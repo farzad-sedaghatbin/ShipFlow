@@ -59,6 +59,7 @@ import ProjectSelector from './ProjectSelector';
 import Breadcrumbs from './Breadcrumbs';
 import WelcomeTourDialog from './WelcomeTourDialog';
 import { QAFloatingButton } from './QAFloatingButton';
+import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -405,6 +406,9 @@ export default function Layout({ children }: LayoutProps) {
                 Switch to {actualMode === 'dark' ? 'light' : 'dark'} mode
               </TooltipContent>
             </Tooltip>
+
+            {/* Notification Center */}
+            <NotificationCenter />
 
             {/* User Menu - Touch-friendly */}
             <DropdownMenu>
