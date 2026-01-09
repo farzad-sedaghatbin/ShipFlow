@@ -339,18 +339,6 @@ export default function Layout({ children }: LayoutProps) {
             <span className="sr-only">Toggle menu</span>
           </Button>
 
-          {/* Mobile Menu Button - Touch-friendly */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden h-11 w-11 touch-manipulation"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open navigation menu"
-          >
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-
           {/* Project Selector - Responsive */}
           <div className="flex-1 min-w-0 lg:flex-none" data-tour="project-selector">
             <ProjectSelector />

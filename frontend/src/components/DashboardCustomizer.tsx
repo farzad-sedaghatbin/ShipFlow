@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff, GripVertical, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,42 +29,23 @@ const WIDGET_DESCRIPTIONS: Record<string, string> = {
 };
 
 interface DashboardCustomizerProps {
+  widgets: DashboardWidget[];
   onUpdate?: () => void;
 }
 
-export function DashboardCustomizer({ onUpdate }: DashboardCustomizerProps) {
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
-  const [loading, setLoading] = useState(true);
+export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerProps) {
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
 
-  useEffect(() => {
-    loadWidgets();
-  }, []);
-
-  const loadWidgets = async () => {
-    try {
-      setLoading(true);
-      const data = await dashboardWidgetApi.getAllWidgets();
-      setWidgets(data.sort((a, b) => a.displayOrder - b.displayOrder));
-    } catch (error) {
-      console.error('Failed to load widgets:', error);
-      showError('Failed to load widget configuration');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const sortedWidgets = [...widgets].sort((a, b) => a.displayOrder - b.displayOrder);
 
   const toggleVisibility = async (widget: DashboardWidget) => {
     try {
-      const updated = await dashboardWidgetApi.updateWidget(widget.id, {
+      await dashboardWidgetApi.updateWidget(widget.id, {
         isVisible: !widget.isVisible,
       });
-      setWidgets((prev) =>
-        prev.map((w) => (w.id === widget.id ? updated : w))
-      );
-      onUpdate?.();
-      showSuccess(`Widget ${updated.isVisible ? 'shown' : 'hidden'}`);
+      await onUpdate?.();
+      showSuccess(`Widget ${!widget.isVisible ? 'shown' : 'hidden'}`);
     } catch (error) {
       console.error('Failed to toggle widget:', error);
       showError('Failed to update widget');
@@ -74,9 +55,8 @@ export function DashboardCustomizer({ onUpdate }: DashboardCustomizerProps) {
   const resetToDefaults = async () => {
     try {
       setSaving(true);
-      const defaultWidgets = await dashboardWidgetApi.resetToDefaults();
-      setWidgets(defaultWidgets.sort((a, b) => a.displayOrder - b.displayOrder));
-      onUpdate?.();
+      await dashboardWidgetApi.resetToDefaults();
+      await onUpdate?.();
       showSuccess('Widgets reset to default configuration');
     } catch (error) {
       console.error('Failed to reset widgets:', error);
@@ -85,19 +65,6 @@ export function DashboardCustomizer({ onUpdate }: DashboardCustomizerProps) {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Widget Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
@@ -121,7 +88,7 @@ export function DashboardCustomizer({ onUpdate }: DashboardCustomizerProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {widgets.map((widget) => (
+          {sortedWidgets.map((widget) => (
             <div
               key={widget.id}
               className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"

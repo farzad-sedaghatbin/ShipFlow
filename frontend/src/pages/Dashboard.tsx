@@ -28,7 +28,6 @@ import {
 } from '../components/illustrations';
 import MotionContainer from '../components/MotionContainer';
 import { AnimatedCard } from '../components/animations';
-import RecentActivityFeed from '../components/RecentActivityFeed';
 import QuickLinks from '../components/QuickLinks';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -103,6 +102,15 @@ export default function Dashboard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshWidgets = async () => {
+    try {
+      const widgetsData = await dashboardWidgetApi.getAllWidgets();
+      setWidgets(widgetsData);
+    } catch (error) {
+      console.error('Failed to refresh widgets:', error);
     }
   };
 
@@ -282,7 +290,7 @@ export default function Dashboard() {
       {/* Widget Customizer - appears before widgets when toggled */}
       {showCustomizer && (
         <MotionContainer delay={0.45} className="mb-4">
-          <DashboardCustomizer onUpdate={loadData} />
+          <DashboardCustomizer widgets={widgets} onUpdate={refreshWidgets} />
         </MotionContainer>
       )}
 
@@ -358,13 +366,6 @@ export default function Dashboard() {
           {/* Hill Chart Widget */}
           <HillChartWidget
             maxPoints={5}
-            projectId={isAllProjectsSelected ? undefined : currentProject?.id}
-          />
-
-          {/* Recent Activity Feed */}
-          <RecentActivityFeed
-            maxItems={5}
-            compact
             projectId={isAllProjectsSelected ? undefined : currentProject?.id}
           />
         </MotionContainer>

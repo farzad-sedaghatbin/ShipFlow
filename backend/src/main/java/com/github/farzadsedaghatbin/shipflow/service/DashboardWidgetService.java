@@ -30,13 +30,13 @@ public class DashboardWidgetService {
 
     // Default widget types
     private static final List<String> DEFAULT_WIDGETS = Arrays.asList(
-        "STATS_CARDS",
-        "QUICK_LINKS",
-        "ACTIVE_CYCLES",
-        "RECENT_PITCHES",
-        "HILL_CHART",
-        "RECENT_ACTIVITY",
-        "RISK_OVERVIEW"
+        "OVERDUE_TASKS",
+        "BLOCKED_TASKS",
+        "UPCOMING_DEADLINES",
+        "MY_TASKS",
+        "TEAM_WORKLOAD",
+        "CYCLE_PROGRESS",
+        "RECENT_ACTIVITY"
     );
 
     /**
