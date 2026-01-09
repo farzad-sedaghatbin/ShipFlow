@@ -64,9 +64,39 @@ When you first log in, the system automatically creates 7 default widgets for yo
 
 ### What Triggers Notifications?
 
-The system generates notifications automatically every day at **8:00 AM** for the following scenarios:
+The system generates two types of notifications:
 
-#### 1️⃣ Overdue Tasks
+#### **Real-Time Notifications** (Instant)
+These are created immediately when an event occurs:
+
+##### 1️⃣ Task Assignment
+- **When:** A task is assigned to you
+- **Who Gets Notified:** The newly assigned person
+- **Severity:** ℹ️ INFO (Blue)
+- **Example:** "Task Assigned: Fix login bug - You have been assigned to task 'Fix login bug'"
+
+##### 2️⃣ Task Reassignment
+- **When:** A task is reassigned from one person to another
+- **Who Gets Notified:** Both the old assignee (removed) and new assignee
+- **Severity:** ℹ️ INFO (Blue)
+- **Example:** "Task Reassigned: API integration - Task 'API integration' has been assigned to John Doe"
+
+##### 3️⃣ Task Status Changes
+- **When:** A task status changes to or from "BLOCKED" or to "IN_PROGRESS"
+- **Who Gets Notified:** The person assigned to the task
+- **Severity:** ⚠️ WARNING (Amber)
+- **Example:** "Task Status Changed: Database migration - Task 'Database migration' is now BLOCKED"
+
+##### 4️⃣ High Priority Task
+- **When:** A task priority is changed to HIGH or URGENT
+- **Who Gets Notified:** The person assigned to the task
+- **Severity:** ⚠️ WARNING (Amber)
+- **Example:** "High Priority Task: Security patch - Task 'Security patch' priority has been set to URGENT"
+
+#### **Scheduled Notifications** (Daily at 8:00 AM)
+These are generated automatically every day:
+
+##### 5️⃣ Overdue Tasks
 - **When:** A task's due date has passed
 - **Condition:** Task status is NOT "Done" or "Cancelled"
 - **Who Gets Notified:** The person assigned to the task
@@ -74,14 +104,14 @@ The system generates notifications automatically every day at **8:00 AM** for th
 - **Frequency:** Once per day (won't spam you)
 - **Example:** "Task Overdue: Fix login bug - Task 'Fix login bug' is overdue by 3 days"
 
-#### 2️⃣ Blocked Tasks
+##### 6️⃣ Blocked Tasks
 - **When:** A task has status "BLOCKED"
 - **Who Gets Notified:** The person assigned to the task
 - **Severity:** 🔴 ERROR (Red)
 - **Frequency:** Once per day
 - **Example:** "Task Blocked: API integration - Task 'API integration' is blocked and needs attention"
 
-#### 3️⃣ Cycle Deadlines
+##### 7️⃣ Cycle Deadlines
 - **When:** A cycle will end within the next 7 days
 - **Condition:** Cycle is in "BUILD" phase
 - **Who Gets Notified:** All team members
@@ -89,7 +119,7 @@ The system generates notifications automatically every day at **8:00 AM** for th
 - **Frequency:** Once per week (won't re-notify for same cycle)
 - **Example:** "Cycle Ending Soon: Sprint 5 - Cycle 'Sprint 5' ends in 5 days"
 
-#### 4️⃣ Stalled Hill Chart Progress
+##### 8️⃣ Stalled Hill Chart Progress
 - **When:** A hill chart scope hasn't been updated in 14+ days
 - **Condition:** Progress position is less than 100% (not complete)
 - **Who Gets Notified:** Team members working on that pitch
