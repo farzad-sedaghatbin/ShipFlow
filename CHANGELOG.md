@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Dashboard Customization**: Users can now customize which widgets appear on their dashboard and in what order
+  - Widget visibility toggle
+  - Configurable display order with bulk update support
+  - Default widgets: Stats Cards, Quick Links, Active Cycles, Recent Pitches, Hill Chart, Recent Activity, Risk Overview
+  - Reset to defaults functionality
+- **Notification System**: Real-time notifications for important events
+  - NotificationCenter component in header with unread badge
+  - Notification types: Overdue Tasks, Blocked Tasks, Cycle Deadlines, Stalled Hill Charts
+  - Severity levels: INFO, WARNING, ERROR, CRITICAL
+  - Click-to-navigate to related entities
+  - Mark as read, delete, and mark all as read actions
+  - Auto-poll for new notifications every 30 seconds
+  - Automated daily generation at 8 AM
+  - Automatic cleanup of old notifications (30 days)
 - Initial release of ShipFlow - Modern project management application implementing the Shape Up methodology
 - **Core Features**:
   - Cycles: 6-week development cycles with betting table
