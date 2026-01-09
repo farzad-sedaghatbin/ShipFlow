@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing to ShipFlow! This document provides guidelines and instructions for contributing.
 
+> **⚠️ IMPORTANT**: Before starting any development work, read [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for the complete development checklist, testing requirements, branch strategy, and project structure.
+
 ## 🌟 Code of Conduct
 
 This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.

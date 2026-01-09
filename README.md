@@ -2,6 +2,8 @@
 
 A modern project management application implementing the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
 
+> **📖 For Developers/AI Agents**: Before working on any task, read [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for mandatory checklist, testing requirements, and project structure.
+
 ## ✨ Features
 
 - **Cycles**: 6-week development cycles with betting table

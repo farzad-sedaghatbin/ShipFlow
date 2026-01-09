@@ -100,3 +100,10 @@ coverage/
 # =========================
 logs/
 *.log
+
+# =========================
+# Local Development Files
+# =========================
+DEVELOPMENT_WORKFLOW.md
+LOCAL_*.md
+*_LOCAL.md
