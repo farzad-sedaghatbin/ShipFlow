@@ -78,7 +78,7 @@ export default function Dashboard() {
         cyclesPromise,
         pitchService.getAll(),
         teamService.getAll(),
-        dashboardWidgetApi.getVisibleWidgets().catch(() => []),
+        dashboardWidgetApi.getAllWidgets().catch(() => []),
       ]);
 
       const cycles = cyclesRes.data;
@@ -287,10 +287,11 @@ export default function Dashboard() {
       )}
 
       {/* Customizable Widgets Grid */}
-      {widgets.length > 0 && (
+      {widgets.filter((w) => w.isVisible).length > 0 && (
         <MotionContainer delay={0.5} className="mb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {widgets
+              .filter((widget) => widget.isVisible)
               .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((widget) => renderWidget(widget))}
           </div>
