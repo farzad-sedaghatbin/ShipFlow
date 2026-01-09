@@ -1,0 +1,202 @@
+package com.github.farzadsedaghatbin.shipflow.service;
+
+import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
+import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class CycleService {
+
+    private final CycleRepository cycleRepository;
+    private final ProjectRepository projectRepository;
+    private final RetroRepository retroRepository;
+
+    public List<CycleDTO> getAllCycles() {
+        return cycleRepository.findAllByOrderByStartDateDesc()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CycleDTO> getCyclesByProject(Long projectId) {
+        return cycleRepository.findByProjectIdOrderByStartDateDesc(projectId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CycleDTO> getActiveCyclesByProject(Long projectId) {
+        return cycleRepository.findByProjectIdAndIsActiveTrue(projectId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CycleDTO> getActiveCycles() {
+        return cycleRepository.findByIsActiveTrue()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public CycleDTO getCycleById(Long id) {
+        Cycle cycle = cycleRepository.findByIdWithProject(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+        return toDTO(cycle);
+    }
+
+    public CycleDTO createCycle(CreateCycleRequest request) {
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
+        
+        Cycle cycle = Cycle.builder()
+                .project(project)
+                .name(request.getName())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .phase(request.getPhase() != null ? request.getPhase() : CyclePhase.BUILD)
+                .isActive(true)
+                .build();
+        
+        Cycle saved = cycleRepository.save(cycle);
+        return toDTO(saved);
+    }
+
+    public CycleDTO updateCycle(Long id, CreateCycleRequest request) {
+        Cycle cycle = cycleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+        
+        // Allow changing project
+        if (request.getProjectId() != null && 
+            (cycle.getProject() == null || !cycle.getProject().getId().equals(request.getProjectId()))) {
+            Project project = projectRepository.findById(request.getProjectId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
+            cycle.setProject(project);
+        }
+        
+        cycle.setName(request.getName());
+        cycle.setStartDate(request.getStartDate());
+        cycle.setEndDate(request.getEndDate());
+        cycle.setPhase(request.getPhase());
+        
+        Cycle saved = cycleRepository.save(cycle);
+        return toDTO(saved);
+    }
+
+    public CycleDTO updatePhase(Long id, CyclePhase phase) {
+        Cycle cycle = cycleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+        
+        cycle.setPhase(phase);
+        Cycle saved = cycleRepository.save(cycle);
+        return toDTO(saved);
+    }
+
+    public CycleDTO toggleActive(Long id) {
+        Cycle cycle = cycleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+        
+        cycle.setIsActive(!cycle.getIsActive());
+        Cycle saved = cycleRepository.save(cycle);
+        return toDTO(saved);
+    }
+
+    /**
+     * Close/Deactivate a cycle with retro enforcement.
+     * Requires at least one closed retrospective if retrospectives are enabled for the project.
+     */
+    public CycleDTO closeCycle(Long id) {
+        Cycle cycle = cycleRepository.findByIdWithProject(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+        
+        // Check retrospective requirement
+        CycleRetroStatusDTO retroStatus = getCycleRetroStatus(id);
+        if (!retroStatus.getCanCloseCycle()) {
+            throw new IllegalStateException(retroStatus.getMessage());
+        }
+        
+        cycle.setIsActive(false);
+        Cycle saved = cycleRepository.save(cycle);
+        return toDTO(saved);
+    }
+
+    /**
+     * Get the retrospective completion status for a cycle.
+     */
+    public CycleRetroStatusDTO getCycleRetroStatus(Long cycleId) {
+        Cycle cycle = cycleRepository.findByIdWithProject(cycleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+        
+        boolean retroEnabled = cycle.getProject() != null && 
+                               Boolean.TRUE.equals(cycle.getProject().getEnableRetrospectives());
+        
+        long totalRetros = retroRepository.countByCycleId(cycleId);
+        long closedRetros = retroRepository.countByCycleIdAndStatus(cycleId, RetroStatus.CLOSED);
+        
+        boolean canClose;
+        String message;
+        
+        if (!retroEnabled) {
+            canClose = true;
+            message = "Retrospectives are disabled for this project";
+        } else if (closedRetros >= 1) {
+            canClose = true;
+            message = "Cycle can be closed - retrospective completed";
+        } else {
+            canClose = false;
+            message = "You can't close this cycle yet — create and close at least one Retro for this cycle.";
+        }
+        
+        return CycleRetroStatusDTO.builder()
+                .cycleId(cycleId)
+                .cycleName(cycle.getName())
+                .totalRetros((int) totalRetros)
+                .closedRetros((int) closedRetros)
+                .canCloseCycle(canClose)
+                .message(message)
+                .build();
+    }
+
+    public void deleteCycle(Long id) {
+        if (!cycleRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Cycle not found with id: " + id);
+        }
+        cycleRepository.deleteById(id);
+    }
+
+    private CycleDTO toDTO(Cycle cycle) {
+        CycleDTO.CycleDTOBuilder builder = CycleDTO.builder()
+                .id(cycle.getId())
+                .name(cycle.getName())
+                .startDate(cycle.getStartDate())
+                .endDate(cycle.getEndDate())
+                .phase(cycle.getPhase())
+                .isActive(cycle.getIsActive())
+                .pitchCount(cycle.getPitches() != null ? cycle.getPitches().size() : 0)
+                .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
+        
+        if (cycle.getProject() != null) {
+            builder.projectId(cycle.getProject().getId())
+                   .projectName(cycle.getProject().getName())
+                   .projectKey(cycle.getProject().getProjectKey());
+        }
+        
+        return builder.build();
+    }
+}

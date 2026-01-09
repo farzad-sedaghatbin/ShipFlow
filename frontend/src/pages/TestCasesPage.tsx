@@ -1,0 +1,515 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Play,
+  Eye,
+  Sparkles,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Label } from '../components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../components/ui/tooltip';
+import { cn } from '../lib/utils';
+import qaTestManagementService from '../services/qaTestManagementService';
+import { cycleService } from '../services/cycleService';
+import { pitchService } from '../services/pitchService';
+import {
+  TestCase,
+  TestCaseStatus,
+  TestCaseType,
+  TestCasePriority,
+  Cycle,
+  Pitch,
+} from '../types';
+
+const priorityVariants: Record<TestCasePriority, 'secondary' | 'default' | 'warning' | 'destructive'> = {
+  LOW: 'secondary',
+  MEDIUM: 'default',
+  HIGH: 'warning',
+  CRITICAL: 'destructive',
+};
+
+const statusVariants: Record<TestCaseStatus, string> = {
+  DRAFT: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  READY: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  APPROVED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  DEPRECATED: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+  ARCHIVED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+};
+
+const TestCasesPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<TestCaseStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<TestCaseType | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<TestCasePriority | 'all'>('all');
+  const [cycleFilter, setCycleFilter] = useState<number | 'all'>('all');
+  const [pitchFilter, setPitchFilter] = useState<number | 'all'>('all');
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; testCase: TestCase | null }>({
+    open: false,
+    testCase: null,
+  });
+
+  useEffect(() => {
+    loadTestCases();
+  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter]);
+
+  useEffect(() => {
+    loadCyclesAndPitches();
+  }, []);
+
+  const loadCyclesAndPitches = async () => {
+    try {
+      const [cyclesRes, pitchesRes] = await Promise.all([
+        cycleService.getAll(),
+        pitchService.getAll(),
+      ]);
+      setCycles(cyclesRes.data);
+      setPitches(pitchesRes.data);
+    } catch (err) {
+      console.error('Failed to load cycles and pitches', err);
+    }
+  };
+
+  const loadTestCases = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let response;
+      // Use filter endpoint if any filter is active
+      if (
+        statusFilter !== 'all' ||
+        typeFilter !== 'all' ||
+        priorityFilter !== 'all' ||
+        cycleFilter !== 'all' ||
+        pitchFilter !== 'all'
+      ) {
+        response = await qaTestManagementService.getTestCasesWithFilters(
+          cycleFilter !== 'all' ? cycleFilter : undefined,
+          pitchFilter !== 'all' ? pitchFilter : undefined,
+          statusFilter !== 'all' ? [statusFilter] : undefined,
+          typeFilter !== 'all' ? [typeFilter] : undefined,
+          priorityFilter !== 'all' ? [priorityFilter] : undefined
+        );
+      } else {
+        response = await qaTestManagementService.getAllTestCases();
+      }
+      setTestCases(response.data);
+    } catch (err) {
+      setError('Failed to load test cases');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteDialog.testCase) return;
+    try {
+      await qaTestManagementService.deleteTestCase(deleteDialog.testCase.id);
+      setTestCases(testCases.filter((tc) => tc.id !== deleteDialog.testCase!.id));
+      setDeleteDialog({ open: false, testCase: null });
+    } catch (err) {
+      setError('Failed to delete test case');
+    }
+  };
+
+  const filteredTestCases = testCases.filter((tc) => {
+    // Only apply search query filter on client-side
+    const matchesSearch =
+      !searchQuery ||
+      tc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tc.testCaseKey.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tc.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <h1 className="text-3xl font-bold tracking-tight">Test Cases</h1>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/qa/test-cases/generate')}
+            className="w-full sm:w-auto"
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
+          <Button
+            onClick={() => navigate('/qa/test-cases/new')}
+            className="w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New Test Case
+          </Button>
+        </div>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="flex items-center gap-2 p-4 rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
+          <AlertCircle className="h-4 w-4" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold">{testCases.length}</p>
+            <p className="text-sm text-muted-foreground">Total Test Cases</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+              {testCases.filter((tc) => tc.status === 'APPROVED').length}
+            </p>
+            <p className="text-sm text-muted-foreground">Approved</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+              {testCases.filter((tc) => tc.status === 'READY').length}
+            </p>
+            <p className="text-sm text-muted-foreground">Ready</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
+              {testCases.filter((tc) => tc.aiGenerated).length}
+            </p>
+            <p className="text-sm text-muted-foreground">AI Generated</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4">
+        <div className="relative min-w-[300px]">
+          <Label htmlFor="test-cases-search" className="sr-only">Search test cases</Label>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Input
+            id="test-cases-search"
+            type="search"
+            placeholder="Search test cases..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search test cases"
+          />
+        </div>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as TestCaseStatus | 'all')}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            {['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'].map((status) => (
+              <SelectItem key={status} value={status}>
+                {status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as TestCaseType | 'all')}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE'].map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={priorityFilter}
+          onValueChange={(value) => setPriorityFilter(value as TestCasePriority | 'all')}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priority</SelectItem>
+            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((priority) => (
+              <SelectItem key={priority} value={priority}>
+                {priority}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={cycleFilter.toString()}
+          onValueChange={(value) => setCycleFilter(value === 'all' ? 'all' : parseInt(value))}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Cycle" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Cycles</SelectItem>
+            {cycles.map((cycle) => (
+              <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                {cycle.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={pitchFilter.toString()}
+          onValueChange={(value) => setPitchFilter(value === 'all' ? 'all' : parseInt(value))}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Pitch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Pitches</SelectItem>
+            {pitches.map((pitch) => (
+              <SelectItem key={pitch.id} value={pitch.id.toString()}>
+                {pitch.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Test Cases Table */}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Key</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Pitch</TableHead>
+              <TableHead>Pass Rate</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredTestCases.map((tc) => (
+              <TableRow key={tc.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{tc.testCaseKey}</span>
+                    {tc.aiGenerated && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Sparkles className="h-4 w-4 text-primary" />
+                          </TooltipTrigger>
+                          <TooltipContent>AI Generated</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="max-w-[300px] truncate block">{tc.title}</span>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{tc.type}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={priorityVariants[tc.priority]}>{tc.priority}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={cn('font-medium', statusVariants[tc.status])}>
+                    {tc.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <span className="text-muted-foreground">{tc.pitchTitle || '-'}</span>
+                </TableCell>
+                <TableCell>
+                  {tc.totalRuns && tc.totalRuns > 0 ? (
+                    <span
+                      className={cn(
+                        'font-medium',
+                        tc.passRate && tc.passRate >= 80
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      )}
+                    >
+                      {tc.passRate?.toFixed(0)}% ({tc.passedRuns}/{tc.totalRuns})
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">No runs</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => navigate(`/qa/test-cases/${tc.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => navigate(`/qa/test-cases/${tc.id}/edit`)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary hover:text-primary"
+                            onClick={() => navigate(`/qa/test-cases/${tc.id}/run`)}
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Run Test</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialog({ open: true, testCase: tc })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredTestCases.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
+                  <span className="text-muted-foreground">
+                    {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || priorityFilter !== 'all'
+                      ? 'No test cases match the filters'
+                      : 'No test cases yet. Create one to get started!'}
+                  </span>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !open && setDeleteDialog({ open: false, testCase: null })}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Test Case</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deleteDialog.testCase?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialog({ open: false, testCase: null })}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default TestCasesPage;

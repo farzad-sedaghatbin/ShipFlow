@@ -1,0 +1,409 @@
+import { useState, useEffect } from 'react';
+import {
+  User,
+  Pencil,
+  Save,
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  Camera,
+  Loader2,
+} from 'lucide-react';
+import { useToast } from '../contexts';
+import api from '../services/api';
+import { UserProfile, UpdateProfileRequest, ChangePasswordRequest } from '../types';
+
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
+import { Badge } from '../components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Separator } from '../components/ui/separator';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+
+export default function Profile() {
+  const { showToast } = useToast();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState<UpdateProfileRequest>({});
+  
+  // Password change dialog
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState<ChangePasswordRequest>({
+    currentPassword: '',
+    newPassword: '',
+  });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    fetchProfile();
+    return () => abortController.abort();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get<UserProfile>('/users/me/profile');
+      setProfile(response.data);
+      setEditForm({
+        email: response.data.email,
+        avatarUrl: response.data.avatarUrl,
+        bio: response.data.bio,
+        skills: response.data.skills,
+        department: response.data.department,
+      });
+    } catch (error) {
+      showToast('Failed to load profile', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const response = await api.put<UserProfile>('/users/me/profile', editForm);
+      setProfile(response.data);
+      setEditing(false);
+      showToast('Profile updated successfully', 'success');
+    } catch (error) {
+      showToast('Failed to update profile', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await api.put(`/users/${profile?.id}/password`, passwordForm);
+      showToast('Password changed successfully', 'success');
+      setPasswordDialogOpen(false);
+      setPasswordForm({ currentPassword: '', newPassword: '' });
+      setConfirmPassword('');
+    } catch (error) {
+      // Error is handled by interceptor
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const getRoleClasses = (role: string) => {
+    const classes: Record<string, string> = {
+      ADMIN: 'bg-red-500/10 text-red-400 border-red-500/20',
+      PROJECT_MANAGER: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      PRODUCT: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+      DEVELOPER: 'bg-green-500/10 text-green-400 border-green-500/20',
+      QA: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    };
+    return classes[role] || '';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>Failed to load profile</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Profile Card */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <Avatar className="h-28 w-28 mx-auto mb-4">
+                <AvatarImage src={profile.avatarUrl} />
+                <AvatarFallback className="text-3xl">
+                  {profile.personName?.charAt(0) || profile.username.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              
+              {editing && (
+                <div className="mb-4">
+                  <Label htmlFor="avatar-url" className="sr-only">Avatar URL</Label>
+                  <div className="relative">
+                    <Camera className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="avatar-url"
+                      placeholder="Avatar URL"
+                      value={editForm.avatarUrl || ''}
+                      onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <h2 className="text-xl font-semibold text-foreground">
+                {profile.personName || profile.username}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-3">@{profile.username}</p>
+              <Badge variant="outline" className={getRoleClasses(profile.role)}>
+                {profile.role.replace('_', ' ')}
+              </Badge>
+              {profile.department && (
+                <p className="text-sm text-muted-foreground mt-3">{profile.department}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Security
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setPasswordDialogOpen(true)}
+              >
+                Change Password
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Profile Details */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Profile Details</CardTitle>
+              {!editing ? (
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditing(false);
+                      setEditForm({
+                        email: profile.email,
+                        avatarUrl: profile.avatarUrl,
+                        bio: profile.bio,
+                        skills: profile.skills,
+                        department: profile.department,
+                      });
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSaveProfile} disabled={saving}>
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Separator />
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="username"
+                      value={profile.username}
+                      disabled
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editing ? editForm.email || '' : profile.email || ''}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    disabled={!editing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Input
+                    id="department"
+                    value={editing ? editForm.department || '' : profile.department || ''}
+                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                    disabled={!editing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Input
+                    id="role"
+                    value={profile.role.replace('_', ' ')}
+                    disabled
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skills">Skills</Label>
+                <Input
+                  id="skills"
+                  value={editing ? editForm.skills || '' : profile.skills || ''}
+                  onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
+                  disabled={!editing}
+                  placeholder="e.g., Java, React, TypeScript, SQL"
+                />
+                <p className="text-xs text-muted-foreground">Comma-separated list of skills</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  rows={4}
+                  value={editing ? editForm.bio || '' : profile.bio || ''}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  disabled={!editing}
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+
+              <Separator />
+
+              <p className="text-sm text-muted-foreground">
+                Member since: {new Date(profile.createdAt).toLocaleDateString()}
+                {profile.updatedAt && (
+                  <> • Last updated: {new Date(profile.updatedAt).toLocaleDateString()}</>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and choose a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="current-password"
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type={showNewPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={confirmPassword !== '' && confirmPassword !== passwordForm.newPassword ? 'border-destructive' : ''}
+              />
+              {confirmPassword !== '' && confirmPassword !== passwordForm.newPassword && (
+                <p className="text-xs text-destructive">Passwords do not match</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !confirmPassword}
+            >
+              {changingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

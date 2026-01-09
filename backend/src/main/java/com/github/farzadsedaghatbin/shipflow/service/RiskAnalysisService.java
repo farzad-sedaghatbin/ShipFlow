@@ -1,0 +1,981 @@
+package com.github.farzadsedaghatbin.shipflow.service;
+
+import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
+import com.github.farzadsedaghatbin.shipflow.dto.risk.*;
+import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Service for AI-powered risk analysis of pitches and cycles using LangChain4j.
+ * Supports multiple AI providers: RunPod (cloud GPU) and Ollama (local/self-hosted).
+ */
+@Service
+@Slf4j
+@Transactional(readOnly = true)
+public class RiskAnalysisService {
+
+    private static final double HOURS_PER_DAY = 8.0;
+
+    private final AIConfig aiConfig;
+    private final ChatLanguageModel chatLanguageModel;
+    private final PitchRepository pitchRepository;
+    private final CycleRepository cycleRepository;
+    private final WorkLogRepository workLogRepository;
+    private final AICacheService cacheService;
+
+    @Autowired
+    public RiskAnalysisService(
+            AIConfig aiConfig,
+            @Autowired(required = false) ChatLanguageModel chatLanguageModel,
+            PitchRepository pitchRepository,
+            CycleRepository cycleRepository,
+            WorkLogRepository workLogRepository,
+            AICacheService cacheService) {
+        this.aiConfig = aiConfig;
+        this.chatLanguageModel = chatLanguageModel;
+        this.pitchRepository = pitchRepository;
+        this.cycleRepository = cycleRepository;
+        this.workLogRepository = workLogRepository;
+        this.cacheService = cacheService;
+    }
+
+    /**
+     * Analyze risk for a single pitch (with AI if enabled).
+     */
+    public PitchRiskDTO analyzePitchRisk(Long pitchId) {
+        return analyzePitchRisk(pitchId, true);
+    }
+
+    /**
+     * Analyze risk for a single pitch.
+     * @param pitchId The pitch ID
+     * @param useAI If true and AI is enabled, includes AI-powered analysis
+     */
+    public PitchRiskDTO analyzePitchRisk(Long pitchId, boolean useAI) {
+        // Check cache first
+        Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitchId, useAI);
+        if (cachedResult.isPresent()) {
+            log.debug("Returning cached risk analysis for pitch {}", pitchId);
+            return cachedResult.get();
+        }
+
+        Pitch pitch = pitchRepository.findById(pitchId)
+                .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
+
+        return analyzePitchRisk(pitch, useAI);
+    }
+
+    /**
+     * Analyze risk for a pitch entity (with AI if enabled).
+     */
+    public PitchRiskDTO analyzePitchRisk(Pitch pitch) {
+        return analyzePitchRisk(pitch, true);
+    }
+
+    /**
+     * Analyze risk for a pitch entity.
+     * @param pitch The pitch entity
+     * @param useAI If true and AI is enabled, includes AI-powered analysis
+     */
+    public PitchRiskDTO analyzePitchRisk(Pitch pitch, boolean useAI) {
+        // Check cache first (for entity-based calls)
+        Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitch.getId(), useAI);
+        if (cachedResult.isPresent()) {
+            log.debug("Returning cached risk analysis for pitch {}", pitch.getId());
+            return cachedResult.get();
+        }
+
+        boolean aiEnabled = useAI && aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
+
+        try {
+            // Calculate basic metrics
+            Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+            if (totalHours == null) totalHours = 0.0;
+
+            double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+            double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
+
+            // Calculate days elapsed and remaining in cycle
+            Cycle cycle = pitch.getCycle();
+            LocalDate today = LocalDate.now();
+            long daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
+            long totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+            double cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+
+            // Create data hash for change detection
+            String dataHash = createPitchDataHash(pitch, totalHours, progress, cycleProgress);
+
+            // Identify risk factors based on metrics
+            List<RiskFactor> riskFactors = identifyRiskFactors(pitch, progress, cycleProgress, totalHours, appetiteHours);
+
+            // Calculate risk score based on factors
+            int baseRiskScore = calculateBaseRiskScore(riskFactors, pitch, progress, cycleProgress);
+
+            // Generate insights - ONLY when AI is requested (useAI=true)
+            // In fast mode, leave empty so UI shows loading state for AI sections
+            List<String> insights = new ArrayList<>();
+            List<String> recommendations = new ArrayList<>();
+            int confidenceScore = 70; // Default confidence without AI
+
+            if (useAI) {
+                if (aiEnabled) {
+                    try {
+                        AIAnalysisResult aiResult = generateAIInsights(pitch, riskFactors, progress, cycleProgress);
+                        insights = aiResult.insights;
+                        recommendations = aiResult.recommendations;
+                        confidenceScore = aiResult.confidenceScore;
+                        
+                        // Adjust risk score based on AI analysis
+                        baseRiskScore = adjustRiskScoreWithAI(baseRiskScore, aiResult);
+                    } catch (Exception e) {
+                        log.warn("AI analysis failed, falling back to rule-based: {}", e.getMessage());
+                        insights = generateRuleBasedInsights(pitch, riskFactors, progress, cycleProgress);
+                        recommendations = generateRuleBasedRecommendations(riskFactors);
+                    }
+                } else {
+                    // AI requested but not available - use rule-based as fallback
+                    insights = generateRuleBasedInsights(pitch, riskFactors, progress, cycleProgress);
+                    recommendations = generateRuleBasedRecommendations(riskFactors);
+                }
+            }
+            // When useAI=false (fast mode), insights and recommendations remain empty
+
+            // Ensure risk score is within bounds
+            int finalRiskScore = Math.max(0, Math.min(100, baseRiskScore));
+            PitchRiskDTO.RiskLevel riskLevel = determineRiskLevel(finalRiskScore);
+
+            PitchRiskDTO result = PitchRiskDTO.builder()
+                    .pitchId(pitch.getId())
+                    .pitchTitle(pitch.getTitle())
+                    .riskScore(finalRiskScore)
+                    .riskLevel(riskLevel)
+                    .riskFactors(riskFactors)
+                    .insights(insights)
+                    .recommendations(recommendations)
+                    .confidenceScore(confidenceScore)
+                    .analyzedAt(LocalDateTime.now())
+                    .aiEnabled(aiEnabled)
+                    .build();
+
+            // Cache the result
+            cacheService.cachePitchRisk(pitch.getId(), useAI, result, dataHash);
+            
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error analyzing pitch risk: {}", e.getMessage(), e);
+            return PitchRiskDTO.builder()
+                    .pitchId(pitch.getId())
+                    .pitchTitle(pitch.getTitle())
+                    .riskScore(50)
+                    .riskLevel(PitchRiskDTO.RiskLevel.MEDIUM)
+                    .riskFactors(Collections.emptyList())
+                    .insights(Collections.emptyList())
+                    .recommendations(Collections.emptyList())
+                    .confidenceScore(0)
+                    .analyzedAt(LocalDateTime.now())
+                    .aiEnabled(aiEnabled)
+                    .errorMessage("Failed to analyze risk: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Get risk overview for an entire cycle (with AI if enabled).
+     */
+    public CycleRiskOverviewDTO getCycleRiskOverview(Long cycleId) {
+        return getCycleRiskOverview(cycleId, true);
+    }
+
+    /**
+     * Get risk overview for an entire cycle.
+     * @param cycleId The cycle ID
+     * @param useAI If true and AI is enabled, includes AI-powered analysis
+     */
+    public CycleRiskOverviewDTO getCycleRiskOverview(Long cycleId, boolean useAI) {
+        // Check cache first
+        Optional<CycleRiskOverviewDTO> cachedResult = cacheService.getCachedCycleRisk(cycleId, useAI);
+        if (cachedResult.isPresent()) {
+            log.debug("Returning cached risk overview for cycle {}", cycleId);
+            return cachedResult.get();
+        }
+
+        Cycle cycle = cycleRepository.findById(cycleId)
+                .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
+
+        List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+        boolean aiEnabled = useAI && aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
+
+        // Analyze each pitch (using fast mode if AI is disabled)
+        List<PitchRiskDTO> pitchRisks = pitches.stream()
+                .map(p -> analyzePitchRisk(p, useAI))
+                .collect(Collectors.toList());
+
+        // Calculate statistics
+        int totalPitches = pitchRisks.size();
+        int highRiskCount = (int) pitchRisks.stream()
+                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH || 
+                            r.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .count();
+        int mediumRiskCount = (int) pitchRisks.stream()
+                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.MEDIUM)
+                .count();
+        int lowRiskCount = (int) pitchRisks.stream()
+                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.LOW)
+                .count();
+
+        // Calculate overall risk score (weighted average with higher weight for high-risk items)
+        int overallRiskScore = calculateOverallRiskScore(pitchRisks);
+        PitchRiskDTO.RiskLevel overallRiskLevel = determineRiskLevel(overallRiskScore);
+
+        // Create pitch risk summaries
+        List<PitchRiskSummary> pitchSummaries = pitchRisks.stream()
+                .map(this::toPitchRiskSummary)
+                .sorted(Comparator.comparing(PitchRiskSummary::getRiskScore).reversed())
+                .collect(Collectors.toList());
+
+        // Aggregate common risk factors
+        List<CommonRiskFactor> topRiskFactors = aggregateRiskFactors(pitchRisks);
+
+        // Calculate cycle stats
+        CycleRiskStats stats = calculateCycleStats(pitchRisks, pitches);
+
+        // Generate cycle-level insights - ONLY when AI is requested
+        // In fast mode, leave empty so UI shows loading state for AI sections
+        List<String> cycleInsights = new ArrayList<>();
+        List<String> cycleRecommendations = new ArrayList<>();
+
+        if (useAI) {
+            if (aiEnabled) {
+                try {
+                    CycleAIAnalysisResult aiResult = generateCycleAIInsights(cycle, pitchRisks, stats);
+                    cycleInsights = aiResult.insights;
+                    cycleRecommendations = aiResult.recommendations;
+                } catch (Exception e) {
+                    log.warn("AI cycle analysis failed, falling back to rule-based: {}", e.getMessage());
+                    cycleInsights = generateRuleBasedCycleInsights(pitchRisks, stats, highRiskCount);
+                    cycleRecommendations = generateRuleBasedCycleRecommendations(topRiskFactors, highRiskCount);
+                }
+            } else {
+                // AI requested but not available - use rule-based as fallback
+                cycleInsights = generateRuleBasedCycleInsights(pitchRisks, stats, highRiskCount);
+                cycleRecommendations = generateRuleBasedCycleRecommendations(topRiskFactors, highRiskCount);
+            }
+        }
+        // When useAI=false (fast mode), cycleInsights and cycleRecommendations remain empty
+
+        CycleRiskOverviewDTO result = CycleRiskOverviewDTO.builder()
+                .cycleId(cycle.getId())
+                .cycleName(cycle.getName())
+                .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
+                .overallRiskScore(overallRiskScore)
+                .overallRiskLevel(overallRiskLevel)
+                .totalPitches(totalPitches)
+                .highRiskPitches(highRiskCount)
+                .mediumRiskPitches(mediumRiskCount)
+                .lowRiskPitches(lowRiskCount)
+                .stats(stats)
+                .pitchRisks(pitchSummaries)
+                .cycleInsights(cycleInsights)
+                .cycleRecommendations(cycleRecommendations)
+                .topRiskFactors(topRiskFactors)
+                .analyzedAt(LocalDateTime.now())
+                .aiEnabled(aiEnabled)
+                .build();
+
+        // Cache the result
+        cacheService.cacheCycleRisk(cycleId, useAI, result);
+        
+        return result;
+    }
+
+    /**
+     * Check if AI risk analysis is available.
+     */
+    public boolean isAIAvailable() {
+        return aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
+    }
+
+    /**
+     * Answer a question about pitch risk using AI.
+     * Note: This method is not transactional to ensure error responses are returned properly.
+     */
+    public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
+        // Get pitch first
+        Pitch pitch;
+        try {
+            pitch = pitchRepository.findById(pitchId)
+                    .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
+        } catch (Exception e) {
+            return RiskQuestionResponse.builder()
+                    .pitchId(pitchId)
+                    .pitchTitle("Unknown")
+                    .question(question)
+                    .answer(null)
+                    .confidenceScore(0)
+                    .aiEnabled(false)
+                    .answeredAt(LocalDateTime.now())
+                    .errorMessage("Pitch not found: " + e.getMessage())
+                    .build();
+        }
+
+        boolean aiEnabled = aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
+
+        if (!aiEnabled) {
+            return RiskQuestionResponse.builder()
+                    .pitchId(pitchId)
+                    .pitchTitle(pitch.getTitle())
+                    .question(question)
+                    .answer("AI risk advisor is not enabled. Please configure Ollama/Mistral to use the Q&A feature.")
+                    .confidenceScore(0)
+                    .aiEnabled(false)
+                    .answeredAt(LocalDateTime.now())
+                    .build();
+        }
+
+        try {
+            // Get pitch context
+            PitchRiskDTO riskAnalysis = analyzePitchRisk(pitch);
+            
+            // Calculate basic metrics for context
+            Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+            if (totalHours == null) totalHours = 0.0;
+            double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+            
+            Cycle cycle = pitch.getCycle();
+            LocalDate today = LocalDate.now();
+            long daysRemaining = ChronoUnit.DAYS.between(today, cycle.getEndDate());
+
+            // Build context for AI
+            String context = String.format("""
+                Pitch: %s
+                Description: %s
+                Status: %s
+                Team: %s
+                Cycle: %s (ends in %d days)
+                
+                Budget: %.1f hours used of %.1f hours appetite (%.1f%% used)
+                
+                Current Risk Analysis:
+                - Risk Score: %d/100
+                - Risk Level: %s
+                - Confidence: %d%%
+                
+                Risk Factors:
+                %s
+                
+                Current Insights:
+                %s
+                
+                Current Recommendations:
+                %s
+                """,
+                pitch.getTitle(),
+                pitch.getDescription() != null ? pitch.getDescription() : "No description",
+                pitch.getStatus(),
+                pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned",
+                cycle.getName(),
+                daysRemaining,
+                totalHours,
+                appetiteHours,
+                riskAnalysis.getRiskScore() > 0 ? (totalHours / appetiteHours * 100) : 0,
+                riskAnalysis.getRiskScore(),
+                riskAnalysis.getRiskLevel(),
+                riskAnalysis.getConfidenceScore(),
+                riskAnalysis.getRiskFactors().stream()
+                    .map(f -> "- " + f.getCategory() + ": " + f.getDescription())
+                    .collect(Collectors.joining("\n")),
+                String.join("\n- ", riskAnalysis.getInsights()),
+                String.join("\n- ", riskAnalysis.getRecommendations())
+            );
+
+            String prompt = String.format("""
+                You are an AI Risk Advisor for a ShipFlow project management system.
+                
+                Based on the following pitch context, answer the user's question helpfully and concisely.
+                Focus on practical, actionable advice related to risk management and project success.
+                
+                CONTEXT:
+                %s
+                
+                USER QUESTION: %s
+                
+                Provide a helpful, specific answer based on the context. Keep your response under 300 words.
+                If the question is not related to the pitch or risk management, politely redirect to relevant topics.
+                """, context, question);
+
+            String answer = chatLanguageModel.generate(prompt);
+
+            return RiskQuestionResponse.builder()
+                    .pitchId(pitchId)
+                    .pitchTitle(pitch.getTitle())
+                    .question(question)
+                    .answer(answer.trim())
+                    .confidenceScore(85)
+                    .aiEnabled(true)
+                    .answeredAt(LocalDateTime.now())
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error answering risk question: {}", e.getMessage(), e);
+            
+            // Provide user-friendly error messages
+            String errorMsg;
+            if (e.getMessage() != null && e.getMessage().contains("Connection refused")) {
+                errorMsg = "AI service (Ollama) is not running. Please start Ollama with 'ollama serve' or disable AI features.";
+            } else if (e.getMessage() != null && e.getMessage().contains("connect")) {
+                errorMsg = "Cannot connect to AI service. Please ensure Ollama is running on port 11434.";
+            } else {
+                errorMsg = "Failed to generate answer: " + e.getMessage();
+            }
+            
+            return RiskQuestionResponse.builder()
+                    .pitchId(pitchId)
+                    .pitchTitle(pitch.getTitle())
+                    .question(question)
+                    .answer(null)
+                    .confidenceScore(0)
+                    .aiEnabled(aiEnabled)
+                    .answeredAt(LocalDateTime.now())
+                    .errorMessage(errorMsg)
+                    .build();
+        }
+    }
+
+    // ==================== Private Helper Methods ====================
+
+    private List<RiskFactor> identifyRiskFactors(Pitch pitch, double progress, double cycleProgress, 
+                                                  double totalHours, double appetiteHours) {
+        List<RiskFactor> factors = new ArrayList<>();
+
+        // Check for time overrun risk
+        if (cycleProgress > progress + 20) {
+            int impact = (int) Math.min(10, (cycleProgress - progress) / 10);
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.TIME_OVERRUN)
+                    .description("Cycle is " + String.format("%.0f", cycleProgress - progress) + "% ahead of pitch progress")
+                    .impactLevel(impact)
+                    .probability(Math.min(10, impact + 2))
+                    .build());
+        }
+
+        // Check for appetite mismatch
+        if (totalHours > appetiteHours * 0.8 && progress < 70) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.APPETITE_MISMATCH)
+                    .description("80% of appetite used but only " + String.format("%.0f", progress) + "% complete")
+                    .impactLevel(8)
+                    .probability(7)
+                    .build());
+        }
+
+        // Check for progress stagnation (no recent work logs)
+        List<WorkLog> recentLogs = workLogRepository.findByPitchId(pitch.getId()).stream()
+                .filter(wl -> wl.getDate().isAfter(LocalDate.now().minusDays(3)))
+                .collect(Collectors.toList());
+        
+        if (recentLogs.isEmpty() && pitch.getStatus() == PitchStatus.IN_PROGRESS) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.PROGRESS_STAGNATION)
+                    .description("No work logged in the last 3 days while pitch is in progress")
+                    .impactLevel(6)
+                    .probability(8)
+                    .build());
+        }
+
+        // Check for team capacity issues
+        if (pitch.getTeam() == null) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.RESOURCE_CONSTRAINT)
+                    .description("No team assigned to this pitch")
+                    .impactLevel(9)
+                    .probability(9)
+                    .build());
+        }
+
+        // Check for unclear requirements (no description or very short)
+        if (pitch.getDescription() == null || pitch.getDescription().length() < 50) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.UNCLEAR_REQUIREMENTS)
+                    .description("Pitch description is missing or too brief")
+                    .impactLevel(5)
+                    .probability(6)
+                    .build());
+        }
+
+        // Check for scope creep (hours spent way over appetite)
+        if (totalHours > appetiteHours * 1.2) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.SCOPE_CREEP)
+                    .description("Hours spent exceed appetite by " + String.format("%.0f", ((totalHours / appetiteHours) - 1) * 100) + "%")
+                    .impactLevel(7)
+                    .probability(10)
+                    .build());
+        }
+
+        // Check status-based risks
+        if (pitch.getStatus() == PitchStatus.PENDING && cycleProgress > 30) {
+            factors.add(RiskFactor.builder()
+                    .category(RiskFactor.RiskCategory.TIME_OVERRUN)
+                    .description("Pitch still pending but cycle is " + String.format("%.0f", cycleProgress) + "% complete")
+                    .impactLevel(8)
+                    .probability(9)
+                    .build());
+        }
+
+        return factors;
+    }
+
+    private int calculateBaseRiskScore(List<RiskFactor> factors, Pitch pitch, double progress, double cycleProgress) {
+        if (factors.isEmpty()) {
+            // Base score from progress vs cycle progress
+            if (cycleProgress > progress) {
+                return (int) Math.min(50, (cycleProgress - progress));
+            }
+            return 20; // Low baseline risk
+        }
+
+        // Calculate weighted risk from factors
+        double totalWeightedRisk = factors.stream()
+                .mapToDouble(f -> f.getImpactLevel() * f.getProbability() / 10.0)
+                .sum();
+
+        // Normalize to 0-100 scale
+        int factorScore = (int) Math.min(80, totalWeightedRisk * 5);
+
+        // Add status-based adjustment
+        int statusAdjustment = switch (pitch.getStatus()) {
+            case DONE -> -30;
+            case TESTING -> -10;
+            case IN_PROGRESS -> 0;
+            case STARTED -> 5;
+            case SHAPED -> 10;
+            case PENDING -> 15;
+            case COOLDOWN -> -20;
+            case CANCELLED -> -50;
+        };
+
+        return Math.max(0, Math.min(100, factorScore + statusAdjustment + 20));
+    }
+
+    private AIAnalysisResult generateAIInsights(Pitch pitch, List<RiskFactor> factors, 
+                                                 double progress, double cycleProgress) {
+        String prompt = buildAIPrompt(pitch, factors, progress, cycleProgress);
+        
+        String response = chatLanguageModel.generate(prompt);
+        return parseAIResponse(response);
+    }
+
+    private String buildAIPrompt(Pitch pitch, List<RiskFactor> factors, double progress, double cycleProgress) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are a project risk advisor for a software development team using the Shape Up methodology.\n\n");
+        sb.append("Analyze the following pitch and provide risk insights:\n\n");
+        sb.append("Pitch Title: ").append(pitch.getTitle()).append("\n");
+        sb.append("Description: ").append(pitch.getDescription() != null ? pitch.getDescription() : "Not provided").append("\n");
+        sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
+        sb.append("Status: ").append(pitch.getStatus()).append("\n");
+        sb.append("Progress: ").append(String.format("%.1f", progress)).append("%\n");
+        sb.append("Cycle Progress: ").append(String.format("%.1f", cycleProgress)).append("%\n");
+        sb.append("Team: ").append(pitch.getTeam() != null ? pitch.getTeam().getName() : "Not assigned").append("\n\n");
+        
+        if (!factors.isEmpty()) {
+            sb.append("Identified Risk Factors:\n");
+            for (RiskFactor factor : factors) {
+                sb.append("- ").append(factor.getCategory()).append(": ").append(factor.getDescription())
+                  .append(" (Impact: ").append(factor.getImpactLevel()).append("/10)\n");
+            }
+        }
+        
+        sb.append("\nProvide your analysis in the following format:\n");
+        sb.append("INSIGHTS:\n- [insight 1]\n- [insight 2]\n- [insight 3]\n\n");
+        sb.append("RECOMMENDATIONS:\n- [recommendation 1]\n- [recommendation 2]\n- [recommendation 3]\n\n");
+        sb.append("CONFIDENCE: [0-100]\n\n");
+        sb.append("Keep insights actionable and specific to this pitch.");
+        
+        return sb.toString();
+    }
+
+    private AIAnalysisResult parseAIResponse(String response) {
+        List<String> insights = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        int confidence = 70;
+
+        String[] sections = response.split("(?i)(INSIGHTS:|RECOMMENDATIONS:|CONFIDENCE:)");
+        
+        for (int i = 1; i < sections.length; i++) {
+            String section = sections[i].trim();
+            String prevHeader = findPreviousHeader(response, sections[i]);
+            
+            if (prevHeader.equalsIgnoreCase("INSIGHTS:")) {
+                insights = extractBulletPoints(section);
+            } else if (prevHeader.equalsIgnoreCase("RECOMMENDATIONS:")) {
+                recommendations = extractBulletPoints(section);
+            } else if (prevHeader.equalsIgnoreCase("CONFIDENCE:")) {
+                try {
+                    confidence = Integer.parseInt(section.replaceAll("[^0-9]", "").substring(0, Math.min(3, section.length())));
+                    confidence = Math.max(0, Math.min(100, confidence));
+                } catch (Exception e) {
+                    confidence = 70;
+                }
+            }
+        }
+
+        // Fallback if parsing failed
+        if (insights.isEmpty()) {
+            insights = List.of("Analysis completed - review risk factors for detailed assessment");
+        }
+        if (recommendations.isEmpty()) {
+            recommendations = List.of("Monitor progress closely and address identified risk factors");
+        }
+
+        return new AIAnalysisResult(insights, recommendations, confidence);
+    }
+
+    private String findPreviousHeader(String fullResponse, String section) {
+        int sectionStart = fullResponse.indexOf(section);
+        String beforeSection = fullResponse.substring(0, sectionStart);
+        
+        if (beforeSection.toUpperCase().contains("CONFIDENCE")) return "CONFIDENCE:";
+        if (beforeSection.toUpperCase().contains("RECOMMENDATIONS")) return "RECOMMENDATIONS:";
+        if (beforeSection.toUpperCase().contains("INSIGHTS")) return "INSIGHTS:";
+        return "";
+    }
+
+    private List<String> extractBulletPoints(String text) {
+        return Arrays.stream(text.split("\n"))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> line.replaceFirst("^[-•*]\\s*", ""))
+                .filter(line -> !line.isEmpty() && line.length() > 3)
+                .limit(5)
+                .collect(Collectors.toList());
+    }
+
+    private int adjustRiskScoreWithAI(int baseScore, AIAnalysisResult aiResult) {
+        // If AI has high confidence and provided good insights, adjust slightly
+        if (aiResult.confidenceScore > 80 && aiResult.insights.size() >= 3) {
+            return baseScore; // Trust the base calculation
+        }
+        return baseScore;
+    }
+
+    private List<String> generateRuleBasedInsights(Pitch pitch, List<RiskFactor> factors, 
+                                                    double progress, double cycleProgress) {
+        List<String> insights = new ArrayList<>();
+
+        if (cycleProgress > progress + 20) {
+            insights.add("The pitch is falling behind the cycle timeline. Consider re-evaluating scope or adding resources.");
+        }
+
+        if (progress > 90) {
+            insights.add("The pitch is nearing completion. Final testing and documentation should be prioritized.");
+        }
+
+        for (RiskFactor factor : factors) {
+            switch (factor.getCategory()) {
+                case SCOPE_CREEP -> insights.add("Scope creep detected - the pitch has exceeded its original appetite estimate.");
+                case PROGRESS_STAGNATION -> insights.add("Work on this pitch has stalled. Consider a team check-in to identify blockers.");
+                case RESOURCE_CONSTRAINT -> insights.add("No team assigned - this pitch cannot progress without resources.");
+                case APPETITE_MISMATCH -> insights.add("The original appetite may have been underestimated for this pitch.");
+                default -> {}
+            }
+        }
+
+        if (insights.isEmpty()) {
+            insights.add("The pitch appears to be progressing normally with no significant risks identified.");
+        }
+
+        return insights.stream().limit(5).collect(Collectors.toList());
+    }
+
+    private List<String> generateRuleBasedRecommendations(List<RiskFactor> factors) {
+        List<String> recommendations = new ArrayList<>();
+
+        for (RiskFactor factor : factors) {
+            switch (factor.getCategory()) {
+                case TIME_OVERRUN -> recommendations.add("Consider cutting scope to meet the deadline, or adjust timeline expectations.");
+                case SCOPE_CREEP -> recommendations.add("Review and document the actual scope versus original pitch to prevent further creep.");
+                case RESOURCE_CONSTRAINT -> recommendations.add("Assign a team to this pitch immediately to enable progress.");
+                case PROGRESS_STAGNATION -> recommendations.add("Schedule a sync meeting to identify and remove blockers.");
+                case UNCLEAR_REQUIREMENTS -> recommendations.add("Add more detail to the pitch description to clarify requirements.");
+                case APPETITE_MISMATCH -> recommendations.add("Document lessons learned about estimation for future cycles.");
+                default -> {}
+            }
+        }
+
+        if (recommendations.isEmpty()) {
+            recommendations.add("Continue monitoring progress and maintain current pace.");
+        }
+
+        return recommendations.stream().distinct().limit(5).collect(Collectors.toList());
+    }
+
+    private PitchRiskDTO.RiskLevel determineRiskLevel(int score) {
+        if (score >= 80) return PitchRiskDTO.RiskLevel.CRITICAL;
+        if (score >= 60) return PitchRiskDTO.RiskLevel.HIGH;
+        if (score >= 30) return PitchRiskDTO.RiskLevel.MEDIUM;
+        return PitchRiskDTO.RiskLevel.LOW;
+    }
+
+    private int calculateOverallRiskScore(List<PitchRiskDTO> pitchRisks) {
+        if (pitchRisks.isEmpty()) return 0;
+
+        // Weighted average: high-risk pitches contribute more
+        double totalWeight = 0;
+        double weightedSum = 0;
+
+        for (PitchRiskDTO risk : pitchRisks) {
+            double weight = switch (risk.getRiskLevel()) {
+                case CRITICAL -> 3.0;
+                case HIGH -> 2.0;
+                case MEDIUM -> 1.5;
+                case LOW -> 1.0;
+            };
+            weightedSum += risk.getRiskScore() * weight;
+            totalWeight += weight;
+        }
+
+        return (int) (weightedSum / totalWeight);
+    }
+
+    private PitchRiskSummary toPitchRiskSummary(PitchRiskDTO risk) {
+        String topRisk = risk.getRiskFactors().isEmpty() ? "No significant risks" :
+                risk.getRiskFactors().get(0).getDescription();
+
+        return PitchRiskSummary.builder()
+                .pitchId(risk.getPitchId())
+                .pitchTitle(risk.getPitchTitle())
+                .riskScore(risk.getRiskScore())
+                .riskLevel(risk.getRiskLevel())
+                .topRisk(topRisk)
+                .build();
+    }
+
+    private List<CommonRiskFactor> aggregateRiskFactors(List<PitchRiskDTO> pitchRisks) {
+        Map<RiskFactor.RiskCategory, List<RiskFactor>> groupedFactors = pitchRisks.stream()
+                .flatMap(r -> r.getRiskFactors().stream())
+                .collect(Collectors.groupingBy(RiskFactor::getCategory));
+
+        return groupedFactors.entrySet().stream()
+                .map(entry -> CommonRiskFactor.builder()
+                        .category(entry.getKey())
+                        .occurrenceCount(entry.getValue().size())
+                        .averageImpact(entry.getValue().stream()
+                                .mapToDouble(RiskFactor::getImpactLevel)
+                                .average()
+                                .orElse(0.0))
+                        .build())
+                .sorted(Comparator.comparing(CommonRiskFactor::getOccurrenceCount).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+    }
+
+    private CycleRiskStats calculateCycleStats(List<PitchRiskDTO> pitchRisks, List<Pitch> pitches) {
+        double avgRisk = pitchRisks.stream()
+                .mapToInt(PitchRiskDTO::getRiskScore)
+                .average()
+                .orElse(0.0);
+
+        int maxRisk = pitchRisks.stream()
+                .mapToInt(PitchRiskDTO::getRiskScore)
+                .max()
+                .orElse(0);
+
+        int minRisk = pitchRisks.stream()
+                .mapToInt(PitchRiskDTO::getRiskScore)
+                .min()
+                .orElse(0);
+
+        // Calculate average progress
+        double totalProgress = 0;
+        double totalAppetite = 0;
+        double totalActual = 0;
+
+        for (Pitch pitch : pitches) {
+            Double hours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+            if (hours == null) hours = 0.0;
+            double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+            totalActual += hours;
+            totalAppetite += appetite;
+            if (appetite > 0) {
+                totalProgress += (hours / appetite) * 100;
+            }
+        }
+
+        double avgProgress = pitches.isEmpty() ? 0 : totalProgress / pitches.size();
+        double appetiteUtilization = totalAppetite > 0 ? (totalActual / totalAppetite) * 100 : 0;
+
+        return CycleRiskStats.builder()
+                .averageRiskScore(avgRisk)
+                .maxRiskScore(maxRisk)
+                .minRiskScore(minRisk)
+                .averageProgress(avgProgress)
+                .appetiteUtilization(appetiteUtilization)
+                .build();
+    }
+
+    private CycleAIAnalysisResult generateCycleAIInsights(Cycle cycle, List<PitchRiskDTO> pitchRisks, 
+                                                           CycleRiskStats stats) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are a project portfolio risk advisor analyzing a Shape Up development cycle.\n\n");
+        prompt.append("Cycle: ").append(cycle.getName()).append("\n");
+        prompt.append("Total Pitches: ").append(pitchRisks.size()).append("\n");
+        prompt.append("Average Risk Score: ").append(String.format("%.1f", stats.getAverageRiskScore())).append("\n");
+        prompt.append("Average Progress: ").append(String.format("%.1f", stats.getAverageProgress())).append("%\n");
+        prompt.append("Appetite Utilization: ").append(String.format("%.1f", stats.getAppetiteUtilization())).append("%\n\n");
+        
+        prompt.append("High-risk pitches:\n");
+        pitchRisks.stream()
+                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH || 
+                            r.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .forEach(r -> prompt.append("- ").append(r.getPitchTitle())
+                        .append(" (Risk: ").append(r.getRiskScore()).append(")\n"));
+
+        prompt.append("\nProvide cycle-level insights and recommendations:\n");
+        prompt.append("INSIGHTS:\n- [insight 1]\n- [insight 2]\n\n");
+        prompt.append("RECOMMENDATIONS:\n- [recommendation 1]\n- [recommendation 2]\n");
+
+        String response = chatLanguageModel.generate(prompt.toString());
+        
+        List<String> insights = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+
+        String[] sections = response.split("(?i)(INSIGHTS:|RECOMMENDATIONS:)");
+        for (int i = 1; i < sections.length; i++) {
+            String section = sections[i].trim();
+            if (i == 1) {
+                insights = extractBulletPoints(section);
+            } else if (i == 2) {
+                recommendations = extractBulletPoints(section);
+            }
+        }
+
+        return new CycleAIAnalysisResult(insights, recommendations);
+    }
+
+    private List<String> generateRuleBasedCycleInsights(List<PitchRiskDTO> pitchRisks, 
+                                                         CycleRiskStats stats, int highRiskCount) {
+        List<String> insights = new ArrayList<>();
+
+        if (highRiskCount > 0) {
+            insights.add(String.format("%d pitch(es) are at high risk and need immediate attention.", highRiskCount));
+        }
+
+        if (stats.getAverageProgress() < 50 && stats.getAppetiteUtilization() > 70) {
+            insights.add("The cycle is consuming appetite faster than delivering progress - consider scope review.");
+        }
+
+        if (stats.getAverageRiskScore() > 60) {
+            insights.add("The overall cycle risk is elevated - proactive management recommended.");
+        } else if (stats.getAverageRiskScore() < 30) {
+            insights.add("The cycle is progressing well with low overall risk.");
+        }
+
+        if (insights.isEmpty()) {
+            insights.add("The cycle is progressing within normal parameters.");
+        }
+
+        return insights;
+    }
+
+    private List<String> generateRuleBasedCycleRecommendations(List<CommonRiskFactor> topFactors, int highRiskCount) {
+        List<String> recommendations = new ArrayList<>();
+
+        if (highRiskCount > 0) {
+            recommendations.add("Schedule a risk review meeting to address high-risk pitches.");
+        }
+
+        for (CommonRiskFactor factor : topFactors) {
+            if (factor.getOccurrenceCount() > 1) {
+                switch (factor.getCategory()) {
+                    case TIME_OVERRUN -> recommendations.add("Multiple pitches face time pressure - consider a cycle-wide scope review.");
+                    case RESOURCE_CONSTRAINT -> recommendations.add("Address team assignment gaps across multiple pitches.");
+                    case PROGRESS_STAGNATION -> recommendations.add("Investigate blockers affecting multiple pitches.");
+                    default -> {}
+                }
+            }
+        }
+
+        if (recommendations.isEmpty()) {
+            recommendations.add("Continue regular monitoring and maintain current practices.");
+        }
+
+        return recommendations.stream().distinct().limit(5).collect(Collectors.toList());
+    }
+
+    /**
+     * Create a hash of pitch data for change detection.
+     * When this hash changes, cached results should be invalidated.
+     */
+    private String createPitchDataHash(Pitch pitch, Double totalHours, double progress, double cycleProgress) {
+        String data = String.format("%d|%s|%.2f|%.2f|%.2f|%s|%s|%s",
+                pitch.getId(),
+                pitch.getStatus(),
+                totalHours,
+                progress,
+                cycleProgress,
+                pitch.getUpdatedAt() != null ? pitch.getUpdatedAt().toString() : "",
+                pitch.getCycle().getStartDate().toString(),
+                pitch.getCycle().getEndDate().toString());
+        
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            // Fallback to simple hash
+            return Integer.toHexString(data.hashCode());
+        }
+    }
+
+    /**
+     * Invalidate cache for a specific pitch (called when pitch data changes).
+     */
+    public void invalidatePitchCache(Long pitchId) {
+        cacheService.invalidatePitchRiskCache(pitchId);
+        
+        // Also invalidate cycle cache if pitch belongs to a cycle
+        pitchRepository.findById(pitchId).ifPresent(pitch -> {
+            if (pitch.getCycle() != null) {
+                cacheService.invalidateCycleRiskCache(pitch.getCycle().getId());
+            }
+        });
+    }
+
+    /**
+     * Invalidate cache for a specific cycle (called when cycle data changes).
+     */
+    public void invalidateCycleCache(Long cycleId) {
+        cacheService.invalidateCycleRiskCache(cycleId);
+    }
+
+    // Inner classes for AI results
+    private record AIAnalysisResult(List<String> insights, List<String> recommendations, int confidenceScore) {}
+    private record CycleAIAnalysisResult(List<String> insights, List<String> recommendations) {}
+}

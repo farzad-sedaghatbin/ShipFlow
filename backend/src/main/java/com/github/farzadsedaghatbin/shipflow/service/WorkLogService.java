@@ -1,0 +1,291 @@
+package com.github.farzadsedaghatbin.shipflow.service;
+
+import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogForSelfRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class WorkLogService {
+
+    private final WorkLogRepository workLogRepository;
+    private final PersonRepository personRepository;
+    private final PitchRepository pitchRepository;
+    private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final AICacheService cacheService;
+
+    public List<WorkLogDTO> getAllWorkLogs() {
+        return workLogRepository.findAll()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<WorkLogDTO> getWorkLogsByPitchId(Long pitchId) {
+        return workLogRepository.findByPitchId(pitchId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<WorkLogDTO> getWorkLogsByPersonId(Long personId) {
+        return workLogRepository.findByPersonId(personId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<WorkLogDTO> getWorkLogsByPersonAndDate(Long personId, LocalDate date) {
+        return workLogRepository.findByPersonIdAndDate(personId, date)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<WorkLogDTO> getWorkLogsByCycleId(Long cycleId) {
+        return workLogRepository.findByCycleId(cycleId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public WorkLogDTO getWorkLogById(Long id) {
+        WorkLog workLog = workLogRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
+        return toDTO(workLog);
+    }
+
+    public WorkLogDTO createWorkLog(CreateWorkLogRequest request) {
+        Person person = personRepository.findById(request.getPersonId())
+                .orElseThrow(() -> new IllegalArgumentException("Person not found with id: " + request.getPersonId()));
+        
+        Pitch pitch = pitchRepository.findById(request.getPitchId())
+                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        
+        WorkLog workLog = WorkLog.builder()
+                .person(person)
+                .pitch(pitch)
+                .date(request.getDate())
+                .hoursSpent(request.getHoursSpent())
+                .note(request.getNote())
+                .build();
+        
+        WorkLog saved = workLogRepository.save(workLog);
+        
+        // Publish event for knowledge ingestion (only if note is present)
+        if (saved.getNote() != null && !saved.getNote().trim().isEmpty()) {
+            eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
+        }
+        
+        // Invalidate risk analysis cache since hours changed
+        invalidateCacheForPitch(pitch);
+        
+        return toDTO(saved);
+    }
+
+    public WorkLogDTO updateWorkLog(Long id, CreateWorkLogRequest request) {
+        WorkLog workLog = workLogRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
+        
+        workLog.setDate(request.getDate());
+        workLog.setHoursSpent(request.getHoursSpent());
+        workLog.setNote(request.getNote());
+        
+        WorkLog saved = workLogRepository.save(workLog);
+        
+        // Publish event for knowledge ingestion (only if note is present)
+        if (saved.getNote() != null && !saved.getNote().trim().isEmpty()) {
+            eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
+        }
+        
+        // Invalidate risk analysis cache since hours changed
+        invalidateCacheForPitch(saved.getPitch());
+        
+        return toDTO(saved);
+    }
+
+    public void deleteWorkLog(Long id) {
+        WorkLog workLog = workLogRepository.findById(id).orElse(null);
+        Pitch pitch = workLog != null ? workLog.getPitch() : null;
+        
+        workLogRepository.deleteById(id);
+        
+        // Invalidate risk analysis cache since hours changed
+        if (pitch != null) {
+            invalidateCacheForPitch(pitch);
+        }
+    }
+
+    /**
+     * Invalidate cache for pitch and its cycle when work log data changes.
+     */
+    private void invalidateCacheForPitch(Pitch pitch) {
+        if (pitch != null) {
+            cacheService.invalidatePitchRiskCache(pitch.getId());
+            if (pitch.getCycle() != null) {
+                cacheService.invalidateCycleRiskCache(pitch.getCycle().getId());
+            }
+        }
+    }
+
+    // ========== Methods for current user's own work logs ==========
+
+    /**
+     * Get the current authenticated user's Person entity
+     */
+    private Person getCurrentUserPerson() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsernameWithPerson(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        if (user.getPerson() == null) {
+            throw new IllegalArgumentException("Your account is not linked to a person profile. Please contact an administrator.");
+        }
+        
+        return user.getPerson();
+    }
+
+    /**
+     * Get all work logs for the current user
+     */
+    public List<WorkLogDTO> getMyWorkLogs() {
+        Person person = getCurrentUserPerson();
+        return workLogRepository.findByPersonId(person.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get work logs for the current user by cycle
+     */
+    public List<WorkLogDTO> getMyWorkLogsByCycle(Long cycleId) {
+        Person person = getCurrentUserPerson();
+        return workLogRepository.findByPersonIdAndCycleId(person.getId(), cycleId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get work logs for the current user by date
+     */
+    public List<WorkLogDTO> getMyWorkLogsByDate(LocalDate date) {
+        Person person = getCurrentUserPerson();
+        return workLogRepository.findByPersonIdAndDate(person.getId(), date)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Create a work log for the current user (for themselves)
+     */
+    public WorkLogDTO createMyWorkLog(CreateWorkLogForSelfRequest request) {
+        Person person = getCurrentUserPerson();
+        
+        Pitch pitch = pitchRepository.findById(request.getPitchId())
+                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        
+        WorkLog workLog = WorkLog.builder()
+                .person(person)
+                .pitch(pitch)
+                .date(request.getDate())
+                .hoursSpent(request.getHoursSpent())
+                .note(request.getNote())
+                .build();
+        
+        WorkLog saved = workLogRepository.save(workLog);
+        
+        // Publish event for knowledge ingestion (only if note is present)
+        if (saved.getNote() != null && !saved.getNote().trim().isEmpty()) {
+            eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
+        }
+        
+        return toDTO(saved);
+    }
+
+    /**
+     * Update a work log owned by the current user
+     */
+    public WorkLogDTO updateMyWorkLog(Long id, CreateWorkLogForSelfRequest request) {
+        Person person = getCurrentUserPerson();
+        WorkLog workLog = workLogRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
+        
+        // Verify ownership
+        if (!workLog.getPerson().getId().equals(person.getId())) {
+            throw new IllegalArgumentException("You can only update your own work logs");
+        }
+        
+        Pitch pitch = pitchRepository.findById(request.getPitchId())
+                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        
+        workLog.setPitch(pitch);
+        workLog.setDate(request.getDate());
+        workLog.setHoursSpent(request.getHoursSpent());
+        workLog.setNote(request.getNote());
+        
+        WorkLog saved = workLogRepository.save(workLog);
+        
+        // Publish event for knowledge ingestion (only if note is present)
+        if (saved.getNote() != null && !saved.getNote().trim().isEmpty()) {
+            eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
+        }
+        
+        return toDTO(saved);
+    }
+
+    /**
+     * Delete a work log owned by the current user
+     */
+    public void deleteMyWorkLog(Long id) {
+        Person person = getCurrentUserPerson();
+        WorkLog workLog = workLogRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
+        
+        // Verify ownership
+        if (!workLog.getPerson().getId().equals(person.getId())) {
+            throw new IllegalArgumentException("You can only delete your own work logs");
+        }
+        
+        workLogRepository.deleteById(id);
+    }
+
+    private WorkLogDTO toDTO(WorkLog workLog) {
+        return WorkLogDTO.builder()
+                .id(workLog.getId())
+                .personId(workLog.getPerson().getId())
+                .personName(workLog.getPerson().getName())
+                .pitchId(workLog.getPitch().getId())
+                .pitchTitle(workLog.getPitch().getTitle())
+                .cycleId(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getId() : null)
+                .cycleName(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getName() : null)
+                .projectId(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getId() : null)
+                .projectName(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getName() : null)
+                .projectKey(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getProjectKey() : null)
+                .date(workLog.getDate())
+                .hoursSpent(workLog.getHoursSpent())
+                .note(workLog.getNote())
+                .build();
+    }
+}

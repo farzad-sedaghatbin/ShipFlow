@@ -1,0 +1,72 @@
+# Docker Compose override for self-hosted Ollama AI
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+#
+# This adds Ollama service for local/self-hosted AI deployments.
+# By default, docker-compose.yml uses RunPod (cloud GPU).
+
+version: '3.8'
+
+services:
+  # Override app to use Ollama
+  app:
+    environment:
+      AI_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+  # Ollama for self-hosted AI
+  ollama:
+    image: ollama/ollama:latest
+    container_name: shipflow-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Ollama Model Initializer (pulls Mistral model)
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: shipflow-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Pulling Mistral model..."
+        ollama pull mistral:instruct
+        echo "Mistral model ready!"
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    networks:
+      - shipflow-network
+    restart: "no"
+
+volumes:
+  ollama_data:
+
+networks:
+  shipflow-network:
+    driver: bridge

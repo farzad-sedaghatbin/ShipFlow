@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: shipflow-db
+    environment:
+      POSTGRES_DB: shipflowdb
+      POSTGRES_USER: shipflow
+      POSTGRES_PASSWORD: shipflow_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipflow -d shipflowdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shipflow-network
+
+  # ShipFlow Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shipflow-app
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shipflowdb
+      DB_USERNAME: shipflow
+      DB_PASSWORD: shipflow_secret
+      # AI Provider Selection: 'runpod' (cloud GPU) or 'ollama' (local/self-hosted)
+      AI_PROVIDER: ${AI_PROVIDER:-runpod}
+      AI_RISK_ENABLED: "true"
+      # RunPod Configuration (default)
+      RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY}
+      RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
+      RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
+      RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
+      # Ollama Configuration (for local/self-hosted)
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:instruct}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
+      # Q&A Feature Configuration
+      QA_ENABLED: "true"
+      QA_VECTOR_STORE_TYPE: chromadb
+      CHROMADB_HOST: chromadb
+      CHROMADB_PORT: 8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
+  # ChromaDB for Q&A Vector Store
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: shipflow-chromadb
+    environment:
+      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/chroma/chroma.htpasswd
+      - CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER=chromadb.auth.basic.BasicAuthCredentialsProvider
+      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.basic.BasicAuthServerProvider
+      - ANONYMIZED_TELEMETRY=FALSE
+      - ALLOW_RESET=TRUE
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/data
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  chromadb_data:
+
+networks:
+  shipflow-network:
+    driver: bridge

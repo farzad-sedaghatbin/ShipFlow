@@ -1,0 +1,161 @@
+/* Custom styles for ShipFlow Tour */
+
+/* Main popover styling */
+.driver-popover.shipflow-tour-popover {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 400px;
+}
+
+/* Dark theme override */
+[data-theme="dark"] .driver-popover.shipflow-tour-popover {
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+}
+
+/* Title styling */
+.driver-popover.shipflow-tour-popover .driver-popover-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* Description styling */
+.driver-popover.shipflow-tour-popover .driver-popover-description {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+}
+
+/* Progress bar */
+.driver-popover.shipflow-tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+}
+
+/* Footer buttons container */
+.driver-popover.shipflow-tour-popover .driver-popover-navigation-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Button base styles */
+.driver-popover.shipflow-tour-popover button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+/* Previous button */
+.driver-popover.shipflow-tour-popover .driver-popover-prev-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-prev-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Next button */
+.driver-popover.shipflow-tour-popover .driver-popover-next-btn {
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: #ffffff;
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-next-btn:hover {
+  background: linear-gradient(135deg, #5a9fe8 0%, #4589cc 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.4);
+}
+
+/* Close/Done button styling */
+.driver-popover.shipflow-tour-popover .driver-popover-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Arrow styling */
+.driver-popover.shipflow-tour-popover .driver-popover-arrow {
+  border: none;
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: #1a1a2e;
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: #1a1a2e;
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-arrow-side-top {
+  border-top-color: #1a1a2e;
+}
+
+.driver-popover.shipflow-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: #1a1a2e;
+}
+
+/* Highlight overlay */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Animated highlight */
+.driver-active-element {
+  animation: pulse-highlight 2s infinite;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(74, 144, 217, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(74, 144, 217, 0.2);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .driver-popover.shipflow-tour-popover {
+    max-width: 300px;
+  }
+  
+  .driver-popover.shipflow-tour-popover .driver-popover-title {
+    font-size: 1.1rem;
+  }
+  
+  .driver-popover.shipflow-tour-popover .driver-popover-description {
+    font-size: 0.875rem;
+  }
+  
+  .driver-popover.shipflow-tour-popover button {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,695 @@
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, Pencil, UserPlus, History, Clock, ClipboardList, Loader2 } from 'lucide-react';
+import { teamService } from '../services/teamService';
+import { personService } from '../services/personService';
+import { cycleService } from '../services/cycleService';
+import { workLogService } from '../services/workLogService';
+import { Team, Person, Cycle, CreateTeamRequest, CreateTeamAssignmentRequest, TeamMemberRole, TeamAssignment, WorkLog } from '../types';
+import EmptyState from '../components/EmptyState';
+import { EmptyTeamsIllustration, EmptyWorkLogsIllustration } from '../components/illustrations';
+import { useProject, useToast } from '../contexts';
+import { QAFloatingButton } from '../components/QAFloatingButton';
+import { getUserFriendlyError } from '../utils/errorMessages';
+import { cn } from '../lib/utils';
+
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../components/ui/accordion';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { ScrollArea } from '../components/ui/scroll-area';
+import { Separator } from '../components/ui/separator';
+
+const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'QA', 'DESIGNER', 'FULLSTACK', 'TECH_LEAD', 'PRODUCT_MANAGER'];
+
+export default function Teams() {
+  const { currentProject, isAllProjectsSelected } = useProject();
+  const { showToast } = useToast();
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [, setSaving] = useState(false);
+  const [, setFieldErrors] = useState<Record<string, string>>({});
+
+  const [teamDialog, setTeamDialog] = useState(false);
+  const [assignmentDialog, setAssignmentDialog] = useState(false);
+  const [editTeamId, setEditTeamId] = useState<number | null>(null);
+  const [editAssignmentId, setEditAssignmentId] = useState<number | null>(null);
+
+  const [teamForm, setTeamForm] = useState<CreateTeamRequest>({ name: '', cycleId: undefined });
+  const [assignmentForm, setAssignmentForm] = useState<CreateTeamAssignmentRequest>({ personId: 0, role: 'BACKEND', teamId: 0 });
+  const [selectedPersonId, setSelectedPersonId] = useState<string>('');
+  
+  // Work activity dialog states
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityPerson, setActivityPerson] = useState<{ id: number; name: string } | null>(null);
+  const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    loadData();
+    return () => abortController.abort();
+  }, [currentProject, isAllProjectsSelected]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      let cyclesPromise;
+      if (isAllProjectsSelected) {
+        cyclesPromise = cycleService.getActive();
+      } else if (currentProject) {
+        cyclesPromise = cycleService.getActiveByProject(currentProject.id);
+      } else {
+        cyclesPromise = Promise.resolve({ data: [] });
+      }
+      
+      const [teamsRes, cyclesRes, personsData] = await Promise.all([
+        teamService.getAll(),
+        cyclesPromise,
+        personService.getAll(true),
+      ]);
+      
+      const cycles = cyclesRes.data;
+      setCycles(cycles);
+      
+      // Filter teams based on cycles (which are already project-filtered)
+      const cycleIds = new Set(cycles.map((c: Cycle) => c.id));
+      const filteredTeams = teamsRes.data.filter((t: Team) => 
+        !t.cycleId || cycleIds.has(t.cycleId)
+      );
+      
+      setTeams(filteredTeams);
+      setPersons(personsData);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenTeamDialog = (team?: Team) => {
+    if (team) {
+      setEditTeamId(team.id);
+      setTeamForm({ name: team.name, cycleId: team.cycleId });
+    } else {
+      setEditTeamId(null);
+      setTeamForm({ name: '', cycleId: undefined });
+    }
+    setFieldErrors({});
+    setTeamDialog(true);
+  };
+
+  // Validate team form
+  const validateTeamForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!teamForm.name.trim()) {
+      errors.name = 'Team name is required';
+    } else if (teamForm.name.trim().length < 2) {
+      errors.name = 'Team name must be at least 2 characters';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveTeam = async () => {
+    if (!validateTeamForm()) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      if (editTeamId) {
+        await teamService.update(editTeamId, teamForm);
+        showToast('Team updated successfully!', 'success');
+      } else {
+        await teamService.create(teamForm);
+        showToast('Team created successfully!', 'success');
+      }
+      setTeamDialog(false);
+      loadData();
+    } catch (error) {
+      showToast(getUserFriendlyError(error, 'Failed to save team'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTeam = async (id: number) => {
+    try {
+      await teamService.delete(id);
+      showToast('Team deleted successfully!', 'success');
+      loadData();
+    } catch (error) {
+      showToast(getUserFriendlyError(error, 'Failed to delete team'), 'error');
+    }
+  };
+
+  const handleOpenAssignmentDialog = (teamId: number, assignment?: TeamAssignment) => {
+    if (assignment) {
+      setEditAssignmentId(assignment.id);
+      setSelectedPersonId(assignment.personId.toString());
+      setAssignmentForm({ personId: assignment.personId, role: assignment.role, teamId: assignment.teamId });
+    } else {
+      setEditAssignmentId(null);
+      setSelectedPersonId('');
+      setAssignmentForm({ personId: 0, role: 'BACKEND', teamId });
+    }
+    setAssignmentDialog(true);
+  };
+
+  const handleSaveAssignment = async () => {
+    try {
+      setSaving(true);
+      if (editAssignmentId) {
+        await personService.updateAssignment(editAssignmentId, assignmentForm);
+        showToast('Assignment updated successfully!', 'success');
+      } else {
+        await personService.assignToTeam(assignmentForm);
+        showToast('Person assigned to team successfully!', 'success');
+      }
+      setAssignmentDialog(false);
+      loadData();
+    } catch (error) {
+      showToast(getUserFriendlyError(error, 'Failed to save assignment'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEndAssignment = async (assignmentId: number) => {
+    try {
+      await personService.endAssignment(assignmentId);
+      showToast('Assignment ended', 'success');
+      loadData();
+    } catch (error) {
+      showToast('Failed to end assignment', 'error');
+    }
+  };
+
+  const handleViewActivity = async (personId: number, personName: string) => {
+    setActivityPerson({ id: personId, name: personName });
+    setActivityDialogOpen(true);
+    setLoadingWorkLogs(true);
+    try {
+      const response = await workLogService.getByPersonId(personId);
+      // Sort by date descending (most recent first)
+      const sortedLogs = response.data.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setWorkLogs(sortedLogs);
+    } catch (error) {
+      showToast('Failed to load work logs', 'error');
+      setWorkLogs([]);
+    } finally {
+      setLoadingWorkLogs(false);
+    }
+  };
+
+  const getRoleClassName = (role: TeamMemberRole): string => {
+    const classNames: Record<TeamMemberRole, string> = {
+      BACKEND: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
+      FRONTEND: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+      QA: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
+      DESIGNER: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
+      FULLSTACK: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
+      TECH_LEAD: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
+      PRODUCT_MANAGER: 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20',
+    };
+    return classNames[role] || '';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+          <p className="text-sm text-muted-foreground">
+            {isAllProjectsSelected ? 'All projects' : currentProject?.name} • {teams.length} team{teams.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <Button onClick={() => handleOpenTeamDialog()} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          New Team
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-1">Total Teams</p>
+            <p className="text-4xl font-bold">{teams.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-1">Total Members</p>
+            <p className="text-4xl font-bold">
+              {teams.reduce((sum, t) => sum + (t.assignments?.length || 0), 0)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Teams List */}
+      {teams.length === 0 ? (
+        <Card>
+          <CardContent className="py-8">
+            <EmptyState
+              illustration={<EmptyTeamsIllustration />}
+              title="No teams yet"
+              description="Create your first team to organize your workforce and start collaborating on pitches"
+              action={{
+                label: 'Create Team',
+                onClick: () => handleOpenTeamDialog(),
+                startIcon: <Plus className="h-4 w-4" />,
+              }}
+              size="medium"
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Accordion type="multiple" defaultValue={teams.map(t => t.id.toString())} className="space-y-2">
+          {teams.map((team) => (
+            <AccordionItem key={team.id} value={team.id.toString()} className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3 flex-1 pr-4">
+                  <span className="text-lg font-semibold">{team.name}</span>
+                  <Badge variant="outline" className="font-normal">
+                    {team.assignments?.length || 0} members
+                  </Badge>
+                  <div className="flex-1" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenTeamDialog(team);
+                    }}
+                    aria-label={`Edit ${team.name} team`}
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTeam(team.id);
+                    }}
+                    aria-label={`Delete ${team.name} team`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex justify-end mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenAssignmentDialog(team.id)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Member
+                  </Button>
+                </div>
+                {!team.assignments || team.assignments.length === 0 ? (
+                  <EmptyState
+                    icon={UserPlus}
+                    title="No members yet"
+                    description="Add team members to get started"
+                    size="small"
+                    compact
+                  />
+                ) : (
+                  <div className="space-y-1">
+                    {team.assignments.map((assignment, index) => (
+                      <div key={assignment.id}>
+                        <div
+                          className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => handleViewActivity(assignment.personId, assignment.personName || 'Unknown')}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-7 w-7">
+                              <AvatarFallback className="text-xs">
+                                {(assignment.personName || 'U').charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{assignment.personName}</p>
+                              <Badge 
+                                variant="outline" 
+                                className={cn('mt-1 text-xs', getRoleClassName(assignment.role))}
+                              >
+                                {assignment.role.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewActivity(assignment.personId, assignment.personName || 'Unknown');
+                              }}
+                              title="View Activity"
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenAssignmentDialog(team.id, assignment);
+                              }}
+                              aria-label={`Edit assignment for ${assignment.personName || 'member'}`}
+                            >
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEndAssignment(assignment.id);
+                              }}
+                              aria-label={`Remove ${assignment.personName || 'member'} from team`}
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </div>
+                        {index < team.assignments!.length - 1 && <Separator />}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
+
+      {/* Team Dialog */}
+      <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editTeamId ? 'Edit Team' : 'New Team'}</DialogTitle>
+            <DialogDescription>
+              {editTeamId ? 'Update team details' : 'Create a new team to organize your workforce'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                value={teamForm.name}
+                onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                placeholder="Enter team name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cycle">Cycle (optional)</Label>
+              <Select
+                value={teamForm.cycleId?.toString() || 'none'}
+                onValueChange={(value) => setTeamForm({ ...teamForm, cycleId: value === 'none' ? undefined : parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a cycle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {cycles.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTeam} disabled={!teamForm.name}>
+              {editTeamId ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Dialog */}
+      <Dialog open={assignmentDialog} onOpenChange={setAssignmentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editAssignmentId ? 'Edit Assignment' : 'Add Team Member'}</DialogTitle>
+            <DialogDescription>
+              {editAssignmentId ? 'Update team member assignment' : 'Add a person to this team'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="person">Person</Label>
+              <Select
+                value={selectedPersonId}
+                onValueChange={(value) => {
+                  setSelectedPersonId(value);
+                  setAssignmentForm({ ...assignmentForm, personId: parseInt(value) });
+                }}
+                disabled={!!editAssignmentId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {persons.map((person) => (
+                    <SelectItem key={person.id} value={person.id.toString()}>
+                      {person.name} {person.email ? `(${person.email})` : '(no email)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={assignmentForm.role}
+                onValueChange={(value) => setAssignmentForm({ ...assignmentForm, role: value as TeamMemberRole })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role.replace('_', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignmentDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveAssignment} disabled={!assignmentForm.personId}>
+              {editAssignmentId ? 'Update' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Work Activity Dialog */}
+      <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {activityPerson?.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <DialogTitle>{activityPerson?.name}</DialogTitle>
+                <DialogDescription>Recent Work Activity</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {loadingWorkLogs ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : workLogs.length === 0 ? (
+            <div className="py-8">
+              <EmptyState
+                illustration={<EmptyWorkLogsIllustration />}
+                title="No work logs yet"
+                description={`${activityPerson?.name} hasn't logged any work activity`}
+                size="small"
+                compact
+              />
+            </div>
+          ) : (
+            <>
+              {/* Summary Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <Card className="border">
+                  <CardContent className="py-3 text-center">
+                    <p className="text-2xl font-bold text-primary">
+                      {workLogs.reduce((sum, log) => sum + log.hoursSpent, 0).toFixed(1)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Total Hours</p>
+                  </CardContent>
+                </Card>
+                <Card className="border">
+                  <CardContent className="py-3 text-center">
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {workLogs.length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Log Entries</p>
+                  </CardContent>
+                </Card>
+                <Card className="border">
+                  <CardContent className="py-3 text-center">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {new Set(workLogs.map(log => log.pitchId)).size}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Pitches Worked</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Work Logs Table */}
+              <ScrollArea className="h-[400px] rounded-md border">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Pitch</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead className="text-right">Hours</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workLogs.slice(0, 50).map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{new Date(log.date).toLocaleDateString()}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">
+                              {log.pitchTitle || `Pitch #${log.pitchId}`}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {log.projectKey ? (
+                            <Badge variant="outline">{log.projectKey}</Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              {log.projectName || '-'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge 
+                            variant={log.hoursSpent >= 4 ? 'default' : 'secondary'}
+                            className={log.hoursSpent >= 4 ? 'bg-green-500/10 text-green-700 dark:text-green-400' : ''}
+                          >
+                            {log.hoursSpent}h
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className="text-sm text-muted-foreground max-w-[200px] truncate block"
+                            title={log.note}
+                          >
+                            {log.note || '-'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+              {workLogs.length > 50 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Showing first 50 of {workLogs.length} entries
+                </p>
+              )}
+            </>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActivityDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <QAFloatingButton contextType="team" />
+    </div>
+  );
+}

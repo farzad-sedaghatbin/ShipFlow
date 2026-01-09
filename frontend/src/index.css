@@ -1,0 +1,612 @@
+@import "tailwindcss";
+
+/*
+ * ShipFlow - Linear-style Design System
+ * Dark-ish neutrals, crisp borders, subtle gradients, dense but clean
+ */
+
+@theme {
+  /* Linear-style color palette */
+  --color-background: #0A0A0B;
+  --color-foreground: #FAFAFA;
+  
+  --color-card: #141415;
+  --color-card-foreground: #FAFAFA;
+  
+  --color-popover: #141415;
+  --color-popover-foreground: #FAFAFA;
+  
+  --color-primary: #8B5CF6;
+  --color-primary-foreground: #FFFFFF;
+  
+  --color-secondary: #1F1F22;
+  --color-secondary-foreground: #FAFAFA;
+  
+  --color-muted: #1F1F22;
+  --color-muted-foreground: #71717A;
+  
+  --color-accent: #27272A;
+  --color-accent-foreground: #FAFAFA;
+  
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  
+  --color-success: #22C55E;
+  --color-success-foreground: #FFFFFF;
+  
+  --color-warning: #F59E0B;
+  --color-warning-foreground: #000000;
+  
+  --color-info: #3B82F6;
+  --color-info-foreground: #FFFFFF;
+  
+  --color-border: #27272A;
+  --color-input: #27272A;
+  --color-ring: #8B5CF6;
+  
+  /* Sidebar colors */
+  --color-sidebar: #0F0F10;
+  --color-sidebar-foreground: #FAFAFA;
+  --color-sidebar-border: #1F1F22;
+  --color-sidebar-accent: #1F1F22;
+  --color-sidebar-accent-foreground: #FAFAFA;
+  --color-sidebar-primary: #8B5CF6;
+  --color-sidebar-primary-foreground: #FFFFFF;
+  
+  /* Chart colors */
+  --color-chart-1: #8B5CF6;
+  --color-chart-2: #22C55E;
+  --color-chart-3: #3B82F6;
+  --color-chart-4: #F59E0B;
+  --color-chart-5: #EF4444;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Light theme overrides */
+.light {
+  --color-background: #FAFAFA;
+  --color-foreground: #0A0A0B;
+  
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0A0A0B;
+  
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0A0A0B;
+  
+  --color-primary: #7C3AED;
+  --color-primary-foreground: #FFFFFF;
+  
+  --color-secondary: #F4F4F5;
+  --color-secondary-foreground: #0A0A0B;
+  
+  --color-muted: #F4F4F5;
+  --color-muted-foreground: #71717A;
+  
+  --color-accent: #F4F4F5;
+  --color-accent-foreground: #0A0A0B;
+  
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  
+  --color-success: #16A34A;
+  --color-success-foreground: #FFFFFF;
+  
+  --color-warning: #D97706;
+  --color-warning-foreground: #FFFFFF;
+  
+  --color-info: #2563EB;
+  --color-info-foreground: #FFFFFF;
+  
+  --color-border: #E4E4E7;
+  --color-input: #E4E4E7;
+  --color-ring: #7C3AED;
+  
+  --color-sidebar: #FAFAFA;
+  --color-sidebar-foreground: #0A0A0B;
+  --color-sidebar-border: #E4E4E7;
+  --color-sidebar-accent: #F4F4F5;
+  --color-sidebar-accent-foreground: #0A0A0B;
+  --color-sidebar-primary: #7C3AED;
+  --color-sidebar-primary-foreground: #FFFFFF;
+}
+
+/* Base styles */
+* {
+  @apply border-border;
+}
+
+html {
+  @apply scroll-smooth;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Focus styles - Linear-style subtle ring */
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* Custom scrollbar - Linear-style */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}
+
+/* Selection */
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+/* Loading animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes typing {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Animation utilities */
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-muted) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-in-top {
+  animation: slide-in-from-top 0.2s ease-out;
+}
+
+.animate-slide-in-bottom {
+  animation: slide-in-from-bottom 0.2s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-typing {
+  animation: typing 1.4s ease-in-out infinite;
+}
+
+/* Linear-style subtle gradient backgrounds */
+.gradient-subtle {
+  background: linear-gradient(
+    180deg,
+    var(--color-background) 0%,
+    color-mix(in srgb, var(--color-background) 95%, var(--color-primary)) 100%
+  );
+}
+
+.gradient-card {
+  background: linear-gradient(
+    135deg,
+    var(--color-card) 0%,
+    color-mix(in srgb, var(--color-card) 98%, var(--color-primary)) 100%
+  );
+}
+
+/* Dense data display utilities */
+.data-table {
+  @apply text-sm;
+}
+
+.data-table th {
+  @apply px-3 py-2 text-left font-medium text-muted-foreground;
+}
+
+.data-table td {
+  @apply px-3 py-2 border-t border-border;
+}
+
+/* Status indicator dots */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot-success {
+  @apply bg-success;
+}
+
+.status-dot-warning {
+  @apply bg-warning;
+}
+
+.status-dot-destructive {
+  @apply bg-destructive;
+}
+
+.status-dot-info {
+  @apply bg-info;
+}
+
+/* Card hover effects - Linear-style */
+.card-interactive {
+  @apply transition-all duration-200;
+}
+
+.card-interactive:hover {
+  @apply border-border/80 shadow-lg shadow-black/5;
+}
+
+/* Input group styling */
+.input-group {
+  @apply flex items-center gap-2;
+}
+
+.input-group > * {
+  @apply flex-shrink-0;
+}
+
+.input-group > input,
+.input-group > select {
+  @apply flex-1;
+}
+
+/* Dense layout utilities */
+.dense {
+  @apply text-sm leading-tight;
+}
+
+.dense-xs {
+  @apply text-xs leading-tight;
+}
+
+/* Tour styles */
+.driver-popover {
+  background-color: var(--color-popover) !important;
+  color: var(--color-popover-foreground) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important;
+}
+
+.driver-popover-title {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+}
+
+.driver-popover-description {
+  color: var(--color-muted-foreground) !important;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem !important;
+  color: var(--color-muted-foreground) !important;
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn {
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.375rem !important;
+  font-weight: 500 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.driver-popover-prev-btn {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-secondary-foreground) !important;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: color-mix(in srgb, var(--color-secondary) 80%, transparent) !important;
+}
+
+.driver-popover-next-btn {
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+}
+
+.driver-popover-next-btn:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 90%, black) !important;
+}
+
+.driver-popover-close-btn {
+  color: var(--color-muted-foreground) !important;
+}
+
+.driver-popover-close-btn:hover {
+  color: var(--color-foreground) !important;
+}
+/* Mobile Responsiveness - Touch-friendly utilities */
+@media (max-width: 768px) {
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Larger tap targets for buttons */
+  button:not(.no-touch-expand) {
+    min-height: 44px;
+  }
+  
+  /* Improve spacing on mobile */
+  .mobile-spacing {
+    padding: 0.75rem;
+  }
+  
+  /* Full-width containers on mobile */
+  .mobile-full-width {
+    width: 100%;
+  }
+  
+  /* Stack elements vertically on mobile */
+  .mobile-stack {
+    flex-direction: column;
+  }
+  
+  /* Hide on mobile */
+  .hide-mobile {
+    display: none;
+  }
+}
+
+/* Touch manipulation - prevents delay on tap */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent text selection on interactive elements */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Safe area insets for mobile devices */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  
+  .safe-left {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+  }
+  
+  .safe-right {
+    padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+}
+
+/* Markdown content styling */
+.markdown-content {
+  color: inherit;
+  font-size: inherit;
+  line-height: 1.6;
+}
+
+.markdown-content p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.markdown-content em {
+  font-style: italic;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-content code {
+  background-color: var(--color-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.markdown-content pre {
+  background-color: var(--color-muted);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+  margin: 0.5rem 0;
+}
+
+.markdown-content a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 1rem 0;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-foreground);
+}
+
+.markdown-content h1 {
+  font-size: 1.5rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.125rem;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: var(--color-muted);
+  font-weight: 600;
+}
