@@ -6,7 +6,6 @@ import {
   Check,
   CheckCheck,
   Trash2,
-  AlertCircle,
   AlertTriangle,
   Info,
   XCircle,
@@ -18,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuLabel,

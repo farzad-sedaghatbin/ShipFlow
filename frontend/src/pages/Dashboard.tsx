@@ -7,11 +7,14 @@ import {
   TrendingUp,
   Plus,
   Rocket,
+  Settings,
 } from 'lucide-react';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { teamService } from '../services/teamService';
+import { dashboardWidgetApi } from '../services/dashboardApi';
 import { Cycle, Pitch, Team } from '../types';
+import { DashboardWidget } from '../types/dashboard';
 import StatusChip from '../components/StatusChip';
 import { HillChartWidget } from '../components/HillChartWidget';
 import CycleRiskOverview from '../components/CycleRiskOverview';
@@ -32,12 +35,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  OverdueTasksWidget,
+  BlockedTasksWidget,
+  UpcomingDeadlinesWidget,
+  MyTasksWidget,
+  TeamWorkloadWidget,
+  CycleProgressWidget,
+  RecentActivityWidget,
+} from '../components/widgets';
+import { DashboardCustomizer } from '../components/DashboardCustomizer';
 
 export default function Dashboard() {
   const { currentProject, isAllProjectsSelected } = useProject();
   const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
   const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,10 +74,11 @@ export default function Dashboard() {
         cyclesPromise = Promise.resolve({ data: [] });
       }
 
-      const [cyclesRes, pitchesRes, teamsRes] = await Promise.all([
+      const [cyclesRes, pitchesRes, teamsRes, widgetsData] = await Promise.all([
         cyclesPromise,
         pitchService.getAll(),
         teamService.getAll(),
+        dashboardWidgetApi.getVisibleWidgets().catch(() => []),
       ]);
 
       const cycles = cyclesRes.data;
@@ -80,12 +96,36 @@ export default function Dashboard() {
 
       setRecentPitches(filteredPitches.slice(0, 5));
       setTeams(filteredTeams);
+      setWidgets(widgetsData);
     } catch (error: any) {
       if (error.name !== 'CanceledError') {
         console.error('Failed to load dashboard data:', error);
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const renderWidget = (widget: DashboardWidget) => {
+    const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
+    
+    switch (widget.widgetType) {
+      case 'OVERDUE_TASKS':
+        return <OverdueTasksWidget key={widget.id} />;
+      case 'BLOCKED_TASKS':
+        return <BlockedTasksWidget key={widget.id} />;
+      case 'UPCOMING_DEADLINES':
+        return <UpcomingDeadlinesWidget key={widget.id} />;
+      case 'MY_TASKS':
+        return <MyTasksWidget key={widget.id} />;
+      case 'TEAM_WORKLOAD':
+        return <TeamWorkloadWidget key={widget.id} />;
+      case 'CYCLE_PROGRESS':
+        return <CycleProgressWidget key={widget.id} />;
+      case 'RECENT_ACTIVITY':
+        return <RecentActivityWidget key={widget.id} projectId={projectId} />;
+      default:
+        return null;
     }
   };
 
@@ -145,11 +185,22 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          {isAllProjectsSelected ? 'Showing data from all projects' : `Showing data for ${currentProject?.name}`}
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            {isAllProjectsSelected ? 'Showing data from all projects' : `Showing data for ${currentProject?.name}`}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowCustomizer(!showCustomizer)}
+          className="gap-2"
+        >
+          <Settings className="w-4 h-4" />
+          {showCustomizer ? 'Hide' : 'Customize'} Widgets
+        </Button>
       </div>
 
       {/* Quick Links Section */}
@@ -227,6 +278,24 @@ export default function Dashboard() {
           </CardContent>
         </AnimatedCard>
       </div>
+
+      {/* Customizable Widgets Grid */}
+      {widgets.length > 0 && (
+        <MotionContainer delay={0.5} className="mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {widgets
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((widget) => renderWidget(widget))}
+          </div>
+        </MotionContainer>
+      )}
+
+      {/* Widget Customizer */}
+      {showCustomizer && (
+        <MotionContainer delay={0.55} className="mb-4">
+          <DashboardCustomizer onUpdate={loadData} />
+        </MotionContainer>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Left Column: Active Cycles + Hill Chart */}
