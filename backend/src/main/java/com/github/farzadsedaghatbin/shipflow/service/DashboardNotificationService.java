@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardNotificationDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -97,6 +98,128 @@ public class DashboardNotificationService {
      */
     public void deleteNotification(Long notificationId) {
         notificationRepository.deleteById(notificationId);
+    }
+
+    /**
+     * Create notification when a task is assigned to someone
+     */
+    public void notifyTaskAssignment(Task task, User assignee) {
+        if (assignee == null) {
+            return;
+        }
+
+        createNotification(
+            assignee,
+            "TASK_ASSIGNED",
+            "New Task Assigned: " + task.getTitle(),
+            String.format("You have been assigned to task '%s'", task.getTitle()),
+            "INFO",
+            "/tasks/" + task.getId(),
+            "TASK",
+            task.getId()
+        );
+        
+        log.info("Created task assignment notification for user {} on task {}", 
+                assignee.getId(), task.getId());
+    }
+
+    /**
+     * Create notification when a task is reassigned from one person to another
+     */
+    public void notifyTaskReassignment(Task task, User oldAssignee, User newAssignee) {
+        // Notify the old assignee that the task was removed from them
+        if (oldAssignee != null) {
+            createNotification(
+                oldAssignee,
+                "TASK_REASSIGNED",
+                "Task Reassigned: " + task.getTitle(),
+                String.format("Task '%s' has been reassigned to someone else", task.getTitle()),
+                "INFO",
+                "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+        }
+
+        // Notify the new assignee
+        if (newAssignee != null) {
+            createNotification(
+                newAssignee,
+                "TASK_ASSIGNED",
+                "New Task Assigned: " + task.getTitle(),
+                String.format("You have been assigned to task '%s'", task.getTitle()),
+                "INFO",
+                "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+        }
+        
+        log.info("Created task reassignment notifications for task {}", task.getId());
+    }
+
+    /**
+     * Create notification when a task status changes to blocked
+     */
+    public void notifyTaskStatusChange(Task task, TaskStatus oldStatus, TaskStatus newStatus) {
+        if (task.getAssignee() == null || task.getAssignee().getUser() == null) {
+            return;
+        }
+
+        User assignee = task.getAssignee().getUser();
+
+        // Only notify for important status changes
+        if (newStatus == TaskStatus.BLOCKED && oldStatus != TaskStatus.BLOCKED) {
+            createNotification(
+                assignee,
+                "TASK_STATUS_CHANGED",
+                "Task Blocked: " + task.getTitle(),
+                String.format("Task '%s' status changed to BLOCKED", task.getTitle()),
+                "WARNING",
+                "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+        } else if (newStatus == TaskStatus.IN_PROGRESS && oldStatus == TaskStatus.BLOCKED) {
+            createNotification(
+                assignee,
+                "TASK_STATUS_CHANGED",
+                "Task Unblocked: " + task.getTitle(),
+                String.format("Task '%s' is no longer blocked", task.getTitle()),
+                "INFO",
+                "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+        }
+        
+        log.info("Created task status change notification for task {}", task.getId());
+    }
+
+    /**
+     * Create notification when a task priority changes to high
+     */
+    public void notifyTaskPriorityChange(Task task, TaskPriority newPriority) {
+        if (task.getAssignee() == null || task.getAssignee().getUser() == null) {
+            return;
+        }
+
+        if (newPriority == TaskPriority.HIGH || newPriority == TaskPriority.URGENT) {
+            User assignee = task.getAssignee().getUser();
+            
+            createNotification(
+                assignee,
+                "TASK_PRIORITY_CHANGED",
+                "High Priority Task: " + task.getTitle(),
+                String.format("Task '%s' priority has been set to %s", task.getTitle(), newPriority),
+                "WARNING",
+                "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+            
+            log.info("Created task priority change notification for task {}", task.getId());
+        }
     }
 
     /**

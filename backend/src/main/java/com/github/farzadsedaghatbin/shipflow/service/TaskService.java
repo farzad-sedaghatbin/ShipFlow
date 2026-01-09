@@ -34,6 +34,7 @@ public class TaskService {
     private final CycleRepository cycleRepository;
     private final PersonRepository personRepository;
     private final UserRepository userRepository;
+    private final DashboardNotificationService notificationService;
 
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll()
@@ -110,8 +111,9 @@ public class TaskService {
                 .tags(request.getTags())
                 .build();
 
+        Person assignee = null;
         if (request.getAssigneeId() != null) {
-            Person assignee = personRepository.findById(request.getAssigneeId())
+            assignee = personRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new IllegalArgumentException("Assignee not found with id: " + request.getAssigneeId()));
             task.setAssignee(assignee);
         }
@@ -131,6 +133,16 @@ public class TaskService {
         }
 
         Task saved = taskRepository.save(task);
+        
+        // Send notification if task is assigned during creation
+        if (assignee != null && assignee.getUser() != null) {
+            try {
+                notificationService.notifyTaskAssignment(saved, assignee.getUser());
+            } catch (Exception e) {
+                // Log error but don't fail task creation
+            }
+        }
+        
         return toDTO(saved);
     }
 
@@ -138,11 +150,15 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
+        // Track old values for notification purposes
+        Person oldAssignee = task.getAssignee();
+        TaskStatus oldStatus = task.getStatus();
+        TaskPriority oldPriority = task.getPriority();
+
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
 
         if (request.getStatus() != null) {
-            TaskStatus oldStatus = task.getStatus();
             task.setStatus(request.getStatus());
             
             // Track completion time
@@ -166,10 +182,12 @@ public class TaskService {
         task.setDueDate(request.getDueDate());
         task.setTags(request.getTags());
 
+        // Handle assignee changes
+        Person newAssignee = null;
         if (request.getAssigneeId() != null) {
-            Person assignee = personRepository.findById(request.getAssigneeId())
+            newAssignee = personRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new IllegalArgumentException("Assignee not found with id: " + request.getAssigneeId()));
-            task.setAssignee(assignee);
+            task.setAssignee(newAssignee);
         } else {
             task.setAssignee(null);
         }
@@ -183,7 +201,49 @@ public class TaskService {
         }
 
         Task saved = taskRepository.save(task);
+
+        // Send notifications after save
+        try {
+            // Check if assignee changed
+            if (hasAssigneeChanged(oldAssignee, newAssignee)) {
+                if (oldAssignee != null && newAssignee != null) {
+                    // Reassignment
+                    notificationService.notifyTaskReassignment(
+                        saved,
+                        oldAssignee.getUser(),
+                        newAssignee.getUser()
+                    );
+                } else if (newAssignee != null) {
+                    // New assignment
+                    notificationService.notifyTaskAssignment(saved, newAssignee.getUser());
+                }
+            }
+
+            // Check if status changed
+            if (request.getStatus() != null && !request.getStatus().equals(oldStatus)) {
+                notificationService.notifyTaskStatusChange(saved, oldStatus, request.getStatus());
+            }
+
+            // Check if priority changed to high
+            if (request.getPriority() != null && !request.getPriority().equals(oldPriority)) {
+                notificationService.notifyTaskPriorityChange(saved, request.getPriority());
+            }
+        } catch (Exception e) {
+            // Log but don't fail the update if notifications fail
+            // TODO: Add proper logging
+        }
+
         return toDTO(saved);
+    }
+
+    private boolean hasAssigneeChanged(Person oldAssignee, Person newAssignee) {
+        if (oldAssignee == null && newAssignee == null) {
+            return false;
+        }
+        if (oldAssignee == null || newAssignee == null) {
+            return true;
+        }
+        return !oldAssignee.getId().equals(newAssignee.getId());
     }
 
     public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
