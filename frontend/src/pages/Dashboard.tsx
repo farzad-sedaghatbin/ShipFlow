@@ -279,6 +279,13 @@ export default function Dashboard() {
         </AnimatedCard>
       </div>
 
+      {/* Widget Customizer - appears before widgets when toggled */}
+      {showCustomizer && (
+        <MotionContainer delay={0.45} className="mb-4">
+          <DashboardCustomizer onUpdate={loadData} />
+        </MotionContainer>
+      )}
+
       {/* Customizable Widgets Grid */}
       {widgets.length > 0 && (
         <MotionContainer delay={0.5} className="mb-4">
@@ -287,13 +294,6 @@ export default function Dashboard() {
               .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((widget) => renderWidget(widget))}
           </div>
-        </MotionContainer>
-      )}
-
-      {/* Widget Customizer */}
-      {showCustomizer && (
-        <MotionContainer delay={0.55} className="mb-4">
-          <DashboardCustomizer onUpdate={loadData} />
         </MotionContainer>
       )}
 
