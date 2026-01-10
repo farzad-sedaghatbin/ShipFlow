@@ -294,7 +294,6 @@ export default function WorkLogsPage() {
   const handleEditClick = (workLog: WorkLog) => {
     setEditingWorkLog(workLog);
     const hasTask = !!workLog.taskId;
-    const hasPitch = !!workLog.pitchId;
     setEditWorkLogType(hasTask ? 'task' : 'pitch');
     setEditForm({
       pitchId: workLog.pitchId,

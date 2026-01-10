@@ -346,7 +346,7 @@ export default function BacklogPage() {
       setFormData({
         title: '',
         description: '',
-        cycleId: selectedCycle,
+        cycleId: selectedCycle === 'all' ? 0 : selectedCycle,
         status: 'BACKLOG',
         priority: 'MEDIUM',
         estimateHours: undefined,
