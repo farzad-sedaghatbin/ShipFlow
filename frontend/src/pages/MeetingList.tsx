@@ -160,7 +160,6 @@ export default function MeetingList() {
 
   const applyFilters = () => {
     setPage(0); // Reset to first page when filters change
-    loadData();
   };
 
   const clearFilters = () => {
