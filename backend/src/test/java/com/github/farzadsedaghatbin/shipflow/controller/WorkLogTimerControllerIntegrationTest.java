@@ -281,7 +281,7 @@ public class WorkLogTimerControllerIntegrationTest {
         mockMvc.perform(post("/api/timers/start")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
