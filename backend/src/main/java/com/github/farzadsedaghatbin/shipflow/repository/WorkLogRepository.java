@@ -18,10 +18,10 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
     List<WorkLog> findByPitchIdAndPersonId(Long pitchId, Long personId);
     List<WorkLog> findByTaskIdAndPersonId(Long taskId, Long personId);
     
-    @Query("SELECT w FROM WorkLog w WHERE w.pitch.cycle.id = :cycleId OR w.task.cycle.id = :cycleId")
+    @Query("SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
     List<WorkLog> findByCycleId(@Param("cycleId") Long cycleId);
     
-    @Query("SELECT w FROM WorkLog w WHERE w.person.id = :personId AND (w.pitch.cycle.id = :cycleId OR w.task.cycle.id = :cycleId)")
+    @Query("SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
     List<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
     
     @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
