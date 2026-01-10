@@ -50,7 +50,7 @@ export default function MyWorkLogs() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<string>('');
+  const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
 
@@ -87,11 +87,15 @@ export default function MyWorkLogs() {
   }, []);
 
   useEffect(() => {
-    if (selectedCycle) {
+    if (selectedCycle && selectedCycle !== 'all') {
       const cycleId = parseInt(selectedCycle, 10);
       loadWorkLogs(cycleId);
       loadPitches(cycleId);
       loadTasks(cycleId);
+    } else if (selectedCycle === 'all') {
+      loadAllWorkLogs();
+      setPitches([]);
+      setTasks([]);
     }
   }, [selectedCycle]);
 
@@ -99,13 +103,21 @@ export default function MyWorkLogs() {
     try {
       const cyclesRes = await cycleService.getActive();
       setCycles(cyclesRes.data);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id.toString());
-      }
+      // Default to 'all' - load all work logs
+      loadAllWorkLogs();
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllWorkLogs = async () => {
+    try {
+      const response = await workLogService.getMy();
+      setWorkLogs(response.data);
+    } catch (error) {
+      console.error('Failed to load all work logs:', error);
     }
   };
 
@@ -166,7 +178,9 @@ export default function MyWorkLogs() {
       setSelectedPitchId('');
       setSelectedTaskId('');
       showSuccess('Work log added successfully');
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllWorkLogs();
+      } else if (selectedCycle) {
         loadWorkLogs(parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
@@ -179,7 +193,9 @@ export default function MyWorkLogs() {
     try {
       await workLogService.deleteMy(id);
       showSuccess('Work log deleted');
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllWorkLogs();
+      } else if (selectedCycle) {
         loadWorkLogs(parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
@@ -218,7 +234,9 @@ export default function MyWorkLogs() {
 
   const handleTimerStopped = () => {
     // Reload work logs when timer is stopped
-    if (selectedCycle) {
+    if (selectedCycle === 'all') {
+      loadAllWorkLogs();
+    } else if (selectedCycle) {
       loadWorkLogs(parseInt(selectedCycle, 10));
     }
     showSuccess('Timer stopped and work log created');
@@ -345,6 +363,7 @@ export default function MyWorkLogs() {
                 <SelectValue placeholder="Select a cycle" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Cycles</SelectItem>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={cycle.id.toString()}>
                     <div className="flex items-center gap-2">

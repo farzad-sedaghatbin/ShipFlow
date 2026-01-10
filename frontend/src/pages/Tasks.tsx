@@ -92,7 +92,7 @@ export default function Tasks() {
   const [totalElements, setTotalElements] = useState(0);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
+  const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -140,7 +140,9 @@ export default function Tasks() {
   useEffect(() => {
     if (selectedCycle) {
       loadTasks();
-      loadStatistics();
+      if (selectedCycle !== 'all') {
+        loadStatistics();
+      }
     }
   }, [selectedCycle, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder]);
 
@@ -152,9 +154,7 @@ export default function Tasks() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id);
-      }
+      // Don't auto-select a cycle - show all by default
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -167,8 +167,46 @@ export default function Tasks() {
     try {
       let response: any;
       if (tabValue === 'my') {
-        // My Tasks tab
+        // My Tasks tab - needs a specific cycle
+        if (selectedCycle === 'all') return;
         response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+      } else if (selectedCycle === 'all') {
+        // All cycles - get all tasks
+        const allTasksPromises = cycles.map(cycle => 
+          taskService.getByCycleId(cycle.id, 0, 1000, sortBy, sortOrder)
+        );
+        const allResponses = await Promise.all(allTasksPromises);
+        const allTasks = allResponses.flatMap(res => {
+          const data = res.data;
+          if (Array.isArray(data)) {
+            return data;
+          } else if (data && typeof data === 'object' && 'content' in data) {
+            return (data as any).content;
+          }
+          return [];
+        });
+        
+        // Apply filters manually
+        let filteredTasks = allTasks;
+        if (statusFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
+          );
+        }
+        if (priorityFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
+          );
+        }
+        if (assigneeFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
+          );
+        }
+        
+        setTasks(filteredTasks);
+        setTotalElements(filteredTasks.length);
+        return;
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         // Use new filter endpoint when filters are applied
         response = await taskService.getWithFilters(
@@ -194,7 +232,7 @@ export default function Tasks() {
   };
 
   const loadStatistics = async () => {
-    if (!selectedCycle) return;
+    if (!selectedCycle || selectedCycle === 'all') return;
     try {
       const response = await taskService.getStatisticsByCycleId(selectedCycle);
       setStatistics(response.data);
@@ -432,13 +470,14 @@ export default function Tasks() {
               <div className="space-y-2 sm:col-span-2 md:col-span-1 lg:col-span-2">
                 <Label>Cycle</Label>
                 <Select
-                  value={selectedCycle ? String(selectedCycle) : ''}
-                  onValueChange={(value) => setSelectedCycle(Number(value))}
+                  value={selectedCycle ? String(selectedCycle) : 'all'}
+                  onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select cycle" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Cycles</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={String(cycle.id)}>
                         {cycle.projectKey && `[${cycle.projectKey}] `}{cycle.name}
