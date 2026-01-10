@@ -17,8 +17,10 @@ import java.time.LocalDate;
 @Builder
 public class CreateWorkLogForSelfRequest {
     
-    @NotNull(message = "Pitch ID is required")
+    // Either pitchId or taskId must be provided
     private Long pitchId;
+    
+    private Long taskId;
     
     @NotNull(message = "Date is required")
     private LocalDate date;

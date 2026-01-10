@@ -264,6 +264,25 @@ export default function Tasks() {
     setFieldErrors({});
   };
 
+  const handleAddSubTask = (parentTask: Task) => {
+    setFormData({
+      title: '',
+      description: '',
+      cycleId: selectedCycle as number,
+      parentTaskId: parentTask.id,
+      status: 'BACKLOG',
+      priority: 'MEDIUM',
+      estimateHours: undefined,
+      assigneeId: undefined,
+      pairAssigneeId: undefined,
+      dueDate: undefined,
+      tags: '',
+    });
+    setDueDate(null);
+    setEditingTask(null);
+    setDialogOpen(true);
+  };
+
   // Validate task form
   const validateTaskForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -695,6 +714,7 @@ export default function Tasks() {
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               onEdit={handleOpenDialog} 
+              onAddSubTask={handleAddSubTask}
               onDelete={(id) => setDeleteDialog({ open: true, taskId: id })}
               onStatusChange={handleStatusChange}
               getStatusBadge={getStatusBadge}
@@ -714,6 +734,7 @@ export default function Tasks() {
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               onEdit={handleOpenDialog} 
+              onAddSubTask={handleAddSubTask}
               onDelete={(id) => setDeleteDialog({ open: true, taskId: id })}
               onStatusChange={handleStatusChange}
               getStatusBadge={getStatusBadge}
@@ -871,7 +892,28 @@ export default function Tasks() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Parent Task (optional)</Label>
+                <Select
+                  value={formData.parentTaskId ? String(formData.parentTaskId) : 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, parentTaskId: value === 'none' ? undefined : Number(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No parent task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No parent task</SelectItem>
+                    {tasks.filter(t => !editingTask || t.id !== editingTask.id).map((task) => (
+                      <SelectItem key={task.id} value={String(task.id)}>
+                        {task.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Make this a sub-task of another task</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">\
                 <div className="space-y-2">
                   <Label htmlFor="estimateHours">Estimate (hours)</Label>
                   <Input
@@ -996,6 +1038,7 @@ interface TaskTableProps {
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (value: string) => void;
   onEdit: (task: Task) => void;
+  onAddSubTask: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: TaskStatus) => void;
   getStatusBadge: (status: TaskStatus) => React.ReactNode;
@@ -1014,6 +1057,7 @@ function TaskTable({
   onPageChange, 
   onRowsPerPageChange, 
   onEdit, 
+  onAddSubTask,
   onDelete, 
   onStatusChange, 
   getStatusBadge, 
@@ -1093,15 +1137,27 @@ function TaskTable({
           {tasks.map((task) => (
             <TableRow key={task.id}>
               <TableCell>
-                <div>
-                  <p className="font-medium">{task.title}</p>
+                <div className={cn(task.parentTaskId && "ml-6")}>
+                  <div className="flex items-center gap-2">
+                    {task.parentTaskId && (
+                      <div className="text-muted-foreground">
+                        <ArrowDown className="h-3 w-3 rotate-90" />
+                      </div>
+                    )}
+                    <p className="font-medium">{task.title}</p>
+                  </div>
+                  {task.parentTaskTitle && (
+                    <p className="text-xs text-muted-foreground ml-5">
+                      Sub-task of: {task.parentTaskTitle}
+                    </p>
+                  )}
                   {task.description && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground ml-5">
                       {task.description.substring(0, 80)}{task.description.length > 80 ? '...' : ''}
                     </p>
                   )}
                   {task.tags && (
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1 mt-1 ml-5">
                       {task.tags.split(',').map((tag, i) => (
                         <Badge key={i} variant="outline" className="text-xs h-5">
                           {tag.trim()}
@@ -1194,6 +1250,21 @@ function TaskTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          onClick={() => onAddSubTask(task)} 
+                          aria-label={`Add sub-task to: ${task.title}`}
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Add Sub-task</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button variant="ghost" size="icon-sm" onClick={() => onEdit(task)} aria-label={`Edit task: ${task.title}`}>
                     <Pencil className="h-4 w-4" aria-hidden="true" />
                   </Button>

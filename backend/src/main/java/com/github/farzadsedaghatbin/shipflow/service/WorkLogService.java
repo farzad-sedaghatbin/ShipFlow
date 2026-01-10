@@ -5,10 +5,12 @@ import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class WorkLogService {
     private final WorkLogRepository workLogRepository;
     private final PersonRepository personRepository;
     private final PitchRepository pitchRepository;
+    private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AICacheService cacheService;
@@ -42,6 +45,13 @@ public class WorkLogService {
 
     public List<WorkLogDTO> getWorkLogsByPitchId(Long pitchId) {
         return workLogRepository.findByPitchId(pitchId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+    
+    public List<WorkLogDTO> getWorkLogsByTaskId(Long taskId) {
+        return workLogRepository.findByTaskId(taskId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -75,15 +85,30 @@ public class WorkLogService {
     }
 
     public WorkLogDTO createWorkLog(CreateWorkLogRequest request) {
+        // Validate that either pitchId or taskId is provided, but not both
+        if ((request.getPitchId() == null && request.getTaskId() == null) ||
+            (request.getPitchId() != null && request.getTaskId() != null)) {
+            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+        }
+        
         Person person = personRepository.findById(request.getPersonId())
                 .orElseThrow(() -> new IllegalArgumentException("Person not found with id: " + request.getPersonId()));
         
-        Pitch pitch = pitchRepository.findById(request.getPitchId())
-                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        Pitch pitch = null;
+        Task task = null;
+        
+        if (request.getPitchId() != null) {
+            pitch = pitchRepository.findById(request.getPitchId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        } else {
+            task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + request.getTaskId()));
+        }
         
         WorkLog workLog = WorkLog.builder()
                 .person(person)
                 .pitch(pitch)
+                .task(task)
                 .date(request.getDate())
                 .hoursSpent(request.getHoursSpent())
                 .note(request.getNote())
@@ -97,7 +122,9 @@ public class WorkLogService {
         }
         
         // Invalidate risk analysis cache since hours changed
-        invalidateCacheForPitch(pitch);
+        if (pitch != null) {
+            invalidateCacheForPitch(pitch);
+        }
         
         return toDTO(saved);
     }
@@ -201,14 +228,29 @@ public class WorkLogService {
      * Create a work log for the current user (for themselves)
      */
     public WorkLogDTO createMyWorkLog(CreateWorkLogForSelfRequest request) {
+        // Validate that either pitchId or taskId is provided, but not both
+        if ((request.getPitchId() == null && request.getTaskId() == null) ||
+            (request.getPitchId() != null && request.getTaskId() != null)) {
+            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+        }
+        
         Person person = getCurrentUserPerson();
         
-        Pitch pitch = pitchRepository.findById(request.getPitchId())
-                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        Pitch pitch = null;
+        Task task = null;
+        
+        if (request.getPitchId() != null) {
+            pitch = pitchRepository.findById(request.getPitchId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        } else {
+            task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + request.getTaskId()));
+        }
         
         WorkLog workLog = WorkLog.builder()
                 .person(person)
                 .pitch(pitch)
+                .task(task)
                 .date(request.getDate())
                 .hoursSpent(request.getHoursSpent())
                 .note(request.getNote())
@@ -228,6 +270,12 @@ public class WorkLogService {
      * Update a work log owned by the current user
      */
     public WorkLogDTO updateMyWorkLog(Long id, CreateWorkLogForSelfRequest request) {
+        // Validate that either pitchId or taskId is provided, but not both
+        if ((request.getPitchId() == null && request.getTaskId() == null) ||
+            (request.getPitchId() != null && request.getTaskId() != null)) {
+            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+        }
+        
         Person person = getCurrentUserPerson();
         WorkLog workLog = workLogRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
@@ -237,10 +285,19 @@ public class WorkLogService {
             throw new IllegalArgumentException("You can only update your own work logs");
         }
         
-        Pitch pitch = pitchRepository.findById(request.getPitchId())
-                .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        Pitch pitch = null;
+        Task task = null;
+        
+        if (request.getPitchId() != null) {
+            pitch = pitchRepository.findById(request.getPitchId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+        } else {
+            task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + request.getTaskId()));
+        }
         
         workLog.setPitch(pitch);
+        workLog.setTask(task);
         workLog.setDate(request.getDate());
         workLog.setHoursSpent(request.getHoursSpent());
         workLog.setNote(request.getNote());
@@ -272,20 +329,36 @@ public class WorkLogService {
     }
 
     private WorkLogDTO toDTO(WorkLog workLog) {
-        return WorkLogDTO.builder()
+        WorkLogDTO.WorkLogDTOBuilder builder = WorkLogDTO.builder()
                 .id(workLog.getId())
                 .personId(workLog.getPerson().getId())
                 .personName(workLog.getPerson().getName())
-                .pitchId(workLog.getPitch().getId())
-                .pitchTitle(workLog.getPitch().getTitle())
-                .cycleId(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getId() : null)
-                .cycleName(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getName() : null)
-                .projectId(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getId() : null)
-                .projectName(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getName() : null)
-                .projectKey(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getProjectKey() : null)
                 .date(workLog.getDate())
                 .hoursSpent(workLog.getHoursSpent())
-                .note(workLog.getNote())
-                .build();
+                .note(workLog.getNote());
+        
+        // Add pitch information if present
+        if (workLog.getPitch() != null) {
+            builder.pitchId(workLog.getPitch().getId())
+                   .pitchTitle(workLog.getPitch().getTitle())
+                   .cycleId(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getId() : null)
+                   .cycleName(workLog.getPitch().getCycle() != null ? workLog.getPitch().getCycle().getName() : null)
+                   .projectId(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getId() : null)
+                   .projectName(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getName() : null)
+                   .projectKey(workLog.getPitch().getCycle() != null && workLog.getPitch().getCycle().getProject() != null ? workLog.getPitch().getCycle().getProject().getProjectKey() : null);
+        }
+        
+        // Add task information if present
+        if (workLog.getTask() != null) {
+            builder.taskId(workLog.getTask().getId())
+                   .taskTitle(workLog.getTask().getTitle())
+                   .cycleId(workLog.getTask().getCycle() != null ? workLog.getTask().getCycle().getId() : null)
+                   .cycleName(workLog.getTask().getCycle() != null ? workLog.getTask().getCycle().getName() : null)
+                   .projectId(workLog.getTask().getCycle() != null && workLog.getTask().getCycle().getProject() != null ? workLog.getTask().getCycle().getProject().getId() : null)
+                   .projectName(workLog.getTask().getCycle() != null && workLog.getTask().getCycle().getProject() != null ? workLog.getTask().getCycle().getProject().getName() : null)
+                   .projectKey(workLog.getTask().getCycle() != null && workLog.getTask().getCycle().getProject() != null ? workLog.getTask().getCycle().getProject().getProjectKey() : null);
+        }
+        
+        return builder.build();
     }
 }

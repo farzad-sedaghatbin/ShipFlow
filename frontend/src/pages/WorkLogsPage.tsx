@@ -180,7 +180,8 @@ export default function WorkLogsPage() {
 
   // Team work log handlers (admin)
   const handleCreateTeamWorkLog = async () => {
-    if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.pitchId || !teamWorkLog.hoursSpent) return;
+    if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.hoursSpent) return;
+    if (!teamWorkLog.pitchId && !teamWorkLog.taskId) return;
     try {
       await workLogService.create({
         ...teamWorkLog,
@@ -221,12 +222,13 @@ export default function WorkLogsPage() {
     setEditingWorkLog(workLog);
     setEditForm({
       pitchId: workLog.pitchId,
+      taskId: workLog.taskId,
       date: workLog.date,
       hoursSpent: workLog.hoursSpent,
       note: workLog.note || '',
     });
     setEditDate(workLog.date);
-    setEditPitchId(workLog.pitchId.toString());
+    setEditPitchId(workLog.pitchId?.toString() || '');
     setEditDialogOpen(true);
   };
 
@@ -510,7 +512,7 @@ export default function WorkLogsPage() {
                   </div>
                   <Button
                     onClick={handleCreateTeamWorkLog}
-                    disabled={!teamWorkLog.personId || !teamWorkLog.pitchId || !teamWorkLog.hoursSpent}
+                    disabled={!teamWorkLog.personId || (!teamWorkLog.pitchId && !teamWorkLog.taskId) || !teamWorkLog.hoursSpent}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Log Time
@@ -626,7 +628,7 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
             <TableRow>
               <TableHead>Date</TableHead>
               {showPerson && <TableHead>Person</TableHead>}
-              <TableHead>Pitch</TableHead>
+              <TableHead>Pitch/Task</TableHead>
               <TableHead className="text-right">Hours</TableHead>
               <TableHead>Note</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -637,7 +639,20 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
               <TableRow key={wl.id}>
                 <TableCell>{dayjs(wl.date).format('MMM D, YYYY')}</TableCell>
                 {showPerson && <TableCell>{wl.personName}</TableCell>}
-                <TableCell>{wl.pitchTitle}</TableCell>
+                <TableCell>
+                  {wl.pitchTitle && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">Pitch</Badge>
+                      <span>{wl.pitchTitle}</span>
+                    </div>
+                  )}
+                  {wl.taskTitle && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">Task</Badge>
+                      <span>{wl.taskTitle}</span>
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <Badge variant="secondary">{wl.hoursSpent}h</Badge>
                 </TableCell>

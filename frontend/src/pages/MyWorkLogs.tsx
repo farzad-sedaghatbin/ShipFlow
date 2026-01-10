@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, PlayCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { workLogService } from '../services/workLogService';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
-import { WorkLog, Pitch, Cycle, CreateWorkLogForSelfRequest } from '../types';
+import { taskService } from '../services/taskService';
+import timerService from '../services/timerService';
+import { WorkLog, Pitch, Cycle, Task, CreateWorkLogForSelfRequest } from '../types';
 import { useAuth, useToast } from '../contexts';
 import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
+import TimerWidget from '../components/TimerWidget';
 import { cn } from '../lib/utils';
 
 import { Button } from '../components/ui/button';
@@ -45,9 +48,11 @@ export default function MyWorkLogs() {
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('pitch');
 
   // Form state
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -58,6 +63,7 @@ export default function MyWorkLogs() {
   });
   const [workLogDate, setWorkLogDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [selectedPitchId, setSelectedPitchId] = useState<string>('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -70,6 +76,11 @@ export default function MyWorkLogs() {
   });
   const [editDate, setEditDate] = useState<string>('');
   const [editPitchId, setEditPitchId] = useState<string>('');
+  const [editTaskId, setEditTaskId] = useState<string>('');
+  const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('pitch');
+
+  // Timer state
+  const [timerLoading, setTimerLoading] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -80,6 +91,7 @@ export default function MyWorkLogs() {
       const cycleId = parseInt(selectedCycle, 10);
       loadWorkLogs(cycleId);
       loadPitches(cycleId);
+      loadTasks(cycleId);
     }
   }, [selectedCycle]);
 
@@ -115,22 +127,44 @@ export default function MyWorkLogs() {
     }
   };
 
-  const handleCreateWorkLog = async () => {
-    if (!workLogDate || !selectedPitchId || !newWorkLog.hoursSpent) return;
+  const loadTasks = async (cycleId: number) => {
     try {
-      await workLogService.createMy({
-        ...newWorkLog,
-        pitchId: parseInt(selectedPitchId, 10),
+      const response = await taskService.getByCycleId(cycleId);
+      // getByCycleId without page params returns Task[]
+      setTasks(response.data as Task[]);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    }
+  };
+
+  const handleCreateWorkLog = async () => {
+    if (!workLogDate || !newWorkLog.hoursSpent) return;
+    if (workLogType === 'pitch' && !selectedPitchId) return;
+    if (workLogType === 'task' && !selectedTaskId) return;
+    
+    try {
+      const payload: CreateWorkLogForSelfRequest = {
         date: workLogDate,
-      });
+        hoursSpent: newWorkLog.hoursSpent,
+        note: newWorkLog.note,
+      };
+      
+      if (workLogType === 'pitch') {
+        payload.pitchId = parseInt(selectedPitchId, 10);
+      } else {
+        payload.taskId = parseInt(selectedTaskId, 10);
+      }
+      
+      await workLogService.createMy(payload);
+      
       setNewWorkLog({
-        pitchId: 0,
         date: dayjs().format('YYYY-MM-DD'),
         hoursSpent: 0,
         note: '',
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
       setSelectedPitchId('');
+      setSelectedTaskId('');
       showSuccess('Work log added successfully');
       if (selectedCycle) {
         loadWorkLogs(parseInt(selectedCycle, 10));
@@ -154,27 +188,80 @@ export default function MyWorkLogs() {
     }
   };
 
+  const handleStartTimer = async () => {
+    if (workLogType === 'pitch' && !selectedPitchId) {
+      showError('Please select a pitch');
+      return;
+    }
+    if (workLogType === 'task' && !selectedTaskId) {
+      showError('Please select a task');
+      return;
+    }
+
+    try {
+      setTimerLoading(true);
+      await timerService.startTimer({
+        pitchId: workLogType === 'pitch' ? parseInt(selectedPitchId, 10) : undefined,
+        taskId: workLogType === 'task' ? parseInt(selectedTaskId, 10) : undefined,
+        note: newWorkLog.note || undefined,
+      });
+      showSuccess('Timer started');
+      // Clear the note after starting timer
+      setNewWorkLog({ ...newWorkLog, note: '' });
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to start timer';
+      showError(message);
+    } finally {
+      setTimerLoading(false);
+    }
+  };
+
+  const handleTimerStopped = () => {
+    // Reload work logs when timer is stopped
+    if (selectedCycle) {
+      loadWorkLogs(parseInt(selectedCycle, 10));
+    }
+    showSuccess('Timer stopped and work log created');
+  };
+
   const handleEditClick = (workLog: WorkLog) => {
     setEditingWorkLog(workLog);
+    
+    const isTask = !!workLog.taskId;
+    setEditWorkLogType(isTask ? 'task' : 'pitch');
+    
     setEditForm({
       pitchId: workLog.pitchId,
+      taskId: workLog.taskId,
       date: workLog.date,
       hoursSpent: workLog.hoursSpent,
       note: workLog.note || '',
     });
     setEditDate(workLog.date);
-    setEditPitchId(workLog.pitchId.toString());
+    setEditPitchId(workLog.pitchId?.toString() || '');
+    setEditTaskId(workLog.taskId?.toString() || '');
     setEditDialogOpen(true);
   };
 
   const handleEditSave = async () => {
-    if (!editingWorkLog || !editDate || !editPitchId) return;
+    if (!editingWorkLog || !editDate) return;
+    if (editWorkLogType === 'pitch' && !editPitchId) return;
+    if (editWorkLogType === 'task' && !editTaskId) return;
+    
     try {
-      await workLogService.updateMy(editingWorkLog.id, {
-        ...editForm,
-        pitchId: parseInt(editPitchId, 10),
+      const payload: CreateWorkLogForSelfRequest = {
         date: editDate,
-      });
+        hoursSpent: editForm.hoursSpent,
+        note: editForm.note,
+      };
+      
+      if (editWorkLogType === 'pitch') {
+        payload.pitchId = parseInt(editPitchId, 10);
+      } else {
+        payload.taskId = parseInt(editTaskId, 10);
+      }
+      
+      await workLogService.updateMy(editingWorkLog.id, payload);
       showSuccess('Work log updated successfully');
       setEditDialogOpen(false);
       setEditingWorkLog(null);
@@ -282,61 +369,129 @@ export default function MyWorkLogs() {
           <CardTitle>Log Your Work</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 items-end">
-            <div className="md:col-span-4 space-y-2">
-              <Label htmlFor="pitch-select">Pitch *</Label>
-              <Select value={selectedPitchId} onValueChange={setSelectedPitchId}>
-                <SelectTrigger id="pitch-select">
-                  <SelectValue placeholder="Select a pitch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pitches.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            {/* Work Log Type Toggle */}
+            <div className="flex items-center gap-4">
+              <Label>Log time on:</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={workLogType === 'pitch' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setWorkLogType('pitch');
+                    setSelectedTaskId('');
+                  }}
+                >
+                  Pitch
+                </Button>
+                <Button
+                  type="button"
+                  variant={workLogType === 'task' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setWorkLogType('task');
+                    setSelectedPitchId('');
+                  }}
+                >
+                  Task
+                </Button>
+              </div>
             </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="date-input">Date *</Label>
-              <Input
-                id="date-input"
-                type="date"
-                value={workLogDate}
-                onChange={(e) => setWorkLogDate(e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="hours-input">Hours *</Label>
-              <Input
-                id="hours-input"
-                type="number"
-                value={newWorkLog.hoursSpent || ''}
-                onChange={(e) => setNewWorkLog({ ...newWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })}
-                min={0.25}
-                step={0.25}
-                placeholder="0.0"
-              />
-            </div>
-            <div className="md:col-span-3 space-y-2">
-              <Label htmlFor="note-input">Note (optional)</Label>
-              <Input
-                id="note-input"
-                value={newWorkLog.note}
-                onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
-                placeholder="What did you work on?"
-              />
-            </div>
-            <div className="md:col-span-1">
-              <Button
-                onClick={handleCreateWorkLog}
-                disabled={!selectedPitchId || !newWorkLog.hoursSpent}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add
-              </Button>
+            
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 items-end">
+              {workLogType === 'pitch' ? (
+                <div className="md:col-span-4 space-y-2">
+                  <Label htmlFor="pitch-select">Pitch *</Label>
+                  <Select value={selectedPitchId} onValueChange={setSelectedPitchId}>
+                    <SelectTrigger id="pitch-select">
+                      <SelectValue placeholder="Select a pitch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pitches.map((p) => (
+                        <SelectItem key={p.id} value={p.id.toString()}>
+                          {p.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="md:col-span-4 space-y-2">
+                  <Label htmlFor="task-select">Task *</Label>
+                  <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
+                    <SelectTrigger id="task-select">
+                      <SelectValue placeholder="Select a task" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tasks.map((t) => (
+                        <SelectItem key={t.id} value={t.id.toString()}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="date-input">Date *</Label>
+                <Input
+                  id="date-input"
+                  type="date"
+                  value={workLogDate}
+                  onChange={(e) => setWorkLogDate(e.target.value)}
+                />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="hours-input">Hours *</Label>
+                <Input
+                  id="hours-input"
+                  type="number"
+                  value={newWorkLog.hoursSpent || ''}
+                  onChange={(e) => setNewWorkLog({ ...newWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })}
+                  min={0.25}
+                  step={0.25}
+                  placeholder="0.0"
+                />
+              </div>
+              <div className="md:col-span-3 space-y-2">
+                <Label htmlFor="note-input">Note (optional)</Label>
+                <Input
+                  id="note-input"
+                  value={newWorkLog.note}
+                  onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
+                  placeholder="What did you work on?"
+                />
+              </div>
+              <div className="md:col-span-1 flex gap-2">
+                <Button
+                  onClick={handleStartTimer}
+                  disabled={
+                    timerLoading ||
+                    (workLogType === 'pitch' && !selectedPitchId) ||
+                    (workLogType === 'task' && !selectedTaskId)
+                  }
+                  variant="outline"
+                  className="flex-1"
+                  title="Start timer for selected item"
+                >
+                  <PlayCircle className="h-4 w-4 mr-1" />
+                  Timer
+                </Button>
+                <Button
+                  onClick={handleCreateWorkLog}
+                  disabled={
+                    !newWorkLog.hoursSpent ||
+                    (workLogType === 'pitch' && !selectedPitchId) ||
+                    (workLogType === 'task' && !selectedTaskId)
+                  }
+                  className="flex-1"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -366,7 +521,7 @@ export default function MyWorkLogs() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Pitch</TableHead>
+                    <TableHead>Pitch/Task</TableHead>
                     <TableHead className="text-right">Hours</TableHead>
                     <TableHead>Note</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
@@ -388,7 +543,17 @@ export default function MyWorkLogs() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{wl.pitchTitle}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span>{wl.pitchTitle || wl.taskTitle}</span>
+                          {wl.taskTitle && (
+                            <Badge variant="secondary" className="text-xs w-fit">Task</Badge>
+                          )}
+                          {wl.pitchTitle && (
+                            <Badge variant="outline" className="text-xs w-fit">Pitch</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{wl.hoursSpent}h</TableCell>
                       <TableCell>{wl.note || '-'}</TableCell>
                       <TableCell>
@@ -397,7 +562,7 @@ export default function MyWorkLogs() {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleEditClick(wl)}
-                            aria-label={`Edit work log for ${wl.pitchTitle}`}
+                            aria-label={`Edit work log for ${wl.pitchTitle || wl.taskTitle}`}
                           >
                             <Pencil className="h-4 w-4" aria-hidden="true" />
                           </Button>
@@ -406,7 +571,7 @@ export default function MyWorkLogs() {
                             size="icon-sm"
                             onClick={() => handleDeleteWorkLog(wl.id)}
                             className="text-destructive hover:text-destructive"
-                            aria-label={`Delete work log for ${wl.pitchTitle}`}
+                            aria-label={`Delete work log for ${wl.pitchTitle || wl.taskTitle}`}
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
@@ -428,21 +593,68 @@ export default function MyWorkLogs() {
             <DialogTitle>Edit Work Log</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-pitch">Pitch *</Label>
-              <Select value={editPitchId} onValueChange={setEditPitchId}>
-                <SelectTrigger id="edit-pitch">
-                  <SelectValue placeholder="Select a pitch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pitches.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Work Log Type Toggle in Edit */}
+            <div className="flex items-center gap-4">
+              <Label>Log time on:</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={editWorkLogType === 'pitch' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setEditWorkLogType('pitch');
+                    setEditTaskId('');
+                  }}
+                >
+                  Pitch
+                </Button>
+                <Button
+                  type="button"
+                  variant={editWorkLogType === 'task' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setEditWorkLogType('task');
+                    setEditPitchId('');
+                  }}
+                >
+                  Task
+                </Button>
+              </div>
             </div>
+            
+            {editWorkLogType === 'pitch' ? (
+              <div className="space-y-2">
+                <Label htmlFor="edit-pitch">Pitch *</Label>
+                <Select value={editPitchId} onValueChange={setEditPitchId}>
+                  <SelectTrigger id="edit-pitch">
+                    <SelectValue placeholder="Select a pitch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pitches.map((p) => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="edit-task">Task *</Label>
+                <Select value={editTaskId} onValueChange={setEditTaskId}>
+                  <SelectTrigger id="edit-task">
+                    <SelectValue placeholder="Select a task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tasks.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-date">Date *</Label>
@@ -483,6 +695,9 @@ export default function MyWorkLogs() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Timer Widget (floating widget) */}
+      <TimerWidget onTimerStopped={handleTimerStopped} />
     </div>
   );
 }

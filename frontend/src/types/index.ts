@@ -183,8 +183,10 @@ export interface WorkLog {
   id: number;
   personId: number;
   personName?: string;
-  pitchId: number;
+  pitchId?: number;
   pitchTitle?: string;
+  taskId?: number;
+  taskTitle?: string;
   cycleId?: number;
   cycleName?: string;
   projectId?: number;
@@ -197,7 +199,8 @@ export interface WorkLog {
 
 export interface CreateWorkLogRequest {
   personId: number;
-  pitchId: number;
+  pitchId?: number;
+  taskId?: number;
   date: string;
   hoursSpent: number;
   note?: string;
@@ -205,7 +208,8 @@ export interface CreateWorkLogRequest {
 
 // For users creating work logs for themselves (no personId required)
 export interface CreateWorkLogForSelfRequest {
-  pitchId: number;
+  pitchId?: number;
+  taskId?: number;
   date: string;
   hoursSpent: number;
   note?: string;
@@ -415,6 +419,9 @@ export interface Task {
   pairAssigneeAvatarUrl?: string;
   createdById?: number;
   createdByName?: string;
+  parentTaskId?: number;
+  parentTaskTitle?: string;
+  children?: Task[];
   dueDate?: string;
   completedAt?: string;
   createdAt: string;
@@ -433,6 +440,7 @@ export interface CreateTaskRequest {
   actualHours?: number;
   assigneeId?: number;
   pairAssigneeId?: number;
+  parentTaskId?: number;
   dueDate?: string;
   tags?: string;
 }

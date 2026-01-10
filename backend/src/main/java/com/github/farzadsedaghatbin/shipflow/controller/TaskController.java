@@ -198,4 +198,27 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ========== Sub-task Hierarchy Endpoints ==========
+
+    @GetMapping("/{id}/subtasks")
+    @Operation(summary = "Get sub-tasks",
+               description = "Returns all direct children of the specified parent task")
+    public ResponseEntity<List<TaskDTO>> getSubTasks(@PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getSubTasks(id));
+    }
+
+    @GetMapping("/cycle/{cycleId}/roots")
+    @Operation(summary = "Get root tasks",
+               description = "Returns all tasks in the cycle that have no parent (root level tasks)")
+    public ResponseEntity<List<TaskDTO>> getRootTasks(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(taskService.getRootTasksByCycleId(cycleId));
+    }
+
+    @GetMapping("/cycle/{cycleId}/tree")
+    @Operation(summary = "Get task tree",
+               description = "Returns the complete task hierarchy for a cycle with nested children")
+    public ResponseEntity<List<TaskDTO>> getTaskTree(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(taskService.getTaskTreeByCycleId(cycleId));
+    }
 }

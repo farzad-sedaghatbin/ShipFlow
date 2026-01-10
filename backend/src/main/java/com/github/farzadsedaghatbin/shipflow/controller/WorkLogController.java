@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/worklogs")
 @RequiredArgsConstructor
-@Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches")
+@Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches and tasks")
 public class WorkLogController {
 
     private final WorkLogService workLogService;
@@ -106,6 +106,12 @@ public class WorkLogController {
     @Operation(summary = "Get work logs by pitch ID")
     public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPitchId(@PathVariable Long pitchId) {
         return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId));
+    }
+    
+    @GetMapping("/task/{taskId}")
+    @Operation(summary = "Get work logs by task ID")
+    public ResponseEntity<List<WorkLogDTO>> getWorkLogsByTaskId(@PathVariable Long taskId) {
+        return ResponseEntity.ok(workLogService.getWorkLogsByTaskId(taskId));
     }
 
     @GetMapping("/person/{personId}")

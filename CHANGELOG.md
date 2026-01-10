@@ -8,6 +8,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Sub-task Hierarchy**: Tasks can now have parent-child relationships for better organization
+  - Database migration V33 adds self-referencing `parent_task_id` column with CASCADE delete
+  - Backend support for creating, updating, and querying hierarchical tasks
+  - Circular reference prevention (tasks cannot be their own ancestor)
+  - New REST endpoints:
+    - `GET /api/tasks/{id}/subtasks` - Get direct children of a task
+    - `GET /api/tasks/cycle/{cycleId}/roots` - Get root-level tasks (no parent)
+    - `GET /api/tasks/cycle/{cycleId}/tree` - Get complete task tree with nested children
+  - Comprehensive unit tests (10/10 passing) for hierarchy operations
+  - **Frontend UI Features**:
+    - Parent task selector in create/edit dialog
+    - "Add Sub-task" button on each task row for quick sub-task creation
+    - Visual indentation and arrow icon for sub-tasks
+    - Display of parent task title below sub-task name
+    - Tasks with same parent grouped visually
+
+- **Task-based Time Logging**: Work logs can now be associated with Tasks in addition to Pitches
+  - Manual time entry for tasks
+  - Toggle between Pitch and Task when logging time
+  - Backend API support for task-based work logs
+  - Updated work log entities, DTOs, and services
+  - Database migration V32 to support optional task references
+  - Validation to ensure either pitchId or taskId is provided (but not both)
+  - Frontend UI with toggle buttons for selecting Pitch or Task
+  - Work log table displays both pitch and task information with badges
+  - Edit dialog supports switching between pitch and task
+  - Comprehensive unit tests (12/12 passing) for work log operations
+
+- **Timer Integration for Time Tracking**: Added timer-based time tracking alongside manual entry
+  - Database migration V34 for work_log_timers table
+  - Backend REST API for timer operations:
+    - `POST /api/timers/start` - Start timer for pitch or task
+    - `POST /api/timers/stop` - Stop timer and create work log entry
+    - `GET /api/timers/active` - Get currently running timer
+    - `DELETE /api/timers/cancel` - Cancel timer without logging
+  - Timer Service with business logic:
+    - Automatic time rounding to nearest 0.25 hours (15 minutes)
+    - One active timer per user enforcement
+    - Elapsed time calculation with real-time updates
+    - Quarter-hour rounding on timer stop
+  - Frontend Timer Widget (floating card):
+    - Real-time elapsed time display (HH:MM:SS format)
+    - Shows associated pitch/task and note
+    - Stop & Log button with confirmation dialog
+    - Cancel button to discard timer
+    - Automatically appears when timer is running
+  - Timer Integration in My Work Logs page:
+    - "Start Timer" button alongside manual entry form
+    - Auto-reloads work logs when timer stopped
+    - Uses same pitch/task selector as manual entry
+  - Comprehensive testing:
+    - Backend unit tests: 11/11 passing (WorkLogTimerServiceTest)
+    - Backend integration tests: 9/9 passing (WorkLogTimerControllerIntegrationTest)
+    - Total timer tests: 20/20 passing
+
+### Testing Summary
+- **Backend Tests**: 42 tests passing across all new features
+  - Task Hierarchy: 10/10 tests
+  - Task-based Work Logs: 12/12 tests
+  - Timer Service: 11/11 tests
+  - Timer Controller Integration: 9/9 tests
+- **Test Coverage**: Service layer, repository layer, REST endpoints, and error scenarios
+
+### Design Decisions
+- **Dual Time Logging**: Both manual entry AND timer integration for maximum flexibility
+- **Timer Rounding**: Automatic rounding to 0.25 hours (15-minute increments) for consistency
+- **Single Active Timer**: Only one timer per user at a time to prevent accidental double-tracking
+- **Seamless Integration**: Timer and manual entry share same UI/UX for pitch/task selection
 - **Dashboard Customization**: Users can now customize which widgets appear on their dashboard and in what order
   - Widget visibility toggle
   - Configurable display order with bulk update support

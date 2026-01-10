@@ -99,4 +99,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("priorities") List<TaskPriority> priorities,
         @Param("assigneeIds") List<Long> assigneeIds,
         Pageable pageable);
+    
+    // Hierarchy queries
+    List<Task> findByParentTaskId(Long parentTaskId);
+    
+    List<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId);
+    
+    Page<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.parentTask IS NULL")
+    List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
 }

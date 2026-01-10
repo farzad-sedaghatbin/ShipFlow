@@ -100,10 +100,23 @@ public class TaskService {
         Cycle cycle = cycleRepository.findById(request.getCycleId())
                 .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
 
+        // Validate parent task if provided
+        Task parentTask = null;
+        if (request.getParentTaskId() != null) {
+            parentTask = taskRepository.findById(request.getParentTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Parent task not found with id: " + request.getParentTaskId()));
+            
+            // Ensure parent task belongs to the same cycle
+            if (!parentTask.getCycle().getId().equals(request.getCycleId())) {
+                throw new IllegalArgumentException("Parent task must belong to the same cycle");
+            }
+        }
+
         Task task = Task.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .cycle(cycle)
+                .parentTask(parentTask)
                 .status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
                 .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
                 .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
@@ -157,6 +170,28 @@ public class TaskService {
         Person oldAssignee = task.getAssignee();
         TaskStatus oldStatus = task.getStatus();
         TaskPriority oldPriority = task.getPriority();
+
+        // Validate and update parent task if changed
+        if (request.getParentTaskId() != null) {
+            if (!request.getParentTaskId().equals(task.getParentTask() != null ? task.getParentTask().getId() : null)) {
+                Task parentTask = taskRepository.findById(request.getParentTaskId())
+                        .orElseThrow(() -> new IllegalArgumentException("Parent task not found with id: " + request.getParentTaskId()));
+                
+                // Prevent circular references
+                if (isCircularReference(task, parentTask)) {
+                    throw new IllegalArgumentException("Cannot set parent task: would create a circular reference");
+                }
+                
+                // Ensure parent task belongs to the same cycle
+                if (!parentTask.getCycle().getId().equals(task.getCycle().getId())) {
+                    throw new IllegalArgumentException("Parent task must belong to the same cycle");
+                }
+                
+                task.setParentTask(parentTask);
+            }
+        } else {
+            task.setParentTask(null);
+        }
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -394,6 +429,64 @@ public class TaskService {
         return taskRepository.countByCycleIdAndCategory(cycleId, category);
     }
 
+    // ========== Sub-task hierarchy methods ==========
+
+    public List<TaskDTO> getSubTasks(Long parentTaskId) {
+        return taskRepository.findByParentTaskId(parentTaskId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDTO> getRootTasksByCycleId(Long cycleId) {
+        return taskRepository.findRootTasksByCycleId(cycleId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public Page<TaskDTO> getRootTasksByCycleId(Long cycleId, Pageable pageable) {
+        return taskRepository.findByCycleIdAndParentTaskIdIsNull(cycleId, pageable)
+                .map(this::toDTO);
+    }
+
+    public List<TaskDTO> getTaskTreeByCycleId(Long cycleId) {
+        List<Task> rootTasks = taskRepository.findRootTasksByCycleId(cycleId);
+        return rootTasks.stream()
+                .map(this::toDTOWithChildren)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Check if setting parentTask would create a circular reference
+     */
+    private boolean isCircularReference(Task task, Task proposedParent) {
+        if (task.getId().equals(proposedParent.getId())) {
+            return true; // Can't be its own parent
+        }
+        
+        Task current = proposedParent;
+        while (current != null) {
+            if (current.getId().equals(task.getId())) {
+                return true; // Found a cycle
+            }
+            current = current.getParentTask();
+        }
+        
+        return false;
+    }
+
+    private TaskDTO toDTOWithChildren(Task task) {
+        TaskDTO dto = toDTO(task);
+        if (task.getChildren() != null && !task.getChildren().isEmpty()) {
+            List<TaskDTO> childrenDTOs = task.getChildren().stream()
+                    .map(this::toDTOWithChildren)
+                    .collect(Collectors.toList());
+            dto.setChildren(childrenDTOs);
+        }
+        return dto;
+    }
+
     private TaskDTO toDTO(Task task) {
         return TaskDTO.builder()
                 .id(task.getId())
@@ -417,6 +510,8 @@ public class TaskService {
                 .pairAssigneeAvatarUrl(task.getPairAssignee() != null ? task.getPairAssignee().getAvatarUrl() : null)
                 .createdById(task.getCreatedBy() != null ? task.getCreatedBy().getId() : null)
                 .createdByName(task.getCreatedBy() != null ? task.getCreatedBy().getName() : null)
+                .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
+                .parentTaskTitle(task.getParentTask() != null ? task.getParentTask().getTitle() : null)
                 .dueDate(task.getDueDate())
                 .completedAt(task.getCompletedAt())
                 .createdAt(task.getCreatedAt())
