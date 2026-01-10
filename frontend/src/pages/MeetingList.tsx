@@ -20,7 +20,7 @@ import { QAFloatingButton } from '../components/QAFloatingButton';
 import { MeetingDocumentsDialog } from '../components/MeetingDocumentsDialog';
 import EmptyState from '../components/EmptyState';
 import { EmptyMeetingsIllustration } from '../components/illustrations';
-import { useToast } from '../contexts';
+import { useToast, useProject } from '../contexts';
 
 
 import { Card, CardContent } from '../components/ui/card';
@@ -62,6 +62,7 @@ const meetingTypes: MeetingType[] = ['SHAPING', 'BETTING', 'KICKOFF', 'STANDUP',
 
 export default function MeetingList() {
   const { showSuccess, showError } = useToast();
+  const { currentProject } = useProject();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [retrospectives, setRetrospectives] = useState<Retrospective[]>([]);
@@ -108,14 +109,16 @@ export default function MeetingList() {
     const abortController = new AbortController();
     loadData();
     return () => abortController.abort();
-  }, [page, size, filters]);
+  }, [page, size, filters, currentProject]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [pitchesRes, retrospectivesRes, personsRes] = await Promise.all([
         pitchService.getAll(),
-        retroService.getByProject(1).catch(() => ({ data: [] })), // Get retrospectives for project 1 (or current project)
+        currentProject 
+          ? retroService.getByProject(currentProject.id).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
         personService.getAll(true), // Get active persons
       ]);
       setPitches(pitchesRes.data);
