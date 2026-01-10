@@ -8,6 +8,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Load environment variables from .env file if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "📝 Loading environment variables from .env file..."
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
 echo "🚀 Starting ShipFlow in Development Mode..."
 echo "=================================================="
 

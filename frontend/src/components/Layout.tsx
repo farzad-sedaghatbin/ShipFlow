@@ -59,6 +59,7 @@ import ProjectSelector from './ProjectSelector';
 import Breadcrumbs from './Breadcrumbs';
 import WelcomeTourDialog from './WelcomeTourDialog';
 import { QAFloatingButton } from './QAFloatingButton';
+import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -338,18 +339,6 @@ export default function Layout({ children }: LayoutProps) {
             <span className="sr-only">Toggle menu</span>
           </Button>
 
-          {/* Mobile Menu Button - Touch-friendly */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden h-11 w-11 touch-manipulation"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open navigation menu"
-          >
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-
           {/* Project Selector - Responsive */}
           <div className="flex-1 min-w-0 lg:flex-none" data-tour="project-selector">
             <ProjectSelector />
@@ -405,6 +394,9 @@ export default function Layout({ children }: LayoutProps) {
                 Switch to {actualMode === 'dark' ? 'light' : 'dark'} mode
               </TooltipContent>
             </Tooltip>
+
+            {/* Notification Center */}
+            <NotificationCenter />
 
             {/* User Menu - Touch-friendly */}
             <DropdownMenu>
