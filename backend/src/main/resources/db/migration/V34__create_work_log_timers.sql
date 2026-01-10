@@ -26,5 +26,3 @@ CREATE INDEX idx_work_log_timers_task_id ON work_log_timers(task_id);
 -- Add comments
 COMMENT ON TABLE work_log_timers IS 'Tracks actively running timers for work log entries';
 COMMENT ON COLUMN work_log_timers.start_time IS 'When the timer was started';
-COMMENT ON CONSTRAINT chk_timer_pitch_or_task ON work_log_timers IS 'Ensures timer is for either a pitch or a task, not both';
-COMMENT ON CONSTRAINT uq_active_timer_per_person ON work_log_timers IS 'One person can only have one active timer at a time';
