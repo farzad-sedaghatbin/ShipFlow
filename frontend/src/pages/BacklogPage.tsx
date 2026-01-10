@@ -14,6 +14,7 @@ import {
   Wrench,
   FileText,
   Loader2,
+  PlayCircle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,9 +66,11 @@ import {
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import timerService from '../services/timerService';
 import { Task, Cycle, Person, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
+import TimerWidget from '../components/TimerWidget';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 
@@ -96,7 +99,7 @@ export default function BacklogPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
+  const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(false);
@@ -173,9 +176,7 @@ export default function BacklogPage() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id);
-      }
+      // Default to 'all' - don't auto-select first cycle
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -200,14 +201,73 @@ export default function BacklogPage() {
     try {
       let response: any;
       if (tabValue === 'my') {
-        // TODO: Add category filter to my tasks endpoint
-        response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
-        // Client-side filter for my tasks until backend supports it
-        const allTasks = response?.data?.content || [];
-        const filteredTasks = allTasks.filter((task: Task) => {
-          const taskCategory = task.category || 'PITCH_SCOPE';
-          return taskCategory === activeCategory;
+        if (selectedCycle === 'all') {
+          // Get my tasks from all cycles
+          const allTasksPromises = cycles.map(cycle => 
+            taskService.getMyByCycle(cycle.id, 0, 1000, sortBy, sortOrder)
+          );
+          const allResponses = await Promise.all(allTasksPromises);
+          const allTasks = allResponses.flatMap(res => {
+            const data = res.data;
+            if (Array.isArray(data)) {
+              return data;
+            } else if (data && typeof data === 'object' && 'content' in data) {
+              return (data as any).content;
+            }
+            return [];
+          });
+          // Filter by category
+          const filteredTasks = allTasks.filter((task: Task) => {
+            const taskCategory = task.category || 'PITCH_SCOPE';
+            return taskCategory === activeCategory;
+          });
+          setTasks(filteredTasks);
+          setTotalElements(filteredTasks.length);
+        } else {
+          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+          // Client-side filter for my tasks until backend supports it
+          const allTasks = response?.data?.content || [];
+          const filteredTasks = allTasks.filter((task: Task) => {
+            const taskCategory = task.category || 'PITCH_SCOPE';
+            return taskCategory === activeCategory;
+          });
+          setTasks(filteredTasks);
+          setTotalElements(filteredTasks.length);
+        }
+      } else if (selectedCycle === 'all') {
+        // Get all tasks from all cycles
+        const allTasksPromises = cycles.map(cycle => 
+          taskService.getByCycleIdAndCategory(cycle.id, activeCategory, 0, 1000, sortBy, sortOrder)
+        );
+        const allResponses = await Promise.all(allTasksPromises);
+        const allTasks = allResponses.flatMap(res => {
+          const data = res.data;
+          if (Array.isArray(data)) {
+            return data;
+          } else if (data && typeof data === 'object' && 'content' in data) {
+            return (data as any).content;
+          }
+          return [];
         });
+        
+        // Apply filters manually
+        let filteredTasks = allTasks;
+        if (statusFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
+          );
+        }
+        if (priorityFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
+          );
+        }
+        if (assigneeFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
+          );
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(filteredTasks.length);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -243,7 +303,7 @@ export default function BacklogPage() {
   };
 
   const loadStatistics = async () => {
-    if (!selectedCycle) return;
+    if (!selectedCycle || selectedCycle === 'all') return;
     try {
       const response = await taskService.getStatisticsByCycleId(selectedCycle);
       setStatistics(response.data);
@@ -324,6 +384,47 @@ export default function BacklogPage() {
     setDialogOpen(false);
     setEditingTask(null);
     setFieldErrors({});
+  };
+
+  const handleAddSubTask = (parentTask: Task) => {
+    setFormData({
+      title: '',
+      description: '',
+      cycleId: selectedCycle === 'all' ? (cycles[0]?.id || 0) : selectedCycle as number,
+      parentTaskId: parentTask.id,
+      status: 'BACKLOG',
+      priority: 'MEDIUM',
+      estimateHours: undefined,
+      assigneeId: undefined,
+      pairAssigneeId: undefined,
+      dueDate: undefined,
+      tags: '',
+      category: activeCategory,
+    });
+    setDueDate(null);
+    setEditingTask(null);
+    setDialogOpen(true);
+  };
+
+  const handleStartTimer = async (task: Task) => {
+    try {
+      await timerService.startTimer({
+        taskId: task.id,
+        note: `Working on: ${task.title}`,
+      });
+      toast.success('Timer started for task');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to start timer';
+      toast.error(message);
+    }
+  };
+
+  const handleTimerStopped = () => {
+    // Timer stopped - reload data
+    loadTasks();
+    if (selectedCycle !== 'all') {
+      loadStatistics();
+    }
   };
 
   const validateTaskForm = (): boolean => {
@@ -429,6 +530,9 @@ export default function BacklogPage() {
 
   return (
     <div className="space-y-6">
+      {/* Timer Widget */}
+      <TimerWidget onTimerStopped={handleTimerStopped} />
+      
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -438,13 +542,14 @@ export default function BacklogPage() {
         <div className="flex items-center gap-2">
           {/* Cycle Selector */}
           <Select
-            value={selectedCycle?.toString() || ''}
-            onValueChange={(value) => setSelectedCycle(Number(value))}
+            value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
+            onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
           >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select cycle" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Cycles</SelectItem>
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id.toString()}>
                   {cycle.name}
@@ -454,7 +559,7 @@ export default function BacklogPage() {
           </Select>
           <Button 
             onClick={() => handleOpenDialog()} 
-            disabled={!selectedCycle}
+            disabled={selectedCycle === 'all' || !selectedCycle}
           >
             <Plus className="mr-2 h-4 w-4" />
             New Task
@@ -956,6 +1061,40 @@ export default function BacklogPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddSubTask(task)}
+                              aria-label={`Add sub-task to: ${task.title}`}
+                              className="text-xs"
+                            >
+                              <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
+                              Sub-task
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Add a sub-task under this task</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleStartTimer(task)}
+                              aria-label={`Start timer for: ${task.title}`}
+                              className="text-xs bg-green-600 hover:bg-green-700"
+                            >
+                              <PlayCircle className="h-3 w-3 mr-1" aria-hidden="true" />
+                              Timer
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Start timer for this task</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
