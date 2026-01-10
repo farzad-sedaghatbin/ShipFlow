@@ -77,7 +77,10 @@ export default function Dashboard() {
         cyclesPromise,
         pitchService.getAll(),
         teamService.getAll(),
-        dashboardWidgetApi.getAllWidgets().catch(() => []),
+        dashboardWidgetApi.getAllWidgets().catch((error) => {
+          console.error('Failed to load dashboard widgets:', error);
+          return [];
+        }),
       ]);
 
       const cycles = cyclesRes.data;
