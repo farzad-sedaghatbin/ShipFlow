@@ -33,6 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
     - Tests cover pagination, filtering, action items, retrospective linking, and error validation
 
+### Fixed
+- **Exception Handling**: BadRequestException now correctly returns 400 status instead of 500
+  - Added explicit handler in GlobalExceptionHandler for BadRequestException
+  - Prevents RuntimeException handler from catching BadRequestException
+  - WorkLogTimer validation errors now return proper HTTP 400 responses
+  - All 525 backend tests now pass
+  - **Test Coverage**:
+    - 16 unit tests in MeetingServiceTest (up from 8)
+    - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
+    - Tests cover pagination, filtering, action items, retrospective linking, and error validation
+
 - **Sub-task Hierarchy**: Tasks can now have parent-child relationships for better organization
   - Database migration V33 adds self-referencing `parent_task_id` column with CASCADE delete
   - Backend support for creating, updating, and querying hierarchical tasks
