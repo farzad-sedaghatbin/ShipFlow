@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class TaskService {
@@ -139,7 +141,8 @@ public class TaskService {
             try {
                 notificationService.notifyTaskAssignment(saved, assignee.getUser());
             } catch (Exception e) {
-                // Log error but don't fail task creation
+                log.error("Failed to send task assignment notification for task {} to user {}", 
+                    saved.getId(), assignee.getUser().getUsername(), e);
             }
         }
         
@@ -229,8 +232,7 @@ public class TaskService {
                 notificationService.notifyTaskPriorityChange(saved, request.getPriority());
             }
         } catch (Exception e) {
-            // Log but don't fail the update if notifications fail
-            // TODO: Add proper logging
+            log.error("Failed to send task update notifications for task {}", saved.getId(), e);
         }
 
         return toDTO(saved);
