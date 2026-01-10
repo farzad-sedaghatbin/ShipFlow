@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Health Overview - Automated Risk Detection**: Comprehensive risk analysis system for pitch health monitoring
+  - **Backend Features**:
+    - Automated risk level calculation based on multiple factors (bugs, scope completion, budget, timeline)
+    - Bug count analysis: Critical/blocker bugs add significant risk scores
+    - Scope completion tracking via Hill Chart positions to detect stagnant work
+    - Work hours analysis comparing budget usage vs timeline progress
+    - Risk trend indicators (IMPROVING, STABLE, WORSENING) based on recent changes
+    - Enhanced `PitchHealthService.calculateRuleBasedRiskLevel()` with comprehensive scoring
+    - New `PitchHealthService.calculateRiskTrend()` method analyzing last 3-7 days of activity
+    - Risk scoring thresholds: CRITICAL (≥70), HIGH (≥50), MEDIUM (≥25), LOW (<25)
+  - **Risk Detection Rules**:
+    - **Critical Bugs**: 3+ critical/blocker bugs = +35 points, 1+ = +20 points
+    - **Open Bugs**: >10 open bugs with <7 days = +15 points
+    - **Budget Overruns**: >120% = +40 points, >100% = +25 points, >80% = +10 points
+    - **Stagnant Scopes**: Scopes unchanged for 7+ days in uphill phase = +10-30 points
+    - **Timeline Pressure**: <3 days remaining without testing/done status = +30 points
+    - **Behind Schedule**: Time progress exceeding work progress by 30% = +30 points
+  - **Trend Analysis**:
+    - Recent critical bugs (last 3 days) trigger WORSENING trend
+    - Hill chart updates (last 7 days) trigger IMPROVING trend
+    - Accelerating budget burn (>15 hours in 3 days while >90% budget) = WORSENING
+    - No progress with <14 days remaining = WORSENING
+  - **Frontend Features**:
+    - Priority sorting: Pitches automatically sorted by risk level (CRITICAL → HIGH → MEDIUM → LOW)
+    - Pulsing animations on CRITICAL and HIGH risk items for immediate attention
+    - Dynamic border widths: Critical (6px), High (5px), Medium/Low (4px)
+    - Shadow effects with red glow on critical pitches
+    - Alert banner showing count of critical pitches requiring attention
+    - Risk trend badges with directional icons (↓ green, ↑ red, − gray)
+    - URGENT badge on critical pitches with pulsing animation
+    - Days-left badges when ≤3 days remaining
+    - Enhanced stat cards with hover effects and time-sensitive coloring
+    - Improved visual hierarchy emphasizing critical items
+  - **UI/UX Improvements**:
+    - Critical pitch stat card pulses and shows "Needs attention!" label
+    - Days-left counter turns orange when ≤7 days
+    - Smooth transitions and animations for better user feedback
+    - Tooltips explaining risk trends and status indicators
+  - **Test Coverage**:
+    - 14 unit tests in `PitchHealthServiceTest` covering all risk scenarios
+    - 15 integration tests in `PitchHealthControllerIntegrationTest`
+    - Tests verify bug detection, budget analysis, scope tracking, and trend calculation
+    - Tests cover healthy, at-risk, and critical pitch scenarios
+  - **API Endpoints**: Existing endpoints enhanced with new risk data
+    - `GET /api/health/pitch/{pitchId}` - Returns risk level, color, and trend
+    - `GET /api/health/cycle/{cycleId}` - Aggregated health with risk breakdown
+    - `GET /api/health/active-cycles` - All active cycles with risk metrics
+
 ## [0.1.0] - 2026-01-10
 
 ### Added
@@ -33,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
     - Tests cover pagination, filtering, action items, retrospective linking, and error validation
 
+>>>>>>> 7aef3fd (feat(health): implement automated risk detection for Health Overview)
 ### Fixed
 - **Exception Handling**: BadRequestException now correctly returns 400 status instead of 500
   - Added explicit handler in GlobalExceptionHandler for BadRequestException

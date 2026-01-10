@@ -11,6 +11,11 @@ A modern project management application implementing the [Shape Up](https://base
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
 - **Retrospectives**: Team retros with voting and merging
+- **Health Overview**: Automated risk detection and health monitoring
+  - Real-time risk analysis based on bugs, scope completion, budget, and timeline
+  - Risk trend indicators (IMPROVING, STABLE, WORSENING)
+  - Visual priority sorting with pulsing animations for critical items
+  - Automated status detection without manual assignment
 - **AI-Powered Q&A**: Enhanced RAG-based knowledge retrieval from project documents
   - Smart relevance filtering (0.70 threshold)
   - Source citation tracking
@@ -21,7 +26,6 @@ A modern project management application implementing the [Shape Up](https://base
   - Automated quality validation
   - Historical test pattern learning
   - Completeness scoring (0-100)
-- **Health Dashboard**: Project health metrics and risk insights
 
 ## ♿ Accessibility
 

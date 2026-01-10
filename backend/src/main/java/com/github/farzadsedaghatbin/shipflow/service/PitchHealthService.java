@@ -3,12 +3,19 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.health.CycleHealthSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.health.PitchHealthDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Meeting;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.MeetingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
@@ -19,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +49,8 @@ public class PitchHealthService {
     private final CycleRepository cycleRepository;
     private final WorkLogRepository workLogRepository;
     private final MeetingRepository meetingRepository;
+    private final BugReportRepository bugReportRepository;
+    private final HillChartPointRepository hillChartPointRepository;
     
     @Autowired(required = false)
     private RiskAnalysisService riskAnalysisService;
@@ -257,6 +267,9 @@ public class PitchHealthService {
 
         // Determine QA status
         String qaStatus = determineQAStatus(pitch);
+        
+        // Calculate risk trend
+        String riskTrend = calculateRiskTrend(pitch, appetiteUsed, daysLeft);
 
         // Generate status summary
         String statusSummary = generateStatusSummary(pitch, appetiteUsed, daysLeft, qaStatus);
@@ -269,6 +282,7 @@ public class PitchHealthService {
                 .cycleName(cycle.getName())
                 .riskLevel(riskLevel)
                 .riskColor(getRiskColor(riskLevel))
+                .riskTrend(riskTrend)
                 .appetiteUsedPercent(Math.round(appetiteUsed * 10.0) / 10.0)
                 .daysLeft(daysLeft)
                 .statusSummary(statusSummary)
@@ -283,6 +297,11 @@ public class PitchHealthService {
 
     /**
      * Fast rule-based risk level calculation without AI.
+     * Includes automated detection based on:
+     * - Budget vs time progress
+     * - Critical/blocker bug counts
+     * - Scope completion status
+     * - Time remaining
      */
     private PitchRiskDTO.RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
         // Get hours
@@ -307,30 +326,81 @@ public class PitchHealthService {
         // Simple rule-based risk calculation
         int riskScore = 0;
         
-        // Check if behind schedule
+        // 1. Check if behind schedule (work progress vs time progress)
         if (cycleProgress > appetiteUsed + 30) {
-            riskScore += 30;
+            riskScore += 30; // Significantly behind schedule
         } else if (cycleProgress > appetiteUsed + 15) {
-            riskScore += 15;
+            riskScore += 15; // Moderately behind schedule
         }
         
-        // Check if over budget
+        // 2. Check if over budget
         if (appetiteUsed > 120) {
-            riskScore += 40;
+            riskScore += 40; // Way over budget
         } else if (appetiteUsed > 100) {
-            riskScore += 25;
+            riskScore += 25; // Over budget
         } else if (appetiteUsed > 80) {
-            riskScore += 10;
+            riskScore += 10; // Approaching budget limit
         }
         
-        // Check status vs time remaining
+        // 3. Check status vs time remaining
         int daysLeft = (int) Math.max(0, totalCycleDays - daysElapsed);
         PitchStatus status = pitch.getStatus();
         
         if (daysLeft <= 3 && status != PitchStatus.DONE && status != PitchStatus.TESTING) {
-            riskScore += 30;
+            riskScore += 30; // Not in testing/done with only 3 days left
         } else if (daysLeft <= 7 && status == PitchStatus.PENDING) {
-            riskScore += 20;
+            riskScore += 20; // Not started with only a week left
+        }
+        
+        // 4. NEW: Check for critical/blocker bugs
+        List<BugReport> bugs = bugReportRepository.findByPitchId(pitch.getId());
+        long criticalBugs = bugs.stream()
+                .filter(b -> (b.getSeverity() == BugSeverity.CRITICAL || b.getSeverity() == BugSeverity.BLOCKER)
+                        && b.getStatus() != BugStatus.RESOLVED && b.getStatus() != BugStatus.CLOSED)
+                .count();
+        
+        if (criticalBugs >= 3) {
+            riskScore += 35; // Multiple critical bugs
+        } else if (criticalBugs >= 1) {
+            riskScore += 20; // At least one critical bug
+        }
+        
+        // Count all open bugs
+        long openBugs = bugs.stream()
+                .filter(b -> b.getStatus() != BugStatus.RESOLVED && b.getStatus() != BugStatus.CLOSED)
+                .count();
+        
+        if (openBugs > 10 && daysLeft < 7) {
+            riskScore += 15; // Too many open bugs with little time
+        } else if (openBugs > 5 && daysLeft < 3) {
+            riskScore += 10; // Several bugs with very little time
+        }
+        
+        // 5. NEW: Check scope completion (using hill chart positions)
+        List<HillChartPoint> scopes = hillChartPointRepository.findByPitchId(pitch.getId());
+        if (!scopes.isEmpty()) {
+            double avgPosition = scopes.stream()
+                    .mapToInt(HillChartPoint::getPosition)
+                    .average()
+                    .orElse(0);
+            
+            // Position 0-50 is uphill (figuring out), 50-100 is downhill (executing)
+            // If we're late in the cycle but scopes are still uphill, that's risky
+            if (cycleProgress > 75 && avgPosition < 30) {
+                riskScore += 25; // Still figuring things out in the final quarter
+            } else if (cycleProgress > 50 && avgPosition < 20) {
+                riskScore += 15; // Halfway through but still early in understanding
+            }
+            
+            // Check for stagnant scopes (scopes that haven't moved much)
+            long stagnantScopes = scopes.stream()
+                    .filter(s -> s.getPosition() < 25 && 
+                            s.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(7)))
+                    .count();
+            
+            if (stagnantScopes > 0 && cycleProgress > 40) {
+                riskScore += 10 * (int) Math.min(stagnantScopes, 3); // Up to 30 points for stagnant scopes
+            }
         }
         
         // Determine risk level from score
@@ -342,6 +412,74 @@ public class PitchHealthService {
             return PitchRiskDTO.RiskLevel.MEDIUM;
         }
         return PitchRiskDTO.RiskLevel.LOW;
+    }
+    
+    /**
+     * Calculate risk trend based on recent changes.
+     * Analyzes if conditions are improving, stable, or worsening.
+     */
+    private String calculateRiskTrend(Pitch pitch, double appetiteUsed, int daysLeft) {
+        int trendScore = 0;
+        
+        // 1. Check if appetite usage is accelerating
+        // Compare recent work rate vs overall average
+        LocalDate threeDaysAgo = LocalDate.now().minusDays(3);
+        List<WorkLog> allLogs = workLogRepository.findByPitchId(pitch.getId());
+        List<WorkLog> recentLogs = allLogs.stream()
+                .filter(log -> log.getDate().isAfter(threeDaysAgo))
+                .collect(Collectors.toList());
+        
+        double recentHours = recentLogs.stream()
+                .mapToDouble(log -> log.getHoursSpent() != null ? log.getHoursSpent().doubleValue() : 0.0)
+                .sum();
+        
+        // If spending is accelerating and already over budget, that's worsening
+        if (appetiteUsed > 90 && recentHours > 15) {
+            trendScore -= 2; // Worsening
+        }
+        
+        // 2. Check hill chart movement
+        List<HillChartPoint> scopes = hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(pitch.getId());
+        if (!scopes.isEmpty()) {
+            // Check if any scopes moved recently
+            LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+            boolean hasRecentProgress = scopes.stream()
+                    .anyMatch(s -> s.getUpdatedAt().isAfter(sevenDaysAgo));
+            
+            if (!hasRecentProgress && daysLeft < 14) {
+                trendScore -= 1; // No progress recently
+            } else if (hasRecentProgress) {
+                trendScore += 1; // Making progress
+            }
+        }
+        
+        // 3. Check bug trend
+        LocalDateTime threeDaysAgoTime = LocalDateTime.now().minusDays(3);
+        List<BugReport> recentBugs = bugReportRepository.findByPitchId(pitch.getId()).stream()
+                .filter(b -> b.getCreatedAt().isAfter(threeDaysAgoTime))
+                .collect(Collectors.toList());
+        
+        long recentCriticalBugs = recentBugs.stream()
+                .filter(b -> b.getSeverity() == BugSeverity.CRITICAL || b.getSeverity() == BugSeverity.BLOCKER)
+                .count();
+        
+        if (recentCriticalBugs > 0) {
+            trendScore -= 2; // New critical bugs = worsening
+        }
+        
+        // 4. Check if getting closer to deadline without being done
+        if (daysLeft <= 5 && pitch.getStatus() != PitchStatus.DONE && pitch.getStatus() != PitchStatus.TESTING) {
+            trendScore -= 1; // Time pressure increasing
+        }
+        
+        // Determine trend
+        if (trendScore <= -2) {
+            return "WORSENING";
+        } else if (trendScore >= 1) {
+            return "IMPROVING";
+        } else {
+            return "STABLE";
+        }
     }
 
     private String determineQAStatus(Pitch pitch) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Circle, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ChevronDown, Circle, Clock, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { PitchHealthDTO, getHealthLabel, getQAStatusLabel } from '../services/pitchHealthService';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -42,6 +42,36 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
     if (appetiteStatus === 'warning') return '[&>div]:bg-yellow-500';
     return '';
   };
+  
+  const getTrendIcon = () => {
+    if (!health.riskTrend) return null;
+    
+    switch (health.riskTrend) {
+      case 'IMPROVING':
+        return <TrendingDown className="h-3 w-3 text-green-500" />;
+      case 'WORSENING':
+        return <TrendingUp className="h-3 w-3 text-red-500 animate-pulse" />;
+      case 'STABLE':
+        return <Minus className="h-3 w-3 text-gray-500" />;
+      default:
+        return null;
+    }
+  };
+  
+  const getTrendLabel = () => {
+    if (!health.riskTrend) return '';
+    
+    switch (health.riskTrend) {
+      case 'IMPROVING':
+        return 'Improving';
+      case 'WORSENING':
+        return 'Getting worse';
+      case 'STABLE':
+        return 'Stable';
+      default:
+        return '';
+    }
+  };
 
   const getRiskBadgeClass = () => {
     if (health.riskColor.includes('4caf50') || health.riskColor.includes('green')) {
@@ -69,28 +99,71 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
     return 'text-primary';
   };
 
+  const isCritical = health.riskLevel === 'CRITICAL';
+  const isHighRisk = health.riskLevel === 'HIGH';
+
   return (
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <Card 
         className={cn(
-          "mb-3 border-l-4 transition-shadow",
-          onClick && "cursor-pointer hover:shadow-lg"
+          "mb-3 border-l-4 transition-all duration-300",
+          onClick && "cursor-pointer hover:shadow-lg",
+          isCritical && "shadow-md shadow-red-500/20 animate-pulse",
+          isHighRisk && "shadow-sm shadow-red-400/10"
         )}
-        style={{ borderLeftColor: health.riskColor }}
+        style={{ 
+          borderLeftColor: health.riskColor,
+          borderLeftWidth: isCritical ? '6px' : isHighRisk ? '5px' : '4px'
+        }}
         onClick={onClick}
       >
         <CardContent className={cn("pt-4", compact ? "pb-2" : "pb-4")}>
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className={cn("font-semibold", compact ? "text-base" : "text-lg")}>
-                  {health.pitchName}
-                </h3>
-                <Badge variant="outline" className={cn('gap-1', getRiskBadgeClass())}>
-                  <Circle className={cn('h-2 w-2 fill-current', getRiskDotColor())} />
-                  {getHealthLabel(health.riskLevel)}
-                </Badge>
-              </div>
+              <TooltipProvider>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className={cn("font-semibold", compact ? "text-base" : "text-lg", isCritical && "text-red-600")}>
+                    {health.pitchName}
+                  </h3>
+                  <Badge variant="outline" className={cn('gap-1', getRiskBadgeClass(), isCritical && 'animate-pulse')}>
+                    <Circle className={cn('h-2 w-2 fill-current', getRiskDotColor())} />
+                    {getHealthLabel(health.riskLevel)}
+                  </Badge>
+                  {health.riskTrend && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            'gap-1 text-xs',
+                            health.riskTrend === 'IMPROVING' && 'bg-green-500/10 text-green-500 border-green-500/30',
+                            health.riskTrend === 'WORSENING' && 'bg-red-500/10 text-red-500 border-red-500/30',
+                            health.riskTrend === 'STABLE' && 'bg-gray-500/10 text-gray-500 border-gray-500/30'
+                          )}
+                        >
+                          {getTrendIcon()}
+                          {getTrendLabel()}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Risk trend based on recent activity
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {isCritical && (
+                    <Badge variant="destructive" className="gap-1 text-xs">
+                      <AlertTriangle className="h-3 w-3" />
+                      URGENT
+                    </Badge>
+                  )}
+                  {health.daysLeft <= 3 && health.status !== 'DONE' && (
+                    <Badge variant="outline" className="gap-1 text-xs bg-orange-500/10 text-orange-500 border-orange-500/30">
+                      <Clock className="h-3 w-3" />
+                      {health.daysLeft}d left
+                    </Badge>
+                  )}
+                </div>
+              </TooltipProvider>
               
               <p className="text-sm text-muted-foreground mb-2">
                 {health.statusSummary}
