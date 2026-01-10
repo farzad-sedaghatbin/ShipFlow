@@ -8,10 +8,9 @@ import {
   CalendarDays,
   Filter,
   X,
-  UserPlus,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { meetingService, PageResponse } from '../services/meetingService';
+import { meetingService } from '../services/meetingService';
 import { pitchService } from '../services/pitchService';
 import { retroService } from '../services/retroService';
 import { personService } from '../services/personService';
@@ -74,7 +73,7 @@ export default function MeetingList() {
   
   // Pagination state
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(20);
+  const [size] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   
