@@ -952,7 +952,7 @@ export default function Tasks() {
                 <p className="text-sm text-muted-foreground">Make this a sub-task of another task</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">\
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="estimateHours">Estimate (hours)</Label>
                   <Input
