@@ -373,7 +373,7 @@ export default function BacklogPage() {
     setFormData({
       title: '',
       description: '',
-      cycleId: selectedCycle === 'all' ? (cycles[0]?.id || 0) : selectedCycle as number,
+      cycleId: parentTask.cycleId, // Use parent task's cycle ID
       parentTaskId: parentTask.id,
       status: 'BACKLOG',
       priority: 'MEDIUM',

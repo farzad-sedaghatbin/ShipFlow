@@ -29,22 +29,22 @@ export interface StopTimerResponse {
 
 const timerService = {
   async startTimer(request: StartTimerRequest): Promise<WorkLogTimer> {
-    const response = await axios.post(`${API_BASE_URL}/api/timers/start`, request);
+    const response = await axios.post(`${API_BASE_URL}/timers/start`, request);
     return response.data;
   },
 
   async stopTimer(): Promise<StopTimerResponse> {
-    const response = await axios.post(`${API_BASE_URL}/api/timers/stop`);
+    const response = await axios.post(`${API_BASE_URL}/timers/stop`);
     return response.data;
   },
 
   async getActiveTimer(): Promise<WorkLogTimer | null> {
-    const response = await axios.get(`${API_BASE_URL}/api/timers/active`);
+    const response = await axios.get(`${API_BASE_URL}/timers/active`);
     return response.data;
   },
 
   async cancelTimer(): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/api/timers/cancel`);
+    await axios.delete(`${API_BASE_URL}/timers/cancel`);
   }
 };
 
