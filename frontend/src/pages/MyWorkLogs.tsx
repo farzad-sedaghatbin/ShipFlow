@@ -52,7 +52,7 @@ export default function MyWorkLogs() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('pitch');
+  const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
 
   // Form state
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -77,7 +77,7 @@ export default function MyWorkLogs() {
   const [editDate, setEditDate] = useState<string>('');
   const [editPitchId, setEditPitchId] = useState<string>('');
   const [editTaskId, setEditTaskId] = useState<string>('');
-  const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('pitch');
+  const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('task');
 
   // Timer state
   const [timerLoading, setTimerLoading] = useState(false);
@@ -464,7 +464,7 @@ export default function MyWorkLogs() {
                   placeholder="What did you work on?"
                 />
               </div>
-              <div className="md:col-span-1 flex gap-2">
+              <div className="md:col-span-1 flex flex-col gap-2">
                 <Button
                   onClick={handleStartTimer}
                   disabled={
@@ -472,12 +472,13 @@ export default function MyWorkLogs() {
                     (workLogType === 'pitch' && !selectedPitchId) ||
                     (workLogType === 'task' && !selectedTaskId)
                   }
-                  variant="outline"
-                  className="flex-1"
-                  title="Start timer for selected item"
+                  variant="default"
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  title="Start a timer - stops automatically when done"
                 >
                   <PlayCircle className="h-4 w-4 mr-1" />
-                  Timer
+                  Start Timer
                 </Button>
                 <Button
                   onClick={handleCreateWorkLog}
@@ -486,10 +487,12 @@ export default function MyWorkLogs() {
                     (workLogType === 'pitch' && !selectedPitchId) ||
                     (workLogType === 'task' && !selectedTaskId)
                   }
-                  className="flex-1"
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add
+                  Log Hours
                 </Button>
               </div>
             </div>

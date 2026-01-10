@@ -1254,15 +1254,17 @@ function TaskTable({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
-                          variant="ghost" 
-                          size="icon-sm" 
+                          variant="outline" 
+                          size="sm" 
                           onClick={() => onAddSubTask(task)} 
                           aria-label={`Add sub-task to: ${task.title}`}
+                          className="text-xs"
                         >
-                          <Plus className="h-4 w-4" aria-hidden="true" />
+                          <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
+                          Sub-task
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Add Sub-task</TooltipContent>
+                      <TooltipContent>Add a sub-task under this task</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                   <Button variant="ghost" size="icon-sm" onClick={() => onEdit(task)} aria-label={`Edit task: ${task.title}`}>
