@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,4 +24,10 @@ public class CreateMeetingRequest {
     private Boolean dorReady = false;
     private Boolean dodReady = false;
     private String notes;
+    private Long retrospectiveId;
+    private String decisions;
+    private String attendees;
+    
+    @Builder.Default
+    private List<MeetingActionDTO> actions = new ArrayList<>();
 }

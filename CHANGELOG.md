@@ -8,6 +8,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Meeting Module Enhancements**: Comprehensive improvements to meeting management
+  - **Backend Features**:
+    - Server-side pagination with configurable page size and sorting
+    - Advanced filtering by type, date range, DOR/DOD readiness status, pitch, cycle, and project
+    - Dynamic Specification-based queries for flexible filtering
+    - New MeetingAction entity for tracking action items with status, assignments, and due dates
+    - Retrospective linking for meetings
+    - Decisions and attendees text fields
+    - Database migration V35 with meeting_actions table and enhanced meeting fields
+  - **API Endpoints**:
+    - `GET /api/meetings/paginated` - Paginated meetings with DESC sort by default
+    - `GET /api/meetings/filter` - Advanced filtering with multiple criteria
+  - **Frontend Features**:
+    - Collapsible filter panel with type selection, date range pickers, and status toggles
+    - Pagination controls with page size selector (10, 20, 50 items per page)
+    - Enhanced meeting dialog (max-w-3xl) with retrospective selector
+    - Decisions and attendees fields
+    - Dynamic action items manager with add/update/remove capabilities
+    - Person assignment for action items with status tracking (OPEN, IN_PROGRESS, COMPLETED, CANCELLED)
+    - Due date picker for action items
+  - **Test Coverage**:
+    - 16 unit tests in MeetingServiceTest (up from 8)
+    - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
+    - Tests cover pagination, filtering, action items, retrospective linking, and error validation
+
+### Fixed
+- **Exception Handling**: BadRequestException now correctly returns 400 status instead of 500
+  - Added explicit handler in GlobalExceptionHandler for BadRequestException
+  - Prevents RuntimeException handler from catching BadRequestException
+  - WorkLogTimer validation errors now return proper HTTP 400 responses
+  - All 525 backend tests now pass
+  - **Test Coverage**:
+    - 16 unit tests in MeetingServiceTest (up from 8)
+    - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
+    - Tests cover pagination, filtering, action items, retrospective linking, and error validation
+
 - **Sub-task Hierarchy**: Tasks can now have parent-child relationships for better organization
   - Database migration V33 adds self-referencing `parent_task_id` column with CASCADE delete
   - Backend support for creating, updating, and querying hierarchical tasks
