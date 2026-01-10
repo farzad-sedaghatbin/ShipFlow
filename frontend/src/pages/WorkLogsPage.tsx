@@ -165,11 +165,8 @@ export default function WorkLogsPage() {
 
   const loadAllPitches = async () => {
     try {
-      // Load pitches from all active cycles
-      const pitchesPromises = cycles.map(cycle => pitchService.getByCycleId(cycle.id));
-      const pitchesResults = await Promise.all(pitchesPromises);
-      const allPitches = pitchesResults.flatMap(res => res.data);
-      setPitches(allPitches);
+      const response = await pitchService.getAll();
+      setPitches(response.data);
     } catch (error) {
       console.error('Failed to load pitches:', error);
     }
@@ -190,16 +187,8 @@ export default function WorkLogsPage() {
 
   const loadAllTasks = async () => {
     try {
-      // Load tasks from all active cycles
-      const tasksPromises = cycles.map(cycle => taskService.getByCycleId(cycle.id));
-      const tasksResults = await Promise.all(tasksPromises);
-      const allTasks = tasksResults.flatMap(res => {
-        const data = res.data;
-        if (Array.isArray(data)) return data;
-        if (data && 'content' in data) return (data as any).content || [];
-        return [];
-      });
-      setTasks(allTasks);
+      const response = await taskService.getAll();
+      setTasks(response.data);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     }

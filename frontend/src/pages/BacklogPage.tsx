@@ -202,20 +202,9 @@ export default function BacklogPage() {
       let response: any;
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
-          // Get my tasks from all cycles
-          const allTasksPromises = cycles.map(cycle => 
-            taskService.getMyByCycle(cycle.id, 0, 1000, sortBy, sortOrder)
-          );
-          const allResponses = await Promise.all(allTasksPromises);
-          const allTasks = allResponses.flatMap(res => {
-            const data = res.data;
-            if (Array.isArray(data)) {
-              return data;
-            } else if (data && typeof data === 'object' && 'content' in data) {
-              return (data as any).content;
-            }
-            return [];
-          });
+          // Get all my tasks directly from backend
+          const response = await taskService.getMy();
+          const allTasks = Array.isArray(response.data) ? response.data : [];
           // Filter by category
           const filteredTasks = allTasks.filter((task: Task) => {
             const taskCategory = task.category || 'PITCH_SCOPE';
@@ -235,23 +224,17 @@ export default function BacklogPage() {
           setTotalElements(filteredTasks.length);
         }
       } else if (selectedCycle === 'all') {
-        // Get all tasks from all cycles
-        const allTasksPromises = cycles.map(cycle => 
-          taskService.getByCycleIdAndCategory(cycle.id, activeCategory, 0, 1000, sortBy, sortOrder)
-        );
-        const allResponses = await Promise.all(allTasksPromises);
-        const allTasks = allResponses.flatMap(res => {
-          const data = res.data;
-          if (Array.isArray(data)) {
-            return data;
-          } else if (data && typeof data === 'object' && 'content' in data) {
-            return (data as any).content;
-          }
-          return [];
+        // Get all tasks directly from backend
+        const response = await taskService.getAll();
+        const allTasks = Array.isArray(response.data) ? response.data : [];
+        
+        // Filter by category
+        let filteredTasks = allTasks.filter((task: Task) => {
+          const taskCategory = task.category || 'PITCH_SCOPE';
+          return taskCategory === activeCategory;
         });
         
-        // Apply filters manually
-        let filteredTasks = allTasks;
+        // Apply additional filters manually
         if (statusFilter.length > 0) {
           filteredTasks = filteredTasks.filter(t => 
             excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
