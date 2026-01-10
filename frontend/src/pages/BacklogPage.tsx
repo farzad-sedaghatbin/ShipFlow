@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { 
@@ -14,6 +14,8 @@ import {
   Wrench,
   FileText,
   Loader2,
+  PlayCircle,
+  Eye,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,9 +67,11 @@ import {
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import timerService from '../services/timerService';
 import { Task, Cycle, Person, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
+import TimerWidget from '../components/TimerWidget';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 
@@ -96,13 +100,14 @@ export default function BacklogPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
+  const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeCategory, setActiveCategory] = useState<TaskCategory>(categoryFromUrl || 'PITCH_SCOPE');
   const [tabValue, setTabValue] = useState('all');
+  const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
@@ -116,6 +121,12 @@ export default function BacklogPage() {
     open: false,
     taskId: null,
   });
+  const [viewDialog, setViewDialog] = useState<{ open: boolean; task: Task | null }>({
+    open: false,
+    task: null,
+  });
+  const [subtasks, setSubtasks] = useState<Task[]>([]);
+  const [viewHistory, setViewHistory] = useState<Task[]>([]);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -143,6 +154,7 @@ export default function BacklogPage() {
 
   useEffect(() => {
     loadInitialData();
+    loadActiveTimer();
   }, []);
 
   useEffect(() => {
@@ -173,13 +185,24 @@ export default function BacklogPage() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id);
-      }
+      // Default to 'all' - don't auto-select first cycle
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadActiveTimer = async () => {
+    try {
+      const timer = await timerService.getActiveTimer();
+      if (timer && timer.taskId) {
+        setActiveTimerTaskId(timer.taskId);
+      } else {
+        setActiveTimerTaskId(null);
+      }
+    } catch (error) {
+      console.error('Failed to load active timer:', error);
     }
   };
 
@@ -200,16 +223,58 @@ export default function BacklogPage() {
     try {
       let response: any;
       if (tabValue === 'my') {
-        // TODO: Add category filter to my tasks endpoint
-        response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
-        // Client-side filter for my tasks until backend supports it
+        if (selectedCycle === 'all') {
+          // Get all my tasks with server-side pagination and sorting
+          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder);
+          const allTasks = response?.data?.content || [];
+          // Filter by category
+          const filteredTasks = allTasks.filter((task: Task) => {
+            const taskCategory = task.category || 'PITCH_SCOPE';
+            return taskCategory === activeCategory;
+          });
+          setTasks(filteredTasks);
+          setTotalElements(response?.data?.totalElements || 0);
+        } else {
+          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+          // Client-side filter for my tasks until backend supports it
+          const allTasks = response?.data?.content || [];
+          const filteredTasks = allTasks.filter((task: Task) => {
+            const taskCategory = task.category || 'PITCH_SCOPE';
+            return taskCategory === activeCategory;
+          });
+          setTasks(filteredTasks);
+          setTotalElements(filteredTasks.length);
+        }
+      } else if (selectedCycle === 'all') {
+        // Get all tasks with server-side pagination and sorting
+        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
         const allTasks = response?.data?.content || [];
-        const filteredTasks = allTasks.filter((task: Task) => {
+        
+        // Filter by category
+        let filteredTasks = allTasks.filter((task: Task) => {
           const taskCategory = task.category || 'PITCH_SCOPE';
           return taskCategory === activeCategory;
         });
+        
+        // Apply additional filters manually
+        if (statusFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
+          );
+        }
+        if (priorityFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
+          );
+        }
+        if (assigneeFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
+          );
+        }
+        
         setTasks(filteredTasks);
-        setTotalElements(filteredTasks.length);
+        setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         // Use filter endpoint with category
         response = await taskService.getWithFilters(
@@ -243,7 +308,7 @@ export default function BacklogPage() {
   };
 
   const loadStatistics = async () => {
-    if (!selectedCycle) return;
+    if (!selectedCycle || selectedCycle === 'all') return;
     try {
       const response = await taskService.getStatisticsByCycleId(selectedCycle);
       setStatistics(response.data);
@@ -286,7 +351,7 @@ export default function BacklogPage() {
       setFormData({
         title: '',
         description: '',
-        cycleId: selectedCycle,
+        cycleId: selectedCycle === 'all' ? 0 : selectedCycle,
         status: 'BACKLOG',
         priority: 'MEDIUM',
         estimateHours: undefined,
@@ -324,6 +389,79 @@ export default function BacklogPage() {
     setDialogOpen(false);
     setEditingTask(null);
     setFieldErrors({});
+  };
+
+  const handleAddSubTask = (parentTask: Task) => {
+    setFormData({
+      title: '',
+      description: '',
+      cycleId: parentTask.cycleId, // Use parent task's cycle ID
+      parentTaskId: parentTask.id,
+      status: 'BACKLOG',
+      priority: 'MEDIUM',
+      estimateHours: undefined,
+      assigneeId: undefined,
+      pairAssigneeId: undefined,
+      dueDate: undefined,
+      tags: '',
+      category: activeCategory,
+    });
+    setDueDate(null);
+    setEditingTask(null);
+    setDialogOpen(true);
+  };
+
+  const handleStartTimer = async (task: Task) => {
+    try {
+      await timerService.startTimer({
+        taskId: task.id,
+        note: `Working on: ${task.title}`,
+      });
+      setActiveTimerTaskId(task.id);
+      // Reload active timer to ensure TimerWidget shows it
+      await loadActiveTimer();
+      toast.success('Timer started for task');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to start timer';
+      toast.error(message);
+    }
+  };
+
+  const handleTimerStopped = () => {
+    // Timer stopped - reload data and clear active timer
+    setActiveTimerTaskId(null);
+    loadTasks();
+    if (selectedCycle !== 'all') {
+      loadStatistics();
+    }
+  };
+
+  const handleViewTask = async (task: Task, addToHistory = true) => {
+    if (addToHistory && viewDialog.task) {
+      setViewHistory([...viewHistory, viewDialog.task]);
+    }
+    setViewDialog({ open: true, task });
+    // Load subtasks if task has any
+    try {
+      const response = await taskService.getSubTasks(task.id);
+      setSubtasks(response.data);
+    } catch (error) {
+      console.error('Failed to load subtasks:', error);
+      setSubtasks([]);
+    }
+  };
+
+  const handleViewBack = () => {
+    if (viewHistory.length > 0) {
+      const previousTask = viewHistory[viewHistory.length - 1];
+      setViewHistory(viewHistory.slice(0, -1));
+      handleViewTask(previousTask, false);
+    }
+  };
+
+  const handleCloseViewDialog = () => {
+    setViewDialog({ open: false, task: null });
+    setViewHistory([]);
   };
 
   const validateTaskForm = (): boolean => {
@@ -429,6 +567,9 @@ export default function BacklogPage() {
 
   return (
     <div className="space-y-6">
+      {/* Timer Widget */}
+      <TimerWidget onTimerStopped={handleTimerStopped} />
+      
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -438,13 +579,14 @@ export default function BacklogPage() {
         <div className="flex items-center gap-2">
           {/* Cycle Selector */}
           <Select
-            value={selectedCycle?.toString() || ''}
-            onValueChange={(value) => setSelectedCycle(Number(value))}
+            value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
+            onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
           >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select cycle" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Cycles</SelectItem>
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id.toString()}>
                   {cycle.name}
@@ -454,7 +596,7 @@ export default function BacklogPage() {
           </Select>
           <Button 
             onClick={() => handleOpenDialog()} 
-            disabled={!selectedCycle}
+            disabled={selectedCycle === 'all' || !selectedCycle}
           >
             <Plus className="mr-2 h-4 w-4" />
             New Task
@@ -616,11 +758,21 @@ export default function BacklogPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTask ? 'Edit Task' : 'Create Task'}</DialogTitle>
+            <DialogTitle>
+              {editingTask 
+                ? (formData.parentTaskId ? 'Edit Subtask' : 'Edit Task')
+                : formData.parentTaskId 
+                  ? 'Create Subtask' 
+                  : 'Create Task'
+              }
+            </DialogTitle>
             <DialogDescription>
-              {activeCategory === 'PITCH_SCOPE' 
-                ? 'Create a task scoped to a pitch in this cycle'
-                : 'Create a technical debt or improvement task'}
+              {formData.parentTaskId
+                ? 'Create a subtask under the selected parent task'
+                : activeCategory === 'PITCH_SCOPE' 
+                  ? 'Create a task scoped to a pitch in this cycle'
+                  : 'Create a technical debt or improvement task'
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -630,7 +782,7 @@ export default function BacklogPage() {
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Task title"
+                placeholder={formData.parentTaskId ? "Subtask title" : "Task title"}
                 className={fieldErrors.title ? 'border-destructive' : ''}
               />
               {fieldErrors.title && (
@@ -643,7 +795,7 @@ export default function BacklogPage() {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Task description"
+                placeholder={formData.parentTaskId ? "Subtask description" : "Task description"}
                 rows={3}
               />
             </div>
@@ -773,6 +925,204 @@ export default function BacklogPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Task Details Dialog */}
+      <Dialog open={viewDialog.open} onOpenChange={(open) => !open && handleCloseViewDialog()}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewHistory.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleViewBack}
+                  className="-ml-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              )}
+              {viewDialog.task?.parentTaskId && viewHistory.length === 0 && (
+                <span className="text-muted-foreground">└─</span>
+              )}
+              {viewDialog.task?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {viewDialog.task && (
+            <div className="space-y-6">
+              {/* Task Metadata */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <div className="mt-1">
+                    <Badge variant={statusOptions.find(s => s.value === viewDialog.task?.status)?.variant}>
+                      {statusOptions.find(s => s.value === viewDialog.task?.status)?.label}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Priority</Label>
+                  <div className="mt-1">
+                    <Badge variant={priorityOptions.find(p => p.value === viewDialog.task?.priority)?.variant}>
+                      {priorityOptions.find(p => p.value === viewDialog.task?.priority)?.label}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Assignee</Label>
+                  <div className="mt-1 font-medium">
+                    {viewDialog.task.assigneeName || 'Unassigned'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Pair Assignee</Label>
+                  <div className="mt-1 font-medium">
+                    {viewDialog.task.pairAssigneeName || 'None'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Estimate</Label>
+                  <div className="mt-1 font-medium">
+                    {viewDialog.task.estimateHours ? `${viewDialog.task.estimateHours}h` : '-'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Actual</Label>
+                  <div className="mt-1 font-medium">
+                    {viewDialog.task.actualHours ? `${viewDialog.task.actualHours}h` : '-'}
+                  </div>
+                </div>
+                {viewDialog.task.dueDate && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Due Date</Label>
+                    <div className="mt-1 font-medium">
+                      {dayjs(viewDialog.task.dueDate).format('MMM D, YYYY')}
+                    </div>
+                  </div>
+                )}
+                {viewDialog.task.parentTaskTitle && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Parent Task</Label>
+                    <div className="mt-1 font-medium">
+                      {viewDialog.task.parentTaskTitle}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              {viewDialog.task.description && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <div className="mt-2 p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+                    {viewDialog.task.description}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {viewDialog.task.tags && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Tags</Label>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {viewDialog.task.tags.split(',').map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {tag.trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Subtasks */}
+              {subtasks.length > 0 && (
+                <div>
+                  <Label className="text-sm font-semibold">Subtasks ({subtasks.length})</Label>
+                  <div className="mt-2 space-y-2">
+                    {subtasks.map((subtask) => (
+                      <div
+                        key={subtask.id}
+                        className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">└─</span>
+                            <span className="font-medium">{subtask.title}</span>
+                          </div>
+                          {subtask.description && (
+                            <p className="text-sm text-muted-foreground mt-1 ml-6">
+                              {subtask.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={statusOptions.find(s => s.value === subtask.status)?.variant} className="text-xs">
+                            {statusOptions.find(s => s.value === subtask.status)?.label}
+                          </Badge>
+                          <Badge variant={priorityOptions.find(p => p.value === subtask.priority)?.variant} className="text-xs">
+                            {priorityOptions.find(p => p.value === subtask.priority)?.label}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleViewTask(subtask)}
+                            title="View subtask"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              handleCloseViewDialog();
+                              handleOpenDialog(subtask);
+                            }}
+                            title="Edit subtask"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Timestamps */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Created</Label>
+                  <div className="mt-1 text-sm">
+                    {dayjs(viewDialog.task.createdAt).format('MMM D, YYYY h:mm A')}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Updated</Label>
+                  <div className="mt-1 text-sm">
+                    {dayjs(viewDialog.task.updatedAt).format('MMM D, YYYY h:mm A')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseViewDialog}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              handleCloseViewDialog();
+              if (viewDialog.task) {
+                handleOpenDialog(viewDialog.task);
+              }
+            }}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
         <DialogContent>
@@ -884,10 +1234,20 @@ export default function BacklogPage() {
             </TableHeader>
             <TableBody>
               {tasks.map((task) => (
-                <TableRow key={task.id}>
+                <TableRow key={task.id} className={task.parentTaskId ? 'bg-muted/30' : ''}>
                   <TableCell>
-                    <div>
-                      <div className="font-medium">{task.title}</div>
+                    <div className={task.parentTaskId ? 'pl-6' : ''}>
+                      <div className="font-medium flex items-center gap-2">
+                        {task.parentTaskId && (
+                          <span className="text-muted-foreground text-xs">└─</span>
+                        )}
+                        <Link 
+                          to={`/backlog/${task.id}`}
+                          className="hover:underline cursor-pointer text-primary"
+                        >
+                          {task.title}
+                        </Link>
+                      </div>
                       {task.description && (
                         <div className="text-sm text-muted-foreground line-clamp-1">
                           {task.description}
@@ -956,6 +1316,64 @@ export default function BacklogPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      {!task.parentTaskId && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddSubTask(task)}
+                                aria-label={`Add sub-task to: ${task.title}`}
+                                className="text-xs"
+                              >
+                                <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
+                                Sub-task
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add a sub-task under this task</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={activeTimerTaskId === task.id ? 'destructive' : 'default'}
+                              size="sm"
+                              onClick={() => handleStartTimer(task)}
+                              disabled={activeTimerTaskId !== null && activeTimerTaskId !== task.id}
+                              aria-label={`Start timer for: ${task.title}`}
+                              className={activeTimerTaskId === task.id ? 'text-xs' : 'text-xs bg-green-600 hover:bg-green-700'}
+                            >
+                              <PlayCircle className="h-3 w-3 mr-1" aria-hidden="true" />
+                              {activeTimerTaskId === task.id ? 'Running' : 'Timer'}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {activeTimerTaskId === task.id 
+                              ? 'Timer is running for this task' 
+                              : activeTimerTaskId 
+                                ? 'Stop the current timer first' 
+                                : 'Start timer for this task'
+                            }
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewTask(task)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Details</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>

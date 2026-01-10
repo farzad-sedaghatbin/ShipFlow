@@ -92,7 +92,7 @@ export default function Tasks() {
   const [totalElements, setTotalElements] = useState(0);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
+  const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -140,7 +140,9 @@ export default function Tasks() {
   useEffect(() => {
     if (selectedCycle) {
       loadTasks();
-      loadStatistics();
+      if (selectedCycle !== 'all') {
+        loadStatistics();
+      }
     }
   }, [selectedCycle, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder]);
 
@@ -152,9 +154,7 @@ export default function Tasks() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id);
-      }
+      // Don't auto-select a cycle - show all by default
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -167,8 +167,46 @@ export default function Tasks() {
     try {
       let response: any;
       if (tabValue === 'my') {
-        // My Tasks tab
+        // My Tasks tab - needs a specific cycle
+        if (selectedCycle === 'all') return;
         response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+      } else if (selectedCycle === 'all') {
+        // All cycles - get all tasks
+        const allTasksPromises = cycles.map(cycle => 
+          taskService.getByCycleId(cycle.id, 0, 1000, sortBy, sortOrder)
+        );
+        const allResponses = await Promise.all(allTasksPromises);
+        const allTasks = allResponses.flatMap(res => {
+          const data = res.data;
+          if (Array.isArray(data)) {
+            return data;
+          } else if (data && typeof data === 'object' && 'content' in data) {
+            return (data as any).content;
+          }
+          return [];
+        });
+        
+        // Apply filters manually
+        let filteredTasks = allTasks;
+        if (statusFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
+          );
+        }
+        if (priorityFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
+          );
+        }
+        if (assigneeFilter.length > 0) {
+          filteredTasks = filteredTasks.filter(t => 
+            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
+          );
+        }
+        
+        setTasks(filteredTasks);
+        setTotalElements(filteredTasks.length);
+        return;
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         // Use new filter endpoint when filters are applied
         response = await taskService.getWithFilters(
@@ -194,7 +232,7 @@ export default function Tasks() {
   };
 
   const loadStatistics = async () => {
-    if (!selectedCycle) return;
+    if (!selectedCycle || selectedCycle === 'all') return;
     try {
       const response = await taskService.getStatisticsByCycleId(selectedCycle);
       setStatistics(response.data);
@@ -262,6 +300,25 @@ export default function Tasks() {
     setDialogOpen(false);
     setEditingTask(null);
     setFieldErrors({});
+  };
+
+  const handleAddSubTask = (parentTask: Task) => {
+    setFormData({
+      title: '',
+      description: '',
+      cycleId: selectedCycle as number,
+      parentTaskId: parentTask.id,
+      status: 'BACKLOG',
+      priority: 'MEDIUM',
+      estimateHours: undefined,
+      assigneeId: undefined,
+      pairAssigneeId: undefined,
+      dueDate: undefined,
+      tags: '',
+    });
+    setDueDate(null);
+    setEditingTask(null);
+    setDialogOpen(true);
   };
 
   // Validate task form
@@ -413,13 +470,14 @@ export default function Tasks() {
               <div className="space-y-2 sm:col-span-2 md:col-span-1 lg:col-span-2">
                 <Label>Cycle</Label>
                 <Select
-                  value={selectedCycle ? String(selectedCycle) : ''}
-                  onValueChange={(value) => setSelectedCycle(Number(value))}
+                  value={selectedCycle ? String(selectedCycle) : 'all'}
+                  onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select cycle" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Cycles</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={String(cycle.id)}>
                         {cycle.projectKey && `[${cycle.projectKey}] `}{cycle.name}
@@ -695,6 +753,7 @@ export default function Tasks() {
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               onEdit={handleOpenDialog} 
+              onAddSubTask={handleAddSubTask}
               onDelete={(id) => setDeleteDialog({ open: true, taskId: id })}
               onStatusChange={handleStatusChange}
               getStatusBadge={getStatusBadge}
@@ -714,6 +773,7 @@ export default function Tasks() {
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               onEdit={handleOpenDialog} 
+              onAddSubTask={handleAddSubTask}
               onDelete={(id) => setDeleteDialog({ open: true, taskId: id })}
               onStatusChange={handleStatusChange}
               getStatusBadge={getStatusBadge}
@@ -871,6 +931,27 @@ export default function Tasks() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label>Parent Task (optional)</Label>
+                <Select
+                  value={formData.parentTaskId ? String(formData.parentTaskId) : 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, parentTaskId: value === 'none' ? undefined : Number(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No parent task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No parent task</SelectItem>
+                    {tasks.filter(t => !editingTask || t.id !== editingTask.id).map((task) => (
+                      <SelectItem key={task.id} value={String(task.id)}>
+                        {task.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">Make this a sub-task of another task</p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="estimateHours">Estimate (hours)</Label>
@@ -996,6 +1077,7 @@ interface TaskTableProps {
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (value: string) => void;
   onEdit: (task: Task) => void;
+  onAddSubTask: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: TaskStatus) => void;
   getStatusBadge: (status: TaskStatus) => React.ReactNode;
@@ -1014,6 +1096,7 @@ function TaskTable({
   onPageChange, 
   onRowsPerPageChange, 
   onEdit, 
+  onAddSubTask,
   onDelete, 
   onStatusChange, 
   getStatusBadge, 
@@ -1093,15 +1176,27 @@ function TaskTable({
           {tasks.map((task) => (
             <TableRow key={task.id}>
               <TableCell>
-                <div>
-                  <p className="font-medium">{task.title}</p>
+                <div className={cn(task.parentTaskId && "ml-6")}>
+                  <div className="flex items-center gap-2">
+                    {task.parentTaskId && (
+                      <div className="text-muted-foreground">
+                        <ArrowDown className="h-3 w-3 rotate-90" />
+                      </div>
+                    )}
+                    <p className="font-medium">{task.title}</p>
+                  </div>
+                  {task.parentTaskTitle && (
+                    <p className="text-xs text-muted-foreground ml-5">
+                      Sub-task of: {task.parentTaskTitle}
+                    </p>
+                  )}
                   {task.description && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground ml-5">
                       {task.description.substring(0, 80)}{task.description.length > 80 ? '...' : ''}
                     </p>
                   )}
                   {task.tags && (
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1 mt-1 ml-5">
                       {task.tags.split(',').map((tag, i) => (
                         <Badge key={i} variant="outline" className="text-xs h-5">
                           {tag.trim()}
@@ -1194,6 +1289,23 @@ function TaskTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => onAddSubTask(task)} 
+                          aria-label={`Add sub-task to: ${task.title}`}
+                          className="text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
+                          Sub-task
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Add a sub-task under this task</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button variant="ghost" size="icon-sm" onClick={() => onEdit(task)} aria-label={`Edit task: ${task.title}`}>
                     <Pencil className="h-4 w-4" aria-hidden="true" />
                   </Button>

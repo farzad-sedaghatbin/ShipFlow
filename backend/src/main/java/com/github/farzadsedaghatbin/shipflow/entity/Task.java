@@ -63,6 +63,13 @@ public class Task {
     @JoinColumn(name = "created_by_id")
     private Person createdBy;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_task_id")
+    private Task parentTask;
+
+    @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Task> children = new java.util.ArrayList<>();
+
     @Column
     private LocalDate dueDate;
 

@@ -1,15 +1,17 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WorkLogDTO {
+public class WorkLogTimerDTO {
     private Long id;
     private Long personId;
     private String personName;
@@ -17,12 +19,7 @@ public class WorkLogDTO {
     private String pitchTitle;
     private Long taskId;
     private String taskTitle;
-    private Long cycleId;
-    private String cycleName;
-    private Long projectId;
-    private String projectName;
-    private String projectKey;
-    private LocalDate date;
-    private BigDecimal hoursSpent;
+    private LocalDateTime startTime;
     private String note;
+    private Long elapsedSeconds; // Calculated duration
 }

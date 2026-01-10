@@ -3,7 +3,16 @@ import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, Task
 
 export const taskService = {
   // Current user's tasks
-  getMy: () => api.get<Task[]>('/tasks/my'),
+  getMy: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks/my', {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   getMyByCycle: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     if (page !== undefined) {
       return api.get<Page<Task>>(`/tasks/my/cycle/${cycleId}`, {
@@ -19,7 +28,16 @@ export const taskService = {
   },
   
   // General task management
-  getAll: () => api.get<Task[]>('/tasks'),
+  getAll: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks', {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   getById: (id: number) => api.get<Task>(`/tasks/${id}`),
   getByCycleId: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     if (page !== undefined) {
@@ -98,4 +116,9 @@ export const taskService = {
   updateStatus: (id: number, status: TaskStatus) => 
     api.patch<Task>(`/tasks/${id}/status`, { status }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
+  
+  // Sub-task hierarchy
+  getSubTasks: (parentTaskId: number) => api.get<Task[]>(`/tasks/${parentTaskId}/subtasks`),
+  getRootTasks: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/roots`),
+  getTaskTree: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/tree`),
 };

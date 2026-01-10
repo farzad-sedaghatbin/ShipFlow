@@ -36,14 +36,20 @@ public class TaskController {
 
     @GetMapping("/my")
     @Operation(summary = "Get current user's tasks",
-               description = "Returns all tasks assigned to the currently authenticated user (as assignee or pair)")
+               description = "Returns all tasks assigned to the currently authenticated user (as assignee or pair) with pagination")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
         @ApiResponse(responseCode = "400", description = "User not linked to a person profile")
     })
-    public ResponseEntity<List<TaskDTO>> getMyTasks() {
-        return ResponseEntity.ok(taskService.getMyTasks());
+    public ResponseEntity<Page<TaskDTO>> getMyTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(taskService.getMyTasks(pageable));
     }
 
     @GetMapping("/my/cycle/{cycleId}")
@@ -64,9 +70,15 @@ public class TaskController {
 
     @GetMapping
     @Operation(summary = "Get all tasks",
-               description = "Returns all tasks in the system")
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        return ResponseEntity.ok(taskService.getAllTasks());
+               description = "Returns all tasks in the system with pagination and sorting")
+    public ResponseEntity<Page<TaskDTO>> getAllTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(taskService.getAllTasks(pageable));
     }
 
     @GetMapping("/{id}")
@@ -197,5 +209,28 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== Sub-task Hierarchy Endpoints ==========
+
+    @GetMapping("/{id}/subtasks")
+    @Operation(summary = "Get sub-tasks",
+               description = "Returns all direct children of the specified parent task")
+    public ResponseEntity<List<TaskDTO>> getSubTasks(@PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getSubTasks(id));
+    }
+
+    @GetMapping("/cycle/{cycleId}/roots")
+    @Operation(summary = "Get root tasks",
+               description = "Returns all tasks in the cycle that have no parent (root level tasks)")
+    public ResponseEntity<List<TaskDTO>> getRootTasks(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(taskService.getRootTasksByCycleId(cycleId));
+    }
+
+    @GetMapping("/cycle/{cycleId}/tree")
+    @Operation(summary = "Get task tree",
+               description = "Returns the complete task hierarchy for a cycle with nested children")
+    public ResponseEntity<List<TaskDTO>> getTaskTree(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(taskService.getTaskTreeByCycleId(cycleId));
     }
 }

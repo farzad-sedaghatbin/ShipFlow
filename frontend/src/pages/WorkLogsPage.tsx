@@ -5,7 +5,8 @@ import { workLogService } from '../services/workLogService';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
-import { WorkLog, Pitch, Cycle, Person, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
+import { taskService } from '../services/taskService';
+import { WorkLog, Pitch, Cycle, Person, Task, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
 import { useAuth, useToast } from '../contexts';
 import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
@@ -48,10 +49,12 @@ export default function WorkLogsPage() {
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<string>('');
+  const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
 
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -62,6 +65,7 @@ export default function WorkLogsPage() {
   });
   const [workLogDate, setWorkLogDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [selectedPitchId, setSelectedPitchId] = useState<string>('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   // Form state for team logs (admin)
   const [teamWorkLog, setTeamWorkLog] = useState<CreateWorkLogRequest>({
@@ -84,6 +88,8 @@ export default function WorkLogsPage() {
   });
   const [editDate, setEditDate] = useState<string>('');
   const [editPitchId, setEditPitchId] = useState<string>('');
+  const [editTaskId, setEditTaskId] = useState<string>('');
+  const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('task');
 
   useEffect(() => {
     loadInitialData();
@@ -91,9 +97,17 @@ export default function WorkLogsPage() {
 
   useEffect(() => {
     if (selectedCycle) {
-      const cycleId = parseInt(selectedCycle, 10);
-      loadWorkLogs(cycleId);
-      loadPitches(cycleId);
+      if (selectedCycle === 'all') {
+        loadWorkLogs('all');
+        // Load pitches and tasks from all active cycles for the form
+        loadAllPitches();
+        loadAllTasks();
+      } else {
+        const cycleId = parseInt(selectedCycle, 10);
+        loadWorkLogs(cycleId);
+        loadPitches(cycleId);
+        loadTasks(cycleId);
+      }
     }
   }, [selectedCycle, activeTab]);
 
@@ -105,9 +119,7 @@ export default function WorkLogsPage() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      if (cyclesRes.data.length > 0) {
-        setSelectedCycle(cyclesRes.data[0].id.toString());
-      }
+      // Default to 'all' - don't auto-select first cycle
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -115,14 +127,27 @@ export default function WorkLogsPage() {
     }
   };
 
-  const loadWorkLogs = async (cycleId: number) => {
+  const loadWorkLogs = async (cycleIdOrAll: number | string) => {
     try {
-      if (activeTab === 'my') {
-        const response = await workLogService.getMyByCycle(cycleId);
-        setWorkLogs(response.data);
+      if (cycleIdOrAll === 'all') {
+        // Load all work logs across all cycles
+        if (activeTab === 'my') {
+          const response = await workLogService.getMy();
+          setWorkLogs(response.data);
+        } else {
+          const response = await workLogService.getAll();
+          setWorkLogs(response.data);
+        }
       } else {
-        const response = await workLogService.getByCycleId(cycleId);
-        setWorkLogs(response.data);
+        // Load work logs for specific cycle
+        const cycleId = cycleIdOrAll as number;
+        if (activeTab === 'my') {
+          const response = await workLogService.getMyByCycle(cycleId);
+          setWorkLogs(response.data);
+        } else {
+          const response = await workLogService.getByCycleId(cycleId);
+          setWorkLogs(response.data);
+        }
       }
     } catch (error) {
       console.error('Failed to load work logs:', error);
@@ -138,15 +163,52 @@ export default function WorkLogsPage() {
     }
   };
 
+  const loadAllPitches = async () => {
+    try {
+      const response = await pitchService.getAll();
+      setPitches(response.data);
+    } catch (error) {
+      console.error('Failed to load pitches:', error);
+    }
+  };
+
+  const loadTasks = async (cycleId: number) => {
+    try {
+      const response = await taskService.getByCycleId(cycleId);
+      if (response.data && 'content' in response.data) {
+        setTasks((response.data as any).content || []);
+      } else if (Array.isArray(response.data)) {
+        setTasks(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    }
+  };
+
+  const loadAllTasks = async () => {
+    try {
+      const response = await taskService.getAll(0, 1000);
+      setTasks(response.data.content || []);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    }
+  };
+
   // My work log handlers
   const handleCreateMyWorkLog = async () => {
-    if (!workLogDate || !selectedPitchId || !newWorkLog.hoursSpent) return;
+    if (!workLogDate || !newWorkLog.hoursSpent) return;
+    if (workLogType === 'pitch' && !selectedPitchId) return;
+    if (workLogType === 'task' && !selectedTaskId) return;
+    
     try {
-      await workLogService.createMy({
+      const requestData = {
         ...newWorkLog,
-        pitchId: parseInt(selectedPitchId, 10),
+        pitchId: workLogType === 'pitch' ? parseInt(selectedPitchId, 10) : undefined,
+        taskId: workLogType === 'task' ? parseInt(selectedTaskId, 10) : undefined,
         date: workLogDate,
-      });
+      };
+      
+      await workLogService.createMy(requestData);
       setNewWorkLog({
         pitchId: 0,
         date: dayjs().format('YYYY-MM-DD'),
@@ -157,7 +219,7 @@ export default function WorkLogsPage() {
       setSelectedPitchId('');
       showSuccess('Work log added successfully');
       if (selectedCycle) {
-        loadWorkLogs(parseInt(selectedCycle, 10));
+        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
       const message = error.response?.data?.message || error.response?.data?.error || 'Failed to add work log';
@@ -170,7 +232,7 @@ export default function WorkLogsPage() {
       await workLogService.deleteMy(id);
       showSuccess('Work log deleted');
       if (selectedCycle) {
-        loadWorkLogs(parseInt(selectedCycle, 10));
+        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to delete work log';
@@ -180,7 +242,8 @@ export default function WorkLogsPage() {
 
   // Team work log handlers (admin)
   const handleCreateTeamWorkLog = async () => {
-    if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.pitchId || !teamWorkLog.hoursSpent) return;
+    if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.hoursSpent) return;
+    if (!teamWorkLog.pitchId && !teamWorkLog.taskId) return;
     try {
       await workLogService.create({
         ...teamWorkLog,
@@ -196,7 +259,7 @@ export default function WorkLogsPage() {
       setTeamWorkLogDate(dayjs().format('YYYY-MM-DD'));
       showSuccess('Work log added successfully');
       if (selectedCycle) {
-        loadWorkLogs(parseInt(selectedCycle, 10));
+        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to add work log';
@@ -209,7 +272,7 @@ export default function WorkLogsPage() {
       await workLogService.delete(id);
       showSuccess('Work log deleted');
       if (selectedCycle) {
-        loadWorkLogs(parseInt(selectedCycle, 10));
+        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to delete work log';
@@ -219,39 +282,47 @@ export default function WorkLogsPage() {
 
   const handleEditClick = (workLog: WorkLog) => {
     setEditingWorkLog(workLog);
+    const hasTask = !!workLog.taskId;
+    setEditWorkLogType(hasTask ? 'task' : 'pitch');
     setEditForm({
       pitchId: workLog.pitchId,
+      taskId: workLog.taskId,
       date: workLog.date,
       hoursSpent: workLog.hoursSpent,
       note: workLog.note || '',
     });
     setEditDate(workLog.date);
-    setEditPitchId(workLog.pitchId.toString());
+    setEditPitchId(workLog.pitchId?.toString() || '');
+    setEditTaskId(workLog.taskId?.toString() || '');
     setEditDialogOpen(true);
   };
 
   const handleEditSave = async () => {
-    if (!editingWorkLog || !editDate || !editPitchId) return;
+    if (!editingWorkLog || !editDate) return;
+    if (editWorkLogType === 'pitch' && !editPitchId) return;
+    if (editWorkLogType === 'task' && !editTaskId) return;
+    
     try {
+      const requestData = {
+        ...editForm,
+        pitchId: editWorkLogType === 'pitch' ? parseInt(editPitchId, 10) : undefined,
+        taskId: editWorkLogType === 'task' ? parseInt(editTaskId, 10) : undefined,
+        date: editDate,
+      };
+      
       if (activeTab === 'my') {
-        await workLogService.updateMy(editingWorkLog.id, {
-          ...editForm,
-          pitchId: parseInt(editPitchId, 10),
-          date: editDate,
-        });
+        await workLogService.updateMy(editingWorkLog.id, requestData);
       } else {
         await workLogService.update(editingWorkLog.id, {
           personId: editingWorkLog.personId,
-          ...editForm,
-          pitchId: parseInt(editPitchId, 10),
-          date: editDate,
+          ...requestData,
         });
       }
       showSuccess('Work log updated successfully');
       setEditDialogOpen(false);
       setEditingWorkLog(null);
       if (selectedCycle) {
-        loadWorkLogs(parseInt(selectedCycle, 10));
+        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to update work log';
@@ -291,6 +362,7 @@ export default function WorkLogsPage() {
               <SelectValue placeholder="Select cycle" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Cycles</SelectItem>
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id.toString()}>
                   {cycle.name}
@@ -361,25 +433,65 @@ export default function WorkLogsPage() {
                   <CardTitle className="text-lg">Quick Log</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
                     <div className="space-y-2">
-                      <Label htmlFor="my-pitch">Pitch *</Label>
+                      <Label htmlFor="log-type">Log Type *</Label>
                       <Select
-                        value={selectedPitchId}
-                        onValueChange={setSelectedPitchId}
+                        value={workLogType}
+                        onValueChange={(value: 'pitch' | 'task') => {
+                          setWorkLogType(value);
+                          setSelectedPitchId('');
+                          setSelectedTaskId('');
+                        }}
                       >
-                        <SelectTrigger id="my-pitch">
-                          <SelectValue placeholder="Select pitch" />
+                        <SelectTrigger id="log-type">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {pitches.map((p) => (
-                            <SelectItem key={p.id} value={p.id.toString()}>
-                              {p.title}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="task">Task/Subtask</SelectItem>
+                          <SelectItem value="pitch">Pitch</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                    {workLogType === 'pitch' ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="my-pitch">Pitch *</Label>
+                        <Select
+                          value={selectedPitchId}
+                          onValueChange={setSelectedPitchId}
+                        >
+                          <SelectTrigger id="my-pitch">
+                            <SelectValue placeholder="Select pitch" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {pitches.map((p) => (
+                              <SelectItem key={p.id} value={p.id.toString()}>
+                                {p.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="my-task">Task/Subtask *</Label>
+                        <Select
+                          value={selectedTaskId}
+                          onValueChange={setSelectedTaskId}
+                        >
+                          <SelectTrigger id="my-task">
+                            <SelectValue placeholder="Select task" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tasks.map((t) => (
+                              <SelectItem key={t.id} value={t.id.toString()}>
+                                {t.parentTaskId && '└─ '}{t.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="my-date">Date</Label>
                       <Input
@@ -412,7 +524,7 @@ export default function WorkLogsPage() {
                     </div>
                     <Button
                       onClick={handleCreateMyWorkLog}
-                      disabled={!selectedPitchId || !newWorkLog.hoursSpent}
+                      disabled={(workLogType === 'pitch' && !selectedPitchId) || (workLogType === 'task' && !selectedTaskId) || !newWorkLog.hoursSpent}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Log Time
@@ -510,7 +622,7 @@ export default function WorkLogsPage() {
                   </div>
                   <Button
                     onClick={handleCreateTeamWorkLog}
-                    disabled={!teamWorkLog.personId || !teamWorkLog.pitchId || !teamWorkLog.hoursSpent}
+                    disabled={!teamWorkLog.personId || (!teamWorkLog.pitchId && !teamWorkLog.taskId) || !teamWorkLog.hoursSpent}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Log Time
@@ -538,23 +650,63 @@ export default function WorkLogsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-pitch">Pitch</Label>
+              <Label htmlFor="edit-log-type">Log Type</Label>
               <Select
-                value={editPitchId}
-                onValueChange={setEditPitchId}
+                value={editWorkLogType}
+                onValueChange={(value: 'pitch' | 'task') => {
+                  setEditWorkLogType(value);
+                  setEditPitchId('');
+                  setEditTaskId('');
+                }}
               >
-                <SelectTrigger id="edit-pitch">
+                <SelectTrigger id="edit-log-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {pitches.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="task">Task/Subtask</SelectItem>
+                  <SelectItem value="pitch">Pitch</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {editWorkLogType === 'pitch' ? (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-pitch">Pitch</Label>
+                <Select
+                  value={editPitchId}
+                  onValueChange={setEditPitchId}
+                >
+                  <SelectTrigger id="edit-pitch">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pitches.map((p) => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-task">Task/Subtask</Label>
+                <Select
+                  value={editTaskId}
+                  onValueChange={setEditTaskId}
+                >
+                  <SelectTrigger id="edit-task">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tasks.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.parentTaskId && '└─ '}{t.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="edit-date">Date</Label>
               <Input
@@ -626,7 +778,7 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
             <TableRow>
               <TableHead>Date</TableHead>
               {showPerson && <TableHead>Person</TableHead>}
-              <TableHead>Pitch</TableHead>
+              <TableHead>Pitch/Task</TableHead>
               <TableHead className="text-right">Hours</TableHead>
               <TableHead>Note</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -637,7 +789,20 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
               <TableRow key={wl.id}>
                 <TableCell>{dayjs(wl.date).format('MMM D, YYYY')}</TableCell>
                 {showPerson && <TableCell>{wl.personName}</TableCell>}
-                <TableCell>{wl.pitchTitle}</TableCell>
+                <TableCell>
+                  {wl.pitchTitle && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">Pitch</Badge>
+                      <span>{wl.pitchTitle}</span>
+                    </div>
+                  )}
+                  {wl.taskTitle && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">Task</Badge>
+                      <span>{wl.taskTitle}</span>
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <Badge variant="secondary">{wl.hoursSpent}h</Badge>
                 </TableCell>

@@ -17,8 +17,9 @@ export function BlockedTasksWidget() {
   const loadBlockedTasks = async () => {
     try {
       setLoading(true);
-      const response = await taskService.getAll();
-      const blocked = response.data.filter((task: Task) => task.status === 'BLOCKED');
+      const response = await taskService.getAll(0, 100);
+      const allTasks = response.data.content || [];
+      const blocked = allTasks.filter((task: Task) => task.status === 'BLOCKED');
       setTasks(blocked.slice(0, 5));
     } catch (error) {
       console.error('Failed to load blocked tasks:', error);

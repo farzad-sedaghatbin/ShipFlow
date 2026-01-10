@@ -49,6 +49,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
     List<Task> findByPersonId(@Param("personId") Long personId);
     
+    @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
+    Page<Task> findByPersonId(@Param("personId") Long personId, Pageable pageable);
+    
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId")
     int countByCycleId(@Param("cycleId") Long cycleId);
     
@@ -99,4 +102,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("priorities") List<TaskPriority> priorities,
         @Param("assigneeIds") List<Long> assigneeIds,
         Pageable pageable);
+    
+    // Hierarchy queries
+    List<Task> findByParentTaskId(Long parentTaskId);
+    
+    List<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId);
+    
+    Page<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.parentTask IS NULL")
+    List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
 }

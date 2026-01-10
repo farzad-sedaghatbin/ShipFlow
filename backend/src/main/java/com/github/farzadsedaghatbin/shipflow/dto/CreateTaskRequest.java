@@ -37,6 +37,8 @@ public class CreateTaskRequest {
     private Long assigneeId;
     private Long pairAssigneeId;
     
+    private Long parentTaskId;
+    
     private LocalDate dueDate;
     
     private String tags;

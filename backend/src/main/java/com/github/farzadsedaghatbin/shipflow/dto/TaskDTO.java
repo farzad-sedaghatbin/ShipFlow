@@ -43,6 +43,10 @@ public class TaskDTO {
     private Long createdById;
     private String createdByName;
     
+    private Long parentTaskId;
+    private String parentTaskTitle;
+    private java.util.List<TaskDTO> children;
+    
     private LocalDate dueDate;
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;

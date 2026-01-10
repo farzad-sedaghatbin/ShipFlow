@@ -28,11 +28,11 @@ export function TeamWorkloadWidget() {
       setLoading(true);
       const [teamsRes, tasksRes] = await Promise.all([
         teamService.getAll(),
-        taskService.getAll(),
+        taskService.getAll(0, 1000),
       ]);
 
       const teams = teamsRes.data;
-      const tasks = tasksRes.data;
+      const tasks = tasksRes.data.content || [];
 
       const workloadData = teams.map((team: Team) => {
         // Filter tasks by matching cycle ID

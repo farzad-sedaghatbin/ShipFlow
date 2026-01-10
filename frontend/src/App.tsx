@@ -20,6 +20,7 @@ import UserManagement from './pages/UserManagement';
 import Projects from './pages/Projects';
 import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
+import TaskDetailPage from './pages/TaskDetailPage';
 import BettingTable from './pages/BettingTable';
 import { PitchHillChart } from './pages/PitchHillChart';
 import { CycleHillChart } from './pages/CycleHillChart';
@@ -77,6 +78,7 @@ function App() {
                     
                     {/* Backlog */}
                     <Route path="backlog" element={<BacklogPage />} />
+                    <Route path="backlog/:taskId" element={<TaskDetailPage />} />
                     {/* Legacy route redirects */}
                     <Route path="backlog/tasks" element={<Navigate to="/backlog?category=PITCH_SCOPE" replace />} />
                     <Route path="backlog/debt" element={<Navigate to="/backlog?category=DEBT_IMPROVEMENT" replace />} />
