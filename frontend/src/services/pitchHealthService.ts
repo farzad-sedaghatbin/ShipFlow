@@ -9,6 +9,7 @@ export interface PitchHealthDTO {
   cycleName: string;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   riskColor: string;
+  riskTrend?: 'IMPROVING' | 'STABLE' | 'WORSENING';
   appetiteUsedPercent: number;
   daysLeft: number;
   statusSummary: string;

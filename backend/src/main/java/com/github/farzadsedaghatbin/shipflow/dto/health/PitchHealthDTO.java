@@ -28,6 +28,12 @@ public class PitchHealthDTO {
     private String riskColor;
     
     /**
+     * Risk trend indicator: IMPROVING, STABLE, WORSENING
+     * Based on recent changes in risk factors
+     */
+    private String riskTrend;
+    
+    /**
      * Percentage of appetite hours used (0-100+)
      */
     private Double appetiteUsedPercent;
