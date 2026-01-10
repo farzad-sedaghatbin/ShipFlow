@@ -972,10 +972,15 @@ export default function BacklogPage() {
             </TableHeader>
             <TableBody>
               {tasks.map((task) => (
-                <TableRow key={task.id}>
+                <TableRow key={task.id} className={task.parentTaskId ? 'bg-muted/30' : ''}>
                   <TableCell>
-                    <div>
-                      <div className="font-medium">{task.title}</div>
+                    <div className={task.parentTaskId ? 'pl-6' : ''}>
+                      <div className="font-medium flex items-center gap-2">
+                        {task.parentTaskId && (
+                          <span className="text-muted-foreground text-xs">└─</span>
+                        )}
+                        {task.title}
+                      </div>
                       {task.description && (
                         <div className="text-sm text-muted-foreground line-clamp-1">
                           {task.description}
@@ -1044,23 +1049,25 @@ export default function BacklogPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddSubTask(task)}
-                              aria-label={`Add sub-task to: ${task.title}`}
-                              className="text-xs"
-                            >
-                              <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
-                              Sub-task
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Add a sub-task under this task</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {!task.parentTaskId && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddSubTask(task)}
+                                aria-label={`Add sub-task to: ${task.title}`}
+                                className="text-xs"
+                              >
+                                <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
+                                Sub-task
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add a sub-task under this task</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
