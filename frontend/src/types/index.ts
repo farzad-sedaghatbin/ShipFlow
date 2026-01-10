@@ -38,6 +38,7 @@ export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type TaskCategory = 'PITCH_SCOPE' | 'DEBT_IMPROVEMENT';
 export type RetroStatus = 'DRAFT' | 'OPEN' | 'CLOSED';
 export type RetroColumnType = 'WENT_WELL' | 'DID_NOT_GO_WELL' | 'TRY_NEXT' | 'ACTIONS';
+export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 // Project DTOs
 export interface Project {
@@ -215,6 +216,16 @@ export interface CreateWorkLogForSelfRequest {
   note?: string;
 }
 
+export interface MeetingAction {
+  id?: number;
+  description: string;
+  assignedToId?: number;
+  assignedToName?: string;
+  status: ActionStatus;
+  dueDate?: string;
+  notes?: string;
+}
+
 export interface Meeting {
   id: number;
   pitchId?: number;
@@ -229,6 +240,11 @@ export interface Meeting {
   dorReady: boolean;
   dodReady: boolean;
   notes?: string;
+  retrospectiveId?: number;
+  retrospectiveTitle?: string;
+  decisions?: string;
+  attendees?: string;
+  actions?: MeetingAction[];
 }
 
 export interface CreateMeetingRequest {
@@ -238,6 +254,10 @@ export interface CreateMeetingRequest {
   dorReady?: boolean;
   dodReady?: boolean;
   notes?: string;
+  retrospectiveId?: number;
+  decisions?: string;
+  attendees?: string;
+  actions?: MeetingAction[];
 }
 
 export interface Evidence {

@@ -8,10 +8,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -23,9 +29,43 @@ public class MeetingController {
     private final MeetingService meetingService;
 
     @GetMapping
-    @Operation(summary = "Get all meetings")
+    @Operation(summary = "Get all meetings (deprecated - use /paginated)")
     public ResponseEntity<List<MeetingDTO>> getAllMeetings() {
         return ResponseEntity.ok(meetingService.getAllMeetings());
+    }
+
+    @GetMapping("/paginated")
+    @Operation(summary = "Get all meetings with pagination and sorting")
+    public ResponseEntity<Page<MeetingDTO>> getAllMeetingsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "dateHeld") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(meetingService.getAllMeetingsPaginated(pageable));
+    }
+
+    @GetMapping("/filter")
+    @Operation(summary = "Get meetings with filters, pagination and sorting",
+               description = "Filter meetings by cycle, project, pitch, types, date range, DOR/DOD status")
+    public ResponseEntity<Page<MeetingDTO>> getMeetingsWithFilters(
+            @RequestParam(required = false) Long cycleId,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Long pitchId,
+            @RequestParam(required = false) List<MeetingType> types,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Boolean dorReady,
+            @RequestParam(required = false) Boolean dodReady,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "dateHeld") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(meetingService.getMeetingsWithFilters(
+                cycleId, projectId, pitchId, types, startDate, endDate, dorReady, dodReady, pageable));
     }
 
     @GetMapping("/pitch/{pitchId}")
