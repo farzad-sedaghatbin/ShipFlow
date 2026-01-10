@@ -36,14 +36,20 @@ public class TaskController {
 
     @GetMapping("/my")
     @Operation(summary = "Get current user's tasks",
-               description = "Returns all tasks assigned to the currently authenticated user (as assignee or pair)")
+               description = "Returns all tasks assigned to the currently authenticated user (as assignee or pair) with pagination")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
         @ApiResponse(responseCode = "400", description = "User not linked to a person profile")
     })
-    public ResponseEntity<List<TaskDTO>> getMyTasks() {
-        return ResponseEntity.ok(taskService.getMyTasks());
+    public ResponseEntity<Page<TaskDTO>> getMyTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(taskService.getMyTasks(pageable));
     }
 
     @GetMapping("/my/cycle/{cycleId}")
@@ -64,9 +70,15 @@ public class TaskController {
 
     @GetMapping
     @Operation(summary = "Get all tasks",
-               description = "Returns all tasks in the system")
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        return ResponseEntity.ok(taskService.getAllTasks());
+               description = "Returns all tasks in the system with pagination and sorting")
+    public ResponseEntity<Page<TaskDTO>> getAllTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(taskService.getAllTasks(pageable));
     }
 
     @GetMapping("/{id}")

@@ -101,11 +101,16 @@ class TaskControllerIntegrationTest {
 
     @Test
     void getAllTasks_ShouldReturnTasks() throws Exception {
-        mockMvc.perform(get("/api/tasks"))
+        mockMvc.perform(get("/api/tasks")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "createdAt")
+                        .param("sortOrder", "desc"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$[0].title", is("Test Task")));
+                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.content[0].title", is("Test Task")))
+                .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(1)));
     }
 
     @Test

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Square, X, Timer as TimerIcon, Clock } from 'lucide-react';
+import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2 } from 'lucide-react';
 import timerService, { WorkLogTimer } from '../services/timerService';
+import { workLogService } from '../services/workLogService';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +26,8 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<'stop' | 'cancel' | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [workLogNote, setWorkLogNote] = useState('');
 
   // Load active timer on mount
   useEffect(() => {
@@ -46,24 +51,47 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       if (timer) {
         setActiveTimer(timer);
         setElapsedSeconds(timer.elapsedSeconds);
+        setWorkLogNote(timer.note || '');
       }
     } catch (err) {
       console.error('Failed to load active timer:', err);
     }
   };
 
+  const handleOpenStopDialog = () => {
+    setWorkLogNote(activeTimer?.note || '');
+    setConfirmDialog('stop');
+  };
+
   const handleStopTimer = async () => {
+    if (!activeTimer) return;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await timerService.stopTimer();
+      
+      // Calculate hours (rounded to nearest 0.25)
+      const hours = Math.round((elapsedSeconds / 3600) * 4) / 4;
+      
+      // Create work log with the custom note
+      await workLogService.createMy({
+        pitchId: activeTimer.pitchId,
+        taskId: activeTimer.taskId,
+        date: new Date().toISOString().split('T')[0],
+        hoursSpent: hours,
+        note: workLogNote.trim() || undefined,
+      });
+      
+      // Cancel the timer (no work log created by timer)
+      await timerService.cancelTimer();
+      
       setActiveTimer(null);
       setElapsedSeconds(0);
+      setWorkLogNote('');
       setConfirmDialog(null);
       if (onTimerStopped) {
         onTimerStopped();
       }
-      console.log(`Timer stopped. Created work log with ${response.hoursSpent} hours`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to stop timer');
     } finally {
@@ -111,12 +139,24 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
               <TimerIcon className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg">Active Timer</CardTitle>
             </div>
-            <Badge variant="default" className="gap-1">
-              <Clock className="h-3 w-3" />
-              Running
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="gap-1">
+                <Clock className="h-3 w-3" />
+                Running
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIsMinimized(!isMinimized)}
+                title={isMinimized ? 'Expand timer' : 'Minimize timer'}
+              >
+                {isMinimized ? <Maximize2 className="h-4 w-4" /> : <MinusCircle className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </CardHeader>
+        {!isMinimized && (
         <CardContent className="space-y-4">
           {/* Timer Display */}
           <div className="text-center py-4 bg-muted rounded-lg">
@@ -152,7 +192,7 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
           <div className="flex gap-2">
             <Button
               className="flex-1"
-              onClick={() => setConfirmDialog('stop')}
+              onClick={handleOpenStopDialog}
               disabled={loading}
             >
               <Square className="h-4 w-4 mr-2" />
@@ -176,22 +216,37 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
             </Alert>
           )}
         </CardContent>
+        )}
       </Card>
 
       {/* Stop Confirmation Dialog */}
       <Dialog open={confirmDialog === 'stop'} onOpenChange={() => setConfirmDialog(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Stop Timer</DialogTitle>
+            <DialogTitle>Stop Timer & Create Work Log</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>
-              Stop the timer and create a work log entry for{' '}
-              <strong>{formatHours(elapsedSeconds)} hours</strong> (rounded to nearest 0.25 hours)?
-            </p>
-            <p className="text-sm text-muted-foreground">
-              This will be logged against: {activeTimer.taskTitle || activeTimer.pitchTitle}
-            </p>
+            <div>
+              <p className="font-medium">
+                Time to log: <strong className="text-primary">{formatHours(elapsedSeconds)} hours</strong>
+                <span className="text-sm text-muted-foreground ml-1">(rounded to nearest 0.25)</span>
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                For: {activeTimer?.taskTitle || activeTimer?.pitchTitle}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="worklog-note">Notes (optional)</Label>
+              <Textarea
+                id="worklog-note"
+                placeholder="Add notes about what you worked on..."
+                value={workLogNote}
+                onChange={(e) => setWorkLogNote(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialog(null)} disabled={loading}>

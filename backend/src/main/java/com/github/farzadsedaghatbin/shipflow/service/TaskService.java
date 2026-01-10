@@ -45,6 +45,11 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public Page<TaskDTO> getAllTasks(Pageable pageable) {
+        return taskRepository.findAll(pageable)
+                .map(this::toDTO);
+    }
+
     public TaskDTO getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
@@ -370,6 +375,12 @@ public class TaskService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<TaskDTO> getMyTasks(Pageable pageable) {
+        Person person = getCurrentUserPerson();
+        Page<Task> tasks = taskRepository.findByPersonId(person.getId(), pageable);
+        return tasks.map(this::toDTO);
     }
 
     public Page<TaskDTO> getMyTasksByCycle(Long cycleId, Pageable pageable) {

@@ -20,17 +20,18 @@ export function MyTasksWidget() {
   const loadMyTasks = async () => {
     try {
       setLoading(true);
-      const response = await taskService.getAll();
+      const response = await taskService.getAll(0, 100);
+      const allTasks = response.data.content || [];
       // Filter tasks assigned to current user (you'd need user context for this)
       // For now, showing all non-completed tasks
-      const myTasks = response.data.filter((task: Task) => 
+      const myTasks = allTasks.filter((task: Task) => 
         task.status !== 'DONE' && task.status !== 'CANCELLED'
       );
       
       setTasks(myTasks.slice(0, 5));
       setStats({
         total: myTasks.length,
-        completed: response.data.filter((t: Task) => t.status === 'DONE').length,
+        completed: allTasks.filter((t: Task) => t.status === 'DONE').length,
         inProgress: myTasks.filter((t: Task) => t.status === 'IN_PROGRESS').length,
       });
     } catch (error) {

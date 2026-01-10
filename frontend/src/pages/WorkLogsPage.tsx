@@ -187,8 +187,8 @@ export default function WorkLogsPage() {
 
   const loadAllTasks = async () => {
     try {
-      const response = await taskService.getAll();
-      setTasks(response.data);
+      const response = await taskService.getAll(0, 1000);
+      setTasks(response.data.content || []);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     }

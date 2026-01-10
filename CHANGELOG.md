@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Task-based Work Logs: 12/12 tests
   - Timer Service: 11/11 tests
   - Timer Controller Integration: 9/9 tests
+- **Frontend Tests**: 106 tests passing
+  - taskService: 19/19 tests (including subtask hierarchy: getSubTasks, getRootTasks, getTaskTree)
+  - workLogService: Tests for work log CRUD operations
+  - pitchService: Tests for pitch management
+  - Other services and components
 - **Test Coverage**: Service layer, repository layer, REST endpoints, and error scenarios
 
 ### Design Decisions

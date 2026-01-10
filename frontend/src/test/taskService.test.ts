@@ -21,17 +21,30 @@ describe('taskService', () => {
   });
 
   describe('getAll', () => {
-    it('should fetch all tasks', async () => {
-      const mockTasks = [
-        { id: 1, title: 'Task 1', status: 'TODO' },
-        { id: 2, title: 'Task 2', status: 'IN_PROGRESS' },
-      ];
-      mockedApi.get.mockResolvedValueOnce({ data: mockTasks });
+    it('should fetch all tasks with pagination', async () => {
+      const mockResponse = {
+        content: [
+          { id: 1, title: 'Task 1', status: 'TODO' },
+          { id: 2, title: 'Task 2', status: 'IN_PROGRESS' },
+        ],
+        totalElements: 2,
+        totalPages: 1,
+        number: 0,
+        size: 10,
+      };
+      mockedApi.get.mockResolvedValueOnce({ data: mockResponse });
 
-      const result = await taskService.getAll();
+      const result = await taskService.getAll(0, 10, 'createdAt', 'desc');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/tasks');
-      expect(result.data).toEqual(mockTasks);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks', {
+        params: {
+          page: 0,
+          size: 10,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        },
+      });
+      expect(result.data).toEqual(mockResponse);
     });
   });
 
@@ -114,14 +127,27 @@ describe('taskService', () => {
   });
 
   describe('getMy', () => {
-    it('should fetch current user tasks', async () => {
-      const mockTasks = [{ id: 1, title: 'My Task' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockTasks });
+    it('should fetch current user tasks with pagination', async () => {
+      const mockResponse = {
+        content: [{ id: 1, title: 'My Task' }],
+        totalElements: 1,
+        totalPages: 1,
+        number: 0,
+        size: 10,
+      };
+      mockedApi.get.mockResolvedValueOnce({ data: mockResponse });
 
-      const result = await taskService.getMy();
+      const result = await taskService.getMy(0, 10, 'createdAt', 'desc');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/my');
-      expect(result.data).toEqual(mockTasks);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/my', {
+        params: {
+          page: 0,
+          size: 10,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        },
+      });
+      expect(result.data).toEqual(mockResponse);
     });
   });
 
@@ -231,6 +257,58 @@ describe('taskService', () => {
       await taskService.delete(1);
 
       expect(mockedApi.delete).toHaveBeenCalledWith('/tasks/1');
+    });
+  });
+
+  describe('getSubTasks', () => {
+    it('should fetch subtasks for a parent task', async () => {
+      const mockSubTasks = [
+        { id: 2, title: 'Subtask 1', parentTaskId: 1 },
+        { id: 3, title: 'Subtask 2', parentTaskId: 1 },
+      ];
+      mockedApi.get.mockResolvedValueOnce({ data: mockSubTasks });
+
+      const result = await taskService.getSubTasks(1);
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/1/subtasks');
+      expect(result.data).toEqual(mockSubTasks);
+    });
+  });
+
+  describe('getRootTasks', () => {
+    it('should fetch root tasks for a cycle', async () => {
+      const mockRootTasks = [
+        { id: 1, title: 'Root Task 1', parentTaskId: null },
+        { id: 4, title: 'Root Task 2', parentTaskId: null },
+      ];
+      mockedApi.get.mockResolvedValueOnce({ data: mockRootTasks });
+
+      const result = await taskService.getRootTasks(1);
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/cycle/1/roots');
+      expect(result.data).toEqual(mockRootTasks);
+    });
+  });
+
+  describe('getTaskTree', () => {
+    it('should fetch task tree for a cycle', async () => {
+      const mockTaskTree = [
+        { 
+          id: 1, 
+          title: 'Parent Task', 
+          parentTaskId: null,
+          children: [
+            { id: 2, title: 'Subtask 1', parentTaskId: 1 },
+            { id: 3, title: 'Subtask 2', parentTaskId: 1 },
+          ]
+        },
+      ];
+      mockedApi.get.mockResolvedValueOnce({ data: mockTaskTree });
+
+      const result = await taskService.getTaskTree(1);
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/cycle/1/tree');
+      expect(result.data).toEqual(mockTaskTree);
     });
   });
 });

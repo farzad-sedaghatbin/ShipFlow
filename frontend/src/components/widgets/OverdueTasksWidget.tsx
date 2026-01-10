@@ -17,11 +17,12 @@ export function OverdueTasksWidget() {
   const loadOverdueTasks = async () => {
     try {
       setLoading(true);
-      const response = await taskService.getAll();
+      const response = await taskService.getAll(0, 100);
+      const allTasks = response.data.content || [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const overdue = response.data.filter((task: Task) => {
+      const overdue = allTasks.filter((task: Task) => {
         if (!task.dueDate || task.status === 'DONE' || task.status === 'CANCELLED') {
           return false;
         }
