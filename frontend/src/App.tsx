@@ -34,6 +34,10 @@ import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
+import CustomMetrics from './pages/CustomMetrics';
+import MetricBuilder from './pages/MetricBuilder';
+import DashboardManager from './pages/DashboardManager';
+import DashboardView from './pages/DashboardView';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 
 function App() {
@@ -74,7 +78,9 @@ function App() {
                     <Route path="health" element={<HealthOverview />} />
                     <Route path="retros" element={<RetroList />} />
                     <Route path="retros/:id" element={<RetroBoard />} />
-                    <Route path="reports" element={<Reports />} />
+                    <Route path="reports" element={<DashboardManager />} />
+                    <Route path="reports/cycle-reports" element={<Reports />} />
+                    <Route path="reports/:id" element={<DashboardView />} />
                     
                     {/* Backlog */}
                     <Route path="backlog" element={<BacklogPage />} />
@@ -102,6 +108,11 @@ function App() {
                     
                     {/* Admin */}
                     <Route path="users" element={<UserManagement />} />
+                    
+                    {/* Custom Metrics */}
+                    <Route path="metrics" element={<CustomMetrics />} />
+                    <Route path="metrics/new" element={<MetricBuilder />} />
+                    <Route path="metrics/:id/edit" element={<MetricBuilder />} />
                     
                     {/* QA & Testing */}
                     <Route path="qa/test-cases" element={<TestCasesPage />} />

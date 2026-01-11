@@ -60,6 +60,7 @@ import Breadcrumbs from './Breadcrumbs';
 import WelcomeTourDialog from './WelcomeTourDialog';
 import { QAFloatingButton } from './QAFloatingButton';
 import NotificationCenter from './NotificationCenter';
+import DashboardSwitcher from './DashboardSwitcher';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -342,6 +343,14 @@ export default function Layout({ children }: LayoutProps) {
           {/* Project Selector - Responsive */}
           <div className="flex-1 min-w-0 lg:flex-none" data-tour="project-selector">
             <ProjectSelector />
+          </div>
+
+          {/* Dashboard Switcher */}
+          <div className="hidden lg:block">
+            <DashboardSwitcher onDashboardChange={(dashboardId) => {
+              // Dashboard changed - could refresh widgets or navigate
+              console.log('Dashboard switched to:', dashboardId);
+            }} />
           </div>
 
           <div className="hidden sm:flex flex-1" />

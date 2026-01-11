@@ -10,6 +10,13 @@ A modern project management application implementing the [Shape Up](https://base
 - **Pitches**: Shape work with appetite, problem definition, and solution
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+- **Reports**: Comprehensive analytics and reporting with export capabilities
+  - Pitch metrics (total, completed, in-progress, appetite vs actual hours)
+  - Risk distribution analysis (LOW, MEDIUM, HIGH, CRITICAL)
+  - Team member statistics and performance tracking
+  - Variance analysis and efficiency ratios
+  - Out-of-scope work (tasks) tracking
+  - PDF and CSV export functionality
 - **Retrospectives**: Team retros with voting and merging
 - **Health Overview**: Automated risk detection and health monitoring
   - Real-time risk analysis based on bugs, scope completion, budget, and timeline

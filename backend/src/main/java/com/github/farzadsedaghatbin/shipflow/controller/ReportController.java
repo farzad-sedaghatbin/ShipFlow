@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.report.CycleReportDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.MemberWorkReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.PitchReportDTO;
 import com.github.farzadsedaghatbin.shipflow.service.ReportService;
@@ -27,6 +28,12 @@ public class ReportController {
     @Operation(summary = "Get full cycle report")
     public ResponseEntity<CycleReportDTO> getCycleReport(@PathVariable Long cycleId) {
         return ResponseEntity.ok(reportService.getCycleReport(cycleId));
+    }
+
+    @GetMapping("/cycle/{cycleId}/enhanced")
+    @Operation(summary = "Get enhanced cycle report with comprehensive metrics including risk distribution")
+    public ResponseEntity<EnhancedCycleReportDTO> getEnhancedCycleReport(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(reportService.getEnhancedCycleReport(cycleId));
     }
 
     @GetMapping("/cycle/{cycleId}/pitches")

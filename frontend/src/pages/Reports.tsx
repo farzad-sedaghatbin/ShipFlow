@@ -33,7 +33,7 @@ import {
 } from '../components/ui/table';
 import { reportService } from '../services/reportService';
 import { cycleService } from '../services/cycleService';
-import { CycleReport, Cycle } from '../types';
+import { EnhancedCycleReport, Cycle } from '../types';
 import StatusChip from '../components/StatusChip';
 import EmptyState from '../components/EmptyState';
 import { EmptyReportsIllustration } from '../components/illustrations';
@@ -44,7 +44,7 @@ const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'
 export default function Reports() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
-  const [report, setReport] = useState<CycleReport | null>(null);
+  const [report, setReport] = useState<EnhancedCycleReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
 
@@ -81,7 +81,7 @@ export default function Reports() {
   const loadReport = async (cycleId: number) => {
     setReportLoading(true);
     try {
-      const response = await reportService.getCycleReport(cycleId);
+      const response = await reportService.getEnhancedCycleReport(cycleId);
       setReport(response.data);
     } catch (error) {
       console.error('Failed to load report:', error);
@@ -140,7 +140,16 @@ export default function Reports() {
     ? [
         { name: 'Completed', value: report.completedPitches },
         { name: 'In Progress', value: report.inProgressPitches },
-        { name: 'Pending', value: report.totalPitches - report.completedPitches - report.inProgressPitches },
+        { name: 'Not Started', value: report.notStartedPitches || 0 },
+      ].filter((d) => d.value > 0)
+    : [];
+
+  const riskData = report?.riskDistribution
+    ? [
+        { name: 'Low', value: report.riskDistribution.lowRiskCount, color: '#10b981' },
+        { name: 'Medium', value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
+        { name: 'High', value: report.riskDistribution.highRiskCount, color: '#f97316' },
+        { name: 'Critical', value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -148,6 +157,37 @@ export default function Reports() {
     name: m.memberName.split(' ')[0],
     hours: m.totalHours,
   })) || [];
+
+  // Show loading state while cycles are being loaded
+  if (loading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-8">Reports</h1>
+        <div className="flex justify-center items-center min-h-[40vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no cycles exist
+  if (cycles.length === 0) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-8">Reports</h1>
+        <Card>
+          <CardContent className="py-12">
+            <EmptyState
+              illustration={<EmptyReportsIllustration />}
+              title="No cycles found"
+              description="Create a cycle first to generate reports. Go to the Cycles page to get started."
+              size="medium"
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -255,6 +295,43 @@ export default function Reports() {
             </Card>
           </div>
 
+          {/* Variance Analysis */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Variance Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Variance (Hours)</p>
+                  <p className={cn(
+                    'text-2xl font-bold',
+                    report.varianceHours > 0 ? 'text-destructive' : 'text-green-600'
+                  )}>
+                    {report.varianceHours > 0 ? '+' : ''}{report.varianceHours.toFixed(1)}h
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Variance (%)</p>
+                  <p className={cn(
+                    'text-2xl font-bold',
+                    report.variancePercentage > 0 ? 'text-destructive' : 'text-green-600'
+                  )}>
+                    {report.variancePercentage > 0 ? '+' : ''}{report.variancePercentage.toFixed(1)}%
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Team Members</p>
+                  <p className="text-2xl font-bold">{report.totalTeamMembers}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Avg Hours/Member</p>
+                  <p className="text-2xl font-bold">{report.averageHoursPerMember.toFixed(1)}h</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Out-of-Scope Work Statistics */}
           <Card className="mb-8">
             <CardHeader>
@@ -288,8 +365,8 @@ export default function Reports() {
           </Card>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <Card className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card>
               <CardHeader>
                 <CardTitle>Appetite vs Actual Hours by Pitch</CardTitle>
               </CardHeader>
@@ -334,6 +411,114 @@ export default function Reports() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Risk Distribution Section */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Risk Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={riskData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {riskData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Low Risk</p>
+                      <p className="text-2xl font-bold text-green-600">{report.riskDistribution?.lowRiskCount || 0}</p>
+                    </div>
+                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Medium Risk</p>
+                      <p className="text-2xl font-bold text-yellow-600">{report.riskDistribution?.mediumRiskCount || 0}</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">High Risk</p>
+                      <p className="text-2xl font-bold text-orange-600">{report.riskDistribution?.highRiskCount || 0}</p>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Critical Risk</p>
+                      <p className="text-2xl font-bold text-red-600">{report.riskDistribution?.criticalRiskCount || 0}</p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Avg Risk Score</p>
+                        <p className="text-lg font-semibold">{report.riskDistribution?.averageRiskScore?.toFixed(1) || '0'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Min Score</p>
+                        <p className="text-lg font-semibold">{report.riskDistribution?.minRiskScore?.toFixed(1) || '0'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Max Score</p>
+                        <p className="text-lg font-semibold">{report.riskDistribution?.maxRiskScore?.toFixed(1) || '0'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Team Performance Section */}
+          {(report.topPerformers.length > 0 || report.overBudgetPitches.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {report.topPerformers.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top Performers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {report.topPerformers.map((performer, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <Badge variant="default">{index + 1}</Badge>
+                          <span className="font-medium">{performer}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+              {report.overBudgetPitches.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Over Budget Pitches</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {report.overBudgetPitches.map((pitch, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <Badge variant="destructive">Over Budget</Badge>
+                          <span className="font-medium">{pitch}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
 
           {/* Member Hours Chart */}
           <Card className="mb-8">

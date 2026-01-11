@@ -285,6 +285,60 @@ export interface CreateEvidenceRequest {
 }
 
 // Report DTOs
+export interface RiskDistribution {
+  lowRiskCount: number;
+  mediumRiskCount: number;
+  highRiskCount: number;
+  criticalRiskCount: number;
+  averageRiskScore: number;
+  maxRiskScore: number;
+  minRiskScore: number;
+}
+
+export interface EnhancedCycleReport {
+  cycleId: number;
+  cycleName: string;
+  projectName?: string;
+  startDate: string;
+  endDate: string;
+  
+  // Pitch metrics
+  totalPitches: number;
+  completedPitches: number;
+  inProgressPitches: number;
+  notStartedPitches: number;
+  
+  // Hours and efficiency
+  totalAppetiteHours: number;
+  totalActualHours: number;
+  varianceHours: number;
+  variancePercentage: number;
+  efficiencyPercentage: number;
+  
+  // Out-of-scope work (Tasks)
+  totalTasks: number;
+  completedTasks: number;
+  totalTaskEstimateHours: number;
+  totalTaskActualHours: number;
+  
+  // Risk distribution
+  riskDistribution: RiskDistribution;
+  
+  // Team member statistics
+  totalTeamMembers: number;
+  averageHoursPerMember: number;
+  maxHoursPerMember: number;
+  minHoursPerMember: number;
+  
+  // Detailed breakdowns
+  pitchReports: PitchReport[];
+  memberReports: MemberWorkReport[];
+  
+  // Top performers and risks
+  topPerformers: string[];
+  overBudgetPitches: string[];
+}
+
 export interface CycleReport {
   cycleId: number;
   cycleName: string;
