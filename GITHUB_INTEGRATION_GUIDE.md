@@ -281,7 +281,7 @@ The integration creates these tables:
 4. Use Personal Access Tokens with minimal required scopes
 5. Store secrets in environment variables, not in code
 6. Monitor webhook event logs for suspicious activity
- (Jira-style)
+### Example: Jira-style workflow
 
 1. Create a task: "Implement user login feature" (ID: 42)
 
