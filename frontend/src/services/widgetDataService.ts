@@ -80,7 +80,7 @@ class WidgetDataService {
       };
     } catch (error) {
       console.error(`Failed to fetch metric data for metricId: ${metricId}`, error);
-      throw new Error(`Failed to fetch metric data for metricId: ${metricId}`, { cause: error });
+      throw new Error(`Failed to fetch metric data for metricId: ${metricId}`);
     }
   }
 
@@ -111,7 +111,7 @@ class WidgetDataService {
       };
     } catch (error) {
       console.error('Failed to fetch pitch list', error);
-      throw new Error('Failed to fetch pitch list', { cause: error });
+      throw new Error('Failed to fetch pitch list');
     }
   }
 
