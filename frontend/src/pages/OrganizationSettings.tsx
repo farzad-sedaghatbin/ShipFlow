@@ -61,7 +61,7 @@ const DATE_FORMATS = [
   { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
 ];
 
-export default function OrganizationSettings() {
+export default function OrganizationSettingsPage() {
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -192,7 +192,7 @@ export default function OrganizationSettings() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -575,20 +575,62 @@ export default function OrganizationSettings() {
                 <div className="space-y-2">
                   {formData.bugStatuses?.map((status, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: status.color }}
+                      <Input
+                        type="color"
+                        value={status.color}
+                        onChange={(e) => {
+                          const updated = [...(formData.bugStatuses || [])];
+                          updated[index] = { ...updated[index], color: e.target.value };
+                          setFormData({ ...formData, bugStatuses: updated });
+                        }}
+                        className="w-12 h-10 p-1 cursor-pointer"
                       />
-                      <div className="flex-1">
-                        <div className="font-medium">{status.name}</div>
-                        <div className="text-xs text-muted-foreground">{status.description}</div>
+                      <div className="flex-1 space-y-1">
+                        <Input
+                          value={status.name}
+                          onChange={(e) => {
+                            const updated = [...(formData.bugStatuses || [])];
+                            updated[index] = { ...updated[index], name: e.target.value };
+                            setFormData({ ...formData, bugStatuses: updated });
+                          }}
+                          className="font-medium"
+                          placeholder="Status name"
+                        />
+                        <Input
+                          value={status.description}
+                          onChange={(e) => {
+                            const updated = [...(formData.bugStatuses || [])];
+                            updated[index] = { ...updated[index], description: e.target.value };
+                            setFormData({ ...formData, bugStatuses: updated });
+                          }}
+                          className="text-sm"
+                          placeholder="Description"
+                        />
                       </div>
-                      <Badge variant={status.isActive ? 'default' : 'secondary'}>
-                        {status.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                      <Badge variant={status.isClosed ? 'outline' : 'secondary'}>
-                        {status.isClosed ? 'Closed' : 'Open'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Switch
+                            checked={status.isActive}
+                            onCheckedChange={(checked) => {
+                              const updated = [...(formData.bugStatuses || [])];
+                              updated[index] = { ...updated[index], isActive: checked };
+                              setFormData({ ...formData, bugStatuses: updated });
+                            }}
+                          />
+                          <Label className="text-xs">Active</Label>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Switch
+                            checked={status.isClosed}
+                            onCheckedChange={(checked) => {
+                              const updated = [...(formData.bugStatuses || [])];
+                              updated[index] = { ...updated[index], isClosed: checked };
+                              setFormData({ ...formData, bugStatuses: updated });
+                            }}
+                          />
+                          <Label className="text-xs">Closed</Label>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -601,18 +643,66 @@ export default function OrganizationSettings() {
                 <div className="space-y-2">
                   {formData.severityLevels?.map((severity, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: severity.color }}
+                      <Input
+                        type="color"
+                        value={severity.color}
+                        onChange={(e) => {
+                          const updated = [...(formData.severityLevels || [])];
+                          updated[index] = { ...updated[index], color: e.target.value };
+                          setFormData({ ...formData, severityLevels: updated });
+                        }}
+                        className="w-12 h-10 p-1 cursor-pointer"
                       />
-                      <div className="flex-1">
-                        <div className="font-medium">{severity.name}</div>
-                        <div className="text-xs text-muted-foreground">{severity.description}</div>
+                      <div className="flex-1 space-y-1">
+                        <Input
+                          value={severity.name}
+                          onChange={(e) => {
+                            const updated = [...(formData.severityLevels || [])];
+                            updated[index] = { ...updated[index], name: e.target.value };
+                            setFormData({ ...formData, severityLevels: updated });
+                          }}
+                          className="font-medium"
+                          placeholder="Severity name"
+                        />
+                        <Input
+                          value={severity.description}
+                          onChange={(e) => {
+                            const updated = [...(formData.severityLevels || [])];
+                            updated[index] = { ...updated[index], description: e.target.value };
+                            setFormData({ ...formData, severityLevels: updated });
+                          }}
+                          className="text-sm"
+                          placeholder="Description"
+                        />
                       </div>
-                      <Badge variant="outline">Priority: {severity.priority}</Badge>
-                      <Badge variant={severity.isActive ? 'default' : 'secondary'}>
-                        {severity.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Label className="text-xs">Priority:</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={severity.priority}
+                            onChange={(e) => {
+                              const updated = [...(formData.severityLevels || [])];
+                              updated[index] = { ...updated[index], priority: parseInt(e.target.value) };
+                              setFormData({ ...formData, severityLevels: updated });
+                            }}
+                            className="w-16"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Switch
+                            checked={severity.isActive}
+                            onCheckedChange={(checked) => {
+                              const updated = [...(formData.severityLevels || [])];
+                              updated[index] = { ...updated[index], isActive: checked };
+                              setFormData({ ...formData, severityLevels: updated });
+                            }}
+                          />
+                          <Label className="text-xs">Active</Label>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -690,27 +780,6 @@ export default function OrganizationSettings() {
               <CardDescription>Enable or disable organization-wide features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor="notifications">Email Notifications</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Send email notifications for important updates
-                  </p>
-                </div>
-                <Switch
-                  id="notifications"
-                  checked={formData.enableNotifications ?? true}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, enableNotifications: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">

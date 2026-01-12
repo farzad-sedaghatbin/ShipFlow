@@ -611,7 +611,7 @@ export const HillChart: React.FC<HillChartProps> = ({
 
   return (
     <Card data-tour="hill-chart" className="bg-gradient-to-br from-card/90 to-card">
-      <CardContent className="p-3 sm:p-6">
+      <CardContent className="p-3 sm:p-6 pb-32">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
           <div>
             <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
@@ -658,15 +658,16 @@ export const HillChart: React.FC<HillChartProps> = ({
           />
         </div>
 
+        {/* Hover info card - absolute positioned to prevent layout shift */}
         {hoveredPoint && !draggingPoint && (
-          <div className="mt-4 p-4 bg-primary/5 rounded-xl border border-primary/10 transition-all">
-            <p className="font-semibold text-primary">{hoveredPoint.scope}</p>
-            <p className="text-sm text-muted-foreground mt-1">{hoveredPoint.description}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs font-semibold bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded">
+          <div className="absolute left-1/2 -translate-x-1/2 mt-4 p-4 bg-card border-2 border-primary/30 rounded-xl shadow-xl transition-all animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none z-10 max-w-md w-full mx-4">
+            <p className="font-bold text-base text-primary">{hoveredPoint.scope}</p>
+            <p className="text-sm text-foreground mt-2 leading-relaxed">{hoveredPoint.description}</p>
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-sm font-bold bg-primary text-primary-foreground px-3 py-1 rounded-md">
                 {hoveredPoint.position}%
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm font-medium text-foreground">
                 {hoveredPoint.position < 50 ? '🔍 Figuring things out' : '🚀 Making it happen'}
               </span>
             </div>
