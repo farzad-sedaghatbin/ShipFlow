@@ -24,7 +24,7 @@ public class TeamService {
     private final CycleRepository cycleRepository;
 
     public List<TeamDTO> getAllTeams() {
-        return teamRepository.findAll()
+        return teamRepository.findAllWithAssignments()
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());

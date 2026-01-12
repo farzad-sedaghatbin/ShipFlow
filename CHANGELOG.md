@@ -8,6 +8,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Custom Dashboards - Smart Context Filter Toggle**:
+  - **Backend Features**:
+    - New `user_context_filter` boolean column on `custom_dashboards` table (V39 migration)
+    - `CustomDashboardService.toggleUserContextFilter()` method for toggling filter state
+    - New endpoint: `PUT /api/dashboards/custom/{id}/toggle-context-filter`
+    - Intelligent defaults: Developer/QA templates default to personal context, Executive/Manager templates default to organization-wide
+    - Stateful toggle persisted per dashboard in database
+  - **Frontend Features**:
+    - Toggle switch with Filter icon in dashboard header
+    - Shows "Personal" vs "Organization-Wide" label based on state
+    - Automatic widget data refresh when toggled
+    - Success messages indicating current filter mode
+  - **Data Filtering**:
+    - **Personal Context Mode**: Filters tasks to user's assignments, teams to user's memberships
+    - **Organization-Wide Mode**: Shows all data across the organization
+    - Client-side filtering using current user from localStorage
+    - Supports TASK_LIST, TEAM_STATS, CYCLE_SUMMARY, PITCH_LIST data sources
+  - **User Experience**:
+    - Developers/QA see their own data by default with option to view organization-wide
+    - Executives/Managers see organization-wide data by default with option to view personal context
+    - Toggle state persists across sessions per dashboard
+
+- **Dashboard Widget Improvements**:
+  - **Table Widget Enhancements**:
+    - Fixed sticky header scrolling issue with proper z-index layering
+    - Added solid background to prevent data overlap during scroll
+    - Improved header visibility with `bg-background` and `z-10` styling
+  - **QA Dashboard Template Fixes** (V40 migration):
+    - Fixed invalid widget filters (removed non-existent "QA" category and "overdue" field)
+    - Updated widget configurations:
+      - "Blocked Tasks": Shows tasks with `status = BLOCKED`
+      - "High Priority Tasks": Shows tasks with `priority = HIGH`
+      - "In Progress Tasks": Shows tasks with `status = IN_PROGRESS`
+      - "Recently Completed": Shows tasks with `status = DONE`
+    - Increased page size from 5 to 10 for better data visibility
+    - All widgets now display data correctly in both personal and organization-wide modes
+
+- **Reports Module - Comprehensive Analytics and Reporting**:
+  - **Backend Features**:
+    - `EnhancedCycleReportDTO` with comprehensive metrics including risk distribution
+    - `RiskDistributionDTO` for risk analysis aggregation (LOW/MEDIUM/HIGH/CRITICAL counts)
+    - `ReportService.getEnhancedCycleReport()` method for complete cycle analytics
+    - `ReportService.calculateRiskDistribution()` integrating with RiskAnalysisService
+    - New endpoint: `GET /api/reports/cycle/{cycleId}/enhanced` for enhanced reports
+    - Pitch metrics: total, completed, in-progress, not-started counts
+    - Hours analysis: appetite vs actual with variance calculations
+    - Efficiency ratios: (actual/appetite) × 100
+    - Team member statistics: total, average, max, min hours per member
+    - Top performers identification (members with ≥6h/day avg and above-average hours)
+    - Over-budget pitches flagging
+    - Out-of-scope work (tasks) tracking with estimate vs actual hours
+  - **Risk Distribution Analysis**:
+    - LOW/MEDIUM/HIGH/CRITICAL risk level counts
+    - Average, max, and min risk scores across all pitches
+    - Integration with fast rule-based risk analysis for performance
+    - Risk score calculations (0-100 scale)
+  - **Frontend Features**:
+    - Enhanced Reports page with comprehensive UI overhaul
+    - Risk Distribution pie chart with color-coded segments
+    - Variance Analysis section showing over/under budget metrics
+    - Top Performers highlight cards
+    - Over-Budget Pitches warning section
+    - Appetite vs Actual hours bar chart (side-by-side comparison)
+    - Pitch Status Distribution pie chart
+    - Hours by Team Member horizontal bar chart
+    - Summary statistics cards with 6 key metrics
+    - Detailed pitch reports table with variance indicators
+    - Member work summary table with role badges
+    - Responsive layout optimized for all screen sizes
+  - **Export Functionality**:
+    - PDF export with all enhanced metrics (backward compatible)
+    - CSV export with all enhanced metrics (backward compatible)
+    - Automatic filenames: `cycle_report_{cycleId}.pdf/csv`
+  - **Performance Optimizations**:
+    - Uses fast rule-based risk analysis (not AI) for quick report generation
+    - Leverages AICacheService for risk calculation caching
+    - Batch processing of pitch and member calculations
+    - Optimized database queries with minimal round trips
+  - **Test Coverage**:
+    - `ReportServiceTest`: 95%+ coverage with comprehensive unit tests
+    - `ReportControllerIntegrationTest`: 100% endpoint coverage
+    - Tests cover: risk distribution, variance analysis, top performers, empty cycles
+    - Integration tests validate JSON responses and export functionality
+  - **Documentation**:
+    - API examples with sample responses
+    - Usage guide for stakeholders and developers
+    - Architecture documentation
+    - Performance and security considerations
+
 - **Health Overview - Automated Risk Detection**: Comprehensive risk analysis system for pitch health monitoring
   - **Backend Features**:
     - Automated risk level calculation based on multiple factors (bugs, scope completion, budget, timeline)
@@ -55,6 +144,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `GET /api/health/pitch/{pitchId}` - Returns risk level, color, and trend
     - `GET /api/health/cycle/{cycleId}` - Aggregated health with risk breakdown
     - `GET /api/health/active-cycles` - All active cycles with risk metrics
+
+  - **Test Coverage**:
+    - `CustomDashboardServiceTest`: Added 5 new tests for user context filter toggle functionality
+    - Tests cover: toggle from false to true, toggle from true to false, toggle from null, not found, unauthorized access
+    - Total dashboard service test coverage: 13 tests (8 scope tests + 5 context filter tests), 100% pass rate
+    - All integration tests passing with comprehensive coverage across modules
+  
+  - **Documentation**:
+    - Documented smart context filter toggle usage and behavior
+    - Added filter operators reference and best practices
+    - Included API endpoints reference for developers
+    - Migration history (V38, V39, V40) documented
 
 ## [0.1.0] - 2026-01-10
 

@@ -39,7 +39,7 @@ services:
       AI_RISK_ENABLED: "true"
       # RunPod Configuration (default)
       RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
-      RUNPOD_API_KEY: ${RUNPOD_API_KEY}
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
       RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
       RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
