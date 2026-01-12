@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **H2 Database Compatibility for GitHub Integration**:
+  - Fixed V43 migration SQL syntax for H2 database compatibility
+  - Changed `TEXT` column type to `CLOB` in migration files
+  - Changed `UNIQUE KEY` syntax to `CONSTRAINT ... UNIQUE` syntax
+  - Removed incompatible `INDEX` creation statements
+  - Updated GitHub entity annotations to use `@Lob` instead of `columnDefinition = "TEXT"`
+  - Entities updated: `GitHubCommit`, `GitHubPullRequest`, `GitHubWebhookEvent`
+  - Migration V43 now successfully executes on H2 in-memory database
+
 ### Added
+- **Development Environment Improvements**:
+  - Added `.env` file configuration support for AI providers
+  - Set Ollama as default/recommended AI provider for local development
+  - Updated documentation to prioritize Ollama over RunPod for easier setup
+  - No API keys required for local development with Ollama
+
 - **Organization Settings - Colors & Bug Configuration**:
   - **Backend Features**:
     - New `colors_json` TEXT column for appetite/actual hour color customization

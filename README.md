@@ -39,6 +39,12 @@ A modern project management application implementing the [Shape Up](https://base
   - Automated quality validation
   - Historical test pattern learning
   - Completeness scoring (0-100)
+- **GitHub Integration**: Seamless integration with GitHub repositories
+  - Auto-link commits and pull requests to tasks and pitches
+  - Auto-close tasks when PRs are merged with closing keywords
+  - Real-time webhook updates
+  - Visual GitHub activity timeline on task/pitch pages
+  - Support for multiple repositories
 
 ## ♿ Accessibility
 
@@ -92,10 +98,23 @@ Press `?` to view all keyboard shortcuts:
 ## 🚀 Quick Start
 
 ```bash
-# Backend
+# 1. Set up environment (choose one option)
+# Option A: Ollama (recommended for development - no API keys needed)
+cat > .env << 'EOF'
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=mistral:instruct
+EOF
+brew install ollama && ollama pull mistral:instruct && ollama serve
+
+# Option B: RunPod (cloud AI - requires API key)
+cp .env.example .env
+# Edit .env with your RunPod credentials
+
+# 2. Start Backend
 cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Frontend (new terminal)
+# 3. Start Frontend (new terminal)
 cd frontend && npm install && npm run dev
 ```
 

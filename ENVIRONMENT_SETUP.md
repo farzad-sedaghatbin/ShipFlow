@@ -4,12 +4,33 @@ This document describes how to configure environment variables for ShipFlow deve
 
 ## Local Development
 
+### Option 1: Ollama (Recommended for Development)
+
+1. **Create a `.env` file:**
+   ```bash
+   # Create .env file in project root
+   cat > .env << 'EOF'
+   AI_PROVIDER=ollama
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=mistral:instruct
+   EOF
+   ```
+
+2. **Install and start Ollama:**
+   ```bash
+   brew install ollama
+   ollama pull mistral:instruct
+   ollama serve
+   ```
+
+### Option 2: RunPod (Cloud AI)
+
 1. **Copy the example file:**
    ```bash
    cp .env.example .env
    ```
 
-2. **Edit `.env` with your credentials:**
+2. **Edit `.env` with your RunPod credentials:**
    ```bash
    # The .env file is git-ignored and safe for local credentials
    nano .env
@@ -18,6 +39,7 @@ This document describes how to configure environment variables for ShipFlow deve
 3. **Required Variables:**
    - `RUNPOD_BASE_URL` - Your RunPod endpoint URL
    - `RUNPOD_API_KEY` - Your RunPod API key
+   - `RUNPOD_MODEL` - Model name (default: mistral:instruct)
    - Other optional configurations (see `.env.example`)
 
 ## Testing
