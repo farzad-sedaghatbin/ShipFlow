@@ -7,6 +7,12 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.http.HttpStatus;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -17,6 +23,7 @@ import static org.mockito.Mockito.when;
  * that are needed by @WebMvcTest but should not require actual configuration in tests.
  */
 @TestConfiguration
+@EnableMethodSecurity
 public class TestAIConfig {
 
     @Bean
@@ -33,4 +40,23 @@ public class TestAIConfig {
     
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
+    
+    /**
+     * Test security filter chain that allows webhook endpoints to bypass authentication
+     * and returns 401 for unauthenticated requests to other endpoints
+     */
+    @Bean
+    @Primary
+    public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/github/webhook/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                )
+                .build();
+    }
 }

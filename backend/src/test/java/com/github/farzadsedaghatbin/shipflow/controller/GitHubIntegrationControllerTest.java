@@ -14,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -31,6 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(GitHubIntegrationController.class)
 @Import(TestAIConfig.class)
+@TestPropertySource(properties = {
+    "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+    "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="
+})
 class GitHubIntegrationControllerTest {
 
     @Autowired

@@ -8,10 +8,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -21,6 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(GitHubWebhookController.class)
 @Import(TestAIConfig.class)
+@TestPropertySource(properties = {
+        "github.webhook.secret=test-secret"
+})
 class GitHubWebhookControllerTest {
 
     @Autowired
@@ -42,6 +47,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-Hub-Signature-256", signature)
                         .header("X-GitHub-Event", eventType)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -64,6 +70,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-Hub-Signature-256", signature)
                         .header("X-GitHub-Event", eventType)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,6 +89,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-GitHub-Event", eventType)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -98,6 +106,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-Hub-Signature-256", signature)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -116,6 +125,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-Hub-Signature-256", signature)
                         .header("X-GitHub-Event", eventType)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -140,6 +150,7 @@ class GitHubWebhookControllerTest {
 
         // When & Then
         mockMvc.perform(post("/api/github/webhook")
+                        .with(csrf())
                         .header("X-Hub-Signature-256", signature)
                         .header("X-GitHub-Event", eventType)
                         .contentType(MediaType.APPLICATION_JSON)
