@@ -109,6 +109,7 @@ const meetingsItems: NavItemConfig[] = [
 // Admin section
 const adminItems: NavItemConfig[] = [
   { text: 'User Management', icon: Shield, path: '/users' },
+  { text: 'Organization Settings', icon: Settings, path: '/settings' },
 ];
 
 function NavItem({ 

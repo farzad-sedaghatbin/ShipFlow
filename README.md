@@ -10,6 +10,12 @@ A modern project management application implementing the [Shape Up](https://base
 - **Pitches**: Shape work with appetite, problem definition, and solution
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+- **Organization Settings**: Centralized configuration management
+  - Cycle length and risk threshold customization
+  - Color schemes for appetite/actual hours visualization (4 configurable colors)
+  - Bug workflow statuses (5 predefined states: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX)
+  - Severity levels for bug prioritization (CRITICAL, HIGH, MEDIUM, LOW)
+  - AI features toggle and notification preferences
 - **Reports**: Comprehensive analytics and reporting with export capabilities
   - Pitch metrics (total, completed, in-progress, appetite vs actual hours)
   - Risk distribution analysis (LOW, MEDIUM, HIGH, CRITICAL)
