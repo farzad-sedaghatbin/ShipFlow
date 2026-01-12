@@ -1,8 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.service.qa;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -21,10 +21,13 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class QueryDecomposer {
     
     private final ChatLanguageModel chatLanguageModel;
+    
+    public QueryDecomposer(@Autowired(required = false) ChatLanguageModel chatLanguageModel) {
+        this.chatLanguageModel = chatLanguageModel;
+    }
     
     /**
      * Determines if a query is complex enough to benefit from decomposition.
@@ -49,7 +52,7 @@ public class QueryDecomposer {
      * Decomposes a complex query into simpler sub-queries.
      */
     public List<String> decompose(String query) {
-        if (!shouldDecompose(query)) {
+        if (!shouldDecompose(query) || chatLanguageModel == null) {
             return List.of(query);
         }
         

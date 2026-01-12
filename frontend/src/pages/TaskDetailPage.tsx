@@ -16,6 +16,7 @@ import {
 import { Task, TaskStatus, TaskPriority } from '../types';
 import { taskService } from '../services/taskService';
 import timerService from '../services/timerService';
+import GitHubLinksCard from '../components/GitHubLinksCard';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
@@ -284,6 +285,9 @@ export default function TaskDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* GitHub Integration */}
+      <GitHubLinksCard taskId={task.id} />
 
       {/* Subtasks */}
       {subtasks.length > 0 && (
