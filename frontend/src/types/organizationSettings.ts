@@ -57,10 +57,7 @@ export interface ColorSettings {
   underBudget: string;      // Color when under budget (e.g., "#22C55E")
 }
 
-excolors?: ColorSettings;
-  bugStatuses?: BugStatusConfig[];
-  severityLevels?: SeverityLevelConfig[];
-  port interface BugStatusConfig {
+export interface BugStatusConfig {
   id?: number;
   name: string;
   description: string;
