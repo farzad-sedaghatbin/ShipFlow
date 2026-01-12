@@ -17,6 +17,7 @@ import Landing from './pages/Landing';
 import Profile from './pages/Profile';
 import People from './pages/People';
 import UserManagement from './pages/UserManagement';
+import OrganizationSettings from './pages/OrganizationSettings';
 import Projects from './pages/Projects';
 import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
@@ -108,6 +109,7 @@ function App() {
                     
                     {/* Admin */}
                     <Route path="users" element={<UserManagement />} />
+                    <Route path="settings" element={<OrganizationSettings />} />
                     
                     {/* Custom Metrics */}
                     <Route path="metrics" element={<CustomMetrics />} />

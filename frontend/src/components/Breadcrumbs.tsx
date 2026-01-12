@@ -42,6 +42,7 @@ const routeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   '/reports': { label: 'Reports', icon: <BarChart3 className="h-4 w-4" /> },
   '/profile': { label: 'Profile', icon: <User className="h-4 w-4" /> },
   '/users': { label: 'User Management', icon: <Shield className="h-4 w-4" /> },
+  '/settings': { label: 'Organization Settings', icon: <Settings className="h-4 w-4" /> },
 };
 
 // Parse dynamic route segments

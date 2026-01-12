@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Organization Settings - Colors & Bug Configuration**:
+  - **Backend Features**:
+    - New `colors_json` TEXT column for appetite/actual hour color customization
+    - New `bug_statuses_json` TEXT column for bug workflow statuses
+    - New `severity_levels_json` TEXT column for bug priority levels
+    - V41 migration: Complete organization settings table with new columns
+    - V42 migration: Backward compatibility for existing installations
+    - JSON serialization/deserialization in `OrganizationSettingsService`
+    - Default configurations: 4 colors, 5 bug statuses, 4 severity levels
+    - Explicit `@Column(name="snake_case")` annotations for H2 database compatibility
+  - **Frontend Features**:
+    - New "Colors" tab in Organization Settings with HTML5 color pickers
+    - New "Bug Config" tab displaying bug statuses and severity levels
+    - `ColorSettings` interface: appetiteHours, actualHours, overBudget, underBudget
+    - `BugStatusConfig` interface: name, description, color, isActive, order, isClosed
+    - `SeverityLevelConfig` interface: name, description, color, isActive, order, priority
+    - Real-time color preview with hex codes
+  - **Default Configurations**:
+    - **Colors**: Blue (#3b82f6), Green (#10b981), Red (#ef4444), Yellow (#f59e0b)
+    - **Bug Statuses**: OPEN, IN_PROGRESS, RESOLVED, CLOSED, REOPENED
+    - **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW
+  - **Database Compatibility**:
+    - Fixed H2 column naming issue with explicit JPA annotations
+    - Verified with 34/34 tests passing
+    - Successfully applied all 36 migrations (v1 → v42)
+
 - **Custom Dashboards - Smart Context Filter Toggle**:
   - **Backend Features**:
     - New `user_context_filter` boolean column on `custom_dashboards` table (V39 migration)
