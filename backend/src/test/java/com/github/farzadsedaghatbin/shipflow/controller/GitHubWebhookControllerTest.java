@@ -1,15 +1,12 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
-import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
+import com.github.farzadsedaghatbin.shipflow.config.TestAIConfig;
 import com.github.farzadsedaghatbin.shipflow.service.github.GitHubWebhookService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,10 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Unit tests for GitHubWebhookController
  * Tests webhook endpoint and signature validation using MockMvc
  */
-@Disabled("Temporarily disabled - Spring context loading issues with @WebMvcTest and AIConfig")
-@WebMvcTest(value = GitHubWebhookController.class,
-    excludeAutoConfiguration = AIConfig.class,
-    excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = AIConfig.class))
+@WebMvcTest(GitHubWebhookController.class)
+@Import(TestAIConfig.class)
 class GitHubWebhookControllerTest {
 
     @Autowired
@@ -33,9 +28,6 @@ class GitHubWebhookControllerTest {
 
     @MockBean
     private GitHubWebhookService webhookService;
-
-    @MockBean
-    private ChatLanguageModel chatLanguageModel;
 
     @Test
     void handleWebhook_WithValidSignature_ShouldReturn200() throws Exception {
