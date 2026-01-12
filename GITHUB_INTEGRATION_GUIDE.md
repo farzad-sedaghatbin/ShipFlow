@@ -323,9 +323,6 @@ git commit -m "Task #42: Add login form UI"
 PR title: `Closes #42 - Implement user login feature`
 
 Both styles work and can be mixed in the same project.
-   - All commits are automatically linked to Task #42
-   - The PR is automatically linked to Task #42
-   - Task #42 is automatically marked as DONE
 
 ## Migration from Existing Projects
 
