@@ -13,7 +13,7 @@ A modern project management application implementing the [Shape Up](https://base
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization
   - Color schemes for appetite/actual hours visualization (4 configurable colors)
-  - Bug workflow statuses (5 predefined states: OPEN, IN_PROGRESS, RESOLVED, CLOSED, REOPENED)
+  - Bug workflow statuses (5 predefined states: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX)
   - Severity levels for bug prioritization (CRITICAL, HIGH, MEDIUM, LOW)
   - AI features toggle and notification preferences
 - **Reports**: Comprehensive analytics and reporting with export capabilities
