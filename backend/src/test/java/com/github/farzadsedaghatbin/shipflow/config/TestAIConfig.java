@@ -21,6 +21,11 @@ import static org.mockito.Mockito.when;
 /**
  * Test configuration that provides mock beans for dependencies
  * that are needed by @WebMvcTest but should not require actual configuration in tests.
+ * 
+ * IMPORTANT: This uses @TestConfiguration which is NOT auto-detected by component scanning.
+ * It must be explicitly imported using @Import(TestAIConfig.class) in tests that need it.
+ * 
+ * Only @WebMvcTest tests should import this configuration, not @SpringBootTest integration tests.
  */
 @TestConfiguration
 @EnableMethodSecurity
