@@ -147,11 +147,10 @@ class MetricFormulaParserTest {
         }
 
         @Test
-        @DisplayName("Should throw exception for division by zero")
-        void throwExceptionForDivisionByZero() {
-            assertThrows(IllegalArgumentException.class, () -> {
-                parser.evaluateFormula("10 / 0", Map.of());
-            });
+        @DisplayName("Should return zero for division by zero")
+        void returnZeroForDivisionByZero() {
+            BigDecimal result = parser.evaluateFormula("10 / 0", Map.of());
+            assertEquals(BigDecimal.ZERO, result);
         }
 
         @Test
