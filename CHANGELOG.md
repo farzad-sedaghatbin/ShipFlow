@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Real-time color preview with hex codes
   - **Default Configurations**:
     - **Colors**: Blue (#3b82f6), Green (#10b981), Red (#ef4444), Yellow (#f59e0b)
-    - **Bug Statuses**: OPEN, IN_PROGRESS, RESOLVED, CLOSED, REOPENED
+    - **Bug Statuses**: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX
     - **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW
   - **Database Compatibility**:
     - Fixed H2 column naming issue with explicit JPA annotations
