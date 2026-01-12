@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `SeverityLevelConfig` interface: name, description, color, isActive, order, priority
     - Real-time color preview with hex codes
   - **Default Configurations**:
-    - **Colors**: Blue (#3b82f6), Green (#10b981), Red (#ef4444), Yellow (#f59e0b)
+    - **Colors**: `appetiteHours` (Blue #3B82F6), `actualHours` (Green #10B981), `overBudget` (Red #EF4444), `underBudget` (Green #22C55E)
     - **Bug Statuses**: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX
     - **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW
   - **Database Compatibility**:
