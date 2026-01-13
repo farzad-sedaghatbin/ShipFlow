@@ -30,6 +30,7 @@ import {
   Target,
   MessageSquare,
   Github,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -314,7 +315,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
               
               <NavGroup
                 title="Integrations"
-                icon={Settings}
+                icon={Plug}
                 items={integrationItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}
