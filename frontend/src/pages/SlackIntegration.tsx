@@ -67,7 +67,7 @@ export default function SlackIntegrationPage() {
     notifySprintStarted: false,
   });
   
-  const [testMessage, setTestMessage] = useState('Test notification from ShapeUp Tracker');
+  const [testMessage, setTestMessage] = useState('Test notification from ShipFlow');
   const [testChannel, setTestChannel] = useState('');
 
   useEffect(() => {
