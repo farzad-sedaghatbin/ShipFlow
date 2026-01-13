@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Role-Based Access Control (RBAC) System**:
+  - **Backend Features**:
+    - New `Permission` entity linking roles to resource actions
+    - `ResourceType` enum: CYCLE, PITCH, BUG, REPORT, PROJECT, TEAM, USER, DASHBOARD, AI_FEATURES, SYSTEM
+    - `PermissionType` enum: CREATE, READ, UPDATE, DELETE, EXECUTE, MANAGE, APPROVE
+    - `PermissionService` for checking and managing permissions
+    - `PermissionRepository` with optimized queries for permission lookups
+    - `@RequirePermission` annotation for declarative permission checking
+    - `PermissionAspect` AOP component for enforcing permissions
+    - V44 migration: Creates permissions table and loads default role permissions
+    - Default permissions for all roles (ADMIN, PROJECT_MANAGER, PRODUCT, DEVELOPER, QA)
+    - Configuration property `app.security.rbac.enabled` to enable/disable RBAC
+  - **API Endpoints**:
+    - `GET /api/permissions/current-user`: Get current user's permissions
+    - `GET /api/permissions/role/{role}`: Get permissions for a role (admin only)
+    - `GET /api/permissions/resource/{resourceType}`: Get permissions for a resource (admin only)
+  - **Documentation**:
+    - Comprehensive RBAC_GUIDE.md with architecture, usage, and best practices
+    - Permission matrix for all roles and resources
+    - Migration guide from legacy system
+    - Future enhancement roadmap
+  - **Testing**:
+    - 20+ unit tests for PermissionService (100% coverage)
+    - Graceful degradation when permissions table doesn't exist (test mode)
+    - Backward compatibility with @PreAuthorize annotations
+  - **Security**:
+    - Fine-grained permissions per resource type and action
+    - Layered security with both Spring Security and RBAC checks
+    - Protection for all major controllers (Cycle, Pitch, User, etc.)
+    - Extensible design for future custom permissions
+
 ### Fixed
 - **H2 Database Compatibility for GitHub Integration**:
   - Fixed V43 migration SQL syntax for H2 database compatibility

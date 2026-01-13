@@ -4,6 +4,9 @@ import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
+import com.github.farzadsedaghatbin.shipflow.security.RequirePermission;
 import com.github.farzadsedaghatbin.shipflow.service.CycleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +58,7 @@ public class CycleController {
     }
 
     @PostMapping
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.CREATE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Create a new cycle")
     public ResponseEntity<CycleDTO> createCycle(@Valid @RequestBody CreateCycleRequest request) {
@@ -62,6 +66,7 @@ public class CycleController {
     }
 
     @PutMapping("/{id}")
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.UPDATE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Update a cycle")
     public ResponseEntity<CycleDTO> updateCycle(@PathVariable Long id, @Valid @RequestBody CreateCycleRequest request) {
@@ -69,6 +74,7 @@ public class CycleController {
     }
 
     @PatchMapping("/{id}/phase")
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.MANAGE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Update cycle phase")
     public ResponseEntity<CycleDTO> updatePhase(@PathVariable Long id, @RequestParam CyclePhase phase) {
@@ -76,6 +82,7 @@ public class CycleController {
     }
 
     @PatchMapping("/{id}/toggle-active")
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.MANAGE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Toggle cycle active status")
     public ResponseEntity<CycleDTO> toggleActive(@PathVariable Long id) {
@@ -83,6 +90,7 @@ public class CycleController {
     }
 
     @PostMapping("/{id}/close")
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.MANAGE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Close/complete a cycle (requires at least one closed retrospective)")
     public ResponseEntity<CycleDTO> closeCycle(@PathVariable Long id) {
@@ -96,6 +104,7 @@ public class CycleController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.DELETE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a cycle")
     public ResponseEntity<Void> deleteCycle(@PathVariable Long id) {
