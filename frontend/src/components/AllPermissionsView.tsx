@@ -8,6 +8,7 @@ import {
   Trash2,
   Loader2,
   X,
+  Info,
 } from 'lucide-react';
 import permissionService, { Permission, UserRole, ResourceType, PermissionType } from '../services/permissionService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
@@ -30,11 +31,13 @@ import {
   SelectValue,
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface AllPermissionsViewProps {
   allPermissions: Permission[];
   loading: boolean;
   isAdmin: boolean;
+  currentUserRole?: UserRole;
   permissionSearch: string;
   setPermissionSearch: (value: string) => void;
   roleFilter: UserRole | 'ALL';
@@ -60,6 +63,7 @@ export function AllPermissionsView({
   allPermissions,
   loading,
   isAdmin,
+  currentUserRole,
   permissionSearch,
   setPermissionSearch,
   roleFilter,
@@ -160,7 +164,7 @@ export function AllPermissionsView({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle>All Permissions</CardTitle>
+            <CardTitle>{isAdmin ? 'All Permissions' : `${currentUserRole} Permissions`}</CardTitle>
             <CardDescription>
               {filteredPermissions.length} of {allPermissions.length} permissions
               {selectedPermIds.size > 0 && ` • ${selectedPermIds.size} selected`}
@@ -185,6 +189,17 @@ export function AllPermissionsView({
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Info banner for non-admin users */}
+            {!isAdmin && currentUserRole && (
+              <Alert className="border-blue-500">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription>
+                  Showing permissions for your role: <strong>{currentUserRole}</strong>. 
+                  Contact your administrator to request changes.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Filters and Search */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -206,18 +221,21 @@ export function AllPermissionsView({
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | 'ALL')}>
-                  <SelectTrigger className="w-40">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All Roles</SelectItem>
-                    {roles.map(role => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Only show role filter for admins */}
+                {isAdmin && (
+                  <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | 'ALL')}>
+                    <SelectTrigger className="w-40">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Roles</SelectItem>
+                      {roles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 <Select value={resourceTypeFilter} onValueChange={(v) => setResourceTypeFilter(v as ResourceType | 'ALL')}>
                   <SelectTrigger className="w-48">

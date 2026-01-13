@@ -95,11 +95,17 @@ export default function PermissionManagement() {
       const userPerms = await permissionService.getCurrentUserPermissions();
       setMyPermissions(userPerms.permissions);
 
-      // Load all role permissions for matrix view
       if (isAdmin) {
+        // Admins see all permissions
         const all = await permissionService.getAllPermissions();
         setAllPermissions(all);
         await loadPermissionMatrix();
+      } else {
+        // Non-admins only see their role's permissions
+        const rolePerms = await permissionService.getPermissionsByRole(currentUser!.role as UserRole);
+        setAllPermissions(rolePerms);
+        // Set filter to current user's role by default
+        setRoleFilter(currentUser!.role as UserRole);
       }
     } catch (error) {
       showToast('Failed to load permissions', 'error');
@@ -370,6 +376,7 @@ export default function PermissionManagement() {
             allPermissions={allPermissions}
             loading={loading}
             isAdmin={isAdmin}
+            currentUserRole={currentUser?.role as UserRole}
             permissionSearch={permissionSearch}
             setPermissionSearch={setPermissionSearch}
             roleFilter={roleFilter}
