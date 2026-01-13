@@ -283,28 +283,151 @@ class PermissionServiceTest {
     }
 
     @Test
-    void createPermission_WhenExists_ShouldReturnExisting() {
+    void createPermission_WhenExists_ShouldThrowException() {
         // Given
         when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
                 UserRole.DEVELOPER, ResourceType.BUG, PermissionType.CREATE
         )).thenReturn(Optional.of(testPermission));
 
-        // When
-        Permission result = permissionService.createPermission(
+        // When/Then
+        assertThatThrownBy(() -> permissionService.createPermission(
                 UserRole.DEVELOPER, ResourceType.BUG, PermissionType.CREATE, "Already exists"
-        );
-
-        // Then
-        assertThat(result).isEqualTo(testPermission);
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already exists");
+        
         verify(permissionRepository, never()).save(any());
     }
 
     @Test
     void deletePermission_ShouldDeletePermission() {
+        // Given
+        when(permissionRepository.existsById(1L)).thenReturn(true);
+        
         // When
         permissionService.deletePermission(1L);
 
         // Then
+        verify(permissionRepository).existsById(1L);
         verify(permissionRepository).deleteById(1L);
     }
+
+    @Test
+    void getAllPermissions_ShouldReturnAllPermissions() {
+        // Given
+        List<Permission> permissions = List.of(testPermission);
+        when(permissionRepository.findAll()).thenReturn(permissions);
+
+        // When
+        List<Permission> result = permissionService.getAllPermissions();
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).isEqualTo(testPermission);
+        verify(permissionRepository).findAll();
+    }
+
+    @Test
+    void updatePermission_WithValidId_ShouldUpdateDescription() {
+        // Given
+        when(permissionRepository.findById(1L)).thenReturn(Optional.of(testPermission));
+        when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Permission result = permissionService.updatePermission(1L, "Updated description");
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getDescription()).isEqualTo("Updated description");
+        verify(permissionRepository).findById(1L);
+        verify(permissionRepository).save(testPermission);
+    }
+
+    @Test
+    void updatePermission_WithInvalidId_ShouldThrowException() {
+        // Given
+        when(permissionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // When/Then
+        assertThatThrownBy(() -> permissionService.updatePermission(99L, "New description"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Permission not found");
+        
+        verify(permissionRepository).findById(99L);
+        verify(permissionRepository, never()).save(any());
+    }
+
+    @Test
+    void createPermission_WhenAlreadyExists_ShouldThrowException() {
+        // Given
+        when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
+                UserRole.DEVELOPER, ResourceType.BUG, PermissionType.CREATE
+        )).thenReturn(Optional.of(testPermission));
+
+        // When/Then
+        assertThatThrownBy(() -> permissionService.createPermission(
+                UserRole.DEVELOPER, ResourceType.BUG, PermissionType.CREATE, "Duplicate"
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already exists");
+        
+        verify(permissionRepository, never()).save(any());
+    }
+
+    @Test
+    void deletePermission_WithInvalidId_ShouldThrowException() {
+        // Given
+        when(permissionRepository.existsById(99L)).thenReturn(false);
+
+        // When/Then
+        assertThatThrownBy(() -> permissionService.deletePermission(99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Permission not found");
+        
+        verify(permissionRepository).existsById(99L);
+        verify(permissionRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void createBulkPermissions_ShouldCreateMultiple() {
+        // Given
+        when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
+                UserRole.QA, ResourceType.BUG, PermissionType.READ
+        )).thenReturn(Optional.empty());
+        when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
+                UserRole.QA, ResourceType.BUG, PermissionType.UPDATE
+        )).thenReturn(Optional.empty());
+        when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> {
+            Permission p = invocation.getArgument(0);
+            p.setId(1L);
+            return p;
+        });
+
+        List<PermissionService.PermissionRequest> requests = List.of(
+                new PermissionService.PermissionRequest(UserRole.QA, ResourceType.BUG, PermissionType.READ, "QA read bugs"),
+                new PermissionService.PermissionRequest(UserRole.QA, ResourceType.BUG, PermissionType.UPDATE, "QA update bugs")
+        );
+
+        // When
+        List<Permission> result = permissionService.createBulkPermissions(requests);
+
+        // Then
+        assertThat(result).hasSize(2);
+        verify(permissionRepository, times(2)).save(any());
+    }
+
+    @Test
+    void deleteBulkPermissions_ShouldDeleteMultiple() {
+        // Given
+        List<Long> ids = List.of(1L, 2L, 3L);
+        when(permissionRepository.existsById(any())).thenReturn(true);
+
+        // When
+        permissionService.deleteBulkPermissions(ids);
+
+        // Then
+        verify(permissionRepository, times(3)).existsById(any());
+        verify(permissionRepository, times(3)).deleteById(any());
+    }
 }
+
