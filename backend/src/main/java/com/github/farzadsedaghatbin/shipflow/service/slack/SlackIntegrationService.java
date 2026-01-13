@@ -230,7 +230,7 @@ public class SlackIntegrationService {
 
         String webhookUrl = config.getWebhookUrl();
         String channel = request.getChannel() != null ? request.getChannel() : config.getDefaultChannel();
-        String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShapeUp Tracker";
+        String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShipFlow";
 
         try {
             Map<String, Object> payload = buildSlackPayload(message, channel);
