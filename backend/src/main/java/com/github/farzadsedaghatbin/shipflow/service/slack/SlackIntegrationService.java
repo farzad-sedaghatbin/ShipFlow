@@ -221,24 +221,33 @@ public class SlackIntegrationService {
     /**
      * Send a test notification
      */
+    private SlackConfiguration getSlackConfigurationOrThrow(Long configId) {
+        return slackConfigRepository.findById(configId)
+                .orElseThrow(() -> new SlackConfigurationNotFoundException(configId));
+    }
+
+    private static class SlackConfigurationNotFoundException extends RuntimeException {
+        SlackConfigurationNotFoundException(Long configId) {
+            super("Slack configuration not found with id: " + configId);
+        }
+    }
+
     public void sendTestNotification(Long configId, TestSlackNotificationRequest request) {
-        SlackConfiguration config = slackConfigRepository.findById(configId)
-                .orElseThrow(() -> new RuntimeException("Slack configuration not found with id: " + configId));
-        
+        SlackConfiguration config = getSlackConfigurationOrThrow(configId);
+
         String webhookUrl = config.getWebhookUrl();
         String channel = request.getChannel() != null ? request.getChannel() : config.getDefaultChannel();
         String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShapeUp Tracker";
-        
+
         try {
             Map<String, Object> payload = buildSlackPayload(message, channel);
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> httpRequest = new HttpEntity<>(payload, headers);
-            
+
             restTemplate.postForEntity(webhookUrl, httpRequest, String.class);
             log.info("Sent test notification to Slack workspace: {}", config.getWorkspaceName());
-            
         } catch (Exception e) {
             log.error("Failed to send test notification: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to send test notification: " + e.getMessage());
