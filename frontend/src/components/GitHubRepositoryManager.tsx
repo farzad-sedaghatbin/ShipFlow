@@ -140,7 +140,7 @@ export default function GitHubRepositoryManager() {
                     <div className="flex items-center gap-2">
                       <Github className="h-4 w-4" />
                       <span className="font-medium">{repo.fullName}</span>
-                      {repo.isActive && <Badge className="bg-green-100 text-green-800">Active</Badge>}
+                      {repo.isActive && <Badge variant="success">Active</Badge>}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-0.5">
                       <div>Default branch: {repo.defaultBranch}</div>
