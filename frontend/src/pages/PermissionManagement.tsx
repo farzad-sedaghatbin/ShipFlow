@@ -9,8 +9,6 @@ import {
   Eye,
   Database,
   Plus,
-  Edit,
-  Trash2,
   RefreshCw,
 } from 'lucide-react';
 import { useAuth, useToast } from '../contexts';
@@ -43,6 +41,7 @@ import {
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { PermissionEditDialog } from '../components/PermissionEditDialog';
+import { AllPermissionsView } from '../components/AllPermissionsView';
 
 type ViewMode = 'role-matrix' | 'role-details' | 'my-permissions';
 
@@ -69,6 +68,16 @@ export default function PermissionManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
   const [selectedPermission, setSelectedPermission] = useState<Permission | undefined>();
+  
+  // Enhanced All Permissions tab filters and pagination
+  const [permissionSearch, setPermissionSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<ResourceType | 'ALL'>('ALL');
+  const [permTypeFilter, setPermTypeFilter] = useState<PermissionType | 'ALL'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selectedPermIds, setSelectedPermIds] = useState<Set<number>>(new Set());
+  const [groupBy, setGroupBy] = useState<'none' | 'role' | 'resource'>('role');
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const roles = permissionService.getUserRoles();
@@ -120,6 +129,20 @@ export default function PermissionManagement() {
       loadData();
     } catch (error) {
       showToast('Failed to delete permission', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPermIds.size === 0) return;
+    if (!confirm(`Delete ${selectedPermIds.size} selected permissions?`)) return;
+    
+    try {
+      await permissionService.deleteBulkPermissions(Array.from(selectedPermIds));
+      showToast(`${selectedPermIds.size} permissions deleted successfully`, 'success');
+      setSelectedPermIds(new Set());
+      loadData();
+    } catch (error) {
+      showToast('Failed to delete permissions', 'error');
     }
   };
 
@@ -341,84 +364,32 @@ export default function PermissionManagement() {
           </Card>
         </TabsContent>
 
-        {/* Role Details View - All Permissions List */}
+        {/* All Permissions View - Enhanced with Filters, Pagination, Grouping */}
         <TabsContent value="role-details" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>All Permissions</CardTitle>
-                  <CardDescription>
-                    Complete list of all permissions in the system ({allPermissions.length} total)
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="border rounded-lg overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Resource</TableHead>
-                        <TableHead>Permission</TableHead>
-                        <TableHead>Description</TableHead>
-                        {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allPermissions.map((perm) => (
-                        <TableRow key={perm.id}>
-                          <TableCell>
-                            <Badge variant={permissionService.getRoleBadgeColor(perm.role) as any}>
-                              {perm.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {permissionService.getResourceLabel(perm.resourceType)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {permissionService.getPermissionLabel(perm.permissionType)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {(perm as any).description || '-'}
-                          </TableCell>
-                          {isAdmin && (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditPermission(perm)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeletePermission(perm.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <AllPermissionsView
+            allPermissions={allPermissions}
+            loading={loading}
+            isAdmin={isAdmin}
+            permissionSearch={permissionSearch}
+            setPermissionSearch={setPermissionSearch}
+            roleFilter={roleFilter}
+            setRoleFilter={setRoleFilter}
+            resourceTypeFilter={resourceTypeFilter}
+            setResourceTypeFilter={setResourceTypeFilter}
+            permTypeFilter={permTypeFilter}
+            setPermTypeFilter={setPermTypeFilter}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            selectedPermIds={selectedPermIds}
+            setSelectedPermIds={setSelectedPermIds}
+            groupBy={groupBy}
+            setGroupBy={setGroupBy}
+            handleEditPermission={handleEditPermission}
+            handleDeletePermission={handleDeletePermission}
+            handleBulkDelete={handleBulkDelete}
+          />
         </TabsContent>
 
         {/* My Permissions View */}
