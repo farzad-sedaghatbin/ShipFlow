@@ -240,19 +240,7 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 
 -- BUG permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
-('DRISK permissions
-INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
-('DEVELOPER', 'RISK', 'READ', 'Developer can read risks', CURRENT_TIMESTAMP);
-
--- RETROSPECTIVE permissions
-INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
-('DEVELOPER', 'RETROSPECTIVE', 'READ', 'Developer can read retrospectives', CURRENT_TIMESTAMP);
-
--- BETTING_TABLE permissions
-INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
-('DEVELOPER', 'BETTING_TABLE', 'READ', 'Developer can read betting table', CURRENT_TIMESTAMP);
-
--- EVELOPER', 'BUG', 'CREATE', 'Developer can create bugs', CURRENT_TIMESTAMP),
+('DEVELOPER', 'BUG', 'CREATE', 'Developer can create bugs', CURRENT_TIMESTAMP),
 ('DEVELOPER', 'BUG', 'READ', 'Developer can read bugs', CURRENT_TIMESTAMP),
 ('DEVELOPER', 'BUG', 'UPDATE', 'Developer can update bugs', CURRENT_TIMESTAMP);
 
@@ -267,6 +255,18 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 -- AI_FEATURES permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
 ('DEVELOPER', 'AI_FEATURES', 'READ', 'Developer can use AI features', CURRENT_TIMESTAMP);
+
+-- RISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'RISK', 'READ', 'Developer can read risks', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'RETROSPECTIVE', 'READ', 'Developer can read retrospectives', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'BETTING_TABLE', 'READ', 'Developer can read betting table', CURRENT_TIMESTAMP);
 
 -- Insert permissions for QA role
 -- PITCH permissions
