@@ -20,12 +20,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - V44 migration: Creates permissions table and loads default role permissions
     - Default permissions for all roles (ADMIN, PROJECT_MANAGER, PRODUCT, DEVELOPER, QA)
     - Configuration property `app.security.rbac.enabled` to enable/disable RBAC
+  - **Frontend Features**:
+    - **Permission Management UI** (`/permissions`): Comprehensive interface for viewing and understanding RBAC
+    - **Permission Matrix View**: Visual grid showing all roles vs. resources with abbreviated permissions
+    - **Role Details View**: Detailed permissions for each role organized by resource type
+    - **My Permissions View**: Personal permission dashboard for current user
+    - **Search & Filter**: Search resources and filter by resource type
+    - **Color-Coded Roles**: Visual distinction between different roles (ADMIN=Red, PM=Blue, etc.)
+    - **Permission Service**: TypeScript service for frontend permission operations
+    - **Responsive Design**: Mobile-friendly permission management interface
+    - **Access Control**: Non-admin users can only view their own permissions
   - **API Endpoints**:
     - `GET /api/permissions/current-user`: Get current user's permissions
     - `GET /api/permissions/role/{role}`: Get permissions for a role (admin only)
     - `GET /api/permissions/resource/{resourceType}`: Get permissions for a resource (admin only)
   - **Documentation**:
     - Comprehensive RBAC_GUIDE.md with architecture, usage, and best practices
+    - PERMISSION_MANAGEMENT_UI_GUIDE.md for frontend UI documentation
     - Permission matrix for all roles and resources
     - Migration guide from legacy system
     - Future enhancement roadmap

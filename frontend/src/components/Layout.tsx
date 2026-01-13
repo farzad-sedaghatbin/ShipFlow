@@ -12,6 +12,7 @@ import {
   User,
   Users2,
   Shield,
+  ShieldCheck,
   Settings,
   Folder,
   Activity,
@@ -109,6 +110,7 @@ const meetingsItems: NavItemConfig[] = [
 // Admin section
 const adminItems: NavItemConfig[] = [
   { text: 'User Management', icon: Shield, path: '/users' },
+  { text: 'Permissions', icon: ShieldCheck, path: '/permissions' },
   { text: 'Organization Settings', icon: Settings, path: '/settings' },
 ];
 
