@@ -167,6 +167,16 @@ public class PermissionService {
     }
 
     /**
+     * Get all permissions (admin only)
+     *
+     * @return List of all permissions
+     */
+    @Transactional(readOnly = true)
+    public List<Permission> getAllPermissions() {
+        return permissionRepository.findAll();
+    }
+
+    /**
      * Create a new permission (admin only)
      *
      * @param role           The role to grant permission to
@@ -184,8 +194,7 @@ public class PermissionService {
         );
         
         if (existing.isPresent()) {
-            log.info("Permission already exists: {} - {} - {}", role, resourceType, permissionType);
-            return existing.get();
+            throw new IllegalArgumentException("Permission already exists for " + role + " - " + resourceType + " - " + permissionType);
         }
 
         Permission permission = Permission.builder()
@@ -202,13 +211,73 @@ public class PermissionService {
     }
 
     /**
+     * Update a permission's description (admin only)
+     *
+     * @param id          The permission ID
+     * @param description New description
+     * @return The updated permission
+     */
+    @Transactional
+    public Permission updatePermission(Long id, String description) {
+        Permission permission = permissionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Permission not found with ID: " + id));
+        
+        permission.setDescription(description);
+        permission = permissionRepository.save(permission);
+        
+        log.info("Updated permission ID {}: new description = {}", id, description);
+        return permission;
+    }
+
+    /**
      * Delete a permission (admin only)
      *
      * @param id The permission ID
      */
     @Transactional
     public void deletePermission(Long id) {
+        if (!permissionRepository.existsById(id)) {
+            throw new IllegalArgumentException("Permission not found with ID: " + id);
+        }
         permissionRepository.deleteById(id);
         log.info("Deleted permission with ID: {}", id);
     }
+
+    /**
+     * Create multiple permissions at once (admin only)
+     *
+     * @param requests List of permission requests
+     * @return List of created permissions
+     */
+    @Transactional
+    public List<Permission> createBulkPermissions(List<PermissionRequest> requests) {
+        return requests.stream()
+                .map(r -> createPermission(r.role, r.resourceType, r.permissionType, r.description))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Delete multiple permissions at once (admin only)
+     *
+     * @param ids List of permission IDs
+     */
+    @Transactional
+    public void deleteBulkPermissions(List<Long> ids) {
+        ids.forEach(this::deletePermission);
+        log.info("Bulk deleted {} permissions", ids.size());
+    }
+
+    /**
+     * Request object for creating permissions
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class PermissionRequest {
+        private UserRole role;
+        private ResourceType resourceType;
+        private PermissionType permissionType;
+        private String description;
+    }
 }
+

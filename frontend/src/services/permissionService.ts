@@ -37,6 +37,18 @@ export interface PermissionDTO {
   role: UserRole;
   resourceType: ResourceType;
   permissionType: PermissionType;
+  description?: string;
+}
+
+export interface CreatePermissionRequest {
+  role: UserRole;
+  resourceType: ResourceType;
+  permissionType: PermissionType;
+  description?: string;
+}
+
+export interface UpdatePermissionRequest {
+  description: string;
 }
 
 export interface UserPermissionsResponse {
@@ -47,6 +59,14 @@ export interface UserPermissionsResponse {
 }
 
 class PermissionService {
+  /**
+   * Get all permissions
+   */
+  async getAllPermissions(): Promise<Permission[]> {
+    const response = await api.get<Permission[]>('/permissions');
+    return response.data;
+  }
+
   /**
    * Get all permissions for the current user
    */
@@ -61,6 +81,44 @@ class PermissionService {
   async getPermissionsByRole(role: UserRole): Promise<Permission[]> {
     const response = await api.get<Permission[]>(`/permissions/role/${role}`);
     return response.data;
+  }
+
+  /**
+   * Create a new permission
+   */
+  async createPermission(request: CreatePermissionRequest): Promise<Permission> {
+    const response = await api.post<Permission>('/permissions', request);
+    return response.data;
+  }
+
+  /**
+   * Update a permission's description
+   */
+  async updatePermission(id: number, request: UpdatePermissionRequest): Promise<Permission> {
+    const response = await api.put<Permission>(`/permissions/${id}`, request);
+    return response.data;
+  }
+
+  /**
+   * Delete a permission
+   */
+  async deletePermission(id: number): Promise<void> {
+    await api.delete(`/permissions/${id}`);
+  }
+
+  /**
+   * Create multiple permissions at once
+   */
+  async createBulkPermissions(requests: CreatePermissionRequest[]): Promise<Permission[]> {
+    const response = await api.post<Permission[]>('/permissions/bulk', requests);
+    return response.data;
+  }
+
+  /**
+   * Delete multiple permissions at once
+   */
+  async deleteBulkPermissions(ids: number[]): Promise<void> {
+    await api.delete('/permissions/bulk', { data: ids });
   }
 
   /**

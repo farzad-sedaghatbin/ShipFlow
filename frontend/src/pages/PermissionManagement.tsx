@@ -10,12 +10,17 @@ import {
   Loader2,
   Eye,
   Database,
+  Plus,
+  Edit,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth, useToast } from '../contexts';
 import permissionService, { Permission, UserRole, ResourceType, PermissionType } from '../services/permissionService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
 import {
   Table,
   TableBody,
@@ -39,6 +44,7 @@ import {
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { PermissionEditDialog } from '../components/PermissionEditDialog';
 
 type ViewMode = 'role-matrix' | 'role-details' | 'my-permissions';
 
@@ -51,6 +57,7 @@ export default function PermissionManagement() {
   // Role-based permissions data
   const [selectedRole, setSelectedRole] = useState<UserRole>('ADMIN');
   const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
+  const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   
   // Current user permissions
   const [myPermissions, setMyPermissions] = useState<Permission[]>([]);
@@ -61,6 +68,11 @@ export default function PermissionManagement() {
   
   // Permission matrix data (all roles × all resources)
   const [permissionMatrix, setPermissionMatrix] = useState<Map<string, Set<PermissionType>>>(new Map());
+  
+  // Edit dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
+  const [selectedPermission, setSelectedPermission] = useState<Permission | undefined>();
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const roles = permissionService.getUserRoles();
@@ -86,6 +98,8 @@ export default function PermissionManagement() {
 
       // Load all role permissions for matrix view
       if (isAdmin) {
+        const all = await permissionService.getAllPermissions();
+        setAllPermissions(all);
         await loadPermissionMatrix();
       }
     } catch (error) {
@@ -93,6 +107,38 @@ export default function PermissionManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreatePermission = () => {
+    setEditMode('create');
+    setSelectedPermission(undefined);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditPermission = (permission: Permission) => {
+    setEditMode('edit');
+    setSelectedPermission(permission);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeletePermission = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this permission?')) return;
+    
+    try {
+      await permissionService.deletePermission(id);
+      showToast('Permission deleted successfully', 'success');
+      loadData();
+    } catch (error) {
+      showToast('Failed to delete permission', 'error');
+    }
+  };
+
+  const handleDialogSave = () => {
+    showToast(
+      editMode === 'create' ? 'Permission created successfully' : 'Permission updated successfully',
+      'success'
+    );
+    loadData();
   };
 
   const loadPermissionMatrix = async () => {
@@ -173,24 +219,39 @@ export default function PermissionManagement() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Shield className="h-8 w-8" />
-          Permission Management
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          View and understand role-based permissions across all resources
-        </p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-8 w-8" />
+            Permission Management
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {isAdmin ? 'Manage role-based permissions across all resources' : 'View your role permissions'}
+          </p>
+        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={handleCreatePermission}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Permission
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Info Banner */}
-      <Alert className="mb-6 border-blue-500">
-        <Info className="h-5 w-5 text-blue-500" />
-        <AlertDescription>
-          <strong>Note:</strong> Permission management is currently read-only. Default permissions are loaded from the database migration. 
-          Custom permission assignment will be available in a future update.
-        </AlertDescription>
-      </Alert>
+      {/* Info Banner - only show for non-admin users */}
+      {!isAdmin && (
+        <Alert className="mb-6 border-blue-500">
+          <Info className="h-5 w-5 text-blue-500" />
+          <AlertDescription>
+            You can view your assigned permissions below. Contact your administrator to request additional permissions.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* View Mode Tabs */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="mb-6">
@@ -198,6 +259,52 @@ export default function PermissionManagement() {
           <TabsTrigger value="role-matrix">
             <Database className="h-4 w-4 mr-2" />
             Permission Matrix
+          </TabsTrigger>
+          <TabsTrigger value="role-details">
+            <Shield className="h-4 w-4 mr-2" />
+            All Permissions
+          </TabsTrigger>
+          <TabsTrigger value="my-permissions">
+            <Eye className="h-4 w-4 mr-2" />
+            My Permissions
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Permission Matrix View */}
+        <TabsContent value="role-matrix" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Permission Matrix</CardTitle>
+              <CardDescription>
+                Overview of all role permissions across resources (✓ = granted)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Search and Filter */}
+              <div className="flex gap-4 mb-6">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search resources..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={filterResource} onValueChange={(v) => setFilterResource(v as ResourceType | 'ALL')}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by resource" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Resources</SelectItem>
+                    {resources.map(resource => (
+                      <SelectItem key={resource} value={resource}>
+                        {permissionService.getResourceLabel(resource)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
           </TabsTrigger>
           <TabsTrigger value="role-details">
             <Shield className="h-4 w-4 mr-2" />
@@ -299,18 +406,85 @@ export default function PermissionManagement() {
           </Card>
         </TabsContent>
 
-        {/* Role Details View */}
+        {/* Role Details View - All Permissions List */}
         <TabsContent value="role-details" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Role Permissions</CardTitle>
-              <CardDescription>
-                Detailed permissions for each role
-              </CardDescription>
-              <div className="mt-4">
-                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as UserRole)}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue />
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>All Permissions</CardTitle>
+                  <CardDescription>
+                    Complete list of all permissions in the system ({allPermissions.length} total)
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Resource</TableHead>
+                        <TableHead>Permission</TableHead>
+                        <TableHead>Description</TableHead>
+                        {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allPermissions.map((perm) => (
+                        <TableRow key={perm.id}>
+                          <TableCell>
+                            <Badge variant={permissionService.getRoleBadgeColor(perm.role) as any}>
+                              {perm.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {permissionService.getResourceLabel(perm.resourceType)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {permissionService.getPermissionLabel(perm.permissionType)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {(perm as any).description || '-'}
+                          </TableCell>
+                          {isAdmin && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditPermission(perm)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeletePermission(perm.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map(role => (
@@ -480,6 +654,15 @@ function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
           </Card>
         ))}
       </div>
+
+      {/* Edit Dialog */}
+      <PermissionEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleDialogSave}
+        mode={editMode}
+        permission={selectedPermission}
+      />
     </div>
   );
 }
