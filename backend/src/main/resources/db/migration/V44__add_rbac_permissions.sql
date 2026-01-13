@@ -87,6 +87,30 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
 ('ADMIN', 'SYSTEM', 'MANAGE', 'Admin can manage system settings', CURRENT_TIMESTAMP);
 
+-- RISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('ADMIN', 'RISK', 'CREATE', 'Admin can create risks', CURRENT_TIMESTAMP),
+('ADMIN', 'RISK', 'READ', 'Admin can read risks', CURRENT_TIMESTAMP),
+('ADMIN', 'RISK', 'UPDATE', 'Admin can update risks', CURRENT_TIMESTAMP),
+('ADMIN', 'RISK', 'DELETE', 'Admin can delete risks', CURRENT_TIMESTAMP),
+('ADMIN', 'RISK', 'MANAGE', 'Admin can manage risk settings', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('ADMIN', 'RETROSPECTIVE', 'CREATE', 'Admin can create retrospectives', CURRENT_TIMESTAMP),
+('ADMIN', 'RETROSPECTIVE', 'READ', 'Admin can read retrospectives', CURRENT_TIMESTAMP),
+('ADMIN', 'RETROSPECTIVE', 'UPDATE', 'Admin can update retrospectives', CURRENT_TIMESTAMP),
+('ADMIN', 'RETROSPECTIVE', 'DELETE', 'Admin can delete retrospectives', CURRENT_TIMESTAMP),
+('ADMIN', 'RETROSPECTIVE', 'MANAGE', 'Admin can manage retrospective settings', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('ADMIN', 'BETTING_TABLE', 'CREATE', 'Admin can create betting slots', CURRENT_TIMESTAMP),
+('ADMIN', 'BETTING_TABLE', 'READ', 'Admin can read betting table', CURRENT_TIMESTAMP),
+('ADMIN', 'BETTING_TABLE', 'UPDATE', 'Admin can update betting slots', CURRENT_TIMESTAMP),
+('ADMIN', 'BETTING_TABLE', 'DELETE', 'Admin can delete betting slots', CURRENT_TIMESTAMP),
+('ADMIN', 'BETTING_TABLE', 'MANAGE', 'Admin can manage betting table', CURRENT_TIMESTAMP);
+
 -- Insert permissions for PROJECT_MANAGER role
 -- CYCLE permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -136,6 +160,29 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('PROJECT_MANAGER', 'AI_FEATURES', 'READ', 'PM can use AI features', CURRENT_TIMESTAMP),
 ('PROJECT_MANAGER', 'AI_FEATURES', 'EXECUTE', 'PM can execute AI operations', CURRENT_TIMESTAMP);
 
+-- RISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PROJECT_MANAGER', 'RISK', 'CREATE', 'PM can create risks', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RISK', 'READ', 'PM can read risks', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RISK', 'UPDATE', 'PM can update risks', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RISK', 'DELETE', 'PM can delete risks', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PROJECT_MANAGER', 'RETROSPECTIVE', 'CREATE', 'PM can create retrospectives', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RETROSPECTIVE', 'READ', 'PM can read retrospectives', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RETROSPECTIVE', 'UPDATE', 'PM can update retrospectives', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RETROSPECTIVE', 'DELETE', 'PM can delete retrospectives', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'RETROSPECTIVE', 'MANAGE', 'PM can manage retrospectives', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PROJECT_MANAGER', 'BETTING_TABLE', 'CREATE', 'PM can create betting slots', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'BETTING_TABLE', 'READ', 'PM can read betting table', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'BETTING_TABLE', 'UPDATE', 'PM can update betting slots', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'BETTING_TABLE', 'DELETE', 'PM can delete betting slots', CURRENT_TIMESTAMP),
+('PROJECT_MANAGER', 'BETTING_TABLE', 'MANAGE', 'PM can manage betting table', CURRENT_TIMESTAMP);
+
 -- Insert permissions for PRODUCT role
 -- PITCH permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -166,6 +213,22 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
 ('PRODUCT', 'AI_FEATURES', 'READ', 'Product can use AI features', CURRENT_TIMESTAMP);
 
+-- RISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PRODUCT', 'RISK', 'CREATE', 'Product can create risks', CURRENT_TIMESTAMP),
+('PRODUCT', 'RISK', 'READ', 'Product can read risks', CURRENT_TIMESTAMP),
+('PRODUCT', 'RISK', 'UPDATE', 'Product can update risks', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PRODUCT', 'RETROSPECTIVE', 'CREATE', 'Product can create retrospectives', CURRENT_TIMESTAMP),
+('PRODUCT', 'RETROSPECTIVE', 'READ', 'Product can read retrospectives', CURRENT_TIMESTAMP),
+('PRODUCT', 'RETROSPECTIVE', 'UPDATE', 'Product can update retrospectives', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('PRODUCT', 'BETTING_TABLE', 'READ', 'Product can read betting table', CURRENT_TIMESTAMP);
+
 -- Insert permissions for DEVELOPER role
 -- PITCH permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -177,7 +240,19 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 
 -- BUG permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
-('DEVELOPER', 'BUG', 'CREATE', 'Developer can create bugs', CURRENT_TIMESTAMP),
+('DRISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'RISK', 'READ', 'Developer can read risks', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'RETROSPECTIVE', 'READ', 'Developer can read retrospectives', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('DEVELOPER', 'BETTING_TABLE', 'READ', 'Developer can read betting table', CURRENT_TIMESTAMP);
+
+-- EVELOPER', 'BUG', 'CREATE', 'Developer can create bugs', CURRENT_TIMESTAMP),
 ('DEVELOPER', 'BUG', 'READ', 'Developer can read bugs', CURRENT_TIMESTAMP),
 ('DEVELOPER', 'BUG', 'UPDATE', 'Developer can update bugs', CURRENT_TIMESTAMP);
 
@@ -209,6 +284,22 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('QA', 'BUG', 'UPDATE', 'QA can update bugs', CURRENT_TIMESTAMP),
 ('QA', 'BUG', 'DELETE', 'QA can delete bugs', CURRENT_TIMESTAMP);
 
+
+-- RISK permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('QA', 'RISK', 'CREATE', 'QA can create risks', CURRENT_TIMESTAMP),
+('QA', 'RISK', 'READ', 'QA can read risks', CURRENT_TIMESTAMP),
+('QA', 'RISK', 'UPDATE', 'QA can update risks', CURRENT_TIMESTAMP);
+
+-- RETROSPECTIVE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('QA', 'RETROSPECTIVE', 'CREATE', 'QA can create retrospectives', CURRENT_TIMESTAMP),
+('QA', 'RETROSPECTIVE', 'READ', 'QA can read retrospectives', CURRENT_TIMESTAMP),
+('QA', 'RETROSPECTIVE', 'UPDATE', 'QA can update retrospectives', CURRENT_TIMESTAMP);
+
+-- BETTING_TABLE permissions
+INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
+('QA', 'BETTING_TABLE', 'READ', 'QA can read betting table', CURRENT_TIMESTAMP);
 -- REPORT permissions
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
 ('QA', 'REPORT', 'READ', 'QA can read reports', CURRENT_TIMESTAMP),
