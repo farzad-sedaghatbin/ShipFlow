@@ -5,8 +5,6 @@ import {
   Lock,
   Search,
   Info,
-  CheckCircle,
-  XCircle,
   Loader2,
   Eye,
   Database,
