@@ -55,8 +55,6 @@ export default function PermissionManagement() {
   const [viewMode, setViewMode] = useState<ViewMode>('role-matrix');
   
   // Role-based permissions data
-  const [selectedRole, setSelectedRole] = useState<UserRole>('ADMIN');
-  const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   
   // Current user permissions
@@ -82,12 +80,6 @@ export default function PermissionManagement() {
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (selectedRole) {
-      loadRolePermissions(selectedRole);
-    }
-  }, [selectedRole]);
 
   const loadData = async () => {
     setLoading(true);
@@ -156,15 +148,6 @@ export default function PermissionManagement() {
     }
     
     setPermissionMatrix(matrix);
-  };
-
-  const loadRolePermissions = async (role: UserRole) => {
-    try {
-      const permissions = await permissionService.getPermissionsByRole(role);
-      setRolePermissions(permissions);
-    } catch (error) {
-      showToast(`Failed to load permissions for ${role}`, 'error');
-    }
   };
 
   const filteredResources = resources.filter(resource => {
@@ -263,52 +246,6 @@ export default function PermissionManagement() {
           <TabsTrigger value="role-details">
             <Shield className="h-4 w-4 mr-2" />
             All Permissions
-          </TabsTrigger>
-          <TabsTrigger value="my-permissions">
-            <Eye className="h-4 w-4 mr-2" />
-            My Permissions
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Permission Matrix View */}
-        <TabsContent value="role-matrix" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Permission Matrix</CardTitle>
-              <CardDescription>
-                Overview of all role permissions across resources (✓ = granted)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Search and Filter */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search resources..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={filterResource} onValueChange={(v) => setFilterResource(v as ResourceType | 'ALL')}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by resource" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All Resources</SelectItem>
-                    {resources.map(resource => (
-                      <SelectItem key={resource} value={resource}>
-                        {permissionService.getResourceLabel(resource)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-          </TabsTrigger>
-          <TabsTrigger value="role-details">
-            <Shield className="h-4 w-4 mr-2" />
-            Role Details
           </TabsTrigger>
           <TabsTrigger value="my-permissions">
             <Eye className="h-4 w-4 mr-2" />
@@ -485,29 +422,6 @@ export default function PermissionManagement() {
             </CardContent>
           </Card>
         </TabsContent>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map(role => (
-                      <SelectItem key={role} value={role}>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={permissionService.getRoleBadgeColor(role) as any} className="text-xs">
-                            {role}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <RolePermissionsDetail 
-                permissions={rolePermissions}
-                resources={resources}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* My Permissions View */}
         <TabsContent value="my-permissions" className="mt-6">
@@ -527,6 +441,15 @@ export default function PermissionManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <PermissionEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleDialogSave}
+        mode={editMode}
+        permission={selectedPermission}
+      />
     </div>
   );
 }
@@ -558,50 +481,6 @@ function PermissionCell({ permissions }: { permissions: PermissionType[] }) {
 }
 
 // Role Permissions Detail Component
-function RolePermissionsDetail({ 
-  permissions, 
-  resources 
-}: { 
-  permissions: Permission[];
-  resources: ResourceType[];
-}) {
-  const groupedByResource = resources.map(resource => ({
-    resource,
-    permissions: permissions.filter(p => p.resourceType === resource)
-  }));
-
-  return (
-    <div className="space-y-4">
-      {groupedByResource.map(({ resource, permissions: resourcePerms }) => (
-        <div key={resource} className="border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold flex items-center gap-2">
-              {resourcePerms.length > 0 ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-              )}
-              {permissionService.getResourceLabel(resource)}
-            </h4>
-            <Badge variant="outline">{resourcePerms.length} permission{resourcePerms.length !== 1 ? 's' : ''}</Badge>
-          </div>
-          {resourcePerms.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {resourcePerms.map(perm => (
-                <Badge key={perm.id} variant="secondary">
-                  {permissionService.getPermissionLabel(perm.permissionType)}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No permissions granted</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // My Permissions View Component
 function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
   const resources = permissionService.getResourceTypes();
@@ -654,15 +533,6 @@ function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
           </Card>
         ))}
       </div>
-
-      {/* Edit Dialog */}
-      <PermissionEditDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSave={handleDialogSave}
-        mode={editMode}
-        permission={selectedPermission}
-      />
     </div>
   );
 }
