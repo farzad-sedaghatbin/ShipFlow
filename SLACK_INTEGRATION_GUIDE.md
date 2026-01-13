@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ShapeUp Tracker now includes Slack integration, allowing you to receive real-time notifications about important events directly in your Slack workspace.
+The ShipFlow now includes Slack integration, allowing you to receive real-time notifications about important events directly in your Slack workspace.
 
 ## Features
 
@@ -29,9 +29,9 @@ The ShapeUp Tracker now includes Slack integration, allowing you to receive real
 6. Click **Add Incoming WebHooks integration**
 7. Copy the **Webhook URL** (it looks like `https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX`)
 
-### 2. Configure ShapeUp Tracker
+### 2. Configure ShipFlow
 
-1. Log in to ShapeUp Tracker as an administrator
+1. Log in to ShipFlow as an administrator
 2. Navigate to **Admin** → **Slack Integration** from the sidebar menu
 3. Click **Configure Workspace**
 4. Fill in the following details:
