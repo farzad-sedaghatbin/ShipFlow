@@ -31,6 +31,7 @@ public class GitHubIntegrationController {
     }
 
     @GetMapping("/repositories")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get all registered GitHub repositories")
     public ResponseEntity<List<GitHubRepositoryDTO>> getAllRepositories() {
         return ResponseEntity.ok(integrationService.getAllRepositories());

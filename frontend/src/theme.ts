@@ -58,7 +58,7 @@ export const palette = {
   },
 };
 
-// Alpha utility function (similar to MUI's alpha)
+// Alpha utility function for color transparency
 export function alpha(color: string, opacity: number): string {
   // Handle hex colors
   if (color.startsWith('#')) {

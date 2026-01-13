@@ -11,7 +11,6 @@ import {
   KeyRound,
   Loader2,
   ShieldAlert,
-  Database,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
 import api from '../services/api';
@@ -78,7 +77,6 @@ export default function UserManagement() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('DEVELOPER');
-  const [seeding, setSeeding] = useState(false);
 
   // Check if current user is admin
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -203,22 +201,6 @@ export default function UserManagement() {
     }
   };
 
-  const handleSeedHillChartData = async () => {
-    if (!confirm("This will add sample hill chart data to all pitches that don't have any. Continue?")) {
-      return;
-    }
-
-    setSeeding(true);
-    try {
-      const response = await api.post('/admin/seed-hill-chart-data');
-      showToast(response.data || 'Sample data added successfully', 'success');
-    } catch (error: any) {
-      showToast(error.response?.data || 'Failed to seed data', 'error');
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   const getRoleClassName = (role: UserRole): string => {
     const classNames: Record<UserRole, string> = {
       ADMIN: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -263,30 +245,10 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            onClick={handleSeedHillChartData}
-            disabled={seeding}
-            size="sm"
-          >
-            {seeding ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Seeding...
-              </>
-            ) : (
-              <>
-                <Database className="mr-2 h-4 w-4" />
-                Seed Hill Chart Data
-              </>
-            )}
-          </Button>
-          <Button onClick={handleOpenDialog} size="sm">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
-        </div>
+        <Button onClick={handleOpenDialog} size="sm">
+          <UserPlus className="mr-2 h-4 w-4" />
+          Add User
+        </Button>
       </div>
 
       {/* Stats Cards */}

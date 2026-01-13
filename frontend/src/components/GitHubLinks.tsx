@@ -1,29 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  Link,
-  Stack,
-  Divider,
-  Tooltip,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import {
-  GitHub as GitHubIcon,
-  CommitOutlined,
-  MergeType,
-  BranchesOutlined,
-  CheckCircle,
-  Cancel,
-  Schedule,
-} from '@mui/icons-material';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Badge } from './ui/badge';
+import { Alert, AlertDescription } from './ui/alert';
+import { Separator } from './ui/separator';
+import { 
+  Github, 
+  GitCommit, 
+  GitMerge, 
+  GitBranch, 
+  CheckCircle2, 
+  XCircle, 
+  Clock,
+  Loader2
+} from 'lucide-react';
 import { GitHubLink, GitHubPullRequest } from '../types/github';
 import { githubService } from '../services/githubService';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '../lib/utils';
 
 interface GitHubLinksProps {
   taskId?: number;
@@ -62,32 +55,30 @@ export default function GitHubLinks({ taskId, pitchId, title = 'GitHub Activity'
 
   const getPRStateIcon = (pr: GitHubPullRequest) => {
     if (pr.state === 'MERGED') {
-      return <MergeType sx={{ fontSize: 18, color: 'success.main' }} />;
+      return <GitMerge className="h-4 w-4 text-green-600" />;
     } else if (pr.state === 'CLOSED') {
-      return <Cancel sx={{ fontSize: 18, color: 'error.main' }} />;
+      return <XCircle className="h-4 w-4 text-red-600" />;
     } else {
-      return <Schedule sx={{ fontSize: 18, color: 'info.main' }} />;
+      return <Clock className="h-4 w-4 text-blue-600" />;
     }
   };
 
   const getPRStateChip = (state: string) => {
-    const stateConfig: Record<string, { label: string; color: 'success' | 'error' | 'info' }> = {
-      MERGED: { label: 'Merged', color: 'success' },
-      CLOSED: { label: 'Closed', color: 'error' },
-      OPEN: { label: 'Open', color: 'info' },
+    const stateConfig: Record<string, { label: string; className: string }> = {
+      MERGED: { label: 'Merged', className: 'bg-green-100 text-green-800' },
+      CLOSED: { label: 'Closed', className: 'bg-red-100 text-red-800' },
+      OPEN: { label: 'Open', className: 'bg-blue-100 text-blue-800' },
     };
 
-    const config = stateConfig[state] || { label: state, color: 'info' };
-    return <Chip label={config.label} color={config.color} size="small" />;
+    const config = stateConfig[state] || { label: state, className: 'bg-blue-100 text-blue-800' };
+    return <Badge variant="secondary" className={config.className}>{config.label}</Badge>;
   };
 
   if (loading) {
     return (
       <Card>
-        <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="center" py={3}>
-            <CircularProgress size={24} />
-          </Box>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
         </CardContent>
       </Card>
     );
@@ -97,7 +88,9 @@ export default function GitHubLinks({ taskId, pitchId, title = 'GitHub Activity'
     return (
       <Card>
         <CardContent>
-          <Alert severity="error">{error}</Alert>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -109,126 +102,111 @@ export default function GitHubLinks({ taskId, pitchId, title = 'GitHub Activity'
 
   return (
     <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Github className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <Badge variant="default">{links.length}</Badge>
+        </div>
+      </CardHeader>
       <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <GitHubIcon />
-          <Typography variant="h6">{title}</Typography>
-          <Chip label={links.length} size="small" color="primary" />
-        </Box>
-
-        <Stack spacing={2} divider={<Divider />}>
-          {links.map((link) => (
-            <Box key={link.id}>
+        <div className="space-y-4">
+          {links.map((link, index) => (
+            <div key={link.id}>
+              {index > 0 && <Separator className="my-4" />}
               {link.linkType === 'COMMIT' && link.commit && (
-                <Box>
-                  <Box display="flex" alignItems="flex-start" gap={1} mb={0.5}>
-                    <CommitOutlined sx={{ fontSize: 18, mt: 0.3, color: 'text.secondary' }} />
-                    <Box flex={1}>
-                      <Link
+                <div>
+                  <div className="flex items-start gap-2">
+                    <GitCommit className="h-4 w-4 mt-1 text-muted-foreground" />
+                    <div className="flex-1 space-y-1">
+                      <a
                         href={link.commit.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        sx={{ fontWeight: 500, fontSize: '0.95rem' }}
+                        className="font-medium text-sm hover:underline"
                       >
                         {link.commit.message.split('\n')[0]}
-                      </Link>
-                      <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                        <Typography variant="caption" color="text.secondary">
+                      </a>
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                        <code className="px-1 py-0.5 bg-muted rounded">
                           {link.commit.sha.substring(0, 7)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          by {link.commit.authorName}
-                        </Typography>
+                        </code>
+                        <span>by {link.commit.authorName}</span>
                         {link.commit.branch && (
-                          <Chip
-                            label={link.commit.branch}
-                            size="small"
-                            variant="outlined"
-                            sx={{ height: 18, fontSize: '0.7rem' }}
-                          />
+                          <Badge variant="outline" className="h-5 text-xs">
+                            {link.commit.branch}
+                          </Badge>
                         )}
-                        <Typography variant="caption" color="text.secondary">
-                          {formatDistanceToNow(new Date(link.commit.commitDate), { addSuffix: true })}
-                        </Typography>
+                        <span>{formatDistanceToNow(new Date(link.commit.commitDate), { addSuffix: true })}</span>
                         {link.autoLinked && (
-                          <Tooltip title="Automatically linked from commit message">
-                            <Chip label="Auto" size="small" color="success" sx={{ height: 18, fontSize: '0.7rem' }} />
-                          </Tooltip>
+                          <Badge variant="secondary" className="h-5 text-xs bg-green-100 text-green-800" title="Automatically linked from commit message">
+                            Auto
+                          </Badge>
                         )}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {link.linkType === 'PULL_REQUEST' && link.pullRequest && (
-                <Box>
-                  <Box display="flex" alignItems="flex-start" gap={1} mb={0.5}>
+                <div>
+                  <div className="flex items-start gap-2">
                     {getPRStateIcon(link.pullRequest)}
-                    <Box flex={1}>
-                      <Link
+                    <div className="flex-1 space-y-1">
+                      <a
                         href={link.pullRequest.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        sx={{ fontWeight: 500, fontSize: '0.95rem' }}
+                        className="font-medium text-sm hover:underline"
                       >
                         #{link.pullRequest.prNumber} {link.pullRequest.title}
-                      </Link>
-                      <Box display="flex" alignItems="center" gap={1} mt={0.5} flexWrap="wrap">
+                      </a>
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                         {getPRStateChip(link.pullRequest.state)}
-                        <Typography variant="caption" color="text.secondary">
-                          by {link.pullRequest.authorUsername}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {link.pullRequest.headBranch} → {link.pullRequest.baseBranch}
-                        </Typography>
+                        <span>by {link.pullRequest.authorUsername}</span>
+                        <span>{link.pullRequest.headBranch} → {link.pullRequest.baseBranch}</span>
                         {link.pullRequest.mergedAt && (
-                          <Typography variant="caption" color="text.secondary">
-                            merged {formatDistanceToNow(new Date(link.pullRequest.mergedAt), { addSuffix: true })}
-                          </Typography>
+                          <span>merged {formatDistanceToNow(new Date(link.pullRequest.mergedAt), { addSuffix: true })}</span>
                         )}
                         {link.pullRequest.state === 'OPEN' && (
-                          <Typography variant="caption" color="text.secondary">
-                            opened {formatDistanceToNow(new Date(link.pullRequest.openedAt), { addSuffix: true })}
-                          </Typography>
+                          <span>opened {formatDistanceToNow(new Date(link.pullRequest.openedAt), { addSuffix: true })}</span>
                         )}
                         {link.autoLinked && (
-                          <Tooltip title="Automatically linked from PR description">
-                            <Chip label="Auto" size="small" color="success" sx={{ height: 18, fontSize: '0.7rem' }} />
-                          </Tooltip>
+                          <Badge variant="secondary" className="h-5 text-xs bg-green-100 text-green-800" title="Automatically linked from PR description">
+                            Auto
+                          </Badge>
                         )}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {link.linkType === 'BRANCH' && link.branch && (
-                <Box>
-                  <Box display="flex" alignItems="flex-start" gap={1}>
-                    <BranchesOutlined sx={{ fontSize: 18, mt: 0.3, color: 'text.secondary' }} />
-                    <Box flex={1}>
-                      <Typography variant="body2" fontWeight={500}>
+                <div>
+                  <div className="flex items-start gap-2">
+                    <GitBranch className="h-4 w-4 mt-1 text-muted-foreground" />
+                    <div className="flex-1 space-y-1">
+                      <div className="font-medium text-sm">
                         {link.branch.name}
-                      </Typography>
-                      <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                        {link.branch.isDefault && <Chip label="Default" size="small" color="primary" />}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                        {link.branch.isDefault && <Badge variant="default" className="h-5 text-xs">Default</Badge>}
                         {link.branch.headSha && (
-                          <Typography variant="caption" color="text.secondary">
+                          <code className="px-1 py-0.5 bg-muted rounded">
                             {link.branch.headSha.substring(0, 7)}
-                          </Typography>
+                          </code>
                         )}
-                        <Typography variant="caption" color="text.secondary">
-                          {link.branch.repositoryFullName}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
+                        <span>{link.branch.repositoryFullName}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
-            </Box>
+            </div>
           ))}
-        </Stack>
+        </div>
       </CardContent>
     </Card>
   );

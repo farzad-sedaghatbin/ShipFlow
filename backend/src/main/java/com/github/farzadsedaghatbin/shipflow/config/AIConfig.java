@@ -59,7 +59,7 @@ public class AIConfig {
      * Automatically selects RunPod or Ollama based on app.ai.provider setting.
      */
     @Bean
-    @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
     public ChatLanguageModel chatLanguageModel() {
         if ("ollama".equalsIgnoreCase(aiProvider)) {
             return createOllamaChatModel();
