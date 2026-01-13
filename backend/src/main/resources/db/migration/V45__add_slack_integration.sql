@@ -38,7 +38,7 @@ CREATE TABLE slack_notification_history (
     slack_config_id BIGINT NOT NULL,
     channel_name VARCHAR(255),
     notification_type VARCHAR(100) NOT NULL,
-    message_text VARCHAR(2000),
+    message_text CLOB,
     entity_type VARCHAR(50),
     entity_id BIGINT,
     sent_at TIMESTAMP NOT NULL,
