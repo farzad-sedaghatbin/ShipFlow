@@ -19,6 +19,8 @@ import People from './pages/People';
 import UserManagement from './pages/UserManagement';
 import PermissionManagement from './pages/PermissionManagement';
 import OrganizationSettings from './pages/OrganizationSettings';
+import SlackIntegration from './pages/SlackIntegration';
+import GitHubIntegration from './pages/integrations/GitHubIntegration';
 import Projects from './pages/Projects';
 import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
@@ -112,6 +114,10 @@ function App() {
                     <Route path="users" element={<UserManagement />} />
                     <Route path="permissions" element={<PermissionManagement />} />
                     <Route path="settings" element={<OrganizationSettings />} />
+                    <Route path="integrations/slack" element={<SlackIntegration />} />
+                    <Route path="integrations/github" element={<GitHubIntegration />} />
+                    {/* Legacy route redirects */}
+                    <Route path="slack" element={<Navigate to="/integrations/slack" replace />} />
                     
                     {/* Custom Metrics */}
                     <Route path="metrics" element={<CustomMetrics />} />

@@ -28,6 +28,9 @@ import {
   Moon,
   ListTodo,
   Target,
+  MessageSquare,
+  Github,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -107,11 +110,16 @@ const meetingsItems: NavItemConfig[] = [
   { text: 'Meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
 ];
 
-// Admin section
-const adminItems: NavItemConfig[] = [
+// Admin section - User & Access items
+const userAccessItems: NavItemConfig[] = [
   { text: 'User Management', icon: Shield, path: '/users' },
   { text: 'Permissions', icon: ShieldCheck, path: '/permissions' },
-  { text: 'Organization Settings', icon: Settings, path: '/settings' },
+];
+
+// Integrations section
+const integrationItems: NavItemConfig[] = [
+  { text: 'Slack', icon: MessageSquare, path: '/integrations/slack' },
+  { text: 'GitHub', icon: Github, path: '/integrations/github' },
 ];
 
 function NavItem({ 
@@ -291,14 +299,27 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           <>
             <SectionHeader>Administration</SectionHeader>
             <nav className="flex flex-col gap-1">
-              {adminItems.map((item) => (
-                <NavItem
-                  key={item.path}
-                  item={item}
-                  isActive={currentPath === item.path}
-                  onClick={onItemClick}
-                />
-              ))}
+              <NavGroup
+                title="User & Access"
+                icon={Shield}
+                items={userAccessItems}
+                currentPath={currentPath}
+                onItemClick={onItemClick}
+              />
+              
+              <NavItem
+                item={{ text: 'Organization Settings', icon: Settings, path: '/settings' }}
+                isActive={currentPath === '/settings'}
+                onClick={onItemClick}
+              />
+              
+              <NavGroup
+                title="Integrations"
+                icon={Plug}
+                items={integrationItems}
+                currentPath={currentPath}
+                onItemClick={onItemClick}
+              />
             </nav>
           </>
         )}

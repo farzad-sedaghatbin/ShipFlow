@@ -45,6 +45,13 @@ A modern project management application implementing the [Shape Up](https://base
   - Real-time webhook updates
   - Visual GitHub activity timeline on task/pitch pages
   - Support for multiple repositories
+- **Slack Integration**: Real-time team notifications
+  - Workspace and channel-specific configuration
+  - 8 notification types (tasks, cycles, pitches, betting)
+  - Granular notification preferences per channel
+  - Test notification functionality
+  - Complete audit trail of sent notifications
+  - Role-based access control (ADMIN/MANAGER only)
 
 ## ♿ Accessibility
 

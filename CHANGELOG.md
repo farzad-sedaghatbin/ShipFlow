@@ -7,7 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Fixed
+- **Authentication Token Storage**:
+  - Fixed GitHub and Slack services using incorrect localStorage key
+  - Changed from `'token'` to `'shipflow_token'` to match AuthContext
+  - Resolved 401 Unauthorized errors on `/api/github/repositories` and `/api/slack/configurations`
+  - Services now correctly retrieve JWT tokens for authenticated requests
+
+### Removed
+- **Navigation Cleanup**:
+  - Removed "Help" menu section from sidebar navigation (keyboard shortcuts moved to future release)
+  - Removed "Seed Hill Chart Data" button from User Management page (development-only feature)
+
+### Improved
+- **Navigation Organization**:
+  - Reorganized Administration section with better grouping
+  - Created "User & Access" collapsible group containing User Management and Permissions
+  - Separated Organization Settings as standalone item for better visibility
+  - Maintained Integrations group (Slack, GitHub) under Administration
+
 ### Added
+
+
+- **Slack Integration**:
+  - **Backend Features**:
+    - Database tables for Slack configuration, channel settings, and notification history
+    - `SlackConfiguration` entity for workspace-level settings
+    - `SlackChannelConfig` entity for channel-specific notification preferences
+    - `SlackNotificationHistory` entity for audit logging
+    - `SlackIntegrationService` for sending notifications and managing configuration
+    - `SlackIntegrationController` with REST endpoints for configuration management
+    - Integration with `DashboardNotificationService` for automatic Slack notifications
+    - Support for 8 notification types: task assigned, task completed, task blocked, pitch shaped, cycle started, cycle cooldown, betting completed, sprint started
+    - Channel-specific notification filtering
+    - Test notification functionality
+    - RestTemplate HTTP client configuration
+  - **Frontend Features**:
+    - Slack Integration settings page at `/slack`
+    - Workspace configuration UI with webhook URL management
+    - Channel-specific notification preference management
+    - Test notification sending interface
+    - Notification history viewing
+    - Navigation integration with MessageSquare icon
+    - TypeScript service with full type definitions
+  - **Documentation**:
+    - Comprehensive Slack integration guide
+    - Setup instructions with screenshots
+    - API documentation
+    - Troubleshooting section
+    - Security considerations
+  - **Testing**:
+    - Controller integration tests with MockMvc
+    - Service unit tests with Mockito
+    - 90%+ code coverage for Slack integration components
 - **Role-Based Access Control (RBAC) System**:
   - **Backend Features**:
     - New `Permission` entity linking roles to resource actions
@@ -409,7 +462,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 - **Frontend Architecture**:
   - React with TypeScript and Vite
-  - Material-UI (MUI) component library
+  - shadcn/ui component library (Radix UI primitives with Tailwind CSS)
   - Framer Motion for animations
   - React Query for data fetching
   - Comprehensive form validation and error handling

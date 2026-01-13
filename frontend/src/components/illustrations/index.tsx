@@ -10,7 +10,7 @@ const colors = {
   textSecondary: '#6b7280', // gray-500
 };
 
-// Helper function to create rgba colors (similar to MUI's alpha)
+// Helper function to create rgba colors
 const alpha = (color: string, opacity: number): string => {
   const hex = color.replace('#', '');
   const r = parseInt(hex.substring(0, 2), 16);

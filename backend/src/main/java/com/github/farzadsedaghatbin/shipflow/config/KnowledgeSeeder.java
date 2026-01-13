@@ -2,8 +2,8 @@ package com.github.farzadsedaghatbin.shipflow.config;
 
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
@@ -15,9 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Runs after SampleDataInitializer (Order 2) to ensure data exists.
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
-@Order(2) // Run after SampleDataInitializer
+@Order(2) // Run after SampleDataInitializer  
 @ConditionalOnProperty(name = "app.sample-data.enabled", havingValue = "true")
 public class KnowledgeSeeder implements CommandLineRunner {
 
@@ -26,7 +25,22 @@ public class KnowledgeSeeder implements CommandLineRunner {
     private final WorkLogRepository workLogRepository;
     private final EvidenceRepository evidenceRepository;
     private final KnowledgeItemRepository knowledgeItemRepository;
-    private final KnowledgeIngestionService knowledgeIngestionService;
+    
+    @Autowired(required = false)
+    private KnowledgeIngestionService knowledgeIngestionService;
+
+    public KnowledgeSeeder(
+            PitchRepository pitchRepository,
+            MeetingRepository meetingRepository,
+            WorkLogRepository workLogRepository,
+            EvidenceRepository evidenceRepository,
+            KnowledgeItemRepository knowledgeItemRepository) {
+        this.pitchRepository = pitchRepository;
+        this.meetingRepository = meetingRepository;
+        this.workLogRepository = workLogRepository;
+        this.evidenceRepository = evidenceRepository;
+        this.knowledgeItemRepository = knowledgeItemRepository;
+    }
 
     @Override
     public void run(String... args) {

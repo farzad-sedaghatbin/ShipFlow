@@ -6,6 +6,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,6 +35,7 @@ public class DashboardNotificationService {
     private final PitchRepository pitchRepository;
     private final HillChartPointRepository hillChartPointRepository;
     private final UserRepository userRepository;
+    private final SlackIntegrationService slackService;
 
     /**
      * Get all notifications for a user
@@ -119,6 +121,16 @@ public class DashboardNotificationService {
             task.getId()
         );
         
+        // Send Slack notification
+        slackService.sendNotification(
+            "TASK_ASSIGNED",
+            String.format("📋 *Task Assigned*\n*%s* has been assigned to *%s*\nTask: %s",
+                task.getTitle(), assignee.getUsername(), task.getDescription() != null ? task.getDescription() : "No description"),
+            null,
+            "TASK",
+            task.getId()
+        );
+        
         log.info("Created task assignment notification for user {} on task {}", 
                 assignee.getId(), task.getId());
     }
@@ -180,6 +192,16 @@ public class DashboardNotificationService {
                 "TASK",
                 task.getId()
             );
+            
+            // Send Slack notification for blocked task
+            slackService.sendNotification(
+                "TASK_BLOCKED",
+                String.format("⚠️ *Task Blocked*\n*%s* is now blocked\nAssigned to: %s",
+                    task.getTitle(), assignee.getUsername()),
+                null,
+                "TASK",
+                task.getId()
+            );
         } else if (newStatus == TaskStatus.IN_PROGRESS && oldStatus == TaskStatus.BLOCKED) {
             createNotification(
                 assignee,
@@ -188,6 +210,16 @@ public class DashboardNotificationService {
                 String.format("Task '%s' is no longer blocked", task.getTitle()),
                 "INFO",
                 "/tasks/" + task.getId(),
+                "TASK",
+                task.getId()
+            );
+        } else if (newStatus == TaskStatus.DONE) {
+            // Send Slack notification for completed task
+            slackService.sendNotification(
+                "TASK_COMPLETED",
+                String.format("✅ *Task Completed*\n*%s* has been marked as done\nCompleted by: %s",
+                    task.getTitle(), assignee.getUsername()),
+                null,
                 "TASK",
                 task.getId()
             );
