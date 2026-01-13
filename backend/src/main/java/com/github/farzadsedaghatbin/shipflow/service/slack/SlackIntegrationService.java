@@ -223,15 +223,8 @@ public class SlackIntegrationService {
      */
     private SlackConfiguration getSlackConfigurationOrThrow(Long configId) {
         return slackConfigRepository.findById(configId)
-                .orElseThrow(() -> new SlackConfigurationNotFoundException(configId));
+                .orElseThrow(() -> new IllegalArgumentException("Slack configuration not found with id: " + configId));
     }
-
-    private static class SlackConfigurationNotFoundException extends RuntimeException {
-        SlackConfigurationNotFoundException(Long configId) {
-            super("Slack configuration not found with id: " + configId);
-        }
-    }
-
     public void sendTestNotification(Long configId, TestSlackNotificationRequest request) {
         SlackConfiguration config = getSlackConfigurationOrThrow(configId);
 
