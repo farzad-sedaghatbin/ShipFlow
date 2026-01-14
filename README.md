@@ -178,6 +178,12 @@ AI_CACHE_REDIS_PASSWORD=secure-password
 - [Changelog](CHANGELOG.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 
-## 📄 License
+## � Community
+
+Join our Discord community for support, discussions, and updates:
+
+- **Discord**: [Join our server](https://discord.com/channels/1460971860823904390/1460971861511766060)
+
+## �📄 License
 
 MIT License
