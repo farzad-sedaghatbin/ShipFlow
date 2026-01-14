@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-14
+
 ### Fixed
 - **Database Migration V47**:
   - Fixed H2 compatibility issues in screenshot seed data migration
@@ -35,6 +37,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Help & Guides System**:
+  - **Help Center Hub** (`/help`):
+    - Comprehensive help center landing page with 8 guide categories
+    - Guide cards with icons, descriptions, and color coding
+    - Quick access links with keyboard shortcuts displayed
+    - Responsive grid layout for guide navigation
+  - **Interactive Guide Pages**:
+    - **Getting Started Guide** (`/help/getting-started`): Introduction to ShipFlow, navigation, and core concepts
+    - **Hill Charts Guide** (`/help/hill-charts`): Master hill chart visualization for progress tracking
+    - **Betting Meeting Guide** (`/help/betting-meeting`): Step-by-step guide for effective betting meetings
+    - **AI Risk Advisor Guide** (`/help/ai-risk-advisor`): Leverage AI-powered risk assessments
+    - **Cycle Setup Guide** (`/help/cycle-setup`): Complete cycle creation and management walkthrough
+    - **QA & Testing Guide** (`/help/qa-testing`): Manage test cases, AI test generation, and bug tracking
+    - **Retrospectives Guide** (`/help/retrospectives`): Run effective retrospectives
+    - **Reports & Dashboards Guide** (`/help/reports`): Visualize metrics and create custom dashboards
+  - **Guide Features**:
+    - Rich content with step-by-step instructions
+    - Screenshots embedded in guides (15+ screenshots in `/public/guides/`)
+    - Cross-linked related guides for easy navigation
+    - Back to help center navigation on all guide pages
+    - Organized sections with clear headings and best practices
+  - **Navigation Integration**:
+    - Added "Help & Guides" menu item in sidebar with BookOpen icon
+    - Accessible via `/help` route
+    - Integrated with application layout and navigation system
+
+- **Keyboard Shortcuts System**:
+  - **KeyboardShortcutsHelp Component**:
+    - Modal dialog displaying all available keyboard shortcuts
+    - Organized shortcut list with descriptions
+    - Visual key chips showing keyboard combinations (⌘, Ctrl, Alt, ⇧)
+    - Accessible interface with ARIA labels
+    - Responsive hover effects for better UX
+  - **useKeyboardShortcuts Hook**:
+    - Custom React hook for managing keyboard shortcuts
+    - Support for meta, ctrl, alt, and shift modifiers
+    - Global event listener with cleanup
+    - TypeScript interface for shortcut definitions
+  - **Available Shortcuts**:
+    - Quick navigation to common pages
+    - Dashboard and cycle management shortcuts
+    - Integration with QuickLinks component
+
+- **Quick Links Component**:
+  - Quick access widget for frequent actions
+  - 8 pre-configured quick links with icons and colors:
+    - New Cycle (⇧N)
+    - Log Work (⇧W)
+    - View Pitches (P)
+    - Tasks
+    - Run Reports
+    - Current Cycle
+    - QA Dashboard
+    - Hill Chart
+  - Keyboard shortcut hints displayed on each link
+  - Smooth animations with Framer Motion
+  - Tooltip descriptions for better UX
+  - Color-coded cards for visual distinction
 
 - **Slack Integration**:
   - **Backend Features**:
