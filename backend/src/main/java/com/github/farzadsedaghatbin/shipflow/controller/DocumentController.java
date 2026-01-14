@@ -250,8 +250,6 @@ public class DocumentController {
             if (addToKnowledgeBase && knowledgeIngestionService != null) {
                 try {
                     String pitchTitle = extracted.title() != null ? extracted.title() : file.getOriginalFilename();
-                    Long userId = userDetails != null ? getUserId(userDetails) : null;
-                    String username = userDetails != null ? userDetails.getUsername() : "system";
                     
                     knowledgeIngestionService.ingestPitchDocument(
                         file.getOriginalFilename(),
