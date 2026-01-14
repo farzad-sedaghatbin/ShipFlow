@@ -89,9 +89,7 @@ export default function Landing() {
             <div>
               {/* Logo & Title */}
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                  SU
-                </div>
+                <img src="/icon.png" alt="ShipFlow" className="w-14 h-14 rounded-xl" />
                 <h1 className="text-3xl font-bold text-primary">ShipFlow</h1>
               </div>
               

@@ -85,9 +85,7 @@ export default function Login() {
           <CardContent className="flex-1 p-8 flex flex-col justify-center">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground font-bold text-lg">
-                  SF
-                </div>
+                <img src="/icon.png" alt="ShipFlow" className="w-10 h-10 rounded-lg" />
                 <h1 className="text-2xl font-bold text-primary">ShipFlow</h1>
               </div>
               <p className="text-sm text-muted-foreground">
