@@ -282,7 +282,7 @@ export default function PitchBoard() {
         }));
         setShowShapingFields(true);
         // Switch to Shape Up tab to show extracted data
-        setActiveTab('shapeup');
+        setActiveTab('shaping');
         showSuccess('Pitch data extracted and added to knowledge base! Review the Shape Up fields and create the pitch.');
       } else {
         setExtractedDocumentName('');
