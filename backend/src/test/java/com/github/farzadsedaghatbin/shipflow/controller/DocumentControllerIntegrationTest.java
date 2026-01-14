@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +54,9 @@ class DocumentControllerIntegrationTest {
 
     @Autowired
     private UploadedDocumentRepository documentRepository;
+
+    @TempDir
+    Path tempDir;
 
     private Pitch testPitch;
     private Cycle testCycle;
@@ -306,13 +313,17 @@ class DocumentControllerIntegrationTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
-    private UploadedDocument createDocument(String fileName, String entityType, Long entityId) {
+    private UploadedDocument createDocument(String fileName, String entityType, Long entityId) throws IOException {
+        // Create actual file in temp directory
+        Path filePath = tempDir.resolve(fileName);
+        Files.writeString(filePath, "Sample text content for " + fileName);
+        
         UploadedDocument doc = UploadedDocument.builder()
                 .fileName("uuid_" + fileName)
                 .originalFileName(fileName)
                 .fileType(fileName.substring(fileName.lastIndexOf('.') + 1))
-                .fileSize(100L)
-                .storagePath("/tmp/" + fileName)
+                .fileSize(Files.size(filePath))
+                .storagePath(filePath.toString())
                 .extractedText("Sample text content")
                 .textExtracted(true)
                 .entityType(entityType)
