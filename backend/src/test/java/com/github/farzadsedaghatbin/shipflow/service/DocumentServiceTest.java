@@ -306,4 +306,39 @@ class DocumentServiceTest {
         assertThat(pending).hasSize(2);
         assertThat(pending).containsExactly(doc1, doc2);
     }
+
+    @Test
+    void linkDocumentToEntity_whenDocumentExists_shouldUpdateEntity() {
+        // Given
+        UploadedDocument doc = UploadedDocument.builder()
+                .id(1L)
+                .fileName("test.pdf")
+                .originalFileName("test.pdf")
+                .entityType("PITCH")
+                .entityId(0L)
+                .build();
+
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
+        when(documentRepository.save(any(UploadedDocument.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        documentService.linkDocumentToEntity(1L, "PITCH", 123L);
+
+        // Then
+        verify(documentRepository).save(argThat(document ->
+                document.getEntityType().equals("PITCH") &&
+                document.getEntityId().equals(123L)
+        ));
+    }
+
+    @Test
+    void linkDocumentToEntity_whenDocumentNotFound_shouldThrowException() {
+        // Given
+        when(documentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When/Then
+        assertThatThrownBy(() -> documentService.linkDocumentToEntity(999L, "PITCH", 123L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Document not found");
+    }
 }
