@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
   ChevronDown,
@@ -177,6 +177,8 @@ export default function PitchBoard() {
     return Object.keys(errors).length === 0;
   };
 
+  const navigate = useNavigate();
+
   const handleCreatePitch = async () => {
     if (!validatePitchForm()) {
       return;
@@ -203,6 +205,9 @@ export default function PitchBoard() {
       
       showSuccess('Pitch created successfully!');
       setCreateDialog(false);
+      
+      // Navigate to the newly created pitch detail view
+      navigate(`/pitches/${createdPitch.id}`);
       setNewPitch({
         title: '',
         description: '',
