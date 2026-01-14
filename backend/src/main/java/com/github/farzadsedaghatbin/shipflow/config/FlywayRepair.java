@@ -2,9 +2,15 @@ package com.github.farzadsedaghatbin.shipflow.config;
 
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+    name = "spring.flyway.repair.enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 public class FlywayRepair implements CommandLineRunner {
 
     private final Flyway flyway;
