@@ -734,9 +734,9 @@ export default function PitchBoard() {
 
               {/* Regular Document Upload */}
               <div className="space-y-2">
-                <h4 className="font-medium">Attach Documents for Q&A</h4>
+                <h4 className="font-medium">Attach Supporting Documents</h4>
                 <p className="text-sm text-muted-foreground">
-                  These documents will be indexed for the knowledge base Q&A feature.
+                  Add additional reference documents (no extraction needed). These will be available for download and indexed for Q&A.
                 </p>
                 <div
                   className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
@@ -759,7 +759,7 @@ export default function PitchBoard() {
                   />
                   <FileUp className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    Drop files here or click to select
+                    Drop files here or click to select multiple documents
                   </p>
                 </div>
                 {pendingDocuments.length > 0 && (
