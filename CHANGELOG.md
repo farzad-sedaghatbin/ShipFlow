@@ -7,10 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-01-14
+
+### Added
+- **Branding & Icon System**:
+  - Added high-quality application icon (2048x2048) for consistent branding
+  - Generated multi-resolution favicons (16x16, 32x32, 48x48, 180x180, 192x192, 512x512)
+  - Created PWA-ready web manifest with proper icon configuration
+  - Updated logo across application: sidebar, login page, landing page, and README
+  - Replaced text-based logos ("SF", "SU") with actual icon image
+
+### Fixed
+- **Build System**:
+  - Fixed Lombok annotation processing compatibility with Java 21
+  - Added explicit annotation processor path in Maven compiler plugin
+  - Updated Lombok to version 1.18.36 for better Java 21 support
+  - Resolved compilation errors with entity getter/setter methods
+  
+- **Database Migration**:
+  - Fixed CyclePhase enum mismatch: changed "EXECUTION" to "BUILD" in V47 migration
+  - Resolved Flyway checksum validation errors
+  - Fixed Java/Maven version compatibility issues (enforced Java 17)
+
 ## [0.2.0] - 2026-01-14
 
 ### Fixed
-- **Database Migration V47**:
   - Fixed H2 compatibility issues in screenshot seed data migration
   - Changed `INTERVAL '42 days'` to H2-compatible `DATEADD('DAY', 42, CURRENT_DATE)`
   - Corrected pitches table INSERT to use `appetite_days` instead of non-existent `appetite` column

@@ -8,7 +8,7 @@ WHERE NOT EXISTS (SELECT 1 FROM projects WHERE project_key = 'SHOP');
 
 -- 2. Create the "Cycle 1 - Q1 2026"
 INSERT INTO cycles (name, start_date, end_date, phase, project_id, is_active)
-SELECT 'Cycle 1 - Q1 2026', CURRENT_DATE, DATEADD('DAY', 42, CURRENT_DATE), 'EXECUTION', 
+SELECT 'Cycle 1 - Q1 2026', CURRENT_DATE, DATEADD('DAY', 42, CURRENT_DATE), 'BUILD', 
        (SELECT id FROM projects WHERE project_key = 'SHOP'), true
 WHERE NOT EXISTS (SELECT 1 FROM cycles WHERE name = 'Cycle 1 - Q1 2026');
 

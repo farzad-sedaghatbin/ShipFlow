@@ -219,9 +219,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
         <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">SF</span>
-          </div>
+          <img src="/icon.png" alt="ShipFlow" className="h-8 w-8 rounded-lg" />
           <span className="text-lg font-bold text-foreground">ShipFlow</span>
         </Link>
       </div>

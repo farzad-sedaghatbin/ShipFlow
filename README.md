@@ -1,4 +1,4 @@
-# ShipFlow
+# <img src="frontend/public/icon.png" alt="ShipFlow Logo" width="32" height="32" style="vertical-align: middle;"> ShipFlow
 
 A modern project management application implementing the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
 
