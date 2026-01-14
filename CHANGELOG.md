@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated Pitch entity, PitchDTO, and CreatePitchRequest with Shape Up fields
 
 - **AI Configuration**:
-  - Configured RunPod as AI provider using .env credentials (RUNPOD_API_KEY, RUNPOD_BASE_URL)
+
   - Enhanced PitchShapingExtractorService with structured JSON extraction prompt
   - Improved knowledge base integration for pitch documents
 
@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better document visibility with badges for extraction and indexing status
 
 ### Fixed
-- **Content-Type Header**: Fixed multipart/form-data Content-Type error in document extraction
+
 - **H2 SQL Syntax**: Removed WHERE clause from partial index for H2 compatibility
 - **Document Visibility**: Added extractedDocumentName state to show uploaded document name
 - **Tab Navigation**: Implemented activeTab state for controlled tab switching
