@@ -172,6 +172,15 @@ public class DocumentController {
     }
 
     /**
+     * Download a document.
+     */
+    @GetMapping("/{id}/download")
+    @Operation(summary = "Download document", description = "Download a document file")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadDocument(@PathVariable Long id) {
+        return documentService.downloadDocument(id);
+    }
+
+    /**
      * Delete a document.
      */
     @DeleteMapping("/{id}")

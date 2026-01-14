@@ -112,4 +112,21 @@ export const documentService = {
   // Check if AI extraction is available
   getExtractionStatus: () =>
     api.get<ExtractionStatus>('/documents/extract-pitch-data/status'),
+
+  // Download document
+  downloadDocument: async (id: number, fileName: string) => {
+    const response = await api.get(`/documents/${id}/download`, {
+      responseType: 'blob',
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

@@ -12,6 +12,11 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -274,6 +280,45 @@ public class DocumentService {
         }
         
         documentRepository.delete(document);
+    }
+
+    /**
+     * Download a document.
+     */
+    public ResponseEntity<Resource> downloadDocument(Long id) {
+        UploadedDocument document = getDocumentById(id);
+        
+        try {
+            Path filePath = Paths.get(document.getStoragePath());
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new RuntimeException("File not found or not readable: " + document.getOriginalFileName());
+            }
+            
+            // Determine content type
+            String contentType = determineContentType(document.getFileType());
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, 
+                            "attachment; filename=\"" + document.getOriginalFileName() + "\"")
+                    .body(resource);
+                    
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Error reading file: " + e.getMessage(), e);
+        }
+    }
+
+    private String determineContentType(String fileType) {
+        return switch (fileType.toLowerCase()) {
+            case "pdf" -> "application/pdf";
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "doc" -> "application/msword";
+            case "txt" -> "text/plain";
+            case "md" -> "text/markdown";
+            default -> "application/octet-stream";
+        };
     }
 
     /**
