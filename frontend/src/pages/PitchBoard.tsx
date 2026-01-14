@@ -286,6 +286,8 @@ export default function PitchBoard() {
           appetiteDays: extracted.appetiteDays || prev.appetiteDays,
         }));
         setShowShapingFields(true);
+        // Add the file to pending documents so it's uploaded after pitch creation
+        setPendingDocuments(prev => [...prev, file]);
         // Switch to Shape Up tab to show extracted data
         setActiveTab('shaping');
         showSuccess('Pitch data extracted and added to knowledge base! Review the Shape Up fields and create the pitch.');
