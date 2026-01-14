@@ -77,6 +77,8 @@ export default function PitchBoard() {
   const [pendingDocuments, setPendingDocuments] = useState<File[]>([]);
   const [showDocUpload, setShowDocUpload] = useState(false);
   const [showShapingFields, setShowShapingFields] = useState(false);
+  const [extractedDocumentName, setExtractedDocumentName] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('basic');
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
     description: '',
@@ -249,6 +251,8 @@ export default function PitchBoard() {
     setPendingDocuments([]);
     setShowDocUpload(false);
     setShowShapingFields(false);
+    setExtractedDocumentName('');
+    setActiveTab('basic');
   };
 
   // Extract pitch data from uploaded document using AI
@@ -256,6 +260,8 @@ export default function PitchBoard() {
   const handleExtractFromDocument = async (file: File) => {
     try {
       setExtracting(true);
+      setExtractedDocumentName(file.name);
+      
       // Note: pitchId will be undefined for new pitches, which is fine
       // The document will still be added to knowledge base with pitch metadata once pitch is created
       const response = await documentService.extractPitchData(file, undefined, true);
@@ -275,11 +281,15 @@ export default function PitchBoard() {
           appetiteDays: extracted.appetiteDays || prev.appetiteDays,
         }));
         setShowShapingFields(true);
-        showSuccess('Pitch data extracted and added to knowledge base! Review and edit the fields below.');
+        // Switch to Shape Up tab to show extracted data
+        setActiveTab('shapeup');
+        showSuccess('Pitch data extracted and added to knowledge base! Review the Shape Up fields and create the pitch.');
       } else {
+        setExtractedDocumentName('');
         showError(extracted.errorMessage || 'Failed to extract pitch data');
       }
     } catch (error) {
+      setExtractedDocumentName('');
       showError(getUserFriendlyError(error, 'Failed to extract pitch data from document'));
     } finally {
       setExtracting(false);
@@ -433,7 +443,7 @@ export default function PitchBoard() {
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="basic" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="shaping">
@@ -618,14 +628,32 @@ export default function PitchBoard() {
                   id="pitch-wireframes"
                   value={newPitch.wireframeLinks || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, wireframeLinks: e.target.value })}
-                  placeholder="Links to Figma, wireframes, mockups, or visual references (one per line)"
-                  rows={2}
+                  placeholder="Figma, wireframes, mockups (one URL per line)\n\nhttps://figma.com/...\nhttps://miro.com/..."
+                  rows={3}
                 />
+                <p className="text-xs text-muted-foreground">Enter multiple links, one per line</p>
               </div>
             </TabsContent>
 
             {/* Documents Tab */}
             <TabsContent value="documents" className="space-y-4 mt-4">
+              {/* Extracted Document Indicator */}
+              {extractedDocumentName && (
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2">
+                    <FileUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">Document Extracted</p>
+                      <p className="text-xs text-green-700 dark:text-green-300">{extractedDocumentName}</p>
+                    </div>
+                    <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">
+                      ✓ Processed
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">Review the extracted data in the Shape Up tab, then create the pitch.</p>
+                </div>
+              )}
+
               {/* AI Extraction Section */}
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-2 mb-2">
