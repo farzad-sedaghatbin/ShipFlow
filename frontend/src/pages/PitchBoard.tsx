@@ -681,7 +681,9 @@ export default function PitchBoard() {
                       ✓ Processed
                     </Badge>
                   </div>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">Review the extracted data in the Shape Up tab, then create the pitch.</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    Review the extracted data in the Shape Up tab. You can extract from another document below to replace this data.
+                  </p>
                 </div>
               )}
 
@@ -693,6 +695,7 @@ export default function PitchBoard() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
                   Upload a pitch document to automatically extract problem statement, solution, rabbit holes, and risks using AI.
+                  {extractedDocumentName && " Upload another to replace the current extracted data."}
                 </p>
                 <div
                   className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/50 transition-colors"
