@@ -284,7 +284,6 @@ export default function PitchBoard() {
   const handleExtractFromDocument = async (file: File) => {
     try {
       setExtracting(true);
-      setExtractedDocumentName(file.name);
       
       // Note: pitchId will be undefined for new pitches, which is fine
       // The document will still be added to knowledge base with pitch metadata once pitch is created
@@ -292,6 +291,8 @@ export default function PitchBoard() {
       const extracted = response.data;
       
       if (extracted.extractionSuccessful) {
+        // Set document name only after successful extraction
+        setExtractedDocumentName(file.name);
         // Apply extracted data to form
         setNewPitch(prev => ({
           ...prev,
