@@ -102,7 +102,11 @@ export const documentService = {
       formData.append('pitchId', pitchId.toString());
     }
     formData.append('addToKnowledgeBase', addToKnowledgeBase.toString());
-    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData);
+    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 
   // Check if AI extraction is available
