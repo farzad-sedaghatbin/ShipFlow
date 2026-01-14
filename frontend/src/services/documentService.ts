@@ -102,11 +102,8 @@ export const documentService = {
       formData.append('pitchId', pitchId.toString());
     }
     formData.append('addToKnowledgeBase', addToKnowledgeBase.toString());
-    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type - let axios/browser set it automatically with boundary
+    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData);
   },
 
   // Check if AI extraction is available
