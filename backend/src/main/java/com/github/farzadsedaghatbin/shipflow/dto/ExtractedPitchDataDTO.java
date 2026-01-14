@@ -24,4 +24,5 @@ public class ExtractedPitchDataDTO {
     private String wireframeLinks;
     private boolean extractionSuccessful;
     private String errorMessage;
+    private Long documentId; // ID of saved document (if saveDocument was true)
 }

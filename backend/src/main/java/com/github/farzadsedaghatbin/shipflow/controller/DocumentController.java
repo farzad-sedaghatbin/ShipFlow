@@ -210,15 +210,29 @@ public class DocumentController {
      */
     @PostMapping(value = "/extract-pitch-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Extract pitch data from document", 
-               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI. Also adds to knowledge base for Q&A.")
+               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI. Also saves document and adds to knowledge base for Q&A.")
     public ResponseEntity<ExtractedPitchDataDTO> extractPitchDataFromDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "pitchId", required = false) Long pitchId,
             @RequestParam(value = "addToKnowledgeBase", required = false, defaultValue = "true") boolean addToKnowledgeBase,
+            @RequestParam(value = "saveDocument", required = false, defaultValue = "true") boolean saveDocument,
             @AuthenticationPrincipal UserDetails userDetails) {
         
         try {
-            // First extract text from the document
+            Long userId = getUserId(userDetails);
+            String username = userDetails.getUsername();
+            Long documentId = null;
+            
+            // Save document if requested (for later linking to pitch)
+            if (saveDocument) {
+                DocumentUploadResponse uploadResponse = documentService.uploadDocument(
+                    file, "PITCH", pitchId != null ? pitchId : 0L, userId, username);
+                if (uploadResponse.getId() != null) {
+                    documentId = uploadResponse.getId();
+                }
+            }
+            
+            // Extract text from the document
             String extractedText = documentService.extractTextFromFile(file);
             
             if (extractedText == null || extractedText.trim().isEmpty()) {
@@ -266,6 +280,7 @@ public class DocumentController {
                     .wireframeLinks(extracted.wireframeLinks())
                     .extractionSuccessful(extracted.extractionSuccessful())
                     .errorMessage(extracted.errorMessage())
+                    .documentId(documentId)
                     .build());
                     
         } catch (Exception e) {
@@ -274,6 +289,23 @@ public class DocumentController {
                     .extractionSuccessful(false)
                     .errorMessage("Error processing document: " + e.getMessage())
                     .build());
+        }
+    }
+
+    /**
+     * Link an existing document to a pitch.
+     */
+    @PutMapping("/{documentId}/link-to-pitch/{pitchId}")
+    @Operation(summary = "Link document to pitch", description = "Associate an existing document with a pitch")
+    public ResponseEntity<Map<String, String>> linkDocumentToPitch(
+            @PathVariable Long documentId,
+            @PathVariable Long pitchId) {
+        try {
+            documentService.linkDocumentToEntity(documentId, "PITCH", pitchId);
+            return ResponseEntity.ok(Map.of("message", "Document linked to pitch successfully"));
+        } catch (Exception e) {
+            log.error("Error linking document to pitch: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

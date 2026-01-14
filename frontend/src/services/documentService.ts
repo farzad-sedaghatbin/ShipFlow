@@ -126,4 +126,8 @@ export const documentService = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+
+  // Link existing document to pitch
+  linkDocumentToPitch: (documentId: number, pitchId: number) =>
+    api.put(`/documents/${documentId}/link-to-pitch/${pitchId}`),
 };

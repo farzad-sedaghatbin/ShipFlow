@@ -206,6 +206,7 @@ export interface ExtractedPitchData {
   wireframeLinks?: string;
   extractionSuccessful: boolean;
   errorMessage?: string;
+  documentId?: number; // ID of saved document
 }
 
 export interface WorkLog {

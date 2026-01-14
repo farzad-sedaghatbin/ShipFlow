@@ -78,6 +78,7 @@ export default function PitchBoard() {
   const [showDocUpload, setShowDocUpload] = useState(false);
   const [showShapingFields, setShowShapingFields] = useState(false);
   const [extractedDocumentName, setExtractedDocumentName] = useState<string>('');
+  const [extractedDocumentId, setExtractedDocumentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
@@ -192,9 +193,20 @@ export default function PitchBoard() {
       });
       const createdPitch = response.data;
       
-      // Upload pending documents if any
+      // Link extracted document if exists
+      if (extractedDocumentId && createdPitch.id) {
+        try {
+          await documentService.linkDocumentToPitch(extractedDocumentId, createdPitch.id);
+          showSuccess('Pitch created with document!');
+        } catch (docError) {
+          console.error('Document linking error:', docError);
+          showError('Pitch created but failed to link document');
+        }
+      }
+      
+      // Upload any additional pending documents
       if (pendingDocuments.length > 0 && createdPitch.id) {
-        showSuccess('Pitch created! Uploading documents...');
+        showSuccess('Pitch created! Uploading additional documents...');
         for (const file of pendingDocuments) {
           try {
             await documentService.uploadForPitch(createdPitch.id, file);
@@ -203,8 +215,8 @@ export default function PitchBoard() {
             showError(`Failed to upload ${file.name}`);
           }
         }
-        showSuccess(`Pitch created with ${pendingDocuments.length} document(s)!`);
-      } else {
+        showSuccess(`Pitch created with ${pendingDocuments.length} additional document(s)!`);
+      } else if (!extractedDocumentId) {
         showSuccess('Pitch created successfully!');
       }
       
@@ -230,6 +242,8 @@ export default function PitchBoard() {
       setPendingDocuments([]);
       setShowDocUpload(false);
       setShowShapingFields(false);
+      setExtractedDocumentId(null);
+      setExtractedDocumentName('');
       if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
@@ -261,6 +275,7 @@ export default function PitchBoard() {
     setShowDocUpload(false);
     setShowShapingFields(false);
     setExtractedDocumentName('');
+    setExtractedDocumentId(null);
     setActiveTab('basic');
   };
 
@@ -290,17 +305,21 @@ export default function PitchBoard() {
           appetiteDays: extracted.appetiteDays || prev.appetiteDays,
         }));
         setShowShapingFields(true);
-        // Add the file to pending documents so it's uploaded after pitch creation
-        setPendingDocuments(prev => [...prev, file]);
+        // Store the document ID from extraction (document was already saved during extraction)
+        if (extracted.documentId) {
+          setExtractedDocumentId(extracted.documentId);
+        }
         // Switch to Shape Up tab to show extracted data
         setActiveTab('shaping');
         showSuccess('Pitch data extracted and added to knowledge base! Review the Shape Up fields and create the pitch.');
       } else {
         setExtractedDocumentName('');
+        setExtractedDocumentId(null);
         showError(extracted.errorMessage || 'Failed to extract pitch data');
       }
     } catch (error) {
       setExtractedDocumentName('');
+      setExtractedDocumentId(null);
       showError(getUserFriendlyError(error, 'Failed to extract pitch data from document'));
     } finally {
       setExtracting(false);

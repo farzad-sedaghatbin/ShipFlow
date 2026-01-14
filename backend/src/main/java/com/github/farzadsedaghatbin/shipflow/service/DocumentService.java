@@ -322,6 +322,17 @@ public class DocumentService {
     }
 
     /**
+     * Link an existing document to an entity.
+     */
+    @Transactional
+    public void linkDocumentToEntity(Long documentId, String entityType, Long entityId) {
+        UploadedDocument document = getDocumentById(documentId);
+        document.setEntityType(entityType);
+        document.setEntityId(entityId);
+        documentRepository.save(document);
+    }
+
+    /**
      * Get documents that haven't been indexed for Q&A.
      */
     public List<UploadedDocument> getPendingDocuments() {
