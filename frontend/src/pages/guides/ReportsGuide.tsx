@@ -128,34 +128,6 @@ export default function ReportsGuide() {
                 </CardContent>
             </Card>
 
-            {/* Dashboard Templates */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <LayoutDashboard className="h-5 w-5" />
-                        Dashboard Templates
-                    </CardTitle>
-                    <CardDescription>Start quickly with pre-built reporting boards</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>
-                        ShipFlow comes with several default templates to help you get started without building from scratch.
-                        Click <strong>"Use Template"</strong> on the main Reports page to browse:
-                    </p>
-                    <ul className="grid gap-2 sm:grid-cols-2 text-sm">
-                        <li className="p-3 rounded-lg border bg-muted/30">
-                            <strong>Weekly Sync:</strong> Overview of active pitches and blockers for standups.
-                        </li>
-                        <li className="p-3 rounded-lg border bg-muted/30">
-                            <strong>Cycle Review:</strong> Comprehensive metrics for the end-of-cycle retrospective.
-                        </li>
-                        <li className="p-3 rounded-lg border bg-muted/30">
-                            <strong>Executive Summary:</strong> High-level view of project health and risks.
-                        </li>
-                    </ul>
-                </CardContent>
-            </Card>
-
             {/* Custom Metrics */}
             <Card>
                 <CardHeader>
