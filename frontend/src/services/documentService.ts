@@ -94,9 +94,14 @@ export const documentService = {
     api.post<{ message: string; indexedCount: number }>('/documents/index-pending'),
 
   // Extract pitch data from a document using AI
-  extractPitchData: (file: File) => {
+  // Optionally adds the document to the knowledge base for Q&A
+  extractPitchData: (file: File, pitchId?: number, addToKnowledgeBase: boolean = true) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (pitchId !== undefined) {
+      formData.append('pitchId', pitchId.toString());
+    }
+    formData.append('addToKnowledgeBase', addToKnowledgeBase.toString());
     return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData);
   },
 

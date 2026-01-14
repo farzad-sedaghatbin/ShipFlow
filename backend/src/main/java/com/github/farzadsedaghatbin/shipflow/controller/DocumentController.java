@@ -6,11 +6,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.DocumentService;
+import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.PitchShapingExtractorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,6 +36,9 @@ public class DocumentController {
     private final DocumentService documentService;
     private final UserRepository userRepository;
     private final PitchShapingExtractorService pitchShapingExtractorService;
+    
+    @Autowired(required = false)
+    private KnowledgeIngestionService knowledgeIngestionService;
 
     /**
      * Upload a document and extract its text content.
@@ -192,12 +197,16 @@ public class DocumentController {
     /**
      * Extract pitch shaping data from an uploaded document using AI.
      * This endpoint analyzes the document and extracts Shape Up methodology elements.
+     * Also adds the document to the knowledge base for Q&A.
      */
     @PostMapping(value = "/extract-pitch-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Extract pitch data from document", 
-               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI")
+               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI. Also adds to knowledge base for Q&A.")
     public ResponseEntity<ExtractedPitchDataDTO> extractPitchDataFromDocument(
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "pitchId", required = false) Long pitchId,
+            @RequestParam(value = "addToKnowledgeBase", required = false, defaultValue = "true") boolean addToKnowledgeBase,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
         try {
             // First extract text from the document
@@ -213,6 +222,29 @@ public class DocumentController {
             // Use AI to extract pitch data
             PitchShapingExtractorService.ExtractedPitchData extracted = 
                     pitchShapingExtractorService.extractFromDocument(extractedText);
+            
+            // Add to knowledge base if enabled and QA service is available
+            if (addToKnowledgeBase && knowledgeIngestionService != null) {
+                try {
+                    String pitchTitle = extracted.title() != null ? extracted.title() : file.getOriginalFilename();
+                    Long userId = userDetails != null ? getUserId(userDetails) : null;
+                    String username = userDetails != null ? userDetails.getUsername() : "system";
+                    
+                    knowledgeIngestionService.ingestPitchDocument(
+                        file.getOriginalFilename(),
+                        extractedText,
+                        pitchId,
+                        pitchTitle,
+                        userId,
+                        username
+                    );
+                    
+                    log.info("Added pitch document to knowledge base: {}", pitchTitle);
+                } catch (Exception e) {
+                    log.warn("Failed to add pitch document to knowledge base: {}", e.getMessage());
+                    // Don't fail the extraction if knowledge base ingestion fails
+                }
+            }
             
             return ResponseEntity.ok(ExtractedPitchDataDTO.builder()
                     .title(extracted.title())

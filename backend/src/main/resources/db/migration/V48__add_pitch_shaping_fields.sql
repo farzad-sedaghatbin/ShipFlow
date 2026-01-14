@@ -14,5 +14,5 @@ ALTER TABLE pitches ADD COLUMN IF NOT EXISTS risks TEXT;
 ALTER TABLE pitches ADD COLUMN IF NOT EXISTS no_gos TEXT;
 ALTER TABLE pitches ADD COLUMN IF NOT EXISTS wireframe_links TEXT;
 
--- Add index for searching shaped pitches with full content
-CREATE INDEX IF NOT EXISTS idx_pitches_shaped_content ON pitches(status) WHERE status = 'SHAPED';
+-- Add index for searching shaped pitches by status
+CREATE INDEX IF NOT EXISTS idx_pitches_status ON pitches(status);

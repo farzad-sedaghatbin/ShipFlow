@@ -252,10 +252,13 @@ export default function PitchBoard() {
   };
 
   // Extract pitch data from uploaded document using AI
+  // Also adds the document to the knowledge base for Q&A
   const handleExtractFromDocument = async (file: File) => {
     try {
       setExtracting(true);
-      const response = await documentService.extractPitchData(file);
+      // Note: pitchId will be undefined for new pitches, which is fine
+      // The document will still be added to knowledge base with pitch metadata once pitch is created
+      const response = await documentService.extractPitchData(file, undefined, true);
       const extracted = response.data;
       
       if (extracted.extractionSuccessful) {
@@ -272,7 +275,7 @@ export default function PitchBoard() {
           appetiteDays: extracted.appetiteDays || prev.appetiteDays,
         }));
         setShowShapingFields(true);
-        showSuccess('Pitch data extracted successfully! Review and edit the fields below.');
+        showSuccess('Pitch data extracted and added to knowledge base! Review and edit the fields below.');
       } else {
         showError(extracted.errorMessage || 'Failed to extract pitch data');
       }

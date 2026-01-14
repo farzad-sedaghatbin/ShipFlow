@@ -309,6 +309,63 @@ public class KnowledgeIngestionService {
         log.info("Ingested document: {} (ID: {})", document.getOriginalFileName(), document.getId());
     }
 
+    /**
+     * Ingest a pitch document directly into the knowledge base.
+     * Used when extracting pitch data from uploaded documents.
+     * This makes pitch documents searchable via Q&A.
+     */
+    @Transactional
+    public void ingestPitchDocument(String fileName, String extractedText, Long pitchId, 
+                                     String pitchTitle, Long uploaderId, String uploaderUsername) {
+        if (!isQAEnabled()) return;
+
+        if (extractedText == null || extractedText.trim().isEmpty()) {
+            log.warn("Pitch document has no extracted text, skipping: {}", fileName);
+            return;
+        }
+
+        Long cycleId = null;
+        Long teamId = null;
+
+        // Resolve pitch associations
+        if (pitchId != null) {
+            Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
+            if (pitchOpt.isPresent()) {
+                Pitch pitch = pitchOpt.get();
+                cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+                teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
+            }
+        }
+
+        String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
+
+        ingestEntity(
+                KnowledgeEntityType.DOCUMENT,
+                null, // No document ID yet as it's directly uploaded for extraction
+                "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName),
+                content,
+                cycleId,
+                teamId,
+                pitchId,
+                uploaderId
+        );
+
+        log.info("Ingested pitch document to knowledge base: {} (Pitch: {})", fileName, pitchTitle);
+    }
+
+    private String buildPitchDocumentContent(String fileName, String pitchTitle, String extractedText) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pitch Document: ").append(fileName).append("\n");
+        if (pitchTitle != null) {
+            sb.append("Pitch Title: ").append(pitchTitle).append("\n");
+        }
+        sb.append("Type: PITCH_DOCUMENT\n");
+        sb.append("\n--- Pitch Content ---\n");
+        sb.append(extractedText);
+        
+        return sb.toString();
+    }
+
     private String buildDocumentContent(UploadedDocument document) {
         StringBuilder sb = new StringBuilder();
         sb.append("Document: ").append(document.getOriginalFileName()).append("\n");
