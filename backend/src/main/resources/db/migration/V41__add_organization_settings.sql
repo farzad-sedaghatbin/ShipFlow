@@ -58,7 +58,7 @@ INSERT INTO organization_settings (
     enable_ai_features,
     updated_by
 ) VALUES (
-    'ShapeUp Tracker',
+    'ShipFlow',
     6,
     2,
     '{"lowMax":30,"mediumMax":60,"highMax":85}',

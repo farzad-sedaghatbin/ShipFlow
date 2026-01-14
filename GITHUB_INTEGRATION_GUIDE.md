@@ -1,6 +1,6 @@
 # GitHub Integration Guide
 
-The ShapeUp Tracker now integrates with GitHub to automatically link commits, pull requests, and branches to tasks and pitches. This enables automatic task closure when PRs are merged and provides visibility into development activity.
+ShipFlow now integrates with GitHub to automatically link commits, pull requests, and branches to tasks and pitches. This enables automatic task closure when PRs are merged and provides visibility into development activity.
 
 ## Features
 
@@ -41,7 +41,7 @@ For production use, it's recommended to set a webhook secret:
 
 1. Generate a secure random string (e.g., using `openssl rand -hex 32`)
 2. Set it in your GitHub webhook configuration
-3. Add it to your repository configuration in ShapeUp Tracker
+3. Add it to your repository configuration in ShipFlow
 4. Or set globally via environment variable: `GITHUB_WEBHOOK_SECRET`
 
 ### 4. Optional: Add Personal Access Token
@@ -49,7 +49,7 @@ For production use, it's recommended to set a webhook secret:
 For private repositories or enhanced API access:
 
 1. Generate a GitHub Personal Access Token with `repo` scope
-2. Add it to your repository configuration in ShapeUp Tracker
+2. Add it to your repository configuration in ShipFlow
 3. Or set globally via environment variable: `GITHUB_OAUTH_CLIENT_SECRET`
 
 ## Usage
@@ -328,7 +328,7 @@ Both styles work and can be mixed in the same project.
 
 If you have an existing repository with commits:
 
-1. Register the repository in ShapeUp Tracker
+1. Register the repository in ShipFlow
 2. Historic commits won't be automatically imported
 3. New commits and PRs will be tracked from webhook registration onward
 4. Optionally implement a one-time import script if needed

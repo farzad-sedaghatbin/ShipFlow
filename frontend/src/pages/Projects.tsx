@@ -257,7 +257,7 @@ export default function Projects() {
           <EmptyState
             illustration={<EmptyProjectsIllustration />}
             title="No projects yet"
-            description="Create your first project to get started with ShapeUp cycles and track your team's progress."
+            description="Create your first project to get started with Shape Up cycles and track your team's progress."
             action={{
               label: 'Create First Project',
               onClick: () => handleOpenDialog(),

@@ -31,6 +31,7 @@ import {
   MessageSquare,
   Github,
   Plug,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -122,13 +123,13 @@ const integrationItems: NavItemConfig[] = [
   { text: 'GitHub', icon: Github, path: '/integrations/github' },
 ];
 
-function NavItem({ 
-  item, 
-  isActive, 
+function NavItem({
+  item,
+  isActive,
   onClick,
   indent = false,
-}: { 
-  item: NavItemConfig; 
+}: {
+  item: NavItemConfig;
   isActive: boolean;
   onClick?: () => void;
   indent?: boolean;
@@ -292,6 +293,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             currentPath={currentPath}
             onItemClick={onItemClick}
           />
+
+          {/* Help & Guides Section */}
+          <SectionHeader>Help & Support</SectionHeader>
+          <NavItem
+            item={{ text: 'Help & Guides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
+            isActive={currentPath.startsWith('/help')}
+            onClick={onItemClick}
+          />
         </nav>
 
         {/* Admin Section */}
@@ -306,13 +315,13 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
                 currentPath={currentPath}
                 onItemClick={onItemClick}
               />
-              
+
               <NavItem
                 item={{ text: 'Organization Settings', icon: Settings, path: '/settings' }}
                 isActive={currentPath === '/settings'}
                 onClick={onItemClick}
               />
-              
+
               <NavGroup
                 title="Integrations"
                 icon={Plug}
@@ -408,9 +417,9 @@ export default function Layout({ children }: LayoutProps) {
             {/* Theme Toggle */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={toggleTheme}
                   className="h-11 w-11 touch-manipulation"
                   aria-label="Toggle theme"

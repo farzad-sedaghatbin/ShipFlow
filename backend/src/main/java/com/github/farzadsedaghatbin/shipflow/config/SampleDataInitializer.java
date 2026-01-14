@@ -80,7 +80,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         User frankUser = userRepository.findByUsername("frank").orElse(null);
         
         Project mainProject = Project.builder()
-                .name("ShapeUp Tracker")
+                .name("ShipFlow")
                 .projectKey("SUT")
                 .description("Main product development - Shape Up tracking and collaboration platform")
                 .color("#3B82F6")

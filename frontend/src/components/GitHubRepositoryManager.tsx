@@ -14,8 +14,8 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Plus, Github, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Plus, Github, Copy, CheckCircle2 } from 'lucide-react';
 import { githubService } from '../services/githubService';
 import { GitHubRepository, CreateGitHubRepositoryRequest } from '../types/github';
 

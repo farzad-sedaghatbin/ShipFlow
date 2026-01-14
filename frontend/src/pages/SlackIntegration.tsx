@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit, Send, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, Send, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -19,7 +19,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -37,7 +36,7 @@ export default function SlackIntegrationPage() {
   const [configurations, setConfigurations] = useState<SlackConfiguration[]>([]);
   const [activeConfig, setActiveConfig] = useState<SlackConfiguration | null>(null);
   const [channelConfigs, setChannelConfigs] = useState<SlackChannelConfig[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   

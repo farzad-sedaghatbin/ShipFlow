@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
@@ -8,7 +8,6 @@ import {
   GitCommit, 
   GitMerge, 
   GitBranch, 
-  CheckCircle2, 
   XCircle, 
   Clock,
   Loader2
@@ -16,7 +15,6 @@ import {
 import { GitHubLink, GitHubPullRequest } from '../types/github';
 import { githubService } from '../services/githubService';
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '../lib/utils';
 
 interface GitHubLinksProps {
   taskId?: number;

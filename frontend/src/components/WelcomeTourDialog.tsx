@@ -75,7 +75,7 @@ export const WelcomeTourDialog: React.FC = () => {
 
         <div className="text-center pb-2">
           <p className="text-sm text-white/80 mb-6">
-            ShipFlow helps you manage projects using the ShapeUp methodology - 
+            ShipFlow helps you manage projects using the Shape Up methodology - 
             with cycles, pitches, and hill charts to track progress.
           </p>
           
