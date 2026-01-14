@@ -4,6 +4,15 @@ A modern project management application implementing the [Shape Up](https://base
 
 🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev)
 
+
+## 📸 Screenshots & Demo
+
+![ShipFlow Demo](screenshots/demo.webp)
+
+| Dashboard | Hill Charts | Pitch Board |
+|-----------|-------------|-------------|
+| ![Dashboard](screenshots/dashboard.png) | ![Hill Chart](screenshots/hill-chart.png) | ![Pitch Board](screenshots/pitch-board.png) |
+
 ## ✨ Features
 
 - **Cycles**: 6-week development cycles with betting table

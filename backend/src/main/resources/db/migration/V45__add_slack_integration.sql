@@ -43,7 +43,7 @@ CREATE TABLE slack_notification_history (
     entity_id BIGINT,
     sent_at TIMESTAMP NOT NULL,
     success BOOLEAN NOT NULL DEFAULT TRUE,
-    error_message VARCHAR(1000),
+    error_message CLOB,
     CONSTRAINT fk_slack_history_config FOREIGN KEY (slack_config_id) REFERENCES slack_configuration(id) ON DELETE CASCADE
 );
 

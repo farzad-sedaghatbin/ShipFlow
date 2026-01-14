@@ -107,3 +107,4 @@ logs/
 DEVELOPMENT_WORKFLOW.md
 LOCAL_*.md
 *_LOCAL.md
+backend/data/

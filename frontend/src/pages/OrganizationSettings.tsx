@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Tags,
   Globe,
-  Bell,
   Sparkles,
   Clock,
   Palette,
@@ -17,8 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
-import { OrganizationSettings, RiskThresholds, CategoryConfig, ColorSettings, BugStatusConfig, SeverityLevelConfig } from '../types/organizationSettings';
-import { cn } from '../lib/utils';
+import { OrganizationSettings, RiskThresholds, ColorSettings } from '../types/organizationSettings';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';

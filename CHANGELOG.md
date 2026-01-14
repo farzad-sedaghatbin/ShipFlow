@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
 ### Fixed
+- **Database Migration V47**:
+  - Fixed H2 compatibility issues in screenshot seed data migration
+  - Changed `INTERVAL '42 days'` to H2-compatible `DATEADD('DAY', 42, CURRENT_DATE)`
+  - Corrected pitches table INSERT to use `appetite_days` instead of non-existent `appetite` column
+  - Fixed PitchStatus enum value from `ACCEPTED` to `IN_PROGRESS`
+  - Fixed FlywayRepair class package declaration
+
 - **Authentication Token Storage**:
   - Fixed GitHub and Slack services using incorrect localStorage key
   - Changed from `'token'` to `'shipflow_token'` to match AuthContext

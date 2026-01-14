@@ -42,6 +42,15 @@ import CustomMetrics from './pages/CustomMetrics';
 import MetricBuilder from './pages/MetricBuilder';
 import DashboardManager from './pages/DashboardManager';
 import DashboardView from './pages/DashboardView';
+import HelpGuides from './pages/HelpGuides';
+import GettingStartedGuide from './pages/guides/GettingStartedGuide';
+import HillChartsGuide from './pages/guides/HillChartsGuide';
+import BettingMeetingGuide from './pages/guides/BettingMeetingGuide';
+import AIRiskAdvisorGuide from './pages/guides/AIRiskAdvisorGuide';
+import CycleSetupGuide from './pages/guides/CycleSetupGuide';
+import QATestingGuide from './pages/guides/QATestingGuide';
+import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
+import ReportsGuide from './pages/guides/ReportsGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 
 function App() {
@@ -73,7 +82,7 @@ function App() {
                     <Route path="cycles/:id" element={<CycleDetail />} />
                     <Route path="cycles/:id/edit" element={<CycleForm />} />
                     <Route path="cycles/:cycleId/hill-chart" element={<CycleHillChart />} />
-                    
+
                     {/* Cycle Workspace */}
                     <Route path="pitches" element={<PitchBoard />} />
                     <Route path="pitches/:pitchId/hill-chart" element={<PitchHillChart />} />
@@ -85,7 +94,7 @@ function App() {
                     <Route path="reports" element={<DashboardManager />} />
                     <Route path="reports/cycle-reports" element={<Reports />} />
                     <Route path="reports/:id" element={<DashboardView />} />
-                    
+
                     {/* Backlog */}
                     <Route path="backlog" element={<BacklogPage />} />
                     <Route path="backlog/:taskId" element={<TaskDetailPage />} />
@@ -93,23 +102,23 @@ function App() {
                     <Route path="backlog/tasks" element={<Navigate to="/backlog?category=PITCH_SCOPE" replace />} />
                     <Route path="backlog/debt" element={<Navigate to="/backlog?category=DEBT_IMPROVEMENT" replace />} />
                     <Route path="tasks" element={<Navigate to="/backlog" replace />} />
-                    
+
                     {/* Time Tracking */}
                     <Route path="time/logs" element={<WorkLogsPage />} />
                     {/* Legacy route redirects */}
                     <Route path="worklogs" element={<Navigate to="/time/logs" replace />} />
                     <Route path="my-worklogs" element={<Navigate to="/time/logs" replace />} />
-                    
+
                     {/* Meetings */}
                     <Route path="meetings" element={<MeetingList />} />
-                    
+
                     {/* Organization */}
                     <Route path="people" element={<People />} />
                     <Route path="teams" element={<Teams />} />
-                    
+
                     {/* User Profile */}
                     <Route path="profile" element={<Profile />} />
-                    
+
                     {/* Admin */}
                     <Route path="users" element={<UserManagement />} />
                     <Route path="permissions" element={<PermissionManagement />} />
@@ -118,12 +127,12 @@ function App() {
                     <Route path="integrations/github" element={<GitHubIntegration />} />
                     {/* Legacy route redirects */}
                     <Route path="slack" element={<Navigate to="/integrations/slack" replace />} />
-                    
+
                     {/* Custom Metrics */}
                     <Route path="metrics" element={<CustomMetrics />} />
                     <Route path="metrics/new" element={<MetricBuilder />} />
                     <Route path="metrics/:id/edit" element={<MetricBuilder />} />
-                    
+
                     {/* QA & Testing */}
                     <Route path="qa/test-cases" element={<TestCasesPage />} />
                     <Route path="qa/test-cases/new" element={<TestCaseFormPage />} />
@@ -134,7 +143,19 @@ function App() {
                     <Route path="qa/bug-reports" element={<BugReportsPage />} />
                     <Route path="pitches/:pitchId/test" element={<PitchTestPage />} />
                     <Route path="cycles/:cycleId/qa-dashboard" element={<CycleQADashboardPage />} />
-                    
+
+                    {/* Help & Guides */}
+                    <Route path="help" element={<HelpGuides />} />
+                    <Route path="help/getting-started" element={<GettingStartedGuide />} />
+                    <Route path="help/hill-charts" element={<HillChartsGuide />} />
+                    <Route path="help/betting-meeting" element={<BettingMeetingGuide />} />
+                    <Route path="help/ai-risk-advisor" element={<AIRiskAdvisorGuide />} />
+                    <Route path="help/cycle-setup" element={<CycleSetupGuide />} />
+                    <Route path="help/qa-testing" element={<QATestingGuide />} />
+                    <Route path="help/retrospectives" element={<RetrospectivesGuide />} />
+                    <Route path="help/reports" element={<ReportsGuide />} />
+
+
                     {/* Catch-all for unmatched routes within protected area */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
