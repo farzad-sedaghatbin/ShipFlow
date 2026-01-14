@@ -1,10 +1,12 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.DocumentUploadResponse;
+import com.github.farzadsedaghatbin.shipflow.dto.ExtractedPitchDataDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.DocumentService;
+import com.github.farzadsedaghatbin.shipflow.service.PitchShapingExtractorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class DocumentController {
 
     private final DocumentService documentService;
     private final UserRepository userRepository;
+    private final PitchShapingExtractorService pitchShapingExtractorService;
 
     /**
      * Upload a document and extract its text content.
@@ -183,6 +186,66 @@ public class DocumentController {
         return ResponseEntity.ok(Map.of(
                 "message", "Documents indexed successfully",
                 "indexedCount", indexed
+        ));
+    }
+
+    /**
+     * Extract pitch shaping data from an uploaded document using AI.
+     * This endpoint analyzes the document and extracts Shape Up methodology elements.
+     */
+    @PostMapping(value = "/extract-pitch-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Extract pitch data from document", 
+               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI")
+    public ResponseEntity<ExtractedPitchDataDTO> extractPitchDataFromDocument(
+            @RequestParam("file") MultipartFile file) {
+        
+        try {
+            // First extract text from the document
+            String extractedText = documentService.extractTextFromFile(file);
+            
+            if (extractedText == null || extractedText.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(ExtractedPitchDataDTO.builder()
+                        .extractionSuccessful(false)
+                        .errorMessage("Could not extract text from document")
+                        .build());
+            }
+            
+            // Use AI to extract pitch data
+            PitchShapingExtractorService.ExtractedPitchData extracted = 
+                    pitchShapingExtractorService.extractFromDocument(extractedText);
+            
+            return ResponseEntity.ok(ExtractedPitchDataDTO.builder()
+                    .title(extracted.title())
+                    .problemStatement(extracted.problemStatement())
+                    .solution(extracted.solution())
+                    .rabbitHoles(extracted.rabbitHoles())
+                    .risks(extracted.risks())
+                    .noGos(extracted.noGos())
+                    .appetiteDays(extracted.appetiteDays())
+                    .wireframeLinks(extracted.wireframeLinks())
+                    .extractionSuccessful(extracted.extractionSuccessful())
+                    .errorMessage(extracted.errorMessage())
+                    .build());
+                    
+        } catch (Exception e) {
+            log.error("Error extracting pitch data: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ExtractedPitchDataDTO.builder()
+                    .extractionSuccessful(false)
+                    .errorMessage("Error processing document: " + e.getMessage())
+                    .build());
+        }
+    }
+
+    /**
+     * Check if AI pitch extraction is available.
+     */
+    @GetMapping("/extract-pitch-data/status")
+    @Operation(summary = "Check extraction availability", description = "Check if AI-powered pitch data extraction is available")
+    public ResponseEntity<Map<String, Object>> getExtractionStatus() {
+        boolean available = pitchShapingExtractorService.isExtractionAvailable();
+        return ResponseEntity.ok(Map.of(
+                "available", available,
+                "message", available ? "AI extraction is available" : "AI extraction is not configured. Please enable AI in application settings."
         ));
     }
 

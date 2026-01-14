@@ -8,6 +8,14 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  AlertTriangle,
+  Lightbulb,
+  Ban,
+  Link2,
+  Target,
+  Edit2,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
@@ -52,6 +60,16 @@ import {
   CollapsibleTrigger,
 } from '../components/ui/collapsible';
 
+// Shape Up field editing interface
+interface ShapeUpFields {
+  problemStatement: string;
+  solution: string;
+  rabbitHoles: string;
+  risks: string;
+  noGos: string;
+  wireframeLinks: string;
+}
+
 export default function PitchDetail() {
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
@@ -63,6 +81,18 @@ export default function PitchDetail() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
+  
+  // Shape Up editing state
+  const [editingShapeUp, setEditingShapeUp] = useState(false);
+  const [savingShapeUp, setSavingShapeUp] = useState(false);
+  const [shapeUpFields, setShapeUpFields] = useState<ShapeUpFields>({
+    problemStatement: '',
+    solution: '',
+    rabbitHoles: '',
+    risks: '',
+    noGos: '',
+    wireframeLinks: '',
+  });
 
   const [workLogDialog, setWorkLogDialog] = useState(false);
   const [meetingDialog, setMeetingDialog] = useState(false);
@@ -103,11 +133,22 @@ export default function PitchDetail() {
         personService.getAll(true),
         documentService.getDocumentsForPitch(pitchId),
       ]);
-      setPitch(pitchRes.data);
+      const pitchData = pitchRes.data;
+      setPitch(pitchData);
       setWorkLogs(workLogsRes.data);
       setMeetings(meetingsRes.data);
       setPersons(personsData);
       setDocuments(docsRes.data);
+      
+      // Sync Shape Up fields
+      setShapeUpFields({
+        problemStatement: pitchData.problemStatement || '',
+        solution: pitchData.solution || '',
+        rabbitHoles: pitchData.rabbitHoles || '',
+        risks: pitchData.risks || '',
+        noGos: pitchData.noGos || '',
+        wireframeLinks: pitchData.wireframeLinks || '',
+      });
     } catch (error) {
       console.error('Failed to load pitch:', error);
     } finally {
@@ -129,6 +170,51 @@ export default function PitchDetail() {
       showError(getUserFriendlyError(error, 'Failed to update status'));
     }
   };
+
+  // Save Shape Up fields
+  const handleSaveShapeUp = async () => {
+    if (!pitch) return;
+    try {
+      setSavingShapeUp(true);
+      await pitchService.update(pitch.id, {
+        title: pitch.title,
+        description: pitch.description,
+        appetiteDays: pitch.appetiteDays,
+        cycleId: pitch.cycleId,
+        teamId: pitch.teamId,
+        status: pitch.status,
+        ...shapeUpFields,
+      });
+      showSuccess('Shape Up details saved successfully!');
+      setEditingShapeUp(false);
+      loadData(pitch.id);
+    } catch (error) {
+      showError(getUserFriendlyError(error, 'Failed to save Shape Up details'));
+    } finally {
+      setSavingShapeUp(false);
+    }
+  };
+
+  // Cancel editing and reset fields
+  const handleCancelShapeUpEdit = () => {
+    if (pitch) {
+      setShapeUpFields({
+        problemStatement: pitch.problemStatement || '',
+        solution: pitch.solution || '',
+        rabbitHoles: pitch.rabbitHoles || '',
+        risks: pitch.risks || '',
+        noGos: pitch.noGos || '',
+        wireframeLinks: pitch.wireframeLinks || '',
+      });
+    }
+    setEditingShapeUp(false);
+  };
+
+  // Check if pitch has any Shape Up content
+  const hasShapeUpContent = pitch && (
+    pitch.problemStatement || pitch.solution || pitch.rabbitHoles || 
+    pitch.risks || pitch.noGos || pitch.wireframeLinks
+  );
 
   const handleCreateWorkLog = async () => {
     if (!pitch || !workLogDate) return;
@@ -338,6 +424,221 @@ export default function PitchDetail() {
           color={(pitch.progressPercentage || 0) > 100 ? 'error' : 'primary'}
         />
       </div>
+
+      {/* Shape Up Narrative Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Shape Up Details
+            </CardTitle>
+            {!editingShapeUp ? (
+              <Button variant="outline" size="sm" onClick={() => setEditingShapeUp(true)}>
+                <Edit2 className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancelShapeUpEdit} disabled={savingShapeUp}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSaveShapeUp} disabled={savingShapeUp}>
+                  {savingShapeUp ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {editingShapeUp ? (
+            // Edit Mode
+            <div className="space-y-4">
+              {/* Problem Statement */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  Problem Statement
+                </Label>
+                <Textarea
+                  value={shapeUpFields.problemStatement}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, problemStatement: e.target.value }))}
+                  placeholder="What problem are we solving? Why does this matter?"
+                  rows={3}
+                />
+              </div>
+
+              {/* Solution */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  Solution (Hatched)
+                </Label>
+                <Textarea
+                  value={shapeUpFields.solution}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, solution: e.target.value }))}
+                  placeholder="The proposed solution and approach."
+                  rows={4}
+                />
+              </div>
+
+              {/* Rabbit Holes */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-red-500" />
+                  Rabbit Holes
+                </Label>
+                <Textarea
+                  value={shapeUpFields.rabbitHoles}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, rabbitHoles: e.target.value }))}
+                  placeholder="Edge cases to avoid, potential time sinks."
+                  rows={3}
+                />
+              </div>
+
+              {/* Risks */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Risks & Unknowns
+                </Label>
+                <Textarea
+                  value={shapeUpFields.risks}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, risks: e.target.value }))}
+                  placeholder="Known risks, technical challenges, or unknowns."
+                  rows={3}
+                />
+              </div>
+
+              {/* No-Gos */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <X className="h-4 w-4 text-red-500" />
+                  No-Gos (Out of Scope)
+                </Label>
+                <Textarea
+                  value={shapeUpFields.noGos}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, noGos: e.target.value }))}
+                  placeholder="Things explicitly NOT being built."
+                  rows={2}
+                />
+              </div>
+
+              {/* Wireframe Links */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-blue-500" />
+                  Wireframe / Prototype Links
+                </Label>
+                <Textarea
+                  value={shapeUpFields.wireframeLinks}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, wireframeLinks: e.target.value }))}
+                  placeholder="Links to Figma, wireframes, mockups (one per line)"
+                  rows={2}
+                />
+              </div>
+            </div>
+          ) : hasShapeUpContent ? (
+            // Display Mode with content
+            <div className="space-y-6">
+              {pitch.problemStatement && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    Problem Statement
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.problemStatement}</p>
+                </div>
+              )}
+
+              {pitch.solution && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <Lightbulb className="h-4 w-4 text-yellow-500" />
+                    Solution
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.solution}</p>
+                </div>
+              )}
+
+              {pitch.rabbitHoles && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <Ban className="h-4 w-4 text-red-500" />
+                    Rabbit Holes
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.rabbitHoles}</p>
+                </div>
+              )}
+
+              {pitch.risks && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    Risks & Unknowns
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.risks}</p>
+                </div>
+              )}
+
+              {pitch.noGos && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <X className="h-4 w-4 text-red-500" />
+                    No-Gos
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.noGos}</p>
+                </div>
+              )}
+
+              {pitch.wireframeLinks && (
+                <div>
+                  <h4 className="font-semibold flex items-center gap-2 mb-2">
+                    <Link2 className="h-4 w-4 text-blue-500" />
+                    Wireframe Links
+                  </h4>
+                  <div className="space-y-1">
+                    {pitch.wireframeLinks.split('\n').map((link, idx) => {
+                      const trimmedLink = link.trim();
+                      if (!trimmedLink) return null;
+                      const isUrl = trimmedLink.startsWith('http://') || trimmedLink.startsWith('https://');
+                      return (
+                        <p key={idx}>
+                          {isUrl ? (
+                            <a 
+                              href={trimmedLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {trimmedLink}
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">{trimmedLink}</span>
+                          )}
+                        </p>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Empty state
+            <div className="text-center py-8">
+              <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground mb-4">
+                No Shape Up details defined yet. Add problem statement, solution, rabbit holes, and risks to fully shape this pitch.
+              </p>
+              <Button variant="outline" onClick={() => setEditingShapeUp(true)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Add Shape Up Details
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6">
         {/* Risk Analysis - Full Width */}

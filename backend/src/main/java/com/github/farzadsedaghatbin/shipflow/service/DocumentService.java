@@ -172,6 +172,31 @@ public class DocumentService {
         }
     }
 
+    /**
+     * Extract text from a MultipartFile without saving it.
+     * Useful for extracting pitch data before creating a pitch.
+     */
+    public String extractTextFromFile(MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return null;
+            }
+            
+            String originalFileName = file.getOriginalFilename();
+            String fileType = getFileType(originalFileName);
+            
+            if (!isAllowedFileType(fileType)) {
+                log.warn("Unsupported file type: {}", fileType);
+                return null;
+            }
+            
+            return extractText(file.getInputStream(), fileType);
+        } catch (Exception e) {
+            log.error("Error extracting text from file: {}", e.getMessage());
+            return null;
+        }
+    }
+
     private String extractTextFromPdf(InputStream inputStream) throws IOException {
         byte[] bytes = inputStream.readAllBytes();
         try (PDDocument document = Loader.loadPDF(bytes)) {

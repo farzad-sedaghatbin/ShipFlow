@@ -7,12 +7,18 @@ import {
   Loader2,
   X,
   FileUp,
+  Sparkles,
+  AlertTriangle,
+  Target,
+  Lightbulb,
+  Ban,
+  Link2,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
 import { teamService } from '../services/teamService';
 import { documentService } from '../services/documentService';
-import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest } from '../types';
+import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest, ExtractedPitchData } from '../types';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import EmptyState from '../components/EmptyState';
@@ -47,6 +53,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '../components/ui/collapsible';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
 
 const statusColumns: PitchStatus[] = ['PENDING', 'SHAPED', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
 
@@ -60,9 +72,11 @@ export default function PitchBoard() {
   const [loading, setLoading] = useState(true);
   const [createDialog, setCreateDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pendingDocuments, setPendingDocuments] = useState<File[]>([]);
   const [showDocUpload, setShowDocUpload] = useState(false);
+  const [showShapingFields, setShowShapingFields] = useState(false);
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
     description: '',
@@ -70,6 +84,13 @@ export default function PitchBoard() {
     cycleId: 0,
     teamId: undefined,
     status: 'PENDING',
+    // Shape Up fields
+    problemStatement: '',
+    solution: '',
+    rabbitHoles: '',
+    risks: '',
+    noGos: '',
+    wireframeLinks: '',
   });
 
   useEffect(() => {
@@ -187,10 +208,17 @@ export default function PitchBoard() {
         cycleId: 0,
         teamId: undefined,
         status: 'PENDING',
+        problemStatement: '',
+        solution: '',
+        rabbitHoles: '',
+        risks: '',
+        noGos: '',
+        wireframeLinks: '',
       });
       setFieldErrors({});
       setPendingDocuments([]);
       setShowDocUpload(false);
+      setShowShapingFields(false);
       if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
@@ -211,9 +239,48 @@ export default function PitchBoard() {
       cycleId: 0,
       teamId: undefined,
       status: 'PENDING',
+      problemStatement: '',
+      solution: '',
+      rabbitHoles: '',
+      risks: '',
+      noGos: '',
+      wireframeLinks: '',
     });
     setPendingDocuments([]);
     setShowDocUpload(false);
+    setShowShapingFields(false);
+  };
+
+  // Extract pitch data from uploaded document using AI
+  const handleExtractFromDocument = async (file: File) => {
+    try {
+      setExtracting(true);
+      const response = await documentService.extractPitchData(file);
+      const extracted = response.data;
+      
+      if (extracted.extractionSuccessful) {
+        // Apply extracted data to form
+        setNewPitch(prev => ({
+          ...prev,
+          title: extracted.title || prev.title,
+          problemStatement: extracted.problemStatement || prev.problemStatement,
+          solution: extracted.solution || prev.solution,
+          rabbitHoles: extracted.rabbitHoles || prev.rabbitHoles,
+          risks: extracted.risks || prev.risks,
+          noGos: extracted.noGos || prev.noGos,
+          wireframeLinks: extracted.wireframeLinks || prev.wireframeLinks,
+          appetiteDays: extracted.appetiteDays || prev.appetiteDays,
+        }));
+        setShowShapingFields(true);
+        showSuccess('Pitch data extracted successfully! Review and edit the fields below.');
+      } else {
+        showError(extracted.errorMessage || 'Failed to extract pitch data');
+      }
+    } catch (error) {
+      showError(getUserFriendlyError(error, 'Failed to extract pitch data from document'));
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const handlePendingFileSelect = (files: FileList) => {
@@ -355,104 +422,256 @@ export default function PitchBoard() {
 
       {/* Create Pitch Dialog */}
       <Dialog open={createDialog} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Pitch</DialogTitle>
             <DialogDescription>
-              Add a new pitch to the current cycle
+              Add a new pitch to the current cycle. Use the Shape Up tab to add problem statement, solution, and risks.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="pitch-title">Title *</Label>
-              <Input
-                id="pitch-title"
-                value={newPitch.title}
-                onChange={(e) => {
-                  setNewPitch({ ...newPitch, title: e.target.value });
-                  setFieldErrors((prev) => ({ ...prev, title: '' }));
-                }}
-                placeholder="Give your pitch a clear, descriptive title"
-                className={fieldErrors.title ? 'border-destructive' : ''}
-              />
-              {fieldErrors.title && (
-                <p className="text-xs text-destructive">{fieldErrors.title}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="pitch-description">Description</Label>
-              <Textarea
-                id="pitch-description"
-                value={newPitch.description}
-                onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
-                placeholder="Describe the problem and proposed solution"
-                rows={3}
-              />
-            </div>
-
-            {/* Appetite & Team */}
-            <div className="grid grid-cols-2 gap-4">
+          
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="shaping">
+                <Target className="h-4 w-4 mr-1" />
+                Shape Up
+              </TabsTrigger>
+              <TabsTrigger value="documents">
+                <FileUp className="h-4 w-4 mr-1" />
+                Documents
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-appetite">Appetite (days) *</Label>
+                <Label htmlFor="pitch-title">Title *</Label>
                 <Input
-                  id="pitch-appetite"
-                  type="number"
-                  value={newPitch.appetiteDays}
+                  id="pitch-title"
+                  value={newPitch.title}
                   onChange={(e) => {
-                    setNewPitch({ ...newPitch, appetiteDays: parseInt(e.target.value) || 0 });
-                    setFieldErrors((prev) => ({ ...prev, appetiteDays: '' }));
+                    setNewPitch({ ...newPitch, title: e.target.value });
+                    setFieldErrors((prev) => ({ ...prev, title: '' }));
                   }}
-                  min={1}
-                  max={42}
-                  className={fieldErrors.appetiteDays ? 'border-destructive' : ''}
+                  placeholder="Give your pitch a clear, descriptive title"
+                  className={fieldErrors.title ? 'border-destructive' : ''}
                 />
-                {fieldErrors.appetiteDays ? (
-                  <p className="text-xs text-destructive">{fieldErrors.appetiteDays}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">1-42 days</p>
+                {fieldErrors.title && (
+                  <p className="text-xs text-destructive">{fieldErrors.title}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label>Team</Label>
-                <Select
-                  value={newPitch.teamId?.toString() || 'unassigned'}
-                  onValueChange={(value) => 
-                    setNewPitch({ ...newPitch, teamId: value === 'unassigned' ? undefined : parseInt(value) })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id.toString()}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Documents */}
-            <Collapsible open={showDocUpload} onOpenChange={setShowDocUpload}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full justify-start">
-                  {showDocUpload ? (
-                    <ChevronUp className="h-4 w-4 mr-2" />
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-description">Description</Label>
+                <Textarea
+                  id="pitch-description"
+                  value={newPitch.description}
+                  onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
+                  placeholder="Brief summary of the pitch"
+                  rows={3}
+                />
+              </div>
+
+              {/* Appetite & Team */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pitch-appetite">Appetite (days) *</Label>
+                  <Input
+                    id="pitch-appetite"
+                    type="number"
+                    value={newPitch.appetiteDays}
+                    onChange={(e) => {
+                      setNewPitch({ ...newPitch, appetiteDays: parseInt(e.target.value) || 0 });
+                      setFieldErrors((prev) => ({ ...prev, appetiteDays: '' }));
+                    }}
+                    min={1}
+                    max={42}
+                    className={fieldErrors.appetiteDays ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors.appetiteDays ? (
+                    <p className="text-xs text-destructive">{fieldErrors.appetiteDays}</p>
                   ) : (
-                    <ChevronDown className="h-4 w-4 mr-2" />
+                    <p className="text-xs text-muted-foreground">1-42 days</p>
                   )}
-                  {showDocUpload ? 'Hide' : 'Add'} Documents
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Attach documents (PDF, Word, Text) to be indexed for Q&A
+                </div>
+                <div className="space-y-2">
+                  <Label>Team</Label>
+                  <Select
+                    value={newPitch.teamId?.toString() || 'unassigned'}
+                    onValueChange={(value) => 
+                      setNewPitch({ ...newPitch, teamId: value === 'unassigned' ? undefined : parseInt(value) })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id.toString()}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Shape Up Tab */}
+            <TabsContent value="shaping" className="space-y-4 mt-4">
+              <div className="bg-muted/50 rounded-lg p-3 mb-4">
+                <p className="text-sm text-muted-foreground">
+                  <Target className="h-4 w-4 inline mr-1" />
+                  Shape Up methodology fields help define the pitch narrative: the problem, solution, rabbit holes to avoid, and risks.
+                </p>
+              </div>
+
+              {/* Problem Statement */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-problem" className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  Problem Statement
+                </Label>
+                <Textarea
+                  id="pitch-problem"
+                  value={newPitch.problemStatement || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, problemStatement: e.target.value })}
+                  placeholder="What problem are we solving? Why does this matter? Who is affected?"
+                  rows={3}
+                />
+              </div>
+
+              {/* Solution */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-solution" className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  Solution (Hatched)
+                </Label>
+                <Textarea
+                  id="pitch-solution"
+                  value={newPitch.solution || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, solution: e.target.value })}
+                  placeholder="The proposed solution. Fat-marker sketch of the approach, key elements, and how it addresses the problem."
+                  rows={4}
+                />
+              </div>
+
+              {/* Rabbit Holes */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-rabbitholes" className="flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-red-500" />
+                  Rabbit Holes
+                </Label>
+                <Textarea
+                  id="pitch-rabbitholes"
+                  value={newPitch.rabbitHoles || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, rabbitHoles: e.target.value })}
+                  placeholder="Edge cases to avoid, potential time sinks, areas that could derail the project."
+                  rows={3}
+                />
+              </div>
+
+              {/* Risks */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-risks" className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Risks & Unknowns
+                </Label>
+                <Textarea
+                  id="pitch-risks"
+                  value={newPitch.risks || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, risks: e.target.value })}
+                  placeholder="Known risks, technical challenges, dependencies, or unknowns that need investigation."
+                  rows={3}
+                />
+              </div>
+
+              {/* No-Gos */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-nogos" className="flex items-center gap-2">
+                  <X className="h-4 w-4 text-red-500" />
+                  No-Gos (Out of Scope)
+                </Label>
+                <Textarea
+                  id="pitch-nogos"
+                  value={newPitch.noGos || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, noGos: e.target.value })}
+                  placeholder="Things explicitly NOT being built. Clear boundaries for the project."
+                  rows={2}
+                />
+              </div>
+
+              {/* Wireframe Links */}
+              <div className="space-y-2">
+                <Label htmlFor="pitch-wireframes" className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-blue-500" />
+                  Wireframe / Prototype Links
+                </Label>
+                <Textarea
+                  id="pitch-wireframes"
+                  value={newPitch.wireframeLinks || ''}
+                  onChange={(e) => setNewPitch({ ...newPitch, wireframeLinks: e.target.value })}
+                  placeholder="Links to Figma, wireframes, mockups, or visual references (one per line)"
+                  rows={2}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="space-y-4 mt-4">
+              {/* AI Extraction Section */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  <h4 className="font-semibold">AI-Powered Extraction</h4>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload a pitch document to automatically extract problem statement, solution, rabbit holes, and risks using AI.
+                </p>
+                <div
+                  className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/50 transition-colors"
+                  onClick={() => document.getElementById('pitch-extract-upload')?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files.length > 0) {
+                      handleExtractFromDocument(e.dataTransfer.files[0]);
+                    }
+                  }}
+                >
+                  <input
+                    id="pitch-extract-upload"
+                    type="file"
+                    hidden
+                    accept=".pdf,.doc,.docx,.txt,.md"
+                    onChange={(e) => e.target.files?.[0] && handleExtractFromDocument(e.target.files[0])}
+                    disabled={extracting}
+                  />
+                  {extracting ? (
+                    <>
+                      <Loader2 className="h-8 w-8 mx-auto text-purple-500 animate-spin mb-2" />
+                      <p className="text-sm text-purple-600 dark:text-purple-400">Extracting pitch data...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-8 w-8 mx-auto text-purple-400 mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Drop a pitch document or click to extract Shape Up fields
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Regular Document Upload */}
+              <div className="space-y-2">
+                <h4 className="font-medium">Attach Documents for Q&A</h4>
+                <p className="text-sm text-muted-foreground">
+                  These documents will be indexed for the knowledge base Q&A feature.
                 </p>
                 <div
                   className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
@@ -493,19 +712,21 @@ export default function PitchBoard() {
                     ))}
                   </div>
                 )}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={handleCloseDialog} disabled={saving || extracting}>
               Cancel
             </Button>
             <LoadingButton
               onClick={handleCreatePitch}
               loading={saving}
               loadingText="Creating..."
+              disabled={extracting}
             >
-              Create
+              Create Pitch
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

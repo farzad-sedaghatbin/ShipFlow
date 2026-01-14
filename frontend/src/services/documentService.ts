@@ -1,4 +1,5 @@
 import api from './api';
+import { ExtractedPitchData } from '../types';
 
 export interface DocumentUploadResponse {
   id?: number;
@@ -26,6 +27,11 @@ export interface UploadedDocument {
   uploaderUsername?: string;
   createdAt: string;
   indexedForQA: boolean;
+}
+
+export interface ExtractionStatus {
+  available: boolean;
+  message: string;
 }
 
 export const documentService = {
@@ -86,4 +92,15 @@ export const documentService = {
   // Index pending documents
   indexPending: () =>
     api.post<{ message: string; indexedCount: number }>('/documents/index-pending'),
+
+  // Extract pitch data from a document using AI
+  extractPitchData: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData);
+  },
+
+  // Check if AI extraction is available
+  getExtractionStatus: () =>
+    api.get<ExtractionStatus>('/documents/extract-pitch-data/status'),
 };
