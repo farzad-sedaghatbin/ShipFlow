@@ -17,8 +17,20 @@ A modern project management application implementing the [Shape Up](https://base
 
 - **Cycles**: 6-week development cycles with betting table
 - **Pitches**: Shape work with appetite, problem definition, and solution
+  - **Shape Up Methodology Support**: Comprehensive pitch creation with all Shape Up elements
+    - Problem Statement, Solution, Rabbit Holes, Risks, No-Gos, Wireframe Links
+    - AI-powered pitch document extraction from PDF/DOCX/TXT files
+    - Automatic knowledge base indexing for Q&A
+    - Document upload, preview, and download capabilities
+    - Inline editing of Shape Up fields on pitch detail page
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+- **Document Management**: Upload, preview, and download project documents
+  - Support for PDF, DOCX, DOC, TXT, and MD files
+  - Text extraction from uploaded documents
+  - Document preview with extracted text
+  - Download with original filenames and proper Content-Type headers
+  - Automatic indexing for AI-powered Q&A
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization
   - Color schemes for appetite/actual hours visualization (4 configurable colors)

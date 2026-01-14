@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Shape Up Pitch Enhancements**:
+  - Added comprehensive Shape Up methodology fields to pitch creation and editing
+  - Implemented 6 new fields: Problem Statement, Solution, Rabbit Holes, Risks, No-Gos, Wireframe Links
+  - Created AI-powered pitch document extraction using RunPod/Mistral
+  - Added automatic knowledge base indexing for pitch documents
+  - Implemented 3-tab pitch creation dialog: Basic Info, Shape Up Details, Documents
+  - Added document upload with drag-and-drop support during pitch creation
+  - Enhanced pitch detail page with Shape Up Details card and inline editing
+  - Added visual feedback for document extraction (green indicator with filename)
+  - Implemented auto-tab switching after successful document extraction
+  - Added support for multiple wireframe links (one per line)
+
+- **Document Management**:
+  - Added document download functionality with proper Content-Type headers
+  - Implemented download endpoint: `GET /api/documents/{id}/download`
+  - Added Download button in DocumentDropZone component
+  - Support for downloading PDF, DOCX, DOC, TXT, and MD files
+  - Files download as attachments with original filenames
+  - Added document preview capability (view extracted text)
+  - Display document metadata: filename, file size, file type, extraction status
+
+### Changed
+- **Database Schema**:
+  - Added V48 migration for Shape Up fields (problem_statement, solution, rabbit_holes, risks, no_gos, wireframe_links)
+  - Fixed H2 database compatibility in partial index syntax
+  - Updated Pitch entity, PitchDTO, and CreatePitchRequest with Shape Up fields
+
+- **AI Configuration**:
+  - Configured RunPod as AI provider using .env credentials (RUNPOD_API_KEY, RUNPOD_BASE_URL)
+  - Enhanced PitchShapingExtractorService with structured JSON extraction prompt
+  - Improved knowledge base integration for pitch documents
+
+- **UX Improvements**:
+  - Fixed Content-Type header for multipart/form-data uploads
+  - Improved visual feedback with "Document Extracted" indicator
+  - Auto-navigation to Shape Up tab after extraction
+  - Enhanced wireframe links input with clear placeholder and helper text
+  - Better document visibility with badges for extraction and indexing status
+
+### Fixed
+- **Content-Type Header**: Fixed multipart/form-data Content-Type error in document extraction
+- **H2 SQL Syntax**: Removed WHERE clause from partial index for H2 compatibility
+- **Document Visibility**: Added extractedDocumentName state to show uploaded document name
+- **Tab Navigation**: Implemented activeTab state for controlled tab switching
+
 ## [0.2.1] - 2026-01-14
 
 ### Added
