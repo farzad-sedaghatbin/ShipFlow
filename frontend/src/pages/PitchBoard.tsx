@@ -194,16 +194,20 @@ export default function PitchBoard() {
       
       // Upload pending documents if any
       if (pendingDocuments.length > 0 && createdPitch.id) {
+        showSuccess('Pitch created! Uploading documents...');
         for (const file of pendingDocuments) {
           try {
             await documentService.uploadForPitch(createdPitch.id, file);
           } catch (docError) {
-            showError('Some documents failed to upload');
+            console.error('Document upload error:', docError);
+            showError(`Failed to upload ${file.name}`);
           }
         }
+        showSuccess(`Pitch created with ${pendingDocuments.length} document(s)!`);
+      } else {
+        showSuccess('Pitch created successfully!');
       }
       
-      showSuccess('Pitch created successfully!');
       setCreateDialog(false);
       
       // Navigate to the newly created pitch detail view
