@@ -158,7 +158,7 @@ export default function Dashboard() {
           <CardContent className="py-6">
             <EmptyState
               illustration={<WelcomeIllustration width={280} height={200} />}
-              title="Welcome to Shape Up Tracker! 🎉"
+              title="Welcome to ShipFlow! 🎉"
               description="You're all set to start shipping. Shape Up is about making meaningful progress in focused cycles. Let's get you started with your first cycle."
               size="large"
               onboardingSteps={[

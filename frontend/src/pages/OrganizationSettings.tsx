@@ -317,7 +317,7 @@ export default function OrganizationSettingsPage() {
                     }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Standard ShapeUp cycle is 6 weeks
+                    Standard Shape Up cycle is 6 weeks
                   </p>
                 </div>
 

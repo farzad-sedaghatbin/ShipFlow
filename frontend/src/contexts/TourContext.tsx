@@ -78,7 +78,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       element: '[data-tour="cycles-menu"]',
       popover: {
         title: '🔄 Cycles',
-        description: 'ShapeUp uses 6-week cycles. Each cycle has a build phase (for development) and a cooldown phase (for bug fixes and exploration).',
+        description: 'Shape Up uses 6-week cycles. Each cycle has a build phase (for development) and a cooldown phase (for bug fixes and exploration).',
         side: 'right',
         align: 'start',
       },
@@ -188,7 +188,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       element: '[data-tour="user-menu"]',
       popover: {
         title: '🎊 You\'re All Set!',
-        description: 'That\'s the basics! Explore the app, create your first project, and start tracking your ShapeUp cycles. Good luck!',
+        description: 'That\'s the basics! Explore the app, create your first project, and start tracking your Shape Up cycles. Good luck!',
         side: 'bottom',
         align: 'end',
       },

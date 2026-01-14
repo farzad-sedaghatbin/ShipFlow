@@ -1,5 +1,5 @@
 /**
- * Shape Up Tracker Theme
+ * ShipFlow Theme
  * 
  * A warm, analog aesthetic inspired by sketching and tactile design.
  * Colors evoke paper, ink, pencil marks, and sticky notes.

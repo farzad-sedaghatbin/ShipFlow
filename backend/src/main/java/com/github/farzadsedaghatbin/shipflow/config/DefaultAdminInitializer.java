@@ -39,7 +39,7 @@ public class DefaultAdminInitializer implements CommandLineRunner {
             // Create admin person
             Person adminPerson = Person.builder()
                     .name("System Administrator")
-                    .email("admin@shapeup-tracker.local")
+                    .email("admin@shipflow.local")
                     .skills("Administration, System Management")
                     .isActive(true)
                     .createdAt(LocalDateTime.now())
