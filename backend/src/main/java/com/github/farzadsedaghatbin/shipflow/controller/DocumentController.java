@@ -246,8 +246,9 @@ public class DocumentController {
             PitchShapingExtractorService.ExtractedPitchData extracted = 
                     pitchShapingExtractorService.extractFromDocument(extractedText);
             
-            // Add to knowledge base if enabled and QA service is available
-            if (addToKnowledgeBase && knowledgeIngestionService != null) {
+            // Add to knowledge base if enabled, QA service is available, and pitchId exists
+            // Note: For new pitches, we skip ingestion here and will ingest after pitch is created
+            if (addToKnowledgeBase && knowledgeIngestionService != null && pitchId != null) {
                 try {
                     String pitchTitle = extracted.title() != null ? extracted.title() : file.getOriginalFilename();
                     
@@ -294,12 +295,40 @@ public class DocumentController {
      * Link an existing document to a pitch.
      */
     @PutMapping("/{documentId}/link-to-pitch/{pitchId}")
-    @Operation(summary = "Link document to pitch", description = "Associate an existing document with a pitch")
+    @Operation(summary = "Link document to pitch", description = "Associate an existing document with a pitch and add to knowledge base")
     public ResponseEntity<Map<String, String>> linkDocumentToPitch(
             @PathVariable Long documentId,
-            @PathVariable Long pitchId) {
+            @PathVariable Long pitchId,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
+            // Link document to pitch
             documentService.linkDocumentToEntity(documentId, "PITCH", pitchId);
+            
+            // Add to knowledge base if service is available
+            if (knowledgeIngestionService != null) {
+                try {
+                    UploadedDocument doc = documentService.getDocumentById(documentId);
+                    if (doc != null && doc.getExtractedText() != null) {
+                        Long userId = getUserId(userDetails);
+                        String username = userDetails.getUsername();
+                        
+                        knowledgeIngestionService.ingestPitchDocument(
+                            doc.getOriginalFileName(),
+                            doc.getExtractedText(),
+                            pitchId,
+                            doc.getOriginalFileName(),
+                            userId,
+                            username
+                        );
+                        
+                        log.info("Added linked document to knowledge base: {}", doc.getOriginalFileName());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to add linked document to knowledge base: {}", e.getMessage());
+                    // Don't fail the linking if knowledge base ingestion fails
+                }
+            }
+            
             return ResponseEntity.ok(Map.of("message", "Document linked to pitch successfully"));
         } catch (Exception e) {
             log.error("Error linking document to pitch: {}", e.getMessage(), e);
