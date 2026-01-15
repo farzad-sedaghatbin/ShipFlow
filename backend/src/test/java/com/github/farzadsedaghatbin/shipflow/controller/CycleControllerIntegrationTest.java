@@ -4,9 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +46,9 @@ class CycleControllerIntegrationTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private Cycle testCycle;
     private Project testProject;
 
@@ -50,6 +56,35 @@ class CycleControllerIntegrationTest {
     void setUp() {
         cycleRepository.deleteAll();
         projectRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Create test users matching @WithMockUser annotations
+        User admin = User.builder()
+                .username("admin")
+                .email("admin@test.com")
+                .password("password")
+                .role(UserRole.ADMIN)
+                .isActive(true)
+                .build();
+        userRepository.save(admin);
+
+        User developer = User.builder()
+                .username("developer")
+                .email("developer@test.com")
+                .password("password")
+                .role(UserRole.DEVELOPER)
+                .isActive(true)
+                .build();
+        userRepository.save(developer);
+
+        User pm = User.builder()
+                .username("pm")
+                .email("pm@test.com")
+                .password("password")
+                .role(UserRole.PROJECT_MANAGER)
+                .isActive(true)
+                .build();
+        userRepository.save(pm);
 
         testProject = Project.builder()
                 .name("Test Project")
@@ -109,7 +144,7 @@ class CycleControllerIntegrationTest {
                 .name("New Cycle")
                 .phase(CyclePhase.BUILD)
                 .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(2))
+                // Don't set endDate - will be auto-calculated
                 .build();
 
         mockMvc.perform(post("/api/cycles")
@@ -128,7 +163,7 @@ class CycleControllerIntegrationTest {
                 .name("Updated Cycle")
                 .phase(CyclePhase.COOLDOWN)
                 .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusWeeks(2))
+                // Don't set endDate - will be auto-calculated
                 .build();
 
         mockMvc.perform(put("/api/cycles/{id}", testCycle.getId())
@@ -175,7 +210,7 @@ class CycleControllerIntegrationTest {
                 .name("Auto-Calculated Cycle")
                 .phase(CyclePhase.BUILD)
                 .startDate(LocalDate.of(2026, 2, 1))
-                .endDate(null) // No end date - should auto-calculate
+                // Don't call .endDate() at all - let it be null by default
                 .build();
 
         mockMvc.perform(post("/api/cycles")

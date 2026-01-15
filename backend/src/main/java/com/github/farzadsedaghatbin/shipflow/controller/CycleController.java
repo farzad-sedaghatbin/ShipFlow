@@ -59,7 +59,6 @@ public class CycleController {
 
     @PostMapping
     @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.CREATE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Create a new cycle")
     public ResponseEntity<CycleDTO> createCycle(@Valid @RequestBody CreateCycleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cycleService.createCycle(request));
@@ -67,7 +66,6 @@ public class CycleController {
 
     @PutMapping("/{id}")
     @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.UPDATE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     @Operation(summary = "Update a cycle")
     public ResponseEntity<CycleDTO> updateCycle(@PathVariable Long id, @Valid @RequestBody CreateCycleRequest request) {
         return ResponseEntity.ok(cycleService.updateCycle(id, request));

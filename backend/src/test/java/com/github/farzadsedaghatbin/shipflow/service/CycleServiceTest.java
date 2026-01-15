@@ -90,7 +90,7 @@ class CycleServiceTest {
         testRequest.setProjectId(1L);
         testRequest.setName("Test Cycle");
         testRequest.setStartDate(LocalDate.now());
-        testRequest.setEndDate(LocalDate.now().plusWeeks(6));
+        // Don't set endDate - let auto-calculation handle it
         testRequest.setPhase(CyclePhase.BUILD);
 
         // Setup test users
@@ -148,6 +148,7 @@ class CycleServiceTest {
     void createCycle_ShouldSaveCycle() {
         when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
         when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
+        when(organizationSettingsService.getSettings()).thenReturn(orgSettings);
 
         CycleDTO result = cycleService.createCycle(testRequest);
 
@@ -160,6 +161,7 @@ class CycleServiceTest {
     void updateCycle_WhenExists_ShouldUpdateCycle() {
         when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
         when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
+        when(organizationSettingsService.getSettings()).thenReturn(orgSettings);
 
         testRequest.setName("Updated Cycle");
         CycleDTO result = cycleService.updateCycle(1L, testRequest);
