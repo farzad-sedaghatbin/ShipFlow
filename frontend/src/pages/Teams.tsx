@@ -264,7 +264,7 @@ export default function Teams() {
         team.name.toLowerCase().includes(search) ||
         team.cycleName?.toLowerCase().includes(search) ||
         team.assignments?.some(assignment =>
-          assignment.personName.toLowerCase().includes(search)
+          assignment.personName?.toLowerCase().includes(search)
         )
       );
     })

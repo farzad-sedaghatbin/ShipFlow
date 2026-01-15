@@ -12,5 +12,6 @@ public enum KnowledgeEntityType {
     EVIDENCE,
     MANUAL_NOTE,
     VALIDATED_QA,
-    DOCUMENT
+    DOCUMENT,
+    REFERENCE_DOCUMENT  // External reference materials like Shape Up methodology book
 }

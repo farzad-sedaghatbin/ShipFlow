@@ -17,4 +17,9 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
     
     @Query("SELECT p FROM Pitch p WHERE p.cycle.id = :cycleId AND p.status NOT IN :statuses")
     List<Pitch> findByCycleIdAndStatusNotIn(@Param("cycleId") Long cycleId, @Param("statuses") List<PitchStatus> statuses);
+    
+    // Circuit Breaker queries
+    List<Pitch> findByIsCircuitBreakerTriggeredTrue();
+    List<Pitch> findByCycleIdAndIsCircuitBreakerTriggeredTrue(Long cycleId);
+    List<Pitch> findByCycleIdAndStatusIn(Long cycleId, List<PitchStatus> statuses);
 }

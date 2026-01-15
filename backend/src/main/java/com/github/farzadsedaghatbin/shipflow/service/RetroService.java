@@ -186,12 +186,14 @@ public class RetroService {
         }
         
         User currentUser = getCurrentUser();
+        Boolean isAnonymous = request.getIsAnonymous() != null ? request.getIsAnonymous() : false;
         
         RetroItem item = RetroItem.builder()
                 .content(request.getContent())
                 .columnType(request.getColumnType())
                 .retrospective(retro)
-                .author(currentUser)
+                .author(isAnonymous ? null : currentUser)
+                .isAnonymous(isAnonymous)
                 .build();
         
         RetroItem saved = retroItemRepository.save(item);
@@ -478,18 +480,26 @@ public class RetroService {
     private RetroItemDTO toItemDTO(RetroItem item) {
         User currentUser = getCurrentUser();
         
+        Boolean isAnonymous = item.getIsAnonymous() != null ? item.getIsAnonymous() : false;
+        
         RetroItemDTO.RetroItemDTOBuilder builder = RetroItemDTO.builder()
                 .id(item.getId())
                 .content(item.getContent())
                 .columnType(item.getColumnType())
                 .retrospectiveId(item.getRetrospective().getId())
+                .isAnonymous(isAnonymous)
                 .voteCount(item.getVoteCount() != null ? item.getVoteCount() : 0)
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt());
         
-        if (item.getAuthor() != null) {
+        // Always include author fields (null for anonymous items)
+        if (!isAnonymous && item.getAuthor() != null) {
             builder.authorId(item.getAuthor().getId())
                    .authorName(item.getAuthor().getUsername());
+        } else {
+            // Explicitly set to null for anonymous items or missing author
+            builder.authorId(null)
+                   .authorName(null);
         }
         
         // Check if current user has voted

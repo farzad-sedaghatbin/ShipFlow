@@ -72,8 +72,6 @@ export default function PitchBoard() {
   const [extracting, setExtracting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pendingDocuments, setPendingDocuments] = useState<File[]>([]);
-  const [showDocUpload, setShowDocUpload] = useState(false);
-  const [showShapingFields, setShowShapingFields] = useState(false);
   const [extractedDocumentName, setExtractedDocumentName] = useState<string>('');
   const [extractedDocumentId, setExtractedDocumentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
@@ -234,8 +232,6 @@ export default function PitchBoard() {
       });
       setFieldErrors({});
       setPendingDocuments([]);
-      setShowDocUpload(false);
-      setShowShapingFields(false);
       setExtractedDocumentId(null);
       setExtractedDocumentName('');
       
@@ -270,8 +266,6 @@ export default function PitchBoard() {
       wireframeLinks: '',
     });
     setPendingDocuments([]);
-    setShowDocUpload(false);
-    setShowShapingFields(false);
     setExtractedDocumentName('');
     setExtractedDocumentId(null);
     setActiveTab('basic');
@@ -303,7 +297,6 @@ export default function PitchBoard() {
           wireframeLinks: extracted.wireframeLinks || prev.wireframeLinks,
           appetiteDays: extracted.appetiteDays || prev.appetiteDays,
         }));
-        setShowShapingFields(true);
         // Store the document ID from extraction (document was already saved during extraction)
         if (extracted.documentId) {
           setExtractedDocumentId(extracted.documentId);

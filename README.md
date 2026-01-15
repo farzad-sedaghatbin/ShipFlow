@@ -45,6 +45,18 @@ A modern project management application implementing the [Shape Up](https://base
   - Out-of-scope work (tasks) tracking
   - PDF and CSV export functionality
 - **Retrospectives**: Team retros with voting and merging
+  - **Anonymous Submissions**: Post feedback anonymously for psychological safety
+  - Checkbox option to hide author attribution on sensitive items
+  - Standard columns: Went Well, Needs Improvement, Action Items
+  - Real-time collaboration and voting
+- **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
+  - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
+  - **Color-Coded Severity**: Visual indicators (blue/yellow/orange/red) based on appetite utilization
+  - **Trigger Mechanism**: Flag pitches for team discussion when scope expansion occurs
+  - **Kill Pitch Capability**: Cancel pitches that can't meet appetite constraints
+  - **Resolve Workflow**: Clear circuit breaker flags when scope is successfully cut
+  - **Team Notifications**: Automatic dashboard alerts for all pitch stakeholders
+  - Integrated help guide explaining Shape Up's fixed-time, variable-scope principle
 - **Health Overview**: Automated risk detection and health monitoring
   - **Weighted Risk Algorithm**: 4-factor scoring with configurable weights
     - Budget utilization (25%): Tracks appetite consumption vs timeline

@@ -920,6 +920,7 @@ export interface RetroItem {
   retrospectiveId: number;
   authorId?: number;
   authorName?: string;
+  isAnonymous?: boolean;
   voteCount: number;
   hasVoted: boolean;
   mergedIntoId?: number;
@@ -939,6 +940,7 @@ export interface CreateRetroItemRequest {
   content: string;
   columnType: RetroColumnType;
   retrospectiveId: number;
+  isAnonymous?: boolean;
 }
 
 export interface UpdateRetroRequest {
@@ -954,3 +956,5 @@ export interface CycleRetroStatus {
   canCloseCycle: boolean;
   message: string;
 }
+export * from './betting-analytics';
+export * from './circuit-breaker';

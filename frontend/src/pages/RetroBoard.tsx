@@ -24,6 +24,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,12 @@ export default function RetroBoard() {
     DID_NOT_GO_WELL: '',
     TRY_NEXT: '',
     ACTIONS: '',
+  });
+  const [isAnonymous, setIsAnonymous] = useState<Record<RetroColumnType, boolean>>({
+    WENT_WELL: false,
+    DID_NOT_GO_WELL: false,
+    TRY_NEXT: false,
+    ACTIONS: false,
   });
   const [editingItem, setEditingItem] = useState<{ id: number; content: string } | null>(null);
   const [mergeDialog, setMergeDialog] = useState<{ open: boolean; sourceItem: RetroItem | null; columnType: RetroColumnType | null }>({
@@ -110,9 +117,11 @@ export default function RetroBoard() {
         content,
         columnType,
         retrospectiveId: retro.id,
+        isAnonymous: isAnonymous[columnType],
       });
       setItems([...items, res.data]);
       setNewItemContent({ ...newItemContent, [columnType]: '' });
+      setIsAnonymous({ ...isAnonymous, [columnType]: false });
     } catch (error) {
       showError('Failed to add item');
     }
@@ -462,15 +471,32 @@ export default function RetroBoard() {
                       }
                     }}
                   />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddItem(column.type)}
-                    disabled={!newItemContent[column.type].trim()}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    Add
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`anonymous-${column.type}`}
+                        checked={isAnonymous[column.type]}
+                        onCheckedChange={(checked) =>
+                          setIsAnonymous({ ...isAnonymous, [column.type]: checked as boolean })
+                        }
+                      />
+                      <label
+                        htmlFor={`anonymous-${column.type}`}
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
+                        Post anonymously
+                      </label>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddItem(column.type)}
+                      disabled={!newItemContent[column.type].trim()}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

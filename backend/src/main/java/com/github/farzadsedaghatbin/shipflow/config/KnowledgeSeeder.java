@@ -3,12 +3,19 @@ package com.github.farzadsedaghatbin.shipflow.config;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Seeds the knowledge base with sample data for Q&A feature.
@@ -103,11 +110,75 @@ public class KnowledgeSeeder implements CommandLineRunner {
                 }
             }
 
+            // Ingest Shape Up methodology reference document
+            ingestShapeUpMethodology();
+
             long totalItems = knowledgeItemRepository.count();
             log.info("Knowledge base seeded successfully with {} items!", totalItems);
 
         } catch (Exception e) {
             log.error("Failed to seed knowledge base: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Ingest the Shape Up methodology PDF into the knowledge base.
+     * This provides the AI Q&A system with authoritative knowledge about Shape Up practices.
+     */
+    private void ingestShapeUpMethodology() {
+        final String SOURCE_ID = "shape-up-methodology";
+        final String TITLE = "Shape Up: Stop Running in Circles and Ship Work that Matters";
+        final String PDF_PATH = "knowledgebase/shape-up.pdf";
+
+        // Check if already ingested
+        if (knowledgeIngestionService.isReferenceDocumentIngested(SOURCE_ID)) {
+            log.info("Shape Up methodology already ingested, skipping");
+            return;
+        }
+
+        try {
+            ClassPathResource resource = new ClassPathResource(PDF_PATH);
+            if (!resource.exists()) {
+                log.warn("Shape Up PDF not found at classpath:{}, skipping methodology ingestion", PDF_PATH);
+                return;
+            }
+
+            log.info("Extracting text from Shape Up methodology PDF...");
+            String extractedText = extractTextFromPdf(resource.getInputStream());
+
+            if (extractedText == null || extractedText.trim().isEmpty()) {
+                log.warn("Could not extract text from Shape Up PDF");
+                return;
+            }
+
+            log.info("Ingesting Shape Up methodology ({} characters)...", extractedText.length());
+            int chunkCount = knowledgeIngestionService.ingestReferenceDocument(
+                    SOURCE_ID,
+                    TITLE,
+                    extractedText
+            );
+
+            log.info("Shape Up methodology ingested successfully ({} knowledge chunks)", chunkCount);
+
+        } catch (IOException e) {
+            log.error("Failed to read Shape Up PDF: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Failed to ingest Shape Up methodology: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extract text content from a PDF file.
+     * 
+     * NOTE: Loads entire PDF into memory. The Shape Up PDF is ~7.3 MB which is acceptable.
+     * For very large reference documents (>50 MB), this could cause memory pressure.
+     * PDFBox Loader.loadPDF() requires byte array for reliable parsing.
+     */
+    private String extractTextFromPdf(InputStream inputStream) throws IOException {
+        byte[] bytes = inputStream.readAllBytes();
+        try (PDDocument document = Loader.loadPDF(bytes)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document).trim();
         }
     }
 }

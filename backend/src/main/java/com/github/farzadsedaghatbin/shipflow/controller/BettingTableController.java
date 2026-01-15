@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
+import com.github.farzadsedaghatbin.shipflow.dto.betting.*;
 import com.github.farzadsedaghatbin.shipflow.service.BettingTableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -95,5 +96,28 @@ public class BettingTableController {
             @PathVariable Long slotId, 
             @PathVariable Long pitchId) {
         return ResponseEntity.ok(bettingTableService.canPitchFitInSlot(pitchId, slotId));
+    }
+
+    // === NEW: Pitch Comparison and Analytics Endpoints ===
+
+    @GetMapping("/team/{teamId}/performance-history")
+    @Operation(summary = "Get team performance history",
+               description = "Returns historical betting success rates and performance metrics for a team")
+    public ResponseEntity<TeamPerformanceHistoryDTO> getTeamPerformanceHistory(@PathVariable Long teamId) {
+        return ResponseEntity.ok(bettingTableService.getTeamPerformanceHistory(teamId));
+    }
+
+    @GetMapping("/cycle/{cycleId}/pitch-comparisons")
+    @Operation(summary = "Get pitch comparison analysis",
+               description = "Returns shaped pitches with team fit analysis and capacity warnings for betting meetings")
+    public ResponseEntity<List<PitchComparisonDTO>> getPitchComparisons(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(bettingTableService.getPitchComparisons(cycleId));
+    }
+
+    @GetMapping("/cycle/{cycleId}/capacity-analysis")
+    @Operation(summary = "Get capacity analysis",
+               description = "Returns overall capacity utilization and warnings for over/under-allocation")
+    public ResponseEntity<CapacityAnalysisDTO> getCapacityAnalysis(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(bettingTableService.getCapacityAnalysis(cycleId));
     }
 }

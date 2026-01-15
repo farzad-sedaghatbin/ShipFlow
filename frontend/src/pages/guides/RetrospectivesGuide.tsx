@@ -89,8 +89,16 @@ export default function RetrospectivesGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        The retro board is divided into three standard columns. Team members can add cards anonymously or signed.
+                        The retro board is divided into three standard columns. Team members can add cards with their name
+                        attached or submit anonymously for psychological safety.
                     </p>
+                    
+                    <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4">
+                        <p className="text-sm text-blue-900 dark:text-blue-100">
+                            <strong>🔒 Anonymous Submissions:</strong> When creating a retro item, check the "Post anonymously"
+                            checkbox to share feedback without attribution. This encourages honest, candid input on sensitive topics.
+                        </p>
+                    </div>
 
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900">

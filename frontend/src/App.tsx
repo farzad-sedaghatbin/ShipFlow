@@ -27,6 +27,7 @@ import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import BettingTable from './pages/BettingTable';
+import PitchComparisonView from './pages/PitchComparisonView';
 import { PitchHillChart } from './pages/PitchHillChart';
 import { CycleHillChart } from './pages/CycleHillChart';
 import TestCasesPage from './pages/TestCasesPage';
@@ -39,6 +40,7 @@ import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
+import CircuitBreakerMonitor from './pages/CircuitBreakerMonitor';
 import CustomMetrics from './pages/CustomMetrics';
 import MetricBuilder from './pages/MetricBuilder';
 import DashboardManager from './pages/DashboardManager';
@@ -51,6 +53,7 @@ import AIRiskAdvisorGuide from './pages/guides/AIRiskAdvisorGuide';
 import CycleSetupGuide from './pages/guides/CycleSetupGuide';
 import QATestingGuide from './pages/guides/QATestingGuide';
 import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
+import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 
@@ -84,12 +87,14 @@ function App() {
                     <Route path="cycles/:id" element={<CycleDetail />} />
                     <Route path="cycles/:id/edit" element={<CycleForm />} />
                     <Route path="cycles/:cycleId/hill-chart" element={<CycleHillChart />} />
+                    <Route path="cycles/:cycleId/circuit-breaker" element={<CircuitBreakerMonitor />} />
 
                     {/* Cycle Workspace */}
                     <Route path="pitches" element={<PitchBoard />} />
                     <Route path="pitches/:pitchId/hill-chart" element={<PitchHillChart />} />
                     <Route path="pitches/:id" element={<PitchDetail />} />
                     <Route path="betting" element={<BettingTable />} />
+                    <Route path="betting/comparison" element={<PitchComparisonView />} />
                     <Route path="health" element={<HealthOverview />} />
                     <Route path="retros" element={<RetroList />} />
                     <Route path="retros/:id" element={<RetroBoard />} />
@@ -155,6 +160,7 @@ function App() {
                     <Route path="help/cycle-setup" element={<CycleSetupGuide />} />
                     <Route path="help/qa-testing" element={<QATestingGuide />} />
                     <Route path="help/retrospectives" element={<RetrospectivesGuide />} />
+                    <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
 
 

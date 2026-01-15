@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -255,6 +256,102 @@ public class DashboardNotificationService {
     }
 
     /**
+     * Create notifications when a cycle phase changes
+     * Notifies all users associated with the cycle (project members, team members, pitch assignees)
+     */
+    public void notifyCyclePhaseChange(Cycle cycle, CyclePhase oldPhase, CyclePhase newPhase) {
+        if (oldPhase == newPhase) {
+            return;
+        }
+
+        String phaseDescription = getPhaseDescription(newPhase);
+        String message = String.format("Cycle '%s' has transitioned from %s to %s phase. %s", 
+            cycle.getName(), 
+            oldPhase.name(), 
+            newPhase.name(),
+            phaseDescription);
+        
+        String severity = (newPhase == CyclePhase.BUILD || newPhase == CyclePhase.COOLDOWN) ? "INFO" : "WARNING";
+
+        // Notify all users involved in the cycle
+        List<User> usersToNotify = getUsersInvolvedInCycle(cycle);
+        
+        for (User user : usersToNotify) {
+            createNotification(
+                user,
+                "CYCLE_PHASE_CHANGED",
+                String.format("Cycle Phase Changed: %s → %s", oldPhase.name(), newPhase.name()),
+                message,
+                severity,
+                "/cycles/" + cycle.getId(),
+                "CYCLE",
+                cycle.getId()
+            );
+        }
+
+        // Always send Slack notification for cycle phase changes
+        String slackMessage = String.format("🔄 *Cycle Phase Changed*\n" +
+            "*Cycle:* %s\n" +
+            "*Phase Transition:* %s → %s\n" +
+            "*Description:* %s",
+            cycle.getName(),
+            oldPhase.name(),
+            newPhase.name(),
+            phaseDescription);
+
+        slackService.sendNotification(
+            "CYCLE_PHASE_CHANGED",
+            slackMessage,
+            null,
+            "CYCLE",
+            cycle.getId()
+        );
+        
+        log.info("Created cycle phase change notifications for cycle {} ({}→{}) - {} users notified", 
+            cycle.getId(), oldPhase, newPhase, usersToNotify.size());
+    }
+
+    /**
+     * Get all users involved in a cycle (team members through assignments)
+     */
+    private List<User> getUsersInvolvedInCycle(Cycle cycle) {
+        List<User> users = new ArrayList<>();
+        
+        // Add users from team assignments
+        if (cycle.getTeams() != null) {
+            cycle.getTeams().forEach(team -> {
+                if (team.getAssignments() != null) {
+                    team.getAssignments().forEach(assignment -> {
+                        if (assignment.getPerson() != null && assignment.getPerson().getUser() != null) {
+                            users.add(assignment.getPerson().getUser());
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Add project owner if the cycle belongs to a project
+        if (cycle.getProject() != null && cycle.getProject().getOwner() != null) {
+            users.add(cycle.getProject().getOwner());
+        }
+        
+        // Remove duplicates
+        return users.stream().distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Get a description of what each phase means
+     */
+    private String getPhaseDescription(CyclePhase phase) {
+        return switch (phase) {
+            case SHAPING -> "Time to shape and refine pitches for the next betting table.";
+            case BETTING -> "Evaluate and select pitches for the upcoming build cycle.";
+            case BUILD -> "Active development phase - teams are building their assigned pitches.";
+            case COOLDOWN -> "Reflection and planning phase - time to recover and prepare for the next cycle.";
+        };
+    }
+
+    /**
      * Generate notifications for overdue tasks, blocked scopes, and cycle deadlines
      * This is called periodically via scheduled task
      */
@@ -483,6 +580,99 @@ public class DashboardNotificationService {
         notificationRepository.deleteAll(expired);
         
         log.info("Cleaned up {} expired notifications", expired.size());
+    }
+
+    /**
+     * Create notification when circuit breaker is triggered on a pitch
+     */
+    public void notifyCircuitBreakerTriggered(Pitch pitch) {
+        List<User> teamMembers = Collections.emptyList();
+        
+        if (pitch.getTeam() != null) {
+            teamMembers = getTeamMembers(pitch.getTeam());
+            
+            for (User user : teamMembers) {
+                createNotification(
+                        user,
+                        "CIRCUIT_BREAKER_TRIGGERED",
+                        "⚠️ Circuit Breaker: " + pitch.getTitle(),
+                        String.format("Pitch '%s' has exceeded its time budget (appetite: %d days). Shape Up safety valve triggered.",
+                                pitch.getTitle(), pitch.getAppetiteDays()),
+                        "CRITICAL",
+                        "/pitches/" + pitch.getId(),
+                        "PITCH",
+                        pitch.getId()
+                );
+            }
+        } else {
+            log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
+        }
+
+        // Always send Slack notification for circuit breaker events
+        String slackMessage = String.format("⚠️ Circuit Breaker triggered for pitch '%s' - exceeded time budget", pitch.getTitle());
+        slackService.sendNotification(
+                "CIRCUIT_BREAKER_TRIGGERED",
+                slackMessage,
+                null,
+                "PITCH",
+                pitch.getId()
+        );
+
+        log.info("Created circuit breaker triggered notifications for pitch {} ({} team members, Slack sent)",
+                pitch.getId(), teamMembers.size());
+    }
+
+    /**
+     * Create notification when a pitch is killed due to overflow
+     */
+    public void notifyPitchKilled(Pitch pitch, String reason) {
+        List<User> teamMembers = Collections.emptyList();
+        
+        if (pitch.getTeam() != null) {
+            teamMembers = getTeamMembers(pitch.getTeam());
+            
+            for (User user : teamMembers) {
+                createNotification(
+                        user,
+                        "PITCH_KILLED",
+                        "🛑 Pitch Killed: " + pitch.getTitle(),
+                        String.format("Pitch '%s' has been permanently stopped. Reason: %s", pitch.getTitle(), reason),
+                        "CRITICAL",
+                        "/pitches/" + pitch.getId(),
+                        "PITCH",
+                        pitch.getId()
+                );
+            }
+        } else {
+            log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
+        }
+
+        // Always send Slack notification for pitch killed events
+        String slackMessage = String.format("🛑 Pitch '%s' has been permanently cancelled. Reason: %s", pitch.getTitle(), reason);
+        slackService.sendNotification(
+                "PITCH_KILLED",
+                slackMessage,
+                null,
+                "PITCH",
+                pitch.getId()
+        );
+
+        log.info("Created pitch killed notifications for pitch {} ({} team members, Slack sent)",
+                pitch.getId(), teamMembers.size());
+    }
+
+    /**
+     * Helper method to safely get team members with null checks
+     */
+    private List<User> getTeamMembers(Team team) {
+        if (team.getAssignments() == null) {
+            return Collections.emptyList();
+        }
+
+        return team.getAssignments().stream()
+                .filter(assignment -> assignment.getPerson() != null && assignment.getPerson().getUser() != null)
+                .map(assignment -> assignment.getPerson().getUser())
+                .toList();
     }
 
     private DashboardNotificationDTO toDTO(DashboardNotification notification) {

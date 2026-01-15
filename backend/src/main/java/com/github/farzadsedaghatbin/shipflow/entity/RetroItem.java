@@ -38,6 +38,10 @@ public class RetroItem {
 
     @Builder.Default
     @Column(nullable = false)
+    private Boolean isAnonymous = false;
+
+    @Builder.Default
+    @Column(nullable = false)
     private Integer voteCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -34,6 +34,9 @@ class CycleServiceTest {
     @Mock
     private ProjectRepository projectRepository;
 
+    @Mock
+    private DashboardNotificationService notificationService;
+
     @InjectMocks
     private CycleService cycleService;
 
@@ -154,6 +157,19 @@ class CycleServiceTest {
 
         assertThat(result).isNotNull();
         verify(cycleRepository).save(any(Cycle.class));
+        verify(notificationService).notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD), eq(CyclePhase.COOLDOWN));
+    }
+
+    @Test
+    void updatePhase_ShouldNotNotifyWhenPhaseUnchanged() {
+        when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+        when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
+
+        CycleDTO result = cycleService.updatePhase(1L, CyclePhase.BUILD); // Same phase
+
+        assertThat(result).isNotNull();
+        verify(cycleRepository).save(any(Cycle.class));
+        verify(notificationService, never()).notifyCyclePhaseChange(any(), any(), any());
     }
 
     @Test

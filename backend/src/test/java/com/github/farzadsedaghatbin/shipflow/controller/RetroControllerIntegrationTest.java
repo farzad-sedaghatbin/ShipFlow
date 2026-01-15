@@ -55,15 +55,28 @@ class RetroControllerIntegrationTest {
     @Autowired
     private RetroItemRepository retroItemRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private Project testProject;
     private Cycle testCycle;
     private Retrospective testRetro;
+    private User adminUser;
 
     @BeforeEach
     void setUp() {
         // Clean up first
         retroItemRepository.deleteAll();
         retroRepository.deleteAll();
+
+        // Ensure admin user exists for authentication
+        adminUser = userRepository.findByUsername("admin")
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .username("admin")
+                        .password("password") // In real test, would be encoded
+                        .email("admin@test.com")
+                        .role(UserRole.ADMIN)
+                        .build()));
 
         testProject = projectRepository.save(Project.builder()
                 .name("Test Project")
@@ -272,6 +285,46 @@ class RetroControllerIntegrationTest {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.content", is("Something went well")))
                     .andExpect(jsonPath("$.columnType", is("WENT_WELL")));
+        }
+
+        @Test
+        @DisplayName("Add anonymous item to retrospective succeeds")
+        void addAnonymousItemSucceeds() throws Exception {
+            CreateRetroItemRequest request = CreateRetroItemRequest.builder()
+                    .content("Sensitive feedback that should be anonymous")
+                    .columnType(RetroColumnType.DID_NOT_GO_WELL)
+                    .retrospectiveId(openRetro.getId())
+                    .isAnonymous(true)
+                    .build();
+
+            mockMvc.perform(post("/api/retros/items")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.content", is("Sensitive feedback that should be anonymous")))
+                    .andExpect(jsonPath("$.columnType", is("DID_NOT_GO_WELL")))
+                    .andExpect(jsonPath("$.isAnonymous", is(true)))
+                    .andExpect(jsonPath("$.author").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("Add non-anonymous item shows author")
+        void addNonAnonymousItemShowsAuthor() throws Exception {
+            CreateRetroItemRequest request = CreateRetroItemRequest.builder()
+                    .content("Public feedback with attribution")
+                    .columnType(RetroColumnType.WENT_WELL)
+                    .retrospectiveId(openRetro.getId())
+                    .isAnonymous(false)
+                    .build();
+
+            mockMvc.perform(post("/api/retros/items")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.content", is("Public feedback with attribution")))
+                    .andExpect(jsonPath("$.isAnonymous", is(false)))
+                    .andExpect(jsonPath("$.authorId", notNullValue()))
+                    .andExpect(jsonPath("$.authorName", notNullValue()));
         }
 
         @Test

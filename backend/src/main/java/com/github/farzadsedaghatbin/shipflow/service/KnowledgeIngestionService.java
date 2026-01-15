@@ -253,6 +253,76 @@ public class KnowledgeIngestionService {
     }
 
     /**
+     * Ingest a reference document (like Shape Up methodology book) into the knowledge base.
+     * Reference documents are external materials that provide context for the Q&A system.
+     * 
+     * @param sourceId Unique identifier for the reference (e.g., "shape-up-methodology")
+     * @param title Display title for the reference
+     * @param content The full text content of the document
+     * @return The number of chunks created
+     */
+    @Transactional
+    public int ingestReferenceDocument(String sourceId, String title, String content) {
+        if (!isQAEnabled()) {
+            log.warn("Q&A feature is disabled, cannot ingest reference document");
+            return 0;
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            log.warn("Reference document has no content, skipping: {}", sourceId);
+            return 0;
+        }
+
+        // Use a hash of the sourceId as a pseudo entity ID for consistency
+        Long entityId = (long) sourceId.hashCode();
+
+        String formattedContent = buildReferenceDocumentContent(sourceId, title, content);
+
+        ingestEntity(
+                KnowledgeEntityType.REFERENCE_DOCUMENT,
+                entityId,
+                title,
+                formattedContent,
+                null, // No cycle association
+                null, // No team association
+                null, // No pitch association
+                null  // No author
+        );
+
+        // Count how many chunks were created
+        int chunkCount = knowledgeItemRepository
+                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+                .size();
+
+        log.info("Ingested reference document: {} ({} chunks)", title, chunkCount);
+        return chunkCount;
+    }
+
+    /**
+     * Build content for a reference document with metadata.
+     */
+    private String buildReferenceDocumentContent(String sourceId, String title, String content) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Reference Document ===\n");
+        sb.append("Source: ").append(sourceId).append("\n");
+        sb.append("Title: ").append(title).append("\n");
+        sb.append("Type: Shape Up Methodology Reference\n\n");
+        sb.append("=== Content ===\n");
+        sb.append(content);
+        return sb.toString();
+    }
+
+    /**
+     * Check if a reference document is already ingested.
+     */
+    public boolean isReferenceDocumentIngested(String sourceId) {
+        Long entityId = (long) sourceId.hashCode();
+        return !knowledgeItemRepository
+                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+                .isEmpty();
+    }
+
+    /**
      * Ingest an uploaded document into the knowledge base.
      */
     @Transactional
