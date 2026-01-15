@@ -566,6 +566,7 @@ public class BettingTableService {
                         .teamName(track.getTeamName())
                         .message(String.format("Team is over-allocated by %d weeks (%.0f%% capacity)",
                                 track.getUsedCapacityWeeks() - track.getTotalCapacityWeeks(), utilization))
+                        .utilizationRate(utilization)
                         .type("OVER_ALLOCATED")
                         .build());
             } else if (utilization > 85) {
@@ -574,6 +575,7 @@ public class BettingTableService {
                         .teamId(track.getTeamId())
                         .teamName(track.getTeamName())
                         .message(String.format("Team capacity is tight: %.0f%% utilized", utilization))
+                        .utilizationRate(utilization)
                         .type("TIGHT_SCHEDULE")
                         .build());
             } else if (utilization < 50) {
@@ -582,6 +584,7 @@ public class BettingTableService {
                         .teamId(track.getTeamId())
                         .teamName(track.getTeamName())
                         .message(String.format("Team has significant available capacity: %.0f%% utilized", utilization))
+                        .utilizationRate(utilization)
                         .type("UNDER_UTILIZED")
                         .build());
             }
@@ -610,9 +613,9 @@ public class BettingTableService {
                 .cycleName(bettingTable.getCycleName())
                 .totalTeams(bettingTable.getTeamTracks().size())
                 .totalCapacityWeeks(bettingTable.getTotalCapacityWeeks())
-                .usedCapacityWeeks(bettingTable.getUsedCapacityWeeks())
-                .availableCapacityWeeks(totalAvailable)
-                .utilizationRate(Math.round(overallUtilization * 10.0) / 10.0)
+                .allocatedWeeks(bettingTable.getUsedCapacityWeeks())
+                .remainingWeeks(totalAvailable)
+                .utilizationRate(overallUtilization / 100.0)  // Convert to decimal (0.0 to 1.0)
                 .warnings(warnings)
                 .isOverAllocated(isOverAllocated)
                 .hasConflicts(false)
