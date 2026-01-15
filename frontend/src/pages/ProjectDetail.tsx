@@ -21,6 +21,7 @@ import { cycleService } from '../services/cycleService';
 import { teamService } from '../services/teamService';
 import { useToast, useProject } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { formatDate } from '../utils/dateUtils';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -123,11 +124,26 @@ export default function ProjectDetail() {
     const endDate = new Date(cycle.endDate);
     
     if (now >= startDate && now <= endDate) {
-      return <Badge className="bg-green-500"><Play className="h-3 w-3 mr-1" />Active</Badge>;
+      return (
+        <Badge className="bg-green-500" aria-label="Active cycle">
+          <Play className="h-3 w-3 mr-1" aria-hidden="true" />
+          Active
+        </Badge>
+      );
     } else if (now > endDate) {
-      return <Badge variant="secondary"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
+      return (
+        <Badge variant="secondary" aria-label="Completed cycle">
+          <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden="true" />
+          Completed
+        </Badge>
+      );
     } else {
-      return <Badge variant="outline"><Pause className="h-3 w-3 mr-1" />Upcoming</Badge>;
+      return (
+        <Badge variant="outline" aria-label="Upcoming cycle">
+          <Pause className="h-3 w-3 mr-1" aria-hidden="true" />
+          Upcoming
+        </Badge>
+      );
     }
   };
 
@@ -362,8 +378,10 @@ export default function ProjectDetail() {
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {cycle.startDate} - {cycle.endDate}
+                          <Calendar className="h-3 w-3" aria-hidden="true" />
+                          <time dateTime={cycle.startDate}>{formatDate(cycle.startDate)}</time>
+                          {' - '}
+                          <time dateTime={cycle.endDate}>{formatDate(cycle.endDate)}</time>
                         </div>
                         {cycle.pitchCount !== undefined && (
                           <div className="flex items-center gap-1">
