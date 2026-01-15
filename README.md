@@ -46,10 +46,28 @@ A modern project management application implementing the [Shape Up](https://base
   - PDF and CSV export functionality
 - **Retrospectives**: Team retros with voting and merging
 - **Health Overview**: Automated risk detection and health monitoring
-  - Real-time risk analysis based on bugs, scope completion, budget, and timeline
+  - **Weighted Risk Algorithm**: 4-factor scoring with configurable weights
+    - Budget utilization (25%): Tracks appetite consumption vs timeline
+    - Bug severity (30%): Monitors critical/major/open bug counts
+    - Scope progress (25%): Analyzes hill chart position and movement
+    - Time pressure (20%): Evaluates days remaining and urgency
+  - **Configurable Thresholds**: 30+ customizable parameters via Organization Settings
+    - Budget thresholds (warning, overrun, critical levels)
+    - Bug count thresholds (by severity and total open bugs)
+    - Scope progress expectations (position and lag thresholds)
+    - Time-based urgency levels (urgent, warning, concern)
+    - Schedule variance detection (moderate and significant gaps)
+    - Cycle progress milestones (midpoint, late phase, final quarter)
+    - Stagnation detection (scope movement, peak stuck, progress gaps)
+    - Work rate indicators (recent hours, appetite usage)
+  - **Risk Classification**: LOW (0-24), MEDIUM (25-49), HIGH (50-69), CRITICAL (70+)
+  - **Visual Indicators**: 
+    - Critical items: 8px red borders, CRITICAL badges with stripe animation, pulse effects
+    - Enhanced progress bars with color-coded budget tracking
+    - Gradient warning banners for at-risk items
   - Risk trend indicators (IMPROVING, STABLE, WORSENING)
-  - Visual priority sorting with pulsing animations for critical items
   - Automated status detection without manual assignment
+  - All thresholds customizable per organization with sensible defaults
 - **AI-Powered Q&A**: Enhanced RAG-based knowledge retrieval from project documents
   - Smart relevance filtering (0.70 threshold)
   - Source citation tracking

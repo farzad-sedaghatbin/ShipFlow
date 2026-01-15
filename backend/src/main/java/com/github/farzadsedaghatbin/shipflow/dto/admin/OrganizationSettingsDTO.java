@@ -47,15 +47,109 @@ public class OrganizationSettingsDTO {
     private LocalDateTime updatedAt;
     private String updatedBy;
 
+    /**
+     * Configurable risk detection thresholds for automated health assessment.
+     * These values control how the system calculates pitch health status.
+     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class RiskThresholds {
-        private Integer lowMax = 30;      // 0-30 is LOW
-        private Integer mediumMax = 60;   // 31-60 is MEDIUM
-        private Integer highMax = 85;     // 61-85 is HIGH
-        // 86-100 is CRITICAL
+        // Risk Score Boundaries (used to determine final risk level)
+        @Builder.Default
+        private Integer lowMax = 24;           // 0-24 is LOW
+        @Builder.Default
+        private Integer mediumMax = 49;        // 25-49 is MEDIUM
+        @Builder.Default
+        private Integer highMax = 69;          // 50-69 is HIGH
+        // 70+ is CRITICAL
+        
+        // Budget Thresholds (percentage of appetite used)
+        @Builder.Default
+        private Integer budgetWarning = 80;         // Start warning at 80%
+        @Builder.Default
+        private Integer budgetOverrun = 100;        // Over budget at 100%
+        @Builder.Default
+        private Integer budgetCritical = 120;       // Critical overrun at 120%
+        
+        // Schedule Variance Thresholds (time progress vs work progress gap)
+        @Builder.Default
+        private Integer scheduleModerateGap = 15;   // Moderately behind if gap > 15%
+        @Builder.Default
+        private Integer scheduleSignificantGap = 30; // Significantly behind if gap > 30%
+        
+        // Bug Count Thresholds
+        @Builder.Default
+        private Integer criticalBugsMinor = 1;      // Risk increases with 1+ critical bugs
+        @Builder.Default
+        private Integer criticalBugsModerate = 3;   // Higher risk with 3+ critical bugs
+        @Builder.Default
+        private Integer criticalBugsSevere = 5;     // Severe risk with 5+ critical bugs
+        @Builder.Default
+        private Integer majorBugsThreshold = 3;     // Risk increases with 3+ major bugs
+        @Builder.Default
+        private Integer majorBugsHigh = 5;          // Higher risk with 5+ major bugs
+        @Builder.Default
+        private Integer openBugsModerate = 5;       // Concern with 5+ open bugs
+        @Builder.Default
+        private Integer openBugsHigh = 10;          // Higher concern with 10+ open bugs
+        @Builder.Default
+        private Integer openBugsCritical = 15;      // Critical concern with 15+ open bugs
+        @Builder.Default
+        private Integer recentBugInflux = 5;        // Quality concern if 5+ bugs in 3 days
+        
+        // Bug Resolution Rate Threshold
+        @Builder.Default
+        private Integer bugResolutionRateMin = 50;  // Concern if resolution rate < 50%
+        
+        // Scope Progress Thresholds (hill chart positions 0-100)
+        @Builder.Default
+        private Integer scopeEarlyPhase = 25;       // Still in early understanding phase
+        @Builder.Default
+        private Integer scopeUphillMax = 30;        // Maximum uphill position threshold
+        @Builder.Default
+        private Integer scopeMidPhase = 40;         // Mid-understanding phase
+        @Builder.Default
+        private Integer scopePeakMin = 45;          // Minimum peak position (decision point)
+        @Builder.Default
+        private Integer scopePeakMax = 55;          // Maximum peak position (decision point)
+        @Builder.Default
+        private Double scopeExpectedProgressRate = 0.8; // Should be at 80% of cycle progress
+        @Builder.Default
+        private Integer scopeLagSignificant = 30;   // Significant lag if gap > 30%
+        
+        // Time-based Thresholds (days remaining)
+        @Builder.Default
+        private Integer daysUrgent = 3;             // Urgent if ≤3 days left
+        @Builder.Default
+        private Integer daysWarning = 7;            // Warning if ≤7 days left
+        @Builder.Default
+        private Integer daysConcern = 14;           // Concern threshold at 14 days
+        
+        // Cycle Progress Thresholds (percentage of cycle elapsed)
+        @Builder.Default
+        private Integer cycleMidpoint = 50;         // Midpoint of cycle
+        @Builder.Default
+        private Integer cycleLatePhase = 60;        // Late phase begins
+        @Builder.Default
+        private Integer cycleFinalQuarter = 75;     // Final quarter begins
+        @Builder.Default
+        private Integer cycleMinForScopes = 30;     // Should have scopes defined by 30%
+        
+        // Stagnation Thresholds (days without movement)
+        @Builder.Default
+        private Integer scopeStagnationDays = 7;    // Scope hasn't moved in 7 days
+        @Builder.Default
+        private Integer peakStuckDays = 5;          // Stuck at peak for 5 days
+        @Builder.Default
+        private Integer noProgressDays = 7;         // No overall progress in 7 days
+        
+        // Work Rate Thresholds
+        @Builder.Default
+        private Integer recentWorkHighHours = 15;   // High work rate indicator (3 days)
+        @Builder.Default
+        private Integer appetiteHighUsage = 90;     // High appetite usage threshold
     }
 
     @Data

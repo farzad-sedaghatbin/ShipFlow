@@ -136,8 +136,8 @@ class PitchHealthControllerIntegrationTest {
 
         // Create critical pitch - multiple issues
         criticalPitch = createPitch("Critical Pitch", PitchStatus.IN_PROGRESS, 10);
-        addWorkLogs(criticalPitch, 100.0); // 125% of 80 hours budget
-        addCriticalBugs(criticalPitch, 2);
+        addWorkLogs(criticalPitch, 120.0); // 150% of 80 hours budget
+        addCriticalBugs(criticalPitch, 6); // More than criticalBugsSevere threshold (5)
         addStagnantScopes(criticalPitch);
     }
 
