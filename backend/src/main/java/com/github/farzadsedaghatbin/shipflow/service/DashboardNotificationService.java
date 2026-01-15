@@ -255,6 +255,102 @@ public class DashboardNotificationService {
     }
 
     /**
+     * Create notifications when a cycle phase changes
+     * Notifies all users associated with the cycle (project members, team members, pitch assignees)
+     */
+    public void notifyCyclePhaseChange(Cycle cycle, CyclePhase oldPhase, CyclePhase newPhase) {
+        if (oldPhase == newPhase) {
+            return;
+        }
+
+        String phaseDescription = getPhaseDescription(newPhase);
+        String message = String.format("Cycle '%s' has transitioned from %s to %s phase. %s", 
+            cycle.getName(), 
+            oldPhase.name(), 
+            newPhase.name(),
+            phaseDescription);
+        
+        String severity = (newPhase == CyclePhase.BUILD || newPhase == CyclePhase.COOLDOWN) ? "INFO" : "WARNING";
+
+        // Notify all users involved in the cycle
+        List<User> usersToNotify = getUsersInvolvedInCycle(cycle);
+        
+        for (User user : usersToNotify) {
+            createNotification(
+                user,
+                "CYCLE_PHASE_CHANGED",
+                String.format("Cycle Phase Changed: %s → %s", oldPhase.name(), newPhase.name()),
+                message,
+                severity,
+                "/cycles/" + cycle.getId(),
+                "CYCLE",
+                cycle.getId()
+            );
+        }
+
+        // Send Slack notification
+        String slackMessage = String.format("🔄 *Cycle Phase Changed*\n" +
+            "*Cycle:* %s\n" +
+            "*Phase Transition:* %s → %s\n" +
+            "*Description:* %s",
+            cycle.getName(),
+            oldPhase.name(),
+            newPhase.name(),
+            phaseDescription);
+        
+        slackService.sendNotification(
+            "CYCLE_PHASE_CHANGED",
+            slackMessage,
+            null,
+            "CYCLE",
+            cycle.getId()
+        );
+        
+        log.info("Created cycle phase change notifications for cycle {} ({}→{})", 
+            cycle.getId(), oldPhase, newPhase);
+    }
+
+    /**
+     * Get all users involved in a cycle (team members through assignments)
+     */
+    private List<User> getUsersInvolvedInCycle(Cycle cycle) {
+        List<User> users = new ArrayList<>();
+        
+        // Add users from team assignments
+        if (cycle.getTeams() != null) {
+            cycle.getTeams().forEach(team -> {
+                if (team.getAssignments() != null) {
+                    team.getAssignments().forEach(assignment -> {
+                        if (assignment.getPerson() != null && assignment.getPerson().getUser() != null) {
+                            users.add(assignment.getPerson().getUser());
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Add project owner if the cycle belongs to a project
+        if (cycle.getProject() != null && cycle.getProject().getOwner() != null) {
+            users.add(cycle.getProject().getOwner());
+        }
+        
+        // Remove duplicates
+        return users.stream().distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Get a description of what each phase means
+     */
+    private String getPhaseDescription(CyclePhase phase) {
+        return switch (phase) {
+            case SHAPING -> "Time to shape and refine pitches for the next betting table.";
+            case BETTING -> "Evaluate and select pitches for the upcoming build cycle.";
+            case BUILD -> "Active development phase - teams are building their assigned pitches.";
+            case COOLDOWN -> "Reflection and planning phase - time to recover and prepare for the next cycle.";
+        };
+    }
+
+    /**
      * Generate notifications for overdue tasks, blocked scopes, and cycle deadlines
      * This is called periodically via scheduled task
      */

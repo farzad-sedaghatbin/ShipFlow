@@ -26,6 +26,7 @@ public class CycleService {
     private final CycleRepository cycleRepository;
     private final ProjectRepository projectRepository;
     private final RetroRepository retroRepository;
+    private final DashboardNotificationService notificationService;
 
     public List<CycleDTO> getAllCycles() {
         return cycleRepository.findAllByOrderByStartDateDesc()
@@ -103,8 +104,15 @@ public class CycleService {
         Cycle cycle = cycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
         
+        CyclePhase oldPhase = cycle.getPhase();
         cycle.setPhase(phase);
         Cycle saved = cycleRepository.save(cycle);
+        
+        // Send notifications if phase actually changed
+        if (oldPhase != phase) {
+            notificationService.notifyCyclePhaseChange(saved, oldPhase, phase);
+        }
+        
         return toDTO(saved);
     }
 
