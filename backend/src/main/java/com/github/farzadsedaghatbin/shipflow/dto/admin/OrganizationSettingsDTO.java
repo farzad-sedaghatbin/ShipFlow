@@ -184,24 +184,10 @@ public class OrganizationSettingsDTO {
         /**
          * Normalize weights to sum to 100 if they don't already.
          * 
-         * Uses integer division which truncates fractional parts, causing precision loss.
-         * To ensure the sum equals exactly 100 despite truncation, the last weight (timeWeight)
-         * is calculated as the remainder (100 - sum of other weights) rather than being
-         * proportionally scaled. This guarantees the total is always 100, not 99 or 101.
+         * Integer division truncates fractional parts, so timeWeight absorbs the remainder
+         * to ensure the sum equals exactly 100. If total is zero, resets to defaults.
          * 
-         * IMPORTANT: This method has an implicit ordering dependency - timeWeight is ALWAYS
-         * assigned the remainder to absorb any rounding errors. If you need to change which
-         * field receives the remainder, modify the last assignment in this method.
-         * The choice of timeWeight is arbitrary but consistent.
-         * 
-         * Edge case: If all weights are zero (total=0), they will be reset to default values.
-         * 
-         * Example: weights [33, 33, 33, 33] (sum=132) normalize to:
-         *   budgetWeight = (33*100)/132 = 25 (truncated from 25.0)
-         *   bugsWeight = (33*100)/132 = 25
-         *   scopeWeight = (33*100)/132 = 25
-         *   timeWeight = 100 - (25+25+25) = 25 (remainder assignment)
-         *   Final sum = 100 ✓
+         * Example: [33, 33, 33, 33] (sum=132) → [25, 25, 25, 25] (sum=100)
          */
         public void normalize() {
             int total = budgetWeight + bugsWeight + scopeWeight + timeWeight;
