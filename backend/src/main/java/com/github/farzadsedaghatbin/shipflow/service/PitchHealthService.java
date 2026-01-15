@@ -419,10 +419,10 @@ public class PitchHealthService {
         
         // Apply configurable weights to calculate final risk score
         double finalRiskScore = 
-            (budgetRisk * weights.getBudgetWeight()) +
-            (bugsRisk * weights.getBugsWeight()) +
-            (scopeRisk * weights.getScopeWeight()) +
-            (timeRisk * weights.getTimeWeight());
+            (budgetRisk * weights.getBudgetWeight() / 100.0) +
+            (bugsRisk * weights.getBugsWeight() / 100.0) +
+            (scopeRisk * weights.getScopeWeight() / 100.0) +
+            (timeRisk * weights.getTimeWeight() / 100.0);
         
         // Determine risk level from weighted score (using configurable thresholds)
         if (finalRiskScore > thresholds.getHighMax()) {
