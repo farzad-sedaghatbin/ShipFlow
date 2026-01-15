@@ -44,7 +44,7 @@ import {
 import { Project, CreateProjectRequest } from '../types';
 import projectService from '../services/projectService';
 import { useToast, useProject } from '../contexts';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
 import EmptyState from '../components/EmptyState';
@@ -80,12 +80,26 @@ export default function Projects() {
   const { showToast } = useToast();
   const { refreshProjects } = useProject();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const abortController = new AbortController();
     loadProjects();
     return () => abortController.abort();
   }, [showArchived]);
+
+  // Handle edit query parameter
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && projects.length > 0) {
+      const projectToEdit = projects.find(p => p.id.toString() === editId);
+      if (projectToEdit) {
+        handleOpenDialog(projectToEdit);
+        // Remove the query parameter after opening the dialog
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, projects]);
 
   const loadProjects = async () => {
     try {
