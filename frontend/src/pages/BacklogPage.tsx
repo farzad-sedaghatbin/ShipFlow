@@ -302,12 +302,30 @@ export default function BacklogPage() {
           sortBy,
           sortOrder
         );
-        setTasks(response?.data?.content || []);
+        let filteredTasks = response?.data?.content || [];
+        
+        // Apply dependency filter
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else {
         // Use category-specific endpoint
         response = await taskService.getByCycleIdAndCategory(selectedCycle, activeCategory, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(response?.data?.content || []);
+        let filteredTasks = response?.data?.content || [];
+        
+        // Apply dependency filter
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       }
     } catch (error) {
@@ -488,7 +506,6 @@ export default function BacklogPage() {
 
     if (!formData.cycleId || formData.cycleId === 0) {
       errors.cycleId = 'Please select a cycle';
-      toast.error('Please select a specific cycle to create a task');
     }
 
     if (formData.estimateHours !== undefined && formData.estimateHours < 0) {

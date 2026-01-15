@@ -69,14 +69,17 @@ public class Task {
 
     @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
     private java.util.List<Task> children = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "sourceTask", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
     private java.util.List<TaskDependency> outgoingDependencies = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "targetTask", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
     private java.util.List<TaskDependency> incomingDependencies = new java.util.ArrayList<>();
 
     @Column
