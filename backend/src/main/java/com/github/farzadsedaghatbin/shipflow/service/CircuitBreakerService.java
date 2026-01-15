@@ -125,7 +125,7 @@ public class CircuitBreakerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
 
         pitch.setIsCircuitBreakerTriggered(true);
-        pitch.setCircuitBreakerReason(reason);
+        pitch.setCircuitBreakerReason("KILLED: " + reason);
         pitch.setCircuitBreakerDate(LocalDateTime.now());
         pitch.setStatus(PitchStatus.CANCELLED);
 
