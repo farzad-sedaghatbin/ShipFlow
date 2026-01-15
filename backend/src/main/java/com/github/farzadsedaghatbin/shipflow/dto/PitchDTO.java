@@ -10,19 +10,40 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PitchDTO {
+    // Basic fields
     private Long id;
     private String title;
     private String description;
     private Integer appetiteDays;
+
+    // Cycle information
     private Long cycleId;
-    private String cycleName;    private Long projectId;
+    private String cycleName;
+
+    // Project information
+    private Long projectId;
     private String projectName;
-    private String projectKey;    private Long teamId;
+    private String projectKey;
+
+    // Team information
+    private Long teamId;
     private String teamName;
+
+    // Status and timestamps
     private PitchStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Progress metrics
     private Double totalHoursSpent;
     private Double appetiteHours;
     private Double progressPercentage;
+    
+    // Shape Up Methodology Fields
+    private String problemStatement;
+    private String solution;
+    private String rabbitHoles;
+    private String risks;
+    private String noGos;
+    private String wireframeLinks;
 }

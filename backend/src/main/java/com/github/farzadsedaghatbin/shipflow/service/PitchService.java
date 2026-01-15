@@ -69,6 +69,13 @@ public class PitchService {
                 .appetiteDays(request.getAppetiteDays())
                 .cycle(cycle)
                 .status(request.getStatus() != null ? request.getStatus() : PitchStatus.PENDING)
+                // Shape Up fields
+                .problemStatement(request.getProblemStatement())
+                .solution(request.getSolution())
+                .rabbitHoles(request.getRabbitHoles())
+                .risks(request.getRisks())
+                .noGos(request.getNoGos())
+                .wireframeLinks(request.getWireframeLinks())
                 .build();
         
         if (request.getTeamId() != null) {
@@ -93,6 +100,14 @@ public class PitchService {
         pitch.setDescription(request.getDescription());
         pitch.setAppetiteDays(request.getAppetiteDays());
         pitch.setStatus(request.getStatus());
+        
+        // Shape Up fields
+        pitch.setProblemStatement(request.getProblemStatement());
+        pitch.setSolution(request.getSolution());
+        pitch.setRabbitHoles(request.getRabbitHoles());
+        pitch.setRisks(request.getRisks());
+        pitch.setNoGos(request.getNoGos());
+        pitch.setWireframeLinks(request.getWireframeLinks());
         
         if (request.getTeamId() != null) {
             Team team = teamRepository.findById(request.getTeamId())
@@ -189,6 +204,13 @@ public class PitchService {
                 .totalHoursSpent(totalHours)
                 .appetiteHours(appetiteHours)
                 .progressPercentage(Math.min(progress, 100))
+                // Shape Up fields
+                .problemStatement(pitch.getProblemStatement())
+                .solution(pitch.getSolution())
+                .rabbitHoles(pitch.getRabbitHoles())
+                .risks(pitch.getRisks())
+                .noGos(pitch.getNoGos())
+                .wireframeLinks(pitch.getWireframeLinks())
                 .build();
     }
 }
