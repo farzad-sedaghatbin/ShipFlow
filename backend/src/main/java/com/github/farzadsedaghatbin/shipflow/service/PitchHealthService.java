@@ -417,14 +417,24 @@ public class PitchHealthService {
         double scopeRisk = calculateScopeRisk(pitch, cycleProgress, thresholds);
         double timeRisk = calculateTimeRisk(pitch, daysElapsed, totalCycleDays, thresholds);
         
-        // Apply configurable weights to calculate final risk score
-        double finalRiskScore = 
+        //  Apply configurable weights to calculate weighted risk score
+        double weightedRiskScore = 
             (budgetRisk * weights.getBudgetWeight() / 100.0) +
             (bugsRisk * weights.getBugsWeight() / 100.0) +
             (scopeRisk * weights.getScopeWeight() / 100.0) +
             (timeRisk * weights.getTimeWeight() / 100.0);
         
-        // Determine risk level from weighted score (using configurable thresholds)
+        // Also consider the maximum individual risk to ensure single severe factors trigger high risk
+        double maxIndividualRisk = Math.max(Math.max(budgetRisk, bugsRisk), 
+                                           Math.max(scopeRisk, timeRisk));
+        
+        // Use the maximum of:
+        // 1. Weighted average (honors user's importance ratings)
+        // 2. 76% of max individual risk (ensures severe single issues are reflected)
+        // This allows both weighted importance and critical single factors to drive risk level
+        double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * 0.76);
+        
+        // Determine risk level from blended score (using configurable thresholds)
         if (finalRiskScore > thresholds.getHighMax()) {
             return PitchRiskDTO.RiskLevel.CRITICAL;
         } else if (finalRiskScore > thresholds.getMediumMax()) {
@@ -444,18 +454,23 @@ public class PitchHealthService {
         
         // Check if behind schedule (work progress vs time progress)
         if (cycleProgress > appetiteUsed + thresholds.getScheduleSignificantGap()) {
-            riskScore += 30; // Significantly behind schedule
+            riskScore += 50; // Significantly behind schedule
         } else if (cycleProgress > appetiteUsed + thresholds.getScheduleModerateGap()) {
-            riskScore += 15; // Moderately behind schedule
+            riskScore += 30; // Moderately behind schedule
         }
         
-        // Check if over budget
+        // Check if over budget - scale based on severity
         if (appetiteUsed > thresholds.getBudgetCritical()) {
-            riskScore += 40; // Way over budget
+            riskScore += 80; // Way over budget (120%+)
         } else if (appetiteUsed > thresholds.getBudgetOverrun()) {
-            riskScore += 25; // Over budget
+            // Scale from 50-70 based on how far over 100%
+            double overrun = appetiteUsed - thresholds.getBudgetOverrun();
+            riskScore += 50 + Math.min(30, overrun * 1.5);
         } else if (appetiteUsed > thresholds.getBudgetWarning()) {
-            riskScore += 10; // Approaching budget limit
+            // Scale from 20-40 based on how close to 100%
+            double warningLevel = (appetiteUsed - thresholds.getBudgetWarning()) / 
+                                 (thresholds.getBudgetOverrun() - thresholds.getBudgetWarning());
+            riskScore += 20 + (warningLevel * 30);
         }
         
         return Math.min(riskScore, 100); // Cap at 100
@@ -478,11 +493,11 @@ public class PitchHealthService {
                 .count();
         
         if (criticalBugs >= thresholds.getCriticalBugsSevere()) {
-            riskScore += 50; // Critical: Many blocker bugs
+            riskScore += 80; // Critical: Many blocker bugs
         } else if (criticalBugs >= thresholds.getCriticalBugsModerate()) {
-            riskScore += 35; // Multiple critical bugs
+            riskScore += 60; // Multiple critical bugs
         } else if (criticalBugs >= thresholds.getCriticalBugsMinor()) {
-            riskScore += 20; // At least one critical bug
+            riskScore += 40; // At least one critical bug
         }
         
         // Major severity bugs
@@ -492,9 +507,9 @@ public class PitchHealthService {
                 .count();
         
         if (majorSeverityBugs > thresholds.getMajorBugsHigh() && daysLeft < thresholds.getDaysWarning()) {
-            riskScore += 15; // Many major-severity bugs near deadline
+            riskScore += 30; // Many major-severity bugs near deadline
         } else if (majorSeverityBugs > thresholds.getMajorBugsThreshold()) {
-            riskScore += 8; // Several major-severity bugs
+            riskScore += 15; // Several major-severity bugs
         }
         
         // Count all open bugs
@@ -504,11 +519,11 @@ public class PitchHealthService {
         
         // Bug density analysis
         if (openBugs > thresholds.getOpenBugsCritical() && daysLeft < thresholds.getDaysWarning()) {
-            riskScore += 20; // High bug count near deadline
+            riskScore += 35; // High bug count near deadline
         } else if (openBugs > thresholds.getOpenBugsHigh() && daysLeft < thresholds.getDaysWarning()) {
-            riskScore += 15; // Too many open bugs with little time
+            riskScore += 25; // Too many open bugs with little time
         } else if (openBugs > thresholds.getOpenBugsModerate() && daysLeft < thresholds.getDaysUrgent()) {
-            riskScore += 10; // Several bugs with very little time
+            riskScore += 15; // Several bugs with very little time
         }
         
         // Check for recent bug influx
@@ -518,7 +533,7 @@ public class PitchHealthService {
                 .count();
         
         if (recentBugs > thresholds.getRecentBugInflux() && pitch.getStatus() == PitchStatus.TESTING) {
-            riskScore += 12; // Many bugs found in testing recently
+            riskScore += 20; // Many bugs found in testing recently
         }
         
         // Bug resolution rate analysis
@@ -530,7 +545,7 @@ public class PitchHealthService {
         
         if (bugResolutionRate < thresholds.getBugResolutionRateMin() && 
                 openBugs > thresholds.getMajorBugsThreshold() && daysLeft < thresholds.getDaysWarning()) {
-            riskScore += 10; // Low resolution rate with many open bugs near deadline
+            riskScore += 20; // Low resolution rate with many open bugs near deadline
         }
         
         return Math.min(riskScore, 100); // Cap at 100
@@ -556,13 +571,13 @@ public class PitchHealthService {
             
             // If we're late in the cycle but scopes are still uphill, that's risky
             if (cycleProgress > thresholds.getCycleFinalQuarter() && avgPosition < thresholds.getScopeUphillMax()) {
-                riskScore += 30; // Critical: Still figuring things out in the final quarter
+                riskScore += 60; // Critical: Still figuring things out in the final quarter
             } else if (cycleProgress > thresholds.getCycleLatePhase() && avgPosition < thresholds.getScopeMidPhase()) {
-                riskScore += 20; // High risk: Past 60% but scopes still mostly uphill
+                riskScore += 45; // High risk: Past 60% but scopes still mostly uphill
             } else if (cycleProgress > thresholds.getCycleMidpoint() && avgPosition < thresholds.getScopeEarlyPhase()) {
-                riskScore += 15; // Halfway through but still early in understanding
+                riskScore += 30; // Halfway through but still early in understanding
             } else if (positionGap > thresholds.getScopeLagSignificant()) {
-                riskScore += 10; // Scope progress lagging behind time progress
+                riskScore += 20; // Scope progress lagging behind time progress
             }
             
             // Check for stagnant scopes
@@ -572,7 +587,7 @@ public class PitchHealthService {
                     .count();
             
             if (stagnantScopes > 0 && cycleProgress > 40) {
-                riskScore += 12 * (int) Math.min(stagnantScopes, 3); // Up to 36 points
+                riskScore += 25 * (int) Math.min(stagnantScopes, 3); // Up to 75 points
             }
             
             // Check for scopes stuck at the peak
@@ -582,11 +597,11 @@ public class PitchHealthService {
                     .count();
             
             if (peakStuckScopes > 0 && cycleProgress > thresholds.getCycleMidpoint()) {
-                riskScore += 10 * (int) Math.min(peakStuckScopes, 2);
+                riskScore += 20 * (int) Math.min(peakStuckScopes, 2);
             }
         } else if (cycleProgress > thresholds.getCycleMinForScopes()) {
             // No scopes defined after threshold % of cycle
-            riskScore += 20;
+            riskScore += 40;
         }
         
         return Math.min(riskScore, 100); // Cap at 100
@@ -602,9 +617,9 @@ public class PitchHealthService {
         PitchStatus status = pitch.getStatus();
         
         if (daysLeft <= thresholds.getDaysUrgent() && status != PitchStatus.DONE && status != PitchStatus.TESTING) {
-            riskScore += 30; // Not in testing/done with only few days left
+            riskScore += 60; // Not in testing/done with only few days left
         } else if (daysLeft <= thresholds.getDaysWarning() && status == PitchStatus.PENDING) {
-            riskScore += 20; // Not started with only a week left
+            riskScore += 40; // Not started with only a week left
         }
         
         return Math.min(riskScore, 100); // Cap at 100
