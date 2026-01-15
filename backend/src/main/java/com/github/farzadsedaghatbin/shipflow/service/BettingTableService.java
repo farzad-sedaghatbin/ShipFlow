@@ -521,8 +521,8 @@ public class BettingTableService {
                 .totalCompletedBets(totalCompletedBets)
                 .overallCompletionRate(Math.round(overallCompletionRate * 10.0) / 10.0)
                 .avgBetsPerCycle(totalCycles > 0 ? Math.round((totalBets * 10.0 / totalCycles)) / 10.0 : 0.0)
-                .avgWeeksPerBet(totalBets > 0 ? 2.0 : 0.0) // Placeholder
-                .avgTimeOverrun(5.0) // Placeholder - would need work log analysis
+                .avgWeeksPerBet(null) // TODO: Calculate from actual cycle durations and bet counts
+                .avgTimeOverrun(null) // TODO: Implement work log analysis to calculate actual vs appetite
                 .trend(trend)
                 .performanceRating(performanceRating)
                 .build();
@@ -647,8 +647,8 @@ public class BettingTableService {
                 .risks(risks.isEmpty() ? List.of("No risks identified") : risks)
                 .rabbitHoles(rabbitHoles.isEmpty() ? List.of("No rabbit holes identified") : rabbitHoles)
                 .teamFitScores(teamFitScores)
-                .estimatedBusinessValue("MEDIUM") // Placeholder
-                .urgency("MEDIUM") // Placeholder
+                .estimatedBusinessValue(null) // TODO: Calculate based on pitch characteristics or user input
+                .urgency(null) // TODO: Calculate based on due dates, dependencies, or user input
                 .build();
     }
 
