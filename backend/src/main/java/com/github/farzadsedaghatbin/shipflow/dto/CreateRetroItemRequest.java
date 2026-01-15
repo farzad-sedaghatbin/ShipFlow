@@ -19,4 +19,7 @@ public class CreateRetroItemRequest {
     
     @NotNull(message = "Retrospective ID is required")
     private Long retrospectiveId;
+    
+    @Builder.Default
+    private Boolean isAnonymous = false;
 }
