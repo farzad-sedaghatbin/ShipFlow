@@ -175,13 +175,13 @@ export default function OrganizationSettingsPage() {
     });
   };
 
-  const updateRiskWeight = (field: string, value: number) => {
+  const updateRiskWeight = (weightField: string, value: number) => {
     const currentWeights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
     setFormData({
       ...formData,
       riskWeights: {
         ...currentWeights,
-        [field]: value,
+        [weightField]: value,
       },
     });
   };

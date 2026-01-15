@@ -189,6 +189,11 @@ public class OrganizationSettingsDTO {
          * is calculated as the remainder (100 - sum of other weights) rather than being
          * proportionally scaled. This guarantees the total is always 100, not 99 or 101.
          * 
+         * IMPORTANT: This method has an implicit ordering dependency - timeWeight is ALWAYS
+         * assigned the remainder to absorb any rounding errors. If you need to change which
+         * field receives the remainder, modify the last assignment in this method.
+         * The choice of timeWeight is arbitrary but consistent.
+         * 
          * Example: weights [33, 33, 33, 33] (sum=132) normalize to:
          *   budgetWeight = (33*100)/132 = 25 (truncated from 25.0)
          *   bugsWeight = (33*100)/132 = 25
@@ -204,6 +209,7 @@ public class OrganizationSettingsDTO {
                 scopeWeight = (scopeWeight * 100) / total;
                 // Assign remainder to timeWeight to ensure sum equals exactly 100
                 // (compensates for precision loss from integer division truncation)
+                // NOTE: timeWeight is chosen arbitrarily to receive the remainder
                 timeWeight = 100 - (budgetWeight + bugsWeight + scopeWeight);
             }
         }

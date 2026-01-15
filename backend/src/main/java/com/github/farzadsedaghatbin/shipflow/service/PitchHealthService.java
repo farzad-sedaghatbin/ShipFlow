@@ -83,10 +83,12 @@ public class PitchHealthService {
     private static final double HOURS_PER_DAY = 8.0;
     
     /**
-     * Individual risk factor multiplier for hybrid risk scoring.
+     * Maximum risk factor weight for hybrid risk scoring.
      * 
      * This value (0.76 = 76%) determines the balance between weighted average risk
-     * and maximum individual risk factor when calculating final risk scores.
+     * and maximum individual risk factor when calculating final risk scores. It ensures
+     * that a single severe factor can trigger appropriate risk levels even when other
+     * factors would dilute the weighted average.
      * 
      * WHY 76%?
      * - Must be > 60% to ensure a risk factor score of 80 (severe) crosses the MEDIUM threshold (60)
@@ -99,7 +101,7 @@ public class PitchHealthService {
      * can override weighted scoring and trigger appropriate HIGH/CRITICAL risk levels,
      * even when other factors are low and would dilute the weighted average.
      */
-    private static final double INDIVIDUAL_RISK_FACTOR_MULTIPLIER = 0.76;
+    private static final double MAX_RISK_FACTOR_WEIGHT = 0.76;
 
     private final PitchRepository pitchRepository;
     private final CycleRepository cycleRepository;
@@ -449,9 +451,9 @@ public class PitchHealthService {
         
         // Use the maximum of:
         // 1. Weighted average (honors user's importance ratings)
-        // 2. Individual risk factor multiplier (ensures severe single issues are reflected)
+        // 2. Max risk factor weight (ensures severe single issues are reflected)
         // This allows both weighted importance and critical single factors to drive risk level
-        double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * INDIVIDUAL_RISK_FACTOR_MULTIPLIER);
+        double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * MAX_RISK_FACTOR_WEIGHT);
         
         // Determine risk level from blended score (using configurable thresholds)
         if (finalRiskScore > thresholds.getHighMax()) {
