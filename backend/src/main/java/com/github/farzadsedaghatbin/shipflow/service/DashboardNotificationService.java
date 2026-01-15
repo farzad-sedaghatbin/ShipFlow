@@ -288,24 +288,25 @@ public class DashboardNotificationService {
             );
         }
 
-        // Send Slack notification
-        String slackMessage = String.format("🔄 *Cycle Phase Changed*\n" +
-            "*Cycle:* %s\n" +
-            "*Phase Transition:* %s → %s\n" +
-            "*Description:* %s",
-            cycle.getName(),
-            oldPhase.name(),
-            newPhase.name(),
-            phaseDescription);
-        
-        slackService.sendNotification(
-            "CYCLE_PHASE_CHANGED",
-            slackMessage,
-            null,
-            "CYCLE",
-            cycle.getId()
-        );
-        
+        // Send Slack notification only if there are users to notify
+        if (!usersToNotify.isEmpty()) {
+            String slackMessage = String.format("🔄 *Cycle Phase Changed*\n" +
+                "*Cycle:* %s\n" +
+                "*Phase Transition:* %s → %s\n" +
+                "*Description:* %s",
+                cycle.getName(),
+                oldPhase.name(),
+                newPhase.name(),
+                phaseDescription);
+
+            slackService.sendNotification(
+                "CYCLE_PHASE_CHANGED",
+                slackMessage,
+                null,
+                "CYCLE",
+                cycle.getId()
+            );
+        }
         log.info("Created cycle phase change notifications for cycle {} ({}→{})", 
             cycle.getId(), oldPhase, newPhase);
     }
