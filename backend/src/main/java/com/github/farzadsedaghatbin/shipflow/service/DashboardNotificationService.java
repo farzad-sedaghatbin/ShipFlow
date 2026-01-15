@@ -586,27 +586,29 @@ public class DashboardNotificationService {
      * Create notification when circuit breaker is triggered on a pitch
      */
     public void notifyCircuitBreakerTriggered(Pitch pitch) {
-        if (pitch.getTeam() == null) {
-            log.warn("Cannot send circuit breaker notifications for pitch {} - no team assigned", pitch.getId());
-            return;
+        List<User> teamMembers = Collections.emptyList();
+        
+        if (pitch.getTeam() != null) {
+            teamMembers = getTeamMembers(pitch.getTeam());
+            
+            for (User user : teamMembers) {
+                createNotification(
+                        user,
+                        "CIRCUIT_BREAKER_TRIGGERED",
+                        "⚠️ Circuit Breaker: " + pitch.getTitle(),
+                        String.format("Pitch '%s' has exceeded its time budget (appetite: %d days). Shape Up safety valve triggered.",
+                                pitch.getTitle(), pitch.getAppetiteDays()),
+                        "CRITICAL",
+                        "/pitches/" + pitch.getId(),
+                        "PITCH",
+                        pitch.getId()
+                );
+            }
+        } else {
+            log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
         }
 
-        List<User> teamMembers = getTeamMembers(pitch.getTeam());
-
-        for (User user : teamMembers) {
-            createNotification(
-                    user,
-                    "CIRCUIT_BREAKER_TRIGGERED",
-                    "⚠️ Circuit Breaker: " + pitch.getTitle(),
-                    String.format("Pitch '%s' has exceeded its time budget (appetite: %d days). Shape Up safety valve triggered.",
-                            pitch.getTitle(), pitch.getAppetiteDays()),
-                    "CRITICAL",
-                    "/pitches/" + pitch.getId(),
-                    "PITCH",
-                    pitch.getId()
-            );
-        }
-
+        // Always send Slack notification for circuit breaker events
         String slackMessage = String.format("⚠️ Circuit Breaker triggered for pitch '%s' - exceeded time budget", pitch.getTitle());
         slackService.sendNotification(
                 "CIRCUIT_BREAKER_TRIGGERED",
@@ -624,26 +626,28 @@ public class DashboardNotificationService {
      * Create notification when a pitch is killed due to overflow
      */
     public void notifyPitchKilled(Pitch pitch, String reason) {
-        if (pitch.getTeam() == null) {
-            log.warn("Cannot send pitch killed notifications for pitch {} - no team assigned", pitch.getId());
-            return;
+        List<User> teamMembers = Collections.emptyList();
+        
+        if (pitch.getTeam() != null) {
+            teamMembers = getTeamMembers(pitch.getTeam());
+            
+            for (User user : teamMembers) {
+                createNotification(
+                        user,
+                        "PITCH_KILLED",
+                        "🛑 Pitch Killed: " + pitch.getTitle(),
+                        String.format("Pitch '%s' has been permanently stopped. Reason: %s", pitch.getTitle(), reason),
+                        "CRITICAL",
+                        "/pitches/" + pitch.getId(),
+                        "PITCH",
+                        pitch.getId()
+                );
+            }
+        } else {
+            log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
         }
 
-        List<User> teamMembers = getTeamMembers(pitch.getTeam());
-
-        for (User user : teamMembers) {
-            createNotification(
-                    user,
-                    "PITCH_KILLED",
-                    "🛑 Pitch Killed: " + pitch.getTitle(),
-                    String.format("Pitch '%s' has been permanently stopped. Reason: %s", pitch.getTitle(), reason),
-                    "CRITICAL",
-                    "/pitches/" + pitch.getId(),
-                    "PITCH",
-                    pitch.getId()
-            );
-        }
-
+        // Always send Slack notification for pitch killed events
         String slackMessage = String.format("🛑 Pitch '%s' has been permanently cancelled. Reason: %s", pitch.getTitle(), reason);
         slackService.sendNotification(
                 "PITCH_KILLED",
