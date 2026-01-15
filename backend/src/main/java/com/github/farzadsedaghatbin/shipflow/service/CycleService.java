@@ -287,6 +287,7 @@ public class CycleService {
             return role == UserRole.ADMIN || role == UserRole.PROJECT_MANAGER;
         } catch (Exception e) {
             // If we can't determine role, deny override
+            log.error("Failed to determine current user's role when checking cycle date override privileges. Denying override.", e);
             return false;
         }
     }
