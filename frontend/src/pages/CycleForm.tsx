@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import { cycleService } from '../services/cycleService';
 import projectService from '../services/projectService';
+import { organizationSettingsService } from '../services/organizationSettingsService';
 import { CreateCycleRequest, CyclePhase, Project } from '../types';
-import { useProject, useToast } from '../contexts';
+import { useProject, useToast, useAuth } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
 
@@ -29,6 +30,7 @@ export default function CycleForm() {
   const isEdit = !!id;
   const { currentProject } = useProject();
   const { showSuccess } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState<CreateCycleRequest>({
     projectId: currentProject?.id || 0,
@@ -39,6 +41,8 @@ export default function CycleForm() {
   });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [useAutoEndDate, setUseAutoEndDate] = useState<boolean>(true);
+  const [defaultCycleLengthWeeks, setDefaultCycleLengthWeeks] = useState<number>(6);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -46,8 +50,12 @@ export default function CycleForm() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
+  // Check if user can override cycle dates
+  const canOverrideDates = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+
   useEffect(() => {
     loadProjects();
+    loadOrganizationSettings();
   }, []);
 
   useEffect(() => {
@@ -61,6 +69,26 @@ export default function CycleForm() {
       loadCycle(id);
     }
   }, [id, isEdit]);
+
+  // Auto-calculate end date when start date changes and auto mode is enabled
+  useEffect(() => {
+    if (useAutoEndDate && startDate && !isEdit) {
+      const start = new Date(startDate);
+      const calculatedEnd = new Date(start);
+      calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
+      setEndDate(calculatedEnd.toISOString().split('T')[0]);
+    }
+  }, [startDate, useAutoEndDate, defaultCycleLengthWeeks, isEdit]);
+
+  const loadOrganizationSettings = async () => {
+    try {
+      const response = await organizationSettingsService.getSettings();
+      setDefaultCycleLengthWeeks(response.data.defaultCycleLengthWeeks || 6);
+    } catch (err) {
+      // Fallback to default if settings can't be loaded
+      setDefaultCycleLengthWeeks(6);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -95,6 +123,7 @@ export default function CycleForm() {
       });
       setStartDate(cycle.startDate);
       setEndDate(cycle.endDate);
+      setUseAutoEndDate(false); // Editing always uses manual mode
     } catch (err) {
       setError('Unable to load cycle details. The cycle may have been deleted.');
     } finally {
@@ -120,9 +149,10 @@ export default function CycleForm() {
       errors.startDate = 'Start date is required';
     }
 
-    if (!endDate) {
-      errors.endDate = 'End date is required';
-    } else if (startDate && endDate < startDate) {
+    // End date is only required if not using auto-calculation or if user can override
+    if (!useAutoEndDate && !endDate) {
+      errors.endDate = 'End date is required when not using auto-calculation';
+    } else if (endDate && startDate && endDate < startDate) {
       errors.endDate = 'End date must be after start date';
     }
 
@@ -143,7 +173,8 @@ export default function CycleForm() {
     const data: CreateCycleRequest = {
       ...formData,
       startDate,
-      endDate,
+      // Only send endDate if not using auto-calculation or if editing
+      endDate: useAutoEndDate && !isEdit ? undefined : endDate,
     };
 
     try {
@@ -260,39 +291,83 @@ export default function CycleForm() {
             </div>
 
             {/* Date Range */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, startDate: '' }));
-                  }}
-                  className={fieldErrors.startDate ? 'border-destructive' : ''}
-                />
-                {fieldErrors.startDate && (
-                  <p className="text-xs text-destructive">{fieldErrors.startDate}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date *</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, endDate: '' }));
-                  }}
-                  min={startDate || undefined}
-                  className={fieldErrors.endDate ? 'border-destructive' : ''}
-                />
-                {fieldErrors.endDate && (
-                  <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
-                )}
+            <div className="space-y-4">
+              {/* Auto-calculation toggle (only for create mode and if user has permission) */}
+              {!isEdit && canOverrideDates && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                  <input
+                    type="checkbox"
+                    id="useAutoEndDate"
+                    checked={useAutoEndDate}
+                    onChange={(e) => {
+                      setUseAutoEndDate(e.target.checked);
+                      if (e.target.checked && startDate) {
+                        // Recalculate end date
+                        const start = new Date(startDate);
+                        const calculatedEnd = new Date(start);
+                        calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
+                        setEndDate(calculatedEnd.toISOString().split('T')[0]);
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="useAutoEndDate" className="cursor-pointer text-sm font-normal">
+                    Auto-calculate end date ({defaultCycleLengthWeeks} weeks from start date)
+                  </Label>
+                </div>
+              )}
+
+              {/* Info for users who can't override */}
+              {!isEdit && !canOverrideDates && (
+                <Alert>
+                  <AlertDescription className="text-sm">
+                    End date will be automatically calculated as {defaultCycleLengthWeeks} weeks from the start date based on organization settings.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date *</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, startDate: '' }));
+                    }}
+                    className={fieldErrors.startDate ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors.startDate && (
+                    <p className="text-xs text-destructive">{fieldErrors.startDate}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">
+                    End Date {useAutoEndDate && !isEdit ? '(Auto)' : '*'}
+                  </Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, endDate: '' }));
+                    }}
+                    min={startDate || undefined}
+                    disabled={useAutoEndDate && !isEdit}
+                    className={fieldErrors.endDate ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors.endDate && (
+                    <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
+                  )}
+                  {useAutoEndDate && !isEdit && (
+                    <p className="text-xs text-muted-foreground">
+                      Automatically calculated from start date
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

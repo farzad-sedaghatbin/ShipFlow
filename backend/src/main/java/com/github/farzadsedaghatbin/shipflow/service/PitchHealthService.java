@@ -40,27 +40,32 @@ import java.util.stream.Collectors;
  * This service implements sophisticated automated risk detection that analyzes multiple
  * data points to calculate health status WITHOUT requiring manual assignment:
  * 
- * 1. Budget Analysis (25% weight):
+ * 1. Budget Analysis (configurable weight, default 25%):
  *    - Compares actual hours spent vs. appetite (budget)
  *    - Flags when spending is ahead of schedule or over budget
  *    - Considers burn rate acceleration
  * 
- * 2. Bug Analysis (30% weight):
+ * 2. Bug Analysis (configurable weight, default 30%):
  *    - Tracks critical/blocker bugs (highest priority)
  *    - Monitors high-severity bug counts
  *    - Analyzes bug density and resolution rates
  *    - Detects recent bug influx (regression indicators)
  * 
- * 3. Scope Completion Analysis (25% weight):
+ * 3. Scope Completion Analysis (configurable weight, default 25%):
  *    - Uses hill chart positions to track understanding and progress
  *    - Compares expected progress vs. actual scope completion
  *    - Identifies stagnant scopes (no recent movement)
  *    - Flags scopes stuck at decision points
  * 
- * 4. Time & Status Analysis (20% weight):
+ * 4. Time & Status Analysis (configurable weight, default 20%):
  *    - Evaluates status appropriateness for time remaining
  *    - Detects deadline pressure situations
  *    - Checks for delayed starts or slow progress
+ * 
+ * WEIGHT CUSTOMIZATION:
+ * - Weights are configurable per organization via settings
+ * - Preset profiles available: balanced, conservative, aggressive, quality_focused, time_critical
+ * - Weights must sum to 100%
  * 
  * MODES:
  * - Fast Mode (default): Rule-based calculation for instant results
@@ -106,6 +111,29 @@ public class PitchHealthService {
         }
         // Return defaults if service not available or settings not configured
         return new com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds();
+    }
+
+    /**
+     * Get risk weights from organization settings, or use defaults if not available.
+     */
+    private com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights getWeights() {
+        if (organizationSettingsService != null) {
+            try {
+                var settings = organizationSettingsService.getSettings();
+                if (settings != null && settings.getRiskWeights() != null) {
+                    return settings.getRiskWeights();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to load organization settings, using default weights: {}", e.getMessage());
+            }
+        }
+        // Return defaults if service not available or settings not configured
+        return com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.builder()
+                .budgetWeight(25)
+                .bugsWeight(30)
+                .scopeWeight(25)
+                .timeWeight(20)
+                .build();
     }
 
     /**
@@ -359,8 +387,9 @@ public class PitchHealthService {
      * This provides immediate, data-driven risk assessment without manual input.
      */
     private PitchRiskDTO.RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
-        // Get configurable thresholds from organization settings
+        // Get configurable thresholds and weights from organization settings
         var thresholds = getThresholds();
+        var weights = getWeights();
         
         // Get hours
         Double totalHours;
@@ -381,17 +410,46 @@ public class PitchHealthService {
         long totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
         double cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
         
-        // Enhanced rule-based risk calculation with weighted scoring (using configurable thresholds)
-        int riskScore = 0;
+        // Enhanced rule-based risk calculation with weighted scoring
+        // Calculate individual risk factor scores (0-100 scale)
+        double budgetRisk = calculateBudgetRisk(appetiteUsed, cycleProgress, thresholds);
+        double bugsRisk = calculateBugsRisk(pitch, daysElapsed, totalCycleDays, thresholds);
+        double scopeRisk = calculateScopeRisk(pitch, cycleProgress, thresholds);
+        double timeRisk = calculateTimeRisk(pitch, daysElapsed, totalCycleDays, thresholds);
         
-        // 1. Check if behind schedule (work progress vs time progress)
+        // Apply configurable weights to calculate final risk score
+        double finalRiskScore = 
+            (budgetRisk * weights.getBudgetWeight()) +
+            (bugsRisk * weights.getBugsWeight()) +
+            (scopeRisk * weights.getScopeWeight()) +
+            (timeRisk * weights.getTimeWeight());
+        
+        // Determine risk level from weighted score (using configurable thresholds)
+        if (finalRiskScore > thresholds.getHighMax()) {
+            return PitchRiskDTO.RiskLevel.CRITICAL;
+        } else if (finalRiskScore > thresholds.getMediumMax()) {
+            return PitchRiskDTO.RiskLevel.HIGH;
+        } else if (finalRiskScore > thresholds.getLowMax()) {
+            return PitchRiskDTO.RiskLevel.MEDIUM;
+        }
+        return PitchRiskDTO.RiskLevel.LOW;
+    }
+    
+    /**
+     * Calculate budget risk score (0-100 scale).
+     */
+    private double calculateBudgetRisk(double appetiteUsed, double cycleProgress, 
+            com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds) {
+        double riskScore = 0;
+        
+        // Check if behind schedule (work progress vs time progress)
         if (cycleProgress > appetiteUsed + thresholds.getScheduleSignificantGap()) {
             riskScore += 30; // Significantly behind schedule
         } else if (cycleProgress > appetiteUsed + thresholds.getScheduleModerateGap()) {
             riskScore += 15; // Moderately behind schedule
         }
         
-        // 2. Check if over budget
+        // Check if over budget
         if (appetiteUsed > thresholds.getBudgetCritical()) {
             riskScore += 40; // Way over budget
         } else if (appetiteUsed > thresholds.getBudgetOverrun()) {
@@ -400,17 +458,17 @@ public class PitchHealthService {
             riskScore += 10; // Approaching budget limit
         }
         
-        // 3. Check status vs time remaining
+        return Math.min(riskScore, 100); // Cap at 100
+    }
+    
+    /**
+     * Calculate bugs risk score (0-100 scale).
+     */
+    private double calculateBugsRisk(Pitch pitch, long daysElapsed, long totalCycleDays,
+            com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds) {
+        double riskScore = 0;
         int daysLeft = (int) Math.max(0, totalCycleDays - daysElapsed);
-        PitchStatus status = pitch.getStatus();
         
-        if (daysLeft <= thresholds.getDaysUrgent() && status != PitchStatus.DONE && status != PitchStatus.TESTING) {
-            riskScore += 30; // Not in testing/done with only few days left
-        } else if (daysLeft <= thresholds.getDaysWarning() && status == PitchStatus.PENDING) {
-            riskScore += 20; // Not started with only a week left
-        }
-        
-        // 4. ENHANCED: Advanced bug analysis with severity distribution and trends
         List<BugReport> bugs = bugReportRepository.findByPitchId(pitch.getId());
         
         // Critical/blocker bugs - highest priority
@@ -444,7 +502,7 @@ public class PitchHealthService {
                 .filter(b -> b.getStatus() != BugStatus.RESOLVED && b.getStatus() != BugStatus.CLOSED)
                 .count();
         
-        // Bug density analysis (bugs per days worked)
+        // Bug density analysis
         if (openBugs > thresholds.getOpenBugsCritical() && daysLeft < thresholds.getDaysWarning()) {
             riskScore += 20; // High bug count near deadline
         } else if (openBugs > thresholds.getOpenBugsHigh() && daysLeft < thresholds.getDaysWarning()) {
@@ -453,14 +511,14 @@ public class PitchHealthService {
             riskScore += 10; // Several bugs with very little time
         }
         
-        // Check for recent bug influx (potential regression or quality issues)
+        // Check for recent bug influx
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
         long recentBugs = bugs.stream()
                 .filter(b -> b.getCreatedAt().isAfter(threeDaysAgo))
                 .count();
         
         if (recentBugs > thresholds.getRecentBugInflux() && pitch.getStatus() == PitchStatus.TESTING) {
-            riskScore += 12; // Many bugs found in testing recently - quality concern
+            riskScore += 12; // Many bugs found in testing recently
         }
         
         // Bug resolution rate analysis
@@ -470,11 +528,21 @@ public class PitchHealthService {
         
         double bugResolutionRate = bugs.size() > 0 ? (double) resolvedBugs / bugs.size() * 100 : 100;
         
-        if (bugResolutionRate < thresholds.getBugResolutionRateMin() && openBugs > thresholds.getMajorBugsThreshold() && daysLeft < thresholds.getDaysWarning()) {
+        if (bugResolutionRate < thresholds.getBugResolutionRateMin() && 
+                openBugs > thresholds.getMajorBugsThreshold() && daysLeft < thresholds.getDaysWarning()) {
             riskScore += 10; // Low resolution rate with many open bugs near deadline
         }
         
-        // 5. ENHANCED: Advanced scope completion analysis (using hill chart positions)
+        return Math.min(riskScore, 100); // Cap at 100
+    }
+    
+    /**
+     * Calculate scope risk score (0-100 scale) based on hill chart progress.
+     */
+    private double calculateScopeRisk(Pitch pitch, double cycleProgress,
+            com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds) {
+        double riskScore = 0;
+        
         List<HillChartPoint> scopes = hillChartPointRepository.findByPitchId(pitch.getId());
         if (!scopes.isEmpty()) {
             double avgPosition = scopes.stream()
@@ -482,7 +550,6 @@ public class PitchHealthService {
                     .average()
                     .orElse(0);
             
-            // Position 0-50 is uphill (figuring out), 50-100 is downhill (executing)
             // Calculate expected position based on cycle progress
             double expectedPosition = cycleProgress * thresholds.getScopeExpectedProgressRate();
             double positionGap = expectedPosition - avgPosition;
@@ -498,39 +565,49 @@ public class PitchHealthService {
                 riskScore += 10; // Scope progress lagging behind time progress
             }
             
-            // Check for stagnant scopes (scopes that haven't moved much)
+            // Check for stagnant scopes
             long stagnantScopes = scopes.stream()
                     .filter(s -> s.getPosition() < thresholds.getScopeUphillMax() && 
                             s.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(thresholds.getScopeStagnationDays())))
                     .count();
             
             if (stagnantScopes > 0 && cycleProgress > 40) {
-                riskScore += 12 * (int) Math.min(stagnantScopes, 3); // Up to 36 points for stagnant scopes
+                riskScore += 12 * (int) Math.min(stagnantScopes, 3); // Up to 36 points
             }
             
-            // Check for scopes stuck at the peak (position ~50)
+            // Check for scopes stuck at the peak
             long peakStuckScopes = scopes.stream()
                     .filter(s -> s.getPosition() >= thresholds.getScopePeakMin() && s.getPosition() <= thresholds.getScopePeakMax() &&
                             s.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(thresholds.getPeakStuckDays())))
                     .count();
             
             if (peakStuckScopes > 0 && cycleProgress > thresholds.getCycleMidpoint()) {
-                riskScore += 10 * (int) Math.min(peakStuckScopes, 2); // Scopes stuck at decision point
+                riskScore += 10 * (int) Math.min(peakStuckScopes, 2);
             }
         } else if (cycleProgress > thresholds.getCycleMinForScopes()) {
-            // No scopes defined after threshold % of cycle - this is a red flag
+            // No scopes defined after threshold % of cycle
             riskScore += 20;
         }
         
-        // Determine risk level from score (using configurable thresholds)
-        if (riskScore > thresholds.getHighMax()) {
-            return PitchRiskDTO.RiskLevel.CRITICAL;
-        } else if (riskScore > thresholds.getMediumMax()) {
-            return PitchRiskDTO.RiskLevel.HIGH;
-        } else if (riskScore > thresholds.getLowMax()) {
-            return PitchRiskDTO.RiskLevel.MEDIUM;
+        return Math.min(riskScore, 100); // Cap at 100
+    }
+    
+    /**
+     * Calculate time risk score (0-100 scale) based on status vs time remaining.
+     */
+    private double calculateTimeRisk(Pitch pitch, long daysElapsed, long totalCycleDays,
+            com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds) {
+        double riskScore = 0;
+        int daysLeft = (int) Math.max(0, totalCycleDays - daysElapsed);
+        PitchStatus status = pitch.getStatus();
+        
+        if (daysLeft <= thresholds.getDaysUrgent() && status != PitchStatus.DONE && status != PitchStatus.TESTING) {
+            riskScore += 30; // Not in testing/done with only few days left
+        } else if (daysLeft <= thresholds.getDaysWarning() && status == PitchStatus.PENDING) {
+            riskScore += 20; // Not started with only a week left
         }
-        return PitchRiskDTO.RiskLevel.LOW;
+        
+        return Math.min(riskScore, 100); // Cap at 100
     }
     
     /**

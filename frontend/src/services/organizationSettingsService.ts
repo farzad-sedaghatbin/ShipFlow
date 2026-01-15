@@ -1,5 +1,5 @@
 import api from './api';
-import { OrganizationSettings, UpdateOrganizationSettingsRequest, RolePermissions } from '../types/organizationSettings';
+import { OrganizationSettings, UpdateOrganizationSettingsRequest, RolePermissions, RiskProfile } from '../types/organizationSettings';
 
 /**
  * Service for managing organization-wide settings
@@ -20,6 +20,11 @@ export const organizationSettingsService = {
    * Get role permissions configuration
    */
   getRolePermissions: () => api.get<RolePermissions[]>('/admin/role-permissions'),
+
+  /**
+   * Get available risk weight profiles
+   */
+  getRiskProfiles: () => api.get<{ profiles: RiskProfile[] }>('/admin/settings/risk-profiles'),
 
   /**
    * Reset settings to defaults

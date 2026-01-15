@@ -27,6 +27,9 @@ public class OrganizationSettingsDTO {
     // Risk Thresholds
     private RiskThresholds riskThresholds;
     
+    // Risk Factor Weights
+    private RiskWeights riskWeights;
+    
     // Categories
     private List<CategoryConfig> taskCategories;
     private List<CategoryConfig> pitchCategories;
@@ -150,6 +153,46 @@ public class OrganizationSettingsDTO {
         private Integer recentWorkHighHours = 15;   // High work rate indicator (3 days)
         @Builder.Default
         private Integer appetiteHighUsage = 90;     // High appetite usage threshold
+    }
+
+    /**
+     * Configurable risk factor weights for calculating overall risk score.
+     * All weights should sum to 100 (percentage-based).
+     * These control how much each factor contributes to the final risk assessment.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RiskWeights {
+        @Builder.Default
+        private Integer budgetWeight = 25;    // Budget utilization contribution (default: 25%)
+        @Builder.Default
+        private Integer bugsWeight = 30;      // Bug severity contribution (default: 30%)
+        @Builder.Default
+        private Integer scopeWeight = 25;     // Scope progress contribution (default: 25%)
+        @Builder.Default
+        private Integer timeWeight = 20;      // Time pressure contribution (default: 20%)
+        
+        /**
+         * Validate that weights sum to 100
+         */
+        public boolean isValid() {
+            return budgetWeight + bugsWeight + scopeWeight + timeWeight == 100;
+        }
+        
+        /**
+         * Normalize weights to sum to 100 if they don't already
+         */
+        public void normalize() {
+            int total = budgetWeight + bugsWeight + scopeWeight + timeWeight;
+            if (total != 100 && total > 0) {
+                budgetWeight = (budgetWeight * 100) / total;
+                bugsWeight = (bugsWeight * 100) / total;
+                scopeWeight = (scopeWeight * 100) / total;
+                timeWeight = 100 - (budgetWeight + bugsWeight + scopeWeight);  // Remainder to avoid rounding errors
+            }
+        }
     }
 
     @Data

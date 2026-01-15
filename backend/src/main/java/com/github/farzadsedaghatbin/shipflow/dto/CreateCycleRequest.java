@@ -21,8 +21,10 @@ public class CreateCycleRequest {
     @NotNull(message = "Start date is required")
     private LocalDate startDate;
     
-    @NotNull(message = "End date is required")
+    // End date is optional - will be auto-calculated from OrganizationSettings
+    // Only ADMIN/PROJECT_MANAGER can provide custom end dates
     private LocalDate endDate;
     
+    @Builder.Default
     private CyclePhase phase = CyclePhase.BUILD;
 }

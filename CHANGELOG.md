@@ -8,6 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Configurable Risk Factor Weights**:
+  - Risk calculation now uses configurable weights instead of fixed percentages
+  - 4 risk factors with adjustable weights: Budget (default 25%), Bugs (default 30%), Scope (default 25%), Time (default 20%)
+  - Weights must sum to 100% with real-time validation and visual feedback
+  - 5 preset profiles for quick setup:
+    - Balanced (25/30/25/20): Equal priority across all factors
+    - Conservative (35/35/15/15): Emphasis on budget and quality
+    - Aggressive (15/25/35/25): Focus on speed and scope completion
+    - Quality-Focused (15/40/30/15): Maximum weight on bug severity
+    - Time-Critical (20/25/20/35): Prioritize deadline pressure
+  - New Organization Settings tab "Risk Weights" with slider controls and profile buttons
+  - Backend refactoring: Split calculateRuleBasedRiskLevel into 4 separate factor methods
+  - Each factor calculates 0-100 score, then weighted sum produces final risk
+  - API endpoint: GET /api/admin/settings/risk-profiles returns all preset profiles
+  - Database migration V51: Added risk_weights_json column to organization_settings table
+  - RiskWeights DTO with validation: isValid() checks sum, normalize() adjusts to 100%
+  - Updated PitchHealthService documentation to reflect configurable weights
+  - Backend compilation verified with zero errors
+  - Frontend TypeScript build successful with proper RiskProfile interface
+
+- **Cycle Date Auto-Calculation with Role-Based Override**:
+  - End dates automatically calculated from organization settings (default 6 weeks)
+  - Configurable cycle length in Organization Settings (4-12 weeks supported)
+  - Role-based override capability: ADMIN and PROJECT_MANAGER can set custom dates
+  - Regular users (DEVELOPER, QA, PRODUCT) restricted to auto-calculated dates
+  - Frontend toggle for privileged users to choose between auto or manual dates
+  - Backend validation with AccessDeniedException for unauthorized overrides
+  - Auto-calculation fallback to 6 weeks if configuration is invalid
+  - Prevents configuration conflicts ensuring standardized planning horizons
+  - Integration tests: 5 new tests covering auto-calculation and role-based access
+  - Unit tests: 8 new tests for CycleService date calculation logic
+  - Updated CreateCycleRequest DTO to make endDate optional
+  - Documentation updates in README.md and inline code comments
+
 - **Circuit Breaker - Shape Up Safety Valve**:
   - Automated overflow detection with configurable thresholds (default 80%, range 50-150%)
   - Real-time budget monitoring: tracks work logs against pitch appetite in hours

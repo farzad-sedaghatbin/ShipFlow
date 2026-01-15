@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.admin.RiskProfilesDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSettingsRequest;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,5 +52,13 @@ public class OrganizationSettingsController {
             @AuthenticationPrincipal UserDetails userDetails) {
         log.info("Resetting organization settings to defaults by user: {}", userDetails.getUsername());
         return ResponseEntity.ok(settingsService.resetToDefaults(userDetails.getUsername()));
+    }
+
+    @GetMapping("/settings/risk-profiles")
+    @Operation(summary = "Get predefined risk calculation profiles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RiskProfilesDTO> getRiskProfiles() {
+        log.info("Fetching predefined risk profiles");
+        return ResponseEntity.ok(RiskProfilesDTO.getDefaultProfiles());
     }
 }

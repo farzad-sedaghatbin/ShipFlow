@@ -86,7 +86,7 @@ export interface CreateCycleRequest {
   projectId: number;
   name: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;  // Optional - auto-calculated from OrganizationSettings if not provided
   phase?: CyclePhase;
 }
 
