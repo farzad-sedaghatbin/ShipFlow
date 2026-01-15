@@ -200,6 +200,16 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
     }
 
+    @PatchMapping("/{id}/priority")
+    @Operation(summary = "Update task priority",
+               description = "Quick update of task priority only")
+    public ResponseEntity<TaskDTO> updateTaskPriority(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> priorityUpdate) {
+        TaskPriority priority = TaskPriority.valueOf(priorityUpdate.get("priority"));
+        return ResponseEntity.ok(taskService.updateTaskPriority(id, priority));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a task")
     @ApiResponses({

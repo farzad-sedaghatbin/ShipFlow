@@ -1,5 +1,5 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest } from '../types';
 
 export const taskService = {
   // Current user's tasks
@@ -115,10 +115,24 @@ export const taskService = {
   update: (id: number, data: CreateTaskRequest) => api.put<Task>(`/tasks/${id}`, data),
   updateStatus: (id: number, status: TaskStatus) => 
     api.patch<Task>(`/tasks/${id}/status`, { status }),
+  updatePriority: (id: number, priority: TaskPriority) => 
+    api.patch<Task>(`/tasks/${id}/priority`, { priority }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
   
   // Sub-task hierarchy
   getSubTasks: (parentTaskId: number) => api.get<Task[]>(`/tasks/${parentTaskId}/subtasks`),
   getRootTasks: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/roots`),
   getTaskTree: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/tree`),
+  
+  // Task Dependencies
+  addDependency: (taskId: number, data: CreateTaskDependencyRequest) => 
+    api.post<TaskDependency>(`/tasks/${taskId}/dependencies`, data),
+  getDependencies: (taskId: number) => 
+    api.get<TaskDependencies>(`/tasks/${taskId}/dependencies`),
+  getBlockingDependencies: (taskId: number) => 
+    api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocking`),
+  getBlockedByDependencies: (taskId: number) => 
+    api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocked-by`),
+  removeDependency: (taskId: number, dependencyId: number) => 
+    api.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
 };
