@@ -70,13 +70,18 @@ export default function CycleForm() {
     }
   }, [id, isEdit]);
 
+  // Helper function to calculate end date from start date
+  const calculateEndDate = (startDateStr: string): string => {
+    const start = new Date(startDateStr);
+    const calculatedEnd = new Date(start);
+    calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
+    return calculatedEnd.toISOString().split('T')[0];
+  };
+
   // Auto-calculate end date when start date changes and auto mode is enabled
   useEffect(() => {
     if (useAutoEndDate && startDate && !isEdit) {
-      const start = new Date(startDate);
-      const calculatedEnd = new Date(start);
-      calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
-      setEndDate(calculatedEnd.toISOString().split('T')[0]);
+      setEndDate(calculateEndDate(startDate));
     }
   }, [startDate, useAutoEndDate, defaultCycleLengthWeeks, isEdit]);
 
@@ -303,10 +308,7 @@ export default function CycleForm() {
                       setUseAutoEndDate(e.target.checked);
                       if (e.target.checked && startDate) {
                         // Recalculate end date
-                        const start = new Date(startDate);
-                        const calculatedEnd = new Date(start);
-                        calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
-                        setEndDate(calculatedEnd.toISOString().split('T')[0]);
+                        setEndDate(calculateEndDate(startDate));
                       }
                     }}
                     className="h-4 w-4 rounded border-gray-300"

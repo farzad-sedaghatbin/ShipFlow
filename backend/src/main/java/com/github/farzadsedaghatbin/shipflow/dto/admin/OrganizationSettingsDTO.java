@@ -194,6 +194,8 @@ public class OrganizationSettingsDTO {
          * field receives the remainder, modify the last assignment in this method.
          * The choice of timeWeight is arbitrary but consistent.
          * 
+         * Edge case: If all weights are zero (total=0), they will be reset to default values.
+         * 
          * Example: weights [33, 33, 33, 33] (sum=132) normalize to:
          *   budgetWeight = (33*100)/132 = 25 (truncated from 25.0)
          *   bugsWeight = (33*100)/132 = 25
@@ -203,7 +205,13 @@ public class OrganizationSettingsDTO {
          */
         public void normalize() {
             int total = budgetWeight + bugsWeight + scopeWeight + timeWeight;
-            if (total != 100 && total > 0) {
+            if (total == 0) {
+                // Reset to defaults when all weights are zero
+                budgetWeight = 25;
+                bugsWeight = 30;
+                scopeWeight = 25;
+                timeWeight = 20;
+            } else if (total != 100) {
                 budgetWeight = (budgetWeight * 100) / total;
                 bugsWeight = (bugsWeight * 100) / total;
                 scopeWeight = (scopeWeight * 100) / total;
