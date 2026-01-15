@@ -41,6 +41,11 @@ public class DocumentController {
     private KnowledgeIngestionService knowledgeIngestionService;
 
     /**
+     * Helper record to hold user information.
+     */
+    private record UserInfo(Long userId, String username) {}
+
+    /**
      * Upload a document and extract its text content.
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -51,11 +56,10 @@ public class DocumentController {
             @RequestParam("entityId") Long entityId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
-        String username = userDetails.getUsername();
+        UserInfo userInfo = getUserInfo(userDetails);
 
         DocumentUploadResponse response = documentService.uploadDocument(
-                file, entityType, entityId, userId, username);
+                file, entityType, entityId, userInfo.userId, userInfo.username);
 
         if (response.getErrorMessage() != null) {
             return ResponseEntity.badRequest().body(response);
@@ -74,11 +78,10 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
-        String username = userDetails.getUsername();
+        UserInfo userInfo = getUserInfo(userDetails);
 
         DocumentUploadResponse response = documentService.uploadDocument(
-                file, "PITCH", pitchId, userId, username);
+                file, "PITCH", pitchId, userInfo.userId, userInfo.username);
 
         if (response.getErrorMessage() != null) {
             return ResponseEntity.badRequest().body(response);
@@ -97,11 +100,10 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
-        String username = userDetails.getUsername();
+        UserInfo userInfo = getUserInfo(userDetails);
 
         DocumentUploadResponse response = documentService.uploadDocument(
-                file, "MEETING", meetingId, userId, username);
+                file, "MEETING", meetingId, userInfo.userId, userInfo.username);
 
         if (response.getErrorMessage() != null) {
             return ResponseEntity.badRequest().body(response);
@@ -120,11 +122,10 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
-        String username = userDetails.getUsername();
+        UserInfo userInfo = getUserInfo(userDetails);
 
         DocumentUploadResponse response = documentService.uploadDocument(
-                file, "CYCLE", cycleId, userId, username);
+                file, "CYCLE", cycleId, userInfo.userId, userInfo.username);
 
         if (response.getErrorMessage() != null) {
             return ResponseEntity.badRequest().body(response);
@@ -219,14 +220,13 @@ public class DocumentController {
             @AuthenticationPrincipal UserDetails userDetails) {
         
         try {
-            Long userId = getUserId(userDetails);
-            String username = userDetails.getUsername();
+            UserInfo userInfo = getUserInfo(userDetails);
             Long documentId = null;
             
             // Save document if requested (for later linking to pitch)
             if (saveDocument) {
                 DocumentUploadResponse uploadResponse = documentService.uploadDocument(
-                    file, "PITCH", pitchId != null ? pitchId : 0L, userId, username);
+                    file, "PITCH", pitchId != null ? pitchId : 0L, userInfo.userId, userInfo.username);
                 if (uploadResponse.getId() != null) {
                     documentId = uploadResponse.getId();
                 }
@@ -257,8 +257,8 @@ public class DocumentController {
                         extractedText,
                         pitchId,
                         pitchTitle,
-                        userId,
-                        username
+                        userInfo.userId,
+                        userInfo.username
                     );
                     
                     log.info("Added pitch document to knowledge base: {}", pitchTitle);
@@ -309,16 +309,15 @@ public class DocumentController {
                 try {
                     UploadedDocument doc = documentService.getDocumentById(documentId);
                     if (doc != null && doc.getExtractedText() != null) {
-                        Long userId = getUserId(userDetails);
-                        String username = userDetails.getUsername();
+                        UserInfo userInfo = getUserInfo(userDetails);
                         
                         knowledgeIngestionService.ingestPitchDocument(
                             doc.getOriginalFileName(),
                             doc.getExtractedText(),
                             pitchId,
                             doc.getOriginalFileName(),
-                            userId,
-                            username
+                            userInfo.userId,
+                            userInfo.username
                         );
                         
                         log.info("Added linked document to knowledge base: {}", doc.getOriginalFileName());
@@ -347,6 +346,16 @@ public class DocumentController {
                 "available", available,
                 "message", available ? "AI extraction is available" : "AI extraction is not configured. Please enable AI in application settings."
         ));
+    }
+
+    /**
+     * Helper method to extract user information from UserDetails.
+     * Reduces code duplication across multiple endpoints.
+     */
+    private UserInfo getUserInfo(UserDetails userDetails) {
+        Long userId = getUserId(userDetails);
+        String username = userDetails.getUsername();
+        return new UserInfo(userId, username);
     }
 
     private Long getUserId(UserDetails userDetails) {
