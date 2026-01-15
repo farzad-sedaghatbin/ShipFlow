@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -408,5 +409,11 @@ class CycleServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn(username);
         SecurityContextHolder.setContext(securityContext);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Clear security context to prevent test pollution
+        SecurityContextHolder.clearContext();
     }
 }

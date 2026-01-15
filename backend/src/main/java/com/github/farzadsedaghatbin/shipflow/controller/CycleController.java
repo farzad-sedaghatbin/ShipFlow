@@ -57,6 +57,9 @@ public class CycleController {
         return ResponseEntity.ok(cycleService.getCycleById(id));
     }
 
+    // Security Model: @RequirePermission allows any user with CREATE permission to invoke this endpoint.
+    // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is enforced in CycleService.
+    // Users without elevated roles can create cycles with auto-calculated end dates only.
     @PostMapping
     @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.CREATE)
     @Operation(summary = "Create a new cycle")
@@ -64,6 +67,9 @@ public class CycleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(cycleService.createCycle(request));
     }
 
+    // Security Model: @RequirePermission allows any user with UPDATE permission to invoke this endpoint.
+    // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is enforced in CycleService.
+    // Users without elevated roles can update cycles with auto-calculated end dates only.
     @PutMapping("/{id}")
     @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.UPDATE)
     @Operation(summary = "Update a cycle")
