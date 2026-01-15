@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -54,11 +54,7 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -81,7 +77,11 @@ export default function ProjectDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, showToast, navigate]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleEdit = () => {
     navigate(`/projects?edit=${id}`);

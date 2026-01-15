@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Pencil,
@@ -88,19 +88,6 @@ export default function Projects() {
     return () => abortController.abort();
   }, [showArchived]);
 
-  // Handle edit query parameter
-  useEffect(() => {
-    const editId = searchParams.get('edit');
-    if (editId && projects.length > 0) {
-      const projectToEdit = projects.find(p => p.id.toString() === editId);
-      if (projectToEdit) {
-        handleOpenDialog(projectToEdit);
-        // Remove the query parameter after opening the dialog
-        setSearchParams({}, { replace: true });
-      }
-    }
-  }, [searchParams, projects]);
-
   const loadProjects = async () => {
     try {
       setLoading(true);
@@ -117,7 +104,7 @@ export default function Projects() {
     }
   };
 
-  const handleOpenDialog = (project?: Project) => {
+  const handleOpenDialog = useCallback((project?: Project) => {
     if (project) {
       setEditingProject(project);
       setFormData({
@@ -139,7 +126,20 @@ export default function Projects() {
     }
     setFieldErrors({});
     setDialogOpen(true);
-  };
+  }, []);
+
+  // Handle edit query parameter
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && projects.length > 0) {
+      const projectToEdit = projects.find(p => p.id.toString() === editId);
+      if (projectToEdit) {
+        handleOpenDialog(projectToEdit);
+        // Remove the query parameter after opening the dialog
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, projects, handleOpenDialog, setSearchParams]);
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
