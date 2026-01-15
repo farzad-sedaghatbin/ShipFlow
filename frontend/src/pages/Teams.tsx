@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, UserPlus, History, Clock, ClipboardList, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, UserPlus, History, Clock, ClipboardList, Loader2, Search, ArrowUpDown } from 'lucide-react';
 import { teamService } from '../services/teamService';
 import { personService } from '../services/personService';
 import { cycleService } from '../services/cycleService';
@@ -61,6 +61,8 @@ export default function Teams() {
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
   const [, setFieldErrors] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'members' | 'cycle'>('name');
 
   const [teamDialog, setTeamDialog] = useState(false);
   const [assignmentDialog, setAssignmentDialog] = useState(false);
@@ -253,6 +255,32 @@ export default function Teams() {
     return classNames[role] || '';
   };
 
+  // Filter and sort teams
+  const filteredAndSortedTeams = teams
+    .filter(team => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        team.name.toLowerCase().includes(search) ||
+        team.cycleName?.toLowerCase().includes(search) ||
+        team.assignments?.some(assignment =>
+          assignment.personName.toLowerCase().includes(search)
+        )
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'members':
+          return (b.assignments?.length || 0) - (a.assignments?.length || 0);
+        case 'cycle':
+          return (a.cycleName || '').localeCompare(b.cycleName || '');
+        default:
+          return 0;
+      }
+    });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -263,17 +291,43 @@ export default function Teams() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
-          <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? 'All projects' : currentProject?.name} • {teams.length} team{teams.length !== 1 ? 's' : ''}
-          </p>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+            <p className="text-sm text-muted-foreground">
+              {isAllProjectsSelected ? 'All projects' : currentProject?.name} • {teams.length} team{teams.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <Button onClick={() => handleOpenTeamDialog()} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            New Team
+          </Button>
         </div>
-        <Button onClick={() => handleOpenTeamDialog()} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          New Team
-        </Button>
+
+        {/* Search and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search teams by name, cycle, or member..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="members">Most Members</SelectItem>
+              <SelectItem value="cycle">Cycle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Stats */}
@@ -295,25 +349,33 @@ export default function Teams() {
       </div>
 
       {/* Teams List */}
-      {teams.length === 0 ? (
+      {filteredAndSortedTeams.length === 0 ? (
         <Card>
           <CardContent className="py-8">
             <EmptyState
               illustration={<EmptyTeamsIllustration />}
-              title="No teams yet"
-              description="Create your first team to organize your workforce and start collaborating on pitches"
-              action={{
-                label: 'Create Team',
-                onClick: () => handleOpenTeamDialog(),
-                startIcon: <Plus className="h-4 w-4" />,
-              }}
+              title={searchTerm ? 'No teams found' : 'No teams yet'}
+              description={
+                searchTerm
+                  ? `No teams match "${searchTerm}". Try a different search term.`
+                  : 'Create your first team to organize your workforce and start collaborating on pitches'
+              }
+              action={
+                !searchTerm
+                  ? {
+                      label: 'Create Team',
+                      onClick: () => handleOpenTeamDialog(),
+                      startIcon: <Plus className="h-4 w-4" />,
+                    }
+                  : undefined
+              }
               size="medium"
             />
           </CardContent>
         </Card>
       ) : (
-        <Accordion type="multiple" defaultValue={teams.map(t => t.id.toString())} className="space-y-2">
-          {teams.map((team) => (
+        <Accordion type="multiple" defaultValue={filteredAndSortedTeams.map(t => t.id.toString())} className="space-y-2">
+          {filteredAndSortedTeams.map((team) => (
             <AccordionItem key={team.id} value={team.id.toString()} className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3 flex-1 pr-4">

@@ -22,6 +22,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import SlackIntegration from './pages/SlackIntegration';
 import GitHubIntegration from './pages/integrations/GitHubIntegration';
 import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
 import TaskDetailPage from './pages/TaskDetailPage';
@@ -77,6 +78,7 @@ function App() {
                     {/* Main Navigation - paths are relative to parent "/*" route */}
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="projects" element={<Projects />} />
+                    <Route path="projects/:id" element={<ProjectDetail />} />
                     <Route path="cycles" element={<CycleList />} />
                     <Route path="cycles/new" element={<CycleForm />} />
                     <Route path="cycles/:id" element={<CycleDetail />} />

@@ -8,6 +8,8 @@ import {
   Eye,
   Loader2,
   Brain,
+  Search,
+  ArrowUpDown,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { cycleService } from '../services/cycleService';
@@ -67,6 +69,8 @@ export default function RetroList() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [retroEnabled, setRetroEnabled] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'title' | 'status' | 'cycle' | 'recent'>('recent');
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; retro: Retrospective | null }>({
     open: false,
@@ -204,36 +208,97 @@ export default function RetroList() {
     );
   }
 
+  // Filter and sort retrospectives
+  const filteredAndSortedRetros = retros
+    .filter(retro => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        retro.title.toLowerCase().includes(search) ||
+        retro.notes?.toLowerCase().includes(search) ||
+        retro.cycleName?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'cycle':
+          return (a.cycleName || '').localeCompare(b.cycleName || '');
+        case 'recent':
+          return (b.id || 0) - (a.id || 0);
+        default:
+          return 0;
+      }
+    });
+
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">Retrospectives</h1>
-          <p className="text-muted-foreground">
-            Reflect on cycles, capture learnings, and plan improvements
-          </p>
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Retrospectives</h1>
+            <p className="text-muted-foreground">
+              Reflect on cycles, capture learnings, and plan improvements
+            </p>
+          </div>
+          <Button onClick={() => setOpenDialog(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Retro
+          </Button>
         </div>
-        <Button onClick={() => setOpenDialog(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Retro
-        </Button>
+
+        {/* Search and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search retrospectives by title, notes, or cycle..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="title">Title (A-Z)</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="cycle">Cycle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Content */}
-      {retros.length === 0 ? (
+      {filteredAndSortedRetros.length === 0 ? (
         <EmptyState
-          title="No retrospectives yet"
-          description="Create your first retrospective to reflect on a cycle"
-          action={{
-            label: 'Create Retro',
-            onClick: () => setOpenDialog(true),
-          }}
+          title={searchTerm ? 'No retrospectives found' : 'No retrospectives yet'}
+          description={
+            searchTerm
+              ? `No retrospectives match "${searchTerm}". Try a different search term.`
+              : 'Create your first retrospective to reflect on a cycle'
+          }
+          action={
+            !searchTerm
+              ? {
+                  label: 'Create Retro',
+                  onClick: () => setOpenDialog(true),
+                }
+              : undefined
+          }
           icon={Brain}
         />
       ) : (
         <div className="space-y-4">
-          {retros.map((retro) => (
+          {filteredAndSortedRetros.map((retro) => (
             <Card key={retro.id}>
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
