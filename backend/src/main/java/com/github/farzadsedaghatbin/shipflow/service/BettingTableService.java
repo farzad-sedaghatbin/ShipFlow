@@ -742,6 +742,6 @@ public class BettingTableService {
         if (completionRate >= 90) return "EXCELLENT";
         if (completionRate >= 75) return "GOOD";
         if (completionRate >= 50) return "FAIR";
-        return "NEEDS_IMPROVEMENT";
+        return "POOR";
     }
 }

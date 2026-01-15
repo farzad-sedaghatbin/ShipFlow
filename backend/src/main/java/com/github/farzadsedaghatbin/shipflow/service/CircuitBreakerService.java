@@ -29,6 +29,7 @@ public class CircuitBreakerService {
 
     private final PitchRepository pitchRepository;
     private final WorkLogRepository workLogRepository;
+    private final DashboardNotificationService notificationService;
 
     /**
      * Detect pitches that are overflowing their appetite (time budget).
@@ -95,6 +96,9 @@ public class CircuitBreakerService {
 
         Pitch saved = pitchRepository.save(pitch);
         log.info("Circuit breaker triggered for pitch {}: {}", pitchId, reason);
+        
+        // Notify team members
+        notificationService.notifyCircuitBreakerTriggered(saved);
 
         return toDTO(saved);
     }
@@ -130,8 +134,9 @@ public class CircuitBreakerService {
         pitch.setStatus(PitchStatus.CANCELLED);
 
         Pitch saved = pitchRepository.save(pitch);
-        log.info("Pitch {} killed due to overflow: {}", pitchId, reason);
-
+        log.info("Pitch {} killed due to overflow: {}", pitchId, reason);        
+        // Notify team members
+        notificationService.notifyPitchKilled(saved, reason);
         return toDTO(saved);
     }
 

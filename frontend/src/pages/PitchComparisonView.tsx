@@ -115,11 +115,13 @@ const PitchComparisonView = () => {
     }
   };
 
-  const getSeverityVariant = (severity: CapacityWarningSeverity): 'default' | 'destructive' | 'info' | 'success' | 'warning' => {
+  const getSeverityVariant = (severity: CapacityWarningSeverity): 'default' | 'destructive' => {
     switch (severity) {
       case 'CRITICAL': return 'destructive';
-      case 'WARNING': return 'warning';
-      case 'INFO': return 'info';
+      case 'WARNING':
+      case 'INFO':
+      default:
+        return 'default';
     }
   };
 
