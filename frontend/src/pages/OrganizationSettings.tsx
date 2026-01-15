@@ -33,6 +33,13 @@ const DEFAULT_RISK_THRESHOLDS: RiskThresholds = {
   highMax: 85,
 };
 
+const DEFAULT_RISK_WEIGHTS = {
+  budgetWeight: 25,
+  bugsWeight: 30,
+  scopeWeight: 25,
+  timeWeight: 20,
+};
+
 const DEFAULT_COLORS: ColorSettings = {
   appetiteHours: '#3B82F6',
   actualHours: '#10B981',
@@ -168,6 +175,62 @@ export default function OrganizationSettingsPage() {
     });
   };
 
+  const updateRiskWeight = (weightField: string, value: number) => {
+    const currentWeights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
+    setFormData({
+      ...formData,
+      riskWeights: {
+        ...currentWeights,
+        [weightField]: value,
+      },
+    });
+  };
+
+  const applyRiskProfile = async (profileName: string) => {
+    try {
+      const response = await organizationSettingsService.getRiskProfiles();
+      // Backend returns { profiles: [...] }
+      const profiles = response.data.profiles;
+      
+      if (!profiles || !Array.isArray(profiles)) {
+        console.error('Invalid response format:', response);
+        showToast('Failed to load risk profiles', 'error');
+        return;
+      }
+      
+      const selectedProfile = profiles.find((p) => p.name === profileName);
+      
+      if (!selectedProfile) {
+        console.error('Profile not found:', profileName, 'Available:', profiles.map(p => p.name));
+        showToast(`Profile "${profileName}" not found`, 'error');
+        return;
+      }
+      
+      setFormData({
+        ...formData,
+        riskWeights: {
+          budgetWeight: selectedProfile.budgetWeight,
+          bugsWeight: selectedProfile.bugsWeight,
+          scopeWeight: selectedProfile.scopeWeight,
+          timeWeight: selectedProfile.timeWeight,
+        },
+      });
+      showToast(`"${selectedProfile.displayName}" profile applied successfully`, 'success');
+    } catch (error) {
+      console.error('Error applying risk profile:', error);
+      showToast('Failed to apply risk profile', 'error');
+    }
+  };
+
+  const getRiskWeightsSum = () => {
+    const weights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
+    return weights.budgetWeight + weights.bugsWeight + weights.scopeWeight + weights.timeWeight;
+  };
+
+  const isRiskWeightsValid = () => {
+    return getRiskWeightsSum() === 100;
+  };
+
   if (!isAdmin) {
     return (
       <div className="p-4">
@@ -228,6 +291,7 @@ export default function OrganizationSettingsPage() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="cycles">Cycles</TabsTrigger>
           <TabsTrigger value="risk">Risk Thresholds</TabsTrigger>
+          <TabsTrigger value="weights">Risk Weights</TabsTrigger>
           <TabsTrigger value="colors">Colors</TabsTrigger>
           <TabsTrigger value="bugs">Bug Config</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -438,6 +502,224 @@ export default function OrganizationSettingsPage() {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   Changes to risk thresholds will affect how existing pitches are categorized.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Risk Weights */}
+        <TabsContent value="weights" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5" />
+                Risk Factor Weights
+              </CardTitle>
+              <CardDescription>
+                Configure how much each factor contributes to the overall risk score (must sum to 100%)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Preset Profiles */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Quick Profiles</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyRiskProfile('balanced')}
+                    className="justify-start"
+                  >
+                    ⚖️ Balanced
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyRiskProfile('conservative')}
+                    className="justify-start"
+                  >
+                    🛡️ Conservative
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyRiskProfile('aggressive')}
+                    className="justify-start"
+                  >
+                    🚀 Aggressive
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyRiskProfile('quality_focused')}
+                    className="justify-start"
+                  >
+                    🎯 Quality Focus
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyRiskProfile('time_critical')}
+                    className="justify-start"
+                  >
+                    ⏱️ Time Critical
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Click a profile to quickly apply preset weight distributions
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Weight Sliders */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="budgetWeight" className="font-medium">💰 Budget Weight</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="budgetWeight"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.riskWeights?.budgetWeight || 25}
+                        onChange={(e) => updateRiskWeight('budgetWeight', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.riskWeights?.budgetWeight || 25}
+                    onChange={(e) => updateRiskWeight('budgetWeight', parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    How spending compares to appetite and schedule
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="bugsWeight" className="font-medium">🐛 Bugs Weight</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="bugsWeight"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.riskWeights?.bugsWeight || 30}
+                        onChange={(e) => updateRiskWeight('bugsWeight', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.riskWeights?.bugsWeight || 30}
+                    onChange={(e) => updateRiskWeight('bugsWeight', parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Critical bugs, bug density, and resolution rate
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="scopeWeight" className="font-medium">📊 Scope Weight</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="scopeWeight"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.riskWeights?.scopeWeight || 25}
+                        onChange={(e) => updateRiskWeight('scopeWeight', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.riskWeights?.scopeWeight || 25}
+                    onChange={(e) => updateRiskWeight('scopeWeight', parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Hill chart progress and scope completion status
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="timeWeight" className="font-medium">⏰ Time Weight</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="timeWeight"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.riskWeights?.timeWeight || 20}
+                        onChange={(e) => updateRiskWeight('timeWeight', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.riskWeights?.timeWeight || 20}
+                    onChange={(e) => updateRiskWeight('timeWeight', parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Status appropriateness for time remaining
+                  </p>
+                </div>
+              </div>
+
+              {/* Validation Alert */}
+              <Alert variant={isRiskWeightsValid() ? 'default' : 'destructive'}>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="flex items-center justify-between">
+                    <span>Total weight: <strong>{getRiskWeightsSum()}%</strong></span>
+                    {isRiskWeightsValid() ? (
+                      <Badge variant="default" className="bg-green-500">✓ Valid</Badge>
+                    ) : (
+                      <Badge variant="destructive">Must equal 100%</Badge>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+
+              <Alert>
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  Weight changes affect how risk scores are calculated. Higher weights make that factor more influential in the final risk assessment.
                 </AlertDescription>
               </Alert>
             </CardContent>

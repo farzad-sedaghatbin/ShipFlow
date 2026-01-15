@@ -16,6 +16,12 @@ A modern project management application implementing the [Shape Up](https://base
 ## ✨ Features
 
 - **Cycles**: 6-week development cycles with betting table
+  - **Auto-Calculated Cycle Dates**: End dates automatically calculated from organization settings
+    - Default 6-week cycles aligned with Shape Up methodology
+    - Configurable cycle length in Organization Settings (4-12 weeks)
+    - Role-based override: ADMIN and PROJECT_MANAGER can set custom cycle lengths
+    - Regular users (DEVELOPER, QA, PRODUCT) use auto-calculated dates
+    - Prevents configuration conflicts and ensures standardized planning horizons
 - **Pitches**: Shape work with appetite, problem definition, and solution
   - **Shape Up Methodology Support**: Comprehensive pitch creation with all Shape Up elements
     - Problem Statement, Solution, Rabbit Holes, Risks, No-Gos, Wireframe Links
@@ -59,10 +65,15 @@ A modern project management application implementing the [Shape Up](https://base
   - Integrated help guide explaining Shape Up's fixed-time, variable-scope principle
 - **Health Overview**: Automated risk detection and health monitoring
   - **Weighted Risk Algorithm**: 4-factor scoring with configurable weights
-    - Budget utilization (25%): Tracks appetite consumption vs timeline
-    - Bug severity (30%): Monitors critical/major/open bug counts
-    - Scope progress (25%): Analyzes hill chart position and movement
-    - Time pressure (20%): Evaluates days remaining and urgency
+    - Budget utilization (default 25%): Tracks appetite consumption vs timeline
+    - Bug severity (default 30%): Monitors critical/major/open bug counts
+    - Scope progress (default 25%): Analyzes hill chart position and movement
+    - Time pressure (default 20%): Evaluates days remaining and urgency
+  - **Configurable Risk Weights**: Customize factor importance via Organization Settings
+    - Adjust weights for budget, bugs, scope, and time factors (must sum to 100%)
+    - Preset profiles for quick setup: Balanced, Conservative, Aggressive, Quality-Focused, Time-Critical
+    - Real-time validation with visual feedback (sum indicator and warnings)
+    - Slider controls for intuitive adjustment
   - **Configurable Thresholds**: 30+ customizable parameters via Organization Settings
     - Budget thresholds (warning, overrun, critical levels)
     - Bug count thresholds (by severity and total open bugs)
@@ -79,7 +90,7 @@ A modern project management application implementing the [Shape Up](https://base
     - Gradient warning banners for at-risk items
   - Risk trend indicators (IMPROVING, STABLE, WORSENING)
   - Automated status detection without manual assignment
-  - All thresholds customizable per organization with sensible defaults
+  - All thresholds and weights customizable per organization with sensible defaults
 - **AI-Powered Q&A**: Enhanced RAG-based knowledge retrieval from project documents
   - Smart relevance filtering (0.70 threshold)
   - Source citation tracking

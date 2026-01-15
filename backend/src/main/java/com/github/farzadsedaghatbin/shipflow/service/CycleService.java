@@ -5,28 +5,38 @@ import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CycleService {
 
     private final CycleRepository cycleRepository;
     private final ProjectRepository projectRepository;
     private final RetroRepository retroRepository;
     private final DashboardNotificationService notificationService;
+    private final UserRepository userRepository;
+    private final OrganizationSettingsService organizationSettingsService;
 
     public List<CycleDTO> getAllCycles() {
         return cycleRepository.findAllByOrderByStartDateDesc()
@@ -66,11 +76,17 @@ public class CycleService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
         
+        // Calculate or validate end date
+        LocalDate endDate = calculateOrValidateEndDate(
+            request.getStartDate(), 
+            request.getEndDate()
+        );
+        
         Cycle cycle = Cycle.builder()
                 .project(project)
                 .name(request.getName())
                 .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
+                .endDate(endDate)
                 .phase(request.getPhase() != null ? request.getPhase() : CyclePhase.BUILD)
                 .isActive(true)
                 .build();
@@ -91,9 +107,15 @@ public class CycleService {
             cycle.setProject(project);
         }
         
+        // Calculate or validate end date
+        LocalDate endDate = calculateOrValidateEndDate(
+            request.getStartDate(), 
+            request.getEndDate()
+        );
+        
         cycle.setName(request.getName());
         cycle.setStartDate(request.getStartDate());
-        cycle.setEndDate(request.getEndDate());
+        cycle.setEndDate(endDate);
         cycle.setPhase(request.getPhase());
         
         Cycle saved = cycleRepository.save(cycle);
@@ -206,5 +228,67 @@ public class CycleService {
         }
         
         return builder.build();
+    }
+
+    /**
+     * Calculate or validate cycle end date based on configuration and user privileges.
+     * - If no end date provided: auto-calculate from start date + organization's default cycle length
+     * - If end date provided: only ADMIN/PROJECT_MANAGER can override, otherwise throw exception
+     */
+    private LocalDate calculateOrValidateEndDate(LocalDate startDate, LocalDate providedEndDate) {
+        if (providedEndDate == null) {
+            // Auto-calculate from organization settings
+            return calculateEndDateFromConfiguration(startDate);
+        }
+        
+        // User wants to override - check if they have privilege
+        if (!currentUserCanOverrideCycleDates()) {
+            throw new AccessDeniedException(
+                "Only users with ADMIN or PROJECT_MANAGER role can set custom cycle end dates. " +
+                "The system will automatically calculate the end date based on the configured cycle length."
+            );
+        }
+        
+        // User has privilege, use their custom date
+        return providedEndDate;
+    }
+
+    /**
+     * Calculate end date from start date using organization's default cycle length
+     */
+    private LocalDate calculateEndDateFromConfiguration(LocalDate startDate) {
+        var settings = organizationSettingsService.getSettings();
+        Integer cycleLengthWeeks = settings.getDefaultCycleLengthWeeks();
+        
+        if (cycleLengthWeeks == null || cycleLengthWeeks <= 0) {
+            log.warn("Invalid or missing default cycle length configuration (value: {}). Falling back to Shape Up standard of 6 weeks.", 
+                    cycleLengthWeeks);
+            cycleLengthWeeks = 6; // Fallback to Shape Up standard
+        }
+        
+        return startDate.plusWeeks(cycleLengthWeeks);
+    }
+
+    /**
+     * Check if current user has privilege to override cycle dates.
+     * Only ADMIN and PROJECT_MANAGER roles can set custom dates.
+     */
+    private boolean currentUserCanOverrideCycleDates() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User user = userRepository.findByUsername(username)
+                    .orElse(null);
+            
+            if (user == null) {
+                return false;
+            }
+            
+            UserRole role = user.getRole();
+            return role == UserRole.ADMIN || role == UserRole.PROJECT_MANAGER;
+        } catch (Exception e) {
+            // Throw exception to surface authentication/authorization issues
+            log.error("Failed to determine current user's role when checking cycle date override privileges", e);
+            throw new RuntimeException("Unable to verify user permissions for cycle date override", e);
+        }
     }
 }

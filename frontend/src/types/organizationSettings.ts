@@ -13,6 +13,9 @@ export interface OrganizationSettings {
   // Risk Thresholds
   riskThresholds: RiskThresholds;
   
+  // Risk Factor Weights
+  riskWeights: RiskWeights;
+  
   // Categories
   taskCategories: CategoryConfig[];
   pitchCategories: CategoryConfig[];
@@ -39,6 +42,30 @@ export interface RiskThresholds {
   mediumMax: number;   // 31-60 default
   highMax: number;     // 61-85 default
   // Above highMax is CRITICAL (86-100)
+}
+
+/**
+ * Risk factor weights for calculating overall risk score.
+ * All weights should sum to 100 (percentage-based).
+ */
+export interface RiskWeights {
+  budgetWeight: number;      // Budget utilization weight (default: 25)
+  bugsWeight: number;        // Bug severity weight (default: 30)
+  scopeWeight: number;       // Scope progress weight (default: 25)
+  timeWeight: number;        // Time pressure weight (default: 20)
+}
+
+/**
+ * Preset risk calculation profiles for quick setup
+ */
+export interface RiskProfile {
+  name: string;
+  displayName: string;
+  description: string;
+  budgetWeight: number;
+  bugsWeight: number;
+  scopeWeight: number;
+  timeWeight: number;
 }
 
 export interface CategoryConfig {
@@ -82,6 +109,7 @@ export interface UpdateOrganizationSettingsRequest {
   defaultCycleLengthWeeks?: number;
   defaultCooldownWeeks?: number;
   riskThresholds?: RiskThresholds;
+  riskWeights?: RiskWeights;
   taskCategories?: CategoryConfig[];
   pitchCategories?: CategoryConfig[];
   timeZone?: string;

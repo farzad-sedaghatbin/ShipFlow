@@ -35,6 +35,10 @@ public class OrganizationSettings {
     @Column(columnDefinition = "TEXT")
     private String riskThresholdsJson;
 
+    // Risk Factor Weights (Budget, Bugs, Scope, Time percentages)
+    @Column(columnDefinition = "TEXT")
+    private String riskWeightsJson;
+
     // Categories (stored as JSON arrays)
     @Column(columnDefinition = "TEXT")
     private String taskCategoriesJson;

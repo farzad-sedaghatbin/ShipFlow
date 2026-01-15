@@ -60,6 +60,15 @@ public class OrganizationSettingsService {
         if (request.getRiskThresholds() != null) {
             settings.setRiskThresholdsJson(toJson(request.getRiskThresholds()));
         }
+        if (request.getRiskWeights() != null) {
+            // Validate and normalize weights before saving
+            OrganizationSettingsDTO.RiskWeights weights = request.getRiskWeights();
+            if (!weights.isValid()) {
+                log.warn("Risk weights don't sum to 100, normalizing: {}", weights);
+                weights.normalize();
+            }
+            settings.setRiskWeightsJson(toJson(weights));
+        }
         if (request.getTaskCategories() != null) {
             settings.setTaskCategoriesJson(toJson(request.getTaskCategories()));
         }
@@ -251,11 +260,20 @@ public class OrganizationSettingsService {
                         .build()
         );
 
+        // Default risk weights (balanced profile)
+        OrganizationSettingsDTO.RiskWeights defaultRiskWeights = OrganizationSettingsDTO.RiskWeights.builder()
+                .budgetWeight(25)
+                .bugsWeight(30)
+                .scopeWeight(25)
+                .timeWeight(20)
+                .build();
+
         OrganizationSettings settings = OrganizationSettings.builder()
                 .organizationName("My Organization")
                 .defaultCycleLengthWeeks(6)
                 .defaultCooldownWeeks(2)
                 .riskThresholdsJson(toJson(defaultRiskThresholds))
+                .riskWeightsJson(toJson(defaultRiskWeights))
                 .taskCategoriesJson(toJson(defaultTaskCategories))
                 .pitchCategoriesJson(toJson(defaultPitchCategories))
                 .colorsJson(toJson(defaultColors))
@@ -275,6 +293,18 @@ public class OrganizationSettingsService {
      * Convert entity to DTO.
      */
     private OrganizationSettingsDTO toDTO(OrganizationSettings entity) {
+        // Provide default risk weights if not configured
+        OrganizationSettingsDTO.RiskWeights weights = fromJson(entity.getRiskWeightsJson(), 
+                new TypeReference<OrganizationSettingsDTO.RiskWeights>() {});
+        if (weights == null) {
+            weights = OrganizationSettingsDTO.RiskWeights.builder()
+                    .budgetWeight(25)
+                    .bugsWeight(30)
+                    .scopeWeight(25)
+                    .timeWeight(20)
+                    .build();
+        }
+        
         return OrganizationSettingsDTO.builder()
                 .id(entity.getId())
                 .organizationName(entity.getOrganizationName())
@@ -282,6 +312,7 @@ public class OrganizationSettingsService {
                 .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
                 .riskThresholds(fromJson(entity.getRiskThresholdsJson(), 
                         new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {}))
+                .riskWeights(weights)
                 .taskCategories(fromJson(entity.getTaskCategoriesJson(), 
                         new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {}))
                 .pitchCategories(fromJson(entity.getPitchCategoriesJson(), 

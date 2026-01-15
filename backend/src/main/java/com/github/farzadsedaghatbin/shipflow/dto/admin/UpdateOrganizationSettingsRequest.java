@@ -20,6 +20,7 @@ public class UpdateOrganizationSettingsRequest {
     private Integer defaultCycleLengthWeeks;
     private Integer defaultCooldownWeeks;
     private OrganizationSettingsDTO.RiskThresholds riskThresholds;
+    private OrganizationSettingsDTO.RiskWeights riskWeights;
     private List<OrganizationSettingsDTO.CategoryConfig> taskCategories;
     private List<OrganizationSettingsDTO.CategoryConfig> pitchCategories;
     private OrganizationSettingsDTO.ColorSettings colors;

@@ -27,6 +27,9 @@ public class OrganizationSettingsDTO {
     // Risk Thresholds
     private RiskThresholds riskThresholds;
     
+    // Risk Factor Weights
+    private RiskWeights riskWeights;
+    
     // Categories
     private List<CategoryConfig> taskCategories;
     private List<CategoryConfig> pitchCategories;
@@ -150,6 +153,66 @@ public class OrganizationSettingsDTO {
         private Integer recentWorkHighHours = 15;   // High work rate indicator (3 days)
         @Builder.Default
         private Integer appetiteHighUsage = 90;     // High appetite usage threshold
+    }
+
+    /**
+     * Configurable risk factor weights for calculating overall risk score.
+     * All weights should sum to 100 (percentage-based).
+     * These control how much each factor contributes to the final risk assessment.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RiskWeights {
+        // Default risk weight constants
+        public static final int DEFAULT_BUDGET_WEIGHT = 25;
+        public static final int DEFAULT_BUGS_WEIGHT = 30;
+        public static final int DEFAULT_SCOPE_WEIGHT = 25;
+        public static final int DEFAULT_TIME_WEIGHT = 20;
+        
+        @Builder.Default
+        private Integer budgetWeight = DEFAULT_BUDGET_WEIGHT;    // Budget utilization contribution (default: 25%)
+        @Builder.Default
+        private Integer bugsWeight = DEFAULT_BUGS_WEIGHT;        // Bug severity contribution (default: 30%)
+        @Builder.Default
+        private Integer scopeWeight = DEFAULT_SCOPE_WEIGHT;      // Scope progress contribution (default: 25%)
+        @Builder.Default
+        private Integer timeWeight = DEFAULT_TIME_WEIGHT;        // Time pressure contribution (default: 20%)
+        
+        /**
+         * Validate that weights sum to 100
+         */
+        public boolean isValid() {
+            return budgetWeight + bugsWeight + scopeWeight + timeWeight == 100;
+        }
+        
+        /**
+         * Normalize weights to sum to 100 if they don't already.
+         * 
+         * Integer division truncates fractional parts, so timeWeight absorbs the remainder
+         * to ensure the sum equals exactly 100. If total is zero, resets to defaults.
+         * 
+         * Example: [33, 33, 33, 33] (sum=132) → [25, 25, 25, 25] (sum=100)
+         */
+        public void normalize() {
+            int total = budgetWeight + bugsWeight + scopeWeight + timeWeight;
+            if (total == 0) {
+                // Reset to defaults when all weights are zero
+                budgetWeight = DEFAULT_BUDGET_WEIGHT;
+                bugsWeight = DEFAULT_BUGS_WEIGHT;
+                scopeWeight = DEFAULT_SCOPE_WEIGHT;
+                timeWeight = DEFAULT_TIME_WEIGHT;
+            } else if (total != 100) {
+                budgetWeight = (budgetWeight * 100) / total;
+                bugsWeight = (bugsWeight * 100) / total;
+                scopeWeight = (scopeWeight * 100) / total;
+                // Assign remainder to timeWeight to ensure sum equals exactly 100
+                // (compensates for precision loss from integer division truncation)
+                // NOTE: timeWeight is chosen arbitrarily to receive the remainder
+                timeWeight = 100 - (budgetWeight + bugsWeight + scopeWeight);
+            }
+        }
     }
 
     @Data
