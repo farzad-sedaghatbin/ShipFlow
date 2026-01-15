@@ -349,31 +349,26 @@ export default function CycleForm() {
                   <Label htmlFor="endDate">
                     End Date {useAutoEndDate && !isEdit ? '(Auto)' : '*'}
                   </Label>
-                  {(() => {
-                    const isEndDateAutoCalculated = useAutoEndDate && !isEdit;
-                    return (
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => {
-                          setEndDate(e.target.value);
-                          setFieldErrors((prev) => ({ ...prev, endDate: '' }));
-                        }}
-                        min={startDate || undefined}
-                        disabled={isEndDateAutoCalculated}
-                        aria-label={
-                          isEndDateAutoCalculated
-                            ? 'End date - automatically calculated from start date'
-                            : 'End date'
-                        }
-                        aria-describedby={
-                          isEndDateAutoCalculated ? 'endDate-auto-hint' : undefined
-                        }
-                        className={fieldErrors.endDate ? 'border-destructive' : ''}
-                      />
-                    );
-                  })()}
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, endDate: '' }));
+                    }}
+                    min={startDate || undefined}
+                    disabled={useAutoEndDate && !isEdit}
+                    aria-label={
+                      useAutoEndDate && !isEdit
+                        ? 'End date - automatically calculated from start date'
+                        : 'End date'
+                    }
+                    aria-describedby={
+                      useAutoEndDate && !isEdit ? 'endDate-auto-hint' : undefined
+                    }
+                    className={fieldErrors.endDate ? 'border-destructive' : ''}
+                  />
                   {fieldErrors.endDate && (
                     <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
                   )}

@@ -150,10 +150,10 @@ public class PitchHealthService {
         }
         // Return defaults if service not available or settings not configured
         return com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.builder()
-                .budgetWeight(25)
-                .bugsWeight(30)
-                .scopeWeight(25)
-                .timeWeight(20)
+                .budgetWeight(com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.DEFAULT_BUDGET_WEIGHT)
+                .bugsWeight(com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.DEFAULT_BUGS_WEIGHT)
+                .scopeWeight(com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.DEFAULT_SCOPE_WEIGHT)
+                .timeWeight(com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskWeights.DEFAULT_TIME_WEIGHT)
                 .build();
     }
 

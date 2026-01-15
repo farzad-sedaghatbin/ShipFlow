@@ -165,14 +165,20 @@ public class OrganizationSettingsDTO {
     @AllArgsConstructor
     @Builder
     public static class RiskWeights {
+        // Default risk weight constants
+        public static final int DEFAULT_BUDGET_WEIGHT = 25;
+        public static final int DEFAULT_BUGS_WEIGHT = 30;
+        public static final int DEFAULT_SCOPE_WEIGHT = 25;
+        public static final int DEFAULT_TIME_WEIGHT = 20;
+        
         @Builder.Default
-        private Integer budgetWeight = 25;    // Budget utilization contribution (default: 25%)
+        private Integer budgetWeight = DEFAULT_BUDGET_WEIGHT;    // Budget utilization contribution (default: 25%)
         @Builder.Default
-        private Integer bugsWeight = 30;      // Bug severity contribution (default: 30%)
+        private Integer bugsWeight = DEFAULT_BUGS_WEIGHT;        // Bug severity contribution (default: 30%)
         @Builder.Default
-        private Integer scopeWeight = 25;     // Scope progress contribution (default: 25%)
+        private Integer scopeWeight = DEFAULT_SCOPE_WEIGHT;      // Scope progress contribution (default: 25%)
         @Builder.Default
-        private Integer timeWeight = 20;      // Time pressure contribution (default: 20%)
+        private Integer timeWeight = DEFAULT_TIME_WEIGHT;        // Time pressure contribution (default: 20%)
         
         /**
          * Validate that weights sum to 100
@@ -193,10 +199,10 @@ public class OrganizationSettingsDTO {
             int total = budgetWeight + bugsWeight + scopeWeight + timeWeight;
             if (total == 0) {
                 // Reset to defaults when all weights are zero
-                budgetWeight = 25;
-                bugsWeight = 30;
-                scopeWeight = 25;
-                timeWeight = 20;
+                budgetWeight = DEFAULT_BUDGET_WEIGHT;
+                bugsWeight = DEFAULT_BUGS_WEIGHT;
+                scopeWeight = DEFAULT_SCOPE_WEIGHT;
+                timeWeight = DEFAULT_TIME_WEIGHT;
             } else if (total != 100) {
                 budgetWeight = (budgetWeight * 100) / total;
                 bugsWeight = (bugsWeight * 100) / total;
