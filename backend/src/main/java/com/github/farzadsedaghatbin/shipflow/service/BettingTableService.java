@@ -6,7 +6,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.BettingSlot;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ComplexityLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.Urgency;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -634,7 +637,7 @@ public class BettingTableService {
                 ? Arrays.asList(pitch.getRabbitHoles().split("\\n"))
                 : new ArrayList<>();
 
-        String complexityLevel = determineComplexity(pitch.getAppetiteDays(), risks.size());
+        ComplexityLevel complexityLevel = determineComplexity(pitch.getAppetiteDays(), risks.size());
 
         List<PitchComparisonDTO.TeamFitAnalysis> teamFitScores = teams.stream()
                 .map(team -> analyzeTeamFit(team, pitch, cycle))
@@ -700,16 +703,16 @@ public class BettingTableService {
     private static final int HIGH_COMPLEXITY_RISK_COUNT_THRESHOLD = 5;
     private static final int MEDIUM_COMPLEXITY_RISK_COUNT_THRESHOLD = 2;
 
-    private String determineComplexity(int appetiteDays, int riskCount) {
+    private ComplexityLevel determineComplexity(int appetiteDays, int riskCount) {
         if (appetiteDays > HIGH_COMPLEXITY_APPETITE_DAYS_THRESHOLD
                 || riskCount > HIGH_COMPLEXITY_RISK_COUNT_THRESHOLD) {
-            return "HIGH";
+            return ComplexityLevel.HIGH;
         }
         if (appetiteDays > MEDIUM_COMPLEXITY_APPETITE_DAYS_THRESHOLD
                 || riskCount > MEDIUM_COMPLEXITY_RISK_COUNT_THRESHOLD) {
-            return "MEDIUM";
+            return ComplexityLevel.MEDIUM;
         }
-        return "LOW";
+        return ComplexityLevel.LOW;
     }
 
     private String calculateTrend(List<Long> cycleIds, Map<Long, List<BettingSlot>> slotsByCycle) {

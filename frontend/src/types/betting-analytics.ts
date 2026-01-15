@@ -2,7 +2,9 @@
 
 export type PerformanceTrend = 'IMPROVING' | 'STABLE' | 'DECLINING';
 export type PerformanceRating = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
-export type ComplexityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
+export type ComplexityLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export type BusinessValue = 'HIGH' | 'MEDIUM' | 'LOW';
+export type Urgency = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type CapacityWarningSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
 
 export interface TeamPerformanceHistory {
@@ -33,11 +35,12 @@ export interface PitchComparison {
   pitchTitle: string;
   appetiteDays: number;
   appetiteWeeks: number;
-  complexityLevel: ComplexityLevel;
+  complexityLevel: ComplexityLevel | null;
   risks: string[];
   rabbitHoles: string[];
   teamFitScores: TeamFitAnalysis[];
-  urgency: string;
+  estimatedBusinessValue: BusinessValue | null;
+  urgency: Urgency | null;
 }
 
 export interface CapacityWarning {

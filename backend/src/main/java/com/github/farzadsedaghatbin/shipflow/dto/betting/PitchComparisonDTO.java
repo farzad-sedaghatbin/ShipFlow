@@ -1,6 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.dto.betting;
 
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ComplexityLevel;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.Urgency;
 import lombok.*;
 
 import java.util.List;
@@ -17,7 +20,7 @@ public class PitchComparisonDTO {
     
     // Risk indicators
     private Integer appetiteDays;
-    private String complexityLevel; // "LOW", "MEDIUM", "HIGH"
+    private ComplexityLevel complexityLevel;
     private List<String> risks;
     private List<String> rabbitHoles;
     
@@ -25,8 +28,8 @@ public class PitchComparisonDTO {
     private List<TeamFitAnalysis> teamFitScores;
     
     // Estimated impact
-    private String estimatedBusinessValue; // "HIGH", "MEDIUM", "LOW"
-    private String urgency; // "CRITICAL", "HIGH", "MEDIUM", "LOW"
+    private BusinessValue estimatedBusinessValue;
+    private Urgency urgency;
     
     @Data
     @NoArgsConstructor
