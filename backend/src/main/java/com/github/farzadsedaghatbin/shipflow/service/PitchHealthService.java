@@ -417,7 +417,7 @@ public class PitchHealthService {
         double scopeRisk = calculateScopeRisk(pitch, cycleProgress, thresholds);
         double timeRisk = calculateTimeRisk(pitch, daysElapsed, totalCycleDays, thresholds);
         
-        //  Apply configurable weights to calculate weighted risk score
+        // Apply configurable weights to calculate weighted risk score
         double weightedRiskScore = 
             (budgetRisk * weights.getBudgetWeight() / 100.0) +
             (bugsRisk * weights.getBugsWeight() / 100.0) +
