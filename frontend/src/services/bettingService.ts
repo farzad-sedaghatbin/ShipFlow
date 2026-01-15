@@ -1,5 +1,13 @@
 import api from './api';
-import { BettingTable, BettingSlot, CreateBettingSlotRequest, Pitch } from '../types';
+import { 
+  BettingTable, 
+  BettingSlot, 
+  CreateBettingSlotRequest, 
+  Pitch,
+  TeamPerformanceHistory,
+  PitchComparison,
+  CapacityAnalysis
+} from '../types';
 
 export const bettingService = {
   // Get the full betting table for a cycle
@@ -39,4 +47,18 @@ export const bettingService = {
   // Check if a pitch can fit in a slot
   canPitchFitInSlot: (slotId: number, pitchId: number) => 
     api.get<boolean>(`/betting/slots/${slotId}/can-fit/${pitchId}`),
+
+  // === Betting Analytics ===
+
+  // Get historical performance data for a team
+  getTeamPerformanceHistory: (teamId: number) =>
+    api.get<TeamPerformanceHistory>(`/betting/team/${teamId}/performance-history`),
+
+  // Get pitch comparisons for a cycle with team fit analysis
+  getPitchComparisons: (cycleId: number) =>
+    api.get<PitchComparison[]>(`/betting/cycle/${cycleId}/pitch-comparisons`),
+
+  // Get capacity analysis for a cycle
+  getCapacityAnalysis: (cycleId: number) =>
+    api.get<CapacityAnalysis>(`/betting/cycle/${cycleId}/capacity-analysis`),
 };

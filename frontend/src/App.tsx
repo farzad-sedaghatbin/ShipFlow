@@ -27,6 +27,7 @@ import HealthOverview from './pages/HealthOverview';
 import BacklogPage from './pages/BacklogPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import BettingTable from './pages/BettingTable';
+import PitchComparisonView from './pages/PitchComparisonView';
 import { PitchHillChart } from './pages/PitchHillChart';
 import { CycleHillChart } from './pages/CycleHillChart';
 import TestCasesPage from './pages/TestCasesPage';
@@ -90,6 +91,7 @@ function App() {
                     <Route path="pitches/:pitchId/hill-chart" element={<PitchHillChart />} />
                     <Route path="pitches/:id" element={<PitchDetail />} />
                     <Route path="betting" element={<BettingTable />} />
+                    <Route path="betting/comparison" element={<PitchComparisonView />} />
                     <Route path="health" element={<HealthOverview />} />
                     <Route path="retros" element={<RetroList />} />
                     <Route path="retros/:id" element={<RetroBoard />} />

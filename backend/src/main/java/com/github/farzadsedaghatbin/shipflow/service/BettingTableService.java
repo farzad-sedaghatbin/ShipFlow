@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
+import com.github.farzadsedaghatbin.shipflow.dto.betting.*;
 import com.github.farzadsedaghatbin.shipflow.entity.BettingSlot;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -452,5 +453,281 @@ public class BettingTableService {
                 .appetiteHours(appetiteHours)
                 .progressPercentage(Math.min(progress, 100))
                 .build();
+    }
+
+    // === NEW: Pitch Comparison and Analytics Methods ===
+
+    /**
+     * Get historical performance metrics for a team
+     */
+    public TeamPerformanceHistoryDTO getTeamPerformanceHistory(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + teamId));
+
+        // Get all completed cycles for this team
+        List<BettingSlot> allHistoricalSlots = bettingSlotRepository.findByTeamId(teamId);
+        
+        // Group by cycle
+        Map<Long, List<BettingSlot>> slotsByCycle = allHistoricalSlots.stream()
+                .filter(slot -> slot.getPitch() != null)
+                .filter(slot -> !slot.getCycle().getIsActive()) // Only completed cycles
+                .collect(Collectors.groupingBy(slot -> slot.getCycle().getId()));
+
+        List<Long> cycleIds = new ArrayList<>(slotsByCycle.keySet());
+        cycleIds.sort(Comparator.reverseOrder()); // Most recent first
+
+        // Calculate metrics
+        int totalCycles = cycleIds.size();
+        int totalBets = allHistoricalSlots.stream()
+                .filter(slot -> slot.getPitch() != null)
+                .filter(slot -> !slot.getCycle().getIsActive())
+                .mapToInt(slot -> 1).sum();
+        
+        int totalCompletedBets = (int) allHistoricalSlots.stream()
+                .filter(slot -> slot.getPitch() != null)
+                .filter(slot -> !slot.getCycle().getIsActive())
+                .filter(slot -> slot.getPitch().getStatus() == PitchStatus.DONE)
+                .count();
+
+        // Last cycle metrics
+        Integer lastCycleTotalBets = 0;
+        Integer lastCycleCompletedBets = 0;
+        if (!cycleIds.isEmpty()) {
+            Long lastCycleId = cycleIds.get(0);
+            List<BettingSlot> lastCycleSlots = slotsByCycle.get(lastCycleId);
+            lastCycleTotalBets = lastCycleSlots.size();
+            lastCycleCompletedBets = (int) lastCycleSlots.stream()
+                    .filter(slot -> slot.getPitch().getStatus() == PitchStatus.DONE)
+                    .count();
+        }
+
+        Double lastCycleCompletionRate = lastCycleTotalBets > 0 
+                ? (lastCycleCompletedBets * 100.0 / lastCycleTotalBets) : 0.0;
+        Double overallCompletionRate = totalBets > 0 
+                ? (totalCompletedBets * 100.0 / totalBets) : 0.0;
+
+        // Calculate trends (last 3 cycles)
+        String trend = calculateTrend(cycleIds, slotsByCycle);
+        String performanceRating = getPerformanceRating(overallCompletionRate);
+
+        return TeamPerformanceHistoryDTO.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .lastCycleTotalBets(lastCycleTotalBets)
+                .lastCycleCompletedBets(lastCycleCompletedBets)
+                .lastCycleCompletionRate(Math.round(lastCycleCompletionRate * 10.0) / 10.0)
+                .totalCycles(totalCycles)
+                .totalBets(totalBets)
+                .totalCompletedBets(totalCompletedBets)
+                .overallCompletionRate(Math.round(overallCompletionRate * 10.0) / 10.0)
+                .avgBetsPerCycle(totalCycles > 0 ? Math.round((totalBets * 10.0 / totalCycles)) / 10.0 : 0.0)
+                .avgWeeksPerBet(totalBets > 0 ? 2.0 : 0.0) // Placeholder
+                .avgTimeOverrun(5.0) // Placeholder - would need work log analysis
+                .trend(trend)
+                .performanceRating(performanceRating)
+                .build();
+    }
+
+    /**
+     * Get pitch comparison analysis for betting meeting
+     */
+    public List<PitchComparisonDTO> getPitchComparisons(Long cycleId) {
+        Cycle cycle = cycleRepository.findById(cycleId)
+                .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
+
+        List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatus(cycleId, PitchStatus.SHAPED);
+        List<Team> teams = teamRepository.findByCycleId(cycleId);
+
+        return shapedPitches.stream()
+                .map(pitch -> buildPitchComparison(pitch, teams, cycle))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get capacity analysis for the current betting table
+     */
+    public CapacityAnalysisDTO getCapacityAnalysis(Long cycleId) {
+        BettingTableDTO bettingTable = getBettingTable(cycleId);
+        
+        List<CapacityAnalysisDTO.CapacityWarning> warnings = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        
+        boolean isOverAllocated = false;
+        
+        for (BettingTableDTO.TeamTrackDTO track : bettingTable.getTeamTracks()) {
+            double utilization = track.getTotalCapacityWeeks() > 0 
+                    ? (track.getUsedCapacityWeeks() * 100.0 / track.getTotalCapacityWeeks()) : 0.0;
+            
+            if (utilization > 100) {
+                isOverAllocated = true;
+                warnings.add(CapacityAnalysisDTO.CapacityWarning.builder()
+                        .severity("CRITICAL")
+                        .teamId(track.getTeamId())
+                        .teamName(track.getTeamName())
+                        .message(String.format("Team is over-allocated by %d weeks (%.0f%% capacity)",
+                                track.getUsedCapacityWeeks() - track.getTotalCapacityWeeks(), utilization))
+                        .type("OVER_ALLOCATED")
+                        .build());
+            } else if (utilization > 85) {
+                warnings.add(CapacityAnalysisDTO.CapacityWarning.builder()
+                        .severity("WARNING")
+                        .teamId(track.getTeamId())
+                        .teamName(track.getTeamName())
+                        .message(String.format("Team capacity is tight: %.0f%% utilized", utilization))
+                        .type("TIGHT_SCHEDULE")
+                        .build());
+            } else if (utilization < 50) {
+                warnings.add(CapacityAnalysisDTO.CapacityWarning.builder()
+                        .severity("INFO")
+                        .teamId(track.getTeamId())
+                        .teamName(track.getTeamName())
+                        .message(String.format("Team has significant available capacity: %.0f%% utilized", utilization))
+                        .type("UNDER_UTILIZED")
+                        .build());
+            }
+        }
+        
+        // Generate recommendations
+        if (isOverAllocated) {
+            recommendations.add("⚠️ Some teams are over-allocated. Consider redistributing work or reducing scope.");
+        }
+        
+        int totalAvailable = bettingTable.getTotalCapacityWeeks() - bettingTable.getUsedCapacityWeeks();
+        if (totalAvailable > 0 && bettingTable.getShapedPitches().size() > 0) {
+            recommendations.add(String.format("✅ %d weeks of capacity available for %d shaped pitches",
+                    totalAvailable, bettingTable.getShapedPitches().size()));
+        }
+        
+        double overallUtilization = bettingTable.getTotalCapacityWeeks() > 0
+                ? (bettingTable.getUsedCapacityWeeks() * 100.0 / bettingTable.getTotalCapacityWeeks()) : 0.0;
+        
+        if (overallUtilization > 80 && overallUtilization <= 100) {
+            recommendations.add("✅ Good capacity utilization - teams are well-allocated");
+        }
+
+        return CapacityAnalysisDTO.builder()
+                .cycleId(cycleId)
+                .cycleName(bettingTable.getCycleName())
+                .totalTeams(bettingTable.getTeamTracks().size())
+                .totalCapacityWeeks(bettingTable.getTotalCapacityWeeks())
+                .usedCapacityWeeks(bettingTable.getUsedCapacityWeeks())
+                .availableCapacityWeeks(totalAvailable)
+                .utilizationRate(Math.round(overallUtilization * 10.0) / 10.0)
+                .warnings(warnings)
+                .isOverAllocated(isOverAllocated)
+                .hasConflicts(false)
+                .recommendations(recommendations)
+                .build();
+    }
+
+    // === Helper Methods for Analytics ===
+
+    private PitchComparisonDTO buildPitchComparison(Pitch pitch, List<Team> teams, Cycle cycle) {
+        List<String> risks = pitch.getRisks() != null && !pitch.getRisks().isEmpty()
+                ? Arrays.asList(pitch.getRisks().split("\\n"))
+                : new ArrayList<>();
+        
+        List<String> rabbitHoles = pitch.getRabbitHoles() != null && !pitch.getRabbitHoles().isEmpty()
+                ? Arrays.asList(pitch.getRabbitHoles().split("\\n"))
+                : new ArrayList<>();
+
+        String complexityLevel = determineComplexity(pitch.getAppetiteDays(), risks.size());
+
+        List<PitchComparisonDTO.TeamFitAnalysis> teamFitScores = teams.stream()
+                .map(team -> analyzeTeamFit(team, pitch, cycle))
+                .collect(Collectors.toList());
+
+        return PitchComparisonDTO.builder()
+                .pitch(toPitchDTO(pitch))
+                .appetiteDays(pitch.getAppetiteDays())
+                .complexityLevel(complexityLevel)
+                .risks(risks.isEmpty() ? List.of("No risks identified") : risks)
+                .rabbitHoles(rabbitHoles.isEmpty() ? List.of("No rabbit holes identified") : rabbitHoles)
+                .teamFitScores(teamFitScores)
+                .estimatedBusinessValue("MEDIUM") // Placeholder
+                .urgency("MEDIUM") // Placeholder
+                .build();
+    }
+
+    private PitchComparisonDTO.TeamFitAnalysis analyzeTeamFit(Team team, Pitch pitch, Cycle cycle) {
+        // Get current slots for this team
+        List<BettingSlot> teamSlots = bettingSlotRepository.findByCycleIdAndTeamId(cycle.getId(), team.getId());
+        
+        int usedWeeks = teamSlots.stream()
+                .filter(s -> s.getPitch() != null)
+                .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / 7.0))
+                .sum();
+        
+        long cycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+        int totalWeeks = (int) Math.ceil(cycleDays / 7.0);
+        int availableWeeks = totalWeeks - usedWeeks;
+        int pitchWeeks = (int) Math.ceil(pitch.getAppetiteDays() / 7.0);
+        
+        boolean canFit = availableWeeks >= pitchWeeks;
+        String capacityStatus;
+        String recommendation;
+        List<String> warnings = new ArrayList<>();
+        
+        if (availableWeeks >= pitchWeeks + 2) {
+            capacityStatus = "AVAILABLE";
+            recommendation = "GOOD_FIT";
+        } else if (availableWeeks >= pitchWeeks) {
+            capacityStatus = "TIGHT";
+            recommendation = "POSSIBLE_WITH_TRADEOFFS";
+            warnings.add(String.format("Only %d weeks buffer remaining", availableWeeks - pitchWeeks));
+        } else {
+            capacityStatus = "OVER_ALLOCATED";
+            recommendation = "NOT_RECOMMENDED";
+            warnings.add(String.format("Exceeds capacity by %d weeks", pitchWeeks - availableWeeks));
+        }
+
+        return PitchComparisonDTO.TeamFitAnalysis.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .availableCapacityWeeks(availableWeeks)
+                .canFit(canFit)
+                .capacityStatus(capacityStatus)
+                .recommendation(recommendation)
+                .warnings(warnings)
+                .build();
+    }
+
+    private String determineComplexity(int appetiteDays, int riskCount) {
+        if (appetiteDays > 35 || riskCount > 5) return "HIGH";
+        if (appetiteDays > 14 || riskCount > 2) return "MEDIUM";
+        return "LOW";
+    }
+
+    private String calculateTrend(List<Long> cycleIds, Map<Long, List<BettingSlot>> slotsByCycle) {
+        if (cycleIds.size() < 2) return "STABLE";
+        
+        List<Double> completionRates = new ArrayList<>();
+        for (int i = 0; i < Math.min(3, cycleIds.size()); i++) {
+            List<BettingSlot> slots = slotsByCycle.get(cycleIds.get(i));
+            long total = slots.size();
+            long completed = slots.stream()
+                    .filter(s -> s.getPitch().getStatus() == PitchStatus.DONE)
+                    .count();
+            completionRates.add(total > 0 ? (completed * 100.0 / total) : 0.0);
+        }
+        
+        if (completionRates.size() < 2) return "STABLE";
+        
+        double avgChange = 0;
+        for (int i = 1; i < completionRates.size(); i++) {
+            avgChange += (completionRates.get(i-1) - completionRates.get(i));
+        }
+        avgChange /= (completionRates.size() - 1);
+        
+        if (avgChange > 10) return "IMPROVING";
+        if (avgChange < -10) return "DECLINING";
+        return "STABLE";
+    }
+
+    private String getPerformanceRating(double completionRate) {
+        if (completionRate >= 90) return "EXCELLENT";
+        if (completionRate >= 75) return "GOOD";
+        if (completionRate >= 50) return "FAIR";
+        return "NEEDS_IMPROVEMENT";
     }
 }

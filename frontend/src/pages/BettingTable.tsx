@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -19,6 +20,7 @@ import {
   Users,
   ClipboardList,
   XCircle,
+  BarChart3,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -228,6 +230,7 @@ function TeamTrackRow({
 export default function BettingTablePage() {
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
+  const navigate = useNavigate();
   
   const [bettingTable, setBettingTable] = useState<BettingTable | null>(null);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -410,6 +413,16 @@ export default function BettingTablePage() {
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/betting/comparison?cycleId=${selectedCycle}`)}
+            disabled={!selectedCycle}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Pitch Comparison
           </Button>
           
           <Button
