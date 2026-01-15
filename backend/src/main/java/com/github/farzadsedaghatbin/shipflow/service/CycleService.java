@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CycleService {
 
     private final CycleRepository cycleRepository;
@@ -259,6 +261,8 @@ public class CycleService {
         Integer cycleLengthWeeks = settings.getDefaultCycleLengthWeeks();
         
         if (cycleLengthWeeks == null || cycleLengthWeeks <= 0) {
+            log.warn("Invalid or missing default cycle length configuration (value: {}). Falling back to Shape Up standard of 6 weeks.", 
+                    cycleLengthWeeks);
             cycleLengthWeeks = 6; // Fallback to Shape Up standard
         }
         

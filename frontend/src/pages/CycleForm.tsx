@@ -357,13 +357,21 @@ export default function CycleForm() {
                     }}
                     min={startDate || undefined}
                     disabled={useAutoEndDate && !isEdit}
+                    aria-label={
+                      useAutoEndDate && !isEdit
+                        ? 'End date - automatically calculated from start date'
+                        : 'End date'
+                    }
+                    aria-describedby={
+                      useAutoEndDate && !isEdit ? 'endDate-auto-hint' : undefined
+                    }
                     className={fieldErrors.endDate ? 'border-destructive' : ''}
                   />
                   {fieldErrors.endDate && (
                     <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
                   )}
                   {useAutoEndDate && !isEdit && (
-                    <p className="text-xs text-muted-foreground">
+                    <p id="endDate-auto-hint" className="text-xs text-muted-foreground">
                       Automatically calculated from start date
                     </p>
                   )}
