@@ -84,7 +84,12 @@ const PitchComparisonView = () => {
       const performanceResults = await Promise.all(performancePromises);
       const performanceMap: Record<number, TeamPerformanceHistory> = {};
       performanceResults.forEach(result => {
-        performanceMap[result.teamId] = result.data;
+        // Validate that result.data contains expected fields
+        if (result.data && result.data.teamId && result.data.teamName) {
+          performanceMap[result.teamId] = result.data;
+        } else {
+          console.warn(`Invalid performance data for team ${result.teamId}:`, result.data);
+        }
       });
       setTeamPerformance(performanceMap);
 

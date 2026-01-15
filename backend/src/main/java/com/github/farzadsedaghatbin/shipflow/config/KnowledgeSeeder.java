@@ -169,6 +169,7 @@ public class KnowledgeSeeder implements CommandLineRunner {
 
     /**
      * Extract text content from a PDF file.
+     * For memory efficiency with large PDFs, load bytes into memory first.
      */
     private String extractTextFromPdf(InputStream inputStream) throws IOException {
         byte[] bytes = inputStream.readAllBytes();

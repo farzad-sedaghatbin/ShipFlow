@@ -8,7 +8,6 @@ import { useToast } from '../contexts';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Progress } from '../components/ui/progress';
 import {
   Dialog,
   DialogContent,
@@ -279,10 +278,9 @@ export default function CircuitBreakerMonitor() {
                             </span>
                           )}
                         </div>
-                        <div className="relative">
-                          <Progress value={Math.min(cb.utilizationPercentage, 100)} />
+                        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`absolute inset-0 ${getProgressColor(
+                            className={`h-full ${getProgressColor(
                               cb.utilizationPercentage
                             )} rounded-full transition-all`}
                             style={{ width: `${Math.min(cb.utilizationPercentage, 100)}%` }}

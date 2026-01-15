@@ -24,10 +24,10 @@ public class TeamPerformanceHistoryDTO {
     private Integer totalCompletedBets;
     private Double overallCompletionRate; // Percentage
     
-    // Average metrics
+    // Average metrics (some may be null if calculation not yet implemented)
     private Double avgBetsPerCycle;
-    private Double avgWeeksPerBet;
-    private Double avgTimeOverrun; // Percentage (e.g., 10% means tasks took 10% longer than appetite)
+    private Double avgWeeksPerBet; // TODO: Calculate from actual cycle durations and bet counts (nullable until implemented)
+    private Double avgTimeOverrun; // TODO: Implement work log analysis to calculate actual vs appetite - Percentage (nullable until implemented)
     
     // Recent trends (last 3 cycles)
     private String trend; // "IMPROVING", "STABLE", "DECLINING"
