@@ -97,9 +97,9 @@ public class PitchHealthService {
      * - Prevents weighted averaging from masking critical single-factor risks
      * - Example: 150% budget overrun (risk=80) → 80×0.76=60.8 → HIGH risk level
      * 
-     * This ensures that a single severe issue (like critical bugs or budget overrun)
-     * can override weighted scoring and trigger appropriate HIGH/CRITICAL risk levels,
-     * even when other factors are low and would dilute the weighted average.
+     * NOTE: This constant is based on default risk thresholds (MEDIUM=25-49, HIGH=50-69).
+     * If organization settings customize these thresholds significantly, this multiplier
+     * may need adjustment to maintain the intended behavior.
      */
     private static final double MAX_RISK_FACTOR_WEIGHT = 0.76;
 
