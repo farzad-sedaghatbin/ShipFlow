@@ -36,6 +36,7 @@ export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO'
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type TaskCategory = 'PITCH_SCOPE' | 'DEBT_IMPROVEMENT';
+export type DependencyType = 'BLOCKS' | 'DEPENDS_ON' | 'RELATED_TO';
 export type RetroStatus = 'DRAFT' | 'OPEN' | 'CLOSED';
 export type RetroColumnType = 'WENT_WELL' | 'DID_NOT_GO_WELL' | 'TRY_NEXT' | 'ACTIONS';
 export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -530,6 +531,12 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags?: string;
+  
+  // Dependency information
+  blockingTasks?: TaskDependency[];
+  blockedByTasks?: TaskDependency[];
+  blockedByCount?: number;
+  isBlocked?: boolean;
 }
 
 export interface CreateTaskRequest {
@@ -546,6 +553,27 @@ export interface CreateTaskRequest {
   parentTaskId?: number;
   dueDate?: string;
   tags?: string;
+}
+
+// Task Dependency Types
+export interface TaskDependency {
+  id: number;
+  sourceTaskId: number;
+  sourceTaskTitle: string;
+  targetTaskId: number;
+  targetTaskTitle: string;
+  dependencyType: DependencyType;
+  createdAt: string;
+}
+
+export interface CreateTaskDependencyRequest {
+  targetTaskId: number;
+  dependencyType?: DependencyType;
+}
+
+export interface TaskDependencies {
+  blocking: TaskDependency[];
+  blockedBy: TaskDependency[];
 }
 
 export interface TaskStatistics {

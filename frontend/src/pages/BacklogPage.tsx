@@ -16,6 +16,9 @@ import {
   Loader2,
   PlayCircle,
   Eye,
+  AlertCircle,
+  Shield,
+  List,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,6 +75,7 @@ import { Task, Cycle, Person, CreateTaskRequest, TaskStatus, TaskPriority, TaskS
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
+import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 
@@ -111,6 +115,7 @@ export default function BacklogPage() {
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
+  const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
   const [excludeMode] = useState(false);
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status' | 'dueDate' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -149,6 +154,7 @@ export default function BacklogPage() {
   // Multi-select dropdown states
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
+  const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_assigneeDropdownOpen, _setAssigneeDropdownOpen] = useState(false);
 
@@ -273,6 +279,13 @@ export default function BacklogPage() {
           );
         }
         
+        // Apply dependency filter
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -289,12 +302,30 @@ export default function BacklogPage() {
           sortBy,
           sortOrder
         );
-        setTasks(response?.data?.content || []);
+        let filteredTasks = response?.data?.content || [];
+        
+        // Apply dependency filter
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else {
         // Use category-specific endpoint
         response = await taskService.getByCycleIdAndCategory(selectedCycle, activeCategory, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(response?.data?.content || []);
+        let filteredTasks = response?.data?.content || [];
+        
+        // Apply dependency filter
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       }
     } catch (error) {
@@ -342,16 +373,16 @@ export default function BacklogPage() {
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
-      // Only allow creating new task if a cycle is selected
-      if (!selectedCycle) {
-        toast.error('Please select a cycle first');
+      // Only allow creating new task if a specific cycle is selected
+      if (!selectedCycle || selectedCycle === 'all') {
+        toast.error('Please select a specific cycle to create a task');
         return;
       }
       setEditingTask(null);
       setFormData({
         title: '',
         description: '',
-        cycleId: selectedCycle === 'all' ? 0 : selectedCycle,
+        cycleId: selectedCycle,
         status: 'BACKLOG',
         priority: 'MEDIUM',
         estimateHours: undefined,
@@ -473,6 +504,10 @@ export default function BacklogPage() {
       errors.title = 'Task title must be at least 3 characters';
     }
 
+    if (!formData.cycleId || formData.cycleId === 0) {
+      errors.cycleId = 'Please select a cycle';
+    }
+
     if (formData.estimateHours !== undefined && formData.estimateHours < 0) {
       errors.estimateHours = 'Estimate hours must be a positive number';
     }
@@ -542,6 +577,18 @@ export default function BacklogPage() {
     }
   };
 
+  const handleQuickPriorityChange = async (taskId: number, newPriority: TaskPriority) => {
+    try {
+      await taskService.updatePriority(taskId, newPriority);
+      toast.success('Priority updated');
+      loadTasks();
+      loadStatistics();
+    } catch (error: any) {
+      const message = getUserFriendlyError(error);
+      toast.error(message);
+    }
+  };
+
   const getStatusBadgeVariant = (status: TaskStatus) => {
     return statusOptions.find(s => s.value === status)?.variant || 'secondary';
   };
@@ -594,13 +641,26 @@ export default function BacklogPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button 
-            onClick={() => handleOpenDialog()} 
-            disabled={selectedCycle === 'all' || !selectedCycle}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Task
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button 
+                    onClick={() => handleOpenDialog()} 
+                    disabled={selectedCycle === 'all' || !selectedCycle}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Task
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {(selectedCycle === 'all' || !selectedCycle) && (
+                <TooltipContent>
+                  <p>Please select a specific cycle to create a task</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -730,7 +790,45 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) && (
+            {/* Dependency Filter */}
+            <DropdownMenu open={dependencyDropdownOpen} onOpenChange={setDependencyDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Dependencies {dependencyFilter !== 'all' && `(${dependencyFilter})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onSelect={() => setDependencyFilter('all')}
+                >
+                  <Checkbox
+                    checked={dependencyFilter === 'all'}
+                    className="mr-2"
+                  />
+                  All Tasks
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setDependencyFilter('blocked')}
+                >
+                  <Checkbox
+                    checked={dependencyFilter === 'blocked'}
+                    className="mr-2"
+                  />
+                  Blocked Tasks
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setDependencyFilter('blocking')}
+                >
+                  <Checkbox
+                    checked={dependencyFilter === 'blocking'}
+                    className="mr-2"
+                  />
+                  Blocking Tasks
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all') && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -738,6 +836,7 @@ export default function BacklogPage() {
                   setStatusFilter([]);
                   setPriorityFilter([]);
                   setAssigneeFilter([]);
+                  setDependencyFilter('all');
                 }}
               >
                 Clear filters
@@ -1033,6 +1132,26 @@ export default function BacklogPage() {
                 </div>
               )}
 
+              {/* Task Dependencies */}
+              <div className="border-t pt-4">
+                <TaskDependencies 
+                  taskId={viewDialog.task.id} 
+                  cycleId={viewDialog.task.cycleId}
+                  onDependenciesChange={() => {
+                    if (viewDialog.task) {
+                      // Reload the task to get updated dependency info
+                      taskService.getById(viewDialog.task.id).then(response => {
+                        setViewDialog({ open: true, task: response.data });
+                        // Also refresh the main task list
+                        loadTasks();
+                      }).catch(error => {
+                        console.error('Failed to reload task:', error);
+                      });
+                    }
+                  }}
+                />
+              </div>
+
               {/* Subtasks */}
               {subtasks.length > 0 && (
                 <div>
@@ -1247,6 +1366,75 @@ export default function BacklogPage() {
                         >
                           {task.title}
                         </Link>
+                        {task.isBlocked && task.blockedByCount && task.blockedByCount > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="destructive" className="h-5 px-1.5">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  {task.blockedByCount}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="font-semibold mb-1">Blocked by {task.blockedByCount} task{task.blockedByCount > 1 ? 's' : ''}:</p>
+                                <ul className="text-sm space-y-0.5">
+                                  {task.blockedByTasks?.slice(0, 3).map((blocker, idx) => (
+                                    <li key={idx}>• {blocker.sourceTaskTitle}</li>
+                                  ))}
+                                  {task.blockedByTasks && task.blockedByTasks.length > 3 && (
+                                    <li className="text-muted-foreground">... and {task.blockedByTasks.length - 3} more</li>
+                                  )}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {task.blockingTasks && task.blockingTasks.length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="h-5 px-1.5">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  {task.blockingTasks.length}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="font-semibold mb-1">Blocking {task.blockingTasks.length} task{task.blockingTasks.length > 1 ? 's' : ''}:</p>
+                                <ul className="text-sm space-y-0.5">
+                                  {task.blockingTasks?.slice(0, 3).map((blocking, idx) => (
+                                    <li key={idx}>• {blocking.targetTaskTitle}</li>
+                                  ))}
+                                  {task.blockingTasks && task.blockingTasks.length > 3 && (
+                                    <li className="text-muted-foreground">... and {task.blockingTasks.length - 3} more</li>
+                                  )}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {!task.parentTaskId && task.children && task.children.length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="h-5 px-1.5">
+                                  <List className="h-3 w-3 mr-1" />
+                                  {task.children.length}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="font-semibold mb-1">{task.children.length} subtask{task.children.length > 1 ? 's' : ''}:</p>
+                                <ul className="text-sm space-y-0.5">
+                                  {task.children.slice(0, 3).map((child, idx) => (
+                                    <li key={idx}>• {child.title}</li>
+                                  ))}
+                                  {task.children.length > 3 && (
+                                    <li className="text-muted-foreground">... and {task.children.length - 3} more</li>
+                                  )}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       {task.description && (
                         <div className="text-sm text-muted-foreground line-clamp-1">
@@ -1280,9 +1468,28 @@ export default function BacklogPage() {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getPriorityBadgeVariant(task.priority)}>
-                      {priorityOptions.find(p => p.value === task.priority)?.label || task.priority}
-                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-0">
+                          <Badge variant={getPriorityBadgeVariant(task.priority)}>
+                            {priorityOptions.find(p => p.value === task.priority)?.label || task.priority}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {priorityOptions.map((priority) => (
+                          <DropdownMenuItem
+                            key={priority.value}
+                            onClick={() => handleQuickPriorityChange(task.id, priority.value)}
+                          >
+                            <Badge variant={priority.variant} className="mr-2">
+                              {priority.label}
+                            </Badge>
+                            {task.priority === priority.value && <Check className="ml-auto h-4 w-4" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     {task.assigneeName ? (

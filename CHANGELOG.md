@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Task Dependencies**: Lightweight dependency tracking system for identifying blockers
+  - Three dependency types: BLOCKS, DEPENDS_ON, RELATED_TO
+  - Automatic circular dependency detection using DFS algorithm
+  - Visual blocker indicators in task lists showing blocked task count
+  - **Enhanced blocker tooltips**: Hover over blocker badge to see up to 3 blocker task names (with "... and X more" for additional)
+  - **Blocking indicators**: Green shield badge showing how many tasks this task is blocking
+  - **Subtask indicators**: List badge showing subtask count with tooltip listing subtask titles
+  - **Dependency filtering**: Filter backlog by "All Tasks", "Blocked Tasks", or "Blocking Tasks"
+  - Dedicated dependency management section in task detail pages with improved UX
+  - Quick Guide in dependency dialog explaining which type to select based on task status
+  - Result preview showing what will happen when dependency is added
+  - REST API endpoints for managing dependencies
+  - Same-cycle validation to prevent cross-cycle dependencies
+  - Comprehensive test coverage (unit and integration tests)
+  - Database migration V52 for task_dependencies table
+
+### Changed
+- **Backlog View**: Now displays blocker badges (🔴 blocked) and blocking badges (🛡️ blocking) for all tasks
+- **Task View Dialog**: Added dependency management section to the quick view dialog (eye icon) so users can add/remove dependencies without navigating away
+- **Task List UX**: Blocker badge tooltip now shows actual task titles instead of just count
+- **Backend**: Task DTOs now include children (subtasks) array for displaying subtask count and details
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
@@ -12,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +39,7 @@ public class TaskService {
     private final CycleRepository cycleRepository;
     private final PersonRepository personRepository;
     private final UserRepository userRepository;
+    private final TaskDependencyRepository taskDependencyRepository;
     private final DashboardNotificationService notificationService;
 
     public List<TaskDTO> getAllTasks() {
@@ -305,6 +309,15 @@ public class TaskService {
         return toDTO(saved);
     }
 
+    public TaskDTO updateTaskPriority(Long id, TaskPriority priority) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+
+        task.setPriority(priority);
+        Task saved = taskRepository.save(task);
+        return toDTO(saved);
+    }
+
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
             throw new IllegalArgumentException("Task not found with id: " + id);
@@ -499,6 +512,59 @@ public class TaskService {
     }
 
     private TaskDTO toDTO(Task task) {
+        // Get dependency information with null safety
+        List<TaskDependencyDTO> blocking = task.getOutgoingDependencies() != null 
+                ? task.getOutgoingDependencies().stream()
+                        .map(dep -> TaskDependencyDTO.builder()
+                                .id(dep.getId())
+                                .sourceTaskId(dep.getSourceTask().getId())
+                                .sourceTaskTitle(dep.getSourceTask().getTitle())
+                                .targetTaskId(dep.getTargetTask().getId())
+                                .targetTaskTitle(dep.getTargetTask().getTitle())
+                                .dependencyType(dep.getDependencyType())
+                                .createdAt(dep.getCreatedAt())
+                                .build())
+                        .collect(Collectors.toList())
+                : new ArrayList<>();
+
+        List<TaskDependencyDTO> blockedBy = task.getIncomingDependencies() != null
+                ? task.getIncomingDependencies().stream()
+                        .map(dep -> TaskDependencyDTO.builder()
+                                .id(dep.getId())
+                                .sourceTaskId(dep.getSourceTask().getId())
+                                .sourceTaskTitle(dep.getSourceTask().getTitle())
+                                .targetTaskId(dep.getTargetTask().getId())
+                                .targetTaskTitle(dep.getTargetTask().getTitle())
+                                .dependencyType(dep.getDependencyType())
+                                .createdAt(dep.getCreatedAt())
+                                .build())
+                        .collect(Collectors.toList())
+                : new ArrayList<>();
+
+        // Map children (subtasks) - only include basic info to avoid deep recursion
+        List<TaskDTO> children = task.getChildren() != null
+                ? task.getChildren().stream()
+                        .map(child -> TaskDTO.builder()
+                                .id(child.getId())
+                                .title(child.getTitle())
+                                .description(child.getDescription())
+                                .status(child.getStatus())
+                                .priority(child.getPriority())
+                                .category(child.getCategory())
+                                .estimateHours(child.getEstimateHours())
+                                .actualHours(child.getActualHours())
+                                .cycleId(child.getCycle().getId())
+                                .assigneeId(child.getAssignee() != null ? child.getAssignee().getId() : null)
+                                .assigneeName(child.getAssignee() != null ? child.getAssignee().getName() : null)
+                                .parentTaskId(child.getParentTask().getId())
+                                .parentTaskTitle(child.getParentTask().getTitle())
+                                .dueDate(child.getDueDate())
+                                .createdAt(child.getCreatedAt())
+                                .updatedAt(child.getUpdatedAt())
+                                .build())
+                        .collect(Collectors.toList())
+                : new ArrayList<>();
+
         return TaskDTO.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -528,6 +594,11 @@ public class TaskService {
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .tags(task.getTags())
+                .children(children)
+                .blockingTasks(blocking)
+                .blockedByTasks(blockedBy)
+                .blockedByCount(blockedBy.size())
+                .isBlocked(!blockedBy.isEmpty())
                 .build();
     }
 }

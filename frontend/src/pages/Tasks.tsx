@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  AlertCircle,
+  List,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1184,6 +1186,52 @@ function TaskTable({
                       </div>
                     )}
                     <p className="font-medium">{task.title}</p>
+                    {task.isBlocked && task.blockedByCount && task.blockedByCount > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="destructive" className="ml-2 h-5 px-1.5">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              {task.blockedByCount}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="font-semibold mb-1">Blocked by {task.blockedByCount} task{task.blockedByCount > 1 ? 's' : ''}:</p>
+                            <ul className="text-sm space-y-0.5">
+                              {task.blockedByTasks?.slice(0, 3).map((blocker, idx) => (
+                                <li key={idx}>• {blocker.sourceTaskTitle}</li>
+                              ))}
+                              {task.blockedByTasks && task.blockedByTasks.length > 3 && (
+                                <li className="text-muted-foreground">... and {task.blockedByTasks.length - 3} more</li>
+                              )}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {!task.parentTaskId && task.children && task.children.length > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="ml-2 h-5 px-1.5">
+                              <List className="h-3 w-3 mr-1" />
+                              {task.children.length}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="font-semibold mb-1">{task.children.length} subtask{task.children.length > 1 ? 's' : ''}:</p>
+                            <ul className="text-sm space-y-0.5">
+                              {task.children.slice(0, 3).map((child, idx) => (
+                                <li key={idx}>• {child.title}</li>
+                              ))}
+                              {task.children.length > 3 && (
+                                <li className="text-muted-foreground">... and {task.children.length - 3} more</li>
+                              )}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                   {task.parentTaskTitle && (
                     <p className="text-xs text-muted-foreground ml-5">

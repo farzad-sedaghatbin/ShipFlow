@@ -31,6 +31,13 @@ A modern project management application implementing the [Shape Up](https://base
     - Inline editing of Shape Up fields on pitch detail page
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+  - **Task Dependencies**: Lightweight dependency tracking to identify blockers
+    - Three dependency types: BLOCKS, DEPENDS_ON, RELATED_TO
+    - Automatic circular dependency detection using depth-first search
+    - Visual blocker indicators in task lists and detail pages
+    - Same-cycle validation for dependency relationships
+    - Clean UI for adding/removing dependencies
+    - See [Task Dependencies Guide](TASK_DEPENDENCIES.md) for details
 - **Document Management**: Upload, preview, and download project documents
   - Support for PDF, DOCX, DOC, TXT, and MD files
   - Text extraction from uploaded documents
@@ -228,6 +235,7 @@ AI_CACHE_REDIS_PASSWORD=secure-password
 ## 📖 Documentation
 
 - [Contributing Guide](CONTRIBUTING.md)
+- [Task Dependencies Guide](TASK_DEPENDENCIES.md)
 - [Changelog](CHANGELOG.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 

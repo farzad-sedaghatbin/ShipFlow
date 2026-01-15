@@ -1,22 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Task, TaskStatus, TaskPriority } from '../types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person } from '../types';
 import { taskService } from '../services/taskService';
+import { cycleService } from '../services/cycleService';
+import { personService } from '../services/personService';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
+import TaskDependencies from '../components/TaskDependencies';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
@@ -43,13 +58,48 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [formData, setFormData] = useState<CreateTaskRequest>({
+    title: '',
+    description: '',
+    cycleId: 0,
+    status: 'BACKLOG',
+    priority: 'MEDIUM',
+    estimateHours: undefined,
+    assigneeId: undefined,
+    pairAssigneeId: undefined,
+    dueDate: undefined,
+    tags: '',
+    category: 'PITCH_SCOPE',
+  });
+  const [dueDate, setDueDate] = useState<Dayjs | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (taskId) {
       loadTask(parseInt(taskId));
       loadActiveTimer();
+      loadInitialData();
     }
   }, [taskId]);
+
+  const loadInitialData = async () => {
+    try {
+      const [cyclesRes, personsRes] = await Promise.all([
+        cycleService.getActive(),
+        personService.getAll(),
+      ]);
+      setCycles(cyclesRes.data);
+      setPersons(personsRes);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
+  };
 
   const loadTask = async (id: number) => {
     try {
@@ -97,7 +147,68 @@ export default function TaskDetailPage() {
   };
 
   const handleEdit = () => {
-    navigate(`/backlog?edit=${task?.id}`);
+    if (!task) return;
+    
+    // Populate form with current task data
+    setFormData({
+      title: task.title,
+      description: task.description || '',
+      cycleId: task.cycleId,
+      status: task.status,
+      priority: task.priority,
+      estimateHours: task.estimateHours,
+      assigneeId: task.assigneeId,
+      pairAssigneeId: task.pairAssigneeId,
+      dueDate: task.dueDate,
+      tags: task.tags || '',
+      category: task.category,
+      parentTaskId: task.parentTaskId,
+    });
+    
+    if (task.dueDate) {
+      setDueDate(dayjs(task.dueDate));
+    } else {
+      setDueDate(null);
+    }
+    
+    setFieldErrors({});
+    setEditDialogOpen(true);
+  };
+
+  const validateTaskForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!formData.title.trim()) {
+      errors.title = 'Title is required';
+    }
+    if (!formData.cycleId || formData.cycleId === 0) {
+      errors.cycleId = 'Cycle is required';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveTask = async () => {
+    if (!validateTaskForm() || !task) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const data = {
+        ...formData,
+        dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined,
+      };
+      
+      await taskService.update(task.id, data);
+      toast.success('Task updated successfully');
+      setEditDialogOpen(false);
+      loadTask(task.id);
+    } catch (error: any) {
+      const message = getUserFriendlyError(error);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddSubtask = () => {
@@ -289,6 +400,13 @@ export default function TaskDetailPage() {
       {/* GitHub Integration */}
       <GitHubLinksCard taskId={task.id} />
 
+      {/* Task Dependencies */}
+      <TaskDependencies 
+        taskId={task.id} 
+        cycleId={task.cycleId}
+        onDependenciesChange={() => loadTask(task.id)}
+      />
+
       {/* Subtasks */}
       {subtasks.length > 0 && (
         <Card>
@@ -425,6 +543,202 @@ export default function TaskDetailPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogDescription>
+              Update the task details below
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-title">Title *</Label>
+              <Input
+                id="edit-title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Task title"
+                className={fieldErrors.title ? 'border-destructive' : ''}
+              />
+              {fieldErrors.title && (
+                <p className="text-sm text-destructive">{fieldErrors.title}</p>
+              )}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Task description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status *</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger id="edit-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-priority">Priority *</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: TaskPriority) => setFormData({ ...formData, priority: value })}
+                >
+                  <SelectTrigger id="edit-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-cycle">Cycle *</Label>
+              <Select
+                value={formData.cycleId.toString()}
+                onValueChange={(value) => setFormData({ ...formData, cycleId: parseInt(value) })}
+              >
+                <SelectTrigger id="edit-cycle" className={fieldErrors.cycleId ? 'border-destructive' : ''}>
+                  <SelectValue placeholder="Select cycle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                      {cycle.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fieldErrors.cycleId && (
+                <p className="text-sm text-destructive">{fieldErrors.cycleId}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-assignee">Assignee</Label>
+                <Select
+                  value={formData.assigneeId?.toString() || 'none'}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, assigneeId: value === 'none' ? undefined : parseInt(value) })
+                  }
+                >
+                  <SelectTrigger id="edit-assignee">
+                    <SelectValue placeholder="Select assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {persons.map((person) => (
+                      <SelectItem key={person.id} value={person.id.toString()}>
+                        {person.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-pair-assignee">Pair Assignee</Label>
+                <Select
+                  value={formData.pairAssigneeId?.toString() || 'none'}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, pairAssigneeId: value === 'none' ? undefined : parseInt(value) })
+                  }
+                >
+                  <SelectTrigger id="edit-pair-assignee">
+                    <SelectValue placeholder="Select pair assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {persons.map((person) => (
+                      <SelectItem key={person.id} value={person.id.toString()}>
+                        {person.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-estimate">Estimate (hours)</Label>
+                <Input
+                  id="edit-estimate"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.estimateHours || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      estimateHours: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-due-date">Due Date</Label>
+                <Input
+                  id="edit-due-date"
+                  type="date"
+                  value={dueDate ? dueDate.format('YYYY-MM-DD') : ''}
+                  onChange={(e) => setDueDate(e.target.value ? dayjs(e.target.value) : null)}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tags">Tags</Label>
+              <Input
+                id="edit-tags"
+                value={formData.tags}
+                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                placeholder="comma, separated, tags"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTask} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
