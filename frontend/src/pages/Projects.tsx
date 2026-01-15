@@ -335,7 +335,7 @@ export default function Projects() {
             description={
               searchTerm
                 ? `No projects match "${searchTerm}". Try a different search term.`
-                : 'Create your first project to get started with Shape Up cycles and track your team\'s progress.'
+                : "Create your first project to get started with Shape Up cycles and track your team's progress."
             }
             action={
               !searchTerm
