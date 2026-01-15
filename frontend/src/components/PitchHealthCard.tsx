@@ -121,7 +121,11 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
       >
         {/* Critical indicator stripe */}
         {isCritical && (
-          <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+          <div
+            className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1"
+            role="status"
+            aria-label="Critical pitch health status"
+          >
             <AlertTriangle className="h-3 w-3 animate-pulse" />
             CRITICAL
           </div>

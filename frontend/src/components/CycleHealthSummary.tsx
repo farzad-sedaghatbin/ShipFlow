@@ -146,7 +146,10 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
           )}>
             <CardContent className="p-4 text-center relative">
               {summary.criticalPitches > 0 && (
-                <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md rounded-tr-md">
+              <div
+                className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md rounded-tr-md"
+                aria-label={`${summary.criticalPitches} critical pitches need action`}
+              >
                   ACTION NEEDED
                 </div>
               )}
@@ -160,7 +163,10 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
               )}>{summary.criticalPitches}</p>
               <p className="text-sm text-muted-foreground font-semibold">Critical</p>
               {summary.criticalPitches > 0 && (
-                <p className="text-xs text-red-600 font-bold mt-1 animate-pulse">⚠ Urgent!</p>
+              <p className="text-xs text-red-600 font-bold mt-1 animate-pulse">
+                <span className="sr-only">Warning: </span>
+                <span aria-hidden="true">⚠</span> Urgent!
+              </p>
               )}
             </CardContent>
           </Card>
@@ -270,7 +276,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-red-600 mb-1">
-                  ⚠️ IMMEDIATE ATTENTION REQUIRED
+                IMMEDIATE ATTENTION REQUIRED
                 </p>
                 <p className="text-sm text-red-600">
                   {summary.criticalPitches} critical {summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate action
