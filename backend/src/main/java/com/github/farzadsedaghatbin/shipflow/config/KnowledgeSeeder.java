@@ -161,7 +161,7 @@ public class KnowledgeSeeder implements CommandLineRunner {
             log.info("Shape Up methodology ingested successfully ({} knowledge chunks)", chunkCount);
 
         } catch (IOException e) {
-            log.error("Failed to read Shape Up PDF: {}", e.getMessage());
+            log.error("Failed to read Shape Up PDF: {}", e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to ingest Shape Up methodology: {}", e.getMessage(), e);
         }

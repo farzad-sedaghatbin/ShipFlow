@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -587,13 +588,11 @@ public class DashboardNotificationService {
      */
     public void notifyCircuitBreakerTriggered(Pitch pitch) {
         if (pitch.getTeam() == null) {
+            log.warn("Cannot send circuit breaker notifications for pitch {} - no team assigned", pitch.getId());
             return;
         }
 
-        // Notify team members
-        List<User> teamMembers = pitch.getTeam().getAssignments().stream()
-                .map(assignment -> assignment.getPerson().getUser())
-                .toList();
+        List<User> teamMembers = getTeamMembers(pitch.getTeam());
 
         for (User user : teamMembers) {
             createNotification(
@@ -609,7 +608,17 @@ public class DashboardNotificationService {
             );
         }
 
-        log.info("Created circuit breaker triggered notifications for pitch {}", pitch.getId());
+        String slackMessage = String.format("⚠️ Circuit Breaker triggered for pitch '%s' - exceeded time budget", pitch.getTitle());
+        slackService.sendNotification(
+                "CIRCUIT_BREAKER_TRIGGERED",
+                slackMessage,
+                null,
+                "PITCH",
+                pitch.getId()
+        );
+
+        log.info("Created circuit breaker triggered notifications for pitch {} ({} team members, Slack sent)",
+                pitch.getId(), teamMembers.size());
     }
 
     /**
@@ -617,13 +626,11 @@ public class DashboardNotificationService {
      */
     public void notifyPitchKilled(Pitch pitch, String reason) {
         if (pitch.getTeam() == null) {
+            log.warn("Cannot send pitch killed notifications for pitch {} - no team assigned", pitch.getId());
             return;
         }
 
-        // Notify team members
-        List<User> teamMembers = pitch.getTeam().getAssignments().stream()
-                .map(assignment -> assignment.getPerson().getUser())
-                .toList();
+        List<User> teamMembers = getTeamMembers(pitch.getTeam());
 
         for (User user : teamMembers) {
             createNotification(
@@ -638,7 +645,31 @@ public class DashboardNotificationService {
             );
         }
 
-        log.info("Created pitch killed notifications for pitch {}", pitch.getId());
+        String slackMessage = String.format("🛑 Pitch '%s' has been permanently cancelled. Reason: %s", pitch.getTitle(), reason);
+        slackService.sendNotification(
+                "PITCH_KILLED",
+                slackMessage,
+                null,
+                "PITCH",
+                pitch.getId()
+        );
+
+        log.info("Created pitch killed notifications for pitch {} ({} team members, Slack sent)",
+                pitch.getId(), teamMembers.size());
+    }
+
+    /**
+     * Helper method to safely get team members with null checks
+     */
+    private List<User> getTeamMembers(Team team) {
+        if (team.getAssignments() == null) {
+            return Collections.emptyList();
+        }
+
+        return team.getAssignments().stream()
+                .filter(assignment -> assignment.getPerson() != null && assignment.getPerson().getUser() != null)
+                .map(assignment -> assignment.getPerson().getUser())
+                .toList();
     }
 
     private DashboardNotificationDTO toDTO(DashboardNotification notification) {

@@ -85,7 +85,7 @@ export default function CircuitBreakerMonitor() {
 
     try {
       await circuitBreakerService.kill(killDialog.pitch.pitchId, killReason);
-      showSuccess('Pitch killed');
+      showSuccess('Pitch permanently cancelled due to overflow');
       setKillDialog({ open: false, pitch: null });
       setKillReason('');
       loadData();
