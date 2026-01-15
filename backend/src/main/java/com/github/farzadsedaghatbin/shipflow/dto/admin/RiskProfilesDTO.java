@@ -105,6 +105,11 @@ public class RiskProfilesDTO {
                         .scopeWeight(profile.getScopeWeight())
                         .timeWeight(profile.getTimeWeight())
                         .build())
-                .orElse(OrganizationSettingsDTO.RiskWeights.builder().build());  // Returns default
+                .orElse(OrganizationSettingsDTO.RiskWeights.builder()
+                        .budgetWeight(25)
+                        .bugsWeight(30)
+                        .scopeWeight(25)
+                        .timeWeight(20)
+                        .build());
     }
 }
