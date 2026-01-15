@@ -226,7 +226,7 @@ export const QAPanel: React.FC<QAPanelProps> = ({
           {/* Messages Area */}
           <div 
             className={cn(
-              "flex-1 overflow-y-auto overflow-x-hidden p-4 bg-background",
+              "flex-1 overflow-y-auto overflow-x-auto p-4 bg-background",
               variant === 'dialog' ? "min-h-[200px] max-h-[400px]" : "min-h-[200px] max-h-[350px]"
             )}
           >
@@ -268,9 +268,9 @@ export const QAPanel: React.FC<QAPanelProps> = ({
                       ) : (
                         <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                       )}
-                      <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex-1 min-w-0">
                         {msg.type === 'answer' ? (
-                          <Markdown content={msg.text} className="text-sm" />
+                          <Markdown content={msg.text} className="text-sm break-words" />
                         ) : (
                           <p className="text-sm whitespace-pre-wrap break-words">
                             {msg.text}
@@ -319,15 +319,15 @@ export const QAPanel: React.FC<QAPanelProps> = ({
                             {/* Sources expansion */}
                             <Collapsible open={showSources === idx}>
                               <CollapsibleContent>
-                                <div className="mt-2 p-2 bg-muted rounded-lg">
+                                <div className="mt-2 p-2 bg-muted rounded-lg break-words">
                                   <span className="text-xs font-semibold">Sources:</span>
                                   {msg.sources?.map((source, sIdx) => (
                                     <div key={sIdx} className="mt-1">
-                                      <span className="text-xs text-primary">
+                                      <span className="text-xs text-primary break-words">
                                         • {source.title || source.entityType}
                                       </span>
                                       {source.snippet && (
-                                        <p className="text-xs text-muted-foreground pl-3 italic truncate">
+                                        <p className="text-xs text-muted-foreground pl-3 italic break-words whitespace-normal">
                                           "{source.snippet}"
                                         </p>
                                       )}
@@ -506,7 +506,7 @@ export const QAPanel: React.FC<QAPanelProps> = ({
   if (variant === 'dialog') {
     return (
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
-        <DialogContent className="sm:max-w-2xl h-[80vh] max-h-[700px] p-0 overflow-hidden">
+        <DialogContent className="max-w-[90vw] sm:max-w-5xl h-[80vh] max-h-[700px] p-0 overflow-hidden">
           {content}
         </DialogContent>
       </Dialog>

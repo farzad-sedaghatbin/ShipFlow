@@ -9,7 +9,8 @@ import {
     HelpCircle,
     Beaker,
     RotateCcw,
-    BarChart3
+    BarChart3,
+    Zap
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,6 +72,13 @@ const guides: GuideCard[] = [
         icon: RotateCcw,
         path: '/help/retrospectives',
         color: 'text-pink-500',
+    },
+    {
+        title: 'Circuit Breaker',
+        description: 'Detect and respond to scope overflow using Shape Up\'s fixed-time safety valve.',
+        icon: Zap,
+        path: '/help/circuit-breaker',
+        color: 'text-amber-500',
     },
     {
         title: 'Reports & Dashboards',

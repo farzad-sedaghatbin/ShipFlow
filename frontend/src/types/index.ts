@@ -957,3 +957,4 @@ export interface CycleRetroStatus {
   message: string;
 }
 export * from './betting-analytics';
+export * from './circuit-breaker';

@@ -275,6 +275,45 @@ class RetroControllerIntegrationTest {
         }
 
         @Test
+        @DisplayName("Add anonymous item to retrospective succeeds")
+        void addAnonymousItemSucceeds() throws Exception {
+            CreateRetroItemRequest request = CreateRetroItemRequest.builder()
+                    .content("Sensitive feedback that should be anonymous")
+                    .columnType(RetroColumnType.DID_NOT_GO_WELL)
+                    .retrospectiveId(openRetro.getId())
+                    .isAnonymous(true)
+                    .build();
+
+            mockMvc.perform(post("/api/retros/items")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.content", is("Sensitive feedback that should be anonymous")))
+                    .andExpect(jsonPath("$.columnType", is("DID_NOT_GO_WELL")))
+                    .andExpect(jsonPath("$.isAnonymous", is(true)))
+                    .andExpect(jsonPath("$.author").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("Add non-anonymous item shows author")
+        void addNonAnonymousItemShowsAuthor() throws Exception {
+            CreateRetroItemRequest request = CreateRetroItemRequest.builder()
+                    .content("Public feedback with attribution")
+                    .columnType(RetroColumnType.WENT_WELL)
+                    .retrospectiveId(openRetro.getId())
+                    .isAnonymous(false)
+                    .build();
+
+            mockMvc.perform(post("/api/retros/items")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.content", is("Public feedback with attribution")))
+                    .andExpect(jsonPath("$.isAnonymous", is(false)))
+                    .andExpect(jsonPath("$.author", notNullValue()));
+        }
+
+        @Test
         @DisplayName("Get items by retrospective succeeds")
         void getItemsSucceeds() throws Exception {
             retroItemRepository.save(RetroItem.builder()

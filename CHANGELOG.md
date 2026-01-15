@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Circuit Breaker - Shape Up Safety Valve**:
+  - Automated overflow detection with configurable thresholds (default 80%, range 50-150%)
+  - Real-time budget monitoring: tracks work logs against pitch appetite in hours
+  - Color-coded severity indicators: blue (<80%), yellow (80-89%), orange (90-99%), red (≥100%)
+  - Trigger circuit breaker mechanism: flag pitches for team discussion with reason documentation
+  - Kill pitch capability: permanently cancel pitches with CIRCUIT_BREAKER status
+  - Resolve circuit breaker workflow: clear flags and update status when scope is cut
+  - Team notifications: dashboard alerts for all pitch stakeholders on trigger/kill events
+  - CircuitBreakerDTO with 12 fields: appetite, hours spent, utilization %, overflow %, status
+  - 5 REST endpoints: detect overflow, get triggered, trigger, kill, resolve
+  - Integration with RiskAnalysisService: +50 risk points for circuit breaker status
+  - Comprehensive help guide: `/help/circuit-breaker` with Shape Up principles
+  - Frontend monitor page: `/cycles/:id/circuit-breaker` with threshold slider and action dialogs
+  - Added V50 database migration for 3 new Pitch fields: isCircuitBreakerTriggered, circuitBreakerReason, circuitBreakerDate
+  - Full test coverage: CircuitBreakerControllerIntegrationTest with 15 test cases
+
+- **Anonymous Retrospective Submissions**:
+  - Added `isAnonymous` boolean field to RetroItem entity for psychological safety
+  - Checkbox option in retro board UI: "Post anonymously"
+  - Author attribution hidden when `isAnonymous=true` (author field set to null)
+  - Backend validation: CreateRetroItemRequest and RetroItemDTO updated
+  - Frontend state management: per-column isAnonymous tracking
+  - Database migration V49: `is_anonymous` column with index on RetroItem table
+  - Updated RetrospectivesGuide.tsx with anonymous submission documentation
+  - Test coverage: RetroControllerIntegrationTest with 3 anonymous-specific test cases
+
 - **Navigation & UX Refinements**:
   - Added comprehensive project detail page with cycles list, teams, and statistics
   - Implemented search functionality across Projects, Teams, Retrospectives, and Pitch Board pages
