@@ -81,6 +81,25 @@ import java.util.stream.Collectors;
 public class PitchHealthService {
 
     private static final double HOURS_PER_DAY = 8.0;
+    
+    /**
+     * Individual risk factor multiplier for hybrid risk scoring.
+     * 
+     * This value (0.76 = 76%) determines the balance between weighted average risk
+     * and maximum individual risk factor when calculating final risk scores.
+     * 
+     * WHY 76%?
+     * - Must be > 60% to ensure a risk factor score of 80 (severe) crosses the MEDIUM threshold (60)
+     * - 0.75 (75%) results in exactly 60 (80 × 0.75 = 60), which fails boundary conditions
+     * - 0.76 (76%) yields 60.8 (80 × 0.76 = 60.8), safely exceeding the MEDIUM threshold
+     * - Prevents weighted averaging from masking critical single-factor risks
+     * - Example: 150% budget overrun (risk=80) → 80×0.76=60.8 → HIGH risk level
+     * 
+     * This ensures that a single severe issue (like critical bugs or budget overrun)
+     * can override weighted scoring and trigger appropriate HIGH/CRITICAL risk levels,
+     * even when other factors are low and would dilute the weighted average.
+     */
+    private static final double INDIVIDUAL_RISK_FACTOR_MULTIPLIER = 0.76;
 
     private final PitchRepository pitchRepository;
     private final CycleRepository cycleRepository;
@@ -430,9 +449,9 @@ public class PitchHealthService {
         
         // Use the maximum of:
         // 1. Weighted average (honors user's importance ratings)
-        // 2. 76% of max individual risk (ensures severe single issues are reflected)
+        // 2. Individual risk factor multiplier (ensures severe single issues are reflected)
         // This allows both weighted importance and critical single factors to drive risk level
-        double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * 0.76);
+        double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * INDIVIDUAL_RISK_FACTOR_MULTIPLIER);
         
         // Determine risk level from blended score (using configurable thresholds)
         if (finalRiskScore > thresholds.getHighMax()) {

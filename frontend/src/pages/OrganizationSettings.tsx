@@ -33,6 +33,13 @@ const DEFAULT_RISK_THRESHOLDS: RiskThresholds = {
   highMax: 85,
 };
 
+const DEFAULT_RISK_WEIGHTS = {
+  budgetWeight: 25,
+  bugsWeight: 30,
+  scopeWeight: 25,
+  timeWeight: 20,
+};
+
 const DEFAULT_COLORS: ColorSettings = {
   appetiteHours: '#3B82F6',
   actualHours: '#10B981',
@@ -169,7 +176,7 @@ export default function OrganizationSettingsPage() {
   };
 
   const updateRiskWeight = (field: string, value: number) => {
-    const currentWeights = formData.riskWeights || { budgetWeight: 25, bugsWeight: 30, scopeWeight: 25, timeWeight: 20 };
+    const currentWeights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
     setFormData({
       ...formData,
       riskWeights: {
@@ -216,7 +223,7 @@ export default function OrganizationSettingsPage() {
   };
 
   const getRiskWeightsSum = () => {
-    const weights = formData.riskWeights || { budgetWeight: 25, bugsWeight: 30, scopeWeight: 25, timeWeight: 20 };
+    const weights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
     return weights.budgetWeight + weights.bugsWeight + weights.scopeWeight + weights.timeWeight;
   };
 
