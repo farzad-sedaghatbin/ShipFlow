@@ -169,7 +169,10 @@ public class KnowledgeSeeder implements CommandLineRunner {
 
     /**
      * Extract text content from a PDF file.
-     * For memory efficiency with large PDFs, load bytes into memory first.
+     * 
+     * NOTE: Loads entire PDF into memory. The Shape Up PDF is ~7.3 MB which is acceptable.
+     * For very large reference documents (>50 MB), this could cause memory pressure.
+     * PDFBox Loader.loadPDF() requires byte array for reliable parsing.
      */
     private String extractTextFromPdf(InputStream inputStream) throws IOException {
         byte[] bytes = inputStream.readAllBytes();

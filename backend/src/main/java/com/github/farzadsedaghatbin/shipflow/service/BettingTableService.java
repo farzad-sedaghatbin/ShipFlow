@@ -647,8 +647,8 @@ public class BettingTableService {
                 .risks(risks.isEmpty() ? List.of("No risks identified") : risks)
                 .rabbitHoles(rabbitHoles.isEmpty() ? List.of("No rabbit holes identified") : rabbitHoles)
                 .teamFitScores(teamFitScores)
-                .estimatedBusinessValue(null) // TODO: Calculate based on pitch characteristics or user input
-                .urgency(null) // TODO: Calculate based on due dates, dependencies, or user input
+                .estimatedBusinessValue(null) // NOTE: Not currently calculated - intentionally returned as null until business value logic is implemented
+                .urgency(null) // NOTE: Not currently calculated - intentionally returned as null until urgency logic is implemented
                 .build();
     }
 

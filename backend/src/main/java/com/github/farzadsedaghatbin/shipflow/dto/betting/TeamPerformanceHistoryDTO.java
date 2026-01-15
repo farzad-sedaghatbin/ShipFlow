@@ -31,5 +31,5 @@ public class TeamPerformanceHistoryDTO {
     
     // Recent trends (last 3 cycles)
     private String trend; // "IMPROVING", "STABLE", "DECLINING"
-    private String performanceRating; // "EXCELLENT", "GOOD", "FAIR", "NEEDS_IMPROVEMENT"
+    private String performanceRating; // "EXCELLENT", "GOOD", "FAIR", "POOR"
 }
