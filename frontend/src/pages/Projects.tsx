@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Pencil,
@@ -9,6 +9,9 @@ import {
   TrendingUp,
   Play,
   Loader2,
+  Search,
+  ArrowUpDown,
+  Eye,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -17,6 +20,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +44,7 @@ import {
 import { Project, CreateProjectRequest } from '../types';
 import projectService from '../services/projectService';
 import { useToast, useProject } from '../contexts';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
 import EmptyState from '../components/EmptyState';
@@ -53,6 +63,8 @@ export default function Projects() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'key' | 'cycles' | 'recent'>('name');
   const [formData, setFormData] = useState<CreateProjectRequest>({
     name: '',
     projectKey: '',
@@ -68,6 +80,7 @@ export default function Projects() {
   const { showToast } = useToast();
   const { refreshProjects } = useProject();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -91,7 +104,7 @@ export default function Projects() {
     }
   };
 
-  const handleOpenDialog = (project?: Project) => {
+  const handleOpenDialog = useCallback((project?: Project) => {
     if (project) {
       setEditingProject(project);
       setFormData({
@@ -113,7 +126,20 @@ export default function Projects() {
     }
     setFieldErrors({});
     setDialogOpen(true);
-  };
+  }, []);
+
+  // Handle edit query parameter
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && projects.length > 0) {
+      const projectToEdit = projects.find(p => p.id.toString() === editId);
+      if (projectToEdit) {
+        handleOpenDialog(projectToEdit);
+        // Remove the query parameter after opening the dialog
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, projects, handleOpenDialog, setSearchParams]);
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
@@ -198,6 +224,15 @@ export default function Projects() {
     navigate(`/cycles?project=${project.id}`);
   };
 
+  const handleViewDetails = (project: Project, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigate(`/projects/${project.id}`);
+  };
+
+  const handleCardClick = (project: Project) => {
+    navigate(`/projects/${project.id}`);
+  };
+
   const generateProjectKey = (name: string) => {
     // Auto-generate project key from name
     const words = name.trim().split(/\s+/);
@@ -218,6 +253,33 @@ export default function Projects() {
     }));
   };
 
+  // Filter and sort projects
+  const filteredAndSortedProjects = projects
+    .filter(project => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(search) ||
+        project.projectKey.toLowerCase().includes(search) ||
+        project.description?.toLowerCase().includes(search) ||
+        project.ownerName?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'key':
+          return a.projectKey.localeCompare(b.projectKey);
+        case 'cycles':
+          return (b.cycleCount || 0) - (a.cycleCount || 0);
+        case 'recent':
+          return (b.id || 0) - (a.id || 0);
+        default:
+          return 0;
+      }
+    });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -228,55 +290,91 @@ export default function Projects() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Folder className="h-6 w-6" />
-          Projects
-        </h1>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Folder className="h-6 w-6" />
+            Projects
+          </h1>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant={showArchived ? 'default' : 'outline'}
+              onClick={() => setShowArchived(!showArchived)}
+              size="sm"
+            >
+              {showArchived ? 'Show Active Only' : 'Show All'}
+            </Button>
+            <Button
+              onClick={() => handleOpenDialog()}
+              data-tour="new-project-btn"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+          </div>
+        </div>
+
+        {/* Search and Sort Controls */}
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant={showArchived ? 'default' : 'outline'}
-            onClick={() => setShowArchived(!showArchived)}
-            size="sm"
-          >
-            {showArchived ? 'Show Active Only' : 'Show All'}
-          </Button>
-          <Button
-            onClick={() => handleOpenDialog()}
-            data-tour="new-project-btn"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search projects by name, key, description, or owner..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="key">Project Key</SelectItem>
+              <SelectItem value="cycles">Most Cycles</SelectItem>
+              <SelectItem value="recent">Most Recent</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {projects.length === 0 ? (
+      {filteredAndSortedProjects.length === 0 ? (
         <Card className="p-8">
           <EmptyState
             illustration={<EmptyProjectsIllustration />}
-            title="No projects yet"
-            description="Create your first project to get started with Shape Up cycles and track your team's progress."
-            action={{
-              label: 'Create First Project',
-              onClick: () => handleOpenDialog(),
-              startIcon: <Plus className="h-4 w-4" />,
-            }}
+            title={searchTerm ? 'No projects found' : 'No projects yet'}
+            description={
+              searchTerm
+                ? `No projects match "${searchTerm}". Try a different search term.`
+                : "Create your first project to get started with Shape Up cycles and track your team's progress."
+            }
+            action={
+              !searchTerm
+                ? {
+                    label: 'Create First Project',
+                    onClick: () => handleOpenDialog(),
+                    startIcon: <Plus className="h-4 w-4" />,
+                  }
+                : undefined
+            }
             size="large"
           />
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+          {filteredAndSortedProjects.map((project, index) => (
             <Card
               key={project.id}
               data-tour={index === 0 ? 'project-card' : undefined}
               className={cn(
-                'flex flex-col',
+                'flex flex-col cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]',
                 !project.isActive && 'opacity-70'
               )}
               style={{ borderLeftWidth: 4, borderLeftColor: project.color || '#4A90D9' }}
+              onClick={() => handleCardClick(project)}
             >
               <CardContent className="flex-1 pt-6">
                 <div className="flex items-center mb-4">
@@ -332,7 +430,26 @@ export default function Projects() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleViewCycles(project)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(project);
+                        }}
+                        aria-label={`View details for ${project.name}`}
+                      >
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View Details</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewCycles(project);
+                        }}
                         aria-label={`View cycles for ${project.name}`}
                       >
                         <TrendingUp className="h-4 w-4" aria-hidden="true" />
@@ -345,7 +462,10 @@ export default function Projects() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleOpenDialog(project)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(project);
+                        }}
                         aria-label={`Edit ${project.name} project`}
                       >
                         <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -358,7 +478,10 @@ export default function Projects() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleToggleArchive(project)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleArchive(project);
+                        }}
                         aria-label={project.isActive ? `Archive ${project.name} project` : `Restore ${project.name} project`}
                       >
                         {project.isActive ? (
@@ -375,7 +498,10 @@ export default function Projects() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteDialog({ open: true, project })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteDialog({ open: true, project });
+                        }}
                         disabled={(project.cycleCount || 0) > 0}
                         className="text-destructive hover:text-destructive"
                       >

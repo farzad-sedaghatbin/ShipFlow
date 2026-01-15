@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   X,
   FileUp,
@@ -13,12 +11,14 @@ import {
   Lightbulb,
   Ban,
   Link2,
+  Search,
+  ArrowUpDown,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
 import { teamService } from '../services/teamService';
 import { documentService } from '../services/documentService';
-import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest, ExtractedPitchData } from '../types';
+import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest } from '../types';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import EmptyState from '../components/EmptyState';
@@ -49,11 +49,6 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '../components/ui/collapsible';
-import {
   Tabs,
   TabsContent,
   TabsList,
@@ -69,6 +64,8 @@ export default function PitchBoard() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
   const [loading, setLoading] = useState(true);
   const [createDialog, setCreateDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -344,42 +341,96 @@ export default function PitchBoard() {
     );
   }
 
+  const filterAndSortPitches = (pitchesList: Pitch[]) => {
+    return pitchesList
+      .filter(pitch => {
+        if (!searchTerm) return true;
+        const search = searchTerm.toLowerCase();
+        return (
+          pitch.title.toLowerCase().includes(search) ||
+          pitch.description?.toLowerCase().includes(search) ||
+          pitch.teamName?.toLowerCase().includes(search) ||
+          pitch.problemStatement?.toLowerCase().includes(search)
+        );
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'title':
+            return a.title.localeCompare(b.title);
+          case 'appetite':
+            return (a.appetiteDays || 0) - (b.appetiteDays || 0);
+          case 'team':
+            return (a.teamName || '').localeCompare(b.teamName || '');
+          default:
+            return 0;
+        }
+      });
+  };
+
   const getPitchesByStatus = (status: PitchStatus) =>
-    pitches.filter((p) => p.status === status);
+    filterAndSortPitches(pitches.filter((p) => p.status === status));
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Pitch Board</h1>
-          <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? 'All projects' : currentProject?.name}
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Pitch Board</h1>
+            <p className="text-sm text-muted-foreground">
+              {isAllProjectsSelected ? 'All projects' : currentProject?.name}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select value={selectedCycle} onValueChange={setSelectedCycle}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                {cycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => setCreateDialog(true)}
+              disabled={!selectedCycle}
+              data-tour="new-pitch-btn"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Pitch
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select cycle" />
-            </SelectTrigger>
-            <SelectContent>
-              {cycles.map((cycle) => (
-                <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                  {cycle.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={() => setCreateDialog(true)}
-            disabled={!selectedCycle}
-            data-tour="new-pitch-btn"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Pitch
-          </Button>
-        </div>
+
+        {/* Search and Sort Controls */}
+        {selectedCycle && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search pitches by title, description, or team..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title">Title (A-Z)</SelectItem>
+                <SelectItem value="appetite">Appetite (Days)</SelectItem>
+                <SelectItem value="team">Team</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Board */}

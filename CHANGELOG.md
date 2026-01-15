@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Navigation & UX Refinements**:
+  - Added comprehensive project detail page with cycles list, teams, and statistics
+  - Implemented search functionality across Projects, Teams, Retrospectives, and Pitch Board pages
+  - Added sorting options to all list pages (by name, date, status, team, etc.)
+  - Made project cards clickable to navigate to detailed project view
+  - Standardized UI patterns: using full pages instead of modals for comprehensive data display
+  - Enhanced user experience with consistent search and filter patterns across all list views
+
 - **Automated Health Risk Detection**:
   - Enhanced automated health risk detection with weighted 4-factor scoring algorithm
   - Added configurable risk thresholds (30+ parameters) via Organization Settings
