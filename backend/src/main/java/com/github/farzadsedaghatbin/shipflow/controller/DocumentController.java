@@ -1,14 +1,18 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.DocumentUploadResponse;
+import com.github.farzadsedaghatbin.shipflow.dto.ExtractedPitchDataDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.DocumentService;
+import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
+import com.github.farzadsedaghatbin.shipflow.service.PitchShapingExtractorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +35,10 @@ public class DocumentController {
 
     private final DocumentService documentService;
     private final UserRepository userRepository;
+    private final PitchShapingExtractorService pitchShapingExtractorService;
+    
+    @Autowired(required = false)
+    private KnowledgeIngestionService knowledgeIngestionService;
 
     /**
      * Upload a document and extract its text content.
@@ -164,6 +172,15 @@ public class DocumentController {
     }
 
     /**
+     * Download a document.
+     */
+    @GetMapping("/{id}/download")
+    @Operation(summary = "Download document", description = "Download a document file")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadDocument(@PathVariable Long id) {
+        return documentService.downloadDocument(id);
+    }
+
+    /**
      * Delete a document.
      */
     @DeleteMapping("/{id}")
@@ -183,6 +200,152 @@ public class DocumentController {
         return ResponseEntity.ok(Map.of(
                 "message", "Documents indexed successfully",
                 "indexedCount", indexed
+        ));
+    }
+
+    /**
+     * Extract pitch shaping data from an uploaded document using AI.
+     * This endpoint analyzes the document and extracts Shape Up methodology elements.
+     * Also adds the document to the knowledge base for Q&A.
+     */
+    @PostMapping(value = "/extract-pitch-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Extract pitch data from document", 
+               description = "Upload a pitch document (PDF, DOCX, TXT) and extract Shape Up elements like problem statement, solution, rabbit holes, and risks using AI. Also saves document and adds to knowledge base for Q&A.")
+    public ResponseEntity<ExtractedPitchDataDTO> extractPitchDataFromDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "pitchId", required = false) Long pitchId,
+            @RequestParam(value = "addToKnowledgeBase", required = false, defaultValue = "true") boolean addToKnowledgeBase,
+            @RequestParam(value = "saveDocument", required = false, defaultValue = "true") boolean saveDocument,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+            Long userId = getUserId(userDetails);
+            String username = userDetails.getUsername();
+            Long documentId = null;
+            
+            // Save document if requested (for later linking to pitch)
+            if (saveDocument) {
+                DocumentUploadResponse uploadResponse = documentService.uploadDocument(
+                    file, "PITCH", pitchId != null ? pitchId : 0L, userId, username);
+                if (uploadResponse.getId() != null) {
+                    documentId = uploadResponse.getId();
+                }
+            }
+            
+            // Extract text from the document
+            String extractedText = documentService.extractTextFromFile(file);
+            
+            if (extractedText == null || extractedText.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(ExtractedPitchDataDTO.builder()
+                        .extractionSuccessful(false)
+                        .errorMessage("Could not extract text from document")
+                        .build());
+            }
+            
+            // Use AI to extract pitch data
+            PitchShapingExtractorService.ExtractedPitchData extracted = 
+                    pitchShapingExtractorService.extractFromDocument(extractedText);
+            
+            // Add to knowledge base if enabled, QA service is available, and pitchId exists
+            // Note: For new pitches, we skip ingestion here and will ingest after pitch is created
+            if (addToKnowledgeBase && knowledgeIngestionService != null && pitchId != null) {
+                try {
+                    String pitchTitle = extracted.title() != null ? extracted.title() : file.getOriginalFilename();
+                    
+                    knowledgeIngestionService.ingestPitchDocument(
+                        file.getOriginalFilename(),
+                        extractedText,
+                        pitchId,
+                        pitchTitle,
+                        userId,
+                        username
+                    );
+                    
+                    log.info("Added pitch document to knowledge base: {}", pitchTitle);
+                } catch (Exception e) {
+                    log.warn("Failed to add pitch document to knowledge base: {}", e.getMessage());
+                    // Don't fail the extraction if knowledge base ingestion fails
+                }
+            }
+            
+            return ResponseEntity.ok(ExtractedPitchDataDTO.builder()
+                    .title(extracted.title())
+                    .problemStatement(extracted.problemStatement())
+                    .solution(extracted.solution())
+                    .rabbitHoles(extracted.rabbitHoles())
+                    .risks(extracted.risks())
+                    .noGos(extracted.noGos())
+                    .appetiteDays(extracted.appetiteDays())
+                    .wireframeLinks(extracted.wireframeLinks())
+                    .extractionSuccessful(extracted.extractionSuccessful())
+                    .errorMessage(extracted.errorMessage())
+                    .documentId(documentId)
+                    .build());
+                    
+        } catch (Exception e) {
+            log.error("Error extracting pitch data: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ExtractedPitchDataDTO.builder()
+                    .extractionSuccessful(false)
+                    .errorMessage("Error processing document: " + e.getMessage())
+                    .build());
+        }
+    }
+
+    /**
+     * Link an existing document to a pitch.
+     */
+    @PutMapping("/{documentId}/link-to-pitch/{pitchId}")
+    @Operation(summary = "Link document to pitch", description = "Associate an existing document with a pitch and add to knowledge base")
+    public ResponseEntity<Map<String, String>> linkDocumentToPitch(
+            @PathVariable Long documentId,
+            @PathVariable Long pitchId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // Link document to pitch
+            documentService.linkDocumentToEntity(documentId, "PITCH", pitchId);
+            
+            // Add to knowledge base if service is available
+            if (knowledgeIngestionService != null) {
+                try {
+                    UploadedDocument doc = documentService.getDocumentById(documentId);
+                    if (doc != null && doc.getExtractedText() != null) {
+                        Long userId = getUserId(userDetails);
+                        String username = userDetails.getUsername();
+                        
+                        knowledgeIngestionService.ingestPitchDocument(
+                            doc.getOriginalFileName(),
+                            doc.getExtractedText(),
+                            pitchId,
+                            doc.getOriginalFileName(),
+                            userId,
+                            username
+                        );
+                        
+                        log.info("Added linked document to knowledge base: {}", doc.getOriginalFileName());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to add linked document to knowledge base: {}", e.getMessage());
+                    // Don't fail the linking if knowledge base ingestion fails
+                }
+            }
+            
+            return ResponseEntity.ok(Map.of("message", "Document linked to pitch successfully"));
+        } catch (Exception e) {
+            log.error("Error linking document to pitch: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Check if AI pitch extraction is available.
+     */
+    @GetMapping("/extract-pitch-data/status")
+    @Operation(summary = "Check extraction availability", description = "Check if AI-powered pitch data extraction is available")
+    public ResponseEntity<Map<String, Object>> getExtractionStatus() {
+        boolean available = pitchShapingExtractorService.isExtractionAvailable();
+        return ResponseEntity.ok(Map.of(
+                "available", available,
+                "message", available ? "AI extraction is available" : "AI extraction is not configured. Please enable AI in application settings."
         ));
     }
 

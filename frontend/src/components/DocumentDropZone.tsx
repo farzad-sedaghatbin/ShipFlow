@@ -9,6 +9,7 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
+  Download,
 } from 'lucide-react';
 import { documentService, UploadedDocument, DocumentUploadResponse } from '../services/documentService';
 import { Card } from './ui/card';
@@ -134,6 +135,14 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
       }
     } catch (error) {
       console.error('Failed to delete document:', error);
+    }
+  };
+
+  const handleDownload = async (docId: number, fileName: string) => {
+    try {
+      await documentService.downloadDocument(docId, fileName);
+    } catch (error) {
+      console.error('Failed to download document:', error);
     }
   };
 
@@ -274,8 +283,18 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
                     <Button 
                       variant="ghost" 
                       size="icon" 
+                      className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                      onClick={() => handleDownload(doc.id, doc.originalFileName)}
+                      title="Download document"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
                       className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                       onClick={() => handleDelete(doc.id)}
+                      title="Delete document"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

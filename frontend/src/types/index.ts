@@ -169,6 +169,13 @@ export interface Pitch {
   totalHoursSpent?: number;
   appetiteHours?: number;
   progressPercentage?: number;
+  // Shape Up Methodology Fields
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  wireframeLinks?: string;
 }
 
 export interface CreatePitchRequest {
@@ -178,6 +185,28 @@ export interface CreatePitchRequest {
   cycleId: number;
   teamId?: number;
   status?: PitchStatus;
+  // Shape Up Methodology Fields
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  wireframeLinks?: string;
+}
+
+// Response from AI pitch data extraction
+export interface ExtractedPitchData {
+  title?: string;
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  appetiteDays?: number;
+  wireframeLinks?: string;
+  extractionSuccessful: boolean;
+  errorMessage?: string;
+  documentId?: number; // ID of saved document
 }
 
 export interface WorkLog {
