@@ -134,7 +134,7 @@ public class CircuitBreakerService {
         pitch.setStatus(PitchStatus.CANCELLED);
 
         Pitch saved = pitchRepository.save(pitch);
-        log.info("Pitch {} killed due to overflow: {}", pitchId, reason);        
+        log.info("Pitch {} killed due to overflow: {}", pitchId, reason);
         // Notify team members
         notificationService.notifyPitchKilled(saved, reason);
         return toDTO(saved);
