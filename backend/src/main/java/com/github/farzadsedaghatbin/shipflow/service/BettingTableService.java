@@ -512,6 +512,12 @@ public class BettingTableService {
         // Calculate trends (last 3 cycles)
         String trend = calculateTrend(cycleIds, slotsByCycle);
         String performanceRating = getPerformanceRating(overallCompletionRate);
+        
+        // Calculate average weeks per bet
+        Double avgWeeksPerBet = calculateAvgWeeksPerBet(slotsByCycle);
+        
+        // Calculate average time overrun percentage
+        Double avgTimeOverrun = calculateAvgTimeOverrun(slotsByCycle);
 
         return TeamPerformanceHistoryDTO.builder()
                 .teamId(team.getId())
@@ -524,8 +530,8 @@ public class BettingTableService {
                 .totalCompletedBets(totalCompletedBets)
                 .overallCompletionRate(Math.round(overallCompletionRate * 10.0) / 10.0)
                 .avgBetsPerCycle(totalCycles > 0 ? Math.round((totalBets * 10.0 / totalCycles)) / 10.0 : 0.0)
-                .avgWeeksPerBet(null) // TODO: Calculate from actual cycle durations and bet counts
-                .avgTimeOverrun(null) // TODO: Implement work log analysis to calculate actual vs appetite
+                .avgWeeksPerBet(avgWeeksPerBet)
+                .avgTimeOverrun(avgTimeOverrun)
                 .trend(trend)
                 .performanceRating(performanceRating)
                 .build();
@@ -747,4 +753,77 @@ public class BettingTableService {
         if (completionRate >= 50) return "FAIR";
         return "POOR";
     }
+
+    /**
+     * Calculate average weeks per bet from actual cycle durations
+     */
+    private Double calculateAvgWeeksPerBet(Map<Long, List<BettingSlot>> slotsByCycle) {
+        if (slotsByCycle.isEmpty()) return null;
+        
+        double totalWeeks = 0.0;
+        int totalBets = 0;
+        
+        for (Map.Entry<Long, List<BettingSlot>> entry : slotsByCycle.entrySet()) {
+            List<BettingSlot> cycleSlots = entry.getValue();
+            if (cycleSlots.isEmpty()) continue;
+            
+            // Get the cycle to calculate duration
+            Cycle cycle = cycleSlots.get(0).getCycle();
+            long cycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+            double cycleWeeks = cycleDays / 7.0;
+            
+            // Count bets in this cycle
+            int cycleBets = cycleSlots.size();
+            
+            if (cycleBets > 0) {
+                totalWeeks += cycleWeeks;
+                totalBets += cycleBets;
+            }
+        }
+        
+        return totalBets > 0 ? Math.round((totalWeeks / totalBets) * 10.0) / 10.0 : null;
+    }
+
+    /**
+     * Calculate average time overrun percentage from work log analysis
+     * Compares actual hours spent vs appetite hours for completed bets
+     */
+    private Double calculateAvgTimeOverrun(Map<Long, List<BettingSlot>> slotsByCycle) {
+        if (slotsByCycle.isEmpty()) return null;
+        
+        List<Double> overrunPercentages = new ArrayList<>();
+        
+        for (List<BettingSlot> cycleSlots : slotsByCycle.values()) {
+            for (BettingSlot slot : cycleSlots) {
+                Pitch pitch = slot.getPitch();
+                if (pitch == null) continue;
+                
+                // Only calculate for completed pitches
+                if (pitch.getStatus() != PitchStatus.DONE) continue;
+                
+                // Get actual hours spent from work logs
+                Double actualHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+                if (actualHours == null || actualHours == 0.0) continue;
+                
+                // Calculate appetite hours
+                double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+                if (appetiteHours == 0.0) continue;
+                
+                // Calculate overrun percentage: (actual - appetite) / appetite * 100
+                double overrun = ((actualHours - appetiteHours) / appetiteHours) * 100.0;
+                overrunPercentages.add(overrun);
+            }
+        }
+        
+        if (overrunPercentages.isEmpty()) return null;
+        
+        // Calculate average overrun
+        double avgOverrun = overrunPercentages.stream()
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(0.0);
+        
+        return Math.round(avgOverrun * 10.0) / 10.0;
+    }
 }
+
