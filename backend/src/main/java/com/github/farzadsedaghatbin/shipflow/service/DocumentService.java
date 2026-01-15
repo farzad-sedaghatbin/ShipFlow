@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentService {
+
+    /**
+     * Mapping of file extensions to MIME content types.
+     * Centralized to maintain consistency across the codebase.
+     */
+    private static final Map<String, String> CONTENT_TYPE_MAP = Map.of(
+        "pdf", "application/pdf",
+        "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "doc", "application/msword",
+        "txt", "text/plain",
+        "md", "text/markdown"
+    );
 
     private final UploadedDocumentRepository documentRepository;
 
@@ -310,15 +323,13 @@ public class DocumentService {
         }
     }
 
+    /**
+     * Determines the MIME content type based on file extension.
+     * @param fileType The file extension (e.g., "pdf", "docx")
+     * @return The MIME content type, or "application/octet-stream" if unknown
+     */
     private String determineContentType(String fileType) {
-        return switch (fileType.toLowerCase()) {
-            case "pdf" -> "application/pdf";
-            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            case "doc" -> "application/msword";
-            case "txt" -> "text/plain";
-            case "md" -> "text/markdown";
-            default -> "application/octet-stream";
-        };
+        return CONTENT_TYPE_MAP.getOrDefault(fileType.toLowerCase(), "application/octet-stream");
     }
 
     /**
