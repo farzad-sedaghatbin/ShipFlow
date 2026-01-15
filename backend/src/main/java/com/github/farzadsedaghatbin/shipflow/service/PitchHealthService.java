@@ -105,7 +105,7 @@ public class PitchHealthService {
             }
         }
         // Return defaults if service not available or settings not configured
-        return com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds.builder().build();
+        return new com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds();
     }
 
     /**

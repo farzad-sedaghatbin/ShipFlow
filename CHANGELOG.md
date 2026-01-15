@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Automated Health Risk Detection**:
+  - Enhanced automated health risk detection with weighted 4-factor scoring algorithm
+  - Added configurable risk thresholds (30+ parameters) via Organization Settings
+  - Implemented intelligent risk calculation: Budget (25%), Bugs (30%), Scope (25%), Time (20%)
+  - Visual enhancements for critical items: 8px red borders, CRITICAL badges, pulse animations
+  - Enhanced warning banners in Cycle Health Summary with gradient effects
+  - Color-coded progress bars with badges for budget tracking
+  - Added comprehensive test coverage for configurable thresholds (7 new test cases)
+  
+- **Configurable Risk Thresholds**:
+  - **Budget Thresholds**: Warning at 80%, Overrun at 100%, Critical at 120% (customizable)
+  - **Bug Count Thresholds**: Critical bugs (1/3/5), Major bugs (3/5), Open bugs (5/10/15) levels
+  - **Scope Progress Thresholds**: Uphill max position, progress rate expectations, lag detection
+  - **Time-based Thresholds**: Urgency at 3 days, Warning at 7 days, Concern at 14 days
+  - **Schedule Variance**: Moderate gap at 15%, Significant gap at 30%
+  - **Cycle Progress**: Midpoint (50%), Late phase (60%), Final quarter (75%)
+  - **Stagnation Detection**: Scope stagnation (7 days), Peak stuck (5 days), No progress (7 days)
+  - **Work Rate Indicators**: High hours threshold (15hrs/3days), High appetite usage (90%)
+  - All thresholds customizable per organization with sensible defaults
+
 - **Shape Up Pitch Enhancements**:
   - Added comprehensive Shape Up methodology fields to pitch creation and editing
   - Implemented 6 new fields: Problem Statement, Solution, Rabbit Holes, Risks, No-Gos, Wireframe Links
