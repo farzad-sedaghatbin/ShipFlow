@@ -101,31 +101,50 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
 
   const isCritical = health.riskLevel === 'CRITICAL';
   const isHighRisk = health.riskLevel === 'HIGH';
+  const isAtRisk = health.riskLevel === 'MEDIUM';
 
   return (
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <Card 
         className={cn(
-          "mb-3 border-l-4 transition-all duration-300",
+          "mb-3 border-l-4 transition-all duration-300 relative",
           onClick && "cursor-pointer hover:shadow-lg",
-          isCritical && "shadow-md shadow-red-500/20 animate-pulse",
-          isHighRisk && "shadow-sm shadow-red-400/10"
+          isCritical && "shadow-xl shadow-red-500/30 animate-pulse border-red-600",
+          isHighRisk && "shadow-lg shadow-red-400/20 border-red-500",
+          isAtRisk && "shadow-sm shadow-yellow-400/10 border-yellow-500"
         )}
         style={{ 
           borderLeftColor: health.riskColor,
-          borderLeftWidth: isCritical ? '6px' : isHighRisk ? '5px' : '4px'
+          borderLeftWidth: isCritical ? '8px' : isHighRisk ? '6px' : '4px'
         }}
         onClick={onClick}
       >
-        <CardContent className={cn("pt-4", compact ? "pb-2" : "pb-4")}>
+        {/* Critical indicator stripe */}
+        {isCritical && (
+          <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3 animate-pulse" />
+            CRITICAL
+          </div>
+        )}
+        <CardContent className={cn("pt-4", compact ? "pb-2" : "pb-4", isCritical && "pt-8")}>
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <TooltipProvider>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h3 className={cn("font-semibold", compact ? "text-base" : "text-lg", isCritical && "text-red-600")}>
+                  <h3 className={cn(
+                    "font-semibold", 
+                    compact ? "text-base" : "text-lg", 
+                    isCritical && "text-red-600 font-bold",
+                    isHighRisk && "text-red-500"
+                  )}>
                     {health.pitchName}
                   </h3>
-                  <Badge variant="outline" className={cn('gap-1', getRiskBadgeClass(), isCritical && 'animate-pulse')}>
+                  <Badge variant="outline" className={cn(
+                    'gap-1 font-medium',
+                    getRiskBadgeClass(), 
+                    isCritical && 'animate-pulse ring-2 ring-red-500/50 font-bold text-base',
+                    isHighRisk && 'ring-1 ring-red-400/30 font-semibold'
+                  )}>
                     <Circle className={cn('h-2 w-2 fill-current', getRiskDotColor())} />
                     {getHealthLabel(health.riskLevel)}
                   </Badge>
@@ -137,7 +156,7 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
                           className={cn(
                             'gap-1 text-xs',
                             health.riskTrend === 'IMPROVING' && 'bg-green-500/10 text-green-500 border-green-500/30',
-                            health.riskTrend === 'WORSENING' && 'bg-red-500/10 text-red-500 border-red-500/30',
+                            health.riskTrend === 'WORSENING' && 'bg-red-500/10 text-red-500 border-red-500/30 animate-pulse',
                             health.riskTrend === 'STABLE' && 'bg-gray-500/10 text-gray-500 border-gray-500/30'
                           )}
                         >
@@ -150,12 +169,6 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
                       </TooltipContent>
                     </Tooltip>
                   )}
-                  {isCritical && (
-                    <Badge variant="destructive" className="gap-1 text-xs">
-                      <AlertTriangle className="h-3 w-3" />
-                      URGENT
-                    </Badge>
-                  )}
                   {health.daysLeft <= 3 && health.status !== 'DONE' && (
                     <Badge variant="outline" className="gap-1 text-xs bg-orange-500/10 text-orange-500 border-orange-500/30">
                       <Clock className="h-3 w-3" />
@@ -165,7 +178,12 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
                 </div>
               </TooltipProvider>
               
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className={cn(
+                "text-sm mb-2",
+                isCritical && "text-red-600 font-semibold",
+                isHighRisk && "text-red-500 font-medium",
+                !isCritical && !isHighRisk && "text-muted-foreground"
+              )}>
                 {health.statusSummary}
               </p>
               

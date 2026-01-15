@@ -90,9 +90,13 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
   };
 
   const isCritical = summary.overallHealth === 'CRITICAL' || summary.overallHealth === 'HIGH';
+  const hasCriticalPitches = summary.criticalPitches > 0;
 
   return (
-    <Card className={cn(isCritical && "border-red-500/50 shadow-lg shadow-red-500/10")}>
+    <Card className={cn(
+      isCritical && "border-red-500/60 shadow-2xl shadow-red-500/20",
+      hasCriticalPitches && "ring-2 ring-red-500/30"
+    )}>
       <CardContent className="p-6">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
@@ -138,20 +142,25 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
           
           <Card className={cn(
             "bg-red-500/5 border-red-500/20 hover:bg-red-500/10 transition-all",
-            summary.criticalPitches > 0 && "border-red-500/40 shadow-md shadow-red-500/20 animate-pulse"
+            summary.criticalPitches > 0 && "border-red-600/50 shadow-xl shadow-red-500/30 ring-2 ring-red-500/20"
           )}>
-            <CardContent className="p-4 text-center">
+            <CardContent className="p-4 text-center relative">
+              {summary.criticalPitches > 0 && (
+                <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md rounded-tr-md">
+                  ACTION NEEDED
+                </div>
+              )}
               <XCircle className={cn(
                 "h-8 w-8 text-red-500 mx-auto mb-2",
                 summary.criticalPitches > 0 && "animate-pulse"
               )} aria-hidden="true" />
               <p className={cn(
                 "text-3xl font-bold text-red-500",
-                summary.criticalPitches > 0 && "animate-pulse"
+                summary.criticalPitches > 0 && "animate-pulse text-4xl"
               )}>{summary.criticalPitches}</p>
-              <p className="text-sm text-muted-foreground">Critical</p>
+              <p className="text-sm text-muted-foreground font-semibold">Critical</p>
               {summary.criticalPitches > 0 && (
-                <p className="text-xs text-red-500 font-medium mt-1">Needs attention!</p>
+                <p className="text-xs text-red-600 font-bold mt-1 animate-pulse">⚠ Urgent!</p>
               )}
             </CardContent>
           </Card>
@@ -197,20 +206,33 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
               <span className="text-sm font-medium flex items-center gap-1">
                 <TrendingUp className="h-4 w-4" aria-hidden="true" />
                 Budget Used
+                {summary.budgetUsedPercent > 100 && (
+                  <Badge variant="destructive" className="text-[10px] px-1 py-0 ml-1">OVER</Badge>
+                )}
+                {summary.budgetUsedPercent > 80 && summary.budgetUsedPercent <= 100 && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 bg-yellow-500/10 text-yellow-600 border-yellow-500/30">HIGH</Badge>
+                )}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className={cn(
+                "text-sm font-medium",
+                summary.budgetUsedPercent > 100 && "text-red-600 font-bold",
+                summary.budgetUsedPercent > 80 && summary.budgetUsedPercent <= 100 && "text-yellow-600",
+                summary.budgetUsedPercent <= 80 && "text-muted-foreground"
+              )}>
                 {summary.totalActualHours.toFixed(1)}h / {summary.totalAppetiteHours.toFixed(0)}h ({summary.budgetUsedPercent.toFixed(0)}%)
               </span>
             </div>
             <Progress 
               value={Math.min(100, summary.budgetUsedPercent)} 
               className={cn(
-                "h-2",
+                "h-2.5",
                 summary.budgetUsedPercent > 100 
-                  ? "[&>div]:bg-red-500" 
-                  : summary.budgetUsedPercent > 80 
-                    ? "[&>div]:bg-yellow-500" 
-                    : ""
+                  ? "[&>div]:bg-red-600 [&>div]:animate-pulse" 
+                  : summary.budgetUsedPercent > 90
+                    ? "[&>div]:bg-red-500"
+                    : summary.budgetUsedPercent > 80 
+                      ? "[&>div]:bg-yellow-500" 
+                      : ""
               )}
               aria-label={`Budget used: ${summary.totalActualHours.toFixed(1)} hours of ${summary.totalAppetiteHours.toFixed(0)} hours`}
             />
@@ -242,10 +264,25 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
             All Pitches ({summary.totalPitches})
           </h3>
           {summary.criticalPitches > 0 && (
-            <div className="mb-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-500 animate-pulse" />
-              <span className="text-sm text-red-500 font-medium">
-                {summary.criticalPitches} critical {summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate attention
+            <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-red-500/20 to-red-600/10 border-2 border-red-500/40 flex items-center gap-3 shadow-lg shadow-red-500/20">
+              <div className="flex-shrink-0">
+                <XCircle className="h-6 w-6 text-red-600 animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-600 mb-1">
+                  ⚠️ IMMEDIATE ATTENTION REQUIRED
+                </p>
+                <p className="text-sm text-red-600">
+                  {summary.criticalPitches} critical {summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate action
+                </p>
+              </div>
+            </div>
+          )}
+          {summary.atRiskPitches > 0 && summary.criticalPitches === 0 && (
+            <div className="mb-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm text-yellow-600 font-medium">
+                {summary.atRiskPitches} {summary.atRiskPitches === 1 ? 'pitch is' : 'pitches are'} at risk - monitor closely
               </span>
             </div>
           )}
