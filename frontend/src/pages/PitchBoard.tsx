@@ -221,9 +221,6 @@ export default function PitchBoard() {
       }
       
       setCreateDialog(false);
-      
-      // Navigate to the newly created pitch detail view
-      navigate(`/pitches/${createdPitch.id}`);
       setNewPitch({
         title: '',
         description: '',
@@ -244,6 +241,10 @@ export default function PitchBoard() {
       setShowShapingFields(false);
       setExtractedDocumentId(null);
       setExtractedDocumentName('');
+      
+      // Navigate after all state cleanup is complete to avoid visual issues
+      navigate(`/pitches/${createdPitch.id}`);
+      
       if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
