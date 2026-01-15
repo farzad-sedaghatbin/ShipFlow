@@ -55,15 +55,28 @@ class RetroControllerIntegrationTest {
     @Autowired
     private RetroItemRepository retroItemRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private Project testProject;
     private Cycle testCycle;
     private Retrospective testRetro;
+    private User adminUser;
 
     @BeforeEach
     void setUp() {
         // Clean up first
         retroItemRepository.deleteAll();
         retroRepository.deleteAll();
+
+        // Ensure admin user exists for authentication
+        adminUser = userRepository.findByUsername("admin")
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .username("admin")
+                        .password("password") // In real test, would be encoded
+                        .email("admin@test.com")
+                        .role(UserRole.ADMIN)
+                        .build()));
 
         testProject = projectRepository.save(Project.builder()
                 .name("Test Project")
@@ -310,7 +323,8 @@ class RetroControllerIntegrationTest {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.content", is("Public feedback with attribution")))
                     .andExpect(jsonPath("$.isAnonymous", is(false)))
-                    .andExpect(jsonPath("$.author", notNullValue()));
+                    .andExpect(jsonPath("$.authorId", notNullValue()))
+                    .andExpect(jsonPath("$.authorName", notNullValue()));
         }
 
         @Test

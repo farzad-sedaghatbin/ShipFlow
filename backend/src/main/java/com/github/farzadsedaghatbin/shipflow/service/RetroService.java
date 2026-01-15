@@ -492,10 +492,14 @@ public class RetroService {
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt());
         
-        // Only show author info if not anonymous
+        // Always include author fields (null for anonymous items)
         if (!isAnonymous && item.getAuthor() != null) {
             builder.authorId(item.getAuthor().getId())
                    .authorName(item.getAuthor().getUsername());
+        } else {
+            // Explicitly set to null for anonymous items or missing author
+            builder.authorId(null)
+                   .authorName(null);
         }
         
         // Check if current user has voted

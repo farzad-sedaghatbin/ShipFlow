@@ -48,7 +48,11 @@ class CircuitBreakerControllerIntegrationTest {
     @Autowired
     private WorkLogRepository workLogRepository;
 
+    @Autowired
+    private PersonRepository personRepository;
+
     private Cycle cycle;
+    private Person testPerson;
 
     @BeforeEach
     void setUp() {
@@ -56,6 +60,14 @@ class CircuitBreakerControllerIntegrationTest {
         workLogRepository.deleteAll();
         pitchRepository.deleteAll();
         cycleRepository.deleteAll();
+
+        // Create test person for work logs
+        testPerson = personRepository.findAll().stream()
+                .findFirst()
+                .orElseGet(() -> personRepository.save(Person.builder()
+                        .name("Test Person")
+                        .email("test@example.com")
+                        .build()));
 
         // Create test cycle
         cycle = Cycle.builder()
@@ -85,9 +97,9 @@ class CircuitBreakerControllerIntegrationTest {
                             .param("threshold", "100"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
-                    .andExpect(jsonPath("$[0].id", is(pitch.getId().intValue())))
-                    .andExpect(jsonPath("$[0].title", is("Overbudget Pitch")))
-                    .andExpect(jsonPath("$[0].appetiteDays", is(5)))
+                    .andExpect(jsonPath("$[0].pitchId", is(pitch.getId().intValue())))
+                    .andExpect(jsonPath("$[0].pitchTitle", is("Overbudget Pitch")))
+                    .andExpect(jsonPath("$[0].appetiteDays", is(5.0)))
                     .andExpect(jsonPath("$[0].hoursSpent", is(40.0)))
                     .andExpect(jsonPath("$[0].utilizationPercentage", is(100.0)))
                     .andExpect(jsonPath("$[0].isOverflowing", is(true)));
@@ -315,6 +327,7 @@ class CircuitBreakerControllerIntegrationTest {
     private void createWorkLog(Pitch pitch, BigDecimal hours) {
         WorkLog workLog = WorkLog.builder()
                 .pitch(pitch)
+                .person(testPerson) // Required field
                 .hoursSpent(hours)
                 .date(LocalDate.now())
                 .build();

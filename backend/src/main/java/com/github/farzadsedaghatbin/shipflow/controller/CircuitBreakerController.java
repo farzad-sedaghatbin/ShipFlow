@@ -5,9 +5,11 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.service.CircuitBreakerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,6 +49,9 @@ public class CircuitBreakerController {
     public ResponseEntity<CircuitBreakerDTO> trigger(
             @PathVariable Long pitchId,
             @RequestParam String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Reason cannot be empty");
+        }
         return ResponseEntity.ok(circuitBreakerService.triggerCircuitBreaker(pitchId, reason));
     }
 
@@ -67,6 +72,9 @@ public class CircuitBreakerController {
     public ResponseEntity<CircuitBreakerDTO> kill(
             @PathVariable Long pitchId,
             @RequestParam String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Reason cannot be empty");
+        }
         return ResponseEntity.ok(circuitBreakerService.killPitch(pitchId, reason));
     }
 }
