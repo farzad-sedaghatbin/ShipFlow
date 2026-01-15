@@ -695,9 +695,20 @@ public class BettingTableService {
                 .build();
     }
 
+    private static final int HIGH_COMPLEXITY_APPETITE_DAYS_THRESHOLD = 35;
+    private static final int MEDIUM_COMPLEXITY_APPETITE_DAYS_THRESHOLD = 14;
+    private static final int HIGH_COMPLEXITY_RISK_COUNT_THRESHOLD = 5;
+    private static final int MEDIUM_COMPLEXITY_RISK_COUNT_THRESHOLD = 2;
+
     private String determineComplexity(int appetiteDays, int riskCount) {
-        if (appetiteDays > 35 || riskCount > 5) return "HIGH";
-        if (appetiteDays > 14 || riskCount > 2) return "MEDIUM";
+        if (appetiteDays > HIGH_COMPLEXITY_APPETITE_DAYS_THRESHOLD
+                || riskCount > HIGH_COMPLEXITY_RISK_COUNT_THRESHOLD) {
+            return "HIGH";
+        }
+        if (appetiteDays > MEDIUM_COMPLEXITY_APPETITE_DAYS_THRESHOLD
+                || riskCount > MEDIUM_COMPLEXITY_RISK_COUNT_THRESHOLD) {
+            return "MEDIUM";
+        }
         return "LOW";
     }
 
