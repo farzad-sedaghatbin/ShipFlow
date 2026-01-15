@@ -581,6 +581,65 @@ public class DashboardNotificationService {
         log.info("Cleaned up {} expired notifications", expired.size());
     }
 
+    /**
+     * Create notification when circuit breaker is triggered on a pitch
+     */
+    public void notifyCircuitBreakerTriggered(Pitch pitch) {
+        if (pitch.getTeam() == null) {
+            return;
+        }
+
+        // Notify team members
+        List<User> teamMembers = pitch.getTeam().getAssignments().stream()
+                .map(assignment -> assignment.getPerson().getUser())
+                .toList();
+
+        for (User user : teamMembers) {
+            createNotification(
+                    user,
+                    "CIRCUIT_BREAKER_TRIGGERED",
+                    "⚠️ Circuit Breaker: " + pitch.getTitle(),
+                    String.format("Pitch '%s' has exceeded its time budget (appetite: %d days). Shape Up safety valve triggered.",
+                            pitch.getTitle(), pitch.getAppetiteDays()),
+                    "CRITICAL",
+                    "/pitches/" + pitch.getId(),
+                    "PITCH",
+                    pitch.getId()
+            );
+        }
+
+        log.info("Created circuit breaker triggered notifications for pitch {}", pitch.getId());
+    }
+
+    /**
+     * Create notification when a pitch is killed due to overflow
+     */
+    public void notifyPitchKilled(Pitch pitch, String reason) {
+        if (pitch.getTeam() == null) {
+            return;
+        }
+
+        // Notify team members
+        List<User> teamMembers = pitch.getTeam().getAssignments().stream()
+                .map(assignment -> assignment.getPerson().getUser())
+                .toList();
+
+        for (User user : teamMembers) {
+            createNotification(
+                    user,
+                    "PITCH_KILLED",
+                    "🛑 Pitch Killed: " + pitch.getTitle(),
+                    String.format("Pitch '%s' has been permanently stopped. Reason: %s", pitch.getTitle(), reason),
+                    "CRITICAL",
+                    "/pitches/" + pitch.getId(),
+                    "PITCH",
+                    pitch.getId()
+            );
+        }
+
+        log.info("Created pitch killed notifications for pitch {}", pitch.getId());
+    }
+
     private DashboardNotificationDTO toDTO(DashboardNotification notification) {
         return DashboardNotificationDTO.builder()
                 .id(notification.getId())

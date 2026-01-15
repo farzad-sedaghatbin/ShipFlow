@@ -61,6 +61,17 @@ public class Pitch {
     @Column(nullable = false)
     private PitchStatus status;
 
+    // Circuit Breaker - Shape Up safety valve for overflow
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isCircuitBreakerTriggered = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String circuitBreakerReason;
+
+    @Column
+    private LocalDateTime circuitBreakerDate;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

@@ -575,6 +575,7 @@ public class RiskAnalysisService {
             case PENDING -> 15;
             case COOLDOWN -> -20;
             case CANCELLED -> -50;
+            case CIRCUIT_BREAKER -> 50; // High risk when circuit breaker is triggered
         };
 
         return Math.max(0, Math.min(100, factorScore + statusAdjustment + 20));

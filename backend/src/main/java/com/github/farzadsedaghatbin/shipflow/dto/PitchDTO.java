@@ -39,6 +39,11 @@ public class PitchDTO {
     private Double appetiteHours;
     private Double progressPercentage;
     
+    // Circuit Breaker - Shape Up safety valve
+    private Boolean isCircuitBreakerTriggered;
+    private String circuitBreakerReason;
+    private LocalDateTime circuitBreakerDate;
+    
     // Shape Up Methodology Fields
     private String problemStatement;
     private String solution;
