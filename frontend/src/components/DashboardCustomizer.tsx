@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, GripVertical, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,32 +9,13 @@ import { dashboardWidgetApi } from '../services/dashboardApi';
 import { DashboardWidget } from '../types/dashboard';
 import { useToast } from '../contexts';
 
-const WIDGET_LABELS: Record<string, string> = {
-  OVERDUE_TASKS: 'Overdue Tasks',
-  BLOCKED_TASKS: 'Blocked Tasks',
-  UPCOMING_DEADLINES: 'Upcoming Deadlines',
-  MY_TASKS: 'My Tasks',
-  TEAM_WORKLOAD: 'Team Workload',
-  CYCLE_PROGRESS: 'Cycle Progress',
-  RECENT_ACTIVITY: 'Recent Activity',
-};
-
-const WIDGET_DESCRIPTIONS: Record<string, string> = {
-  OVERDUE_TASKS: 'Shows tasks that are past their due date',
-  BLOCKED_TASKS: 'Displays all currently blocked tasks',
-  UPCOMING_DEADLINES: 'Cycle deadlines in the next 2 weeks',
-  MY_TASKS: 'Your assigned tasks with completion stats',
-  TEAM_WORKLOAD: 'Workload distribution across teams',
-  CYCLE_PROGRESS: 'Progress tracking for active cycles',
-  RECENT_ACTIVITY: 'Latest activity feed from the system',
-};
-
 interface DashboardCustomizerProps {
   widgets: DashboardWidget[];
   onUpdate?: () => void;
 }
 
 export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerProps) {
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
 
@@ -45,10 +27,10 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
         isVisible: !widget.isVisible,
       });
       await onUpdate?.();
-      showSuccess(`Widget ${!widget.isVisible ? 'shown' : 'hidden'}`);
+      showSuccess(t('dashboardCustomizer.widgetToggled', { state: !widget.isVisible ? t('dashboardCustomizer.shown') : t('dashboardCustomizer.hidden') }));
     } catch (error) {
       console.error('Failed to toggle widget:', error);
-      showError('Failed to update widget');
+      showError(t('dashboardCustomizer.updateFailed'));
     }
   };
 
@@ -57,10 +39,10 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
       setSaving(true);
       await dashboardWidgetApi.resetToDefaults();
       await onUpdate?.();
-      showSuccess('Widgets reset to default configuration');
+      showSuccess(t('dashboardCustomizer.resetSuccess'));
     } catch (error) {
       console.error('Failed to reset widgets:', error);
-      showError('Failed to reset widgets');
+      showError(t('dashboardCustomizer.resetFailed'));
     } finally {
       setSaving(false);
     }
@@ -70,7 +52,7 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Widget Configuration</CardTitle>
+          <CardTitle>{t('dashboardCustomizer.title')}</CardTitle>
           <Button
             variant="outline"
             size="sm"
@@ -79,11 +61,11 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
             className="gap-2"
           >
             <RotateCcw className="w-4 h-4" />
-            Reset to Defaults
+            {t('dashboardCustomizer.resetToDefaults')}
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Toggle visibility of widgets on your dashboard
+          {t('dashboardCustomizer.description')}
         </p>
       </CardHeader>
       <CardContent>
@@ -97,7 +79,7 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Label htmlFor={`widget-${widget.id}`} className="font-medium cursor-pointer">
-                    {WIDGET_LABELS[widget.widgetType] || widget.widgetType}
+                    {t(`dashboardCustomizer.widgets.${widget.widgetType}.label`, widget.widgetType)}
                   </Label>
                   {widget.isVisible ? (
                     <Eye className="w-3.5 h-3.5 text-emerald-500" />
@@ -106,7 +88,7 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {WIDGET_DESCRIPTIONS[widget.widgetType] || 'Custom widget'}
+                  {t(`dashboardCustomizer.widgets.${widget.widgetType}.description`, t('dashboardCustomizer.customWidget'))}
                 </p>
               </div>
               <Switch
@@ -120,8 +102,7 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
 
         <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
           <p className="text-xs text-muted-foreground">
-            <strong>Tip:</strong> Hidden widgets won't appear on your dashboard but can be re-enabled
-            anytime. Changes are saved automatically.
+            <strong>{t('dashboardCustomizer.tip')}:</strong> {t('dashboardCustomizer.tipText')}
           </p>
         </div>
       </CardContent>

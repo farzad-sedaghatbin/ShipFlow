@@ -97,6 +97,44 @@
       "integrations": "یکپارچه‌سازی‌ها"
     }
   },
+  "breadcrumbs": {
+    "dashboard": "داشبورد",
+    "projects": "پروژه‌ها",
+    "cycles": "چرخه‌ها",
+    "newCycle": "چرخه جدید",
+    "pitchBoard": "تابلوی پیچ",
+    "tasks": "تسک‌ها",
+    "healthOverview": "نمای کلی سلامت",
+    "workLogs": "گزارش کار",
+    "myWorkLogs": "گزارش کار من",
+    "teams": "تیم‌ها",
+    "people": "افراد",
+    "meetings": "جلسات",
+    "reports": "گزارش‌ها",
+    "profile": "پروفایل",
+    "userManagement": "مدیریت کاربران",
+    "organizationSettings": "تنظیمات سازمان",
+    "slackIntegration": "یکپارچه‌سازی Slack",
+    "permissions": "دسترسی‌ها",
+    "qa": "تست و کیفیت",
+    "testCases": "موارد تست",
+    "bugReports": "گزارش باگ‌ها",
+    "integrations": "یکپارچه‌سازی‌ها",
+    "githubIntegration": "یکپارچه‌سازی GitHub",
+    "teamsIntegration": "یکپارچه‌سازی Teams",
+    "time": "پیگیری زمان",
+    "timeLogs": "گزارش زمان",
+    "backlog": "بک‌لاگ",
+    "cycleNumber": "چرخه #{{number}}",
+    "pitchNumber": "پیچ #{{number}}",
+    "projectNumber": "پروژه #{{number}}",
+    "backlogNumber": "بک‌لاگ #{{number}}",
+    "edit": "ویرایش",
+    "new": "جدید",
+    "hillChart": "نمودار تپه",
+    "generate": "تولید",
+    "run": "اجرا"
+  },
   "integrations": {
     "slack": "اسلک",
     "github": "گیت‌هاب",
@@ -913,13 +951,22 @@
   },
   "dashboardCustomizer": {
     "title": "پیکربندی ویجت‌ها",
+    "description": "تغییر نمایش ویجت‌ها در داشبورد شما",
+    "resetToDefaults": "بازگشت به پیش‌فرض",
+    "resetSuccess": "ویجت‌ها به پیکربندی پیش‌فرض بازگشتند",
+    "resetFailed": "بازگشت ویجت‌ها ناموفق بود",
+    "updateFailed": "به‌روزرسانی ویجت ناموفق بود",
+    "widgetToggled": "ویجت {{state}} شد",
+    "shown": "نمایش داده",
+    "hidden": "مخفی",
+    "tip": "نکته",
+    "tipText": "ویجت‌های مخفی در داشبورد شما ظاهر نمی‌شوند اما می‌توانید هر زمان آن‌ها را دوباره فعال کنید. تغییرات به طور خودکار ذخیره می‌شوند.",
+    "customWidget": "ویجت سفارشی",
     "addWidget": "افزودن ویجت",
     "removeWidget": "حذف ویجت",
     "layout": "چیدمان",
     "widgets": "ویجت‌ها",
     "saveLayout": "ذخیره چیدمان",
-    "resetLayout": "بازگشت به پیش‌فرض",
-    "toggleVisibility": "تغییر نمایش ویجت‌ها در داشبورد شما",
     "quickLinks": "لینک‌های سریع",
     "newCycle": "چرخه جدید",
     "logWork": "ثبت کار",
@@ -927,22 +974,38 @@
     "tasks": "تسک‌ها",
     "healthCheck": "بررسی سلامت",
     "reports": "گزارش‌ها",
-    "widgetOverdueTasks": "تسک‌های عقب افتاده",
-    "widgetOverdueTasksDesc": "نمایش تسک‌هایی که از موعد مقرر گذشته‌اند",
-    "widgetBlockedTasks": "تسک‌های مسدود شده",
-    "widgetBlockedTasksDesc": "نمایش تمام تسک‌های در حال حاضر مسدود شده",
-    "widgetUpcomingDeadlines": "موعدهای پیش رو",
-    "widgetUpcomingDeadlinesDesc": "موعدهای چرخه در ۲ هفته آینده",
-    "widgetMyTasks": "تسک‌های من",
-    "widgetMyTasksDesc": "تسک‌های اختصاص یافته به شما با آمار تکمیل",
-    "widgetTeamWorkload": "بار کاری تیم",
-    "widgetTeamWorkloadDesc": "توزیع بار کاری در بین تیم‌ها",
-    "widgetCycleProgress": "پیشرفت چرخه",
-    "widgetCycleProgressDesc": "پیگیری پیشرفت برای چرخه‌های فعال",
-    "widgetRecentActivity": "فعالیت‌های اخیر",
-    "widgetRecentActivityDesc": "آخرین فیدهای فعالیت از سیستم",
     "saveSuccess": "چیدمان داشبورد با موفقیت ذخیره شد",
-    "loadFailed": "بارگذاری داشبورد ناموفق بود"
+    "loadFailed": "بارگذاری داشبورد ناموفق بود",
+    "widgets": {
+      "OVERDUE_TASKS": {
+        "label": "تسک‌های عقب افتاده",
+        "description": "نمایش تسک‌هایی که از موعد مقرر گذشته‌اند"
+      },
+      "BLOCKED_TASKS": {
+        "label": "تسک‌های مسدود شده",
+        "description": "نمایش تمام تسک‌های در حال حاضر مسدود شده"
+      },
+      "UPCOMING_DEADLINES": {
+        "label": "موعدهای پیش رو",
+        "description": "موعدهای چرخه در ۲ هفته آینده"
+      },
+      "MY_TASKS": {
+        "label": "تسک‌های من",
+        "description": "تسک‌های اختصاص یافته به شما با آمار تکمیل"
+      },
+      "TEAM_WORKLOAD": {
+        "label": "بار کاری تیم",
+        "description": "توزیع بار کاری در بین تیم‌ها"
+      },
+      "CYCLE_PROGRESS": {
+        "label": "پیشرفت چرخه",
+        "description": "پیگیری پیشرفت برای چرخه‌های فعال"
+      },
+      "RECENT_ACTIVITY": {
+        "label": "فعالیت‌های اخیر",
+        "description": "آخرین فیدهای فعالیت از سیستم"
+      }
+    }
   },
   "slackIntegration": {
     "title": "یکپارچه‌سازی Slack",

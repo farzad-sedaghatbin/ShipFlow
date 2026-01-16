@@ -97,6 +97,44 @@
       "integrations": "Integrations"
     }
   },
+  "breadcrumbs": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "cycles": "Cycles",
+    "newCycle": "New Cycle",
+    "pitchBoard": "Pitch Board",
+    "tasks": "Tasks",
+    "healthOverview": "Health Overview",
+    "workLogs": "Work Logs",
+    "myWorkLogs": "My Work Logs",
+    "teams": "Teams",
+    "people": "People",
+    "meetings": "Meetings",
+    "reports": "Reports",
+    "profile": "Profile",
+    "userManagement": "User Management",
+    "organizationSettings": "Organization Settings",
+    "slackIntegration": "Slack Integration",
+    "permissions": "Permissions",
+    "qa": "QA & Testing",
+    "testCases": "Test Cases",
+    "bugReports": "Bug Reports",
+    "integrations": "Integrations",
+    "githubIntegration": "GitHub Integration",
+    "teamsIntegration": "Teams Integration",
+    "time": "Time Tracking",
+    "timeLogs": "Time Logs",
+    "backlog": "Backlog",
+    "cycleNumber": "Cycle #{{number}}",
+    "pitchNumber": "Pitch #{{number}}",
+    "projectNumber": "Project #{{number}}",
+    "backlogNumber": "Backlog #{{number}}",
+    "edit": "Edit",
+    "new": "New",
+    "hillChart": "Hill Chart",
+    "generate": "Generate",
+    "run": "Run"
+  },
   "integrations": {
     "slack": "Slack",
     "github": "GitHub",
@@ -992,13 +1030,22 @@
   },
   "dashboardCustomizer": {
     "title": "Widget Configuration",
+    "description": "Toggle visibility of widgets on your dashboard",
+    "resetToDefaults": "Reset to Defaults",
+    "resetSuccess": "Widgets reset to default configuration",
+    "resetFailed": "Failed to reset widgets",
+    "updateFailed": "Failed to update widget",
+    "widgetToggled": "Widget {{state}}",
+    "shown": "shown",
+    "hidden": "hidden",
+    "tip": "Tip",
+    "tipText": "Hidden widgets won't appear on your dashboard but can be re-enabled anytime. Changes are saved automatically.",
+    "customWidget": "Custom widget",
     "addWidget": "Add Widget",
     "removeWidget": "Remove Widget",
     "layout": "Layout",
     "widgets": "Widgets",
     "saveLayout": "Save Layout",
-    "resetLayout": "Reset to Defaults",
-    "toggleVisibility": "Toggle visibility of widgets on your dashboard",
     "quickLinks": "Quick Links",
     "newCycle": "New Cycle",
     "logWork": "Log Work",
@@ -1006,22 +1053,38 @@
     "tasks": "Tasks",
     "healthCheck": "Health Check",
     "reports": "Reports",
-    "widgetOverdueTasks": "Overdue Tasks",
-    "widgetOverdueTasksDesc": "Shows tasks that are past their due date",
-    "widgetBlockedTasks": "Blocked Tasks",
-    "widgetBlockedTasksDesc": "Displays all currently blocked tasks",
-    "widgetUpcomingDeadlines": "Upcoming Deadlines",
-    "widgetUpcomingDeadlinesDesc": "Cycle deadlines in the next 2 weeks",
-    "widgetMyTasks": "My Tasks",
-    "widgetMyTasksDesc": "Your assigned tasks with completion stats",
-    "widgetTeamWorkload": "Team Workload",
-    "widgetTeamWorkloadDesc": "Workload distribution across teams",
-    "widgetCycleProgress": "Cycle Progress",
-    "widgetCycleProgressDesc": "Progress tracking for active cycles",
-    "widgetRecentActivity": "Recent Activity",
-    "widgetRecentActivityDesc": "Latest activity feed from the system",
     "saveSuccess": "Dashboard layout saved successfully",
-    "loadFailed": "Failed to load dashboard"
+    "loadFailed": "Failed to load dashboard",
+    "widgets": {
+      "OVERDUE_TASKS": {
+        "label": "Overdue Tasks",
+        "description": "Shows tasks that are past their due date"
+      },
+      "BLOCKED_TASKS": {
+        "label": "Blocked Tasks",
+        "description": "Displays all currently blocked tasks"
+      },
+      "UPCOMING_DEADLINES": {
+        "label": "Upcoming Deadlines",
+        "description": "Cycle deadlines in the next 2 weeks"
+      },
+      "MY_TASKS": {
+        "label": "My Tasks",
+        "description": "Your assigned tasks with completion stats"
+      },
+      "TEAM_WORKLOAD": {
+        "label": "Team Workload",
+        "description": "Workload distribution across teams"
+      },
+      "CYCLE_PROGRESS": {
+        "label": "Cycle Progress",
+        "description": "Progress tracking for active cycles"
+      },
+      "RECENT_ACTIVITY": {
+        "label": "Recent Activity",
+        "description": "Latest activity feed from the system"
+      }
+    }
   },
   "slackIntegration": {
     "title": "Slack Integration",
