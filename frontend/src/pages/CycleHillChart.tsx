@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertCircle, Info, X } from 'lucide-react';
 import { safeParseId } from '../utils/validation';
@@ -12,6 +13,7 @@ import { Badge } from '../components/ui/badge';
 import { cn } from '../lib/utils';
 
 export const CycleHillChart: React.FC = () => {
+  const { t } = useTranslation();
   const { cycleId: cycleIdParam } = useParams<{ cycleId: string }>();
   const cycleId = safeParseId(cycleIdParam);
   const navigate = useNavigate();
@@ -43,7 +45,7 @@ export const CycleHillChart: React.FC = () => {
       setPoints(cyclePoints);
       setError(null);
     } catch (err) {
-      setError('Failed to load cycle hill chart');
+      setError(t('cycleHillChart.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -71,7 +73,7 @@ export const CycleHillChart: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Invalid cycle ID</span>
+          <span className="text-sm">{t('cycleHillChart.invalidId')}</span>
         </div>
       </div>
     );
@@ -88,7 +90,7 @@ export const CycleHillChart: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">Cycle Hill Chart</h1>
+        <h1 className="text-3xl font-bold mb-1">{t('cycleHillChart.title')}</h1>
         {cycle && (
           <p className="text-lg text-muted-foreground">{cycle.name}</p>
         )}
