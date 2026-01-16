@@ -139,8 +139,8 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       
       try {
         if (cycleId) {
-          // Load tasks for specific cycle
-          const tasksRes = await taskService.getByCycleId(cycleId, 0, 200, 'createdAt', 'desc');
+          // Load a limited number of tasks for specific cycle to avoid excessive upfront loading
+          const tasksRes = await taskService.getByCycleId(cycleId, 0, 50, 'createdAt', 'desc');
           const taskData = Array.isArray(tasksRes.data) ? tasksRes.data : tasksRes.data.content;
           setTasks(taskData);
         } else {
