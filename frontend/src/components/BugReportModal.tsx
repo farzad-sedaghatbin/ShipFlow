@@ -88,9 +88,9 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [searchingScopes, setSearchingScopes] = useState(false);
   const [searchingTasks, setSearchingTasks] = useState(false);
   
-  // Debounce search queries - 300ms delay
-  const debouncedScopeSearch = useDebounce(scopeSearch, 300);
-  const debouncedTaskSearch = useDebounce(taskSearch, 300);
+  // Debounce search queries to avoid excessive API calls (uses useDebounce default delay)
+  const debouncedScopeSearch = useDebounce(scopeSearch);
+  const debouncedTaskSearch = useDebounce(taskSearch);
 
   const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({
     title: bugReport?.title || '',
