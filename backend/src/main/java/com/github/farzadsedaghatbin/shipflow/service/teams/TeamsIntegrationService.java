@@ -218,14 +218,9 @@ public class TeamsIntegrationService {
     /**
      * Send a test notification
      */
-    private TeamsConfiguration getTeamsConfigurationOrThrow(Long configId) {
-        return teamsConfigRepository.findById(configId)
-                .orElseThrow(() -> new IllegalArgumentException("Teams configuration not found with id: " + configId));
-    }
-
     public void sendTestNotification(Long configId, TestTeamsNotificationRequest request) {
-        TeamsConfiguration config = getTeamsConfigurationOrThrow(configId);
-
+        TeamsConfiguration config = teamsConfigRepository.findById(configId)
+                .orElseThrow(() -> new IllegalArgumentException("Teams configuration not found with id: " + configId));
         String webhookUrl = config.getWebhookUrl();
         String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShipFlow";
 
