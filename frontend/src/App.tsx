@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Teams from './pages/Teams';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import CompetitorsComparison from './pages/CompetitorsComparison';
 import Profile from './pages/Profile';
 import People from './pages/People';
 import UserManagement from './pages/UserManagement';
@@ -21,6 +22,7 @@ import PermissionManagement from './pages/PermissionManagement';
 import OrganizationSettings from './pages/OrganizationSettings';
 import SlackIntegration from './pages/SlackIntegration';
 import GitHubIntegration from './pages/integrations/GitHubIntegration';
+import TeamsIntegration from './pages/integrations/TeamsIntegration';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import HealthOverview from './pages/HealthOverview';
@@ -69,6 +71,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/welcome" element={<Navigate to="/" replace />} />
+      <Route path="/compare" element={<CompetitorsComparison />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"
@@ -132,6 +135,7 @@ function App() {
                     <Route path="settings" element={<OrganizationSettings />} />
                     <Route path="integrations/slack" element={<SlackIntegration />} />
                     <Route path="integrations/github" element={<GitHubIntegration />} />
+                    <Route path="integrations/teams" element={<TeamsIntegration />} />
                     {/* Legacy route redirects */}
                     <Route path="slack" element={<Navigate to="/integrations/slack" replace />} />
 

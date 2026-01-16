@@ -8,9 +8,9 @@ import {
   Target,
   CheckCircle,
   Github,
-  BookOpen,
   Accessibility,
   RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -127,16 +127,10 @@ export default function Landing() {
                 <Button 
                   variant="ghost" 
                   size="lg"
-                  asChild
+                  onClick={() => navigate('/compare')}
                 >
-                  <a 
-                    href="https://basecamp.com/shapeup" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <BookOpen className="h-5 w-5 mr-2" />
-                    Learn Shape Up
-                  </a>
+                  <ArrowRight className="h-5 w-5 mr-2" />
+                  Compare to Alternatives
                 </Button>
               </div>
 
