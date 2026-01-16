@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText } from 'lucide-react';
 import { DocumentDropZone } from './DocumentDropZone';
 import { documentService, UploadedDocument } from '../services/documentService';
@@ -26,6 +27,7 @@ export const MeetingDocumentsDialog: React.FC<MeetingDocumentsDialogProps> = ({
   meetingType,
   meetingDate,
 }) => {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
 
   useEffect(() => {
@@ -53,13 +55,13 @@ export const MeetingDocumentsDialog: React.FC<MeetingDocumentsDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Documents for {meetingType} Meeting ({meetingDate})
+            {t('meetingDocuments.title', { type: meetingType, date: meetingDate })}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Upload meeting notes, agendas, or other documents. The text will be extracted and added to the knowledge base for Q&A.
+            {t('meetingDocuments.description')}
           </p>
           
           <DocumentDropZone
@@ -73,7 +75,7 @@ export const MeetingDocumentsDialog: React.FC<MeetingDocumentsDialogProps> = ({
         
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Close
+            {t('meetingDocuments.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

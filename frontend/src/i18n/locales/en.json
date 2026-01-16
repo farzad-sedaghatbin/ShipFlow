@@ -2132,6 +2132,108 @@
     "deleteEntry": "Delete Entry",
     "confirmDelete": "Are you sure you want to delete this entry?"
   },
+  "meetingList": {
+    "title": "Meetings",
+    "totalMeetings": "{{count}} total meetings",
+    "totalMeetings_plural": "{{count}} total meetings",
+    "filters": "Filters",
+    "newMeeting": "New Meeting",
+    "filters": {
+      "meetingTypes": "Meeting Types",
+      "allTypes": "All Types",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "dorReady": "DOR Ready",
+      "dodReady": "DOD Ready",
+      "all": "All",
+      "yes": "Yes",
+      "no": "No",
+      "apply": "Apply Filters",
+      "clear": "Clear"
+    },
+    "empty": {
+      "title": "No meetings yet",
+      "description": "Schedule your first meeting to track shaping sessions, demos, and retrospectives",
+      "action": "Schedule Meeting"
+    },
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "pitch": "Pitch",
+      "attendees": "Attendees",
+      "actions": "Actions",
+      "dor": "DOR",
+      "dod": "DOD",
+      "operations": "Operations",
+      "actionCount": "{{count}} action",
+      "actionCount_plural": "{{count}} actions",
+      "yes": "Yes",
+      "no": "No",
+      "documentsTooltip": "Documents",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} meetings",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{total}}"
+    },
+    "dialog": {
+      "newTitle": "New Meeting",
+      "editTitle": "Edit Meeting",
+      "type": "Type",
+      "selectType": "Select type",
+      "date": "Date",
+      "pitch": "Pitch (optional)",
+      "selectPitch": "Select pitch",
+      "retrospective": "Retrospective (optional)",
+      "selectRetrospective": "Select retrospective",
+      "none": "None",
+      "dorReady": "DOR Ready",
+      "dodReady": "DOD Ready",
+      "yes": "Yes",
+      "no": "No",
+      "attendees": "Attendees",
+      "attendeesPlaceholder": "e.g., John Doe, Jane Smith, Bob Johnson",
+      "commaSeparated": "Comma-separated names",
+      "notes": "Notes",
+      "notesPlaceholder": "Add meeting notes...",
+      "decisions": "Key Decisions",
+      "decisionsPlaceholder": "Record key decisions made during the meeting...",
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update"
+    },
+    "actionItems": {
+      "label": "Action Items",
+      "add": "Add Action",
+      "descriptionPlaceholder": "Action description *",
+      "assignee": "Assignee",
+      "unassigned": "Unassigned",
+      "status": "Status",
+      "statusOpen": "Open",
+      "statusInProgress": "In Progress",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "dueDate": "Due Date",
+      "notes": "Notes",
+      "notesPlaceholder": "Additional notes (optional)",
+      "empty": "No action items yet. Click \"Add Action\" to create one."
+    },
+    "toast": {
+      "createSuccess": "Meeting created",
+      "updateSuccess": "Meeting updated",
+      "deleteSuccess": "Meeting deleted",
+      "saveFailed": "Failed to save meeting",
+      "deleteFailed": "Failed to delete meeting"
+    }
+  },
+  "meetingDocuments": {
+    "title": "Documents for {{type}} Meeting ({{date}})",
+    "description": "Upload meeting notes, agendas, or other documents. The text will be extracted and added to the knowledge base for Q&A.",
+    "close": "Close"
+  },
   "taskDetailPage": {
     "title": "Task Details",
     "editTask": "Edit Task",

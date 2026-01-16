@@ -1441,6 +1441,108 @@
     "deleteEntry": "حذف ورودی",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این ورودی را حذف کنید؟"
   },
+  "meetingList": {
+    "title": "جلسات",
+    "totalMeetings": "{{count}} جلسه",
+    "totalMeetings_plural": "{{count}} جلسه",
+    "filters": "فیلترها",
+    "newMeeting": "جلسه جدید",
+    "filters": {
+      "meetingTypes": "انواع جلسه",
+      "allTypes": "همه انواع",
+      "startDate": "تاریخ شروع",
+      "endDate": "تاریخ پایان",
+      "dorReady": "آمادگی DOR",
+      "dodReady": "آمادگی DOD",
+      "all": "همه",
+      "yes": "بله",
+      "no": "خیر",
+      "apply": "اعمال فیلترها",
+      "clear": "پاک کردن"
+    },
+    "empty": {
+      "title": "هنوز جلسه‌ای وجود ندارد",
+      "description": "اولین جلسه خود را برای پیگیری جلسات شکل‌دهی، دموها و بازنگری‌ها زمان‌بندی کنید",
+      "action": "زمان‌بندی جلسه"
+    },
+    "table": {
+      "date": "تاریخ",
+      "type": "نوع",
+      "pitch": "پیچ",
+      "attendees": "شرکت‌کنندگان",
+      "actions": "اقدامات",
+      "dor": "DOR",
+      "dod": "DOD",
+      "operations": "عملیات",
+      "actionCount": "{{count}} اقدام",
+      "actionCount_plural": "{{count}} اقدام",
+      "yes": "بله",
+      "no": "خیر",
+      "documentsTooltip": "اسناد",
+      "editTooltip": "ویرایش",
+      "deleteTooltip": "حذف"
+    },
+    "pagination": {
+      "showing": "نمایش {{from}} تا {{to}} از {{total}} جلسه",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "page": "صفحه {{current}} از {{total}}"
+    },
+    "dialog": {
+      "newTitle": "جلسه جدید",
+      "editTitle": "ویرایش جلسه",
+      "type": "نوع",
+      "selectType": "انتخاب نوع",
+      "date": "تاریخ",
+      "pitch": "پیچ (اختیاری)",
+      "selectPitch": "انتخاب پیچ",
+      "retrospective": "بازنگری (اختیاری)",
+      "selectRetrospective": "انتخاب بازنگری",
+      "none": "هیچ",
+      "dorReady": "آمادگی DOR",
+      "dodReady": "آمادگی DOD",
+      "yes": "بله",
+      "no": "خیر",
+      "attendees": "شرکت‌کنندگان",
+      "attendeesPlaceholder": "مثال: علی محمدی، زهرا احمدی، حسن رضایی",
+      "commaSeparated": "نام‌های جدا شده با کاما",
+      "notes": "یادداشت‌ها",
+      "notesPlaceholder": "افزودن یادداشت‌های جلسه...",
+      "decisions": "تصمیمات کلیدی",
+      "decisionsPlaceholder": "ثبت تصمیمات کلیدی گرفته شده در جلسه...",
+      "cancel": "انصراف",
+      "create": "ایجاد",
+      "update": "به‌روزرسانی"
+    },
+    "actionItems": {
+      "label": "اقدامات",
+      "add": "افزودن اقدام",
+      "descriptionPlaceholder": "توضیحات اقدام *",
+      "assignee": "مسئول",
+      "unassigned": "بدون مسئول",
+      "status": "وضعیت",
+      "statusOpen": "باز",
+      "statusInProgress": "در حال انجام",
+      "statusCompleted": "تکمیل شده",
+      "statusCancelled": "لغو شده",
+      "dueDate": "موعد",
+      "notes": "یادداشت‌ها",
+      "notesPlaceholder": "یادداشت‌های اضافی (اختیاری)",
+      "empty": "هنوز اقدامی وجود ندارد. برای ایجاد، روی \"افزودن اقدام\" کلیک کنید."
+    },
+    "toast": {
+      "createSuccess": "جلسه ایجاد شد",
+      "updateSuccess": "جلسه به‌روزرسانی شد",
+      "deleteSuccess": "جلسه حذف شد",
+      "saveFailed": "ذخیره جلسه ناموفق بود",
+      "deleteFailed": "حذف جلسه ناموفق بود"
+    }
+  },
+  "meetingDocuments": {
+    "title": "اسناد جلسه {{type}} ({{date}})",
+    "description": "یادداشت‌های جلسه، دستور کار یا سایر اسناد را آپلود کنید. متن استخراج شده و به پایگاه دانش برای پرسش و پاسخ اضافه می‌شود.",
+    "close": "بستن"
+  },
   "taskDetailPage": {
     "title": "جزئیات وظیفه",
     "editTask": "ویرایش وظیفه",
