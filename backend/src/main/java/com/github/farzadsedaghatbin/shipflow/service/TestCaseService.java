@@ -83,14 +83,14 @@ public class TestCaseService {
         // Set scope if provided
         if (request.getScopeId() != null) {
             HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
-                    .orElseThrow(() -> new RuntimeException("Scope not found: " + request.getScopeId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
             testCase.setScope(scope);
         }
 
         // Set task if provided
         if (request.getTaskId() != null) {
             Task task = taskRepository.findById(request.getTaskId())
-                    .orElseThrow(() -> new RuntimeException("Task not found: " + request.getTaskId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
             testCase.setTask(task);
         }
 
@@ -151,7 +151,7 @@ public class TestCaseService {
         // Update task if provided
         if (request.getTaskId() != null) {
             Task task = taskRepository.findById(request.getTaskId())
-                    .orElseThrow(() -> new RuntimeException("Task not found: " + request.getTaskId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
             testCase.setTask(task);
         }
 
