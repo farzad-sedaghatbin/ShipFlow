@@ -41,8 +41,6 @@ export default function SlackIntegrationPage() {
   const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // i18n ready
-  if (false) console.log(t('slackIntegration.title'));
   
   // Dialog states
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -94,7 +92,7 @@ export default function SlackIntegrationPage() {
       
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch Slack configurations');
+      setError(err.response?.data?.message || t('slackIntegration.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -105,14 +103,14 @@ export default function SlackIntegrationPage() {
       const channels = await slackService.getChannelConfigs(configId);
       setChannelConfigs(channels);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch channel configurations');
+      setError(err.response?.data?.message || t('slackIntegration.channelLoadFailed'));
     }
   };
 
   const handleCreateConfiguration = async () => {
     try {
       await slackService.createConfiguration(configForm);
-      setSuccess('Slack workspace configured successfully');
+      setSuccess(t('slackIntegration.configCreated'));
       setConfigDialogOpen(false);
       setConfigForm({
         workspaceName: '',
@@ -122,21 +120,21 @@ export default function SlackIntegrationPage() {
       });
       fetchConfigurations();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create Slack configuration');
+      setError(err.response?.data?.message || t('slackIntegration.createFailed'));
     }
   };
 
   const handleDeleteConfiguration = async (configId: number) => {
-    if (!confirm('Are you sure you want to delete this Slack configuration?')) {
+    if (!confirm(t('slackIntegration.deleteConfirm'))) {
       return;
     }
     
     try {
       await slackService.deleteConfiguration(configId);
-      setSuccess('Slack configuration deleted successfully');
+      setSuccess(t('slackIntegration.configDeleted'));
       fetchConfigurations();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete Slack configuration');
+      setError(err.response?.data?.message || t('slackIntegration.deleteFailed'));
     }
   };
 
@@ -145,7 +143,7 @@ export default function SlackIntegrationPage() {
     
     try {
       await slackService.createChannelConfig(activeConfig.id, channelForm);
-      setSuccess('Channel configuration saved successfully');
+      setSuccess(t('slackIntegration.channelCreated'));
       setChannelDialogOpen(false);
       setChannelForm({
         channelName: '',
@@ -161,23 +159,23 @@ export default function SlackIntegrationPage() {
       });
       fetchChannelConfigs(activeConfig.id);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create channel configuration');
+      setError(err.response?.data?.message || t('slackIntegration.channelCreateFailed'));
     }
   };
 
   const handleDeleteChannelConfig = async (channelConfigId: number) => {
-    if (!confirm('Are you sure you want to delete this channel configuration?')) {
+    if (!confirm(t('slackIntegration.deleteChannelConfirm'))) {
       return;
     }
     
     try {
       await slackService.deleteChannelConfig(channelConfigId);
-      setSuccess('Channel configuration deleted successfully');
+      setSuccess(t('slackIntegration.channelDeleted'));
       if (activeConfig) {
         fetchChannelConfigs(activeConfig.id);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete channel configuration');
+      setError(err.response?.data?.message || t('slackIntegration.channelDeleteFailed'));
     }
   };
 
@@ -189,21 +187,21 @@ export default function SlackIntegrationPage() {
         message: testMessage,
         channel: testChannel,
       });
-      setSuccess('Test notification sent successfully');
+      setSuccess(t('slackIntegration.testSent'));
       setTestDialogOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send test notification');
+      setError(err.response?.data?.message || t('slackIntegration.testFailed'));
     }
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Slack Integration</h1>
+        <h1 className="text-3xl font-bold">{t('slackIntegration.title')}</h1>
         <div className="flex gap-2">
           <Button onClick={() => setConfigDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Configure Workspace
+            {t('slackIntegration.workspace')}
           </Button>
           <Button variant="ghost" size="icon" onClick={fetchConfigurations}>
             <RefreshCw className="h-4 w-4" />
@@ -225,9 +223,9 @@ export default function SlackIntegrationPage() {
 
       <Tabs value={tabValue} onValueChange={setTabValue} className="mb-4">
         <TabsList>
-          <TabsTrigger value="workspace">Workspace Configuration</TabsTrigger>
+          <TabsTrigger value="workspace">{t('slackIntegration.workspace')}</TabsTrigger>
           <TabsTrigger value="channels" disabled={!activeConfig}>
-            Channel Notifications
+            {t('slackIntegration.channels')}
           </TabsTrigger>
         </TabsList>
 
@@ -236,18 +234,18 @@ export default function SlackIntegrationPage() {
             <CardContent className="pt-6">
               {configurations.length === 0 ? (
                 <p className="text-muted-foreground">
-                  No Slack workspace configured. Click "Configure Workspace" to get started.
+                  No Slack workspace configured. Click "{t('slackIntegration.workspace')}" to get started.
                 </p>
               ) : (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Workspace Name</TableHead>
-                        <TableHead>Webhook URL</TableHead>
-                        <TableHead>Default Channel</TableHead>
+                        <TableHead>{t('slackIntegration.workspaceName')}</TableHead>
+                        <TableHead>{t('slackIntegration.webhookUrl')}</TableHead>
+                        <TableHead>{t('slackIntegration.defaultChannel')}</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-right">{t('slackIntegration.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -262,7 +260,7 @@ export default function SlackIntegrationPage() {
                           <TableCell>{config.defaultChannel || '-'}</TableCell>
                           <TableCell>
                             <Badge variant={config.isEnabled ? 'default' : 'secondary'}>
-                              {config.isEnabled ? 'Enabled' : 'Disabled'}
+                              {config.isEnabled ? t('slackIntegration.enabled') : 'Disabled'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -296,10 +294,10 @@ export default function SlackIntegrationPage() {
 
         <TabsContent value="channels" className="mt-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Channel Notification Settings</h2>
+            <h2 className="text-xl font-semibold">{t('slackIntegration.notificationSettings')}</h2>
             <Button onClick={() => setChannelDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Channel
+              {t('slackIntegration.addChannel')}
             </Button>
           </div>
 
@@ -307,19 +305,19 @@ export default function SlackIntegrationPage() {
             <CardContent className="pt-6">
               {channelConfigs.length === 0 ? (
                 <p className="text-muted-foreground">
-                  No channel configurations. Click "Add Channel" to configure notification preferences for specific channels.
+                  No channel configurations. Click "{t('slackIntegration.addChannel')}" to configure notification preferences for specific channels.
                 </p>
               ) : (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Channel Name</TableHead>
-                        <TableHead>Task Assigned</TableHead>
-                        <TableHead>Task Completed</TableHead>
-                        <TableHead>Task Blocked</TableHead>
+                        <TableHead>{t('slackIntegration.channelName')}</TableHead>
+                        <TableHead>{t('slackIntegration.taskAssigned')}</TableHead>
+                        <TableHead>{t('slackIntegration.taskCompleted')}</TableHead>
+                        <TableHead>{t('slackIntegration.taskBlocked')}</TableHead>
                         <TableHead>Cycle Events</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-right">{t('slackIntegration.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -376,11 +374,11 @@ export default function SlackIntegrationPage() {
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Configure Slack Workspace</DialogTitle>
+            <DialogTitle>{t('slackIntegration.workspace')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="workspaceName">Workspace Name</Label>
+              <Label htmlFor="workspaceName">{t('slackIntegration.workspaceName')}</Label>
               <Input
                 id="workspaceName"
                 value={configForm.workspaceName}
@@ -388,7 +386,7 @@ export default function SlackIntegrationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="webhookUrl">Webhook URL</Label>
+              <Label htmlFor="webhookUrl">{t('slackIntegration.webhookUrl')}</Label>
               <Input
                 id="webhookUrl"
                 value={configForm.webhookUrl}
@@ -397,7 +395,7 @@ export default function SlackIntegrationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="defaultChannel">Default Channel (optional)</Label>
+              <Label htmlFor="defaultChannel">{t('slackIntegration.defaultChannel')} (optional)</Label>
               <Input
                 id="defaultChannel"
                 value={configForm.defaultChannel}
@@ -411,14 +409,14 @@ export default function SlackIntegrationPage() {
                 checked={configForm.isEnabled}
                 onCheckedChange={(checked) => setConfigForm({ ...configForm, isEnabled: checked })}
               />
-              <Label htmlFor="isEnabled">Enable Slack Integration</Label>
+              <Label htmlFor="isEnabled">{t('slackIntegration.enabled')}</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
-              Cancel
+              {t('slackIntegration.cancel')}
             </Button>
-            <Button onClick={handleCreateConfiguration}>Save</Button>
+            <Button onClick={handleCreateConfiguration}>{t('slackIntegration.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -427,11 +425,11 @@ export default function SlackIntegrationPage() {
       <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Configure Channel Notifications</DialogTitle>
+            <DialogTitle>{t('slackIntegration.notificationSettings')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="channelName">Channel Name</Label>
+              <Label htmlFor="channelName">{t('slackIntegration.channelName')}</Label>
               <Input
                 id="channelName"
                 value={channelForm.channelName}
@@ -440,7 +438,7 @@ export default function SlackIntegrationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channelWebhookUrl">Channel-Specific Webhook URL (optional)</Label>
+              <Label htmlFor="channelWebhookUrl">{t('slackIntegration.channelWebhook')}</Label>
               <Input
                 id="channelWebhookUrl"
                 value={channelForm.channelWebhookUrl}
@@ -452,7 +450,7 @@ export default function SlackIntegrationPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-3">Notification Preferences</h4>
+              <h4 className="text-sm font-medium mb-3">{t('slackIntegration.notificationSettings')}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -462,7 +460,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyTaskAssigned: checked })
                     }
                   />
-                  <Label htmlFor="notifyTaskAssigned">Task Assigned</Label>
+                  <Label htmlFor="notifyTaskAssigned">{t('slackIntegration.taskAssigned')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -472,7 +470,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyTaskCompleted: checked })
                     }
                   />
-                  <Label htmlFor="notifyTaskCompleted">Task Completed</Label>
+                  <Label htmlFor="notifyTaskCompleted">{t('slackIntegration.taskCompleted')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -482,7 +480,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyTaskBlocked: checked })
                     }
                   />
-                  <Label htmlFor="notifyTaskBlocked">Task Blocked</Label>
+                  <Label htmlFor="notifyTaskBlocked">{t('slackIntegration.taskBlocked')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -492,7 +490,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyPitchShaped: checked })
                     }
                   />
-                  <Label htmlFor="notifyPitchShaped">Pitch Shaped</Label>
+                  <Label htmlFor="notifyPitchShaped">{t('slackIntegration.pitchShaped')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -502,7 +500,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyCycleStarted: checked })
                     }
                   />
-                  <Label htmlFor="notifyCycleStarted">Cycle Started</Label>
+                  <Label htmlFor="notifyCycleStarted">{t('slackIntegration.cycleStarted')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -512,7 +510,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyCycleCooldown: checked })
                     }
                   />
-                  <Label htmlFor="notifyCycleCooldown">Cycle Cooldown</Label>
+                  <Label htmlFor="notifyCycleCooldown">{t('slackIntegration.cycleCooldown')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -522,7 +520,7 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifyBettingCompleted: checked })
                     }
                   />
-                  <Label htmlFor="notifyBettingCompleted">Betting Completed</Label>
+                  <Label htmlFor="notifyBettingCompleted">{t('slackIntegration.bettingCompleted')}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -532,16 +530,16 @@ export default function SlackIntegrationPage() {
                       setChannelForm({ ...channelForm, notifySprintStarted: checked })
                     }
                   />
-                  <Label htmlFor="notifySprintStarted">Sprint Started</Label>
+                  <Label htmlFor="notifySprintStarted">{t('slackIntegration.sprintStarted')}</Label>
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setChannelDialogOpen(false)}>
-              Cancel
+              {t('slackIntegration.cancel')}
             </Button>
-            <Button onClick={handleCreateChannelConfig}>Save</Button>
+            <Button onClick={handleCreateChannelConfig}>{t('slackIntegration.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -550,11 +548,11 @@ export default function SlackIntegrationPage() {
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Send Test Notification</DialogTitle>
+            <DialogTitle>{t('slackIntegration.testNotification')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="testMessage">Message</Label>
+              <Label htmlFor="testMessage">{t('slackIntegration.testMessage')}</Label>
               <textarea
                 id="testMessage"
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -564,7 +562,7 @@ export default function SlackIntegrationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="testChannel">Channel (optional)</Label>
+              <Label htmlFor="testChannel">{t('slackIntegration.testChannel')}</Label>
               <Input
                 id="testChannel"
                 value={testChannel}
@@ -575,11 +573,11 @@ export default function SlackIntegrationPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTestDialogOpen(false)}>
-              Cancel
+              {t('slackIntegration.cancel')}
             </Button>
             <Button onClick={handleSendTestNotification}>
               <Send className="mr-2 h-4 w-4" />
-              Send Test
+              {t('slackIntegration.sendTest')}
             </Button>
           </DialogFooter>
         </DialogContent>

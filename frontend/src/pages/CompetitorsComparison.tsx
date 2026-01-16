@@ -169,7 +169,7 @@ export default function CompetitorsComparison() {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {t('common.back')}
+                {t('competitorsComparison.backToDashboard')}
               </Button>
               <Separator orientation="vertical" className="h-6" />
               <div className="flex items-center gap-2">
@@ -192,11 +192,10 @@ export default function CompetitorsComparison() {
             Comparison Guide
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            How ShipFlow Compares
+            {t('competitorsComparison.title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            ShipFlow is the only project management tool built specifically for the Shape Up methodology.
-            See how we compare to popular alternatives.
+            {t('competitorsComparison.subtitle')}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {competitors.map((comp) => (
@@ -213,7 +212,7 @@ export default function CompetitorsComparison() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Why Choose ShipFlow?
+              {t('competitorsComparison.whyShipFlow')}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               ShipFlow stands out with unique features designed for teams following Shape Up.

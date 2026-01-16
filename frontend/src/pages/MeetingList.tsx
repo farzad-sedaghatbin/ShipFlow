@@ -63,7 +63,7 @@ import {
 const meetingTypes: MeetingType[] = ['SHAPING', 'BETTING', 'KICKOFF', 'STANDUP', 'DEMO', 'RETROSPECTIVE', 'HILL_CHART_REVIEW'];
 
 export default function MeetingList() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -71,8 +71,6 @@ export default function MeetingList() {
   const [retrospectives, setRetrospectives] = useState<Retrospective[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('meetingList.title'), i18n.language);
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [docsDialog, setDocsDialog] = useState<{ open: boolean; meeting: Meeting | null }>({ open: false, meeting: null });

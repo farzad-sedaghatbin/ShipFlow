@@ -111,15 +111,14 @@ export const CycleHillChart: React.FC = () => {
       {points.length === 0 ? (
         <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 animate-in fade-in duration-500">
           <Info className="h-4 w-4" />
-          <span className="text-sm">No hill chart points found for this cycle. Add scopes to individual pitches to see them here.</span>
+          <span className="text-sm">{t('cycleHillChart.noPoints')}</span>
         </div>
       ) : (
         <>
           <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 animate-in fade-in duration-300">
             <Info className="h-4 w-4 shrink-0" />
             <p className="text-sm">
-              Showing all scopes from {Object.keys(pointsByPitch).length} pitch(es) in this cycle.
-              Click on any point to view the pitch details.
+              {t('cycleHillChart.showingScopes', { count: Object.keys(pointsByPitch).length })}
             </p>
           </div>
 
@@ -133,7 +132,7 @@ export const CycleHillChart: React.FC = () => {
           </div>
 
           <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Scopes by Pitch</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('cycleHillChart.scopesByPitch')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(pointsByPitch).map(([pitchTitle, pitchPoints]) => (
                 <Card 

@@ -50,8 +50,6 @@ const TestCaseFormPage: React.FC = () => {
   const isEdit = !!id;
 
   const [loading, setLoading] = useState(isEdit);
-  // i18n ready
-  if (false) console.log(t('testCases.createTestCase'));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -234,7 +232,7 @@ const TestCaseFormPage: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Invalid test case ID</span>
+          <span className="text-sm">{t('testCaseForm.invalidId')}</span>
         </div>
       </div>
     );
@@ -253,9 +251,9 @@ const TestCaseFormPage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('testCaseForm.back')}
         </Button>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Test Case' : 'New Test Case'}</h1>
+        <h1 className="text-2xl font-bold">{isEdit ? t('testCaseForm.editTitle') : t('testCaseForm.createTitle')}</h1>
       </div>
 
       {error && (
@@ -269,34 +267,36 @@ const TestCaseFormPage: React.FC = () => {
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('testCaseForm.title')} *</Label>
               <Input
                 id="title"
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder={t('testCaseForm.titlePlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('testCaseForm.description')}</Label>
               <Textarea
                 id="description"
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder={t('testCaseForm.descriptionPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Pitch</Label>
+                <Label>{t('testCaseForm.pitch')}</Label>
                 <Select
                   value={formData.pitchId ? String(formData.pitchId) : 'none'}
                   onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a pitch" />
+                    <SelectValue placeholder={t('testCaseForm.selectPitch')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
@@ -310,18 +310,18 @@ const TestCaseFormPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Scope (optional)</Label>
+                <Label>{t('testCaseForm.scope')}</Label>
                 <Select
                   value={formData.scopeId ? String(formData.scopeId) : 'none'}
                   onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? "Select pitch or search" : "No specific scope"} />
+                    <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : "No specific scope"} />
                   </SelectTrigger>
                   <SelectContent>
                     <div className="px-2 pb-2">
                       <Input
-                        placeholder="Search scopes..."
+                        placeholder={t('testCaseForm.searchScopes')}
                         value={scopeSearch}
                         onChange={(e) => setScopeSearch(e.target.value)}
                         className="h-8"
@@ -329,9 +329,9 @@ const TestCaseFormPage: React.FC = () => {
                     </div>
                     <SelectItem value="none">No specific scope</SelectItem>
                     {searchingScopes ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.searching')}</div>
                     ) : !formData.pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.minCharacters')}</div>
                     ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
                       <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
                     ) : scopes.length === 0 && !formData.pitchId ? (
@@ -537,7 +537,7 @@ const TestCaseFormPage: React.FC = () => {
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="ghost" onClick={() => navigate('/qa/test-cases')}>
-                Cancel
+                {t('testCaseForm.cancel')}
               </Button>
               <Button type="submit" disabled={saving} className="gap-2">
                 {saving ? (
@@ -545,7 +545,7 @@ const TestCaseFormPage: React.FC = () => {
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                {saving ? 'Saving...' : isEdit ? 'Update Test Case' : 'Create Test Case'}
+                {saving ? t('testCaseForm.saving') : isEdit ? t('testCaseForm.save') : t('testCaseForm.save')}
               </Button>
             </div>
           </form>
