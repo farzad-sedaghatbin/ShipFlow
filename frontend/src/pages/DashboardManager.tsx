@@ -36,7 +36,7 @@ import LoadingButton from '../components/LoadingButton';
 import { TableSkeleton } from '../components/Skeletons';
 
 export default function DashboardManager() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [dashboards, setDashboards] = useState<CustomDashboard[]>([]);
   const [templates, setTemplates] = useState<CustomDashboard[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -116,7 +116,7 @@ export default function DashboardManager() {
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      showError('Dashboard name is required');
+      showError(t('common.nameRequired'));
       return;
     }
 
@@ -124,15 +124,15 @@ export default function DashboardManager() {
       setSavingDashboard(true);
       if (editingDashboard) {
         await customDashboardService.update(editingDashboard.id, formData);
-        showSuccess('Dashboard updated successfully');
+        showSuccess(t('common.updateSuccess'));
       } else {
         await customDashboardService.create(formData);
-        showSuccess('Dashboard created successfully');
+        showSuccess(t('common.createSuccess'));
       }
       setShowCreateDialog(false);
       loadDashboards();
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to save dashboard'));
+      showError(getUserFriendlyError(err, t('common.saveFailed')));
     } finally {
       setSavingDashboard(false);
     }
@@ -140,28 +140,28 @@ export default function DashboardManager() {
 
   const handleDelete = async (dashboard: CustomDashboard) => {
     if (dashboard.isDefault) {
-      showError('Cannot delete the default dashboard. Set another dashboard as default first.');
+      showError(t('common.cannotDeleteDefault'));
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${dashboard.name}"?`)) return;
+    if (!confirm(t('common.confirmDelete', { name: dashboard.name }))) return;
 
     try {
       await customDashboardService.delete(dashboard.id);
-      showSuccess('Dashboard deleted successfully');
+      showSuccess(t('common.deleteSuccess'));
       loadDashboards();
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to delete dashboard'));
+      showError(getUserFriendlyError(err, t('common.deleteFailed')));
     }
   };
 
   const handleSetDefault = async (dashboard: CustomDashboard) => {
     try {
       await customDashboardService.setAsDefault(dashboard.id);
-      showSuccess(`"${dashboard.name}" set as default dashboard`);
+      showSuccess(t('common.setDefaultSuccess', { name: dashboard.name }));
       loadDashboards();
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to set default dashboard'));
+      showError(getUserFriendlyError(err, t('common.setDefaultFailed')));
     }
   };
 
@@ -185,8 +185,8 @@ export default function DashboardManager() {
   const staticReports = [
     {
       id: -1,
-      name: 'Cycle Reports',
-      description: 'Traditional cycle-based analytics and metrics',
+      name: t('dashboardManager.cycleReports'),
+      description: t('dashboardManager.cycleReportsDesc'),
       url: '/reports/cycle-reports',
       isStatic: true
     }
@@ -207,19 +207,19 @@ export default function DashboardManager() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Reports</h1>
+          <h1 className="text-3xl font-bold">{t('dashboardManager.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your custom report boards and analytics dashboards
+            {t('dashboardManager.description')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Use Template
+            {t('dashboardManager.useTemplate')}
           </Button>
           <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
-            New Report Board
+            {t('dashboardManager.newReportBoard')}
           </Button>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function DashboardManager() {
                     <BarChart3 className="h-5 w-5 text-blue-600" />
                     {report.name}
                     <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                      Static
+                      {t('dashboardManager.static')}
                     </Badge>
                   </CardTitle>
                   {report.description && (
@@ -252,7 +252,7 @@ export default function DashboardManager() {
                 onClick={() => navigate(report.url)}
               >
                 <Eye className="mr-2 h-4 w-4" />
-                Open Report
+                {t('dashboardManager.openReport')}
               </Button>
             </CardContent>
           </Card>
@@ -263,18 +263,18 @@ export default function DashboardManager() {
           <Card className="col-span-full md:col-span-2 lg:col-span-2">
             <CardContent className="py-12 text-center">
               <LayoutDashboard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No custom report boards yet</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('dashboardManager.noCustomBoards')}</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first custom report board or start from a template
+                {t('dashboardManager.noCustomBoardsDesc')}
               </p>
               <div className="flex justify-center gap-2">
                 <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Browse Templates
+                  {t('dashboardManager.browseTemplates')}
                 </Button>
                 <Button onClick={openCreateDialog}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Report Board
+                  {t('dashboardManager.createReportBoard')}
                 </Button>
               </div>
             </CardContent>
@@ -314,7 +314,7 @@ export default function DashboardManager() {
                       onClick={() => navigate(`/reports/${dashboard.id}`)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
-                      View
+                      {t('dashboardManager.view')}
                     </Button>
                     {!dashboard.isDefault && (
                       <Button
@@ -323,7 +323,7 @@ export default function DashboardManager() {
                         onClick={() => handleSetDefault(dashboard)}
                       >
                         <Star className="mr-2 h-4 w-4" />
-                        Set Default
+                        {t('common.setDefault')}
                       </Button>
                     )}
                     <Button
@@ -332,7 +332,7 @@ export default function DashboardManager() {
                       onClick={() => openEditDialog(dashboard)}
                     >
                       <Edit className="mr-2 h-4 w-4" />
-                      Edit
+                      {t('dashboardManager.edit')}
                     </Button>
                     {!dashboard.isDefault && (
                       <Button
@@ -341,7 +341,7 @@ export default function DashboardManager() {
                         onClick={() => handleDelete(dashboard)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t('dashboardManager.delete')}
                       </Button>
                     )}
                   </div>
@@ -357,31 +357,31 @@ export default function DashboardManager() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingDashboard ? 'Edit Dashboard' : 'Create New Dashboard'}
+              {editingDashboard ? t('dashboardManager.editDashboard') : t('dashboardManager.createDashboard')}
             </DialogTitle>
             <DialogDescription>
               {editingDashboard
-                ? 'Update your dashboard details'
-                : 'Create a custom dashboard to organize your widgets'}
+                ? t('dashboardManager.updateDashboardDetails')
+                : t('dashboardManager.createNewDashboard')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Dashboard Name *</Label>
+              <Label htmlFor="name">{t('dashboardManager.dashboardName')}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Executive Summary"
+                placeholder={t('dashboardManager.dashboardNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('dashboardManager.dashboardDescription')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the purpose of this dashboard..."
+                placeholder={t('dashboardManager.dashboardDescPlaceholder')}
                 rows={3}
               />
             </div>
@@ -389,15 +389,15 @@ export default function DashboardManager() {
             {/* Scope Section */}
             <div className="border-t pt-4 space-y-4">
               <div>
-                <h3 className="font-medium mb-1 text-sm">Scope (Optional)</h3>
+                <h3 className="font-medium mb-1 text-sm">{t('dashboardManager.scope')}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Limit this dashboard to a specific cycle, pitch, or team
+                  {t('dashboardManager.scopeDesc')}
                 </p>
               </div>
 
               {/* Cycle Scope */}
               <div className="space-y-2">
-                <Label className="text-sm">Cycle</Label>
+                <Label className="text-sm">{t('dashboardManager.cycle')}</Label>
                 <Select
                   value={formData.cycleId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
@@ -406,10 +406,10 @@ export default function DashboardManager() {
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All cycles" />
+                    <SelectValue placeholder={t('dashboardManager.allCycles')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All cycles</SelectItem>
+                    <SelectItem value="none">{t('dashboardManager.allCycles')}</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id.toString()}>
                         {cycle.name}
@@ -421,7 +421,7 @@ export default function DashboardManager() {
 
               {/* Pitch Scope */}
               <div className="space-y-2">
-                <Label className="text-sm">Pitch</Label>
+                <Label className="text-sm">{t('dashboardManager.pitch')}</Label>
                 <Select
                   value={formData.pitchId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
@@ -430,10 +430,10 @@ export default function DashboardManager() {
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All pitches" />
+                    <SelectValue placeholder={t('dashboardManager.allPitches')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All pitches</SelectItem>
+                    <SelectItem value="none">{t('dashboardManager.allPitches')}</SelectItem>
                     {pitches.map((pitch) => (
                       <SelectItem key={pitch.id} value={pitch.id.toString()}>
                         {pitch.title}
@@ -445,7 +445,7 @@ export default function DashboardManager() {
 
               {/* Team Scope */}
               <div className="space-y-2">
-                <Label className="text-sm">Team</Label>
+                <Label className="text-sm">{t('dashboardManager.team')}</Label>
                 <Select
                   value={formData.teamId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
@@ -454,10 +454,10 @@ export default function DashboardManager() {
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All teams" />
+                    <SelectValue placeholder={t('dashboardManager.allTeams')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All teams</SelectItem>
+                    <SelectItem value="none">{t('dashboardManager.allTeams')}</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id.toString()}>
                         {team.name}
@@ -470,10 +470,10 @@ export default function DashboardManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <LoadingButton onClick={handleSave} loading={savingDashboard}>
-              {editingDashboard ? 'Update' : 'Create'}
+              {editingDashboard ? t('common.update') : t('common.create')}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -483,15 +483,15 @@ export default function DashboardManager() {
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Dashboard Templates</DialogTitle>
+            <DialogTitle>{t('dashboardManager.dashboardTemplates')}</DialogTitle>
             <DialogDescription>
-              Choose a pre-configured dashboard template to get started quickly
+              {t('dashboardManager.dashboardTemplatesDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 md:grid-cols-2 py-4">
             {templates.length === 0 ? (
               <div className="col-span-2 text-center py-8 text-muted-foreground">
-                No templates available
+                {t('dashboardManager.noTemplates')}
               </div>
             ) : (
               templates.map((template) => (
@@ -510,7 +510,7 @@ export default function DashboardManager() {
                         onClick={() => handleCloneTemplate(template)}
                       >
                         <Copy className="mr-2 h-4 w-4" />
-                        Use This Template
+                        {t('dashboardManager.useThisTemplate')}
                       </Button>
                     </div>
                   </CardContent>
