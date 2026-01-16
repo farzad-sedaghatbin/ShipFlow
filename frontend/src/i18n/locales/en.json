@@ -1022,17 +1022,93 @@
   },
   "bugReports": {
     "title": "Bug Reports",
+    "reportBug": "Report Bug",
     "createBug": "Report Bug",
     "editBug": "Edit Bug",
+    "confirmDelete": "Are you sure you want to delete this bug report?",
+    "unassigned": "Unassigned",
     "severity": "Severity",
     "status": "Status",
     "assignee": "Assignee",
+    "reporter": "Reporter",
     "pitch": "Pitch",
     "cycle": "Cycle",
     "noBugs": "No bugs reported",
     "createSuccess": "Bug reported successfully",
     "updateSuccess": "Bug updated successfully",
-    "loadFailed": "Failed to load bug reports"
+    "deleteSuccess": "Bug deleted successfully",
+    "loadFailed": "Failed to load bug reports",
+    "deleteFailed": "Failed to delete bug report",
+    "saveFailed": "Failed to save bug report",
+    "stats": {
+      "total": "Total",
+      "open": "Open",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "criticalBlocker": "Critical/Blocker"
+    },
+    "filters": {
+      "searchLabel": "Search bug reports",
+      "searchPlaceholder": "Search by title, description, or key...",
+      "searchAriaLabel": "Search bug reports",
+      "status": "Status",
+      "allStatus": "All Status",
+      "severity": "Severity",
+      "allSeverity": "All Severity",
+      "itemsSelected": "{{count}} selected",
+      "exclude": "Exclude",
+      "clear": "Clear",
+      "sortBy": "Sort By",
+      "cycle": "Cycle",
+      "allCycles": "All Cycles",
+      "pitch": "Pitch",
+      "allPitches": "All Pitches"
+    },
+    "sort": {
+      "createdDate": "Created Date",
+      "severity": "Severity",
+      "status": "Status",
+      "title": "Title"
+    },
+    "table": {
+      "key": "Key",
+      "title": "Title",
+      "severity": "Severity",
+      "status": "Status",
+      "pitch": "Pitch",
+      "assignee": "Assignee",
+      "reporter": "Reporter",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "viewDetails": "View Details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "close": "Close",
+      "editBug": "Edit Bug"
+    },
+    "emptyState": {
+      "noMatches": "No bugs match the filters",
+      "noBugs": "No bugs reported yet. Report one if you find an issue!"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page:",
+      "rangeText": "{{start}}-{{end}} of {{total}}"
+    },
+    "detail": {
+      "description": "Description",
+      "noDescription": "No description provided",
+      "stepsToReproduce": "Steps to Reproduce",
+      "notProvided": "Not provided",
+      "expectedBehavior": "Expected Behavior",
+      "actualBehavior": "Actual Behavior",
+      "environment": "Environment:",
+      "tags": "Tags",
+      "reporter": "Reporter:",
+      "assignee": "Assignee:",
+      "created": "Created:"
+    }
   },
   "qaDashboard": {
     "title": "QA Dashboard",

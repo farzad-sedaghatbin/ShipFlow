@@ -943,17 +943,93 @@
   },
   "bugReports": {
     "title": "گزارش‌های باگ",
+    "reportBug": "گزارش باگ",
     "createBug": "گزارش باگ",
     "editBug": "ویرایش باگ",
+    "confirmDelete": "آیا مطمئن هستید که می‌خواهید این گزارش باگ را حذف کنید؟",
+    "unassigned": "بدون مسئول",
     "severity": "شدت",
     "status": "وضعیت",
     "assignee": "مسئول",
+    "reporter": "گزارش‌دهنده",
     "pitch": "پیچ",
     "cycle": "چرخه",
     "noBugs": "هیچ باگی گزارش نشده",
     "createSuccess": "باگ با موفقیت گزارش شد",
     "updateSuccess": "باگ با موفقیت به‌روزرسانی شد",
-    "loadFailed": "بارگذاری گزارش‌های باگ ناموفق بود"
+    "deleteSuccess": "باگ با موفقیت حذف شد",
+    "loadFailed": "بارگذاری گزارش‌های باگ ناموفق بود",
+    "deleteFailed": "حذف گزارش باگ ناموفق بود",
+    "saveFailed": "ذخیره گزارش باگ ناموفق بود",
+    "stats": {
+      "total": "کل",
+      "open": "باز",
+      "inProgress": "در حال انجام",
+      "resolved": "حل شده",
+      "criticalBlocker": "بحرانی/مسدودکننده"
+    },
+    "filters": {
+      "searchLabel": "جستجوی گزارش‌های باگ",
+      "searchPlaceholder": "جستجو بر اساس عنوان، توضیحات، یا کلید...",
+      "searchAriaLabel": "جستجوی گزارش‌های باگ",
+      "status": "وضعیت",
+      "allStatus": "همه وضعیت‌ها",
+      "severity": "شدت",
+      "allSeverity": "همه شدت‌ها",
+      "itemsSelected": "{{count}} انتخاب شده",
+      "exclude": "حذف کردن",
+      "clear": "پاک کردن",
+      "sortBy": "مرتب‌سازی بر اساس",
+      "cycle": "چرخه",
+      "allCycles": "همه چرخه‌ها",
+      "pitch": "پیچ",
+      "allPitches": "همه پیچ‌ها"
+    },
+    "sort": {
+      "createdDate": "تاریخ ایجاد",
+      "severity": "شدت",
+      "status": "وضعیت",
+      "title": "عنوان"
+    },
+    "table": {
+      "key": "کلید",
+      "title": "عنوان",
+      "severity": "شدت",
+      "status": "وضعیت",
+      "pitch": "پیچ",
+      "assignee": "مسئول",
+      "reporter": "گزارش‌دهنده",
+      "created": "ایجاد شده",
+      "actions": "عملیات"
+    },
+    "actions": {
+      "viewDetails": "مشاهده جزئیات",
+      "edit": "ویرایش",
+      "delete": "حذف",
+      "close": "بستن",
+      "editBug": "ویرایش باگ"
+    },
+    "emptyState": {
+      "noMatches": "هیچ باگی با فیلترها مطابقت ندارد",
+      "noBugs": "هنوز هیچ باگی گزارش نشده است. اگر مشکلی پیدا کردید، آن را گزارش دهید!"
+    },
+    "pagination": {
+      "rowsPerPage": "ردیف در هر صفحه:",
+      "rangeText": "{{start}}-{{end}} از {{total}}"
+    },
+    "detail": {
+      "description": "توضیحات",
+      "noDescription": "توضیحاتی ارائه نشده است",
+      "stepsToReproduce": "مراحل بازتولید",
+      "notProvided": "ارائه نشده",
+      "expectedBehavior": "رفتار مورد انتظار",
+      "actualBehavior": "رفتار واقعی",
+      "environment": "محیط:",
+      "tags": "برچسب‌ها",
+      "reporter": "گزارش‌دهنده:",
+      "assignee": "مسئول:",
+      "created": "ایجاد شده:"
+    }
   },
   "qaDashboard": {
     "title": "داشبورد تضمین کیفیت",
