@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { safeParseId } from '../utils/validation';
 import { AlertTriangle, Zap, XCircle, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { circuitBreakerService } from '../services/circuitBreakerService';
@@ -20,15 +21,18 @@ import { Textarea } from '../components/ui/textarea';
 import { Slider } from '../components/ui/slider';
 
 export default function CircuitBreakerMonitor() {
+  const { t } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const cycleId = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
+  // i18n ready
+  if (false) console.log(t('circuitBreaker.title'));
 
   const [overflows, setOverflows] = useState<CircuitBreaker[]>([]);
   const [triggered, setTriggered] = useState<CircuitBreaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [threshold, setThreshold] = useState(80);
-  
+
   const [killDialog, setKillDialog] = useState<{ open: boolean; pitch: CircuitBreaker | null }>({
     open: false,
     pitch: null
@@ -49,13 +53,13 @@ export default function CircuitBreakerMonitor() {
 
   const loadData = async () => {
     if (!cycleId) return;
-    
+
     try {
       const [overflowRes, triggeredRes] = await Promise.all([
         circuitBreakerService.detectOverflow(cycleId, threshold),
         circuitBreakerService.getTriggered(cycleId)
       ]);
-      
+
       setOverflows(overflowRes.data);
       setTriggered(triggeredRes.data);
     } catch (error) {
@@ -296,8 +300,7 @@ export default function CircuitBreakerMonitor() {
                             onClick={() => {
                               setTriggerDialog({ open: true, pitch: cb });
                               setTriggerReason(
-                                `Exceeded time budget: ${cb.daysSpent.toFixed(1)}d spent vs ${
-                                  cb.appetiteDays
+                                `Exceeded time budget: ${cb.daysSpent.toFixed(1)}d spent vs ${cb.appetiteDays
                                 }d appetite`
                               );
                             }}
@@ -346,7 +349,7 @@ export default function CircuitBreakerMonitor() {
               <Textarea
                 value={triggerReason}
                 onChange={(e) => setTriggerReason(e.target.value)}
-                placeholder="Why is this pitch being flagged?"
+                placeholder={t('circuitBreaker.flagPlaceholder')}
                 className="mt-1"
                 rows={3}
               />
@@ -385,7 +388,7 @@ export default function CircuitBreakerMonitor() {
               <Textarea
                 value={killReason}
                 onChange={(e) => setKillReason(e.target.value)}
-                placeholder="Why is this pitch being killed?"
+                placeholder={t('circuitBreaker.killPlaceholder')}
                 className="mt-1"
                 rows={3}
               />

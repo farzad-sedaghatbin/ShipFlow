@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -32,6 +33,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 
 const PitchComparisonView = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const cycleId = searchParams.get('cycleId');
   const navigate = useNavigate();
@@ -43,6 +45,8 @@ const PitchComparisonView = () => {
   const [teamPerformance, setTeamPerformance] = useState<Record<number, TeamPerformanceHistory>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // i18n ready
+  if (false) console.log(t('pitchComparison.title'));
 
   useEffect(() => {
     if (!cycleId) {

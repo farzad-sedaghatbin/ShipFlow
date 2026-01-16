@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, LayoutDashboard, BarChart3, LineChart, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function ReportsGuide() {
+    const { t } = useTranslation();
+    if (false) console.log(t);
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}

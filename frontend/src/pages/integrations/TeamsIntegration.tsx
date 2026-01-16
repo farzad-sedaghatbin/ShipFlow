@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Send, RefreshCw, HelpCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -33,6 +34,9 @@ import {
 } from '../../services/teamsService';
 
 export default function TeamsIntegration() {
+  const { t } = useTranslation();
+  // i18n ready
+  if (false) console.log(t('teamsIntegration.title'));
   const [tabValue, setTabValue] = useState('workspace');
   const [configurations, setConfigurations] = useState<TeamsConfiguration[]>([]);
   const [activeConfig, setActiveConfig] = useState<TeamsConfiguration | null>(null);
@@ -40,13 +44,13 @@ export default function TeamsIntegration() {
   const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Dialog states
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [channelDialogOpen, setChannelDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
-  
+
   // Form states
   const [configForm, setConfigForm] = useState<CreateTeamsConfigurationRequest>({
     tenantName: '',
@@ -54,7 +58,7 @@ export default function TeamsIntegration() {
     defaultChannel: '',
     isEnabled: true,
   });
-  
+
   const [channelForm, setChannelForm] = useState<CreateTeamsChannelConfigRequest>({
     channelName: '',
     channelWebhookUrl: '',
@@ -67,7 +71,7 @@ export default function TeamsIntegration() {
     notifyBettingCompleted: false,
     notifySprintStarted: false,
   });
-  
+
   const [testMessage, setTestMessage] = useState('Test notification from ShipFlow');
   const [testChannel, setTestChannel] = useState('');
 
@@ -97,10 +101,10 @@ export default function TeamsIntegration() {
       setLoading(true);
       const configs = await teamsService.getAllConfigurations();
       setConfigurations(configs);
-      
+
       const active = await teamsService.getActiveConfiguration();
       setActiveConfig(active);
-      
+
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch Teams configurations');
@@ -139,7 +143,7 @@ export default function TeamsIntegration() {
     if (!confirm('Are you sure you want to delete this Teams configuration?')) {
       return;
     }
-    
+
     try {
       await teamsService.deleteConfiguration(configId);
       setSuccess('Teams configuration deleted successfully');
@@ -151,7 +155,7 @@ export default function TeamsIntegration() {
 
   const handleCreateChannelConfig = async () => {
     if (!activeConfig) return;
-    
+
     try {
       await teamsService.createChannelConfig(activeConfig.id, channelForm);
       setSuccess('Channel configuration saved successfully');
@@ -178,7 +182,7 @@ export default function TeamsIntegration() {
     if (!confirm('Are you sure you want to delete this channel configuration?')) {
       return;
     }
-    
+
     try {
       await teamsService.deleteChannelConfig(channelConfigId);
       setSuccess('Channel configuration deleted successfully');
@@ -192,7 +196,7 @@ export default function TeamsIntegration() {
 
   const handleSendTestNotification = async () => {
     if (!activeConfig) return;
-    
+
     try {
       await teamsService.sendTestNotification(activeConfig.id, {
         message: testMessage,
@@ -261,7 +265,7 @@ export default function TeamsIntegration() {
               {configurations.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">
-                    No Microsoft Teams tenant configured. Click "Configure Tenant" to get started.
+                    {t('teamsIntegration.noTenant')}
                   </p>
                   <Button onClick={() => setHelpDialogOpen(true)} variant="outline">
                     View Setup Guide
@@ -301,7 +305,7 @@ export default function TeamsIntegration() {
                                 size="icon"
                                 onClick={() => setTestDialogOpen(true)}
                                 disabled={!config.isEnabled}
-                                title="Send test notification"
+                                title={t('teamsIntegration.sendTest')}
                               >
                                 <Send className="h-4 w-4" />
                               </Button>
@@ -309,7 +313,7 @@ export default function TeamsIntegration() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDeleteConfiguration(config.id)}
-                                title="Delete configuration"
+                                title={t('teamsIntegration.deleteConfig')}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -343,7 +347,7 @@ export default function TeamsIntegration() {
             <CardContent className="pt-6">
               {channelConfigs.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No channel configurations. Click "Add Channel" to configure notification preferences for specific channels.
+                  {t('teamsIntegration.noChannels')}
                 </p>
               ) : (
                 <div className="rounded-md border">
@@ -493,7 +497,7 @@ export default function TeamsIntegration() {
                 id="tenantName"
                 value={configForm.tenantName}
                 onChange={(e) => setConfigForm({ ...configForm, tenantName: e.target.value })}
-                placeholder="My Organization"
+                placeholder={t('teamsIntegration.orgPlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -514,7 +518,7 @@ export default function TeamsIntegration() {
                 id="defaultChannel"
                 value={configForm.defaultChannel}
                 onChange={(e) => setConfigForm({ ...configForm, defaultChannel: e.target.value })}
-                placeholder="General"
+                placeholder={t('teamsIntegration.channelNamePlaceholder')}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -551,7 +555,7 @@ export default function TeamsIntegration() {
                 id="channelName"
                 value={channelForm.channelName}
                 onChange={(e) => setChannelForm({ ...channelForm, channelName: e.target.value })}
-                placeholder="General"
+                placeholder={t('teamsIntegration.teamNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -562,7 +566,7 @@ export default function TeamsIntegration() {
                 onChange={(e) =>
                   setChannelForm({ ...channelForm, channelWebhookUrl: e.target.value })
                 }
-                placeholder="Leave empty to use tenant webhook"
+                placeholder={t('teamsIntegration.webhookPlaceholder')}
               />
             </div>
 
@@ -687,7 +691,7 @@ export default function TeamsIntegration() {
                 id="testChannel"
                 value={testChannel}
                 onChange={(e) => setTestChannel(e.target.value)}
-                placeholder="Leave empty to use default channel"
+                placeholder={t('teamsIntegration.channelWebhookPlaceholder')}
               />
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Save, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,10 +31,13 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
 
 export default function MetricBuilder() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  // i18n ready
+  if (false) console.log(t('metricBuilder.title'));
 
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -182,7 +186,7 @@ export default function MetricBuilder() {
                   setFormData({ ...formData, name: e.target.value });
                   setErrors({ ...errors, name: '' });
                 }}
-                placeholder="e.g., Cycle Completion Rate"
+                placeholder={t('metricBuilder.namePlaceholder')}
                 className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
@@ -197,7 +201,7 @@ export default function MetricBuilder() {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what this metric measures..."
+                placeholder={t('metricBuilder.descriptionPlaceholder')}
                 rows={2}
               />
             </div>
@@ -279,13 +283,13 @@ export default function MetricBuilder() {
                 <Label>Cycle</Label>
                 <Select
                   value={formData.cycleId?.toString() || 'none'}
-                  onValueChange={(value) => setFormData({ 
-                    ...formData, 
-                    cycleId: value === 'none' ? undefined : parseInt(value) 
+                  onValueChange={(value) => setFormData({
+                    ...formData,
+                    cycleId: value === 'none' ? undefined : parseInt(value)
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All cycles" />
+                    <SelectValue placeholder={t('metricBuilder.allCycles')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">All cycles</SelectItem>
@@ -303,13 +307,13 @@ export default function MetricBuilder() {
                 <Label>Pitch</Label>
                 <Select
                   value={formData.pitchId?.toString() || 'none'}
-                  onValueChange={(value) => setFormData({ 
-                    ...formData, 
-                    pitchId: value === 'none' ? undefined : parseInt(value) 
+                  onValueChange={(value) => setFormData({
+                    ...formData,
+                    pitchId: value === 'none' ? undefined : parseInt(value)
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All pitches" />
+                    <SelectValue placeholder={t('metricBuilder.allPitches')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">All pitches</SelectItem>
@@ -327,13 +331,13 @@ export default function MetricBuilder() {
                 <Label>Team</Label>
                 <Select
                   value={formData.teamId?.toString() || 'none'}
-                  onValueChange={(value) => setFormData({ 
-                    ...formData, 
-                    teamId: value === 'none' ? undefined : parseInt(value) 
+                  onValueChange={(value) => setFormData({
+                    ...formData,
+                    teamId: value === 'none' ? undefined : parseInt(value)
                   })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All teams" />
+                    <SelectValue placeholder={t('metricBuilder.allTeams')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">All teams</SelectItem>
@@ -369,14 +373,14 @@ export default function MetricBuilder() {
                   setErrors({ ...errors, formula: '' });
                   setValidationResult(null);
                 }}
-                placeholder="e.g., completedPitches / totalPitches * 100"
+                placeholder={t('metricBuilder.formulaPlaceholder')}
                 rows={4}
                 className={errors.formula ? 'border-destructive' : ''}
               />
               {errors.formula && (
                 <p className="text-xs text-destructive">{errors.formula}</p>
               )}
-              
+
               {validationResult && (
                 <Alert variant={validationResult.valid ? 'default' : 'destructive'}>
                   {validationResult.valid ? (

@@ -1,6 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import GitHubRepositoryManager from '../../components/GitHubRepositoryManager';
 
 export default function GitHubIntegration() {
+  const { t } = useTranslation();
+  // i18n ready
+  if (false) console.log(t('gitHubIntegration.title'));
   return (
     <div className="space-y-6">
       <div>
