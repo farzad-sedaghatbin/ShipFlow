@@ -1679,6 +1679,7 @@
     "sortTeam": "Team",
     "noPitchesInStatus": "No pitches",
     "noPitches": "No pitches",
+    "noPitchesDescription": "Drag pitches here or create a new {{status}} pitch",
     "dragToMove": "Drag pitches here or create a new {{status}} pitch",
     "statuses": {
       "pending": "Pending",
@@ -1751,7 +1752,12 @@
     "loadPitchesFailed": "Failed to load pitches",
     "noCyclesAvailable": "No cycles available. Create a cycle first.",
     "selectCycleFirst": "Select a cycle to create pitches",
-    "unassignedTeam": "Unassigned"
+    "unassignedTeam": "Unassigned",
+    "errors": {
+      "loadFailed": "Failed to load pitches",
+      "updateStatusFailed": "Failed to update status",
+      "createFailed": "Failed to create pitch"
+    }
   },
   "peopleManagement": {
     "title": "People Management",

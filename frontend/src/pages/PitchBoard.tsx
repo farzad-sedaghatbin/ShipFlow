@@ -69,8 +69,6 @@ export default function PitchBoard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('common.loading'));
   const [createDialog, setCreateDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -142,7 +140,7 @@ export default function PitchBoard() {
       const response = await pitchService.getByCycleId(cycleId);
       setPitches(response.data);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to load pitches'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.loadFailed')));
     }
   };
 
@@ -153,7 +151,7 @@ export default function PitchBoard() {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to update status'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.updateStatusFailed')));
     }
   };
 
@@ -246,7 +244,7 @@ export default function PitchBoard() {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to create pitch'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.createFailed')));
     } finally {
       setSaving(false);
     }
@@ -499,8 +497,8 @@ export default function PitchBoard() {
                   <Card className="opacity-60 border-dashed">
                     <CardContent className="py-6">
                       <EmptyState
-                        title="No pitches"
-                        description={`Drag pitches here or create a new ${status.toLowerCase().replace('_', ' ')} pitch`}
+                        title={t('pitchBoard.noPitches')}
+                        description={t('pitchBoard.noPitchesDescription', { status: status.toLowerCase().replace('_', ' ') })}
                         size="small"
                         compact
                       />

@@ -1892,10 +1892,17 @@
     "sortByDate": "تاریخ",
     "sortByName": "نام",
     "sortByAppetite": "اشتها",
-    "confirmDelete": "آیا مطمئن هستید که می‌خواهید این پیچ را حذف کنید؟",
+    "confirmDelete": "آیا مطمئن هستید که می\u200cخواهید این پیچ را حذف کنید؟",
     "deleteSuccess": "پیچ با موفقیت حذف شد",
     "moveSuccess": "پیچ با موفقیت جابجا شد",
-    "loadFailed": "بارگذاری پیچ‌ها ناموفق بود"
+    "loadFailed": "بارگذاری پیچ\u200cها ناموفق بود",
+    "noPitches": "پیچی وجود ندارد",
+    "noPitchesDescription": "پیچ\u200cها را به اینجا بکشید یا یک پیچ {{status}} جدید ایجاد کنید",
+    "errors": {
+      "loadFailed": "بارگذاری پیچ\u200cها ناموفق بود",
+      "updateStatusFailed": "به\u200cروزرسانی وضعیت ناموفق بود",
+      "createFailed": "ایجاد پیچ ناموفق بود"
+    }
   },
   "peopleManagement": {
     "title": "افراد",
