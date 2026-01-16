@@ -44,16 +44,16 @@ import {
 import { useToast } from '../contexts';
 
 const columns: { type: RetroColumnType; title: string; emoji: string; color: string }[] = [
-  { type: 'WENT_WELL', title: 'Went Well', emoji: '✅', color: 'border-green-500' },
-  { type: 'DID_NOT_GO_WELL', title: "Didn't Go Well", emoji: '⚠️', color: 'border-orange-500' },
-  { type: 'TRY_NEXT', title: 'Try Next', emoji: '🚀', color: 'border-blue-500' },
-  { type: 'ACTIONS', title: 'Actions', emoji: '🧾', color: 'border-purple-500' },
+  { type: 'WENT_WELL', title: '', emoji: '✅', color: 'border-green-500' },
+  { type: 'DID_NOT_GO_WELL', title: '', emoji: '⚠️', color: 'border-orange-500' },
+  { type: 'TRY_NEXT', title: '', emoji: '🚀', color: 'border-blue-500' },
+  { type: 'ACTIONS', title: '', emoji: '🧾', color: 'border-purple-500' },
 ];
 
 const statusConfig: Record<RetroStatus, { label: string; variant: 'default' | 'success' | 'secondary' }> = {
-  DRAFT: { label: '📝 Draft', variant: 'secondary' },
-  OPEN: { label: '🟢 Open', variant: 'default' },
-  CLOSED: { label: '✅ Closed', variant: 'success' },
+  DRAFT: { label: '', variant: 'secondary' },
+  OPEN: { label: '', variant: 'default' },
+  CLOSED: { label: '', variant: 'success' },
 };
 
 export default function RetroBoard() {
@@ -89,6 +89,25 @@ export default function RetroBoard() {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
   const isReadOnly = retro?.status === 'CLOSED';
 
+  const getColumnTitle = (type: RetroColumnType) => {
+    const map: Record<RetroColumnType, string> = {
+      WENT_WELL: t('retroBoardPage.wentWell'),
+      DID_NOT_GO_WELL: t('retroBoardPage.didNotGoWell'),
+      TRY_NEXT: t('retroBoardPage.tryNext'),
+      ACTIONS: t('retroBoardPage.actions'),
+    };
+    return map[type];
+  };
+
+  const getStatusLabel = (status: RetroStatus) => {
+    const map: Record<RetroStatus, string> = {
+      DRAFT: `📝 ${t('retroBoardPage.draft')}`,
+      OPEN: `🟢 ${t('retroBoardPage.open')}`,
+      CLOSED: `✅ ${t('retroBoardPage.closed')}`,
+    };
+    return map[status];
+  };
+
   useEffect(() => {
     if (id) {
       loadData(id);
@@ -106,7 +125,7 @@ export default function RetroBoard() {
     } catch (error: any) {
       console.error('Failed to load retro:', error);
       if (error.response?.status === 400 || error.response?.status === 403) {
-        showError('Retrospectives feature is disabled for this project');
+        showError(t('retroBoardPage.retrosDisabled'));
       }
     } finally {
       setLoading(false);
@@ -128,7 +147,7 @@ export default function RetroBoard() {
       setNewItemContent({ ...newItemContent, [columnType]: '' });
       setIsAnonymous({ ...isAnonymous, [columnType]: false });
     } catch (error) {
-      showError('Failed to add item');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -140,7 +159,7 @@ export default function RetroBoard() {
       setItems(items.map((item) => (item.id === editingItem.id ? { ...item, content: editingItem.content } : item)));
       setEditingItem(null);
     } catch (error) {
-      showError('Failed to update item');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -149,7 +168,7 @@ export default function RetroBoard() {
       await retroService.deleteItem(itemId);
       setItems(items.filter((item) => item.id !== itemId));
     } catch (error) {
-      showError('Failed to delete item');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -158,7 +177,7 @@ export default function RetroBoard() {
       const res = await retroService.toggleVote(itemId);
       setItems(items.map((item) => (item.id === itemId ? res.data : item)));
     } catch (error) {
-      showError('Failed to vote');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -173,9 +192,9 @@ export default function RetroBoard() {
         return item;
       }));
       setMergeDialog({ open: false, sourceItem: null, columnType: null });
-      showSuccess('Items merged successfully!');
+      showSuccess(t('retroBoardPage.itemsMerged'));
     } catch (error: any) {
-      showError(error.response?.data?.message || 'Failed to merge items');
+      showError(error.response?.data?.message || t('retroBoardPage.mergeFailed'));
     }
   };
 
@@ -188,9 +207,9 @@ export default function RetroBoard() {
     try {
       const res = await retroService.open(retro.id);
       setRetro(res.data);
-      showSuccess('Retrospective opened!');
+      showSuccess(t('retroBoardPage.retroOpened'));
     } catch (error) {
-      showError('Failed to open retrospective');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -199,9 +218,9 @@ export default function RetroBoard() {
     try {
       const res = await retroService.close(retro.id);
       setRetro(res.data);
-      showSuccess('Retrospective closed!');
+      showSuccess(t('retroBoardPage.retroClosed'));
     } catch (error) {
-      showError('Failed to close retrospective');
+      showError(t('retroBoardPage.saveFailed'));
     }
   };
 
@@ -221,7 +240,7 @@ export default function RetroBoard() {
     return (
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-          <span className="text-sm">Invalid retrospective ID</span>
+          <span className="text-sm">{t('pitchDetailPage.invalidPitchId')}</span>
         </div>
       </div>
     );
@@ -238,11 +257,11 @@ export default function RetroBoard() {
   if (!retro) {
     return (
       <div className="space-y-4">
-        <p className="text-muted-foreground">Retrospective not found</p>
+        <p className="text-muted-foreground">{t('pitchDetailPage.pitchNotFound')}</p>
         <Button variant="outline" asChild>
           <Link to="/retros">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Retros
+            {t('retroBoardPage.backToList')}
           </Link>
         </Button>
       </div>
@@ -259,12 +278,12 @@ export default function RetroBoard() {
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/retros">
                   <ArrowLeft className="mr-1 h-4 w-4" />
-                  Back
+                  {t('retroBoardPage.backToList')}
                 </Link>
               </Button>
               <h1 className="text-2xl font-bold">{retro.title}</h1>
               <Badge variant={statusConfig[retro.status].variant}>
-                {statusConfig[retro.status].label}
+                {getStatusLabel(retro.status)}
               </Badge>
               {isReadOnly && (
                 <Tooltip>
@@ -272,14 +291,14 @@ export default function RetroBoard() {
                     <Lock className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    This retrospective is closed and read-only
+                    {t('retroBoardPage.readOnly')}
                   </TooltipContent>
                 </Tooltip>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Cycle: {retro.cycleName} • Created: {formatLocalizedDate(new Date(retro.createdAt), i18n.language)}
-              {retro.closedAt && ` • Closed: ${formatLocalizedDate(new Date(retro.closedAt), i18n.language)}`}
+              {t('retroListPage.cycle')}: {retro.cycleName} • {t('backlogPage.created')}: {formatLocalizedDate(new Date(retro.createdAt), i18n.language)}
+              {retro.closedAt && ` • ${t('backlogPage.closed')}: ${formatLocalizedDate(new Date(retro.closedAt), i18n.language)}`}
             </p>
             {retro.notes && (
               <p className="text-sm italic text-muted-foreground">{retro.notes}</p>
@@ -289,13 +308,13 @@ export default function RetroBoard() {
             {retro.status === 'DRAFT' && (
               <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={handleOpenRetro}>
                 <Play className="mr-2 h-4 w-4" />
-                Open for Team
+                {t('retroBoardPage.openRetro')}
               </Button>
             )}
             {retro.status === 'OPEN' && isAdmin && (
               <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleCloseRetro}>
                 <Square className="mr-2 h-4 w-4" />
-                Close Retro
+                {t('retroBoardPage.closeRetro')}
               </Button>
             )}
           </div>
@@ -304,7 +323,7 @@ export default function RetroBoard() {
         {isReadOnly && (
           <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 p-4">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              This retrospective is closed and read-only. The findings have been captured.
+              {t('retroBoardPage.confirmCloseDesc')}
             </p>
           </div>
         )}
@@ -321,7 +340,7 @@ export default function RetroBoard() {
             >
               {/* Column Header */}
               <h3 className="text-lg font-semibold mb-4">
-                {column.emoji} {column.title}
+                {column.emoji} {getColumnTitle(column.type)}
               </h3>
 
               {/* Items */}
@@ -361,12 +380,12 @@ export default function RetroBoard() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge variant="info" className="text-xs cursor-help">
-                                  +{item.mergedItemIds.length} merged
+                                  +{item.mergedItemIds.length} {t('retroBoardPage.merge').toLowerCase()}
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <div className="space-y-1">
-                                  <p className="font-semibold text-xs">Merged items:</p>
+                                  <p className="font-semibold text-xs">{t('retroBoardPage.merge')}:</p>
                                   {items
                                     .filter((i) => item.mergedItemIds?.includes(i.id))
                                     .map((mergedItem) => (
@@ -403,7 +422,7 @@ export default function RetroBoard() {
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    {item.hasVoted ? 'Remove vote' : 'Vote'}
+                                    {item.hasVoted ? t('common.delete') : t('retroBoardPage.vote')}
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -432,7 +451,7 @@ export default function RetroBoard() {
                                         <Merge className="h-4 w-4" />
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Merge into another item</TooltipContent>
+                                    <TooltipContent>{t('retroBoardPage.merge')}</TooltipContent>
                                   </Tooltip>
                                 )}
                                 <Button
@@ -465,7 +484,7 @@ export default function RetroBoard() {
               {!isReadOnly && (
                 <div className="border-t pt-3 space-y-2">
                   <Textarea
-                    placeholder={`Add ${column.title.toLowerCase()}...`}
+                    placeholder={`${t('retroBoardPage.addItem')} ${getColumnTitle(column.type).toLowerCase()}...`}
                     value={newItemContent[column.type]}
                     onChange={(e) => setNewItemContent({ ...newItemContent, [column.type]: e.target.value })}
                     className="min-h-[60px] resize-none"
@@ -489,7 +508,7 @@ export default function RetroBoard() {
                         htmlFor={`anonymous-${column.type}`}
                         className="text-sm text-muted-foreground cursor-pointer"
                       >
-                        Post anonymously
+                        {t('retroBoardPage.anonymous')}
                       </label>
                     </div>
                     <Button
@@ -499,7 +518,7 @@ export default function RetroBoard() {
                       disabled={!newItemContent[column.type].trim()}
                     >
                       <Plus className="mr-1 h-4 w-4" />
-                      Add
+                      {t('retroBoardPage.addItem')}
                     </Button>
                   </div>
                 </div>
@@ -517,9 +536,9 @@ export default function RetroBoard() {
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Merge Item</DialogTitle>
+              <DialogTitle>{t('retroBoardPage.merge')}</DialogTitle>
               <DialogDescription>
-                Select an item to merge "{mergeDialog.sourceItem?.content?.substring(0, 50)}..." into:
+                {t('retroBoardPage.selectItemToMerge')} "{mergeDialog.sourceItem?.content?.substring(0, 50)}...":
               </DialogDescription>
             </DialogHeader>
             <div className="max-h-[300px] overflow-y-auto">
@@ -539,7 +558,7 @@ export default function RetroBoard() {
                   ))}
                   {getMergeTargets(mergeDialog.columnType, mergeDialog.sourceItem.id).length === 0 && (
                     <p className="text-center text-muted-foreground py-4">
-                      No other items in this column to merge with.
+                      {t('retroBoardPage.selectItemToMerge')}
                     </p>
                   )}
                 </div>
@@ -550,7 +569,7 @@ export default function RetroBoard() {
                 variant="outline"
                 onClick={() => setMergeDialog({ open: false, sourceItem: null, columnType: null })}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </DialogFooter>
           </DialogContent>

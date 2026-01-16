@@ -142,18 +142,18 @@ export default function Reports() {
 
   const statusData = report
     ? [
-        { name: 'Completed', value: report.completedPitches },
-        { name: 'In Progress', value: report.inProgressPitches },
-        { name: 'Not Started', value: report.notStartedPitches || 0 },
+        { name: t('reportsPage.completed'), value: report.completedPitches },
+        { name: t('reportsPage.inProgress'), value: report.inProgressPitches },
+        { name: t('reportsPage.notStarted'), value: report.notStartedPitches || 0 },
       ].filter((d) => d.value > 0)
     : [];
 
   const riskData = report?.riskDistribution
     ? [
-        { name: 'Low', value: report.riskDistribution.lowRiskCount, color: '#10b981' },
-        { name: 'Medium', value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
-        { name: 'High', value: report.riskDistribution.highRiskCount, color: '#f97316' },
-        { name: 'Critical', value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
+        { name: t('reportsPage.lowRiskLabel'), value: report.riskDistribution.lowRiskCount, color: '#10b981' },
+        { name: t('reportsPage.mediumRiskLabel'), value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
+        { name: t('reportsPage.highRiskLabel'), value: report.riskDistribution.highRiskCount, color: '#f97316' },
+        { name: t('reportsPage.criticalRiskLabel'), value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -302,12 +302,12 @@ export default function Reports() {
           {/* Variance Analysis */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Variance Analysis</CardTitle>
+              <CardTitle>{t('reportsPage.varianceAnalysis')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Variance (Hours)</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.varianceHours')}</p>
                   <p className={cn(
                     'text-2xl font-bold',
                     report.varianceHours > 0 ? 'text-destructive' : 'text-green-600'
@@ -316,7 +316,7 @@ export default function Reports() {
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Variance (%)</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.variancePercent')}</p>
                   <p className={cn(
                     'text-2xl font-bold',
                     report.variancePercentage > 0 ? 'text-destructive' : 'text-green-600'
@@ -325,11 +325,11 @@ export default function Reports() {
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Team Members</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.teamMembers')}</p>
                   <p className="text-2xl font-bold">{report.totalTeamMembers}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Avg Hours/Member</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.avgHoursPerMember')}</p>
                   <p className="text-2xl font-bold">{report.averageHoursPerMember.toFixed(1)}h</p>
                 </div>
               </div>
@@ -339,20 +339,20 @@ export default function Reports() {
           {/* Out-of-Scope Work Statistics */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Out-of-Scope Work (Tasks)</CardTitle>
+              <CardTitle>{t('reportsPage.outOfScopeWork')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Total Tasks</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.totalTasks')}</p>
                   <p className="text-2xl font-bold">{report.totalTasks}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Completed Tasks</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.completedTasks')}</p>
                   <p className="text-2xl font-bold text-green-600">{report.completedTasks}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Est. Hours</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.estimateHours')}</p>
                   <p className="text-2xl font-bold">{report.totalTaskEstimateHours.toFixed(0)}h</p>
                 </div>
                 <div className="text-center">
@@ -372,7 +372,7 @@ export default function Reports() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <Card>
               <CardHeader>
-                <CardTitle>Appetite vs Actual Hours by Pitch</CardTitle>
+                <CardTitle>{t('reportsPage.appetiteVsActual')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -390,7 +390,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Pitch Status Distribution</CardTitle>
+                <CardTitle>{t('reportsPage.pitchStatusDist')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -419,7 +419,7 @@ export default function Reports() {
           {/* Risk Distribution Section */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Risk Distribution</CardTitle>
+              <CardTitle>{t('reportsPage.riskDistribution')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -447,34 +447,34 @@ export default function Reports() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Low Risk</p>
+                      <p className="text-sm text-muted-foreground">{t('reportsPage.lowRisk')}</p>
                       <p className="text-2xl font-bold text-green-600">{report.riskDistribution?.lowRiskCount || 0}</p>
                     </div>
                     <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Medium Risk</p>
+                      <p className="text-sm text-muted-foreground">{t('reportsPage.mediumRisk')}</p>
                       <p className="text-2xl font-bold text-yellow-600">{report.riskDistribution?.mediumRiskCount || 0}</p>
                     </div>
                     <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">High Risk</p>
+                      <p className="text-sm text-muted-foreground">{t('reportsPage.highRisk')}</p>
                       <p className="text-2xl font-bold text-orange-600">{report.riskDistribution?.highRiskCount || 0}</p>
                     </div>
                     <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Critical Risk</p>
+                      <p className="text-sm text-muted-foreground">{t('reportsPage.criticalRisk')}</p>
                       <p className="text-2xl font-bold text-red-600">{report.riskDistribution?.criticalRiskCount || 0}</p>
                     </div>
                   </div>
                   <div className="pt-4 border-t">
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
-                        <p className="text-xs text-muted-foreground">Avg Risk Score</p>
+                        <p className="text-xs text-muted-foreground">{t('reportsPage.avgRiskScore')}</p>
                         <p className="text-lg font-semibold">{report.riskDistribution?.averageRiskScore?.toFixed(1) || '0'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Min Score</p>
+                        <p className="text-xs text-muted-foreground">{t('reportsPage.minScore')}</p>
                         <p className="text-lg font-semibold">{report.riskDistribution?.minRiskScore?.toFixed(1) || '0'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Max Score</p>
+                        <p className="text-xs text-muted-foreground">{t('reportsPage.maxScore')}</p>
                         <p className="text-lg font-semibold">{report.riskDistribution?.maxRiskScore?.toFixed(1) || '0'}</p>
                       </div>
                     </div>
@@ -490,7 +490,7 @@ export default function Reports() {
               {report.topPerformers.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Top Performers</CardTitle>
+                    <CardTitle>{t('reportsPage.topPerformers')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
@@ -507,13 +507,13 @@ export default function Reports() {
               {report.overBudgetPitches.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Over Budget Pitches</CardTitle>
+                    <CardTitle>{t('reportsPage.overBudgetPitches')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
                       {report.overBudgetPitches.map((pitch, index) => (
                         <li key={index} className="flex items-center gap-2">
-                          <Badge variant="destructive">Over Budget</Badge>
+                          <Badge variant="destructive">{t('reportsPage.overBudget')}</Badge>
                           <span className="font-medium">{pitch}</span>
                         </li>
                       ))}
@@ -527,7 +527,7 @@ export default function Reports() {
           {/* Member Hours Chart */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Hours by Team Member</CardTitle>
+              <CardTitle>{t('reportsPage.hoursByMember')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
@@ -545,21 +545,21 @@ export default function Reports() {
           {/* Pitch Details Table */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Pitch Details</CardTitle>
+              <CardTitle>{t('reportsPage.pitchDetails')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Pitch</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Appetite (days)</TableHead>
-                      <TableHead className="text-right">Appetite (h)</TableHead>
-                      <TableHead className="text-right">Actual (h)</TableHead>
-                      <TableHead className="text-right">Variance (h)</TableHead>
-                      <TableHead className="text-center">Over Budget</TableHead>
+                      <TableHead>{t('reportsPage.pitch')}</TableHead>
+                      <TableHead>{t('reportsPage.team')}</TableHead>
+                      <TableHead>{t('reportsPage.status')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.appetiteDays')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.appetiteHours')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.actualHours')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.variance')}</TableHead>
+                      <TableHead className="text-center">{t('reportsPage.isOverBudget')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -581,7 +581,7 @@ export default function Reports() {
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant={pitch.isOverBudget ? 'destructive' : 'default'}>
-                            {pitch.isOverBudget ? 'Yes' : 'No'}
+                            {pitch.isOverBudget ? t('reportsPage.yes') : t('reportsPage.no')}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -595,19 +595,19 @@ export default function Reports() {
           {/* Member Details Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Member Work Summary</CardTitle>
+              <CardTitle>{t('reportsPage.memberWorkSummary')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead className="text-right">Total Hours</TableHead>
-                      <TableHead className="text-right">Work Days</TableHead>
-                      <TableHead className="text-right">Avg Hours/Day</TableHead>
+                      <TableHead>{t('reportsPage.member')}</TableHead>
+                      <TableHead>{t('reportsPage.role')}</TableHead>
+                      <TableHead>{t('reportsPage.team')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.totalHours')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.workDays')}</TableHead>
+                      <TableHead className="text-right">{t('reportsPage.avgHoursPerDay')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

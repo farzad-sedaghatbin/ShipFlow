@@ -46,7 +46,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 
 // Draggable Pitch Card Component
-function DraggablePitchCard({ pitch, isDragging }: { pitch: Pitch; isDragging?: boolean }) {
+function DraggablePitchCard({ pitch, isDragging, t }: { pitch: Pitch; isDragging?: boolean; t: any }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `pitch-${pitch.id}`,
     data: { pitch, type: 'pitch' },
@@ -60,10 +60,10 @@ function DraggablePitchCard({ pitch, isDragging }: { pitch: Pitch; isDragging?: 
     : undefined;
 
   const getAppetiteLabel = (days: number) => {
-    if (days <= 7) return 'Small Batch';
-    if (days <= 14) return 'Medium Batch';
-    if (days <= 28) return 'Big Batch';
-    return 'Full Cycle';
+    if (days <= 7) return t('bettingTablePage.smallBatch');
+    if (days <= 14) return t('bettingTablePage.mediumBatch');
+    if (days <= 28) return t('bettingTablePage.bigBatch');
+    return t('bettingTablePage.fullCycle');
   };
 
   const getAppetiteVariant = (days: number): 'default' | 'secondary' | 'destructive' | 'outline' => {
@@ -88,7 +88,7 @@ function DraggablePitchCard({ pitch, isDragging }: { pitch: Pitch; isDragging?: 
             <p className="font-semibold text-sm truncate mb-1">{pitch.title}</p>
             <div className="flex items-center gap-1.5">
               <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
-                {pitch.appetiteDays} days
+                {pitch.appetiteDays} {t('common.days')}
               </Badge>
               <span className="text-xs text-muted-foreground">
                 {getAppetiteLabel(pitch.appetiteDays)}
@@ -110,11 +110,13 @@ function DroppableSlot({
   onRemovePitch,
   cycleStartDate,
   cycleEndDate,
+  t,
 }: {
   slot: BettingSlot;
   onRemovePitch: (slotId: number) => void;
   cycleStartDate: string;
   cycleEndDate: string;
+  t: any;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: `slot-${slot.id}`,
@@ -169,13 +171,13 @@ function DroppableSlot({
               </button>
             </div>
             <Badge variant="default" className="mt-auto self-start h-4 text-[0.65rem]">
-              {slot.pitchAppetiteDays} days
+              {slot.pitchAppetiteDays} {t('common.days')}
             </Badge>
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-            <p className="text-xs">Drop pitch here</p>
-            <p className="text-xs opacity-60">{slotDays} days available</p>
+            <p className="text-xs">{t('bettingTablePage.dropPitchHere')}</p>
+            <p className="text-xs opacity-60">{t('bettingTablePage.daysAvailable', { days: slotDays })}</p>
           </div>
         )}
       </div>
@@ -189,11 +191,13 @@ function TeamTrackRow({
   cycleStartDate,
   cycleEndDate,
   onRemovePitch,
+  t,
 }: {
   track: TeamTrack;
   cycleStartDate: string;
   cycleEndDate: string;
   onRemovePitch: (slotId: number) => void;
+  t: any;
 }) {
   return (
     <div className="mb-4">
@@ -204,7 +208,7 @@ function TeamTrackRow({
           variant={track.availableCapacityWeeks > 0 ? 'outline' : 'secondary'}
           className="ml-auto"
         >
-          {track.usedCapacityWeeks}/{track.totalCapacityWeeks} weeks used
+          {t('bettingTablePage.weeksUsed', { used: track.usedCapacityWeeks, total: track.totalCapacityWeeks })}
         </Badge>
       </div>
       <div className="relative h-[90px] bg-muted/50 rounded border border-border">
@@ -216,11 +220,12 @@ function TeamTrackRow({
               onRemovePitch={onRemovePitch}
               cycleStartDate={cycleStartDate}
               cycleEndDate={cycleEndDate}
+              t={t}
             />
           ))
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">
-            <p className="text-sm">No slots configured</p>
+            <p className="text-sm">{t('bettingTablePage.noSlotsConfigured')}</p>
           </div>
         )}
       </div>
@@ -307,7 +312,7 @@ export default function BettingTablePage() {
       setGeneratingSlots(true);
       await bettingService.generateSlots(Number(selectedCycle));
       await loadBettingTable(Number(selectedCycle));
-      showSuccess('Slots generated successfully');
+      showSuccess(t('bettingTablePage.slotsGeneratedSuccess'));
     } catch (error) {
       showError(getUserFriendlyError(error, 'Failed to generate slots'));
     } finally {
@@ -336,7 +341,7 @@ export default function BettingTablePage() {
 
     // Check if slot already has a pitch
     if (slot.pitchId) {
-      showError('This slot already has a pitch assigned. Remove it first.');
+      showError(t('bettingTablePage.slotAlreadyOccupied'));
       return;
     }
 
@@ -344,13 +349,13 @@ export default function BettingTablePage() {
       // Check if pitch fits
       const canFit = await bettingService.canPitchFitInSlot(slot.id, pitch.id);
       if (!canFit.data) {
-        showError(`Pitch "${pitch.title}" (${pitch.appetiteDays} days) doesn't fit in this slot.`);
+        showError(t('bettingTablePage.pitchDoesntFit', { title: pitch.title, days: pitch.appetiteDays }));
         return;
       }
 
       await bettingService.assignPitchToSlot(slot.id, pitch.id);
       await loadBettingTable(Number(selectedCycle));
-      showSuccess(`"${pitch.title}" assigned to ${slot.teamName}`);
+      showSuccess(t('bettingTablePage.pitchAssignedSuccess', { title: pitch.title, team: slot.teamName }));
     } catch (error) {
       showError(getUserFriendlyError(error, 'Failed to assign pitch'));
     }
@@ -360,7 +365,7 @@ export default function BettingTablePage() {
     try {
       await bettingService.removePitchFromSlot(slotId);
       await loadBettingTable(Number(selectedCycle));
-      showSuccess('Pitch removed from slot');
+      showSuccess(t('bettingTablePage.pitchRemovedSuccess'));
     } catch (error) {
       showError(getUserFriendlyError(error, 'Failed to remove pitch'));
     }
@@ -389,9 +394,9 @@ export default function BettingTablePage() {
         <div className="flex items-center gap-3">
           <Dices className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-xl font-bold">Betting Table</h1>
+            <h1 className="text-xl font-bold">{t('bettingTablePage.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              Drag shaped pitches to assign them to team slots
+              {t('bettingTablePage.subtitle')}
             </p>
           </div>
         </div>
@@ -399,7 +404,7 @@ export default function BettingTablePage() {
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={selectedCycle} onValueChange={setSelectedCycle}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select cycle" />
+              <SelectValue placeholder={t('bettingTablePage.selectCycle')} />
             </SelectTrigger>
             <SelectContent>
               {cycles.map((cycle) => (
@@ -417,7 +422,7 @@ export default function BettingTablePage() {
             disabled={!selectedCycle}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            {t('bettingTablePage.refresh')}
           </Button>
 
           <Button
@@ -427,7 +432,7 @@ export default function BettingTablePage() {
             disabled={!selectedCycle}
           >
             <BarChart3 className="h-4 w-4 mr-2" />
-            Pitch Comparison
+            {t('bettingTablePage.pitchComparison')}
           </Button>
           
           <Button
@@ -435,15 +440,15 @@ export default function BettingTablePage() {
             disabled={!selectedCycle || generatingSlots}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Generate Slots
+            {t('bettingTablePage.generateSlots')}
           </Button>
         </div>
       </div>
 
       {!selectedCycle || cycles.length === 0 ? (
         <EmptyState
-          title="No Active Cycles"
-          description="Create a cycle first to start using the Betting Table"
+          title={t('bettingTablePage.noActiveCycles')}
+          description={t('bettingTablePage.createCycleFirst')}
           icon={Dices}
         />
       ) : !bettingTable ? (
@@ -463,7 +468,7 @@ export default function BettingTablePage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-4">
                     <ClipboardList className="h-5 w-5 text-primary" />
-                    <h2 className="font-semibold">Shaped Work</h2>
+                    <h2 className="font-semibold">{t('bettingTablePage.shapedWork')}</h2>
                     <Badge variant="secondary" className="ml-auto">
                       {bettingTable.shapedPitches.length}
                     </Badge>
@@ -471,19 +476,19 @@ export default function BettingTablePage() {
                   
                   <Alert className="mb-4">
                     <AlertDescription className="text-xs">
-                      Drag pitches to the timeline to assign them to teams
+                      {t('bettingTablePage.dragInstructions')}
                     </AlertDescription>
                   </Alert>
 
                   {bettingTable.shapedPitches.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <ClipboardList className="h-12 w-12 mx-auto opacity-30 mb-2" />
-                      <p className="text-sm">No shaped pitches available</p>
-                      <p className="text-xs">Mark pitches as "Shaped" to see them here</p>
+                      <p className="text-sm">{t('bettingTablePage.noPitchesAvailable')}</p>
+                      <p className="text-xs">{t('bettingTablePage.markPitchesAsShaped')}</p>
                     </div>
                   ) : (
                     bettingTable.shapedPitches.map((pitch) => (
-                      <DraggablePitchCard key={pitch.id} pitch={pitch} />
+                      <DraggablePitchCard key={pitch.id} pitch={pitch} t={t} />
                     ))
                   )}
                 </CardContent>
@@ -504,17 +509,17 @@ export default function BettingTablePage() {
                           {formatLocalizedDate(new Date(bettingTable.cycleStartDate), i18n.language)} - {formatLocalizedDate(new Date(bettingTable.cycleEndDate), i18n.language)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {bettingTable.cycleDurationWeeks} weeks
+                          {bettingTable.cycleDurationWeeks} {t('bettingTablePage.weeks')}
                         </span>
                       </div>
                     </div>
                     
                     <div className="flex gap-2">
                       <Badge variant="outline">
-                        {bettingTable.totalAssignedPitches} assigned
+                        {bettingTable.totalAssignedPitches} {t('bettingTablePage.assigned')}
                       </Badge>
                       <Badge variant="secondary">
-                        {bettingTable.usedCapacityWeeks}/{bettingTable.totalCapacityWeeks} weeks
+                        {bettingTable.usedCapacityWeeks}/{bettingTable.totalCapacityWeeks} {t('bettingTablePage.weeks')}
                       </Badge>
                     </div>
                   </div>
@@ -545,13 +550,13 @@ export default function BettingTablePage() {
                   {bettingTable.teamTracks.length === 0 ? (
                     <div className="text-center py-16 text-muted-foreground">
                       <Users className="h-16 w-16 mx-auto opacity-30 mb-4" />
-                      <h3 className="font-semibold text-lg mb-2">No Teams Configured</h3>
+                      <h3 className="font-semibold text-lg mb-2">{t('bettingTablePage.noTeamsConfigured')}</h3>
                       <p className="text-sm mb-4">
-                        Create teams for this cycle first, then generate slots.
+                        {t('bettingTablePage.createTeamsFirst')}
                       </p>
                       <Button onClick={handleGenerateSlots} disabled={generatingSlots}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Generate Slots
+                        {t('bettingTablePage.generateSlots')}
                       </Button>
                     </div>
                   ) : (
@@ -562,6 +567,7 @@ export default function BettingTablePage() {
                         cycleStartDate={bettingTable.cycleStartDate}
                         cycleEndDate={bettingTable.cycleEndDate}
                         onRemovePitch={handleRemovePitch}
+                        t={t}
                       />
                     ))
                   )}

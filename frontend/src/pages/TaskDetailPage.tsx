@@ -289,7 +289,7 @@ export default function TaskDetailPage() {
           onClick={() => navigate('/backlog')}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Backlog
+          {t('taskDetailPage.backToBacklog')}
         </Button>
       </div>
 
@@ -349,32 +349,32 @@ export default function TaskDetailPage() {
           {/* Task Metadata */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <Label className="text-xs text-muted-foreground">Assignee</Label>
+              <Label className="text-xs text-muted-foreground">{t('taskDetailPage.assignee')}</Label>
               <div className="mt-1 font-medium">
-                {task.assigneeName || 'Unassigned'}
+                {task.assigneeName || t('common.unassigned')}
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Pair Assignee</Label>
+              <Label className="text-xs text-muted-foreground">{t('taskDetailPage.pairAssignee')}</Label>
               <div className="mt-1 font-medium">
-                {task.pairAssigneeName || 'None'}
+                {task.pairAssigneeName || t('common.none')}
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Estimate</Label>
+              <Label className="text-xs text-muted-foreground">{t('taskDetailPage.estimate')}</Label>
               <div className="mt-1 font-medium">
                 {task.estimateHours ? `${task.estimateHours}h` : '-'}
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Actual</Label>
+              <Label className="text-xs text-muted-foreground">{t('taskDetailPage.actualHours')}</Label>
               <div className="mt-1 font-medium">
                 {task.actualHours ? `${task.actualHours}h` : '-'}
               </div>
             </div>
             {task.dueDate && (
               <div>
-                <Label className="text-xs text-muted-foreground">Due Date</Label>
+                <Label className="text-xs text-muted-foreground">{t('taskDetailPage.dueDate')}</Label>
                 <div className="mt-1 font-medium">
                   {dayjs(task.dueDate).format('MMM D, YYYY')}
                 </div>
@@ -382,7 +382,7 @@ export default function TaskDetailPage() {
             )}
             {task.parentTaskTitle && (
               <div>
-                <Label className="text-xs text-muted-foreground">Parent Task</Label>
+                <Label className="text-xs text-muted-foreground">{t('backlogPage.parentTask')}</Label>
                 <div className="mt-1 font-medium">
                   <Link to={`/backlog/${task.parentTaskId}`} className="hover:underline text-primary">
                     {task.parentTaskTitle}
@@ -391,14 +391,14 @@ export default function TaskDetailPage() {
               </div>
             )}
             <div>
-              <Label className="text-xs text-muted-foreground">Cycle</Label>
+              <Label className="text-xs text-muted-foreground">{t('taskDetailPage.cycle')}</Label>
               <div className="mt-1 font-medium">
                 {task.cycleName}
               </div>
             </div>
             {task.projectName && (
               <div>
-                <Label className="text-xs text-muted-foreground">Project</Label>
+                <Label className="text-xs text-muted-foreground">{t('common.project')}</Label>
                 <div className="mt-1 font-medium">
                   {task.projectName}
                 </div>
@@ -409,7 +409,7 @@ export default function TaskDetailPage() {
           {/* Description */}
           {task.description && (
             <div>
-              <Label className="text-sm font-semibold">Description</Label>
+              <Label className="text-sm font-semibold">{t('common.description')}</Label>
               <div className="mt-2 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap">
                 {task.description}
               </div>
@@ -419,7 +419,7 @@ export default function TaskDetailPage() {
           {/* Tags */}
           {task.tags && (
             <div>
-              <Label className="text-sm font-semibold">Tags</Label>
+              <Label className="text-sm font-semibold">{t('taskDetailPage.tags')}</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {task.tags.split(',').map((tag, idx) => (
                   <Badge key={idx} variant="outline">
@@ -433,14 +433,14 @@ export default function TaskDetailPage() {
           {/* Timestamps */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div>
-              <Label className="text-xs text-muted-foreground">Created</Label>
+              <Label className="text-xs text-muted-foreground">{t('backlogPage.created')}</Label>
               <div className="mt-1 text-sm">
                 {dayjs(task.createdAt).format('MMM D, YYYY h:mm A')}
-                {task.createdByName && ` by ${task.createdByName}`}
+                {task.createdByName && ` ${t('common.by')} ${task.createdByName}`}
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Updated</Label>
+              <Label className="text-xs text-muted-foreground">{t('backlogPage.updated')}</Label>
               <div className="mt-1 text-sm">
                 {dayjs(task.updatedAt).format('MMM D, YYYY h:mm A')}
               </div>
@@ -463,7 +463,7 @@ export default function TaskDetailPage() {
       {subtasks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Subtasks ({subtasks.length})</CardTitle>
+            <CardTitle className="text-lg">{t('taskDetailPage.subtasks')} ({subtasks.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -489,7 +489,7 @@ export default function TaskDetailPage() {
                     )}
                     {subtask.assigneeName && (
                       <p className="text-xs text-muted-foreground ml-6 mt-1">
-                        Assigned to: {subtask.assigneeName}
+                        {t('backlogPage.assignedTo')}: {subtask.assigneeName}
                       </p>
                     )}
                   </div>
@@ -602,19 +602,19 @@ export default function TaskDetailPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
+            <DialogTitle>{t('taskDetailPage.editTask')}</DialogTitle>
             <DialogDescription>
-              Update the task details below
+              {t('backlogPage.updateTaskDetails')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-title">Title *</Label>
+              <Label htmlFor="edit-title">{t('common.title')} *</Label>
               <Input
                 id="edit-title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Task title"
+                placeholder={t('backlogPage.taskTitle')}
                 className={fieldErrors.title ? 'border-destructive' : ''}
               />
               {fieldErrors.title && (
@@ -623,19 +623,19 @@ export default function TaskDetailPage() {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description">{t('common.description')}</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Task description"
+                placeholder={t('backlogPage.taskDescription')}
                 rows={3}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-status">Status *</Label>
+                <Label htmlFor="edit-status">{t('common.status')} *</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
@@ -825,11 +825,11 @@ export default function TaskDetailPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveTask} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
