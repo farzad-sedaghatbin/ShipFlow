@@ -214,11 +214,11 @@ export default function DashboardManager() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="me-2 h-4 w-4" />
             {t('dashboardManager.useTemplate')}
           </Button>
           <Button onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="me-2 h-4 w-4" />
             {t('dashboardManager.newReportBoard')}
           </Button>
         </div>
@@ -251,7 +251,7 @@ export default function DashboardManager() {
                 className="w-full"
                 onClick={() => navigate(report.url)}
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="me-2 h-4 w-4" />
                 {t('dashboardManager.openReport')}
               </Button>
             </CardContent>
@@ -269,11 +269,11 @@ export default function DashboardManager() {
               </p>
               <div className="flex justify-center gap-2">
                 <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Sparkles className="me-2 h-4 w-4" />
                   {t('dashboardManager.browseTemplates')}
                 </Button>
                 <Button onClick={openCreateDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                   {t('dashboardManager.createReportBoard')}
                 </Button>
               </div>
@@ -313,7 +313,7 @@ export default function DashboardManager() {
                       size="sm"
                       onClick={() => navigate(`/reports/${dashboard.id}`)}
                     >
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="me-2 h-4 w-4" />
                       {t('dashboardManager.view')}
                     </Button>
                     {!dashboard.isDefault && (
@@ -322,7 +322,7 @@ export default function DashboardManager() {
                         size="sm"
                         onClick={() => handleSetDefault(dashboard)}
                       >
-                        <Star className="mr-2 h-4 w-4" />
+                        <Star className="me-2 h-4 w-4" />
                         {t('common.setDefault')}
                       </Button>
                     )}
@@ -331,7 +331,7 @@ export default function DashboardManager() {
                       size="sm"
                       onClick={() => openEditDialog(dashboard)}
                     >
-                      <Edit className="mr-2 h-4 w-4" />
+                      <Edit className="me-2 h-4 w-4" />
                       {t('dashboardManager.edit')}
                     </Button>
                     {!dashboard.isDefault && (
@@ -340,7 +340,7 @@ export default function DashboardManager() {
                         size="sm"
                         onClick={() => handleDelete(dashboard)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="me-2 h-4 w-4" />
                         {t('dashboardManager.delete')}
                       </Button>
                     )}
@@ -509,7 +509,7 @@ export default function DashboardManager() {
                         className="w-full"
                         onClick={() => handleCloneTemplate(template)}
                       >
-                        <Copy className="mr-2 h-4 w-4" />
+                        <Copy className="me-2 h-4 w-4" />
                         {t('dashboardManager.useThisTemplate')}
                       </Button>
                     </div>

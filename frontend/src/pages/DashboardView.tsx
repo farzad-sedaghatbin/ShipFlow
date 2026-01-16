@@ -235,22 +235,22 @@ export default function DashboardView() {
                   loadDashboard(); // Reload to discard changes
                 }}
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="h-4 w-4 me-2" />
                 {t('common.cancel')}
               </Button>
               <Button onClick={handleSaveLayout}>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-4 w-4 me-2" />
                 {t('dashboardView.saveLayout')}
               </Button>
             </>
           ) : (
             <Button variant="outline" onClick={() => setEditMode(true)}>
-              <Edit3 className="h-4 w-4 mr-2" />
+              <Edit3 className="h-4 w-4 me-2" />
               {t('dashboardView.editDashboard')}
             </Button>
           )}
           <Button onClick={() => setShowWidgetSelector(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 me-2" />
             {t('dashboardView.addWidget')}
           </Button>
         </div>
@@ -261,7 +261,7 @@ export default function DashboardView() {
         <div className="flex flex-col items-center justify-center h-96 border-2 border-dashed rounded-lg">
           <p className="text-muted-foreground mb-4">{t('dashboardView.noWidgets')}</p>
           <Button onClick={() => setShowWidgetSelector(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 me-2" />
             {t('dashboardView.addFirstWidget')}
           </Button>
         </div>

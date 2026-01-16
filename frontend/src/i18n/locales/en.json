@@ -1181,6 +1181,32 @@
       "created": "Created:"
     }
   },
+  "chartConfig": {
+    "title": "Chart Configuration",
+    "chartType": "Chart Type",
+    "chartTitle": "Chart Title",
+    "chartTitlePlaceholder": "Enter chart title",
+    "xAxisLabel": "X-Axis Label",
+    "xAxisPlaceholder": "Horizontal axis label",
+    "yAxisLabel": "Y-Axis Label",
+    "yAxisPlaceholder": "Vertical axis label",
+    "lineChart": "Line Chart",
+    "barChart": "Bar Chart",
+    "pieChart": "Pie Chart",
+    "areaChart": "Area Chart",
+    "scatterPlot": "Scatter Plot",
+    "basicTab": "Basic",
+    "stylingTab": "Styling",
+    "advancedTab": "Advanced",
+    "showLegend": "Show Legend",
+    "showGrid": "Show Grid",
+    "showDataLabels": "Show Data Labels",
+    "stacked": "Stacked",
+    "animated": "Animated",
+    "colors": "Colors",
+    "save": "Save Configuration",
+    "cancel": "Cancel"
+  },
   "qaDashboard": {
     "title": "QA Dashboard",
     "testCoverage": "Test Coverage",

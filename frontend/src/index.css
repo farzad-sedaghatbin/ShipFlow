@@ -716,3 +716,53 @@ html[dir="rtl"] ol {
   background-color: var(--color-muted);
   font-weight: 600;
 }
+
+/* React Grid Layout - Ensure proper z-index and positioning */
+.react-grid-layout {
+  position: relative;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+}
+
+.react-grid-item.react-draggable-dragging {
+  z-index: 100;
+}
+
+.react-grid-item.resizing {
+  z-index: 100;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+/* RTL support for grid layout */
+[dir="rtl"] .react-grid-layout {
+  direction: ltr;
+}
+
+[dir="rtl"] .react-grid-item {
+  direction: rtl;
+}
+
+[dir="rtl"] .react-grid-item > .react-resizable-handle::after {
+  left: 3px;
+  right: auto;
+  border-left: 2px solid rgba(0, 0, 0, 0.4);
+  border-right: none;
+}

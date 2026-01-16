@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -41,6 +42,7 @@ export default function ChartConfigPanel({
   onConfigChange, 
   onCancel 
 }: ChartConfigPanelProps) {
+  const { t } = useTranslation();
   const [chartType, setChartType] = useState<ChartType>(initialConfig.chartType || 'LINE');
   const [title, setTitle] = useState(initialConfig.title || '');
   const [xAxisLabel, setXAxisLabel] = useState(initialConfig.xAxisLabel || '');
@@ -78,32 +80,32 @@ export default function ChartConfigPanel({
     <div className="space-y-6">
       <Tabs defaultValue="basic">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="styling">Styling</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="basic">{t('chartConfig.basicTab')}</TabsTrigger>
+          <TabsTrigger value="styling">{t('chartConfig.stylingTab')}</TabsTrigger>
+          <TabsTrigger value="advanced">{t('chartConfig.advancedTab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4">
           <div>
-            <Label>Chart Type</Label>
+            <Label>{t('chartConfig.chartType')}</Label>
             <Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="LINE">Line Chart</SelectItem>
-                <SelectItem value="BAR">Bar Chart</SelectItem>
-                <SelectItem value="PIE">Pie Chart</SelectItem>
-                <SelectItem value="AREA">Area Chart</SelectItem>
-                <SelectItem value="SCATTER">Scatter Plot</SelectItem>
+                <SelectItem value="LINE">{t('chartConfig.lineChart')}</SelectItem>
+                <SelectItem value="BAR">{t('chartConfig.barChart')}</SelectItem>
+                <SelectItem value="PIE">{t('chartConfig.pieChart')}</SelectItem>
+                <SelectItem value="AREA">{t('chartConfig.areaChart')}</SelectItem>
+                <SelectItem value="SCATTER">{t('chartConfig.scatterPlot')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Chart Title</Label>
+            <Label>{t('chartConfig.chartTitle')}</Label>
             <Input
-              placeholder="Enter chart title"
+              placeholder={t('chartConfig.chartTitlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -112,18 +114,18 @@ export default function ChartConfigPanel({
           {chartType !== 'PIE' && (
             <>
               <div>
-                <Label>X-Axis Label</Label>
+                <Label>{t('chartConfig.xAxisLabel')}</Label>
                 <Input
-                  placeholder="Horizontal axis label"
+                  placeholder={t('chartConfig.xAxisPlaceholder')}
                   value={xAxisLabel}
                   onChange={(e) => setXAxisLabel(e.target.value)}
                 />
               </div>
 
               <div>
-                <Label>Y-Axis Label</Label>
+                <Label>{t('chartConfig.yAxisLabel')}</Label>
                 <Input
-                  placeholder="Vertical axis label"
+                  placeholder={t('chartConfig.yAxisPlaceholder')}
                   value={yAxisLabel}
                   onChange={(e) => setYAxisLabel(e.target.value)}
                 />
@@ -156,7 +158,7 @@ export default function ChartConfigPanel({
           </Card>
 
           <div className="flex items-center justify-between">
-            <Label>Show Legend</Label>
+            <Label>{t('chartConfig.showLegend')}</Label>
             <input
               type="checkbox"
               checked={showLegend}
@@ -166,7 +168,7 @@ export default function ChartConfigPanel({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label>Show Grid Lines</Label>
+            <Label>{t('chartConfig.showGrid')}</Label>
             <input
               type="checkbox"
               checked={showGrid}
@@ -176,7 +178,7 @@ export default function ChartConfigPanel({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label>Show Data Labels</Label>
+            <Label>{t('chartConfig.showDataLabels')}</Label>
             <input
               type="checkbox"
               checked={showDataLabels}
@@ -190,7 +192,7 @@ export default function ChartConfigPanel({
           {(chartType === 'BAR' || chartType === 'AREA') && (
             <div className="flex items-center justify-between">
               <div>
-                <Label>Stacked Display</Label>
+                <Label>{t('chartConfig.stacked')}</Label>
                 <p className="text-sm text-muted-foreground">Stack multiple series on top of each other</p>
               </div>
               <input
@@ -204,7 +206,7 @@ export default function ChartConfigPanel({
 
           <div className="flex items-center justify-between">
             <div>
-              <Label>Animated Transitions</Label>
+              <Label>{t('chartConfig.animated')}</Label>
               <p className="text-sm text-muted-foreground">Enable smooth animations</p>
             </div>
             <input
@@ -239,10 +241,10 @@ export default function ChartConfigPanel({
 
       <div className="flex justify-end gap-2 pt-4 border-t">
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          {t('chartConfig.cancel')}
         </Button>
         <Button onClick={handleSave}>
-          Apply Configuration
+          {t('chartConfig.save')}
         </Button>
       </div>
     </div>

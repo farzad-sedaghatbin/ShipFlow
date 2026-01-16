@@ -9,6 +9,8 @@ import { PageErrorBoundary } from '@/components/ErrorBoundary'
 import { queryClient } from '@/lib/queryClient'
 import '@/i18n' // Initialize i18n
 import './index.css'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <PageErrorBoundary>

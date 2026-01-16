@@ -216,7 +216,7 @@ export default function Reports() {
               disabled={!selectedCycle}
               size="sm"
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText className="h-4 w-4 me-2" />
               {t('reportsPage.exportPDF')}
             </Button>
             <Button
@@ -225,7 +225,7 @@ export default function Reports() {
               disabled={!selectedCycle}
               size="sm"
             >
-              <Sheet className="h-4 w-4 mr-2" />
+              <Sheet className="h-4 w-4 me-2" />
               {t('reportsPage.exportCSV')}
             </Button>
           </div>
@@ -382,8 +382,8 @@ export default function Reports() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="appetite" name="Appetite (h)" fill="#2563eb" />
-                    <Bar dataKey="actual" name="Actual (h)" fill="#10b981" />
+                    <Bar dataKey="appetite" name={t('reportsPage.appetiteHours')} fill="#2563eb" />
+                    <Bar dataKey="actual" name={t('reportsPage.actualHours')} fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -555,10 +555,10 @@ export default function Reports() {
                       <TableHead>{t('reportsPage.pitch')}</TableHead>
                       <TableHead>{t('reportsPage.team')}</TableHead>
                       <TableHead>{t('reportsPage.status')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.appetiteDays')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.appetiteHours')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.actualHours')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.variance')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.appetiteDays')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.appetiteHours')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.actualHours')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.variance')}</TableHead>
                       <TableHead className="text-center">{t('reportsPage.isOverBudget')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -570,11 +570,11 @@ export default function Reports() {
                         <TableCell>
                           <StatusChip status={pitch.status} />
                         </TableCell>
-                        <TableCell className="text-right">{pitch.appetiteDays}</TableCell>
-                        <TableCell className="text-right">{pitch.appetiteHours.toFixed(0)}</TableCell>
-                        <TableCell className="text-right">{pitch.actualHours.toFixed(1)}</TableCell>
+                        <TableCell className="text-end">{pitch.appetiteDays}</TableCell>
+                        <TableCell className="text-end">{pitch.appetiteHours.toFixed(0)}</TableCell>
+                        <TableCell className="text-end">{pitch.actualHours.toFixed(1)}</TableCell>
                         <TableCell className={cn(
-                          'text-right',
+                          'text-end',
                           pitch.varianceHours > 0 ? 'text-destructive' : 'text-green-600'
                         )}>
                           {pitch.varianceHours > 0 ? '+' : ''}{pitch.varianceHours.toFixed(1)}
@@ -605,9 +605,9 @@ export default function Reports() {
                       <TableHead>{t('reportsPage.member')}</TableHead>
                       <TableHead>{t('reportsPage.role')}</TableHead>
                       <TableHead>{t('reportsPage.team')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.totalHours')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.workDays')}</TableHead>
-                      <TableHead className="text-right">{t('reportsPage.avgHoursPerDay')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.totalHours')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.workDays')}</TableHead>
+                      <TableHead className="text-end">{t('reportsPage.avgHoursPerDay')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -618,9 +618,9 @@ export default function Reports() {
                           <Badge variant="outline">{member.role}</Badge>
                         </TableCell>
                         <TableCell>{member.teamName}</TableCell>
-                        <TableCell className="text-right">{member.totalHours.toFixed(1)}</TableCell>
-                        <TableCell className="text-right">{member.workDays}</TableCell>
-                        <TableCell className="text-right">{member.avgHoursPerDay.toFixed(1)}</TableCell>
+                        <TableCell className="text-end">{member.totalHours.toFixed(1)}</TableCell>
+                        <TableCell className="text-end">{member.workDays}</TableCell>
+                        <TableCell className="text-end">{member.avgHoursPerDay.toFixed(1)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

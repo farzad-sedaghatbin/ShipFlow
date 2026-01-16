@@ -184,7 +184,7 @@ export default function Dashboard() {
               action={{
                 label: t('dashboard.welcome.createFirstCycle'),
                 onClick: () => window.location.href = '/cycles/new',
-                startIcon: <Rocket className="w-4 h-4 mr-2" />,
+                startIcon: <Rocket className="w-4 h-4 me-2" />,
               }}
               secondaryAction={{
                 label: t('dashboard.welcome.learnMore'),
@@ -234,7 +234,7 @@ export default function Dashboard() {
         >
           <CardContent className="p-4">
             <div className="flex items-center mb-2">
-              <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-2.5 mr-2 shadow-lg shadow-primary/30">
+              <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-2.5 me-2 shadow-lg shadow-primary/30">
                 <RefreshCw className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.activeCycles')}</span>
@@ -251,7 +251,7 @@ export default function Dashboard() {
         >
           <CardContent className="p-4">
             <div className="flex items-center mb-2">
-              <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-violet-500/30">
+              <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-2.5 me-2 shadow-lg shadow-violet-500/30">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.totalPitches')}</span>
@@ -268,7 +268,7 @@ export default function Dashboard() {
         >
           <CardContent className="p-4">
             <div className="flex items-center mb-2">
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-emerald-500/30">
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-2.5 me-2 shadow-lg shadow-emerald-500/30">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
               <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.completed')}</span>
@@ -285,7 +285,7 @@ export default function Dashboard() {
         >
           <CardContent className="p-4">
             <div className="flex items-center mb-2">
-              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-amber-500/30">
+              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-2.5 me-2 shadow-lg shadow-amber-500/30">
                 <Users className="w-5 h-5 text-white" />
               </div>
               <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.inProgress')}</span>
