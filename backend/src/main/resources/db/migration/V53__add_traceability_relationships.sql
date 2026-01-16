@@ -1,6 +1,7 @@
 -- V53: Add traceability relationships for improved tracking across modules
 -- This migration adds optional pitch/scope relationships to tasks, and scope/task relationships to bugs and test cases
 -- Supports both pitch-scoped work and technical debt/improvement work
+-- NOTE: Existing records will have NULL values for these new fields, which is acceptable since these are optional relationships
 
 -- Add pitch and scope columns to tasks table (H2-compatible syntax)
 ALTER TABLE tasks ADD COLUMN pitch_id BIGINT;

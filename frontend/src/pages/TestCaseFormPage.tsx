@@ -94,16 +94,6 @@ const TestCaseFormPage: React.FC = () => {
       setScopes([]);
     }
   }, [formData.pitchId]);
-
-  useEffect(() => {
-    // Load tasks when cycleId changes (if provided)
-    if (formData.cycleId) {
-      loadTasksForCycle(formData.cycleId);
-    } else {
-      // No cycle - user must search
-      setTasks([]);
-    }
-  }, [formData.cycleId]);
   
   // Server-side search for scopes (minimum 3 characters)
   useEffect(() => {
