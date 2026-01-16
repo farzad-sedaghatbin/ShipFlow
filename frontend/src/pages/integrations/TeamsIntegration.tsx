@@ -37,7 +37,7 @@ export default function TeamsIntegration() {
   const [configurations, setConfigurations] = useState<TeamsConfiguration[]>([]);
   const [activeConfig, setActiveConfig] = useState<TeamsConfiguration | null>(null);
   const [channelConfigs, setChannelConfigs] = useState<TeamsChannelConfig[]>([]);
-  const [_loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
