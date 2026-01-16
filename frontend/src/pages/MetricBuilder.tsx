@@ -36,8 +36,6 @@ export default function MetricBuilder() {
   const isEdit = !!id;
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-  // i18n ready
-  if (false) console.log(t('metricBuilder.title'));
 
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -98,7 +96,7 @@ export default function MetricBuilder() {
         filters: metric.filters
       });
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to load metric'));
+      showError(getUserFriendlyError(err, t('metricBuilder.loadFailed')));
     } finally {
       setLoading(false);
     }
@@ -106,7 +104,7 @@ export default function MetricBuilder() {
 
   const validateFormula = async () => {
     if (!formData.formula.trim()) {
-      setValidationResult({ valid: false, error: 'Formula is required' });
+      setValidationResult({ valid: false, error: t('metricBuilder.formulaRequired') });
       return;
     }
 
@@ -118,7 +116,7 @@ export default function MetricBuilder() {
         error: response.errorMessage
       });
     } catch (err) {
-      setValidationResult({ valid: false, error: 'Failed to validate formula' });
+      setValidationResult({ valid: false, error: t('metricBuilder.validationFailed') });
     } finally {
       setValidating(false);
     }
@@ -128,11 +126,11 @@ export default function MetricBuilder() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Metric name is required';
+      newErrors.name = t('metricBuilder.nameRequired');
     }
 
     if (!formData.formula.trim()) {
-      newErrors.formula = 'Formula is required';
+      newErrors.formula = t('metricBuilder.formulaRequired');
     }
 
     setErrors(newErrors);
@@ -148,14 +146,14 @@ export default function MetricBuilder() {
       setLoading(true);
       if (isEdit && id) {
         await customMetricService.update(parseInt(id), formData);
-        showSuccess('Metric updated successfully');
+        showSuccess(t('metricBuilder.metricUpdated'));
       } else {
         await customMetricService.create(formData);
-        showSuccess('Metric created successfully');
+        showSuccess(t('metricBuilder.metricCreated'));
       }
       navigate('/metrics');
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to save metric'));
+      showError(getUserFriendlyError(err, t('metricBuilder.saveFailed')));
     } finally {
       setLoading(false);
     }
@@ -166,19 +164,19 @@ export default function MetricBuilder() {
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate('/metrics')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Metrics
+          {t('metricBuilder.backToMetrics')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isEdit ? 'Edit Metric' : 'Create Custom Metric'}</CardTitle>
+          <CardTitle>{isEdit ? t('metricBuilder.editMetric') : t('metricBuilder.createMetric')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Metric Name *</Label>
+              <Label htmlFor="name">{t('metricBuilder.metricName')} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -196,7 +194,7 @@ export default function MetricBuilder() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('metricBuilder.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -208,7 +206,7 @@ export default function MetricBuilder() {
 
             {/* Data Source */}
             <div className="space-y-2">
-              <Label>Data Source *</Label>
+              <Label>{t('metricBuilder.dataSource')} *</Label>
               <Select
                 value={formData.dataSource}
                 onValueChange={(value) => setFormData({ ...formData, dataSource: value as MetricDataSource })}
@@ -217,19 +215,19 @@ export default function MetricBuilder() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={MetricDataSource.PITCH}>Pitches</SelectItem>
-                  <SelectItem value={MetricDataSource.CYCLE}>Cycles</SelectItem>
-                  <SelectItem value={MetricDataSource.TASK}>Tasks</SelectItem>
-                  <SelectItem value={MetricDataSource.WORK_LOG}>Work Logs</SelectItem>
-                  <SelectItem value={MetricDataSource.TEAM}>Teams</SelectItem>
-                  <SelectItem value={MetricDataSource.CUSTOM}>Custom</SelectItem>
+                  <SelectItem value={MetricDataSource.PITCH}>{t('metricBuilder.pitches')}</SelectItem>
+                  <SelectItem value={MetricDataSource.CYCLE}>{t('metricBuilder.cycles')}</SelectItem>
+                  <SelectItem value={MetricDataSource.TASK}>{t('metricBuilder.tasks')}</SelectItem>
+                  <SelectItem value={MetricDataSource.WORK_LOG}>{t('metricBuilder.workLogs')}</SelectItem>
+                  <SelectItem value={MetricDataSource.TEAM}>{t('metricBuilder.teams')}</SelectItem>
+                  <SelectItem value={MetricDataSource.CUSTOM}>{t('metricBuilder.custom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Aggregation Type */}
             <div className="space-y-2">
-              <Label>Aggregation Type *</Label>
+              <Label>{t('metricBuilder.aggregationType')} *</Label>
               <Select
                 value={formData.aggregationType}
                 onValueChange={(value) => setFormData({ ...formData, aggregationType: value as MetricAggregationType })}
@@ -238,20 +236,20 @@ export default function MetricBuilder() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={MetricAggregationType.COUNT}>Count</SelectItem>
-                  <SelectItem value={MetricAggregationType.SUM}>Sum</SelectItem>
-                  <SelectItem value={MetricAggregationType.AVG}>Average</SelectItem>
-                  <SelectItem value={MetricAggregationType.MIN}>Minimum</SelectItem>
-                  <SelectItem value={MetricAggregationType.MAX}>Maximum</SelectItem>
-                  <SelectItem value={MetricAggregationType.RATIO}>Ratio</SelectItem>
-                  <SelectItem value={MetricAggregationType.PERCENTAGE}>Percentage</SelectItem>
+                  <SelectItem value={MetricAggregationType.COUNT}>{t('metricBuilder.count')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.SUM}>{t('metricBuilder.sum')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.AVG}>{t('metricBuilder.average')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.MIN}>{t('metricBuilder.minimum')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.MAX}>{t('metricBuilder.maximum')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.RATIO}>{t('metricBuilder.ratio')}</SelectItem>
+                  <SelectItem value={MetricAggregationType.PERCENTAGE}>{t('metricBuilder.percentage')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Display Format */}
             <div className="space-y-2">
-              <Label>Display Format *</Label>
+              <Label>{t('metricBuilder.displayFormat')} *</Label>
               <Select
                 value={formData.displayFormat}
                 onValueChange={(value) => setFormData({ ...formData, displayFormat: value as MetricDisplayFormat })}
@@ -260,11 +258,11 @@ export default function MetricBuilder() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={MetricDisplayFormat.NUMBER}>Number</SelectItem>
-                  <SelectItem value={MetricDisplayFormat.PERCENTAGE}>Percentage</SelectItem>
-                  <SelectItem value={MetricDisplayFormat.CURRENCY}>Currency</SelectItem>
-                  <SelectItem value={MetricDisplayFormat.DURATION}>Duration</SelectItem>
-                  <SelectItem value={MetricDisplayFormat.DECIMAL}>Decimal</SelectItem>
+                  <SelectItem value={MetricDisplayFormat.NUMBER}>{t('metricBuilder.number')}</SelectItem>
+                  <SelectItem value={MetricDisplayFormat.PERCENTAGE}>{t('metricBuilder.percentage')}</SelectItem>
+                  <SelectItem value={MetricDisplayFormat.CURRENCY}>{t('metricBuilder.currency')}</SelectItem>
+                  <SelectItem value={MetricDisplayFormat.DURATION}>{t('metricBuilder.duration')}</SelectItem>
+                  <SelectItem value={MetricDisplayFormat.DECIMAL}>{t('metricBuilder.decimal')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -272,15 +270,15 @@ export default function MetricBuilder() {
             {/* Scope Section */}
             <div className="border-t pt-4 space-y-4">
               <div>
-                <h3 className="font-medium mb-1">Scope (Optional)</h3>
+                <h3 className="font-medium mb-1">{t('metricBuilder.scope')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Limit this metric to a specific cycle, pitch, or team
+                  {t('metricBuilder.scopeDesc')}
                 </p>
               </div>
 
               {/* Cycle Scope */}
               <div className="space-y-2">
-                <Label>Cycle</Label>
+                <Label>{t('metricBuilder.cycle')}</Label>
                 <Select
                   value={formData.cycleId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({
@@ -292,7 +290,7 @@ export default function MetricBuilder() {
                     <SelectValue placeholder={t('metricBuilder.allCycles')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All cycles</SelectItem>
+                    <SelectItem value="none">{t('metricBuilder.allCycles')}</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id.toString()}>
                         {cycle.name}
@@ -304,7 +302,7 @@ export default function MetricBuilder() {
 
               {/* Pitch Scope */}
               <div className="space-y-2">
-                <Label>Pitch</Label>
+                <Label>{t('metricBuilder.pitch')}</Label>
                 <Select
                   value={formData.pitchId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({
@@ -316,7 +314,7 @@ export default function MetricBuilder() {
                     <SelectValue placeholder={t('metricBuilder.allPitches')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All pitches</SelectItem>
+                    <SelectItem value="none">{t('metricBuilder.allPitches')}</SelectItem>
                     {pitches.map((pitch) => (
                       <SelectItem key={pitch.id} value={pitch.id.toString()}>
                         {pitch.title}
@@ -328,7 +326,7 @@ export default function MetricBuilder() {
 
               {/* Team Scope */}
               <div className="space-y-2">
-                <Label>Team</Label>
+                <Label>{t('metricBuilder.team')}</Label>
                 <Select
                   value={formData.teamId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({
@@ -340,7 +338,7 @@ export default function MetricBuilder() {
                     <SelectValue placeholder={t('metricBuilder.allTeams')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">All teams</SelectItem>
+                    <SelectItem value="none">{t('metricBuilder.allTeams')}</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id.toString()}>
                         {team.name}
@@ -354,7 +352,7 @@ export default function MetricBuilder() {
             {/* Formula */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label htmlFor="formula">Formula *</Label>
+                <Label htmlFor="formula">{t('metricBuilder.formula')} *</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -362,7 +360,7 @@ export default function MetricBuilder() {
                   onClick={validateFormula}
                   disabled={validating || !formData.formula.trim()}
                 >
-                  {validating ? 'Validating...' : 'Validate Formula'}
+                  {validating ? t('metricBuilder.validating') : t('metricBuilder.validateFormula')}
                 </Button>
               </div>
               <Textarea
@@ -390,18 +388,18 @@ export default function MetricBuilder() {
                   )}
                   <AlertDescription>
                     {validationResult.valid
-                      ? 'Formula is valid'
-                      : validationResult.error || 'Formula is invalid'}
+                      ? t('metricBuilder.formulaValid')
+                      : validationResult.error || t('metricBuilder.formulaInvalid')}
                   </AlertDescription>
                 </Alert>
               )}
 
               <p className="text-xs text-muted-foreground">
-                Supported operators: +, -, *, /, ( )
+                {t('metricBuilder.supportedOperators')}
                 <br />
-                Supported functions: SUM, AVG, COUNT, MIN, MAX
+                {t('metricBuilder.supportedFunctions')}
                 <br />
-                Field references: pitch.appetiteDays, workLog.hours, task.status, etc.
+                {t('metricBuilder.fieldReferences')}
               </p>
             </div>
 
@@ -413,11 +411,11 @@ export default function MetricBuilder() {
                 onClick={() => navigate('/metrics')}
                 disabled={loading}
               >
-                Cancel
+                {t('metricBuilder.cancel')}
               </Button>
               <LoadingButton type="submit" loading={loading}>
                 <Save className="mr-2 h-4 w-4" />
-                {isEdit ? 'Update Metric' : 'Create Metric'}
+                {isEdit ? t('metricBuilder.updateMetric') : t('metricBuilder.createButton')}
               </LoadingButton>
             </div>
           </form>
