@@ -284,6 +284,12 @@
     "betting": "Betting",
     "build": "Build",
     "cooldown": "Cooldown",
+    "phaseValues": {
+      "SHAPING": "Shaping",
+      "BETTING": "Betting",
+      "BUILD": "Build",
+      "COOLDOWN": "Cooldown"
+    },
     "allStatus": "All Status",
     "inactive": "Completed",
     "activeCycles": "Active Cycles",

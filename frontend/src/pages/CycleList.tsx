@@ -52,8 +52,7 @@ export default function CycleList() {
     cycle: null,
   });
   
-  // Filter states - i18n ready
-  if (false) console.log(t('common.loading'));
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPhase, setFilterPhase] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -242,7 +241,7 @@ export default function CycleList() {
                       </div>
                     </div>
                     <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
-                      {cycle.phase}
+                      {t(`cycles.phaseValues.${cycle.phase}`)}
                     </Badge>
                   </div>
 
@@ -250,11 +249,11 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> pitches</span>
+                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.teamCount || 0}</strong> teams</span>
+                      <span><strong className="text-foreground">{cycle.teamCount || 0}</strong> {t('cycles.teams')}</span>
                     </div>
                   </div>
 
@@ -348,18 +347,18 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> pitches</span>
+                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.teamCount || 0}</strong> teams</span>
+                      <span><strong className="text-foreground">{cycle.teamCount || 0}</strong> {t('cycles.teams')}</span>
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>View Details</Link>
+                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">
