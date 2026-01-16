@@ -4,7 +4,7 @@ import { format as formatJalali } from 'date-fns-jalali';
 /**
  * Format a date string or Date object according to the current locale
  * @param date - ISO date string, Date object, or null/undefined
- * @param locale - Current locale (e.g., 'fa', 'en', 'es')
+ * @param locale - Current locale (e.g., 'fa', 'en')
  * @param formatPattern - Optional custom format pattern
  * @returns Formatted date string
  */
@@ -42,7 +42,7 @@ export function formatLocalizedDate(
 /**
  * Format a date-time string or Date object according to the current locale
  * @param dateTime - ISO date-time string, Date object, or null/undefined
- * @param locale - Current locale (e.g., 'fa', 'en', 'es')
+ * @param locale - Current locale (e.g., 'fa', 'en')
  * @returns Formatted date-time string
  */
 export function formatLocalizedDateTime(

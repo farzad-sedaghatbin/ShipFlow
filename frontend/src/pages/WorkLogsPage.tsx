@@ -59,8 +59,6 @@ export default function WorkLogsPage() {
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
-  // i18n ready
-  if (false) console.log(t('workLogs.title'), i18n.language);
 
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({

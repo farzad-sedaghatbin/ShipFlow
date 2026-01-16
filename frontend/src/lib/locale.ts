@@ -10,7 +10,7 @@
 
 import { format as formatGregorian, formatDistance as formatDistanceGregorian, parseISO, type Locale } from 'date-fns';
 import { format as formatJalali, formatDistance as formatDistanceJalali } from 'date-fns-jalali';
-import { enUS, faIR, es } from 'date-fns/locale';
+import { enUS, faIR } from 'date-fns/locale';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import i18n from '@/i18n';
 
@@ -18,7 +18,7 @@ import i18n from '@/i18n';
 // LANGUAGE CONFIGURATION
 // ============================================
 
-export type SupportedLocale = 'en' | 'fa' | 'es';
+export type SupportedLocale = 'en' | 'fa';
 
 export interface LocaleConfig {
   code: SupportedLocale;
@@ -51,16 +51,6 @@ export const LOCALE_CONFIGS: Record<SupportedLocale, LocaleConfig> = {
     dateLocale: faIR,
     numberSystem: 'arabext',
     weekStartsOn: 6, // Week starts on Saturday in Iran
-  },
-  es: {
-    code: 'es',
-    name: 'Spanish',
-    nativeName: 'Español',
-    dir: 'ltr',
-    calendar: 'gregorian',
-    dateLocale: es,
-    numberSystem: 'latn',
-    weekStartsOn: 1, // Week starts on Monday in Spain
   },
 };
 
