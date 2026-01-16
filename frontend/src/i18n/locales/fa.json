@@ -625,21 +625,6 @@
     "passwordMismatch": "رمزهای عبور مطابقت ندارند",
     "loadFailed": "بارگذاری پروفایل ناموفق بود"
   },
-  "dashboard": {
-    "welcome": "به ShipFlow خوش آمدید",
-    "quickActions": "اقدامات سریع",
-    "recentActivity": "فعالیت‌های اخیر",
-    "upcomingDeadlines": "ضرب‌الاجل‌های پیش‌رو",
-    "myTasks": "وظایف من",
-    "teamWorkload": "بار کاری تیم",
-    "overdueTitle": "وظایف عقب‌افتاده",
-    "blockedTitle": "وظایف مسدود شده",
-    "activeCycles": "چرخه‌های فعال",
-    "pendingPitches": "پیچ‌های در انتظار",
-    "refresh": "بارگذاری مجدد",
-    "customize": "سفارشی‌سازی",
-    "noData": "داده‌ای در دسترس نیست"
-  },
   "landing": {
     "title": "ShipFlow",
     "subtitle": "توسعه نرم‌افزار خود را شکل دهید",

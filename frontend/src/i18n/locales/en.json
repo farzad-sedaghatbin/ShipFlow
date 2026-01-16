@@ -730,21 +730,6 @@
     "passwordMismatch": "Passwords do not match",
     "loadFailed": "Failed to load profile"
   },
-  "dashboard": {
-    "welcome": "Welcome to ShipFlow",
-    "quickActions": "Quick Actions",
-    "recentActivity": "Recent Activity",
-    "upcomingDeadlines": "Upcoming Deadlines",
-    "myTasks": "My Tasks",
-    "teamWorkload": "Team Workload",
-    "overdueTitle": "Overdue Tasks",
-    "blockedTitle": "Blocked Tasks",
-    "activeCycles": "Active Cycles",
-    "pendingPitches": "Pending Pitches",
-    "refresh": "Refresh",
-    "customize": "Customize",
-    "noData": "No data available"
-  },
   "helpGuides": {
     "title": "Help & Guides",
     "subtitle": "Learn how to use ShipFlow effectively",
