@@ -83,8 +83,8 @@ export default function DashboardView() {
       await loadDashboard();
       showSuccess(
         updatedDashboard.userContextFilter 
-          ? 'Switched to personal context - showing only your data'
-          : 'Switched to organization-wide view'
+          ? t('dashboardView.personalContext')
+          : t('dashboardView.organizationWide')
       );
     } catch (error) {
       showError(getUserFriendlyError(error));
@@ -136,7 +136,7 @@ export default function DashboardView() {
     try {
       const newWidget = await customDashboardService.addWidget(parseInt(id), request);
       setWidgets([...widgets, newWidget]);
-      showSuccess('Widget added successfully');
+      showSuccess(t('dashboardView.widgetAdded'));
     } catch (error) {
       showError(getUserFriendlyError(error));
       throw error;
@@ -146,14 +146,14 @@ export default function DashboardView() {
   const handleRemoveWidget = async (widgetId: number) => {
     if (!id) return;
 
-    if (!confirm('Are you sure you want to remove this widget?')) {
+    if (!confirm(t('dashboardView.removeWidgetConfirm'))) {
       return;
     }
 
     try {
       await customDashboardService.removeWidget(parseInt(id), widgetId);
       setWidgets(widgets.filter(w => w.id !== widgetId));
-      showSuccess('Widget removed');
+      showSuccess(t('dashboardView.widgetRemoved'));
     } catch (error) {
       showError(getUserFriendlyError(error));
     }
@@ -175,7 +175,7 @@ export default function DashboardView() {
       setWidgets(widgets.map(w => w.id === widget.id ? updated : w));
       setShowWidgetSettings(false);
       setSelectedWidget(null);
-      showSuccess('Widget updated successfully');
+      showSuccess(t('dashboardView.widgetUpdated'));
     } catch (error) {
       showError(getUserFriendlyError(error));
     }
@@ -183,7 +183,7 @@ export default function DashboardView() {
 
   const handleSaveLayout = async () => {
     setEditMode(false);
-    showSuccess('Dashboard layout saved');
+    showSuccess(t('dashboardView.layoutSaved'));
   };
 
   if (loading) {
@@ -197,7 +197,7 @@ export default function DashboardView() {
   if (!dashboard) {
     return (
       <div className="flex items-center justify-center h-96 text-muted-foreground">
-        Dashboard not found
+        {t('dashboardView.notFound')}
       </div>
     );
   }
@@ -217,7 +217,7 @@ export default function DashboardView() {
           <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-card">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">
-              {dashboard.userContextFilter ? 'Personal' : 'Organization-Wide'}
+              {dashboard.userContextFilter ? t('dashboardView.personal') : t('dashboardView.organizationWide')}
             </span>
             <Switch
               checked={dashboard.userContextFilter || false}
@@ -236,22 +236,22 @@ export default function DashboardView() {
                 }}
               >
                 <X className="h-4 w-4 mr-2" />
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleSaveLayout}>
                 <Save className="h-4 w-4 mr-2" />
-                Save Layout
+                {t('dashboardView.saveLayout')}
               </Button>
             </>
           ) : (
             <Button variant="outline" onClick={() => setEditMode(true)}>
               <Edit3 className="h-4 w-4 mr-2" />
-              Edit Dashboard
+              {t('dashboardView.editDashboard')}
             </Button>
           )}
           <Button onClick={() => setShowWidgetSelector(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Widget
+            {t('dashboardView.addWidget')}
           </Button>
         </div>
       </div>
@@ -259,10 +259,10 @@ export default function DashboardView() {
       {/* Dashboard Grid */}
       {widgets.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-96 border-2 border-dashed rounded-lg">
-          <p className="text-muted-foreground mb-4">No widgets yet</p>
+          <p className="text-muted-foreground mb-4">{t('dashboardView.noWidgets')}</p>
           <Button onClick={() => setShowWidgetSelector(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Your First Widget
+            {t('dashboardView.addFirstWidget')}
           </Button>
         </div>
       ) : (
@@ -288,7 +288,7 @@ export default function DashboardView() {
       <Dialog open={showWidgetSettings} onOpenChange={setShowWidgetSettings}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Widget Settings</DialogTitle>
+            <DialogTitle>{t('dashboardView.widgetSettings')}</DialogTitle>
           </DialogHeader>
           {selectedWidget && (
             <WidgetSettings

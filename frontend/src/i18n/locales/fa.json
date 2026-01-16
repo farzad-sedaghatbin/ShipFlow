@@ -1858,14 +1858,14 @@
     "cancel": "لغو",
     "saveLayout": "ذخیره چیدمان",
     "layoutSaved": "چیدمان داشبورد ذخیره شد",
-    "noWidgetsYet": "هنوز ویجتی وجود ندارد",
-    "addYourFirstWidget": "اولین ویجت خود را اضافه کنید",
+    "noWidgets": "هنوز ویجتی وجود ندارد",
+    "addFirstWidget": "اولین ویجت خود را اضافه کنید",
     "widgetAdded": "ویجت با موفقیت اضافه شد",
     "widgetRemoved": "ویجت حذف شد",
     "widgetUpdated": "ویجت با موفقیت به‌روزرسانی شد",
-    "confirmRemoveWidget": "آیا مطمئن هستید که می‌خواهید این ویجت را حذف کنید؟",
+    "removeWidgetConfirm": "آیا مطمئن هستید که می‌خواهید این ویجت را حذف کنید؟",
     "widgetSettings": "تنظیمات ویجت",
     "personalContext": "به زمینه شخصی تغییر کرد - فقط داده‌های شما نمایش داده می‌شود",
-    "orgContext": "به نمای سازمانی تغییر کرد"
+    "organizationWide": "به نمای سازمانی تغییر کرد"
   }
 }

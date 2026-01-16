@@ -2826,15 +2826,15 @@
     "cancel": "Cancel",
     "saveLayout": "Save Layout",
     "layoutSaved": "Dashboard layout saved",
-    "noWidgetsYet": "No widgets yet",
-    "addYourFirstWidget": "Add Your First Widget",
+    "noWidgets": "No widgets yet",
+    "addFirstWidget": "Add Your First Widget",
     "widgetAdded": "Widget added successfully",
     "widgetRemoved": "Widget removed",
     "widgetUpdated": "Widget updated successfully",
-    "confirmRemoveWidget": "Are you sure you want to remove this widget?",
+    "removeWidgetConfirm": "Are you sure you want to remove this widget?",
     "widgetSettings": "Widget Settings",
     "personalContext": "Switched to personal context - showing only your data",
-    "orgContext": "Switched to organization-wide view"
+    "organizationWide": "Switched to organization-wide view"
   },
   "projectDetail": {
     "title": "Project Details",
