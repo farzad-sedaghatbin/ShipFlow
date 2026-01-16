@@ -1193,7 +1193,7 @@ export default function BacklogPage() {
                 </div>
                 {viewDialog.task.dueDate && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Due Date</Label>
+                    <Label className="text-xs text-muted-foreground">{t('backlogPage.dueDate')}</Label>
                     <div className="mt-1 font-medium">
                       {dayjs(viewDialog.task.dueDate).format('MMM D, YYYY')}
                     </div>
@@ -1201,7 +1201,7 @@ export default function BacklogPage() {
                 )}
                 {viewDialog.task.parentTaskTitle && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Parent Task</Label>
+                    <Label className="text-xs text-muted-foreground">{t('backlogPage.parentTask')}</Label>
                     <div className="mt-1 font-medium">
                       {viewDialog.task.parentTaskTitle}
                     </div>
@@ -1477,13 +1477,13 @@ export default function BacklogPage() {
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="font-semibold mb-1">Blocked by {task.blockedByCount} task{task.blockedByCount > 1 ? 's' : ''}:</p>
+                                <p className="font-semibold mb-1">{t('backlogPage.blockedByCount', { count: task.blockedByCount })}:</p>
                                 <ul className="text-sm space-y-0.5">
                                   {task.blockedByTasks?.slice(0, 3).map((blocker, idx) => (
                                     <li key={idx}>• {blocker.sourceTaskTitle}</li>
                                   ))}
                                   {task.blockedByTasks && task.blockedByTasks.length > 3 && (
-                                    <li className="text-muted-foreground">... and {task.blockedByTasks.length - 3} more</li>
+                                    <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.blockedByTasks.length - 3 })}</li>
                                   )}
                                 </ul>
                               </TooltipContent>
@@ -1500,13 +1500,13 @@ export default function BacklogPage() {
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="font-semibold mb-1">Blocking {task.blockingTasks.length} task{task.blockingTasks.length > 1 ? 's' : ''}:</p>
+                                <p className="font-semibold mb-1">{t('backlogPage.blockingCount', { count: task.blockingTasks.length })}:</p>
                                 <ul className="text-sm space-y-0.5">
                                   {task.blockingTasks?.slice(0, 3).map((blocking, idx) => (
                                     <li key={idx}>• {blocking.targetTaskTitle}</li>
                                   ))}
                                   {task.blockingTasks && task.blockingTasks.length > 3 && (
-                                    <li className="text-muted-foreground">... and {task.blockingTasks.length - 3} more</li>
+                                    <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.blockingTasks.length - 3 })}</li>
                                   )}
                                 </ul>
                               </TooltipContent>
@@ -1523,13 +1523,13 @@ export default function BacklogPage() {
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="font-semibold mb-1">{task.children.length} subtask{task.children.length > 1 ? 's' : ''}:</p>
+                                <p className="font-semibold mb-1">{t('backlogPage.subtaskCount', { count: task.children.length })}:</p>
                                 <ul className="text-sm space-y-0.5">
                                   {task.children.slice(0, 3).map((child, idx) => (
                                     <li key={idx}>• {child.title}</li>
                                   ))}
                                   {task.children.length > 3 && (
-                                    <li className="text-muted-foreground">... and {task.children.length - 3} more</li>
+                                    <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.children.length - 3 })}</li>
                                   )}
                                 </ul>
                               </TooltipContent>
