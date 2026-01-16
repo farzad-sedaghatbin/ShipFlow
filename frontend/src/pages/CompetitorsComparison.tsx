@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Check,
@@ -153,6 +154,7 @@ const renderFeatureCell = (value: boolean | 'partial' | 'coming') => {
 };
 
 export default function CompetitorsComparison() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Group features by category
@@ -167,7 +169,7 @@ export default function CompetitorsComparison() {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                {t('common.back')}
               </Button>
               <Separator orientation="vertical" className="h-6" />
               <div className="flex items-center gap-2">
@@ -495,10 +497,10 @@ export default function CompetitorsComparison() {
       <section className="py-16 md:py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 max-w-3xl text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Ready to Try Shape Up with ShipFlow?
+            {t('competitors.ctaTitle')}
           </h2>
           <p className="text-lg opacity-90 mb-8">
-            Start for free. No credit card required. Deploy on your infrastructure or use our demo.
+            {t('competitors.ctaSubtitle')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
@@ -506,7 +508,7 @@ export default function CompetitorsComparison() {
               variant="secondary"
               onClick={() => navigate('/login')}
             >
-              Get Started Free
+              {t('competitors.getStarted')}
             </Button>
             <Button 
               size="lg" 
@@ -535,14 +537,14 @@ export default function CompetitorsComparison() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
+              {t('competitors.copyright', { year: new Date().getFullYear() })}
             </p>
             <nav className="flex gap-6">
               <a 
                 href="/"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Home
+                {t('competitors.home')}
               </a>
               <a 
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
