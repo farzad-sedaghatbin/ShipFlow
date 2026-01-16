@@ -47,7 +47,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function WorkLogsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
@@ -59,8 +59,6 @@ export default function WorkLogsPage() {
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
-  // i18n ready
-  if (false) console.log(t('workLogs.title'), i18n.language);
 
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -223,12 +221,12 @@ export default function WorkLogsPage() {
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
       setSelectedPitchId('');
-      showSuccess('Work log added successfully');
+      showSuccess(t('workLogs.addSuccess'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || error.response?.data?.error || 'Failed to add work log';
+      const message = error.response?.data?.message || error.response?.data?.error || t('workLogs.errors.addFailed');
       showError(message);
     }
   };
@@ -236,12 +234,12 @@ export default function WorkLogsPage() {
   const handleDeleteMyWorkLog = async (id: number) => {
     try {
       await workLogService.deleteMy(id);
-      showSuccess('Work log deleted');
+      showSuccess(t('workLogs.deleteSuccess'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to delete work log';
+      const message = error.response?.data?.message || t('workLogs.errors.deleteFailed');
       showError(message);
     }
   };
@@ -263,12 +261,12 @@ export default function WorkLogsPage() {
         note: '',
       });
       setTeamWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      showSuccess('Work log added successfully');
+      showSuccess(t('workLogs.addSuccess'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to add work log';
+      const message = error.response?.data?.message || t('workLogs.errors.addFailed');
       showError(message);
     }
   };
@@ -276,12 +274,12 @@ export default function WorkLogsPage() {
   const handleDeleteTeamWorkLog = async (id: number) => {
     try {
       await workLogService.delete(id);
-      showSuccess('Work log deleted');
+      showSuccess(t('workLogs.deleteSuccess'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to delete work log';
+      const message = error.response?.data?.message || t('workLogs.errors.deleteFailed');
       showError(message);
     }
   };
@@ -324,14 +322,14 @@ export default function WorkLogsPage() {
           ...requestData,
         });
       }
-      showSuccess('Work log updated successfully');
+      showSuccess(t('workLogs.updateSuccess'));
       setEditDialogOpen(false);
       setEditingWorkLog(null);
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to update work log';
+      const message = error.response?.data?.message || t('workLogs.errors.updateFailed');
       showError(message);
     }
   };
@@ -385,11 +383,11 @@ export default function WorkLogsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-5 w-5 text-primary" />
-              <span className="text-sm text-muted-foreground">Today</span>
+              <span className="text-sm text-muted-foreground">{t('workLogs.today')}</span>
             </div>
             <div className="text-3xl font-bold">{todayHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">
-              {todayLogs.length} log{todayLogs.length !== 1 ? 's' : ''} today
+              {t('workLogs.logsToday', { count: todayLogs.length })}
             </p>
           </CardContent>
         </Card>
@@ -397,11 +395,11 @@ export default function WorkLogsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-secondary-foreground" />
-              <span className="text-sm text-muted-foreground">This Cycle</span>
+              <span className="text-sm text-muted-foreground">{t('workLogs.thisCycle')}</span>
             </div>
             <div className="text-3xl font-bold">{totalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">
-              {workLogs.length} total log{workLogs.length !== 1 ? 's' : ''}
+              {t('workLogs.logsCount', { count: workLogs.length })}
             </p>
           </CardContent>
         </Card>
@@ -412,12 +410,12 @@ export default function WorkLogsPage() {
         <TabsList>
           <TabsTrigger value="my" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            My Logs
+            {t('workLogs.myLogs')}
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="team" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Team Logs
+              {t('workLogs.teamLogs')}
             </TabsTrigger>
           )}
         </TabsList>
@@ -428,7 +426,7 @@ export default function WorkLogsPage() {
             <Alert variant="default" className="border-amber-500 bg-amber-50 dark:bg-amber-950">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <AlertDescription>
-                Your account is not linked to a person profile. Please contact an administrator to link your account.
+                {t('workLogs.notLinkedAlert')}
               </AlertDescription>
             </Alert>
           ) : (
@@ -436,12 +434,12 @@ export default function WorkLogsPage() {
               {/* Quick Log Form */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Quick Log</CardTitle>
+                  <CardTitle className="text-lg">{t('workLogs.quickLog')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
                     <div className="space-y-2">
-                      <Label htmlFor="log-type">Log Type *</Label>
+                      <Label htmlFor="log-type">{t('workLogs.logType')} *</Label>
                       <Select
                         value={workLogType}
                         onValueChange={(value: 'pitch' | 'task') => {
@@ -454,20 +452,20 @@ export default function WorkLogsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="task">Task/Subtask</SelectItem>
-                          <SelectItem value="pitch">Pitch</SelectItem>
+                          <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
+                          <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     {workLogType === 'pitch' ? (
                       <div className="space-y-2">
-                        <Label htmlFor="my-pitch">Pitch *</Label>
+                        <Label htmlFor="my-pitch">{t('workLogs.pitch')} *</Label>
                         <Select
                           value={selectedPitchId}
                           onValueChange={setSelectedPitchId}
                         >
                           <SelectTrigger id="my-pitch">
-                            <SelectValue placeholder="Select pitch" />
+                            <SelectValue placeholder={t('workLogs.selectPitch')} />
                           </SelectTrigger>
                           <SelectContent>
                             {pitches.map((p) => (
@@ -480,13 +478,13 @@ export default function WorkLogsPage() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Label htmlFor="my-task">Task/Subtask *</Label>
+                        <Label htmlFor="my-task">{t('workLogs.taskSubtask')} *</Label>
                         <Select
                           value={selectedTaskId}
                           onValueChange={setSelectedTaskId}
                         >
                           <SelectTrigger id="my-task">
-                            <SelectValue placeholder="Select task" />
+                            <SelectValue placeholder={t('workLogs.selectTask')} />
                           </SelectTrigger>
                           <SelectContent>
                             {tasks.map((t) => (
@@ -499,7 +497,7 @@ export default function WorkLogsPage() {
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label htmlFor="my-date">Date</Label>
+                      <Label htmlFor="my-date">{t('workLogs.date')}</Label>
                       <LocalizedDateInput
                         id="my-date"
                         value={workLogDate}
@@ -507,7 +505,7 @@ export default function WorkLogsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="my-hours">Hours *</Label>
+                      <Label htmlFor="my-hours">{t('workLogs.hours')} *</Label>
                       <Input
                         id="my-hours"
                         type="number"
@@ -519,12 +517,12 @@ export default function WorkLogsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="my-note">Note</Label>
+                      <Label htmlFor="my-note">{t('workLogs.note')}</Label>
                       <Input
                         id="my-note"
                         value={newWorkLog.note}
                         onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
-                        placeholder="Optional note"
+                        placeholder={t('workLogs.optionalNote')}
                       />
                     </div>
                     <Button
@@ -532,7 +530,7 @@ export default function WorkLogsPage() {
                       disabled={(workLogType === 'pitch' && !selectedPitchId) || (workLogType === 'task' && !selectedTaskId) || !newWorkLog.hoursSpent}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Log Time
+                      {t('workLogs.logTime')}
                     </Button>
                   </div>
                 </CardContent>
@@ -555,18 +553,18 @@ export default function WorkLogsPage() {
             {/* Add for Team Form */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Log Time for Team Member</CardTitle>
+                <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
                   <div className="space-y-2">
-                    <Label htmlFor="team-person">Person *</Label>
+                    <Label htmlFor="team-person">{t('workLogs.person')} *</Label>
                     <Select
                       value={teamWorkLog.personId ? teamWorkLog.personId.toString() : ''}
                       onValueChange={(value) => setTeamWorkLog({ ...teamWorkLog, personId: Number(value) })}
                     >
                       <SelectTrigger id="team-person">
-                        <SelectValue placeholder="Select person" />
+                        <SelectValue placeholder={t('workLogs.selectPerson')} />
                       </SelectTrigger>
                       <SelectContent>
                         {persons.map((p) => (
@@ -578,13 +576,13 @@ export default function WorkLogsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="team-pitch">Pitch *</Label>
+                    <Label htmlFor="team-pitch">{t('workLogs.pitch')} *</Label>
                     <Select
                       value={teamWorkLog.pitchId ? teamWorkLog.pitchId.toString() : ''}
                       onValueChange={(value) => setTeamWorkLog({ ...teamWorkLog, pitchId: Number(value) })}
                     >
                       <SelectTrigger id="team-pitch">
-                        <SelectValue placeholder="Select pitch" />
+                        <SelectValue placeholder={t('workLogs.selectPitch')} />
                       </SelectTrigger>
                       <SelectContent>
                         {pitches.map((p) => (
@@ -650,11 +648,11 @@ export default function WorkLogsPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Work Log</DialogTitle>
+            <DialogTitle>{t('workLogs.editWorkLog')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-log-type">Log Type</Label>
+              <Label htmlFor="edit-log-type">{t('workLogs.logType')}</Label>
               <Select
                 value={editWorkLogType}
                 onValueChange={(value: 'pitch' | 'task') => {
@@ -674,7 +672,7 @@ export default function WorkLogsPage() {
             </div>
             {editWorkLogType === 'pitch' ? (
               <div className="grid gap-2">
-                <Label htmlFor="edit-pitch">Pitch</Label>
+                <Label htmlFor="edit-pitch">{t('workLogs.pitch')}</Label>
                 <Select
                   value={editPitchId}
                   onValueChange={setEditPitchId}
@@ -693,7 +691,7 @@ export default function WorkLogsPage() {
               </div>
             ) : (
               <div className="grid gap-2">
-                <Label htmlFor="edit-task">Task/Subtask</Label>
+                <Label htmlFor="edit-task">{t('workLogs.taskSubtask')}</Label>
                 <Select
                   value={editTaskId}
                   onValueChange={setEditTaskId}
@@ -712,7 +710,7 @@ export default function WorkLogsPage() {
               </div>
             )}
             <div className="grid gap-2">
-              <Label htmlFor="edit-date">Date</Label>
+              <Label htmlFor="edit-date">{t('workLogs.date')}</Label>
               <LocalizedDateInput
                 id="edit-date"
                 value={editDate}
@@ -720,7 +718,7 @@ export default function WorkLogsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-hours">Hours</Label>
+              <Label htmlFor="edit-hours">{t('workLogs.hours')}</Label>
               <Input
                 id="edit-hours"
                 type="number"
@@ -731,7 +729,7 @@ export default function WorkLogsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-note">Note</Label>
+              <Label htmlFor="edit-note">{t('workLogs.note')}</Label>
               <Textarea
                 id="edit-note"
                 value={editForm.note}
@@ -742,9 +740,9 @@ export default function WorkLogsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleEditSave}>Save Changes</Button>
+            <Button onClick={handleEditSave}>{t('workLogs.saveChanges')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -760,13 +758,13 @@ interface WorkLogsTableProps {
 }
 
 function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTableProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   if (workLogs.length === 0) {
     return (
       <EmptyState
-        title="No work logs yet"
-        description="Start tracking work by logging your first entry"
+        title={t('workLogs.empty.title')}
+        description={t('workLogs.empty.description')}
         illustration={<EmptyWorkLogsIllustration />}
       />
     );
@@ -775,13 +773,13 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Work Logs</CardTitle>
+        <CardTitle className="text-lg">{t('workLogs.workLogsTable')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>{t('workLogs.date')}</TableHead>
               {showPerson && <TableHead>Person</TableHead>}
               <TableHead>Pitch/Task</TableHead>
               <TableHead className="text-right">Hours</TableHead>
@@ -797,13 +795,13 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
                 <TableCell>
                   {wl.pitchTitle && (
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">Pitch</Badge>
+                      <Badge variant="outline" className="text-xs">{t('workLogs.pitch')}</Badge>
                       <span>{wl.pitchTitle}</span>
                     </div>
                   )}
                   {wl.taskTitle && (
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">Task</Badge>
+                      <Badge variant="outline" className="text-xs">{t('workLogs.task')}</Badge>
                       <span>{wl.taskTitle}</span>
                     </div>
                   )}
