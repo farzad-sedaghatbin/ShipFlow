@@ -33,7 +33,7 @@ import {
 import { useToast } from '../contexts';
 
 export default function WorkLogForm() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -117,24 +117,24 @@ export default function WorkLogForm() {
         note: '',
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      showSuccess('Work log added successfully');
+      showSuccess(t('workLogForm.workLogAdded'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle as number);
       }
     } catch (error) {
-      showError('Failed to add work log');
+      showError(t('workLogForm.workLogAddFailed'));
     }
   };
 
   const handleDeleteWorkLog = async (id: number) => {
     try {
       await workLogService.delete(id);
-      showSuccess('Work log deleted');
+      showSuccess(t('workLogForm.workLogDeleted'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle as number);
       }
     } catch (error) {
-      showError('Failed to delete work log');
+      showError(t('workLogForm.workLogDeleteFailed'));
     }
   };
 
@@ -150,19 +150,19 @@ export default function WorkLogForm() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Work Logs</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t('workLogForm.title')}</h1>
 
       {/* Filter */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-2">
-            <Label htmlFor="cycle-select">Cycle</Label>
+            <Label htmlFor="cycle-select">{t('workLogForm.cycle')}</Label>
             <Select
               value={selectedCycle ? String(selectedCycle) : ''}
               onValueChange={(value) => setSelectedCycle(Number(value))}
             >
               <SelectTrigger id="cycle-select" className="w-[300px]">
-                <SelectValue placeholder="Select a cycle" />
+                <SelectValue placeholder={t('workLogForm.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
                 {cycles.map((cycle) => (
@@ -179,18 +179,18 @@ export default function WorkLogForm() {
       {/* Add Work Log Form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Log Daily Work</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('workLogForm.logDailyWork')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-4 items-end">
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-2 space-y-2">
-              <Label htmlFor="person-select">Person *</Label>
+              <Label htmlFor="person-select">{t('workLogForm.person')} *</Label>
               <Select
                 value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
                 onValueChange={(value) => setNewWorkLog({ ...newWorkLog, personId: Number(value) })}
               >
                 <SelectTrigger id="person-select">
-                  <SelectValue placeholder="Select person" />
+                  <SelectValue placeholder={t('workLogForm.selectPerson')} />
                 </SelectTrigger>
                 <SelectContent>
                   {persons.map((p) => (
@@ -203,13 +203,13 @@ export default function WorkLogForm() {
             </div>
 
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
-              <Label htmlFor="pitch-select">Pitch *</Label>
+              <Label htmlFor="pitch-select">{t('workLogForm.pitch')} *</Label>
               <Select
                 value={newWorkLog.pitchId ? String(newWorkLog.pitchId) : ''}
                 onValueChange={(value) => setNewWorkLog({ ...newWorkLog, pitchId: Number(value) })}
               >
                 <SelectTrigger id="pitch-select">
-                  <SelectValue placeholder="Select pitch" />
+                  <SelectValue placeholder={t('workLogForm.selectPitch')} />
                 </SelectTrigger>
                 <SelectContent>
                   {pitches.map((p) => (
@@ -222,7 +222,7 @@ export default function WorkLogForm() {
             </div>
 
             <div className="sm:col-span-1 md:col-span-1 lg:col-span-2 space-y-2">
-              <Label htmlFor="date-input">Date</Label>
+              <Label htmlFor="date-input">{t('workLogForm.date')}</Label>
               <LocalizedDateInput
                 id="date-input"
                 value={workLogDate}
@@ -231,7 +231,7 @@ export default function WorkLogForm() {
             </div>
 
             <div className="sm:col-span-1 md:col-span-1 lg:col-span-1 space-y-2">
-              <Label htmlFor="hours-input">Hours *</Label>
+              <Label htmlFor="hours-input">{t('workLogForm.hours')} *</Label>
               <Input
                 id="hours-input"
                 type="number"
@@ -244,12 +244,12 @@ export default function WorkLogForm() {
             </div>
 
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
-              <Label htmlFor="note-input">Note</Label>
+              <Label htmlFor="note-input">{t('workLogForm.note')}</Label>
               <Input
                 id="note-input"
                 value={newWorkLog.note}
                 onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
-                placeholder="Optional note"
+                placeholder={t('workLogForm.optionalNote')}
               />
             </div>
 
@@ -260,7 +260,7 @@ export default function WorkLogForm() {
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add
+                {t('workLogForm.add')}
               </Button>
             </div>
           </div>
@@ -271,9 +271,9 @@ export default function WorkLogForm() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-semibold">Recent Work Logs</CardTitle>
+            <CardTitle className="text-lg font-semibold">{t('workLogForm.recentWorkLogs')}</CardTitle>
             <span className="text-muted-foreground">
-              Total: <strong className="text-foreground">{totalHours.toFixed(1)} hours</strong>
+              {t('workLogForm.total')}: <strong className="text-foreground">{totalHours.toFixed(1)} {t('workLogForm.hoursUnit')}</strong>
             </span>
           </div>
         </CardHeader>
@@ -281,8 +281,8 @@ export default function WorkLogForm() {
           {workLogs.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
-              title="No work logs yet"
-              description="Start tracking work by adding your first work log entry above"
+              title={t('workLogForm.noWorkLogs')}
+              description={t('workLogForm.noWorkLogsDesc')}
               size="small"
               compact
             />
@@ -291,12 +291,12 @@ export default function WorkLogForm() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Team Member</TableHead>
-                    <TableHead>Pitch</TableHead>
-                    <TableHead className="text-right">Hours</TableHead>
-                    <TableHead>Note</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                    <TableHead>{t('workLogForm.date')}</TableHead>
+                    <TableHead>{t('workLogForm.teamMember')}</TableHead>
+                    <TableHead>{t('workLogForm.pitch')}</TableHead>
+                    <TableHead className="text-right">{t('workLogForm.hours')}</TableHead>
+                    <TableHead>{t('workLogForm.note')}</TableHead>
+                    <TableHead className="text-center">{t('workLogForm.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
