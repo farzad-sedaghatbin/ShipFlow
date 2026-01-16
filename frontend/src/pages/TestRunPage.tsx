@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Save,
@@ -26,6 +27,7 @@ import {
 const testRunStatuses: TestRunStatus[] = ['PENDING', 'RUNNING', 'PASSED', 'FAILED', 'BLOCKED', 'SKIPPED'];
 
 const TestRunPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
@@ -56,7 +58,7 @@ const TestRunPage: React.FC = () => {
       const response = await qaTestManagementService.getTestCaseById(id!);
       setTestCase(response.data);
     } catch (err) {
-      setError('Failed to load test case');
+      setError(t('testRun.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ const TestRunPage: React.FC = () => {
       setSuccess(true);
       setTimeout(() => navigate(`/qa/test-cases/${id}`), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to record test run');
+      setError(err.response?.data?.message || t('testRun.recordFailed'));
     } finally {
       setSaving(false);
     }
@@ -86,7 +88,7 @@ const TestRunPage: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Invalid test case ID</span>
+          <span className="text-sm">{t('testRun.invalidId')}</span>
         </div>
       </div>
     );
@@ -105,11 +107,11 @@ const TestRunPage: React.FC = () => {
       <div>
         <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="mb-4 gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Test case not found</span>
+          <span className="text-sm">{t('testRun.notFound')}</span>
         </div>
       </div>
     );
@@ -120,9 +122,9 @@ const TestRunPage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={() => navigate(`/qa/test-cases/${id}`)} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('common.back')}
         </Button>
-        <h1 className="text-2xl font-bold">Run Test Case</h1>
+        <h1 className="text-2xl font-bold">{t('testRun.title')}</h1>
       </div>
 
       {error && (
@@ -135,14 +137,14 @@ const TestRunPage: React.FC = () => {
       {success && (
         <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500">
           <CheckCircle className="h-4 w-4" />
-          <span className="text-sm">Test run recorded successfully! Redirecting...</span>
+          <span className="text-sm">{t('testRun.recordSuccess')}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Test Case Details</CardTitle>
+            <CardTitle>{t('testRun.testCaseDetails')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -152,7 +154,7 @@ const TestRunPage: React.FC = () => {
 
             {testCase.preconditions && (
               <div>
-                <Label className="text-muted-foreground">Preconditions</Label>
+                <Label className="text-muted-foreground">{t('testRun.preconditions')}</Label>
                 <div className="mt-1 p-3 rounded-lg bg-muted border border-border">
                   <pre className="whitespace-pre-wrap text-sm font-mono">{testCase.preconditions}</pre>
                 </div>
@@ -160,19 +162,19 @@ const TestRunPage: React.FC = () => {
             )}
 
             <div>
-              <Label className="text-muted-foreground">Test Steps</Label>
+              <Label className="text-muted-foreground">{t('testRun.testSteps')}</Label>
               <div className="mt-1 p-3 rounded-lg bg-primary text-primary-foreground">
                 <pre className="whitespace-pre-wrap text-sm font-mono">
-                  {testCase.steps || 'No steps defined'}
+                  {testCase.steps || t('testRun.noSteps')}
                 </pre>
               </div>
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Expected Result</Label>
+              <Label className="text-muted-foreground">{t('testRun.expectedResult')}</Label>
               <div className="mt-1 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                 <pre className="whitespace-pre-wrap text-sm font-mono text-green-600 dark:text-green-400">
-                  {testCase.expectedResult || 'No expected result defined'}
+                  {testCase.expectedResult || t('testRun.noExpectedResult')}
                 </pre>
               </div>
             </div>
@@ -181,18 +183,18 @@ const TestRunPage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Record Test Run</CardTitle>
+            <CardTitle>{t('testRun.recordTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Status *</Label>
+                <Label>{t('testRun.status')} *</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value as TestRunStatus })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t('testRun.selectStatus')} />
                   </SelectTrigger>
                   <SelectContent>
                     {testRunStatuses.map((status) => (
@@ -205,17 +207,17 @@ const TestRunPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Actual Result</Label>
+                <Label>{t('testRun.actualResult')}</Label>
                 <Textarea
                   rows={4}
-                  placeholder="What was the actual outcome?"
+                  placeholder={t('testRun.actualResultPlaceholder')}
                   value={formData.actualResult}
                   onChange={(e) => setFormData({ ...formData, actualResult: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Duration (seconds)</Label>
+                <Label>{t('testRun.duration')}</Label>
                 <Input
                   type="number"
                   value={formData.durationSeconds || ''}
@@ -228,35 +230,35 @@ const TestRunPage: React.FC = () => {
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Environment Details</span>
+                  <span className="bg-card px-2 text-muted-foreground">{t('testRun.environmentDetails')}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Environment</Label>
+                <Label>{t('testRun.environment')}</Label>
                 <Input
-                  placeholder="e.g., Chrome 120 on macOS 14.2, iPhone 15 Pro iOS 17.2"
+                  placeholder={t('testRun.environmentPlaceholder')}
                   value={formData.environment}
                   onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">Browser, OS, device model, or test environment</p>
+                <p className="text-xs text-muted-foreground">{t('testRun.environmentHint')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Build/Version</Label>
+                <Label>{t('testRun.buildVersion')}</Label>
                 <Input
-                  placeholder="e.g., v2.3.1, build #456, commit abc123"
+                  placeholder={t('testRun.buildPlaceholder')}
                   value={formData.buildVersion}
                   onChange={(e) => setFormData({ ...formData, buildVersion: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">Application version or build number being tested</p>
+                <p className="text-xs text-muted-foreground">{t('testRun.buildHint')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
+                <Label>{t('testRun.notes')}</Label>
                 <Textarea
                   rows={3}
-                  placeholder="Any additional notes about this test run"
+                  placeholder={t('testRun.notesPlaceholder')}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
@@ -268,7 +270,7 @@ const TestRunPage: React.FC = () => {
                   variant="ghost" 
                   onClick={() => navigate(`/qa/test-cases/${id}`)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -280,7 +282,7 @@ const TestRunPage: React.FC = () => {
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {saving ? 'Recording...' : 'Record Test Run'}
+                  {saving ? t('testRun.recording') : t('testRun.recordButton')}
                 </Button>
               </div>
             </form>
