@@ -141,7 +141,7 @@ const TestCasesPage: React.FC = () => {
       }
       setTestCases(response.data);
     } catch (err) {
-      setError('Failed to load test cases');
+      setError(t('testCases.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ const TestCasesPage: React.FC = () => {
       setTestCases(testCases.filter((tc) => tc.id !== deleteDialog.testCase!.id));
       setDeleteDialog({ open: false, testCase: null });
     } catch (err) {
-      setError('Failed to delete test case');
+      setError(t('testCases.deleteFailed'));
     }
   };
 
@@ -181,7 +181,7 @@ const TestCasesPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Test Cases</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('testCases.title')}</h1>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
@@ -189,14 +189,14 @@ const TestCasesPage: React.FC = () => {
             className="w-full sm:w-auto"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Generate with AI
+            {t('testCases.generateAI')}
           </Button>
           <Button
             onClick={() => navigate('/qa/test-cases/new')}
             className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Test Case
+            {t('testCases.newTestCase')}
           </Button>
         </div>
       </div>
@@ -214,7 +214,7 @@ const TestCasesPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold">{testCases.length}</p>
-            <p className="text-sm text-muted-foreground">Total Test Cases</p>
+            <p className="text-sm text-muted-foreground">{t('testCases.totalTestCases')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -222,7 +222,7 @@ const TestCasesPage: React.FC = () => {
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
               {testCases.filter((tc) => tc.status === 'APPROVED').length}
             </p>
-            <p className="text-sm text-muted-foreground">Approved</p>
+            <p className="text-sm text-muted-foreground">{t('testCases.approved')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -230,7 +230,7 @@ const TestCasesPage: React.FC = () => {
             <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
               {testCases.filter((tc) => tc.status === 'READY').length}
             </p>
-            <p className="text-sm text-muted-foreground">Ready</p>
+            <p className="text-sm text-muted-foreground">{t('testCases.ready')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -238,7 +238,7 @@ const TestCasesPage: React.FC = () => {
             <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
               {testCases.filter((tc) => tc.aiGenerated).length}
             </p>
-            <p className="text-sm text-muted-foreground">AI Generated</p>
+            <p className="text-sm text-muted-foreground">{t('testCases.aiGenerated')}</p>
           </CardContent>
         </Card>
       </div>
@@ -246,16 +246,16 @@ const TestCasesPage: React.FC = () => {
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="relative min-w-[300px]">
-          <Label htmlFor="test-cases-search" className="sr-only">Search test cases</Label>
+          <Label htmlFor="test-cases-search" className="sr-only">{t('testCases.searchLabel')}</Label>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <Input
             id="test-cases-search"
             type="search"
-            placeholder="Search test cases..."
+            placeholder={t('testCases.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
-            aria-label="Search test cases"
+            aria-label={t('testCases.searchLabel')}
           />
         </div>
         <Select
@@ -263,10 +263,10 @@ const TestCasesPage: React.FC = () => {
           onValueChange={(value) => setStatusFilter(value as TestCaseStatus | 'all')}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t('testCases.status')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all">{t('testCases.allStatus')}</SelectItem>
             {['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'].map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
@@ -279,10 +279,10 @@ const TestCasesPage: React.FC = () => {
           onValueChange={(value) => setTypeFilter(value as TestCaseType | 'all')}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder={t('testCases.type')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">{t('testCases.allTypes')}</SelectItem>
             {['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE'].map((type) => (
               <SelectItem key={type} value={type}>
                 {type}
@@ -295,10 +295,10 @@ const TestCasesPage: React.FC = () => {
           onValueChange={(value) => setPriorityFilter(value as TestCasePriority | 'all')}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Priority" />
+            <SelectValue placeholder={t('testCases.priority')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Priority</SelectItem>
+            <SelectItem value="all">{t('testCases.allPriority')}</SelectItem>
             {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((priority) => (
               <SelectItem key={priority} value={priority}>
                 {priority}
@@ -311,10 +311,10 @@ const TestCasesPage: React.FC = () => {
           onValueChange={(value) => setCycleFilter(value === 'all' ? 'all' : parseInt(value))}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Cycle" />
+            <SelectValue placeholder={t('testCases.cycle')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Cycles</SelectItem>
+            <SelectItem value="all">{t('testCases.allCycles')}</SelectItem>
             {cycles.map((cycle) => (
               <SelectItem key={cycle.id} value={cycle.id.toString()}>
                 {cycle.name}
@@ -327,10 +327,10 @@ const TestCasesPage: React.FC = () => {
           onValueChange={(value) => setPitchFilter(value === 'all' ? 'all' : parseInt(value))}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Pitch" />
+            <SelectValue placeholder={t('testCases.pitch')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Pitches</SelectItem>
+            <SelectItem value="all">{t('testCases.allPitches')}</SelectItem>
             {pitches.map((pitch) => (
               <SelectItem key={pitch.id} value={pitch.id.toString()}>
                 {pitch.title}
@@ -345,14 +345,14 @@ const TestCasesPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Key</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Pitch</TableHead>
-              <TableHead>Pass Rate</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('testCases.key')}</TableHead>
+              <TableHead>{t('testCases.tableTitle')}</TableHead>
+              <TableHead>{t('testCases.type')}</TableHead>
+              <TableHead>{t('testCases.priority')}</TableHead>
+              <TableHead>{t('testCases.status')}</TableHead>
+              <TableHead>{t('testCases.pitch')}</TableHead>
+              <TableHead>{t('testCases.passRate')}</TableHead>
+              <TableHead className="text-right">{t('testCases.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -367,7 +367,7 @@ const TestCasesPage: React.FC = () => {
                           <TooltipTrigger>
                             <Sparkles className="h-4 w-4 text-primary" />
                           </TooltipTrigger>
-                          <TooltipContent>AI Generated</TooltipContent>
+                          <TooltipContent>{t('testCases.aiGenerated')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}
@@ -403,7 +403,7 @@ const TestCasesPage: React.FC = () => {
                       {tc.passRate?.toFixed(0)}% ({tc.passedRuns}/{tc.totalRuns})
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">No runs</span>
+                    <span className="text-muted-foreground">{t('testCases.noRuns')}</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -420,7 +420,7 @@ const TestCasesPage: React.FC = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>View</TooltipContent>
+                        <TooltipContent>{t('testCases.view')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <TooltipProvider>
@@ -435,7 +435,7 @@ const TestCasesPage: React.FC = () => {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
+                        <TooltipContent>{t('testCases.edit')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <TooltipProvider>
@@ -450,7 +450,7 @@ const TestCasesPage: React.FC = () => {
                             <Play className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Run Test</TooltipContent>
+                        <TooltipContent>{t('testCases.runTest')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <TooltipProvider>
@@ -465,7 +465,7 @@ const TestCasesPage: React.FC = () => {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
+                        <TooltipContent>{t('testCases.delete')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -477,8 +477,8 @@ const TestCasesPage: React.FC = () => {
                 <TableCell colSpan={8} className="text-center py-8">
                   <span className="text-muted-foreground">
                     {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || priorityFilter !== 'all'
-                      ? 'No test cases match the filters'
-                      : 'No test cases yet. Create one to get started!'}
+                      ? t('testCases.noMatch')
+                      : t('testCases.noTestCases')}
                   </span>
                 </TableCell>
               </TableRow>
@@ -494,9 +494,9 @@ const TestCasesPage: React.FC = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Test Case</DialogTitle>
+            <DialogTitle>{t('testCases.deleteTestCase')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.testCase?.title}"? This action cannot be undone.
+              {t('testCases.deleteConfirm', { title: deleteDialog.testCase?.title })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -504,10 +504,10 @@ const TestCasesPage: React.FC = () => {
               variant="outline"
               onClick={() => setDeleteDialog({ open: false, testCase: null })}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
