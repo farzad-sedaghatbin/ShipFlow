@@ -27,6 +27,10 @@ public class CreateTaskRequest {
     @NotNull(message = "Cycle ID is required")
     private Long cycleId;
     
+    private Long pitchId;
+    
+    private Long scopeId;
+    
     private TaskStatus status;
     private TaskPriority priority;
     private TaskCategory category;

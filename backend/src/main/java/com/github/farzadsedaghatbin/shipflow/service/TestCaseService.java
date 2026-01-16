@@ -28,6 +28,8 @@ public class TestCaseService {
     private final CycleRepository cycleRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final HillChartPointRepository hillChartPointRepository;
+    private final TaskRepository taskRepository;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -78,6 +80,20 @@ public class TestCaseService {
             }
         }
 
+        // Set scope if provided
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
+            testCase.setScope(scope);
+        }
+
+        // Set task if provided
+        if (request.getTaskId() != null) {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+            testCase.setTask(task);
+        }
+
         testCase = testCaseRepository.save(testCase);
         log.info("Created test case: {} by user: {}", testCase.getTestCaseKey(), userId);
         
@@ -123,6 +139,20 @@ public class TestCaseService {
             Team team = teamRepository.findById(request.getTeamId())
                     .orElseThrow(() -> new RuntimeException("Team not found: " + request.getTeamId()));
             testCase.setTeam(team);
+        }
+
+        // Update scope if provided
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new RuntimeException("Scope not found: " + request.getScopeId()));
+            testCase.setScope(scope);
+        }
+
+        // Update task if provided
+        if (request.getTaskId() != null) {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+            testCase.setTask(task);
         }
 
         testCase.setUpdatedBy(user);
@@ -295,6 +325,10 @@ public class TestCaseService {
                 .cycleName(testCase.getCycle() != null ? testCase.getCycle().getName() : null)
                 .teamId(testCase.getTeam() != null ? testCase.getTeam().getId() : null)
                 .teamName(testCase.getTeam() != null ? testCase.getTeam().getName() : null)
+                .scopeId(testCase.getScope() != null ? testCase.getScope().getId() : null)
+                .scopeName(testCase.getScope() != null ? testCase.getScope().getScope() : null)
+                .taskId(testCase.getTask() != null ? testCase.getTask().getId() : null)
+                .taskTitle(testCase.getTask() != null ? testCase.getTask().getTitle() : null)
                 .type(testCase.getType())
                 .priority(testCase.getPriority())
                 .status(testCase.getStatus())

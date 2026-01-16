@@ -78,6 +78,17 @@ export const taskService = {
   getByAssigneeId: (assigneeId: number) => api.get<Task[]>(`/tasks/assignee/${assigneeId}`),
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
+  search: (query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks/search', {
+      params: {
+        q: query,
+        page: page ?? 0,
+        size: size ?? 50,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   
   // Multi-filter endpoint
   getWithFilters: (

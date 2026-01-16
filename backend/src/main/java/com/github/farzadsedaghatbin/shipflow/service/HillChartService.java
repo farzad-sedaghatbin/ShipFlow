@@ -49,6 +49,19 @@ public class HillChartService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+    
+    /**
+     * Search hill chart points (scopes) by name or description.
+     * Minimum 3 characters required to prevent performance issues with large datasets.
+     */
+    public List<HillChartPointDTO> searchHillChartPoints(String query) {
+        if (query == null || query.trim().length() < 3) {
+            return List.of();
+        }
+        return hillChartPointRepository.searchHillChartPoints(query.trim()).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
     public HillChartPointDTO getHillChartPointById(Long id) {
         HillChartPoint point = hillChartPointRepository.findById(id)

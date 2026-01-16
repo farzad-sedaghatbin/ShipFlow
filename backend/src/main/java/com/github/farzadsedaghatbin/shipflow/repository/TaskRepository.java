@@ -49,6 +49,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
     List<Task> findByPersonId(@Param("personId") Long personId);
     
+    @Query("SELECT t FROM Task t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Task> searchTasks(@Param("query") String query, Pageable pageable);
+    
     @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
     Page<Task> findByPersonId(@Param("personId") Long personId, Pageable pageable);
     
@@ -112,4 +115,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.parentTask IS NULL")
     List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
+    
+    // Pitch and scope queries for traceability
+    List<Task> findByPitchId(Long pitchId);
+    
+    List<Task> findByScopeId(Long scopeId);
+    
+    @Query("SELECT t FROM Task t WHERE t.pitch.id = :pitchId AND t.status = :status")
+    List<Task> findByPitchIdAndStatus(@Param("pitchId") Long pitchId, @Param("status") TaskStatus status);
+    
+    @Query("SELECT t FROM Task t WHERE t.scope.id = :scopeId AND t.status = :status")
+    List<Task> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") TaskStatus status);
 }

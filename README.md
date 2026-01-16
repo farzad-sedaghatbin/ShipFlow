@@ -31,6 +31,11 @@ A modern project management application implementing the [Shape Up](https://base
     - Inline editing of Shape Up fields on pitch detail page
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+  - **Traceability**: Optional links to pitches and scopes for improved reporting
+    - Tasks can optionally link to specific pitch and scope (hill chart point)
+    - Supports technical debt and improvement work (no pitch required)
+    - Server-side search with debouncing for scalable scope/task selection
+    - Minimum 3-character search prevents performance issues with large datasets
   - **Task Dependencies**: Lightweight dependency tracking to identify blockers
     - Three dependency types: BLOCKS, DEPENDS_ON, RELATED_TO
     - Automatic circular dependency detection using depth-first search
@@ -55,8 +60,17 @@ A modern project management application implementing the [Shape Up](https://base
   - Risk distribution analysis (LOW, MEDIUM, HIGH, CRITICAL)
   - Team member statistics and performance tracking
   - Variance analysis and efficiency ratios
-  - Out-of-scope work (tasks) tracking
+  - Out-of-scope work (tasks) tracking with traceability
   - PDF and CSV export functionality
+- **QA & Testing**: Bug tracking and test case management
+  - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
+    - Optional traceability to scopes and related tasks
+    - Server-side search for finding related scopes/tasks (min 3 chars, 300ms debounce)
+    - Context-aware dropdowns (pitch → scopes, cycle → tasks)
+  - **Test Cases**: Structured test case management
+    - Optional links to scopes and related tasks for better coverage tracking
+    - Debounced search prevents performance issues with large test suites
+    - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
 - **Retrospectives**: Team retros with voting and merging
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
   - Checkbox option to hide author attribution on sensitive items

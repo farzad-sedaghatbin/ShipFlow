@@ -90,6 +90,22 @@ public class TestCase {
     private Team team;
 
     /**
+     * The scope (hill chart point) this test case is related to (optional).
+     * Links the test case to a specific scope for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scope_id")
+    private HillChartPoint scope;
+
+    /**
+     * The task this test case is related to (optional).
+     * Links the test case to a specific task for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id")
+    private Task task;
+
+    /**
      * Type of test case.
      */
     @Enumerated(EnumType.STRING)

@@ -10,6 +10,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { pitchService } from '../services/pitchService';
+import { hillChartApi } from '../services/hillChartApi';
+import { taskService } from '../services/taskService';
+import { useDebounce } from '../hooks/useDebounce';
 import {
   TestCaseStatus,
   TestCaseType,
@@ -17,6 +20,8 @@ import {
   CreateTestCaseRequest,
   UpdateTestCaseRequest,
   Pitch,
+  HillChartPoint,
+  Task,
 } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -46,7 +51,17 @@ const TestCaseFormPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [scopeSearch, setScopeSearch] = useState('');
+  const [taskSearch, setTaskSearch] = useState('');
+  const [searchingScopes, setSearchingScopes] = useState(false);
+  const [searchingTasks, setSearchingTasks] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  
+  // Debounce search queries - 300ms delay
+  const debouncedScopeSearch = useDebounce(scopeSearch, 300);
+  const debouncedTaskSearch = useDebounce(taskSearch, 300);
 
   const [formData, setFormData] = useState<CreateTestCaseRequest>({
     title: '',
@@ -55,6 +70,8 @@ const TestCaseFormPage: React.FC = () => {
     steps: '',
     expectedResult: '',
     pitchId: undefined,
+    scopeId: undefined,
+    taskId: undefined,
     type: 'FUNCTIONAL',
     priority: 'MEDIUM',
     status: 'DRAFT',
@@ -69,12 +86,79 @@ const TestCaseFormPage: React.FC = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    // Load scopes when pitchId changes
+    if (formData.pitchId) {
+      loadScopesForPitch(formData.pitchId);
+    } else {
+      setScopes([]);
+    }
+  }, [formData.pitchId]);
+  
+  // Server-side search for scopes (minimum 3 characters)
+  useEffect(() => {
+    const searchScopes = async () => {
+      if (debouncedScopeSearch.length < 3) {
+        if (!formData.pitchId && debouncedScopeSearch.length > 0) {
+          setScopes([]);
+        }
+        return;
+      }
+      
+      setSearchingScopes(true);
+      try {
+        const scopesRes = await hillChartApi.searchHillChartPoints(debouncedScopeSearch);
+        setScopes(scopesRes);
+      } catch (err) {
+        console.error('Failed to search scopes:', err);
+        setScopes([]);
+      } finally {
+        setSearchingScopes(false);
+      }
+    };
+    searchScopes();
+  }, [debouncedScopeSearch, formData.pitchId]);
+
+  // Server-side search for tasks (minimum 3 characters)
+  useEffect(() => {
+    const searchTasks = async () => {
+      if (debouncedTaskSearch.length < 3) {
+        if (!formData.cycleId && debouncedTaskSearch.length > 0) {
+          setTasks([]);
+        }
+        return;
+      }
+      
+      setSearchingTasks(true);
+      try {
+        const tasksRes = await taskService.search(debouncedTaskSearch, 0, 50);
+        setTasks(tasksRes.data.content);
+      } catch (err) {
+        console.error('Failed to search tasks:', err);
+        setTasks([]);
+      } finally {
+        setSearchingTasks(false);
+      }
+    };
+    searchTasks();
+  }, [debouncedTaskSearch, formData.cycleId]);
+
   const loadPitches = async () => {
     try {
       const response = await pitchService.getAll();
       setPitches(response.data);
     } catch (err) {
       console.error('Failed to load pitches', err);
+    }
+  };
+
+  const loadScopesForPitch = async (pitchId: number) => {
+    try {
+      const response = await hillChartApi.getHillChartPointsByPitch(pitchId);
+      setScopes(response);
+    } catch (err) {
+      console.error('Failed to load scopes', err);
+      setScopes([]);
     }
   };
 
@@ -90,6 +174,9 @@ const TestCaseFormPage: React.FC = () => {
         steps: tc.steps || '',
         expectedResult: tc.expectedResult || '',
         pitchId: tc.pitchId,
+        scopeId: tc.scopeId,
+        taskId: tc.taskId,
+        cycleId: tc.cycleId,
         type: tc.type,
         priority: tc.priority,
         status: tc.status,
@@ -202,7 +289,7 @@ const TestCaseFormPage: React.FC = () => {
                 <Label>Pitch</Label>
                 <Select
                   value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value) })}
+                  onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a pitch" />
@@ -216,6 +303,100 @@ const TestCaseFormPage: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Scope (optional)</Label>
+                <Select
+                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? "Select pitch or search" : "No specific scope"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 pb-2">
+                      <Input
+                        placeholder="Search scopes..."
+                        value={scopeSearch}
+                        onChange={(e) => setScopeSearch(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    <SelectItem value="none">No specific scope</SelectItem>
+                    {searchingScopes ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                    ) : !formData.pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                    ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
+                    ) : scopes.length === 0 && !formData.pitchId ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
+                    ) : (
+                      scopes.slice(0, 50).map((scope) => (
+                        <SelectItem key={scope.id} value={String(scope.id)}>
+                          {scope.scope}
+                        </SelectItem>
+                      ))
+                    )}
+                    {scopes.length > 50 && (
+                      <div className="py-2 text-center text-xs text-muted-foreground">
+                        Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {formData.pitchId ? `${scopes.length} scopes available for selected pitch` : 'Search to find scopes (min 3 chars)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Related Task (optional)</Label>
+                <Select
+                  value={formData.taskId ? String(formData.taskId) : 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, taskId: value === 'none' ? undefined : Number(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.cycleId && tasks.length === 0 ? "Loading..." : "No related task"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 pb-2">
+                      <Input
+                        placeholder="Search tasks..."
+                        value={taskSearch}
+                        onChange={(e) => setTaskSearch(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    <SelectItem value="none">No related task</SelectItem>
+                    {searchingTasks ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                    ) : !formData.cycleId && taskSearch.length > 0 && taskSearch.length < 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                    ) : tasks.length === 0 && taskSearch.length >= 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">No tasks found</div>
+                    ) : tasks.length === 0 && !formData.cycleId ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search tasks</div>
+                    ) : (
+                      tasks.slice(0, 50).map((task) => (
+                        <SelectItem key={task.id} value={String(task.id)}>
+                          {task.title}
+                        </SelectItem>
+                      ))
+                    )}
+                    {tasks.length > 50 && (
+                      <div className="py-2 text-center text-xs text-muted-foreground">
+                        Showing first 50 of {tasks.length} tasks. Refine your search for more specific results.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {formData.cycleId ? `${tasks.length} tasks available for selected cycle` : 'Search to find tasks (min 3 chars)'}
+                </p>
               </div>
 
               <div className="space-y-2">

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Server-Side Search for Traceability Dropdowns**: Optimized performance for large datasets
+  - Minimum 3-character search with 300ms debouncing to prevent API spam
+  - GET `/api/tasks/search?q={query}` endpoint for task search by title/description
+  - GET `/api/hill-chart/search?q={query}` endpoint for scope search by scope/description
+  - Database-level LIKE queries with case-insensitive partial matching
+  - Context-aware loading: pitch/cycle context loads scoped data, otherwise requires search
+  - Custom `useDebounce` hook for frontend search optimization
+  - Helpful UI messages: "Type to search", "Searching...", "Type at least 3 characters"
+  - Max 50 results per search to maintain performance
+  - Scales to millions of records via indexed searches
+- **Traceability Relationships**: Optional links between tasks, bug reports, test cases, and scopes
+  - Tasks can link to pitch and scope (hill chart point)
+  - Bug reports can link to scope and related task
+  - Test cases can link to scope and related task
+  - All relationships optional to support technical debt/improvement work
+  - Database migration V53 with nullable foreign keys
+  - Comprehensive test coverage (22 unit tests)
+  - Frontend dropdowns with search in BugReportModal and TestCaseFormPage
 - **Task Dependencies**: Lightweight dependency tracking system for identifying blockers
   - Three dependency types: BLOCKS, DEPENDS_ON, RELATED_TO
   - Automatic circular dependency detection using DFS algorithm
@@ -22,6 +40,10 @@ All notable changes to this project will be documented in this file.
   - Database migration V52 for task_dependencies table
 
 ### Changed
+- **Performance Optimization**: Replaced client-side filtering with server-side search
+  - Before: Loaded 200+ items then filtered locally (400KB+ per dropdown)
+  - After: 0-50 items loaded only when needed (0-100KB)
+  - Dramatically improved performance for deployments with 1000+ scopes/tasks
 - **Backlog View**: Now displays blocker badges (🔴 blocked) and blocking badges (🛡️ blocking) for all tasks
 - **Task View Dialog**: Added dependency management section to the quick view dialog (eye icon) so users can add/remove dependencies without navigating away
 - **Task List UX**: Blocker badge tooltip now shows actual task titles instead of just count

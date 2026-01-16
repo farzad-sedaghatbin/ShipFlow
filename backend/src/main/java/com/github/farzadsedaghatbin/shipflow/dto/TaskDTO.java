@@ -32,6 +32,14 @@ public class TaskDTO {
     private String projectName;
     private String projectKey;
     
+    // Pitch relationship
+    private Long pitchId;
+    private String pitchTitle;
+    
+    // Scope relationship
+    private Long scopeId;
+    private String scopeName;
+    
     private Long assigneeId;
     private String assigneeName;
     private String assigneeAvatarUrl;
