@@ -189,7 +189,7 @@ export default function ProjectDetail() {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/projects')}
-          aria-label="Back to projects"
+          aria-label={t('projectDetail.backToProjects')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
