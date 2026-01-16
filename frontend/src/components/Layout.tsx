@@ -121,6 +121,7 @@ const userAccessItems: NavItemConfig[] = [
 const integrationItems: NavItemConfig[] = [
   { text: 'Slack', icon: MessageSquare, path: '/integrations/slack' },
   { text: 'GitHub', icon: Github, path: '/integrations/github' },
+  { text: 'Microsoft Teams', icon: Users2, path: '/integrations/teams' },
 ];
 
 function NavItem({

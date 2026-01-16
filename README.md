@@ -136,6 +136,32 @@ A modern project management application implementing the [Shape Up](https://base
   - Complete audit trail of sent notifications
   - Role-based access control (ADMIN/MANAGER only)
 
+## 🔀 How ShipFlow Compares
+
+ShipFlow is the **only project management tool** built specifically for the [Shape Up](https://basecamp.com/shapeup) methodology:
+
+| Feature | ShipFlow | Linear | Asana | Monday.com | Jira | Basecamp |
+|---------|----------|--------|-------|------------|------|----------|
+| **Native Shape Up** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
+| **6-Week Cycles** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Hill Charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
+| **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
+| **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**Why Choose ShipFlow?**
+- **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
+- **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
+- **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
+- **AI-Powered**: RAG-based document Q&A and automated test case generation
+- **Complete Control**: Self-hosted with full data ownership
+
+[→ View Full Comparison](/compare)
+
 ## ♿ Accessibility
 
 ShipFlow is committed to **WCAG 2.1 AA compliance** with a current score of **B+ (88/100)**:

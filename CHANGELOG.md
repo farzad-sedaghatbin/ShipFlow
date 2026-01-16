@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Microsoft Teams Integration**: Full integration with Microsoft Teams for real-time notifications
+  - **Backend Features**:
+    - Database tables for Teams configuration, channel settings, and notification history (V54 migration)
+    - `TeamsConfiguration` entity for tenant-level settings with webhook URL
+    - `TeamsChannelConfig` entity for channel-specific notification preferences
+    - `TeamsNotificationHistory` entity for audit logging
+    - `TeamsIntegrationService` for sending notifications using Adaptive Card format
+    - `TeamsIntegrationController` with REST endpoints for configuration management
+    - Support for 8 notification types: task assigned/completed/blocked, pitch shaped, cycle started/cooldown, betting completed, sprint started
+    - Channel-specific notification filtering and test notification functionality
+    - Color-coded notification cards based on event type
+    - **Test Coverage**: 17 comprehensive unit tests for `TeamsIntegrationService` with Mockito (100% pass rate)
+  - **Frontend Features**:
+    - Teams Integration settings page at `/integrations/teams`
+    - Tenant configuration UI with webhook URL management
+    - Channel-specific notification preference management with toggles
+    - Test notification sending interface
+    - Built-in setup guide with step-by-step instructions
+    - Navigation integration in Administration → Integrations section
+  - **API Endpoints**:
+    - `POST /api/teams/configurations` - Create/update tenant configuration
+    - `GET /api/teams/configurations` - List all configurations
+    - `GET /api/teams/configurations/active` - Get active configuration
+    - `DELETE /api/teams/configurations/{id}` - Delete configuration
+    - `POST /api/teams/configurations/{id}/channels` - Configure channel notifications
+    - `POST /api/teams/configurations/{id}/test` - Send test notification
+    - `GET /api/teams/configurations/{id}/history` - Get notification history
+
+- **Competitors Comparison Page**: New marketing page comparing ShipFlow with alternatives
+  - Feature-by-feature comparison matrix with Linear, Asana, Monday.com, Jira, and Basecamp
+  - 40+ features compared across 7 categories (Shape Up, Progress, AI, QA, Team, Integrations, Deployment)
+  - Key differentiator cards highlighting ShipFlow's unique advantages
+  - Individual competitor breakdown cards explaining when to choose each tool
+  - Accessible via `/compare` route and linked from Landing page with "Compare to Alternatives" button
+  - Professional design with responsive layout
+  - Comparison summary also added to README.md for quick reference
+
 - **Server-Side Search for Traceability Dropdowns**: Optimized performance for large datasets
   - Minimum 3-character search with 300ms debouncing to prevent API spam
   - GET `/api/tasks/search?q={query}` endpoint for task search by title/description
