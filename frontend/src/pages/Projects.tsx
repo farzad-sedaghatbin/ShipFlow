@@ -154,15 +154,15 @@ export default function Projects() {
     const errors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      errors.name = 'Project name is required';
+      errors.name = t('projects.errors.nameRequired');
     } else if (formData.name.trim().length < 2) {
       errors.name = 'Project name must be at least 2 characters';
     }
 
     if (!formData.projectKey.trim()) {
-      errors.projectKey = 'Project key is required';
+      errors.projectKey = t('projects.errors.keyRequired');
     } else if (!/^[A-Z0-9]{2,10}$/.test(formData.projectKey.trim())) {
-      errors.projectKey = 'Project key must be 2-10 uppercase letters or numbers';
+      errors.projectKey = t('projects.errors.keyFormat');
     }
 
     setFieldErrors(errors);
@@ -187,7 +187,7 @@ export default function Projects() {
       loadProjects();
       refreshProjects(); // Refresh toolbar project list
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to save project'), 'error');
+      showToast(getUserFriendlyError(error, t('projects.errors.saveFailed')), 'error');
     } finally {
       setSaving(false);
     }
@@ -202,7 +202,7 @@ export default function Projects() {
       loadProjects();
       refreshProjects(); // Refresh toolbar project list
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to delete project'), 'error');
+      showToast(getUserFriendlyError(error, t('projects.errors.deleteFailed')), 'error');
     }
   };
 
@@ -210,15 +210,15 @@ export default function Projects() {
     try {
       if (project.isActive) {
         await projectService.deactivate(project.id);
-        showToast('Project archived successfully', 'success');
+        showToast(t('projects.archiveSuccess'), 'success');
       } else {
         await projectService.activate(project.id);
-        showToast('Project activated successfully', 'success');
+        showToast(t('projects.activateSuccess'), 'success');
       }
       loadProjects();
       refreshProjects(); // Refresh toolbar project list
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to update project status'), 'error');
+      showToast(getUserFriendlyError(error, t('projects.errors.updateStatusFailed')), 'error');
     }
   };
 
@@ -436,7 +436,7 @@ export default function Projects() {
                           e.stopPropagation();
                           handleViewDetails(project);
                         }}
-                        aria-label={`View details for ${project.name}`}
+                        aria-label={t('projects.viewDetailsFor', { name: project.name })}
                       >
                         <Eye className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -452,7 +452,7 @@ export default function Projects() {
                           e.stopPropagation();
                           handleViewCycles(project);
                         }}
-                        aria-label={`View cycles for ${project.name}`}
+                        aria-label={t('projects.viewCyclesFor', { name: project.name })}
                       >
                         <TrendingUp className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -468,7 +468,7 @@ export default function Projects() {
                           e.stopPropagation();
                           handleOpenDialog(project);
                         }}
-                        aria-label={`Edit ${project.name} project`}
+                        aria-label={t('projects.editProjectFor', { name: project.name })}
                       >
                         <Pencil className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -537,7 +537,7 @@ export default function Projects() {
                   handleNameChange(e.target.value);
                   setFieldErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder="My Awesome Project"
+                placeholder={t('projects.namePlaceholder')}
               />
               {fieldErrors.name ? (
                 <p className="text-xs text-destructive">{fieldErrors.name}</p>
@@ -575,7 +575,7 @@ export default function Projects() {
             </div>
             <div className="space-y-2">
               <Label>{t('projects.projectColor')}</Label>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Select project color">
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('projects.selectColor')}>
                 {PROJECT_COLORS.map((color) => (
                   <button
                     key={color}
@@ -587,7 +587,7 @@ export default function Projects() {
                       formData.color === color && 'ring-2 ring-offset-2 ring-foreground'
                     )}
                     style={{ backgroundColor: color }}
-                    aria-label={`Select color ${color}`}
+                    aria-label={t('projects.selectColorValue', { color })}
                     aria-checked={formData.color === color}
                   />
                 ))}
@@ -599,7 +599,7 @@ export default function Projects() {
                 id="logoUrl"
                 value={formData.logoUrl || ''}
                 onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-                placeholder="https://..."
+                placeholder={t('projects.logoUrlPlaceholder')}
               />
             </div>
           </div>
