@@ -130,7 +130,7 @@ export default function Landing() {
                   onClick={() => navigate('/compare')}
                 >
                   <ArrowRight className="h-5 w-5 mr-2" />
-                  Compare to Alternatives
+                  Compare to Competitors
                 </Button>
               </div>
 

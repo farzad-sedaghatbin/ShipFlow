@@ -304,6 +304,8 @@ public class TeamsIntegrationService {
         
         // Use MessageCard format for Teams incoming webhooks
         payload.put("@type", "MessageCard");
+        // Note: http://schema.org/extensions is the official Microsoft Teams schema URL
+        // It must be HTTP (not HTTPS) as per Microsoft's MessageCard specification
         payload.put("@context", "http://schema.org/extensions");
         payload.put("themeColor", getThemeColor(notificationType));
         payload.put("summary", "ShipFlow Notification");
@@ -334,8 +336,8 @@ public class TeamsIntegrationService {
 
     private String getThemeColor(String notificationType) {
         return switch (notificationType) {
-            case "TASK_COMPLETED", "CYCLE_COOLDOWN" -> "00FF00"; // Green
-            case "TASK_BLOCKED", "CYCLE_STARTED" -> "FF0000"; // Red
+            case "TASK_COMPLETED", "CYCLE_COOLDOWN", "CYCLE_STARTED" -> "00FF00"; // Green
+            case "TASK_BLOCKED" -> "FF0000"; // Red
             case "PITCH_SHAPED", "BETTING_COMPLETED" -> "0078D4"; // Blue
             case "TASK_ASSIGNED", "SPRINT_STARTED" -> "FFA500"; // Orange
             case "TEST" -> "9B59B6"; // Purple

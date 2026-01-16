@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/teams")
@@ -20,6 +22,7 @@ import java.util.Optional;
 @Tag(name = "Microsoft Teams Integration", description = "APIs for managing Microsoft Teams integration and notifications")
 public class TeamsIntegrationController {
 
+    private static final Logger LOGGER = Logger.getLogger(TeamsIntegrationController.class.getName());
     private final TeamsIntegrationService teamsService;
 
     @PostMapping("/configurations")
@@ -91,8 +94,9 @@ public class TeamsIntegrationController {
             teamsService.sendTestNotification(configId, request);
             return ResponseEntity.ok("Test notification sent successfully");
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to send test notification for config ID: " + configId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to send test notification: " + e.getMessage());
+                    .body("Failed to send test notification. Please check your Teams webhook configuration.");
         }
     }
 
