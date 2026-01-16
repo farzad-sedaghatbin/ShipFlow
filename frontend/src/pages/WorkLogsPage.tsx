@@ -363,10 +363,10 @@ export default function WorkLogsPage() {
             onValueChange={setSelectedCycle}
           >
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select cycle" />
+              <SelectValue placeholder={t('workLogsPage.selectCycle')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cycles</SelectItem>
+              <SelectItem value="all">{t('workLogsPage.allCycles')}</SelectItem>
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id.toString()}>
                   {cycle.name}
@@ -619,7 +619,7 @@ export default function WorkLogsPage() {
                       id="team-note"
                       value={teamWorkLog.note}
                       onChange={(e) => setTeamWorkLog({ ...teamWorkLog, note: e.target.value })}
-                      placeholder="Optional note"
+                      placeholder={t('workLogsPage.optionalNote')}
                     />
                   </div>
                   <Button

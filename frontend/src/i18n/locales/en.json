@@ -2128,6 +2128,7 @@
     "selectPitch": "Select pitch",
     "selectTask": "Select task",
     "selectPerson": "Select person",
+    "optionalNote": "Optional note",
     "noWorkLogs": "No work logs found",
     "noLogsDesc": "Start logging work to track your progress",
     "confirmDelete": "Are you sure you want to delete this work log?",
