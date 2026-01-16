@@ -1202,6 +1202,14 @@
     "updateSuccess": "Permissions updated successfully",
     "loadFailed": "Failed to load permissions"
   },
+  "widgets": {
+    "overdueTasks": "Overdue Tasks",
+    "blockedTasks": "Blocked Tasks",
+    "upcomingDeadlines": "Upcoming Deadlines",
+    "noOverdueTasks": "No overdue tasks! 🎉",
+    "noBlockedTasks": "No blocked tasks",
+    "noUpcomingDeadlines": "No upcoming cycle deadlines"
+  },
   "dashboardCustomizer": {
     "title": "Widget Configuration",
     "description": "Toggle visibility of widgets on your dashboard",
@@ -1897,8 +1905,16 @@
     "passwordChanged": "Password changed successfully",
     "failedToLoad": "Failed to load profile",
     "accountInfo": "Account Information",
-    "memberSince": "Member Since",
-    "lastLogin": "Last Login"
+    "memberSince": "Member since",
+    "lastLogin": "Last Login",
+    "lastUpdated": "Last updated",
+    "changePasswordDesc": "Enter your current password and choose a new password.",
+    "minChars": "Minimum 6 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "changing": "Changing...",
+    "skillsPlaceholder": "e.g., Java, React, TypeScript, SQL",
+    "skillsHelp": "Comma-separated list of skills",
+    "bioPlaceholder": "Tell us about yourself..."
   },
   "landingPage": {
     "heroTitle": "Shape Up Your Software Development",

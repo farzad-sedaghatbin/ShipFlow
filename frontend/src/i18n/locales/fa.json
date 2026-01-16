@@ -1171,6 +1171,14 @@
     "updateSuccess": "مجوزها با موفقیت به‌روزرسانی شد",
     "loadFailed": "بارگذاری مجوزها ناموفق بود"
   },
+  "widgets": {
+    "overdueTasks": "تسک‌های عقب افتاده",
+    "blockedTasks": "تسک‌های مسدود",
+    "upcomingDeadlines": "ضرب‌الاجل‌های پیش‌رو",
+    "noOverdueTasks": "هیچ تسک عقب افتاده‌ای نیست! 🎉",
+    "noBlockedTasks": "هیچ تسک مسدودی نیست",
+    "noUpcomingDeadlines": "هیچ ضرب‌الاجل سیکلی پیش‌رو نیست"
+  },
   "dashboardCustomizer": {
     "title": "پیکربندی ویجت‌ها",
     "description": "تغییر نمایش ویجت‌ها در داشبورد شما",
@@ -2266,7 +2274,23 @@
     "loadFailed": "بارگذاری پروفایل ناموفق بود",
     "showPassword": "نمایش رمز عبور",
     "hidePassword": "پنهان کردن رمز عبور",
-    "saving": "در حال ذخیره..."
+    "saving": "در حال ذخیره...",
+    "profileDetails": "جزئیات پروفایل",
+    "editProfile": "ویرایش پروفایل",
+    "security": "امنیت",
+    "avatarUrl": "آدرس تصویر پروفایل",
+    "profileUpdated": "پروفایل با موفقیت به‌روزرسانی شد",
+    "passwordMinLength": "رمز عبور باید حداقل ۶ کاراکتر باشد",
+    "passwordChanged": "رمز عبور با موفقیت تغییر کرد",
+    "failedToLoad": "بارگذاری پروفایل ناموفق بود",
+    "lastUpdated": "آخرین به‌روزرسانی",
+    "changePasswordDesc": "رمز عبور فعلی خود را وارد کرده و رمز عبور جدید را انتخاب کنید.",
+    "minChars": "حداقل ۶ کاراکتر",
+    "passwordsDoNotMatch": "رمزهای عبور مطابقت ندارند",
+    "changing": "در حال تغییر...",
+    "skillsPlaceholder": "مثلاً Java، React، TypeScript، SQL",
+    "skillsHelp": "لیست مهارت‌ها با کاما جدا شده",
+    "bioPlaceholder": "درباره خودتان بگویید..."
   },
   "userManagement": {
     "title": "مدیریت کاربران",

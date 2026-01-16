@@ -9,7 +9,7 @@ import { taskService } from '../../services/taskService';
 import { Task } from '../../types';
 
 export function OverdueTasksWidget() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,11 +57,11 @@ export function OverdueTasksWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-destructive" />
-            Overdue Tasks
+            {t('widgets.overdueTasks')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -72,7 +72,7 @@ export function OverdueTasksWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-destructive" />
-          Overdue Tasks
+          {t('widgets.overdueTasks')}
           {tasks.length > 0 && (
             <Badge variant="destructive" className="ml-auto">
               {tasks.length}
@@ -82,7 +82,7 @@ export function OverdueTasksWidget() {
       </CardHeader>
       <CardContent>
         {tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No overdue tasks! 🎉</p>
+          <p className="text-sm text-muted-foreground">{t('widgets.noOverdueTasks')}</p>
         ) : (
           <div className="space-y-2">
             {tasks.map((task) => (

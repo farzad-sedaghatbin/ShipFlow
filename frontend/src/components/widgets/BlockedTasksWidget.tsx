@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Ban, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { taskService } from '../../services/taskService';
 import { Task } from '../../types';
 
 export function BlockedTasksWidget() {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,11 +36,11 @@ export function BlockedTasksWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Ban className="w-4 h-4 text-destructive" />
-            Blocked Tasks
+            {t('widgets.blockedTasks')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -49,7 +51,7 @@ export function BlockedTasksWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Ban className="w-4 h-4 text-destructive" />
-          Blocked Tasks
+          {t('widgets.blockedTasks')}
           {tasks.length > 0 && (
             <Badge variant="destructive" className="ml-auto">
               {tasks.length}
@@ -59,7 +61,7 @@ export function BlockedTasksWidget() {
       </CardHeader>
       <CardContent>
         {tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No blocked tasks</p>
+          <p className="text-sm text-muted-foreground">{t('widgets.noBlockedTasks')}</p>
         ) : (
           <div className="space-y-2">
             {tasks.map((task) => (
