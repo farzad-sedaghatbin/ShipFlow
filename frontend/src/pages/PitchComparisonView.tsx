@@ -45,12 +45,10 @@ const PitchComparisonView = () => {
   const [teamPerformance, setTeamPerformance] = useState<Record<number, TeamPerformanceHistory>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // i18n ready
-  if (false) console.log(t('pitchComparison.title'));
 
   useEffect(() => {
     if (!cycleId) {
-      setError('No cycle selected');
+      setError(t('pitchComparison.noCycleSelected'));
       setLoading(false);
       return;
     }
@@ -171,11 +169,11 @@ const PitchComparisonView = () => {
         <div className="max-w-7xl mx-auto">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error || 'Failed to load cycle data'}</AlertDescription>
+            <AlertTitle>{t('pitchComparison.error')}</AlertTitle>
+            <AlertDescription>{error || t('pitchComparison.failedToLoad')}</AlertDescription>
           </Alert>
           <Button onClick={() => navigate(-1)} className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t('pitchComparison.goBack')}
           </Button>
         </div>
       </div>
@@ -189,11 +187,11 @@ const PitchComparisonView = () => {
         <div className="flex items-center justify-between">
           <div>
             <Button variant="ghost" onClick={() => navigate(-1)} className="mb-2">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Betting Table
+              <ArrowLeft className="mr-2 h-4 w-4" /> {t('pitchComparison.backToBetting')}
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Pitch Comparison</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('pitchComparison.title')}</h1>
             <p className="text-muted-foreground">
-              {cycle.name} • Betting Meeting Analysis
+              {cycle.name} • {t('pitchComparison.bettingMeetingAnalysis')}
             </p>
           </div>
         </div>
@@ -202,12 +200,12 @@ const PitchComparisonView = () => {
         {capacityAnalysis && (
           <Card>
             <CardHeader>
-              <CardTitle>Capacity Overview</CardTitle>
+              <CardTitle>{t('pitchComparison.capacityOverview')}</CardTitle>
               <CardDescription>
-                Total: {capacityAnalysis.totalCapacityWeeks} weeks • 
-                Allocated: {capacityAnalysis.allocatedWeeks} weeks • 
-                Remaining: {capacityAnalysis.remainingWeeks} weeks • 
-                Utilization: {formatPercentage(capacityAnalysis.utilizationRate)}
+                {t('pitchComparison.capacityTotal')}: {capacityAnalysis.totalCapacityWeeks} {t('pitchComparison.weeks')} • 
+                {t('pitchComparison.capacityAllocated')}: {capacityAnalysis.allocatedWeeks} {t('pitchComparison.weeks')} • 
+                {t('pitchComparison.capacityRemaining')}: {capacityAnalysis.remainingWeeks} {t('pitchComparison.weeks')} • 
+                {t('pitchComparison.capacityUtilization')}: {formatPercentage(capacityAnalysis.utilizationRate)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -235,7 +233,7 @@ const PitchComparisonView = () => {
               {/* Recommendations */}
               {capacityAnalysis.recommendations.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">Recommendations</h4>
+                  <h4 className="text-sm font-semibold">{t('pitchComparison.recommendations')}</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                     {capacityAnalysis.recommendations.map((rec, idx) => (
                       <li key={idx}>{rec}</li>
@@ -250,9 +248,9 @@ const PitchComparisonView = () => {
         {/* Pitch Comparisons */}
         <Card>
           <CardHeader>
-            <CardTitle>Shaped Pitches Analysis</CardTitle>
+            <CardTitle>{t('pitchComparison.shapedPitchesAnalysis')}</CardTitle>
             <CardDescription>
-              Compare pitches across teams with historical performance and capacity fit
+              {t('pitchComparison.comparePitchesDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -265,7 +263,7 @@ const PitchComparisonView = () => {
                       <h3 className="text-lg font-semibold">{pitch.pitchTitle}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">
-                          {pitch.appetiteWeeks} weeks ({pitch.appetiteDays} days)
+                          {pitch.appetiteWeeks} {t('pitchComparison.weeks')} ({pitch.appetiteDays} {t('pitchComparison.days')})
                         </Badge>
                         {pitch.complexityLevel && (
                           <Badge className={cn('text-xs', getComplexityColor(pitch.complexityLevel))}>
@@ -287,7 +285,7 @@ const PitchComparisonView = () => {
                       {pitch.risks.length > 0 && (
                         <div>
                           <h4 className="font-semibold text-xs text-red-600 dark:text-red-400 mb-1">
-                            Risks
+                            {t('pitchComparison.risks')}
                           </h4>
                           <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                             {pitch.risks.map((risk, idx) => (
@@ -299,7 +297,7 @@ const PitchComparisonView = () => {
                       {pitch.rabbitHoles.length > 0 && (
                         <div>
                           <h4 className="font-semibold text-xs text-orange-600 dark:text-orange-400 mb-1">
-                            Rabbit Holes
+                            {t('pitchComparison.rabbitHoles')}
                           </h4>
                           <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                             {pitch.rabbitHoles.map((hole, idx) => (
@@ -313,17 +311,17 @@ const PitchComparisonView = () => {
 
                   {/* Team Fit Analysis Table */}
                   <div>
-                    <h4 className="text-sm font-semibold mb-2">Team Capacity Fit</h4>
+                    <h4 className="text-sm font-semibold mb-2">{t('pitchComparison.teamCapacityFit')}</h4>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Team</TableHead>
-                          <TableHead>Historical Performance</TableHead>
-                          <TableHead>Available</TableHead>
-                          <TableHead>Required</TableHead>
-                          <TableHead>Utilization</TableHead>
-                          <TableHead>Fit Score</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>{t('pitchComparison.team')}</TableHead>
+                          <TableHead>{t('pitchComparison.historicalPerformance')}</TableHead>
+                          <TableHead>{t('pitchComparison.available')}</TableHead>
+                          <TableHead>{t('pitchComparison.required')}</TableHead>
+                          <TableHead>{t('pitchComparison.utilization')}</TableHead>
+                          <TableHead>{t('pitchComparison.fitScore')}</TableHead>
+                          <TableHead>{t('common.status')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -340,7 +338,7 @@ const PitchComparisonView = () => {
                                     </Badge>
                                     {getPerformanceIcon(performance.trend)}
                                     <span className="text-xs text-muted-foreground">
-                                      {performance.completedBets}/{performance.totalBets} bets
+                                      {performance.completedBets}/{performance.totalBets} {t('pitchComparison.bets')}
                                     </span>
                                   </div>
                                 )}
@@ -357,13 +355,13 @@ const PitchComparisonView = () => {
                                 {fit.canFit ? (
                                   <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
                                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Can Fit
+                                    {t('pitchComparison.canFit')}
                                   </Badge>
                                 ) : (
                                   <div>
                                     <Badge variant="outline" className="text-xs bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 mb-1">
                                       <AlertTriangle className="h-3 w-3 mr-1" />
-                                      Over Capacity
+                                      {t('pitchComparison.overCapacity')}
                                     </Badge>
                                     {fit.capacityWarning && (
                                       <p className="text-xs text-muted-foreground mt-1">{fit.capacityWarning}</p>
@@ -382,7 +380,7 @@ const PitchComparisonView = () => {
 
               {pitchComparisons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  No shaped pitches available for this cycle
+                  {t('pitchComparison.noPitches')}
                 </div>
               )}
             </div>
