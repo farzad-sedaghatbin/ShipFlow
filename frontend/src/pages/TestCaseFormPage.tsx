@@ -172,12 +172,6 @@ const TestCaseFormPage: React.FC = () => {
     }
   };
 
-  const loadTasksForCycle = async (_cycleId: number) => {
-    // Tasks are loaded on-demand via search dropdown, not preloaded
-    // This prevents loading all tasks upfront for better scalability
-    setTasks([]);
-  };
-
   const loadTestCase = async () => {
     setLoading(true);
     try {
