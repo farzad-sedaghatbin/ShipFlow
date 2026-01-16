@@ -2234,6 +2234,95 @@
     "description": "Upload meeting notes, agendas, or other documents. The text will be extracted and added to the knowledge base for Q&A.",
     "close": "Close"
   },
+  "permissions": {
+    "title": "Permission Management",
+    "subtitle": "Manage role-based permissions across all resources",
+    "viewOnly": "View your role permissions",
+    "refresh": "Refresh",
+    "addPermission": "Add Permission",
+    "noAccess": "You don't have permission to manage role permissions. You can only view your own permissions.",
+    "viewInfo": "You can view your assigned permissions below. Contact your administrator to request additional permissions.",
+    "myPermissionsTitle": "My Permissions",
+    "currentRole": "Your current role",
+    "confirmDelete": "Are you sure you want to delete this permission?",
+    "confirmBulkDelete": "Delete {{count}} selected permissions?",
+    "tabs": {
+      "matrix": "Permission Matrix",
+      "all": "All Permissions",
+      "my": "My Permissions"
+    },
+    "allPermissions": {
+      "title": "All Permissions",
+      "roleTitle": "{{role}} Permissions",
+      "permissionCount": "{{filtered}} of {{total}} permissions",
+      "selected": " • {{count}} selected",
+      "deleteCount": "Delete {{count}}",
+      "roleInfo": "Showing permissions for your role: <strong>{{role}}</strong>. Contact your administrator to request changes.",
+      "searchPlaceholder": "Search permissions...",
+      "clear": "Clear",
+      "role": "Role",
+      "allRoles": "All Roles",
+      "resource": "Resource",
+      "allResources": "All Resources",
+      "type": "Type",
+      "allTypes": "All Types",
+      "noGrouping": "No Grouping",
+      "groupByRole": "Group by Role",
+      "groupByResource": "Group by Resource",
+      "perPage": "{{count}} per page",
+      "table": {
+        "role": "Role",
+        "resource": "Resource",
+        "permission": "Permission",
+        "description": "Description",
+        "actions": "Actions",
+        "empty": "No permissions found"
+      },
+      "pagination": {
+        "showing": "Showing {{from}} to {{to}} of {{total}}",
+        "page": "Page {{current}} of {{total}}"
+      }
+    },
+    "matrix": {
+      "title": "Permission Matrix",
+      "description": "Overview of all role permissions across resources (✓ = granted)",
+      "searchPlaceholder": "Search resources...",
+      "filterPlaceholder": "Filter by resource",
+      "allResources": "All Resources",
+      "legend": "Permission Types",
+      "table": {
+        "resource": "Resource"
+      }
+    },
+    "myPermissions": {
+      "empty": "No permissions found. Contact your administrator if you believe this is an error.",
+      "totalCount": "Total Permissions: {{count}}",
+      "description": "These permissions control what actions you can perform across the application."
+    },
+    "dialog": {
+      "createTitle": "Create Permission",
+      "editTitle": "Edit Permission",
+      "createDescription": "Add a new permission to the system",
+      "editDescription": "Update the permission description",
+      "role": "Role",
+      "resourceType": "Resource Type",
+      "permissionType": "Permission Type",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update",
+      "saving": "Saving..."
+    },
+    "toast": {
+      "deleteSuccess": "Permission deleted successfully",
+      "deleteFailed": "Failed to delete permission",
+      "bulkDeleteSuccess": "{{count}} permissions deleted successfully",
+      "bulkDeleteFailed": "Failed to delete permissions",
+      "createSuccess": "Permission created successfully",
+      "updateSuccess": "Permission updated successfully"
+    }
+  },
   "taskDetailPage": {
     "title": "Task Details",
     "editTask": "Edit Task",

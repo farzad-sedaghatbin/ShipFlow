@@ -131,34 +131,34 @@ export default function PermissionManagement() {
   };
 
   const handleDeletePermission = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this permission?')) return;
+    if (!confirm(t('permissions.confirmDelete'))) return;
     
     try {
       await permissionService.deletePermission(id);
-      showToast('Permission deleted successfully', 'success');
+      showToast(t('permissions.toast.deleteSuccess'), 'success');
       loadData();
     } catch (error) {
-      showToast('Failed to delete permission', 'error');
+      showToast(t('permissions.toast.deleteFailed'), 'error');
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedPermIds.size === 0) return;
-    if (!confirm(`Delete ${selectedPermIds.size} selected permissions?`)) return;
+    if (!confirm(t('permissions.confirmBulkDelete', { count: selectedPermIds.size }))) return;
     
     try {
       await permissionService.deleteBulkPermissions(Array.from(selectedPermIds));
-      showToast(`${selectedPermIds.size} permissions deleted successfully`, 'success');
+      showToast(t('permissions.toast.bulkDeleteSuccess', { count: selectedPermIds.size }), 'success');
       setSelectedPermIds(new Set());
       loadData();
     } catch (error) {
-      showToast('Failed to delete permissions', 'error');
+      showToast(t('permissions.toast.bulkDeleteFailed'), 'error');
     }
   };
 
   const handleDialogSave = () => {
     showToast(
-      editMode === 'create' ? 'Permission created successfully' : 'Permission updated successfully',
+      t(editMode === 'create' ? 'permissions.toast.createSuccess' : 'permissions.toast.updateSuccess'),
       'success'
     );
     loadData();
@@ -193,17 +193,17 @@ export default function PermissionManagement() {
         <Alert className="border-amber-500">
           <ShieldCheck className="h-5 w-5 text-amber-500" />
           <AlertDescription>
-            You don't have permission to manage role permissions. You can only view your own permissions.
+            {t('permissions.noAccess')}
           </AlertDescription>
         </Alert>
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              My Permissions
+              {t('permissions.myPermissionsTitle')}
             </CardTitle>
             <CardDescription>
-              Your current role: <Badge variant={permissionService.getRoleBadgeColor(currentUser?.role as UserRole) as any}>{currentUser?.role}</Badge>
+              {t('permissions.currentRole')}: <Badge variant={permissionService.getRoleBadgeColor(currentUser?.role as UserRole) as any}>{currentUser?.role}</Badge>
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -237,21 +237,21 @@ export default function PermissionManagement() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Shield className="h-8 w-8" />
-            Permission Management
+            {t('permissions.title')}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isAdmin ? 'Manage role-based permissions across all resources' : 'View your role permissions'}
+            {isAdmin ? t('permissions.subtitle') : t('permissions.viewOnly')}
           </p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('permissions.refresh')}
             </Button>
             <Button onClick={handleCreatePermission}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Permission
+              {t('permissions.addPermission')}
             </Button>
           </div>
         )}
@@ -262,7 +262,7 @@ export default function PermissionManagement() {
         <Alert className="mb-6 border-blue-500">
           <Info className="h-5 w-5 text-blue-500" />
           <AlertDescription>
-            You can view your assigned permissions below. Contact your administrator to request additional permissions.
+            {t('permissions.viewInfo')}
           </AlertDescription>
         </Alert>
       )}
@@ -272,15 +272,15 @@ export default function PermissionManagement() {
         <TabsList className="grid w-full max-w-2xl grid-cols-3">
           <TabsTrigger value="role-matrix">
             <Database className="h-4 w-4 mr-2" />
-            Permission Matrix
+            {t('permissions.tabs.matrix')}
           </TabsTrigger>
           <TabsTrigger value="role-details">
             <Shield className="h-4 w-4 mr-2" />
-            All Permissions
+            {t('permissions.tabs.all')}
           </TabsTrigger>
           <TabsTrigger value="my-permissions">
             <Eye className="h-4 w-4 mr-2" />
-            My Permissions
+            {t('permissions.tabs.my')}
           </TabsTrigger>
         </TabsList>
 
@@ -288,9 +288,9 @@ export default function PermissionManagement() {
         <TabsContent value="role-matrix" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Permission Matrix</CardTitle>
+              <CardTitle>{t('permissions.matrix.title')}</CardTitle>
               <CardDescription>
-                Overview of all role permissions across resources (✓ = granted)
+                {t('permissions.matrix.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -299,7 +299,7 @@ export default function PermissionManagement() {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search resources..."
+                    placeholder={t('permissions.matrix.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -307,10 +307,10 @@ export default function PermissionManagement() {
                 </div>
                 <Select value={filterResource} onValueChange={(v) => setFilterResource(v as ResourceType | 'ALL')}>
                   <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by resource" />
+                    <SelectValue placeholder={t('permissions.matrix.filterPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All Resources</SelectItem>
+                    <SelectItem value="ALL">{t('permissions.matrix.allResources')}</SelectItem>
                     {resources.map(resource => (
                       <SelectItem key={resource} value={resource}>
                         {permissionService.getResourceLabel(resource)}
@@ -326,7 +326,7 @@ export default function PermissionManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">
-                        Resource
+                        {t('permissions.matrix.table.resource')}
                       </TableHead>
                       {roles.map(role => (
                         <TableHead key={role} className="text-center min-w-[120px]">
@@ -358,7 +358,7 @@ export default function PermissionManagement() {
 
               {/* Legend */}
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-semibold mb-3">Permission Types:</h4>
+                <h4 className="font-semibold mb-3">{t('permissions.matrix.legend')}:</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {permissionTypes.map(type => (
                     <div key={type} className="flex items-center gap-2">
@@ -409,10 +409,10 @@ export default function PermissionManagement() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
-                My Permissions
+                {t('permissions.myPermissionsTitle')}
               </CardTitle>
               <CardDescription>
-                Your current role: <Badge variant={permissionService.getRoleBadgeColor(currentUser?.role as UserRole) as any}>{currentUser?.role}</Badge>
+                {t('permissions.currentRole')}: <Badge variant={permissionService.getRoleBadgeColor(currentUser?.role as UserRole) as any}>{currentUser?.role}</Badge>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -463,6 +463,7 @@ function PermissionCell({ permissions }: { permissions: PermissionType[] }) {
 // Role Permissions Detail Component
 // My Permissions View Component
 function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
+  const { t } = useTranslation();
   const resources = permissionService.getResourceTypes();
   
   const groupedByResource = resources.map(resource => ({
@@ -474,7 +475,7 @@ function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
     return (
       <Alert>
         <AlertDescription>
-          No permissions found. Contact your administrator if you believe this is an error.
+          {t('permissions.myPermissions.empty')}
         </AlertDescription>
       </Alert>
     );
@@ -485,10 +486,10 @@ function MyPermissionsView({ permissions }: { permissions: Permission[] }) {
       <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Total Permissions: {permissions.length}</h3>
+          <h3 className="font-semibold">{t('permissions.myPermissions.totalCount', { count: permissions.length })}</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          These permissions control what actions you can perform across the application.
+          {t('permissions.myPermissions.description')}
         </p>
       </div>
 

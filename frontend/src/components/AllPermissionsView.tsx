@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Filter,
@@ -84,6 +85,7 @@ export function AllPermissionsView({
   handleDeletePermission,
   handleBulkDelete,
 }: AllPermissionsViewProps) {
+  const { t } = useTranslation();
   
   const roles = permissionService.getUserRoles();
   const resources = permissionService.getResourceTypes();
@@ -164,10 +166,10 @@ export function AllPermissionsView({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle>{isAdmin ? 'All Permissions' : `${currentUserRole} Permissions`}</CardTitle>
+            <CardTitle>{isAdmin ? t('permissions.allPermissions.title') : t('permissions.allPermissions.roleTitle', { role: currentUserRole })}</CardTitle>
             <CardDescription>
-              {filteredPermissions.length} of {allPermissions.length} permissions
-              {selectedPermIds.size > 0 && ` • ${selectedPermIds.size} selected`}
+              {t('permissions.allPermissions.permissionCount', { filtered: filteredPermissions.length, total: allPermissions.length })}
+              {selectedPermIds.size > 0 && t('permissions.allPermissions.selected', { count: selectedPermIds.size })}
             </CardDescription>
           </div>
           {isAdmin && selectedPermIds.size > 0 && (
@@ -177,7 +179,7 @@ export function AllPermissionsView({
               onClick={handleBulkDelete}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete {selectedPermIds.size}
+              {t('permissions.allPermissions.deleteCount', { count: selectedPermIds.size })}
             </Button>
           )}
         </div>
@@ -194,8 +196,7 @@ export function AllPermissionsView({
               <Alert className="border-blue-500">
                 <Info className="h-4 w-4 text-blue-500" />
                 <AlertDescription>
-                  Showing permissions for your role: <strong>{currentUserRole}</strong>. 
-                  Contact your administrator to request changes.
+                  {t('permissions.allPermissions.roleInfo', { role: currentUserRole })}
                 </AlertDescription>
               </Alert>
             )}
@@ -206,7 +207,7 @@ export function AllPermissionsView({
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search permissions..."
+                    placeholder={t('permissions.allPermissions.searchPlaceholder')}
                     value={permissionSearch}
                     onChange={(e) => setPermissionSearch(e.target.value)}
                     className="pl-10"
@@ -215,7 +216,7 @@ export function AllPermissionsView({
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
                     <X className="h-4 w-4 mr-1" />
-                    Clear
+                    {t('permissions.allPermissions.clear')}
                   </Button>
                 )}
               </div>
@@ -226,10 +227,10 @@ export function AllPermissionsView({
                   <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | 'ALL')}>
                     <SelectTrigger className="w-40">
                       <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Role" />
+                      <SelectValue placeholder={t('permissions.allPermissions.role')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">All Roles</SelectItem>
+                      <SelectItem value="ALL">{t('permissions.allPermissions.allRoles')}</SelectItem>
                       {roles.map(role => (
                         <SelectItem key={role} value={role}>{role}</SelectItem>
                       ))}
@@ -240,10 +241,10 @@ export function AllPermissionsView({
                 <Select value={resourceTypeFilter} onValueChange={(v) => setResourceTypeFilter(v as ResourceType | 'ALL')}>
                   <SelectTrigger className="w-48">
                     <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Resource" />
+                    <SelectValue placeholder={t('permissions.allPermissions.resource')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All Resources</SelectItem>
+                    <SelectItem value="ALL">{t('permissions.allPermissions.allResources')}</SelectItem>
                     {resources.map(res => (
                       <SelectItem key={res} value={res}>
                         {permissionService.getResourceLabel(res)}
@@ -255,10 +256,10 @@ export function AllPermissionsView({
                 <Select value={permTypeFilter} onValueChange={(v) => setPermTypeFilter(v as PermissionType | 'ALL')}>
                   <SelectTrigger className="w-40">
                     <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Type" />
+                    <SelectValue placeholder={t('permissions.allPermissions.type')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All Types</SelectItem>
+                    <SelectItem value="ALL">{t('permissions.allPermissions.allTypes')}</SelectItem>
                     {permTypes.map(type => (
                       <SelectItem key={type} value={type}>
                         {permissionService.getPermissionLabel(type)}
@@ -272,9 +273,9 @@ export function AllPermissionsView({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Grouping</SelectItem>
-                    <SelectItem value="role">Group by Role</SelectItem>
-                    <SelectItem value="resource">Group by Resource</SelectItem>
+                    <SelectItem value="none">{t('permissions.allPermissions.noGrouping')}</SelectItem>
+                    <SelectItem value="role">{t('permissions.allPermissions.groupByRole')}</SelectItem>
+                    <SelectItem value="resource">{t('permissions.allPermissions.groupByResource')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -286,10 +287,10 @@ export function AllPermissionsView({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10 per page</SelectItem>
-                    <SelectItem value="20">20 per page</SelectItem>
-                    <SelectItem value="50">50 per page</SelectItem>
-                    <SelectItem value="100">100 per page</SelectItem>
+                    <SelectItem value="10">{t('permissions.allPermissions.perPage', { count: 10 })}</SelectItem>
+                    <SelectItem value="20">{t('permissions.allPermissions.perPage', { count: 20 })}</SelectItem>
+                    <SelectItem value="50">{t('permissions.allPermissions.perPage', { count: 50 })}</SelectItem>
+                    <SelectItem value="100">{t('permissions.allPermissions.perPage', { count: 100 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -317,18 +318,18 @@ export function AllPermissionsView({
                             )}
                           </TableHead>
                         )}
-                        <TableHead>Role</TableHead>
-                        <TableHead>Resource</TableHead>
-                        <TableHead>Permission</TableHead>
-                        <TableHead>Description</TableHead>
-                        {isAdmin && <TableHead className="text-right w-32">Actions</TableHead>}
+                        <TableHead>{t('permissions.allPermissions.table.role')}</TableHead>
+                        <TableHead>{t('permissions.allPermissions.table.resource')}</TableHead>
+                        <TableHead>{t('permissions.allPermissions.table.permission')}</TableHead>
+                        <TableHead>{t('permissions.allPermissions.table.description')}</TableHead>
+                        {isAdmin && <TableHead className="text-right w-32">{t('permissions.allPermissions.table.actions')}</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {perms.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={isAdmin ? 6 : 4} className="text-center py-8 text-muted-foreground">
-                            No permissions found
+                            {t('permissions.allPermissions.table.empty')}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -392,7 +393,11 @@ export function AllPermissionsView({
             {groupBy === 'none' && totalPages > 1 && (
               <div className="flex items-center justify-between px-2">
                 <div className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredPermissions.length)} of {filteredPermissions.length}
+                  {t('permissions.allPermissions.pagination.showing', {
+                    from: ((currentPage - 1) * pageSize) + 1,
+                    to: Math.min(currentPage * pageSize, filteredPermissions.length),
+                    total: filteredPermissions.length
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -404,7 +409,7 @@ export function AllPermissionsView({
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-sm">
-                    Page {currentPage} of {totalPages}
+                    {t('permissions.allPermissions.pagination.page', { current: currentPage, total: totalPages })}
                   </span>
                   <Button
                     variant="outline"

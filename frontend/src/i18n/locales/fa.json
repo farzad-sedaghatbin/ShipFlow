@@ -1543,6 +1543,95 @@
     "description": "یادداشت‌های جلسه، دستور کار یا سایر اسناد را آپلود کنید. متن استخراج شده و به پایگاه دانش برای پرسش و پاسخ اضافه می‌شود.",
     "close": "بستن"
   },
+  "permissions": {
+    "title": "مدیریت دسترسی‌ها",
+    "subtitle": "مدیریت دسترسی‌های مبتنی بر نقش در همه منابع",
+    "viewOnly": "مشاهده دسترسی‌های نقش شما",
+    "refresh": "به‌روزرسانی",
+    "addPermission": "افزودن دسترسی",
+    "noAccess": "شما اجازه مدیریت دسترسی‌های نقش را ندارید. فقط می‌توانید دسترسی‌های خود را مشاهده کنید.",
+    "viewInfo": "می‌توانید دسترسی‌های اختصاص داده شده به خود را در زیر مشاهده کنید. برای درخواست دسترسی‌های اضافی با مدیر خود تماس بگیرید.",
+    "myPermissionsTitle": "دسترسی‌های من",
+    "currentRole": "نقش فعلی شما",
+    "confirmDelete": "آیا مطمئن هستید که می‌خواهید این دسترسی را حذف کنید؟",
+    "confirmBulkDelete": "حذف {{count}} دسترسی انتخاب شده؟",
+    "tabs": {
+      "matrix": "ماتریس دسترسی",
+      "all": "همه دسترسی‌ها",
+      "my": "دسترسی‌های من"
+    },
+    "allPermissions": {
+      "title": "همه دسترسی‌ها",
+      "roleTitle": "دسترسی‌های {{role}}",
+      "permissionCount": "{{filtered}} از {{total}} دسترسی",
+      "selected": " • {{count}} انتخاب شده",
+      "deleteCount": "حذف {{count}}",
+      "roleInfo": "نمایش دسترسی‌ها برای نقش شما: <strong>{{role}}</strong>. برای درخواست تغییرات با مدیر خود تماس بگیرید.",
+      "searchPlaceholder": "جستجوی دسترسی‌ها...",
+      "clear": "پاک کردن",
+      "role": "نقش",
+      "allRoles": "همه نقش‌ها",
+      "resource": "منبع",
+      "allResources": "همه منابع",
+      "type": "نوع",
+      "allTypes": "همه انواع",
+      "noGrouping": "بدون گروه‌بندی",
+      "groupByRole": "گروه‌بندی بر اساس نقش",
+      "groupByResource": "گروه‌بندی بر اساس منبع",
+      "perPage": "{{count}} در هر صفحه",
+      "table": {
+        "role": "نقش",
+        "resource": "منبع",
+        "permission": "دسترسی",
+        "description": "توضیحات",
+        "actions": "عملیات",
+        "empty": "دسترسی یافت نشد"
+      },
+      "pagination": {
+        "showing": "نمایش {{from}} تا {{to}} از {{total}}",
+        "page": "صفحه {{current}} از {{total}}"
+      }
+    },
+    "matrix": {
+      "title": "ماتریس دسترسی",
+      "description": "نمای کلی همه دسترسی‌های نقش در منابع (✓ = اعطا شده)",
+      "searchPlaceholder": "جستجوی منابع...",
+      "filterPlaceholder": "فیلتر بر اساس منبع",
+      "allResources": "همه منابع",
+      "legend": "انواع دسترسی",
+      "table": {
+        "resource": "منبع"
+      }
+    },
+    "myPermissions": {
+      "empty": "دسترسی یافت نشد. اگر فکر می‌کنید این یک خطا است، با مدیر خود تماس بگیرید.",
+      "totalCount": "کل دسترسی‌ها: {{count}}",
+      "description": "این دسترسی‌ها کنترل می‌کنند که چه اقداماتی می‌توانید در برنامه انجام دهید."
+    },
+    "dialog": {
+      "createTitle": "ایجاد دسترسی",
+      "editTitle": "ویرایش دسترسی",
+      "createDescription": "افزودن یک دسترسی جدید به سیستم",
+      "editDescription": "به‌روزرسانی توضیحات دسترسی",
+      "role": "نقش",
+      "resourceType": "نوع منبع",
+      "permissionType": "نوع دسترسی",
+      "description": "توضیحات",
+      "descriptionPlaceholder": "توضیحات اختیاری",
+      "cancel": "انصراف",
+      "create": "ایجاد",
+      "update": "به‌روزرسانی",
+      "saving": "در حال ذخیره..."
+    },
+    "toast": {
+      "deleteSuccess": "دسترسی حذف شد",
+      "deleteFailed": "حذف دسترسی ناموفق بود",
+      "bulkDeleteSuccess": "{{count}} دسترسی حذف شد",
+      "bulkDeleteFailed": "حذف دسترسی‌ها ناموفق بود",
+      "createSuccess": "دسترسی ایجاد شد",
+      "updateSuccess": "دسترسی به‌روزرسانی شد"
+    }
+  },
   "taskDetailPage": {
     "title": "جزئیات وظیفه",
     "editTask": "ویرایش وظیفه",
