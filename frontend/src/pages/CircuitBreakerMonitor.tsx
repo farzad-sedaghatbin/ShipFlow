@@ -25,8 +25,6 @@ export default function CircuitBreakerMonitor() {
   const { id: idParam } = useParams<{ id: string }>();
   const cycleId = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
-  // i18n ready
-  if (false) console.log(t('circuitBreaker.title'));
 
   const [overflows, setOverflows] = useState<CircuitBreaker[]>([]);
   const [triggered, setTriggered] = useState<CircuitBreaker[]>([]);
@@ -63,7 +61,7 @@ export default function CircuitBreakerMonitor() {
       setOverflows(overflowRes.data);
       setTriggered(triggeredRes.data);
     } catch (error) {
-      showError('Failed to load circuit breaker data');
+      showError(t('circuitBreaker.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -74,12 +72,12 @@ export default function CircuitBreakerMonitor() {
 
     try {
       await circuitBreakerService.trigger(triggerDialog.pitch.pitchId, triggerReason);
-      showSuccess('Circuit breaker triggered');
+      showSuccess(t('circuitBreaker.triggerSuccess'));
       setTriggerDialog({ open: false, pitch: null });
       setTriggerReason('');
       loadData();
     } catch (error) {
-      showError('Failed to trigger circuit breaker');
+      showError(t('circuitBreaker.triggerFailed'));
     }
   };
 
@@ -88,12 +86,12 @@ export default function CircuitBreakerMonitor() {
 
     try {
       await circuitBreakerService.kill(killDialog.pitch.pitchId, killReason);
-      showSuccess('Pitch permanently cancelled due to overflow');
+      showSuccess(t('circuitBreaker.killSuccess'));
       setKillDialog({ open: false, pitch: null });
       setKillReason('');
       loadData();
     } catch (error) {
-      showError('Failed to kill pitch');
+      showError(t('circuitBreaker.killFailed'));
     }
   };
 
@@ -132,10 +130,10 @@ export default function CircuitBreakerMonitor() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Zap className="h-8 w-8 text-yellow-500" />
-              Circuit Breaker Monitor
+              {t('circuitBreaker.title')}
             </h1>
             <p className="text-muted-foreground">
-              Shape Up safety valve - detect and kill overflowing pitches
+              {t('circuitBreaker.subtitle')}
             </p>
           </div>
         </div>
@@ -144,12 +142,12 @@ export default function CircuitBreakerMonitor() {
       {/* Threshold Control */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Detection Threshold</CardTitle>
+          <CardTitle className="text-lg">{t('circuitBreaker.detectionThreshold')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium min-w-[100px]">
-              {threshold}% of appetite
+              {threshold}% {t('circuitBreaker.appetiteLabel')}
             </span>
             <Slider
               value={[threshold]}
@@ -161,7 +159,7 @@ export default function CircuitBreakerMonitor() {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Shows pitches that have consumed {threshold}% or more of their time budget
+            {t('circuitBreaker.showsPitches', { threshold })}
           </p>
         </CardContent>
       </Card>
@@ -172,7 +170,7 @@ export default function CircuitBreakerMonitor() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
               <AlertTriangle className="h-5 w-5" />
-              Active Circuit Breakers ({triggered.length})
+              {t('circuitBreaker.activeBreakers')} ({triggered.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -192,22 +190,22 @@ export default function CircuitBreakerMonitor() {
                       </div>
                       <Badge variant="destructive" className="gap-1">
                         <Zap className="h-3 w-3" />
-                        TRIGGERED
+                        {t('circuitBreaker.triggered')}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Appetite:</span>
+                        <span className="text-muted-foreground">{t('circuitBreaker.appetite')}</span>
                         <span className="ml-2 font-medium">{cb.appetiteDays}d</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Spent:</span>
+                        <span className="text-muted-foreground">{t('circuitBreaker.spent')}</span>
                         <span className="ml-2 font-medium text-red-600">
                           {cb.daysSpent.toFixed(1)}d
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Overflow:</span>
+                        <span className="text-muted-foreground">{t('circuitBreaker.overflow')}</span>
                         <span className="ml-2 font-medium text-red-600">
                           +{cb.overflowPercentage.toFixed(0)}%
                         </span>
@@ -226,15 +224,15 @@ export default function CircuitBreakerMonitor() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            Overflow Detection ({overflows.length} pitches)
+            {t('circuitBreaker.overflowDetection')} ({t('circuitBreaker.pitchesCount', { count: overflows.length })})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {overflows.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
-              <p>No overflowing pitches detected</p>
-              <p className="text-sm mt-1">All pitches are within their time budget</p>
+              <p>{t('circuitBreaker.noOverflow')}</p>
+              <p className="text-sm mt-1">{t('circuitBreaker.allWithinBudget')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -274,11 +272,11 @@ export default function CircuitBreakerMonitor() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-medium">
-                            {cb.utilizationPercentage.toFixed(0)}% utilized
+                            {cb.utilizationPercentage.toFixed(0)}% {t('circuitBreaker.utilized')}
                           </span>
                           {cb.overflowPercentage > 0 && (
                             <span className="text-red-600 font-medium">
-                              +{cb.overflowPercentage.toFixed(0)}% overflow
+                              +{cb.overflowPercentage.toFixed(0)}% {t('circuitBreaker.overflowPercent')}
                             </span>
                           )}
                         </div>
@@ -306,7 +304,7 @@ export default function CircuitBreakerMonitor() {
                             }}
                           >
                             <Zap className="mr-1 h-4 w-4" />
-                            Trigger Circuit Breaker
+                            {t('circuitBreaker.triggerBreaker')}
                           </Button>
                           <Button
                             variant="destructive"
@@ -321,7 +319,7 @@ export default function CircuitBreakerMonitor() {
                             }}
                           >
                             <XCircle className="mr-1 h-4 w-4" />
-                            Kill Pitch
+                            {t('circuitBreaker.killPitch')}
                           </Button>
                         </div>
                       )}
@@ -338,14 +336,14 @@ export default function CircuitBreakerMonitor() {
       <Dialog open={triggerDialog.open} onOpenChange={(open) => !open && setTriggerDialog({ open: false, pitch: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Trigger Circuit Breaker</DialogTitle>
+            <DialogTitle>{t('circuitBreaker.triggerTitle')}</DialogTitle>
             <DialogDescription>
-              Flag "{triggerDialog.pitch?.pitchTitle}" as overflowing its time budget
+              {t('circuitBreaker.triggerDescription', { title: triggerDialog.pitch?.pitchTitle })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Reason</label>
+              <label className="text-sm font-medium">{t('circuitBreaker.reason')}</label>
               <Textarea
                 value={triggerReason}
                 onChange={(e) => setTriggerReason(e.target.value)}
@@ -357,11 +355,11 @@ export default function CircuitBreakerMonitor() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTriggerDialog({ open: false, pitch: null })}>
-              Cancel
+              {t('circuitBreaker.cancel')}
             </Button>
             <Button onClick={handleTrigger} disabled={!triggerReason.trim()}>
               <Zap className="mr-1 h-4 w-4" />
-              Trigger
+              {t('circuitBreaker.trigger')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -371,20 +369,18 @@ export default function CircuitBreakerMonitor() {
       <Dialog open={killDialog.open} onOpenChange={(open) => !open && setKillDialog({ open: false, pitch: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-red-600">Kill Pitch</DialogTitle>
+            <DialogTitle className="text-red-600">{t('circuitBreaker.killTitle')}</DialogTitle>
             <DialogDescription>
-              Permanently stop work on "{killDialog.pitch?.pitchTitle}" due to overflow.
-              This will cancel the pitch.
+              {t('circuitBreaker.killDescription', { title: killDialog.pitch?.pitchTitle })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800">
               <AlertTriangle className="h-4 w-4 inline mr-2" />
-              This action enforces Shape Up's fixed time, variable scope principle.
-              Work that won't fit should be killed rather than extending timelines.
+              {t('circuitBreaker.killWarning')}
             </div>
             <div>
-              <label className="text-sm font-medium">Reason</label>
+              <label className="text-sm font-medium">{t('circuitBreaker.reason')}</label>
               <Textarea
                 value={killReason}
                 onChange={(e) => setKillReason(e.target.value)}
@@ -396,11 +392,11 @@ export default function CircuitBreakerMonitor() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setKillDialog({ open: false, pitch: null })}>
-              Cancel
+              {t('circuitBreaker.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleKill} disabled={!killReason.trim()}>
               <XCircle className="mr-1 h-4 w-4" />
-              Kill Pitch
+              {t('circuitBreaker.killButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

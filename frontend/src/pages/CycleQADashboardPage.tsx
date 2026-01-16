@@ -26,8 +26,6 @@ const CycleQADashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<QADashboard | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  // i18n ready
-  if (false) console.log(t('qaDashboard.title'));
 
   useEffect(() => {
     if (cycleId) {
@@ -42,7 +40,7 @@ const CycleQADashboardPage: React.FC = () => {
       const response = await qaTestManagementService.getQADashboardByCycle(cycleId!);
       setDashboard(response.data);
     } catch (err) {
-      setError('Failed to load QA dashboard');
+      setError(t('qaDashboard.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -56,9 +54,9 @@ const CycleQADashboardPage: React.FC = () => {
   };
 
   const getHealthStatus = (score: number) => {
-    if (score >= 80) return 'Healthy';
-    if (score >= 60) return 'At Risk';
-    return 'Critical';
+    if (score >= 80) return t('qaDashboard.healthy');
+    if (score >= 60) return t('qaDashboard.atRisk');
+    return t('qaDashboard.critical');
   };
 
   const getHealthVariant = (score: number): 'default' | 'secondary' | 'destructive' | 'outline' => {
@@ -78,7 +76,7 @@ const CycleQADashboardPage: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm">Invalid cycle ID</span>
+          <span className="text-sm">{t('qaDashboard.invalidId')}</span>
         </div>
       </div>
     );
@@ -109,9 +107,9 @@ const CycleQADashboardPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">QA Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('qaDashboard.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Cycle #{cycleId} - {dashboard.cycleName || 'Current Cycle'}
+            {t('qaDashboard.cycleId', { id: cycleId, name: dashboard.cycleName || t('qaDashboard.currentCycle') })}
           </p>
         </div>
         <Button
@@ -162,7 +160,7 @@ const CycleQADashboardPage: React.FC = () => {
                 <span className="text-2xl font-bold">{passRate.toFixed(0)}%</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold">Overall Pass Rate</h3>
+            <h3 className="text-lg font-semibold">{t('qaDashboard.overallPassRate')}</h3>
             <Badge variant={getHealthVariant(passRate)} className="mt-2">
               {getHealthStatus(passRate)}
             </Badge>
@@ -175,28 +173,28 @@ const CycleQADashboardPage: React.FC = () => {
               <CardContent className="pt-6 text-center">
                 <ClipboardList className="h-10 w-10 text-primary mx-auto mb-2" />
                 <p className="text-3xl font-bold">{dashboard.totalTestCases || 0}</p>
-                <p className="text-sm text-muted-foreground">Test Cases</p>
+                <p className="text-sm text-muted-foreground">{t('qaDashboard.testCases')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-green-500">{dashboard.passedRuns || 0}</p>
-                <p className="text-sm text-muted-foreground">Passed</p>
+                <p className="text-sm text-muted-foreground">{t('qaDashboard.passed')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <XCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-red-500">{dashboard.failedRuns || 0}</p>
-                <p className="text-sm text-muted-foreground">Failed</p>
+                <p className="text-sm text-muted-foreground">{t('qaDashboard.failed')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <Bug className="h-10 w-10 text-red-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-red-500">{openBugs}</p>
-                <p className="text-sm text-muted-foreground">Open Bugs</p>
+                <p className="text-sm text-muted-foreground">{t('qaDashboard.openBugs')}</p>
               </CardContent>
             </Card>
           </div>
@@ -208,7 +206,7 @@ const CycleQADashboardPage: React.FC = () => {
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 mb-6 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <p className="font-medium text-destructive">
-            {criticalBugs} Critical/Blocker bug{criticalBugs > 1 ? 's' : ''} require immediate attention!
+            {t('qaDashboard.criticalAlert', { count: criticalBugs, s: criticalBugs > 1 ? 's' : '' })}
           </p>
         </div>
       )}
@@ -217,7 +215,7 @@ const CycleQADashboardPage: React.FC = () => {
         {/* Test Coverage by Pitch */}
         <Card>
           <CardHeader>
-            <CardTitle>Coverage by Pitch</CardTitle>
+            <CardTitle>{t('qaDashboard.coverageByPitch')}</CardTitle>
           </CardHeader>
           <CardContent>
             {dashboard.pitchCoverage && dashboard.pitchCoverage.length > 0 ? (
@@ -246,14 +244,14 @@ const CycleQADashboardPage: React.FC = () => {
                     </div>
                     <div className="flex gap-4 mt-1">
                       <span className="text-xs text-muted-foreground">
-                        {coverage.totalTestCases} tests
+                        {t('qaDashboard.tests', { count: coverage.totalTestCases })}
                       </span>
                       <span className="text-xs text-green-500">
-                        {coverage.passedRuns} passed
+                        {t('qaDashboard.passedTests', { count: coverage.passedRuns })}
                       </span>
                       {coverage.failedRuns && coverage.failedRuns > 0 && (
                         <span className="text-xs text-red-500">
-                          {coverage.failedRuns} failed
+                          {t('qaDashboard.failedTests', { count: coverage.failedRuns })}
                         </span>
                       )}
                     </div>
@@ -262,7 +260,7 @@ const CycleQADashboardPage: React.FC = () => {
               </div>
             ) : (
               <p className="text-muted-foreground text-center">
-                No pitch coverage data available
+                {t('qaDashboard.noCoverage')}
               </p>
             )}
           </CardContent>
@@ -271,28 +269,28 @@ const CycleQADashboardPage: React.FC = () => {
         {/* Bug Summary */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>Bug Summary</CardTitle>
+            <CardTitle>{t('qaDashboard.bugSummary')}</CardTitle>
             <Button variant="ghost" size="sm" onClick={() => navigate('/qa/bugs')}>
-              View All
+              {t('qaDashboard.viewAll')}
             </Button>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center">
                 <p className="text-2xl font-bold">{totalBugs}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">{t('qaDashboard.total')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-red-500">{openBugs}</p>
-                <p className="text-xs text-muted-foreground">Open</p>
+                <p className="text-xs text-muted-foreground">{t('qaDashboard.open')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-500">{dashboard.resolvedBugs || 0}</p>
-                <p className="text-xs text-muted-foreground">Resolved</p>
+                <p className="text-xs text-muted-foreground">{t('qaDashboard.resolved')}</p>
               </div>
             </div>
 
-            <h4 className="text-sm font-semibold mb-2">By Severity</h4>
+            <h4 className="text-sm font-semibold mb-2">{t('qaDashboard.bySeverity')}</h4>
             <div className="space-y-2">
               {[
                 { severity: 'BLOCKER', count: dashboard.blockerBugs || 0 },
@@ -330,33 +328,33 @@ const CycleQADashboardPage: React.FC = () => {
         {/* Test Case Status Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Test Case Status</CardTitle>
+            <CardTitle>{t('qaDashboard.testCaseStatus')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm">Draft</span>
+                <span className="text-sm">{t('qaDashboard.draft')}</span>
                 <Badge variant="outline">{dashboard.draftTestCases || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Ready</span>
+                <span className="text-sm">{t('qaDashboard.ready')}</span>
                 <Badge variant="secondary">{dashboard.readyTestCases || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Approved</span>
+                <span className="text-sm">{t('qaDashboard.approved')}</span>
                 <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                   {dashboard.approvedTestCases || 0}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Deprecated</span>
+                <span className="text-sm">{t('qaDashboard.deprecated')}</span>
                 <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
                   {dashboard.deprecatedTestCases || 0}
                 </Badge>
               </div>
               {dashboard.aiGeneratedTestCases > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">AI Generated</span>
+                  <span className="text-sm">{t('qaDashboard.aiGenerated')}</span>
                   <Badge variant="secondary" className="bg-purple-500 hover:bg-purple-600 text-white">
                     {dashboard.aiGeneratedTestCases}
                   </Badge>
@@ -369,36 +367,36 @@ const CycleQADashboardPage: React.FC = () => {
         {/* Test Run Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Test Run Summary</CardTitle>
+            <CardTitle>{t('qaDashboard.testRunSummary')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm">Total Runs</span>
+                <span className="text-sm">{t('qaDashboard.totalRuns')}</span>
                 <Badge variant="outline">{dashboard.totalRuns || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Passed</span>
+                <span className="text-sm">{t('qaDashboard.passed')}</span>
                 <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                   {dashboard.passedRuns || 0}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Failed</span>
+                <span className="text-sm">{t('qaDashboard.failed')}</span>
                 <Badge variant="destructive">{dashboard.failedRuns || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Blocked</span>
+                <span className="text-sm">{t('qaDashboard.blocked')}</span>
                 <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
                   {dashboard.blockedRuns || 0}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Skipped</span>
+                <span className="text-sm">{t('qaDashboard.skipped')}</span>
                 <Badge variant="outline">{dashboard.skippedRuns || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Pending</span>
+                <span className="text-sm">{t('qaDashboard.pending')}</span>
                 <Badge variant="secondary">{dashboard.pendingRuns || 0}</Badge>
               </div>
             </div>

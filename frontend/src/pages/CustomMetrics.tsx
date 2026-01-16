@@ -20,8 +20,6 @@ export default function CustomMetrics() {
   const [searchTerm, setSearchTerm] = useState('');
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
-  // i18n ready
-  if (false) console.log(t('customMetrics.title'));
 
   useEffect(() => {
     loadMetrics();
@@ -47,21 +45,21 @@ export default function CustomMetrics() {
       );
       setMetricValues(values);
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to load custom metrics'));
+      showError(getUserFriendlyError(err, t('customMetrics.loadFailed')));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this metric?')) return;
+    if (!confirm(t('customMetrics.deleteConfirm'))) return;
     
     try {
       await customMetricService.delete(id);
-      showSuccess('Metric deleted successfully');
+      showSuccess(t('customMetrics.deleteSuccess'));
       loadMetrics();
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to delete metric'));
+      showError(getUserFriendlyError(err, t('customMetrics.deleteFailed')));
     }
   };
 
@@ -76,10 +74,10 @@ export default function CustomMetrics() {
         displayFormat: metric.displayFormat,
         filters: metric.filters
       });
-      showSuccess('Metric duplicated successfully');
+      showSuccess(t('customMetrics.duplicateSuccess'));
       loadMetrics();
     } catch (err) {
-      showError(getUserFriendlyError(err, 'Failed to duplicate metric'));
+      showError(getUserFriendlyError(err, t('customMetrics.duplicateFailed')));
     }
   };
 
@@ -103,20 +101,20 @@ export default function CustomMetrics() {
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Custom Metrics</h1>
+        <h1 className="text-3xl font-bold">{t('customMetrics.title')}</h1>
         <Button onClick={() => navigate('/metrics/new')}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Metric
+          {t('customMetrics.createMetric')}
         </Button>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Search Metrics</CardTitle>
+          <CardTitle>{t('customMetrics.searchMetrics')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Input
-            placeholder="Search by name, description, or formula..."
+            placeholder={t('customMetrics.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -127,14 +125,14 @@ export default function CustomMetrics() {
         <Card>
           <CardContent className="py-12 text-center">
             <Calculator className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No custom metrics found</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('customMetrics.noMetricsFound')}</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'Try a different search term' : 'Create your first custom metric to get started'}
+              {searchTerm ? t('customMetrics.tryDifferentSearch') : t('customMetrics.firstMetricPrompt')}
             </p>
             {!searchTerm && (
               <Button onClick={() => navigate('/metrics/new')}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Metric
+                {t('customMetrics.createMetric')}
               </Button>
             )}
           </CardContent>
@@ -158,11 +156,11 @@ export default function CustomMetrics() {
                         <div>
                           <div className="text-3xl font-bold">{value.formattedValue}</div>
                           <div className="text-xs text-muted-foreground">
-                            Updated {formatLocalizedDateTime(new Date(value.calculatedAt), i18n.language)}
+                            {t('customMetrics.updated', { date: formatLocalizedDateTime(new Date(value.calculatedAt), i18n.language) })}
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-muted-foreground">Calculating...</div>
+                        <div className="text-sm text-muted-foreground">{t('customMetrics.calculating')}</div>
                       )}
                     </div>
                   </div>
@@ -170,15 +168,15 @@ export default function CustomMetrics() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="font-medium">Formula:</span>
+                      <span className="font-medium">{t('customMetrics.formula')}</span>
                       <code className="bg-muted px-2 py-1 rounded text-xs">{metric.formula}</code>
                     </div>
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="font-medium">Data Source:</span>
+                      <span className="font-medium">{t('customMetrics.dataSource')}</span>
                       <span className="text-muted-foreground">{metric.dataSource}</span>
-                      <span className="font-medium ml-4">Aggregation:</span>
+                      <span className="font-medium ml-4">{t('customMetrics.aggregation')}</span>
                       <span className="text-muted-foreground">{metric.aggregationType}</span>
-                      <span className="font-medium ml-4">Format:</span>
+                      <span className="font-medium ml-4">{t('customMetrics.format')}</span>
                       <span className="text-muted-foreground">{metric.displayFormat}</span>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
@@ -187,7 +185,7 @@ export default function CustomMetrics() {
                         size="sm"
                         onClick={() => navigate(`/metrics/${metric.id}/history`)}
                       >
-                        View History
+                        {t('customMetrics.viewHistory')}
                       </Button>
                       <Button
                         variant="outline"
@@ -195,7 +193,7 @@ export default function CustomMetrics() {
                         onClick={() => handleDuplicate(metric)}
                       >
                         <Copy className="mr-2 h-4 w-4" />
-                        Duplicate
+                        {t('customMetrics.duplicate')}
                       </Button>
                       <Button
                         variant="outline"
@@ -203,7 +201,7 @@ export default function CustomMetrics() {
                         onClick={() => navigate(`/metrics/${metric.id}/edit`)}
                       >
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit
+                        {t('customMetrics.edit')}
                       </Button>
                       <Button
                         variant="destructive"
@@ -211,7 +209,7 @@ export default function CustomMetrics() {
                         onClick={() => handleDelete(metric.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t('customMetrics.delete')}
                       </Button>
                     </div>
                   </div>
