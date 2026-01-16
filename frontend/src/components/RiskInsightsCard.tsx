@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import { 
   AlertTriangle, 
   Lightbulb, 
@@ -46,6 +48,7 @@ interface RiskInsightsCardProps {
 }
 
 export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardProps) {
+  const { i18n } = useTranslation();
   const [riskData, setRiskData] = useState<PitchRiskDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -209,7 +212,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Analyzed {new Date(riskData.analyzedAt).toLocaleString()}
+              Analyzed {formatLocalizedDateTime(new Date(riskData.analyzedAt), i18n.language)}
             </p>
           </div>
           <TooltipProvider>

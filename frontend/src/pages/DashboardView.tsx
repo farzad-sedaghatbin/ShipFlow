@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Edit3, Save, X, Filter } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -16,11 +17,14 @@ import { Layout } from 'react-grid-layout';
 import { Switch } from '../components/ui/switch';
 
 export default function DashboardView() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [dashboard, setDashboard] = useState<CustomDashboard | null>(null);
   const [widgets, setWidgets] = useState<DashboardWidgetConfig[]>([]);
   const [metrics, setMetrics] = useState<CustomMetric[]>([]);
   const [loading, setLoading] = useState(true);
+  // i18n ready
+  if (false) console.log(t('dashboardCustomizer.title'));
   const [editMode, setEditMode] = useState(false);
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [showWidgetSettings, setShowWidgetSettings] = useState(false);

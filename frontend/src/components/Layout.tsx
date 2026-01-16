@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Repeat,
@@ -66,13 +67,14 @@ import WelcomeTourDialog from './WelcomeTourDialog';
 import { QAFloatingButton } from './QAFloatingButton';
 import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
+import LanguageSelector from './LanguageSelector';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 interface NavItemConfig {
-  text: string;
+  textKey: string;
   icon: React.ElementType;
   path: string;
   tourId?: string;
@@ -80,48 +82,48 @@ interface NavItemConfig {
 
 // Main navigation items (always visible)
 const mainNavItems: NavItemConfig[] = [
-  { text: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
-  { text: 'Projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
-  { text: 'Cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
+  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
+  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
+  { textKey: 'nav.cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
 ];
 
 // Cycle Workspace - contextual items when viewing cycle content
 const cycleWorkspaceItems: NavItemConfig[] = [
-  { text: 'Pitch Board', icon: FileText, path: '/pitches', tourId: 'pitches-menu' },
-  { text: 'Betting Table', icon: Dices, path: '/betting', tourId: 'betting-menu' },
-  { text: 'Health Overview', icon: Activity, path: '/health', tourId: 'health-menu' },
-  { text: 'Retrospectives', icon: Brain, path: '/retros', tourId: 'retros-menu' },
-  { text: 'Reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
+  { textKey: 'nav.pitchBoard', icon: FileText, path: '/pitches', tourId: 'pitches-menu' },
+  { textKey: 'nav.betting', icon: Dices, path: '/betting', tourId: 'betting-menu' },
+  { textKey: 'nav.health', icon: Activity, path: '/health', tourId: 'health-menu' },
+  { textKey: 'nav.retrospectives', icon: Brain, path: '/retros', tourId: 'retros-menu' },
+  { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
 ];
 
 // People & Teams
 const peopleItems: NavItemConfig[] = [
-  { text: 'People', icon: Users2, path: '/people', tourId: 'people-menu' },
-  { text: 'Teams', icon: Users, path: '/teams', tourId: 'teams-menu' },
+  { textKey: 'nav.people', icon: Users2, path: '/people', tourId: 'people-menu' },
+  { textKey: 'nav.teams', icon: Users, path: '/teams', tourId: 'teams-menu' },
 ];
 
 // Quality section
 const qualityItems: NavItemConfig[] = [
-  { text: 'Test Cases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
-  { text: 'Bug Reports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
+  { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
+  { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
 ];
 
 // Meetings (accessible from cycle context)
 const meetingsItems: NavItemConfig[] = [
-  { text: 'Meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
+  { textKey: 'nav.meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
 ];
 
 // Admin section - User & Access items
 const userAccessItems: NavItemConfig[] = [
-  { text: 'User Management', icon: Shield, path: '/users' },
-  { text: 'Permissions', icon: ShieldCheck, path: '/permissions' },
+  { textKey: 'nav.userManagement', icon: Shield, path: '/users' },
+  { textKey: 'nav.permissions', icon: ShieldCheck, path: '/permissions' },
 ];
 
 // Integrations section
 const integrationItems: NavItemConfig[] = [
-  { text: 'Slack', icon: MessageSquare, path: '/integrations/slack' },
-  { text: 'GitHub', icon: Github, path: '/integrations/github' },
-  { text: 'Microsoft Teams', icon: Users2, path: '/integrations/teams' },
+  { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
+  { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
+  { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
 ];
 
 function NavItem({
@@ -135,6 +137,7 @@ function NavItem({
   onClick?: () => void;
   indent?: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = item.icon;
   return (
     <Link
@@ -143,42 +146,44 @@ function NavItem({
       data-tour={item.tourId}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors touch-manipulation min-h-[44px]",
-        indent && "ml-4",
+        "rtl:flex-row-reverse",
+        indent && "ms-4",
         isActive
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       )}
     >
       <Icon className="h-5 w-5 flex-shrink-0" />
-      <span>{item.text}</span>
+      <span className="flex-1">{t(item.textKey)}</span>
     </Link>
   );
 }
 
 function NavGroup({
-  title,
+  titleKey,
   icon: Icon,
   items,
   currentPath,
   onItemClick,
   defaultOpen = false,
 }: {
-  title: string;
+  titleKey: string;
   icon: React.ElementType;
   items: NavItemConfig[];
   currentPath: string;
   onItemClick?: () => void;
   defaultOpen?: boolean;
 }) {
+  const { t } = useTranslation();
   const hasActiveItem = items.some(item => currentPath === item.path || currentPath.startsWith(item.path + '/'));
   const [isOpen, setIsOpen] = useState(defaultOpen || hasActiveItem);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors touch-manipulation min-h-[44px]">
+      <CollapsibleTrigger className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors touch-manipulation min-h-[44px] rtl:flex-row-reverse">
         <Icon className="h-5 w-5 flex-shrink-0" />
-        <span className="flex-1 text-left">{title}</span>
-        <ChevronRight className={cn("h-5 w-5 transition-transform", isOpen && "rotate-90")} />
+        <span className="flex-1 text-start">{t(titleKey)}</span>
+        <ChevronRight className={cn("h-5 w-5 flex-shrink-0 transition-transform rtl:rotate-180", isOpen && "rotate-90")} />
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-1 space-y-1">
         {items.map((item) => (
@@ -195,11 +200,12 @@ function NavGroup({
   );
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
+function SectionHeader({ textKey }: { textKey: string }) {
+  const { t } = useTranslation();
   return (
     <div className="px-3 py-2 mt-4">
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {children}
+        {t(textKey)}
       </span>
     </div>
   );
@@ -229,7 +235,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="flex flex-col gap-1">
           {/* Overview Section */}
-          <SectionHeader>Overview</SectionHeader>
+          <SectionHeader textKey="nav.sections.overview" />
           {mainNavItems.map((item) => (
             <NavItem
               key={item.path}
@@ -240,9 +246,9 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           ))}
 
           {/* Cycle Workspace Section */}
-          <SectionHeader>Cycle Workspace</SectionHeader>
+          <SectionHeader textKey="nav.sections.cycleWorkspace" />
           <NavGroup
-            title="Cycle Tools"
+            titleKey="nav.groups.cycleTools"
             icon={Target}
             items={cycleWorkspaceItems}
             currentPath={currentPath}
@@ -251,14 +257,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
 
           {/* Work Management Section - Direct items, no collapsible groups */}
-          <SectionHeader>Work Management</SectionHeader>
+          <SectionHeader textKey="nav.sections.workManagement" />
           <NavItem
-            item={{ text: 'Backlog', icon: ListTodo, path: '/backlog', tourId: 'backlog-menu' }}
+            item={{ textKey: 'nav.backlog', icon: ListTodo, path: '/backlog', tourId: 'backlog-menu' }}
             isActive={currentPath.startsWith('/backlog')}
             onClick={onItemClick}
           />
           <NavItem
-            item={{ text: 'Work Logs', icon: Clock, path: '/time/logs', tourId: 'worklogs-menu' }}
+            item={{ textKey: 'nav.workLogs', icon: Clock, path: '/time/logs', tourId: 'worklogs-menu' }}
             isActive={currentPath.startsWith('/time')}
             onClick={onItemClick}
           />
@@ -274,9 +280,9 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           ))}
 
           {/* Organization Section */}
-          <SectionHeader>Organization</SectionHeader>
+          <SectionHeader textKey="nav.sections.organization" />
           <NavGroup
-            title="People"
+            titleKey="nav.groups.people"
             icon={Users2}
             items={peopleItems}
             currentPath={currentPath}
@@ -284,9 +290,9 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
 
           {/* Quality Section */}
-          <SectionHeader>Quality</SectionHeader>
+          <SectionHeader textKey="nav.sections.quality" />
           <NavGroup
-            title="QA & Testing"
+            titleKey="nav.groups.qaTesting"
             icon={FlaskConical}
             items={qualityItems}
             currentPath={currentPath}
@@ -294,9 +300,9 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
 
           {/* Help & Guides Section */}
-          <SectionHeader>Help & Support</SectionHeader>
+          <SectionHeader textKey="nav.sections.helpSupport" />
           <NavItem
-            item={{ text: 'Help & Guides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
+            item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
             onClick={onItemClick}
           />
@@ -305,10 +311,10 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
         {/* Admin Section */}
         {user?.role === 'ADMIN' && (
           <>
-            <SectionHeader>Administration</SectionHeader>
+            <SectionHeader textKey="nav.sections.administration" />
             <nav className="flex flex-col gap-1">
               <NavGroup
-                title="User & Access"
+                titleKey="nav.groups.userAccess"
                 icon={Shield}
                 items={userAccessItems}
                 currentPath={currentPath}
@@ -316,13 +322,13 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
               />
 
               <NavItem
-                item={{ text: 'Organization Settings', icon: Settings, path: '/settings' }}
+                item={{ textKey: 'nav.organizationSettings', icon: Settings, path: '/settings' }}
                 isActive={currentPath === '/settings'}
                 onClick={onItemClick}
               />
 
               <NavGroup
-                title="Integrations"
+                titleKey="nav.groups.integrations"
                 icon={Plug}
                 items={integrationItems}
                 currentPath={currentPath}
@@ -341,17 +347,18 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar - hidden on mobile (< 768px) */}
-      <aside className="hidden lg:flex w-64 flex-shrink-0 border-r border-border bg-sidebar">
+      <aside className="hidden lg:flex w-64 flex-shrink-0 border-e border-border bg-sidebar">
         <SidebarContent />
       </aside>
 
       {/* Mobile Sidebar - Sheet/Drawer for hamburger menu */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-sidebar">
+        <SheetContent side="start" className="w-72 p-0 bg-sidebar">
           <SidebarContent onItemClick={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
@@ -400,16 +407,28 @@ export default function Layout({ children }: LayoutProps) {
                     "h-11 w-11 touch-manipulation",
                     !hasCompletedTour && "text-primary animate-pulse"
                   )}
-                  aria-label={hasCompletedTour ? "Restart guided tour" : "Start guided tour"}
+                  aria-label={hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
                 >
                   <HelpCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                   <span className="sr-only">
-                    {hasCompletedTour ? "Restart guided tour" : "Start guided tour"}
+                    {hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
                   </span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {hasCompletedTour ? "Restart guided tour" : "Start guided tour"}
+                {hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Language Selector */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <LanguageSelector className="h-11 w-11 touch-manipulation" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('layout.changeLanguage')}
               </TooltipContent>
             </Tooltip>
 
@@ -421,18 +440,18 @@ export default function Layout({ children }: LayoutProps) {
                   size="icon"
                   onClick={toggleTheme}
                   className="h-11 w-11 touch-manipulation"
-                  aria-label="Toggle theme"
+                  aria-label={t('layout.toggleTheme')}
                 >
                   {actualMode === 'dark' ? (
                     <Sun className="h-5 w-5 sm:h-6 sm:w-6" />
                   ) : (
                     <Moon className="h-5 w-5 sm:h-6 sm:w-6" />
                   )}
-                  <span className="sr-only">Toggle theme</span>
+                  <span className="sr-only">{t('layout.toggleTheme')}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Switch to {actualMode === 'dark' ? 'light' : 'dark'} mode
+                {actualMode === 'dark' ? t('layout.switchToLight') : t('layout.switchToDark')}
               </TooltipContent>
             </Tooltip>
 
@@ -446,7 +465,7 @@ export default function Layout({ children }: LayoutProps) {
                   variant="ghost"
                   className="flex items-center gap-2 px-2 h-11 touch-manipulation"
                   data-tour="user-menu"
-                  aria-label="User menu"
+                  aria-label={t('layout.userMenu')}
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -473,7 +492,7 @@ export default function Layout({ children }: LayoutProps) {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
-                    My Profile
+                    {t('layout.myProfile')}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -482,7 +501,7 @@ export default function Layout({ children }: LayoutProps) {
                   className="flex items-center gap-2 text-destructive focus:text-destructive"
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {t('common.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

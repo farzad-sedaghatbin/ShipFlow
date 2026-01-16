@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { Plus, Trash2, Pencil, UserPlus, History, Clock, ClipboardList, Loader2, Search, ArrowUpDown } from 'lucide-react';
 import { teamService } from '../services/teamService';
 import { personService } from '../services/personService';
@@ -53,6 +55,7 @@ import { Separator } from '../components/ui/separator';
 const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'QA', 'DESIGNER', 'FULLSTACK', 'TECH_LEAD', 'PRODUCT_MANAGER'];
 
 export default function Teams() {
+  const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showToast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -116,7 +119,7 @@ export default function Teams() {
       setTeams(filteredTeams);
       setPersons(personsData);
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error(t('teams.loadFailed'), error);
     } finally {
       setLoading(false);
     }
@@ -139,9 +142,9 @@ export default function Teams() {
     const errors: Record<string, string> = {};
 
     if (!teamForm.name.trim()) {
-      errors.name = 'Team name is required';
+      errors.name = t('validation.required');
     } else if (teamForm.name.trim().length < 2) {
-      errors.name = 'Team name must be at least 2 characters';
+      errors.name = t('validation.minLength', { min: 2 });
     }
 
     setFieldErrors(errors);
@@ -157,15 +160,15 @@ export default function Teams() {
       setSaving(true);
       if (editTeamId) {
         await teamService.update(editTeamId, teamForm);
-        showToast('Team updated successfully!', 'success');
+        showToast(t('teams.updateSuccess'), 'success');
       } else {
         await teamService.create(teamForm);
-        showToast('Team created successfully!', 'success');
+        showToast(t('teams.createSuccess'), 'success');
       }
       setTeamDialog(false);
       loadData();
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to save team'), 'error');
+      showToast(getUserFriendlyError(error, t('teams.failedToSave')), 'error');
     } finally {
       setSaving(false);
     }
@@ -174,10 +177,10 @@ export default function Teams() {
   const handleDeleteTeam = async (id: number) => {
     try {
       await teamService.delete(id);
-      showToast('Team deleted successfully!', 'success');
+      showToast(t('teams.deleteSuccess'), 'success');
       loadData();
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to delete team'), 'error');
+      showToast(getUserFriendlyError(error, t('teams.failedToDelete')), 'error');
     }
   };
 
@@ -199,15 +202,15 @@ export default function Teams() {
       setSaving(true);
       if (editAssignmentId) {
         await personService.updateAssignment(editAssignmentId, assignmentForm);
-        showToast('Assignment updated successfully!', 'success');
+        showToast(t('teams.updateAssignmentSuccess'), 'success');
       } else {
         await personService.assignToTeam(assignmentForm);
-        showToast('Person assigned to team successfully!', 'success');
+        showToast(t('teams.assignSuccess'), 'success');
       }
       setAssignmentDialog(false);
       loadData();
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to save assignment'), 'error');
+      showToast(getUserFriendlyError(error, t('teams.failedToSaveAssignment')), 'error');
     } finally {
       setSaving(false);
     }
@@ -216,10 +219,10 @@ export default function Teams() {
   const handleEndAssignment = async (assignmentId: number) => {
     try {
       await personService.endAssignment(assignmentId);
-      showToast('Assignment ended', 'success');
+      showToast(t('teams.removeSuccess'), 'success');
       loadData();
     } catch (error) {
-      showToast('Failed to end assignment', 'error');
+      showToast(t('teams.failedToEndAssignment'), 'error');
     }
   };
 
@@ -235,7 +238,7 @@ export default function Teams() {
       );
       setWorkLogs(sortedLogs);
     } catch (error) {
-      showToast('Failed to load work logs', 'error');
+      showToast(t('teams.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);
     } finally {
       setLoadingWorkLogs(false);
@@ -294,14 +297,14 @@ export default function Teams() {
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('teams.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {isAllProjectsSelected ? 'All projects' : currentProject?.name} • {teams.length} team{teams.length !== 1 ? 's' : ''}
+              {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {teams.length} {teams.length !== 1 ? t('teams.teams') : t('teams.team')}
             </p>
           </div>
           <Button onClick={() => handleOpenTeamDialog()} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            New Team
+            {t('teams.newTeam')}
           </Button>
         </div>
 
@@ -310,7 +313,7 @@ export default function Teams() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search teams by name, cycle, or member..."
+              placeholder={t('teams.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -319,12 +322,12 @@ export default function Teams() {
           <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <ArrowUpDown className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t('teams.sortBy')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-              <SelectItem value="members">Most Members</SelectItem>
-              <SelectItem value="cycle">Cycle</SelectItem>
+              <SelectItem value="name">{t('teams.sortByName')}</SelectItem>
+              <SelectItem value="members">{t('teams.sortByMembers')}</SelectItem>
+              <SelectItem value="cycle">{t('teams.sortByCycle')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -334,13 +337,13 @@ export default function Teams() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-1">Total Teams</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('teams.totalTeams')}</p>
             <p className="text-4xl font-bold">{teams.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-1">Total Members</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('teams.totalMembers')}</p>
             <p className="text-4xl font-bold">
               {teams.reduce((sum, t) => sum + (t.assignments?.length || 0), 0)}
             </p>
@@ -354,16 +357,16 @@ export default function Teams() {
           <CardContent className="py-8">
             <EmptyState
               illustration={<EmptyTeamsIllustration />}
-              title={searchTerm ? 'No teams found' : 'No teams yet'}
+              title={searchTerm ? t('teams.noTeamsFound') : t('teams.noTeams')}
               description={
                 searchTerm
-                  ? `No teams match "${searchTerm}". Try a different search term.`
-                  : 'Create your first team to organize your workforce and start collaborating on pitches'
+                  ? t('teams.tryDifferentSearch')
+                  : t('teams.noTeamsDescription')
               }
               action={
                 !searchTerm
                   ? {
-                      label: 'Create Team',
+                      label: t('teams.createTeam'),
                       onClick: () => handleOpenTeamDialog(),
                       startIcon: <Plus className="h-4 w-4" />,
                     }
@@ -381,7 +384,7 @@ export default function Teams() {
                 <div className="flex items-center gap-3 flex-1 pr-4">
                   <span className="text-lg font-semibold">{team.name}</span>
                   <Badge variant="outline" className="font-normal">
-                    {team.assignments?.length || 0} members
+                    {team.assignments?.length || 0} {t('teams.membersCount')}
                   </Badge>
                   <div className="flex-1" />
                   <Button
@@ -392,7 +395,7 @@ export default function Teams() {
                       e.stopPropagation();
                       handleOpenTeamDialog(team);
                     }}
-                    aria-label={`Edit ${team.name} team`}
+                    aria-label={t('teams.editTeam')}
                   >
                     <Pencil className="h-4 w-4" aria-hidden="true" />
                   </Button>
@@ -404,7 +407,7 @@ export default function Teams() {
                       e.stopPropagation();
                       handleDeleteTeam(team.id);
                     }}
-                    aria-label={`Delete ${team.name} team`}
+                    aria-label={t('teams.deleteTeam')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
@@ -418,14 +421,14 @@ export default function Teams() {
                     onClick={() => handleOpenAssignmentDialog(team.id)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Member
+                    {t('teams.addMember')}
                   </Button>
                 </div>
                 {!team.assignments || team.assignments.length === 0 ? (
                   <EmptyState
                     icon={UserPlus}
-                    title="No members yet"
-                    description="Add team members to get started"
+                    title={t('teams.noMembersYet')}
+                    description={t('teams.addMembersToStart')}
                     size="small"
                     compact
                   />
@@ -462,7 +465,7 @@ export default function Teams() {
                                 e.stopPropagation();
                                 handleViewActivity(assignment.personId, assignment.personName || 'Unknown');
                               }}
-                              title="View Activity"
+                              title={t('teams.viewActivity')}
                             >
                               <History className="h-4 w-4" />
                             </Button>
@@ -474,7 +477,7 @@ export default function Teams() {
                                 e.stopPropagation();
                                 handleOpenAssignmentDialog(team.id, assignment);
                               }}
-                              aria-label={`Edit assignment for ${assignment.personName || 'member'}`}
+                              aria-label={t('teams.editAssignment')}
                             >
                               <Pencil className="h-4 w-4" aria-hidden="true" />
                             </Button>
@@ -486,7 +489,7 @@ export default function Teams() {
                                 e.stopPropagation();
                                 handleEndAssignment(assignment.id);
                               }}
-                              aria-label={`Remove ${assignment.personName || 'member'} from team`}
+                              aria-label={t('teams.removeMember')}
                             >
                               <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
@@ -507,32 +510,32 @@ export default function Teams() {
       <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editTeamId ? 'Edit Team' : 'New Team'}</DialogTitle>
+            <DialogTitle>{editTeamId ? t('teams.editTeam') : t('teams.newTeam')}</DialogTitle>
             <DialogDescription>
-              {editTeamId ? 'Update team details' : 'Create a new team to organize your workforce'}
+              {editTeamId ? t('teams.updateTeamDetails') : t('teams.createNewTeam')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="team-name">Team Name</Label>
+              <Label htmlFor="team-name">{t('teams.teamName')}</Label>
               <Input
                 id="team-name"
                 value={teamForm.name}
                 onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
-                placeholder="Enter team name"
+                placeholder={t('teams.enterTeamName')}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="cycle">Cycle (optional)</Label>
+              <Label htmlFor="cycle">{t('teams.cycleOptional')}</Label>
               <Select
                 value={teamForm.cycleId?.toString() || 'none'}
                 onValueChange={(value) => setTeamForm({ ...teamForm, cycleId: value === 'none' ? undefined : parseInt(value) })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a cycle" />
+                  <SelectValue placeholder={t('teams.selectACycle')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('teams.none')}</SelectItem>
                   {cycles.map((c) => (
                     <SelectItem key={c.id} value={c.id.toString()}>
                       {c.name}
@@ -544,10 +547,10 @@ export default function Teams() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTeamDialog(false)}>
-              Cancel
+              {t('teams.cancel')}
             </Button>
             <Button onClick={handleSaveTeam} disabled={!teamForm.name}>
-              {editTeamId ? 'Update' : 'Create'}
+              {editTeamId ? t('teams.update') : t('common.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -557,14 +560,14 @@ export default function Teams() {
       <Dialog open={assignmentDialog} onOpenChange={setAssignmentDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editAssignmentId ? 'Edit Assignment' : 'Add Team Member'}</DialogTitle>
+            <DialogTitle>{editAssignmentId ? t('teams.editAssignment') : t('teams.addTeamMember')}</DialogTitle>
             <DialogDescription>
-              {editAssignmentId ? 'Update team member assignment' : 'Add a person to this team'}
+              {editAssignmentId ? t('teams.updateMemberAssignment') : t('teams.addPersonToTeam')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="person">Person</Label>
+              <Label htmlFor="person">{t('teams.person')}</Label>
               <Select
                 value={selectedPersonId}
                 onValueChange={(value) => {
@@ -574,25 +577,25 @@ export default function Teams() {
                 disabled={!!editAssignmentId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a person" />
+                  <SelectValue placeholder={t('teams.selectAPerson')} />
                 </SelectTrigger>
                 <SelectContent>
                   {persons.map((person) => (
                     <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name} {person.email ? `(${person.email})` : '(no email)'}
+                      {person.name} {person.email ? `(${person.email})` : t('teams.noEmail')}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('teams.role')}</Label>
               <Select
                 value={assignmentForm.role}
                 onValueChange={(value) => setAssignmentForm({ ...assignmentForm, role: value as TeamMemberRole })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('teams.selectARole')} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (
@@ -606,10 +609,10 @@ export default function Teams() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignmentDialog(false)}>
-              Cancel
+              {t('teams.cancel')}
             </Button>
             <Button onClick={handleSaveAssignment} disabled={!assignmentForm.personId}>
-              {editAssignmentId ? 'Update' : 'Add'}
+              {editAssignmentId ? t('teams.update') : t('teams.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -627,7 +630,7 @@ export default function Teams() {
               </Avatar>
               <div>
                 <DialogTitle>{activityPerson?.name}</DialogTitle>
-                <DialogDescription>Recent Work Activity</DialogDescription>
+                <DialogDescription>{t('teams.recentWorkActivity')}</DialogDescription>
               </div>
             </div>
           </DialogHeader>
@@ -640,8 +643,8 @@ export default function Teams() {
             <div className="py-8">
               <EmptyState
                 illustration={<EmptyWorkLogsIllustration />}
-                title="No work logs yet"
-                description={`${activityPerson?.name} hasn't logged any work activity`}
+                title={t('teams.noWorkLogs')}
+                description={t('teams.hasntLoggedWork', { name: activityPerson?.name })}
                 size="small"
                 compact
               />
@@ -655,7 +658,7 @@ export default function Teams() {
                     <p className="text-2xl font-bold text-primary">
                       {workLogs.reduce((sum, log) => sum + log.hoursSpent, 0).toFixed(1)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Total Hours</p>
+                    <p className="text-xs text-muted-foreground">{t('teams.totalHours')}</p>
                   </CardContent>
                 </Card>
                 <Card className="border">
@@ -663,7 +666,7 @@ export default function Teams() {
                     <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                       {workLogs.length}
                     </p>
-                    <p className="text-xs text-muted-foreground">Log Entries</p>
+                    <p className="text-xs text-muted-foreground">{t('teams.logEntries')}</p>
                   </CardContent>
                 </Card>
                 <Card className="border">
@@ -671,7 +674,7 @@ export default function Teams() {
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {new Set(workLogs.map(log => log.pitchId)).size}
                     </p>
-                    <p className="text-xs text-muted-foreground">Pitches Worked</p>
+                    <p className="text-xs text-muted-foreground">{t('teams.pitchesWorked')}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -681,11 +684,11 @@ export default function Teams() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-background">
                     <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Pitch</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead className="text-right">Hours</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead>{t('teams.date')}</TableHead>
+                      <TableHead>{t('teams.pitch')}</TableHead>
+                      <TableHead>{t('teams.project')}</TableHead>
+                      <TableHead className="text-right">{t('teams.hours')}</TableHead>
+                      <TableHead>{t('teams.notes')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -694,7 +697,7 @@ export default function Teams() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{new Date(log.date).toLocaleDateString()}</span>
+                            <span className="text-sm">{formatLocalizedDate(new Date(log.date), i18n.language)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -737,7 +740,7 @@ export default function Teams() {
               </ScrollArea>
               {workLogs.length > 50 && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  Showing first 50 of {workLogs.length} entries
+                  {t('teams.showingFirstEntries', { count: workLogs.length })}
                 </p>
               )}
             </>
@@ -745,7 +748,7 @@ export default function Teams() {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setActivityDialogOpen(false)}>
-              Close
+              {t('teams.close')}
             </Button>
           </DialogFooter>
         </DialogContent>

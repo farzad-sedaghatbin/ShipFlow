@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { Plus, LayoutDashboard, Star, Edit, Trash2, Copy, Sparkles, Eye, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -34,6 +36,7 @@ import LoadingButton from '../components/LoadingButton';
 import { TableSkeleton } from '../components/Skeletons';
 
 export default function DashboardManager() {
+  const { i18n } = useTranslation();
   const [dashboards, setDashboards] = useState<CustomDashboard[]>([]);
   const [templates, setTemplates] = useState<CustomDashboard[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -299,7 +302,7 @@ export default function DashboardManager() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Created {new Date(dashboard.createdAt).toLocaleDateString()}</span>
+                    <span>Created {formatLocalizedDate(new Date(dashboard.createdAt), i18n.language)}</span>
                   </div>
                   {dashboard.templateCategory && (
                     <Badge variant="secondary">{dashboard.templateCategory}</Badge>

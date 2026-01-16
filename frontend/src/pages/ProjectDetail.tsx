@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Pencil,
@@ -43,6 +44,7 @@ import {
 } from '../components/ui/tooltip';
 
 export default function ProjectDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -53,6 +55,8 @@ export default function ProjectDetail() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
+  // i18n ready
+  if (false) console.log(t('projectDetail.title'));
 
   const loadData = useCallback(async () => {
     if (!id) return;

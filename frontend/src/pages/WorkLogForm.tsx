@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { Plus, Trash2, ClipboardList, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { workLogService } from '../services/workLogService';
@@ -30,6 +33,7 @@ import {
 import { useToast } from '../contexts';
 
 export default function WorkLogForm() {
+  const { i18n } = useTranslation();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -219,11 +223,10 @@ export default function WorkLogForm() {
 
             <div className="sm:col-span-1 md:col-span-1 lg:col-span-2 space-y-2">
               <Label htmlFor="date-input">Date</Label>
-              <Input
+              <LocalizedDateInput
                 id="date-input"
-                type="date"
                 value={workLogDate}
-                onChange={(e) => setWorkLogDate(e.target.value)}
+                onChange={setWorkLogDate}
               />
             </div>
 
@@ -299,7 +302,7 @@ export default function WorkLogForm() {
                 <TableBody>
                   {workLogs.map((wl) => (
                     <TableRow key={wl.id}>
-                      <TableCell>{new Date(wl.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatLocalizedDate(new Date(wl.date), i18n.language)}</TableCell>
                       <TableCell>{wl.personName}</TableCell>
                       <TableCell>{wl.pitchTitle}</TableCell>
                       <TableCell className="text-right">{wl.hoursSpent}h</TableCell>

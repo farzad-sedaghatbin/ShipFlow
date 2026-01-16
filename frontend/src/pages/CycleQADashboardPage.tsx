@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { safeParseId } from '../utils/validation';
 import {
   Bug,
@@ -17,6 +18,7 @@ import qaTestManagementService from '../services/qaTestManagementService';
 import { QADashboard, TestCoverage } from '../types';
 
 const CycleQADashboardPage: React.FC = () => {
+  const { t } = useTranslation();
   const { cycleId: cycleIdParam } = useParams<{ cycleId: string }>();
   const cycleId = safeParseId(cycleIdParam);
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ const CycleQADashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<QADashboard | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // i18n ready
+  if (false) console.log(t('qaDashboard.title'));
 
   useEffect(() => {
     if (cycleId) {

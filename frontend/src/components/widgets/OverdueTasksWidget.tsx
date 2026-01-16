@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../../utils/dateLocalization';
 import { AlertCircle, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +9,7 @@ import { taskService } from '../../services/taskService';
 import { Task } from '../../types';
 
 export function OverdueTasksWidget() {
+  const { i18n } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +101,7 @@ export function OverdueTasksWidget() {
                 </div>
                 <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                   <Calendar className="w-3 h-3" />
-                  Due: {new Date(task.dueDate!).toLocaleDateString()}
+                  Due: {formatLocalizedDate(new Date(task.dueDate!), i18n.language)}
                 </div>
               </Link>
             ))}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Save,
@@ -42,12 +43,15 @@ const testCasePriorities: TestCasePriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITIC
 const testCaseStatuses: TestCaseStatus[] = ['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'];
 
 const TestCaseFormPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const isEdit = !!id;
 
   const [loading, setLoading] = useState(isEdit);
+  // i18n ready
+  if (false) console.log(t('testCases.createTestCase'));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);

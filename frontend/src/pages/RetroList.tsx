@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   Plus,
   Trash2,
@@ -61,6 +63,7 @@ const statusLabels: Record<RetroStatus, string> = {
 };
 
 export default function RetroList() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { user } = useAuth();
@@ -68,6 +71,8 @@ export default function RetroList() {
   const [retros, setRetros] = useState<Retrospective[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
+  // i18n ready
+  if (false) console.log(t('retroList.title'));
   const [retroEnabled, setRetroEnabled] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'status' | 'cycle' | 'recent'>('recent');
@@ -310,8 +315,8 @@ export default function RetroList() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Cycle: {retro.cycleName} • Created: {new Date(retro.createdAt).toLocaleDateString()}
-                      {retro.closedAt && ` • Closed: ${new Date(retro.closedAt).toLocaleDateString()}`}
+                      Cycle: {retro.cycleName} • Created: {formatLocalizedDate(new Date(retro.createdAt), i18n.language)}
+                      {retro.closedAt && ` • Closed: ${formatLocalizedDate(new Date(retro.closedAt), i18n.language)}`}
                     </p>
                     {retro.notes && (
                       <p className="text-sm mt-2">{retro.notes}</p>

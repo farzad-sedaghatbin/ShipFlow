@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   CheckCircle2,
   XCircle,
@@ -73,6 +75,7 @@ const TestExecutionPanel: React.FC<TestExecutionPanelProps> = ({
   showTestCaseInfo = true,
   maxRows,
 }) => {
+  const { i18n } = useTranslation();
   const displayRuns = maxRows ? testRuns.slice(0, maxRows) : testRuns;
 
   const formatDuration = (seconds?: number) => {
@@ -84,8 +87,7 @@ const TestExecutionPanel: React.FC<TestExecutionPanelProps> = ({
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatLocalizedDateTime(new Date(dateStr), i18n.language);
   };
 
   if (testRuns.length === 0) {

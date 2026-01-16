@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { safeParseId } from '../utils/validation';
 import {
   Pencil,
@@ -41,6 +43,7 @@ import {
 } from '../components/ui/dialog';
 
 export default function CycleDetail() {
+  const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const { user } = useAuth();
@@ -52,6 +55,8 @@ export default function CycleDetail() {
   const [retroEnabled, setRetroEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [closeCycleDialog, setCloseCycleDialog] = useState(false);
+  // i18n ready
+  if (false) console.log(t('cycleDetail.title'));
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
 
@@ -101,11 +106,11 @@ export default function CycleDetail() {
     if (!cycle) return;
     try {
       await cycleService.closeCycle(cycle.id);
-      showSuccess('Cycle closed successfully!');
+      showSuccess(t('cycleDetailPage.cycleClosed'));
       setCloseCycleDialog(false);
       loadData(cycle.id);
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Failed to close cycle';
+      const message = error.response?.data?.message || error.message || t('cycleDetailPage.closeFailed');
       showError(message);
       setCloseCycleDialog(false);
     }
@@ -116,7 +121,7 @@ export default function CycleDetail() {
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm">Invalid cycle ID</span>
+          <span className="text-sm">{t('cycleDetailPage.invalidCycleId')}</span>
         </div>
       </div>
     );
@@ -133,9 +138,9 @@ export default function CycleDetail() {
   if (!cycle) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-muted-foreground">Cycle not found</p>
+        <p className="text-muted-foreground">{t('cycleDetailPage.cycleNotFound')}</p>
         <Button asChild variant="outline">
-          <Link to="/cycles">Back to Cycles</Link>
+          <Link to="/cycles">{t('cycleDetailPage.back')}</Link>
         </Button>
       </div>
     );
@@ -162,26 +167,26 @@ export default function CycleDetail() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{cycle.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {new Date(cycle.startDate).toLocaleDateString()} - {new Date(cycle.endDate).toLocaleDateString()}
+            {formatLocalizedDate(new Date(cycle.startDate), i18n.language)} - {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
-            {cycle.phase}
+            {t(`cycles.phase.${cycle.phase.toLowerCase()}`)}
           </Badge>
           <Badge variant={cycle.isActive ? 'default' : 'secondary'} className={cycle.isActive ? 'bg-green-500/10 text-green-400 border-green-500/20' : ''}>
-            {cycle.isActive ? 'Active' : 'Completed'}
+            {cycle.isActive ? t('cycleDetailPage.active') : t('cycleDetailPage.completed')}
           </Badge>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/cycles/${cycle.id}/hill-chart`}>
               <BarChart3 className="h-4 w-4 mr-2" />
-              Hill Chart
+              {t('cycleDetailPage.hillChart')}
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/cycles/${cycle.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit
+              {t('cycleDetailPage.edit')}
             </Link>
           </Button>
           {cycle.isActive && isAdmin && (
@@ -192,7 +197,7 @@ export default function CycleDetail() {
               onClick={() => setCloseCycleDialog(true)}
             >
               <Lock className="h-4 w-4 mr-2" />
-              Close Cycle
+              {t('cycleDetailPage.closeCycle')}
             </Button>
           )}
         </div>
@@ -207,7 +212,7 @@ export default function CycleDetail() {
             <AlertTriangle className="h-4 w-4 text-amber-400" />
           )}
           <AlertTitle className="font-semibold">
-            Retrospective Status: {retroStatus.closedRetros}/{retroEnabled ? 1 : 0} completed
+            {t('cycleDetailPage.retroStatus')}: {retroStatus.closedRetros}/{retroEnabled ? 1 : 0} {t('cycleDetailPage.retroCompleted')}
           </AlertTitle>
           <AlertDescription className="flex items-center justify-between">
             <span>{retroStatus.message}</span>
@@ -215,7 +220,7 @@ export default function CycleDetail() {
               <Button variant="outline" size="sm" asChild>
                 <Link to="/retros">
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Create Retro
+                  {t('cycleDetailPage.createRetro')}
                 </Link>
               </Button>
             )}
@@ -229,7 +234,7 @@ export default function CycleDetail() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <FileText className="h-4 w-4" />
-              <span className="text-sm">Total Pitches</span>
+              <span className="text-sm">{t('cycleDetailPage.totalPitches')}</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{pitches.length}</p>
           </CardContent>
@@ -238,7 +243,7 @@ export default function CycleDetail() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">Completed</span>
+              <span className="text-sm">{t('cycleDetailPage.completedPitches')}</span>
             </div>
             <p className="text-3xl font-bold text-green-400">{completedPitches}</p>
           </CardContent>
@@ -247,7 +252,7 @@ export default function CycleDetail() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Target className="h-4 w-4" />
-              <span className="text-sm">Appetite (hours)</span>
+              <span className="text-sm">{t('cycleDetailPage.totalAppetite')}</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{totalAppetiteHours.toFixed(0)}</p>
           </CardContent>
@@ -256,7 +261,7 @@ export default function CycleDetail() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">Actual (hours)</span>
+              <span className="text-sm">{t('cycleDetailPage.totalActual')}</span>
             </div>
             <p className={`text-3xl font-bold ${totalActualHours > totalAppetiteHours ? 'text-red-400' : 'text-green-400'}`}>
               {totalActualHours.toFixed(0)}
@@ -273,15 +278,15 @@ export default function CycleDetail() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <CardTitle>Pitches</CardTitle>
+                <CardTitle>{t('cycleDetailPage.pitches')}</CardTitle>
               </div>
               <Button variant="link" asChild className="px-0">
-                <Link to="/pitches">View All</Link>
+                <Link to="/pitches">{t('common.viewAll')}</Link>
               </Button>
             </CardHeader>
             <CardContent>
               {pitches.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No pitches in this cycle</p>
+                <p className="text-muted-foreground text-center py-8">{t('cycleDetailPage.noPitches')}</p>
               ) : (
                 <div className="space-y-3">
                   {pitches.map((pitch) => (
@@ -295,7 +300,7 @@ export default function CycleDetail() {
                         <StatusChip status={pitch.status} />
                       </div>
                       <div className="flex justify-between items-center mb-2 text-sm text-muted-foreground">
-                        <span>{pitch.teamName || 'Unassigned'} • {pitch.appetiteDays} days appetite</span>
+                        <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')} {t('cycles.appetite')}</span>
                         <span>{pitch.totalHoursSpent?.toFixed(1) || 0}h / {pitch.appetiteHours?.toFixed(0) || 0}h</span>
                       </div>
                       <ProgressBar
@@ -318,12 +323,12 @@ export default function CycleDetail() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                <CardTitle>Teams</CardTitle>
+                <CardTitle>{t('cycleDetailPage.teams')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               {teams.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No teams in this cycle</p>
+                <p className="text-muted-foreground text-center py-4">{t('cycleDetailPage.noTeams')}</p>
               ) : (
                 <div className="space-y-1">
                   {teams.map((team, index) => (
@@ -331,7 +336,7 @@ export default function CycleDetail() {
                       <div className="flex justify-between items-center py-3">
                         <span className="font-medium text-foreground">{team.name}</span>
                         <span className="text-sm text-muted-foreground">
-                          {team.assignments?.length || 0} members
+                          {team.assignments?.length || 0} {t('cycles.members')}
                         </span>
                       </div>
                       {index < teams.length - 1 && <Separator />}
@@ -351,7 +356,7 @@ export default function CycleDetail() {
           <NotesList 
             contextType="cycle" 
             contextId={cycle.id} 
-            title="Cycle Notes"
+            title={t('cycleDetailPage.cycleNotes')}
           />
         </div>
       </div>
@@ -368,7 +373,7 @@ export default function CycleDetail() {
       <Dialog open={closeCycleDialog} onOpenChange={setCloseCycleDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Close Cycle?</DialogTitle>
+            <DialogTitle>{t('cycleDetailPage.confirmClose')}</DialogTitle>
             <DialogDescription>
               {retroStatus && !retroStatus.canCloseCycle ? (
                 <Alert className="mt-4 border-amber-500/50 bg-amber-500/10">
@@ -377,20 +382,20 @@ export default function CycleDetail() {
                 </Alert>
               ) : (
                 <span>
-                  Are you sure you want to close the cycle "{cycle.name}"? This will mark it as completed.
+                  {t('cycleDetailPage.confirmCloseDesc')}
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCloseCycleDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             {retroStatus && !retroStatus.canCloseCycle ? (
               <Button asChild>
                 <Link to="/retros">
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Create Retro First
+                  {t('cycleDetailPage.createRetroFirst')}
                 </Link>
               </Button>
             ) : (
@@ -398,7 +403,7 @@ export default function CycleDetail() {
                 className="bg-amber-500 hover:bg-amber-600 text-white"
                 onClick={handleCloseCycle}
               >
-                Close Cycle
+                {t('cycleDetailPage.closeCycle')}
               </Button>
             )}
           </DialogFooter>

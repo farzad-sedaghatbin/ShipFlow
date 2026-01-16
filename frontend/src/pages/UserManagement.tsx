@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   UserPlus,
   Pencil,
@@ -56,12 +58,15 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 const USER_ROLES: UserRole[] = ['ADMIN', 'PROJECT_MANAGER', 'PRODUCT', 'DEVELOPER', 'QA'];
 
 export default function UserManagement() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserType[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  // i18n ready
+  if (false) console.log(t('common.loading'));
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -381,7 +386,7 @@ export default function UserManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {formatLocalizedDate(new Date(user.createdAt), i18n.language)}
                   </TableCell>
                   <TableCell className="text-right">
                     <TooltipProvider>

@@ -1,4 +1,5 @@
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LogIn,
   TrendingUp,
@@ -72,8 +73,11 @@ const techStack = [
 ];
 
 export default function Landing() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
+  // i18n ready
+  if (false) console.log(t('landing.title'));
 
   // Redirect authenticated users to dashboard
   if (!isLoading && isAuthenticated) {

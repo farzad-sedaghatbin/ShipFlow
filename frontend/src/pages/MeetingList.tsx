@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Pencil,
@@ -20,6 +21,8 @@ import { MeetingDocumentsDialog } from '../components/MeetingDocumentsDialog';
 import EmptyState from '../components/EmptyState';
 import { EmptyMeetingsIllustration } from '../components/illustrations';
 import { useToast, useProject } from '../contexts';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 
 import { Card, CardContent } from '../components/ui/card';
@@ -60,6 +63,7 @@ import {
 const meetingTypes: MeetingType[] = ['SHAPING', 'BETTING', 'KICKOFF', 'STANDUP', 'DEMO', 'RETROSPECTIVE', 'HILL_CHART_REVIEW'];
 
 export default function MeetingList() {
+  const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -67,6 +71,8 @@ export default function MeetingList() {
   const [retrospectives, setRetrospectives] = useState<Retrospective[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  // i18n ready
+  if (false) console.log(t('meetingList.title'), i18n.language);
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [docsDialog, setDocsDialog] = useState<{ open: boolean; meeting: Meeting | null }>({ open: false, meeting: null });
@@ -351,18 +357,16 @@ export default function MeetingList() {
                 </div>
                 <div className="space-y-2">
                   <Label>Start Date</Label>
-                  <Input
-                    type="date"
+                  <LocalizedDateInput
                     value={filters.startDate}
-                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    onChange={(value) => setFilters({ ...filters, startDate: value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>End Date</Label>
-                  <Input
-                    type="date"
+                  <LocalizedDateInput
                     value={filters.endDate}
-                    onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                    onChange={(value) => setFilters({ ...filters, endDate: value })}
                   />
                 </div>
               </div>
@@ -472,7 +476,7 @@ export default function MeetingList() {
                   {meetings.map((meeting) => (
                     <TableRow key={meeting.id}>
                       <TableCell className="font-medium">
-                        {new Date(meeting.dateHeld).toLocaleDateString()}
+                        {formatLocalizedDate(meeting.dateHeld, i18n.language)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={getMeetingTypeBadgeVariant(meeting.type)}>
@@ -648,14 +652,13 @@ export default function MeetingList() {
               <div className="space-y-2">
                 <Label htmlFor="meeting-date">Date *</Label>
                 <div className="relative">
-                  <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
+                  <LocalizedDateInput
                     id="meeting-date"
-                    type="date"
                     value={meetingDate}
-                    onChange={(e) => setMeetingDate(e.target.value)}
+                    onChange={(value) => setMeetingDate(value)}
                     className="pl-9"
-                    required
+                    aria-required="true"
                   />
                 </div>
               </div>
@@ -850,11 +853,10 @@ export default function MeetingList() {
                           
                           <div className="space-y-1">
                             <Label className="text-xs">Due Date</Label>
-                            <Input
-                              type="date"
+                            <LocalizedDateInput
                               className="h-9"
                               value={action.dueDate || ''}
-                              onChange={(e) => updateAction(index, 'dueDate', e.target.value || undefined)}
+                              onChange={(value) => updateAction(index, 'dueDate', value || undefined)}
                             />
                           </div>
                         </div>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { 
@@ -81,24 +83,25 @@ import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 
-const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
-  { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
-  { value: 'TODO', label: 'To Do', variant: 'info' },
-  { value: 'IN_PROGRESS', label: 'In Progress', variant: 'default' },
-  { value: 'BLOCKED', label: 'Blocked', variant: 'destructive' },
-  { value: 'IN_REVIEW', label: 'In Review', variant: 'warning' },
-  { value: 'DONE', label: 'Done', variant: 'success' },
-  { value: 'CANCELLED', label: 'Cancelled', variant: 'secondary' },
+const statusOptions: { value: TaskStatus; labelKey: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
+  { value: 'BACKLOG', labelKey: 'backlogPage.statusOptions.backlog', variant: 'secondary' },
+  { value: 'TODO', labelKey: 'backlogPage.statusOptions.todo', variant: 'info' },
+  { value: 'IN_PROGRESS', labelKey: 'backlogPage.statusOptions.inProgress', variant: 'default' },
+  { value: 'BLOCKED', labelKey: 'backlogPage.statusOptions.blocked', variant: 'destructive' },
+  { value: 'IN_REVIEW', labelKey: 'backlogPage.statusOptions.inReview', variant: 'warning' },
+  { value: 'DONE', labelKey: 'backlogPage.statusOptions.done', variant: 'success' },
+  { value: 'CANCELLED', labelKey: 'backlogPage.statusOptions.cancelled', variant: 'secondary' },
 ];
 
-const priorityOptions: { value: TaskPriority; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
-  { value: 'LOW', label: 'Low', variant: 'secondary' },
-  { value: 'MEDIUM', label: 'Medium', variant: 'info' },
-  { value: 'HIGH', label: 'High', variant: 'warning' },
-  { value: 'URGENT', label: 'Urgent', variant: 'destructive' },
+const priorityOptions: { value: TaskPriority; labelKey: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
+  { value: 'LOW', labelKey: 'backlogPage.priorityOptions.low', variant: 'secondary' },
+  { value: 'MEDIUM', labelKey: 'backlogPage.priorityOptions.medium', variant: 'info' },
+  { value: 'HIGH', labelKey: 'backlogPage.priorityOptions.high', variant: 'warning' },
+  { value: 'URGENT', labelKey: 'backlogPage.priorityOptions.urgent', variant: 'destructive' },
 ];
 
 export default function BacklogPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
   
@@ -111,6 +114,8 @@ export default function BacklogPage() {
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // i18n ready
+  if (false) console.log(t('common.loading'));
   const [activeCategory, setActiveCategory] = useState<TaskCategory>(categoryFromUrl || 'PITCH_SCOPE');
   const [tabValue, setTabValue] = useState('all');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
@@ -431,7 +436,7 @@ export default function BacklogPage() {
     } else {
       // Only allow creating new task if a specific cycle is selected
       if (!selectedCycle || selectedCycle === 'all') {
-        toast.error('Please select a specific cycle to create a task');
+        toast.error(t('backlogPage.selectCycleToCreate'));
         return;
       }
       setEditingTask(null);
@@ -507,7 +512,7 @@ export default function BacklogPage() {
       setActiveTimerTaskId(task.id);
       // Reload active timer to ensure TimerWidget shows it
       await loadActiveTimer();
-      toast.success('Timer started for task');
+      toast.success(t('backlogPage.timerStarted'));
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to start timer';
       toast.error(message);
@@ -555,21 +560,21 @@ export default function BacklogPage() {
     const errors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      errors.title = 'Task title is required';
+      errors.title = t('backlogPage.titleRequired');
     } else if (formData.title.trim().length < 3) {
-      errors.title = 'Task title must be at least 3 characters';
+      errors.title = t('backlogPage.titleMinLength');
     }
 
     if (!formData.cycleId || formData.cycleId === 0) {
-      errors.cycleId = 'Please select a cycle';
+      errors.cycleId = t('backlogPage.cycleRequired');
     }
 
     if (formData.estimateHours !== undefined && formData.estimateHours < 0) {
-      errors.estimateHours = 'Estimate hours must be a positive number';
+      errors.estimateHours = t('backlogPage.estimatePositive');
     }
 
     if (formData.actualHours !== undefined && formData.actualHours < 0) {
-      errors.actualHours = 'Actual hours must be a positive number';
+      errors.actualHours = t('backlogPage.actualPositive');
     }
 
     setFieldErrors(errors);
@@ -591,10 +596,10 @@ export default function BacklogPage() {
       
       if (editingTask) {
         await taskService.update(editingTask.id, data);
-        toast.success('Task updated successfully');
+        toast.success(t('backlogPage.taskUpdated'));
       } else {
         await taskService.create(data);
-        toast.success('Task created successfully');
+        toast.success(t('backlogPage.taskCreated'));
       }
       handleCloseDialog();
       loadTasks();
@@ -611,7 +616,7 @@ export default function BacklogPage() {
     if (!deleteDialog.taskId) return;
     try {
       await taskService.delete(deleteDialog.taskId);
-      toast.success('Task deleted successfully');
+      toast.success(t('backlogPage.taskDeleted'));
       setDeleteDialog({ open: false, taskId: null });
       loadTasks();
       loadStatistics();
@@ -624,7 +629,7 @@ export default function BacklogPage() {
   const handleQuickStatusChange = async (taskId: number, newStatus: TaskStatus) => {
     try {
       await taskService.updateStatus(taskId, newStatus);
-      toast.success('Status updated');
+      toast.success(t('backlogPage.statusUpdated'));
       loadTasks();
       loadStatistics();
     } catch (error: any) {
@@ -636,7 +641,7 @@ export default function BacklogPage() {
   const handleQuickPriorityChange = async (taskId: number, newPriority: TaskPriority) => {
     try {
       await taskService.updatePriority(taskId, newPriority);
-      toast.success('Priority updated');
+      toast.success(t('backlogPage.priorityUpdated'));
       loadTasks();
       loadStatistics();
     } catch (error: any) {
@@ -655,10 +660,10 @@ export default function BacklogPage() {
 
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
-  const categoryTitle = activeCategory === 'PITCH_SCOPE' ? 'Pitch Tasks' : 'Debt & Improvements';
+  const categoryTitle = activeCategory === 'PITCH_SCOPE' ? t('backlogPage.pitchTasks') : t('backlogPage.debtImprovements');
   const categoryDescription = activeCategory === 'PITCH_SCOPE' 
-    ? 'Tasks scoped to pitches in the current cycle' 
-    : 'Technical debt, improvements, and maintenance work';
+    ? t('backlogPage.categoryDescription.pitchScope')
+    : t('backlogPage.categoryDescription.debtImprovement');
 
   if (loading) {
     return (
@@ -676,7 +681,7 @@ export default function BacklogPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Backlog</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('backlogPage.title')}</h1>
           <p className="text-muted-foreground">{categoryDescription}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -686,10 +691,10 @@ export default function BacklogPage() {
             onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
           >
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select cycle" />
+              <SelectValue placeholder={t('backlogPage.selectCycle')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cycles</SelectItem>
+              <SelectItem value="all">{t('backlogPage.allCycles')}</SelectItem>
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id.toString()}>
                   {cycle.name}
@@ -706,13 +711,13 @@ export default function BacklogPage() {
                     disabled={selectedCycle === 'all' || !selectedCycle}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    New Task
+                    {t('backlogPage.newTask')}
                   </Button>
                 </span>
               </TooltipTrigger>
               {(selectedCycle === 'all' || !selectedCycle) && (
                 <TooltipContent>
-                  <p>Please select a specific cycle to create a task</p>
+                  <p>{t('backlogPage.selectCycleToCreate')}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -725,11 +730,11 @@ export default function BacklogPage() {
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="PITCH_SCOPE" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Pitch Tasks
+            {t('backlogPage.pitchTasks')}
           </TabsTrigger>
           <TabsTrigger value="DEBT_IMPROVEMENT" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
-            Debt & Improvements
+            {t('backlogPage.debtImprovements')}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -738,37 +743,37 @@ export default function BacklogPage() {
       {statistics && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Task Overview</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('backlogPage.taskOverview')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold">{statistics.totalTasks}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.total')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-500">{statistics.todoTasks}</div>
-                <div className="text-xs text-muted-foreground">To Do</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.todo')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-500">{statistics.inProgressTasks}</div>
-                <div className="text-xs text-muted-foreground">In Progress</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.inProgress')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-500">{statistics.blockedTasks}</div>
-                <div className="text-xs text-muted-foreground">Blocked</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.blocked')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-500">{statistics.inReviewTasks}</div>
-                <div className="text-xs text-muted-foreground">In Review</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.inReview')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">{statistics.doneTasks}</div>
-                <div className="text-xs text-muted-foreground">Done</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.done')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{statistics.completionPercentage}%</div>
-                <div className="text-xs text-muted-foreground">Complete</div>
+                <div className="text-xs text-muted-foreground">{t('backlogPage.complete')}</div>
               </div>
             </div>
             <Progress value={statistics.completionPercentage} className="mt-4" />
@@ -780,8 +785,8 @@ export default function BacklogPage() {
       <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
           <TabsList>
-            <TabsTrigger value="all">All Tasks</TabsTrigger>
-            <TabsTrigger value="my">My Tasks</TabsTrigger>
+            <TabsTrigger value="all">{t('backlogPage.allTasks')}</TabsTrigger>
+            <TabsTrigger value="my">{t('backlogPage.myTasks')}</TabsTrigger>
           </TabsList>
 
           {/* Filters */}
@@ -790,7 +795,7 @@ export default function BacklogPage() {
             <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  Status {statusFilter.length > 0 && `(${statusFilter.length})`}
+                  {t('backlogPage.filters.status')} {statusFilter.length > 0 && `(${statusFilter.length})`}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -810,7 +815,7 @@ export default function BacklogPage() {
                       checked={statusFilter.includes(status.value)}
                       className="mr-2"
                     />
-                    {status.label}
+                    {t(status.labelKey)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -820,7 +825,7 @@ export default function BacklogPage() {
             <DropdownMenu open={priorityDropdownOpen} onOpenChange={setPriorityDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  Priority {priorityFilter.length > 0 && `(${priorityFilter.length})`}
+                  {t('backlogPage.filters.priority')} {priorityFilter.length > 0 && `(${priorityFilter.length})`}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -840,7 +845,7 @@ export default function BacklogPage() {
                       checked={priorityFilter.includes(priority.value)}
                       className="mr-2"
                     />
-                    {priority.label}
+                    {t(priority.labelKey)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -850,7 +855,7 @@ export default function BacklogPage() {
             <DropdownMenu open={dependencyDropdownOpen} onOpenChange={setDependencyDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  Dependencies {dependencyFilter !== 'all' && `(${dependencyFilter})`}
+                  {t('backlogPage.filters.dependencies')} {dependencyFilter !== 'all' && `(${dependencyFilter})`}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -861,7 +866,7 @@ export default function BacklogPage() {
                     checked={dependencyFilter === 'all'}
                     className="mr-2"
                   />
-                  All Tasks
+                  {t('backlogPage.filters.allTasks')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setDependencyFilter('blocked')}
@@ -870,7 +875,7 @@ export default function BacklogPage() {
                     checked={dependencyFilter === 'blocked'}
                     className="mr-2"
                   />
-                  Blocked Tasks
+                  {t('backlogPage.filters.blockedTasks')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setDependencyFilter('blocking')}
@@ -879,7 +884,7 @@ export default function BacklogPage() {
                     checked={dependencyFilter === 'blocking'}
                     className="mr-2"
                   />
-                  Blocking Tasks
+                  {t('backlogPage.filters.blockingTasks')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -895,7 +900,7 @@ export default function BacklogPage() {
                   setDependencyFilter('all');
                 }}
               >
-                Clear filters
+                {t('backlogPage.filters.clearFilters')}
               </Button>
             )}
           </div>
@@ -915,29 +920,29 @@ export default function BacklogPage() {
           <DialogHeader>
             <DialogTitle>
               {editingTask 
-                ? (formData.parentTaskId ? 'Edit Subtask' : 'Edit Task')
+                ? (formData.parentTaskId ? t('backlogPage.editSubtask') : t('backlogPage.editTask'))
                 : formData.parentTaskId 
-                  ? 'Create Subtask' 
-                  : 'Create Task'
+                  ? t('backlogPage.createSubtask')
+                  : t('backlogPage.createTask')
               }
             </DialogTitle>
             <DialogDescription>
               {formData.parentTaskId
-                ? 'Create a subtask under the selected parent task'
+                ? t('backlogPage.subtaskDescription')
                 : activeCategory === 'PITCH_SCOPE' 
-                  ? 'Create a task scoped to a pitch in this cycle'
-                  : 'Create a technical debt or improvement task'
+                  ? t('backlogPage.categoryDescription.pitchScope')
+                  : t('backlogPage.categoryDescription.debtImprovement')
               }
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('backlogPage.title')} *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder={formData.parentTaskId ? "Subtask title" : "Task title"}
+                placeholder={formData.parentTaskId ? t('backlogPage.subtaskTitle') : t('backlogPage.taskTitle')}
                 className={fieldErrors.title ? 'border-destructive' : ''}
               />
               {fieldErrors.title && (
@@ -945,18 +950,18 @@ export default function BacklogPage() {
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('backlogPage.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder={formData.parentTaskId ? "Subtask description" : "Task description"}
+                placeholder={formData.parentTaskId ? t('backlogPage.subtaskDescription') : t('backlogPage.taskDescription')}
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t('common.status')}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}
@@ -967,14 +972,14 @@ export default function BacklogPage() {
                   <SelectContent>
                     {statusOptions.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                        {t(status.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">{t('backlogPage.filters.priority')}</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}
@@ -985,7 +990,7 @@ export default function BacklogPage() {
                   <SelectContent>
                     {priorityOptions.map((priority) => (
                       <SelectItem key={priority.value} value={priority.value}>
-                        {priority.label}
+                        {t(priority.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -994,16 +999,16 @@ export default function BacklogPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="assignee">Assignee</Label>
+                <Label htmlFor="assignee">{t('backlogPage.assignee')}</Label>
                 <Select
                   value={formData.assigneeId?.toString() || 'unassigned'}
                   onValueChange={(value) => setFormData({ ...formData, assigneeId: value === 'unassigned' ? undefined : Number(value) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select assignee" />
+                    <SelectValue placeholder={t('backlogPage.selectAssignee')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">{t('backlogPage.unassigned')}</SelectItem>
                     {persons.map((person) => (
                       <SelectItem key={person.id} value={person.id.toString()}>
                         {person.name}
@@ -1013,16 +1018,16 @@ export default function BacklogPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="pairAssignee">Pair Assignee</Label>
+                <Label htmlFor="pairAssignee">{t('backlogPage.pairAssignee')}</Label>
                 <Select
                   value={formData.pairAssigneeId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ ...formData, pairAssigneeId: value === 'none' ? undefined : Number(value) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select pair" />
+                    <SelectValue placeholder={t('backlogPage.selectPair')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">{t('backlogPage.none')}</SelectItem>
                     {persons.filter(p => p.id !== formData.assigneeId).map((person) => (
                       <SelectItem key={person.id} value={person.id.toString()}>
                         {person.name}
@@ -1034,7 +1039,7 @@ export default function BacklogPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="estimateHours">Estimate (hours)</Label>
+                <Label htmlFor="estimateHours">{t('backlogPage.estimateHours')}</Label>
                 <Input
                   id="estimateHours"
                   type="number"
@@ -1049,36 +1054,35 @@ export default function BacklogPage() {
                 )}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="dueDate">Due Date</Label>
-                <Input
+                <Label htmlFor="dueDate">{t('backlogPage.dueDate')}</Label>
+                <LocalizedDateInput
                   id="dueDate"
-                  type="date"
                   value={dueDate ? dueDate.format('YYYY-MM-DD') : ''}
-                  onChange={(e) => setDueDate(e.target.value ? dayjs(e.target.value) : null)}
+                  onChange={(val) => setDueDate(val ? dayjs(val) : null)}
                 />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="tags">Tags</Label>
+              <Label htmlFor="tags">{t('backlogPage.tags')}</Label>
               <Input
                 id="tags"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                placeholder="Comma-separated tags"
+                placeholder={t('backlogPage.commaSeparated')}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Pitch (optional)</Label>
+                <Label>{t('backlogPage.pitch')}</Label>
                 <Select
                   value={formData.pitchId ? String(formData.pitchId) : 'none'}
                   onValueChange={handlePitchChange}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="No pitch (technical debt)" />
+                    <SelectValue placeholder={t('backlogPage.noPitch')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No pitch (technical debt)</SelectItem>
+                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
                     {pitches.map((pitch) => (
                       <SelectItem key={pitch.id} value={String(pitch.id)}>
                         {pitch.title}
@@ -1088,17 +1092,17 @@ export default function BacklogPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Scope (optional)</Label>
+                <Label>{t('backlogPage.scope')}</Label>
                 <Select
                   value={formData.scopeId ? String(formData.scopeId) : 'none'}
                   onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
                   disabled={!formData.pitchId || scopes.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId ? "Select pitch first" : "No specific scope"} />
+                    <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No specific scope</SelectItem>
+                    <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
                     {scopes.map((scope) => (
                       <SelectItem key={scope.id} value={String(scope.id)}>
                         {scope.scope}
@@ -1111,11 +1115,11 @@ export default function BacklogPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
+              {t('backlogPage.cancel')}
             </Button>
             <Button onClick={handleSaveTask} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingTask ? 'Update' : 'Create'}
+              {editingTask ? t('backlogPage.update') : t('backlogPage.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1134,7 +1138,7 @@ export default function BacklogPage() {
                   className="-ml-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Back
+                  {t('backlogPage.back')}
                 </Button>
               )}
               {viewDialog.task?.parentTaskId && viewHistory.length === 0 && (
@@ -1148,35 +1152,35 @@ export default function BacklogPage() {
               {/* Task Metadata */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Label className="text-xs text-muted-foreground">{t('common.status')}</Label>
                   <div className="mt-1">
                     <Badge variant={statusOptions.find(s => s.value === viewDialog.task?.status)?.variant}>
-                      {statusOptions.find(s => s.value === viewDialog.task?.status)?.label}
+                      {t(statusOptions.find(s => s.value === viewDialog.task?.status)?.labelKey || 'backlogPage.statusOptions.backlog')}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Priority</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.filters.priority')}</Label>
                   <div className="mt-1">
                     <Badge variant={priorityOptions.find(p => p.value === viewDialog.task?.priority)?.variant}>
-                      {priorityOptions.find(p => p.value === viewDialog.task?.priority)?.label}
+                      {t(priorityOptions.find(p => p.value === viewDialog.task?.priority)?.labelKey || 'backlogPage.priorityOptions.medium')}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Assignee</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.assignee')}</Label>
                   <div className="mt-1 font-medium">
-                    {viewDialog.task.assigneeName || 'Unassigned'}
+                    {viewDialog.task.assigneeName || t('backlogPage.unassigned')}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Pair Assignee</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.pairAssignee')}</Label>
                   <div className="mt-1 font-medium">
-                    {viewDialog.task.pairAssigneeName || 'None'}
+                    {viewDialog.task.pairAssigneeName || t('backlogPage.none')}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Estimate</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.estimate')}</Label>
                   <div className="mt-1 font-medium">
                     {viewDialog.task.estimateHours ? `${viewDialog.task.estimateHours}h` : '-'}
                   </div>
@@ -1208,7 +1212,7 @@ export default function BacklogPage() {
               {/* Description */}
               {viewDialog.task.description && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.description')}</Label>
                   <div className="mt-2 p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
                     {viewDialog.task.description}
                   </div>
@@ -1218,7 +1222,7 @@ export default function BacklogPage() {
               {/* Tags */}
               {viewDialog.task.tags && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Tags</Label>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.tags')}</Label>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {viewDialog.task.tags.split(',').map((tag, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs">
@@ -1252,7 +1256,7 @@ export default function BacklogPage() {
               {/* Subtasks */}
               {subtasks.length > 0 && (
                 <div>
-                  <Label className="text-sm font-semibold">Subtasks ({subtasks.length})</Label>
+                  <Label className="text-sm font-semibold">{t('backlogPage.subtasks')} ({subtasks.length})</Label>
                   <div className="mt-2 space-y-2">
                     {subtasks.map((subtask) => (
                       <div
@@ -1272,17 +1276,17 @@ export default function BacklogPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={statusOptions.find(s => s.value === subtask.status)?.variant} className="text-xs">
-                            {statusOptions.find(s => s.value === subtask.status)?.label}
+                            {t(statusOptions.find(s => s.value === subtask.status)?.labelKey || 'backlogPage.statusOptions.backlog')}
                           </Badge>
                           <Badge variant={priorityOptions.find(p => p.value === subtask.priority)?.variant} className="text-xs">
-                            {priorityOptions.find(p => p.value === subtask.priority)?.label}
+                            {t(priorityOptions.find(p => p.value === subtask.priority)?.labelKey || 'backlogPage.priorityOptions.medium')}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleViewTask(subtask)}
-                            title="View subtask"
+                            title={t('backlogPage.viewDetails')}
                           >
                             <Eye className="h-3 w-3" />
                           </Button>
@@ -1294,7 +1298,7 @@ export default function BacklogPage() {
                               handleCloseViewDialog();
                               handleOpenDialog(subtask);
                             }}
-                            title="Edit subtask"
+                            title={t('backlogPage.edit')}
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -1324,7 +1328,7 @@ export default function BacklogPage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseViewDialog}>
-              Close
+              {t('backlogPage.close')}
             </Button>
             <Button onClick={() => {
               handleCloseViewDialog();
@@ -1333,7 +1337,7 @@ export default function BacklogPage() {
               }
             }}>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit
+              {t('backlogPage.edit')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1343,17 +1347,17 @@ export default function BacklogPage() {
       <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>{t('backlogPage.deleteTask')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
+              {t('backlogPage.confirmDeleteMessage')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, taskId: null })}>
-              Cancel
+              {t('backlogPage.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteTask}>
-              Delete
+              {t('backlogPage.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1407,7 +1411,7 @@ export default function BacklogPage() {
                     onClick={() => handleSort('title')}
                     className="-ml-3"
                   >
-                    Title
+                    {t('backlogPage.title')}
                     {sortBy === 'title' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                   </Button>
                 </TableHead>
@@ -1418,7 +1422,7 @@ export default function BacklogPage() {
                     onClick={() => handleSort('status')}
                     className="-ml-3"
                   >
-                    Status
+                    {t('common.status')}
                     {sortBy === 'status' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                   </Button>
                 </TableHead>
@@ -1429,11 +1433,11 @@ export default function BacklogPage() {
                     onClick={() => handleSort('priority')}
                     className="-ml-3"
                   >
-                    Priority
+                    {t('backlogPage.filters.priority')}
                     {sortBy === 'priority' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                   </Button>
                 </TableHead>
-                <TableHead>Assignee</TableHead>
+                <TableHead>{t('backlogPage.assignee')}</TableHead>
                 <TableHead>
                   <Button
                     variant="ghost"
@@ -1441,11 +1445,11 @@ export default function BacklogPage() {
                     onClick={() => handleSort('dueDate')}
                     className="-ml-3"
                   >
-                    Due Date
+                    {t('backlogPage.dueDate')}
                     {sortBy === 'dueDate' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                   </Button>
                 </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">{t('common.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1545,7 +1549,7 @@ export default function BacklogPage() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-auto p-0">
                           <Badge variant={getStatusBadgeVariant(task.status)}>
-                            {statusOptions.find(s => s.value === task.status)?.label || task.status}
+                            {t(statusOptions.find(s => s.value === task.status)?.labelKey || 'backlogPage.statusOptions.backlog')}
                           </Badge>
                         </Button>
                       </DropdownMenuTrigger>
@@ -1556,7 +1560,7 @@ export default function BacklogPage() {
                             onClick={() => handleQuickStatusChange(task.id, status.value)}
                           >
                             <Badge variant={status.variant} className="mr-2">
-                              {status.label}
+                              {t(status.labelKey)}
                             </Badge>
                             {task.status === status.value && <Check className="ml-auto h-4 w-4" />}
                           </DropdownMenuItem>
@@ -1569,7 +1573,7 @@ export default function BacklogPage() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-auto p-0">
                           <Badge variant={getPriorityBadgeVariant(task.priority)}>
-                            {priorityOptions.find(p => p.value === task.priority)?.label || task.priority}
+                            {t(priorityOptions.find(p => p.value === task.priority)?.labelKey || 'backlogPage.priorityOptions.medium')}
                           </Badge>
                         </Button>
                       </DropdownMenuTrigger>
@@ -1580,7 +1584,7 @@ export default function BacklogPage() {
                             onClick={() => handleQuickPriorityChange(task.id, priority.value)}
                           >
                             <Badge variant={priority.variant} className="mr-2">
-                              {priority.label}
+                              {t(priority.labelKey)}
                             </Badge>
                             {task.priority === priority.value && <Check className="ml-auto h-4 w-4" />}
                           </DropdownMenuItem>
@@ -1603,7 +1607,7 @@ export default function BacklogPage() {
                         <span className="text-sm">{task.assigneeName}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
+                      <span className="text-muted-foreground">{t('backlogPage.unassigned')}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -1628,14 +1632,14 @@ export default function BacklogPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleAddSubTask(task)}
-                                aria-label={`Add sub-task to: ${task.title}`}
+                                aria-label={`${t('backlogPage.addSubTask')}: ${task.title}`}
                                 className="text-xs"
                               >
                                 <Plus className="h-3 w-3 mr-1" aria-hidden="true" />
-                                Sub-task
+                                {t('backlogPage.subTask')}
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Add a sub-task under this task</TooltipContent>
+                            <TooltipContent>{t('backlogPage.addSubTask')}</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       )}
@@ -1647,19 +1651,19 @@ export default function BacklogPage() {
                               size="sm"
                               onClick={() => handleStartTimer(task)}
                               disabled={activeTimerTaskId !== null && activeTimerTaskId !== task.id}
-                              aria-label={`Start timer for: ${task.title}`}
+                              aria-label={`${t('backlogPage.startTimer')}: ${task.title}`}
                               className={activeTimerTaskId === task.id ? 'text-xs' : 'text-xs bg-green-600 hover:bg-green-700'}
                             >
                               <PlayCircle className="h-3 w-3 mr-1" aria-hidden="true" />
-                              {activeTimerTaskId === task.id ? 'Running' : 'Timer'}
+                              {activeTimerTaskId === task.id ? t('backlogPage.running') : t('backlogPage.timer')}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
                             {activeTimerTaskId === task.id 
-                              ? 'Timer is running for this task' 
+                              ? t('backlogPage.timerRunning')
                               : activeTimerTaskId 
-                                ? 'Stop the current timer first' 
-                                : 'Start timer for this task'
+                                ? t('backlogPage.stopTimerFirst')
+                                : t('backlogPage.startTimer')
                             }
                           </TooltipContent>
                         </Tooltip>
@@ -1675,7 +1679,7 @@ export default function BacklogPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>View Details</TooltipContent>
+                          <TooltipContent>{t('backlogPage.viewDetails')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -1689,7 +1693,7 @@ export default function BacklogPage() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Edit</TooltipContent>
+                          <TooltipContent>{t('backlogPage.edit')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -1703,7 +1707,7 @@ export default function BacklogPage() {
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
+                          <TooltipContent>{t('backlogPage.delete')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>

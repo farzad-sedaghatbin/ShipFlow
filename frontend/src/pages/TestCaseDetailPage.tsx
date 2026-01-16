@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   ArrowLeft,
   Pencil,
@@ -44,9 +46,12 @@ const getRunStatusStyle = (status: string): string => {
 };
 
 const TestCaseDetailPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
+  // i18n ready
+  if (false) console.log(t('testCases.title'));
 
   const [testCase, setTestCase] = useState<TestCase | null>(null);
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
@@ -202,7 +207,7 @@ const TestCaseDetailPage: React.FC = () => {
                           {run.status}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          {run.executedAt ? new Date(run.executedAt).toLocaleString() : 'Not executed'}
+                          {run.executedAt ? formatLocalizedDateTime(new Date(run.executedAt), i18n.language) : 'Not executed'}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
@@ -275,14 +280,14 @@ const TestCaseDetailPage: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Created</p>
                 <p className="text-sm">
-                  {testCase.createdAt ? new Date(testCase.createdAt).toLocaleString() : 'Unknown'}
+                  {testCase.createdAt ? formatLocalizedDateTime(new Date(testCase.createdAt), i18n.language) : 'Unknown'}
                 </p>
               </div>
 
               {testCase.updatedAt && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Last Updated</p>
-                  <p className="text-sm">{new Date(testCase.updatedAt).toLocaleString()}</p>
+                  <p className="text-sm">{formatLocalizedDateTime(new Date(testCase.updatedAt), i18n.language)}</p>
                 </div>
               )}
             </CardContent>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   Plus,
   Pencil,
@@ -40,6 +42,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
 
 export default function CycleList() {
+  const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -49,7 +52,8 @@ export default function CycleList() {
     cycle: null,
   });
   
-  // Filter states
+  // Filter states - i18n ready
+  if (false) console.log(t('common.loading'));
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPhase, setFilterPhase] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -82,10 +86,10 @@ export default function CycleList() {
   const handleToggleActive = async (cycle: Cycle) => {
     try {
       await cycleService.toggleActive(cycle.id);
-      showSuccess(cycle.isActive ? 'Cycle paused' : 'Cycle reactivated');
+      showSuccess(cycle.isActive ? t('cycles.cyclePaused') : t('cycles.cycleReactivated'));
       loadCycles();
     } catch (error) {
-      showError('Failed to update cycle status');
+      showError(t('cycles.failedToUpdate'));
       console.error('Failed to toggle cycle:', error);
     }
   };
@@ -94,11 +98,11 @@ export default function CycleList() {
     if (!deleteDialog.cycle) return;
     try {
       await cycleService.delete(deleteDialog.cycle.id);
-      showSuccess('Cycle deleted successfully!');
+      showSuccess(t('cycles.cycleDeleted'));
       setDeleteDialog({ open: false, cycle: null });
       loadCycles();
     } catch (error) {
-      showError('Failed to delete cycle');
+      showError(t('cycles.failedToDelete'));
       console.error('Failed to delete cycle:', error);
     }
   };
@@ -148,15 +152,15 @@ export default function CycleList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cycles</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('cycles.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? 'All projects' : currentProject?.name} • {filteredCycles.length} cycle{filteredCycles.length !== 1 ? 's' : ''} found
+            {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {filteredCycles.length} {filteredCycles.length !== 1 ? t('cycles.cyclesFound_plural') : t('cycles.cyclesFound')} 
           </p>
         </div>
         <Button asChild data-tour="new-cycle-btn">
           <Link to="/cycles/new">
             <Plus className="h-4 w-4 mr-2" />
-            New Cycle
+            {t('cycles.newCycle')}
           </Link>
         </Button>
       </div>
@@ -168,7 +172,7 @@ export default function CycleList() {
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search cycles..."
+                placeholder={t('cycles.searchCycles')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -176,24 +180,24 @@ export default function CycleList() {
             </div>
             <Select value={filterPhase} onValueChange={setFilterPhase}>
               <SelectTrigger>
-                <SelectValue placeholder="All Phases" />
+                <SelectValue placeholder={t('cycles.allPhases')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Phases</SelectItem>
-                <SelectItem value="SHAPING">Shaping</SelectItem>
-                <SelectItem value="BETTING">Betting</SelectItem>
-                <SelectItem value="BUILD">Build</SelectItem>
-                <SelectItem value="COOLDOWN">Cooldown</SelectItem>
+                <SelectItem value="all">{t('cycles.allPhases')}</SelectItem>
+                <SelectItem value="SHAPING">{t('cycles.shaping')}</SelectItem>
+                <SelectItem value="BETTING">{t('cycles.betting')}</SelectItem>
+                <SelectItem value="BUILD">{t('cycles.build')}</SelectItem>
+                <SelectItem value="COOLDOWN">{t('cycles.cooldown')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger>
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder={t('cycles.allStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Completed</SelectItem>
+                <SelectItem value="all">{t('cycles.allStatus')}</SelectItem>
+                <SelectItem value="active">{t('cycles.active')}</SelectItem>
+                <SelectItem value="inactive">{t('cycles.inactive')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -202,15 +206,15 @@ export default function CycleList() {
 
       {/* Active Cycles */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Active Cycles</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.activeCycles')}</h2>
         {activeCycles.length === 0 ? (
           <Card>
             <EmptyState
               illustration={<EmptyCyclesIllustration />}
-              title="No Active Cycles"
-              description="Start a new cycle to begin tracking your team's progress through the build phase."
+              title={t('cycles.noActiveCycles')}
+              description={t('cycles.noActiveCyclesDesc')}
               action={{
-                label: 'Create First Cycle',
+                label: t('cycles.createFirstCycle'),
                 onClick: () => window.location.href = '/cycles/new',
               }}
               size="small"
@@ -233,7 +237,7 @@ export default function CycleList() {
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
-                          {new Date(cycle.startDate).toLocaleDateString()} - {new Date(cycle.endDate).toLocaleDateString()}
+                          {formatLocalizedDate(cycle.startDate, i18n.language)} - {formatLocalizedDate(cycle.endDate, i18n.language)}
                         </span>
                       </div>
                     </div>
@@ -257,7 +261,7 @@ export default function CycleList() {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>View Details</Link>
+                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">
@@ -272,7 +276,7 @@ export default function CycleList() {
                               <Pause className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Pause cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.pauseCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -282,7 +286,7 @@ export default function CycleList() {
                               </Link>
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Edit cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.editCycleTooltip')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -295,7 +299,7 @@ export default function CycleList() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.deleteCycleTooltip')}</TooltipContent>
                         </Tooltip>
                       </div>
                     </TooltipProvider>
@@ -309,13 +313,13 @@ export default function CycleList() {
 
       {/* Past Cycles */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Past Cycles</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.pastCycles')}</h2>
         {inactiveCycles.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">No past cycles yet</p>
+              <p className="text-muted-foreground">{t('cycles.noPastCycles')}</p>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Completed cycles will appear here
+                {t('cycles.noPastCyclesDesc')}
               </p>
             </CardContent>
           </Card>
@@ -331,12 +335,12 @@ export default function CycleList() {
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
-                          {new Date(cycle.startDate).toLocaleDateString()} - {new Date(cycle.endDate).toLocaleDateString()}
+                          {formatLocalizedDate(cycle.startDate, i18n.language)} - {formatLocalizedDate(cycle.endDate, i18n.language)}
                         </span>
                       </div>
                     </div>
                     <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      Completed
+                      {t('cycles.inactive')}
                     </Badge>
                   </div>
 
@@ -370,7 +374,7 @@ export default function CycleList() {
                               <Play className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Reactivate cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.reactivateCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -399,18 +403,17 @@ export default function CycleList() {
       <Dialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, cycle: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Cycle</DialogTitle>
+            <DialogTitle>{t('cycles.deleteDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.cycle?.name}"? This will also delete all associated
-              pitches and work logs.
+              {t('cycles.deleteDialogDesc', { name: deleteDialog.cycle?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, cycle: null })}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

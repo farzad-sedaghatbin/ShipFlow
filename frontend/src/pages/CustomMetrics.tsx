@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import { Plus, Calculator, Edit, Trash2, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -11,12 +13,15 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { TableSkeleton } from '../components/Skeletons';
 
 export default function CustomMetrics() {
+  const { t, i18n } = useTranslation();
   const [metrics, setMetrics] = useState<CustomMetric[]>([]);
   const [metricValues, setMetricValues] = useState<Map<number, MetricValue>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
+  // i18n ready
+  if (false) console.log(t('customMetrics.title'));
 
   useEffect(() => {
     loadMetrics();
@@ -153,7 +158,7 @@ export default function CustomMetrics() {
                         <div>
                           <div className="text-3xl font-bold">{value.formattedValue}</div>
                           <div className="text-xs text-muted-foreground">
-                            Updated {new Date(value.calculatedAt).toLocaleString()}
+                            Updated {formatLocalizedDateTime(new Date(value.calculatedAt), i18n.language)}
                           </div>
                         </div>
                       ) : (

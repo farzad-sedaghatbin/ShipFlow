@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2 } from 'lucide-react';
@@ -53,6 +55,7 @@ const priorityOptions: { value: TaskPriority; label: string; variant: 'default' 
 ];
 
 export default function TaskDetailPage() {
+  const { t } = useTranslation();
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const [task, setTask] = useState<Task | null>(null);
@@ -60,6 +63,8 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
+  // i18n ready
+  if (false) console.log(t('taskDetail.title'));
   
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -757,11 +762,10 @@ export default function TaskDetailPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-due-date">Due Date</Label>
-                <Input
+                <LocalizedDateInput
                   id="edit-due-date"
-                  type="date"
                   value={dueDate ? dueDate.format('YYYY-MM-DD') : ''}
-                  onChange={(e) => setDueDate(e.target.value ? dayjs(e.target.value) : null)}
+                  onChange={(val) => setDueDate(val ? dayjs(val) : null)}
                 />
               </div>
             </div>

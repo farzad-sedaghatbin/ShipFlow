@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { Play, Plus, Bug, Sparkles, ClipboardList, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
@@ -20,6 +22,7 @@ import AISuggestionPanel from '../components/AISuggestionPanel';
 import { safeParseId } from '../utils/validation';
 
 const PitchTestPage: React.FC = () => {
+  const { i18n } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
   const pitchId = safeParseId(pitchIdParam);
   const navigate = useNavigate();
@@ -343,7 +346,7 @@ const PitchTestPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>Reported by {bug.reporterName || 'Unknown'}</span>
-                          <span>{new Date(bug.createdAt).toLocaleDateString()}</span>
+                          <span>{formatLocalizedDate(new Date(bug.createdAt), i18n.language)}</span>
                         </div>
                       </div>
                     </div>

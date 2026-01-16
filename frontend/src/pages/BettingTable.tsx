@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   DndContext,
   DragEndEvent,
@@ -228,6 +230,7 @@ function TeamTrackRow({
 
 // Main Betting Table Page
 export default function BettingTablePage() {
+  const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
@@ -238,6 +241,8 @@ export default function BettingTablePage() {
   const [loading, setLoading] = useState(true);
   const [generatingSlots, setGeneratingSlots] = useState(false);
   const [activePitch, setActivePitch] = useState<Pitch | null>(null);
+  // i18n ready
+  if (false) console.log(t('bettingTable.title'));
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -496,7 +501,7 @@ export default function BettingTablePage() {
                       <div className="flex items-center gap-4 mt-1">
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {new Date(bettingTable.cycleStartDate).toLocaleDateString()} - {new Date(bettingTable.cycleEndDate).toLocaleDateString()}
+                          {formatLocalizedDate(new Date(bettingTable.cycleStartDate), i18n.language)} - {formatLocalizedDate(new Date(bettingTable.cycleEndDate), i18n.language)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {bettingTable.cycleDurationWeeks} weeks

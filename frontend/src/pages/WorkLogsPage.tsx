@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, Users, User } from 'lucide-react';
 import dayjs from 'dayjs';
 import { workLogService } from '../services/workLogService';
@@ -10,6 +11,8 @@ import { WorkLog, Pitch, Cycle, Person, Task, CreateWorkLogRequest, CreateWorkLo
 import { useAuth, useToast } from '../contexts';
 import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 
 import { Button } from '../components/ui/button';
@@ -44,6 +47,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function WorkLogsPage() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
@@ -55,6 +59,8 @@ export default function WorkLogsPage() {
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
+  // i18n ready
+  if (false) console.log(t('workLogs.title'), i18n.language);
 
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -494,11 +500,10 @@ export default function WorkLogsPage() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="my-date">Date</Label>
-                      <Input
+                      <LocalizedDateInput
                         id="my-date"
-                        type="date"
                         value={workLogDate}
-                        onChange={(e) => setWorkLogDate(e.target.value)}
+                        onChange={(value) => setWorkLogDate(value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -592,11 +597,10 @@ export default function WorkLogsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="team-date">Date</Label>
-                    <Input
+                    <LocalizedDateInput
                       id="team-date"
-                      type="date"
                       value={teamWorkLogDate}
-                      onChange={(e) => setTeamWorkLogDate(e.target.value)}
+                      onChange={(value) => setTeamWorkLogDate(value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -709,11 +713,10 @@ export default function WorkLogsPage() {
             )}
             <div className="grid gap-2">
               <Label htmlFor="edit-date">Date</Label>
-              <Input
+              <LocalizedDateInput
                 id="edit-date"
-                type="date"
                 value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
+                onChange={(value) => setEditDate(value)}
               />
             </div>
             <div className="grid gap-2">
@@ -757,6 +760,8 @@ interface WorkLogsTableProps {
 }
 
 function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTableProps) {
+  const { i18n } = useTranslation();
+  
   if (workLogs.length === 0) {
     return (
       <EmptyState
@@ -787,7 +792,7 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
           <TableBody>
             {workLogs.map((wl) => (
               <TableRow key={wl.id}>
-                <TableCell>{dayjs(wl.date).format('MMM D, YYYY')}</TableCell>
+                <TableCell>{formatLocalizedDate(wl.date, i18n.language)}</TableCell>
                 {showPerson && <TableCell>{wl.personName}</TableCell>}
                 <TableCell>
                   {wl.pitchTitle && (

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { 
   Plus, 
   Pencil, 
@@ -52,6 +54,7 @@ import {
 import { ScrollArea } from '../components/ui/scroll-area';
 
 export default function People() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +93,7 @@ export default function People() {
       const response = await api.get<Person[]>('/persons');
       setPeople(response.data);
     } catch (error) {
-      showToast('Failed to load people', 'error');
+      showToast(t('people.loadFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -102,7 +105,7 @@ export default function People() {
       const response = await api.get<TeamAssignment[]>(`/persons/${personId}/assignments`);
       setAssignments(response.data);
     } catch (error) {
-      showToast('Failed to load assignments', 'error');
+      showToast(t('peopleManagement.failedToLoadAssignments'), 'error');
     } finally {
       setLoadingAssignments(false);
     }
@@ -132,11 +135,11 @@ export default function People() {
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      showToast('Name is required', 'error');
+      showToast(t('peopleManagement.nameRequired'), 'error');
       return;
     }
     if (!formData.email.trim()) {
-      showToast('Email is required', 'error');
+      showToast(t('peopleManagement.emailRequired'), 'error');
       return;
     }
 
@@ -144,10 +147,10 @@ export default function People() {
     try {
       if (editingPerson) {
         await api.put(`/persons/${editingPerson.id}`, formData);
-        showToast('Person updated successfully', 'success');
+        showToast(t('peopleManagement.personUpdated'), 'success');
       } else {
         await api.post('/persons', formData);
-        showToast('Person created successfully', 'success');
+        showToast(t('peopleManagement.personCreated'), 'success');
       }
       fetchPeople();
       handleCloseDialog();
@@ -159,13 +162,13 @@ export default function People() {
   };
 
   const handleDelete = async (person: Person) => {
-    if (!confirm(`Are you sure you want to deactivate ${person.name}?`)) {
+    if (!confirm(t('peopleManagement.confirmDeactivate') + ' ' + person.name + '?')) {
       return;
     }
 
     try {
       await api.delete(`/persons/${person.id}`);
-      showToast('Person deactivated successfully', 'success');
+      showToast(t('peopleManagement.personDeactivated'), 'success');
       fetchPeople();
     } catch (error) {
       // Error handled by interceptor
@@ -194,7 +197,7 @@ export default function People() {
       );
       setWorkLogs(sortedLogs);
     } catch (error) {
-      showToast('Failed to load work logs', 'error');
+      showToast(t('peopleManagement.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);
     } finally {
       setLoadingWorkLogs(false);
@@ -246,10 +249,10 @@ export default function People() {
     <TooltipProvider>
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">People Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('peopleManagement.title')}</h1>
           <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Add Person
+            {t('peopleManagement.addPerson')}
           </Button>
         </div>
 
@@ -257,13 +260,13 @@ export default function People() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground mb-1">Total People</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('peopleManagement.totalPeople')}</p>
               <p className="text-3xl font-bold">{people.length}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground mb-1">Active</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('peopleManagement.active')}</p>
               <p className="text-3xl font-bold text-green-600">
                 {people.filter((p) => p.isActive).length}
               </p>
@@ -271,7 +274,7 @@ export default function People() {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground mb-1">Inactive</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('peopleManagement.inactive')}</p>
               <p className="text-3xl font-bold text-muted-foreground">
                 {people.filter((p) => !p.isActive).length}
               </p>
@@ -282,16 +285,16 @@ export default function People() {
         {/* Search */}
         <div className="bg-card rounded-lg border p-4 mb-4">
           <div className="relative">
-            <Label htmlFor="people-search" className="sr-only">Search people by name, email, or skills</Label>
+            <Label htmlFor="people-search" className="sr-only">{t('peopleManagement.searchPlaceholder')}</Label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="people-search"
               type="search"
               className="pl-10"
-              placeholder="Search by name, email, or skills..."
+              placeholder={t('peopleManagement.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search people by name, email, or skills"
+              aria-label={t('peopleManagement.searchPlaceholder')}
             />
           </div>
         </div>
@@ -301,12 +304,12 @@ export default function People() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Person</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Skills</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('peopleManagement.person')}</TableHead>
+                <TableHead>{t('peopleManagement.email')}</TableHead>
+                <TableHead>{t('peopleManagement.skills')}</TableHead>
+                <TableHead>{t('peopleManagement.status')}</TableHead>
+                <TableHead>{t('peopleManagement.joined')}</TableHead>
+                <TableHead className="text-right">{t('peopleManagement.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -344,11 +347,11 @@ export default function People() {
                     <Badge variant={person.isActive ? 'default' : 'secondary'} className={cn(
                       person.isActive && 'bg-green-500 hover:bg-green-600'
                     )}>
-                      {person.isActive ? 'Active' : 'Inactive'}
+                      {person.isActive ? t('peopleManagement.active') : t('peopleManagement.inactive')}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(person.createdAt).toLocaleDateString()}
+                    {formatLocalizedDate(new Date(person.createdAt), i18n.language)}
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
@@ -363,7 +366,7 @@ export default function People() {
                             <ClipboardList className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>View Activity</TooltipContent>
+                        <TooltipContent>{t('peopleManagement.viewActivity')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -376,7 +379,7 @@ export default function People() {
                             <History className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Team History</TooltipContent>
+                        <TooltipContent>{t('peopleManagement.teamHistory')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -389,7 +392,7 @@ export default function People() {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
+                        <TooltipContent>{t('peopleManagement.edit')}</TooltipContent>
                       </Tooltip>
                       {person.isActive && (
                         <Tooltip>
@@ -403,7 +406,7 @@ export default function People() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Deactivate</TooltipContent>
+                          <TooltipContent>{t('peopleManagement.deactivate')}</TooltipContent>
                         </Tooltip>
                       )}
                     </div>
@@ -416,10 +419,10 @@ export default function People() {
                     {people.length === 0 ? (
                       <EmptyState
                         illustration={<EmptyPeopleIllustration />}
-                        title="No people yet"
-                        description="Add team members to assign them to teams and track their work"
+                        title={t('peopleManagement.noPeopleYet')}
+                        description={t('peopleManagement.noPeopleDescription')}
                         action={{
-                          label: 'Add First Person',
+                          label: t('peopleManagement.addFirstPerson'),
                           onClick: () => handleOpenDialog(),
                           startIcon: <Plus className="h-4 w-4" />,
                         }}
@@ -427,8 +430,8 @@ export default function People() {
                       />
                     ) : (
                       <EmptyState
-                        title="No matches found"
-                        description={`No people found matching "${searchTerm}"`}
+                        title={t('peopleManagement.noMatches')}
+                        description={t('peopleManagement.noMatchesDescription', { searchTerm })}
                         size="small"
                         compact
                       />
@@ -445,15 +448,15 @@ export default function People() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingPerson ? 'Edit Person' : 'Add New Person'}
+                {editingPerson ? t('peopleManagement.editPerson') : t('peopleManagement.addNewPerson')}
               </DialogTitle>
               <DialogDescription>
-                {editingPerson ? 'Update person details' : 'Add a new team member'}
+                {editingPerson ? t('peopleManagement.updatePerson') : t('peopleManagement.addNewPerson')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t('peopleManagement.name')} *</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -461,12 +464,12 @@ export default function People() {
                     className="pl-10"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter name"
+                    placeholder={t('peopleManagement.enterName')}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">{t('peopleManagement.email')} *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -475,12 +478,12 @@ export default function People() {
                     className="pl-10"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter email"
+                    placeholder={t('peopleManagement.enterEmail')}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
+                <Label htmlFor="skills">{t('peopleManagement.skillsLabel')}</Label>
                 <div className="relative">
                   <Award className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -488,13 +491,13 @@ export default function People() {
                     className="pl-10"
                     value={formData.skills}
                     onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                    placeholder="e.g., Java, React, TypeScript"
+                    placeholder={t('peopleManagement.skillsPlaceholder')}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Comma-separated list of skills</p>
+                <p className="text-xs text-muted-foreground">{t('peopleManagement.skillsHint')}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
+                <Label htmlFor="avatarUrl">{t('peopleManagement.avatarUrl')}</Label>
                 <Input
                   id="avatarUrl"
                   value={formData.avatarUrl}
@@ -505,11 +508,11 @@ export default function People() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={handleCloseDialog}>
-                Cancel
+                {t('peopleManagement.cancel')}
               </Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {saving ? 'Saving...' : editingPerson ? 'Update' : 'Create'}
+                {saving ? t('peopleManagement.saving') : editingPerson ? t('peopleManagement.update') : t('peopleManagement.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -526,7 +529,7 @@ export default function People() {
                 </Avatar>
                 <div>
                   <DialogTitle>{selectedPerson?.name}</DialogTitle>
-                  <DialogDescription>Team Assignment History</DialogDescription>
+                  <DialogDescription>{t('peopleManagement.teamAssignmentHistory')}</DialogDescription>
                 </div>
               </div>
             </DialogHeader>
@@ -537,7 +540,7 @@ export default function People() {
                 </div>
               ) : assignments.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  No team assignments found
+                  {t('peopleManagement.noAssignments')}
                 </p>
               ) : (
                 <Table>
@@ -564,8 +567,8 @@ export default function People() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {new Date(assignment.startDate).toLocaleDateString()}
-                          {assignment.endDate && ` - ${new Date(assignment.endDate).toLocaleDateString()}`}
+                          {formatLocalizedDate(new Date(assignment.startDate), i18n.language)}
+                          {assignment.endDate && ` - ${formatLocalizedDate(new Date(assignment.endDate), i18n.language)}`}
                         </TableCell>
                         <TableCell>
                           <Badge 
@@ -602,7 +605,7 @@ export default function People() {
                 </Avatar>
                 <div>
                   <DialogTitle>{selectedPerson?.name}</DialogTitle>
-                  <DialogDescription>Recent Work Activity</DialogDescription>
+                  <DialogDescription>{t('peopleManagement.workActivityTitle')}</DialogDescription>
                 </div>
               </div>
             </DialogHeader>
@@ -615,8 +618,8 @@ export default function People() {
                 <div className="py-8">
                   <EmptyState
                     illustration={<EmptyWorkLogsIllustration />}
-                    title="No work logs yet"
-                    description={`${selectedPerson?.name} hasn't logged any work activity`}
+                    title={t('peopleManagement.noWorkLogs')}
+                    description={t('peopleManagement.noWorkLogsDesc', { name: selectedPerson?.name })}
                     size="small"
                     compact
                   />
@@ -630,7 +633,7 @@ export default function People() {
                         <p className="text-2xl font-bold text-primary">
                           {workLogs.reduce((sum, log) => sum + log.hoursSpent, 0).toFixed(1)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Total Hours</p>
+                        <p className="text-xs text-muted-foreground">{t('peopleManagement.totalHours')}</p>
                       </CardContent>
                     </Card>
                     <Card className="border">
@@ -638,7 +641,7 @@ export default function People() {
                         <p className="text-2xl font-bold text-purple-600">
                           {workLogs.length}
                         </p>
-                        <p className="text-xs text-muted-foreground">Log Entries</p>
+                        <p className="text-xs text-muted-foreground">{t('peopleManagement.logEntries')}</p>
                       </CardContent>
                     </Card>
                     <Card className="border">
@@ -646,7 +649,7 @@ export default function People() {
                         <p className="text-2xl font-bold text-green-600">
                           {new Set(workLogs.map(log => log.pitchId)).size}
                         </p>
-                        <p className="text-xs text-muted-foreground">Pitches Worked</p>
+                        <p className="text-xs text-muted-foreground">{t('peopleManagement.pitchesWorked')}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -656,11 +659,11 @@ export default function People() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Pitch</TableHead>
-                          <TableHead>Project</TableHead>
-                          <TableHead className="text-right">Hours</TableHead>
-                          <TableHead>Notes</TableHead>
+                          <TableHead>{t('peopleManagement.date')}</TableHead>
+                          <TableHead>{t('peopleManagement.pitch')}</TableHead>
+                          <TableHead>{t('peopleManagement.project')}</TableHead>
+                          <TableHead className="text-right">{t('peopleManagement.hours')}</TableHead>
+                          <TableHead>{t('peopleManagement.notes')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -669,7 +672,7 @@ export default function People() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
-                                {new Date(log.date).toLocaleDateString()}
+                                {formatLocalizedDate(new Date(log.date), i18n.language)}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -714,7 +717,7 @@ export default function People() {
                   </ScrollArea>
                   {workLogs.length > 50 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Showing first 50 of {workLogs.length} entries
+                      {t('peopleManagement.showingFirst', { count: workLogs.length })}
                     </p>
                   )}
                 </>
@@ -722,7 +725,7 @@ export default function People() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setActivityDialogOpen(false)}>
-                Close
+                {t('peopleManagement.close')}
               </Button>
             </DialogFooter>
           </DialogContent>

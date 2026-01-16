@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { safeParseId } from '../utils/validation';
 import { cycleService } from '../services/cycleService';
 import projectService from '../services/projectService';
@@ -8,6 +9,7 @@ import { CreateCycleRequest, CyclePhase, Project } from '../types';
 import { useProject, useToast, useAuth } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -24,6 +26,7 @@ import {
 } from '../components/ui/select';
 
 export default function CycleForm() {
+  const { t } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const navigate = useNavigate();
@@ -39,6 +42,8 @@ export default function CycleForm() {
     endDate: '',
     phase: 'BUILD',
   });
+  // i18n ready
+  if (false) console.log(t('cycleForm.title'));
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [useAutoEndDate, setUseAutoEndDate] = useState<boolean>(true);
@@ -203,7 +208,7 @@ export default function CycleForm() {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-          <span className="text-sm">Invalid cycle ID</span>
+          <span className="text-sm">{t('cycleForm.invalidCycleId')}</span>
         </div>
       </div>
     );
@@ -232,7 +237,7 @@ export default function CycleForm() {
     <div className="flex justify-center">
       <div className="w-full max-w-xl space-y-6">
         <h1 className="text-2xl font-bold text-foreground">
-          {isEdit ? 'Edit Cycle' : 'Create New Cycle'}
+          {isEdit ? t('cycleForm.editCycle') : t('cycleForm.createNewCycle')}
         </h1>
 
         <Card>
@@ -246,7 +251,7 @@ export default function CycleForm() {
 
             {/* Project */}
             <div className="space-y-2">
-              <Label htmlFor="project">Project *</Label>
+              <Label htmlFor="project">{t('cycleForm.projectRequired')}</Label>
               <Select
                 value={formData.projectId?.toString() || ''}
                 onValueChange={(value) => {
@@ -256,11 +261,11 @@ export default function CycleForm() {
                 disabled={projectsLoading}
               >
                 <SelectTrigger className={fieldErrors.projectId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder={projectsLoading ? 'Loading projects...' : 'Select project'} />
+                  <SelectValue placeholder={projectsLoading ? t('cycleForm.loadingProjects') : t('cycleForm.selectProject')} />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.length === 0 ? (
-                    <SelectItem value="none" disabled>No projects available</SelectItem>
+                    <SelectItem value="none" disabled>{t('cycleForm.noProjectsAvailable')}</SelectItem>
                   ) : (
                     projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
@@ -277,7 +282,7 @@ export default function CycleForm() {
 
             {/* Cycle Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Cycle Name *</Label>
+              <Label htmlFor="name">{t('cycleForm.cycleNameRequired')}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -285,13 +290,13 @@ export default function CycleForm() {
                   setFormData({ ...formData, name: e.target.value });
                   setFieldErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder="e.g., Q1 2025 - Feature Sprint"
+                placeholder={t('cycleForm.cycleNamePlaceholder')}
                 className={fieldErrors.name ? 'border-destructive' : ''}
               />
               {fieldErrors.name ? (
                 <p className="text-xs text-destructive">{fieldErrors.name}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Give your cycle a descriptive name</p>
+                <p className="text-xs text-muted-foreground">{t('cycleForm.cycleNameDesc')}</p>
               )}
             </div>
 
@@ -314,7 +319,7 @@ export default function CycleForm() {
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <Label htmlFor="useAutoEndDate" className="cursor-pointer text-sm font-normal">
-                    Auto-calculate end date ({defaultCycleLengthWeeks} weeks from start date)
+                    {t('cycleForm.autoCalculateEndDate', { weeks: defaultCycleLengthWeeks })}
                   </Label>
                 </div>
               )}
@@ -323,20 +328,19 @@ export default function CycleForm() {
               {!isEdit && !canOverrideDates && (
                 <Alert>
                   <AlertDescription className="text-sm">
-                    End date will be automatically calculated as {defaultCycleLengthWeeks} weeks from the start date based on organization settings.
+                    {t('cycleForm.autoEndDateInfo', { weeks: defaultCycleLengthWeeks })}
                   </AlertDescription>
                 </Alert>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date *</Label>
-                  <Input
+                  <Label htmlFor="startDate">{t('cycleForm.startDateRequired')}</Label>
+                  <LocalizedDateInput
                     id="startDate"
-                    type="date"
                     value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
+                    onChange={(value) => {
+                      setStartDate(value);
                       setFieldErrors((prev) => ({ ...prev, startDate: '' }));
                     }}
                     className={fieldErrors.startDate ? 'border-destructive' : ''}
@@ -347,22 +351,21 @@ export default function CycleForm() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endDate">
-                    End Date {useAutoEndDate && !isEdit ? '(Auto)' : '*'}
+                    {useAutoEndDate && !isEdit ? t('cycleForm.endDateAuto') : t('cycleForm.endDateRequired')}
                   </Label>
-                  <Input
+                  <LocalizedDateInput
                     id="endDate"
-                    type="date"
                     value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
+                    onChange={(value) => {
+                      setEndDate(value);
                       setFieldErrors((prev) => ({ ...prev, endDate: '' }));
                     }}
                     min={startDate || undefined}
                     disabled={useAutoEndDate && !isEdit}
                     aria-label={
                       useAutoEndDate && !isEdit
-                        ? 'End date - automatically calculated from start date'
-                        : 'End date'
+                        ? t('cycleForm.endDateAutoAriaLabel')
+                        : t('cycleForm.endDateAriaLabel')
                     }
                     aria-describedby={
                       useAutoEndDate && !isEdit ? 'endDate-auto-hint' : undefined
@@ -374,7 +377,7 @@ export default function CycleForm() {
                   )}
                   {useAutoEndDate && !isEdit && (
                     <p id="endDate-auto-hint" className="text-xs text-muted-foreground">
-                      Automatically calculated from start date
+                      {t('cycleForm.automaticallyCalculated')}
                     </p>
                   )}
                 </div>
@@ -383,7 +386,7 @@ export default function CycleForm() {
 
             {/* Phase */}
             <div className="space-y-2">
-              <Label>Phase</Label>
+              <Label>{t('cycleForm.phase')}</Label>
               <Select
                 value={formData.phase}
                 onValueChange={(value) => setFormData({ ...formData, phase: value as CyclePhase })}
@@ -392,10 +395,10 @@ export default function CycleForm() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SHAPING">Shaping</SelectItem>
-                  <SelectItem value="BETTING">Betting</SelectItem>
-                  <SelectItem value="BUILD">Build</SelectItem>
-                  <SelectItem value="COOLDOWN">Cooldown</SelectItem>
+                  <SelectItem value="SHAPING">{t('cycleForm.shaping')}</SelectItem>
+                  <SelectItem value="BETTING">{t('cycleForm.betting')}</SelectItem>
+                  <SelectItem value="BUILD">{t('cycleForm.build')}</SelectItem>
+                  <SelectItem value="COOLDOWN">{t('cycleForm.cooldown')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -408,14 +411,14 @@ export default function CycleForm() {
                 onClick={() => navigate('/cycles')} 
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <LoadingButton
                 type="submit"
                 loading={loading}
-                loadingText="Saving..."
+                loadingText={t('cycleForm.saving')}
               >
-                {isEdit ? 'Update Cycle' : 'Create Cycle'}
+                {isEdit ? t('cycleForm.updateCycle') : t('cycleForm.createCycle')}
               </LoadingButton>
             </div>
           </form>

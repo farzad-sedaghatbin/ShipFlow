@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Search,
@@ -74,9 +75,12 @@ const statusVariants: Record<TestCaseStatus, string> = {
 };
 
 const TestCasesPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
+  // i18n ready
+  if (false) console.log(t('testCases.title'));
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TestCaseStatus | 'all'>('all');

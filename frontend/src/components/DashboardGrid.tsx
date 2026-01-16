@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import KPIWidget from './KPIWidget';
@@ -26,6 +28,7 @@ export default function DashboardGrid({
   onWidgetRemove,
   onWidgetConfigure
 }: DashboardGridProps) {
+  const { i18n } = useTranslation();
   const [layout, setLayout] = useState<Layout>([]);
   const [widgetDataMap, setWidgetDataMap] = useState<Map<number, WidgetData>>(new Map());
   const [loadingWidgets, setLoadingWidgets] = useState<Set<number>>(new Set());
@@ -133,7 +136,7 @@ export default function DashboardGrid({
         let chartData = [];
         if (data?.data?.history) {
           chartData = data.data.history.map((h: any) => ({
-            name: new Date(h.timestamp).toLocaleDateString(),
+            name: formatLocalizedDate(new Date(h.timestamp), i18n.language),
             value: h.value
           }));
         }
@@ -151,8 +154,8 @@ export default function DashboardGrid({
         let tableData = [];
         if (data?.data?.history) {
           tableData = data.data.history.map((item: any) => ({
-            date: new Date(item.timestamp).toLocaleDateString(),
-            time: new Date(item.timestamp).toLocaleTimeString(),
+            date: formatLocalizedDate(new Date(item.timestamp), i18n.language),
+            time: formatLocalizedDateTime(new Date(item.timestamp), i18n.language).split(' ').slice(1).join(' '), // Get time part
             value: item.value,
             ...item
           }));

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   User,
   Pencil,
@@ -33,6 +35,7 @@ import {
 } from '../components/ui/dialog';
 
 export default function Profile() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +72,7 @@ export default function Profile() {
         department: response.data.department,
       });
     } catch (error) {
-      showToast('Failed to load profile', 'error');
+      showToast(t('profile.loadFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -81,9 +84,9 @@ export default function Profile() {
       const response = await api.put<UserProfile>('/users/me/profile', editForm);
       setProfile(response.data);
       setEditing(false);
-      showToast('Profile updated successfully', 'success');
+      showToast(t('profilePage.profileUpdated'), 'success');
     } catch (error) {
-      showToast('Failed to update profile', 'error');
+      showToast(t('profilePage.failedToLoad'), 'error');
     } finally {
       setSaving(false);
     }
@@ -91,18 +94,18 @@ export default function Profile() {
 
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
+      showToast(t('profilePage.passwordMismatch'), 'error');
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+      showToast(t('profilePage.passwordMinLength'), 'error');
       return;
     }
 
     setChangingPassword(true);
     try {
       await api.put(`/users/${profile?.id}/password`, passwordForm);
-      showToast('Password changed successfully', 'success');
+      showToast(t('profilePage.passwordChanged'), 'success');
       setPasswordDialogOpen(false);
       setPasswordForm({ currentPassword: '', newPassword: '' });
       setConfirmPassword('');
@@ -135,14 +138,14 @@ export default function Profile() {
   if (!profile) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>Failed to load profile</AlertDescription>
+        <AlertDescription>{t('profilePage.failedToLoad')}</AlertDescription>
       </Alert>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('profilePage.title')}</h1>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Profile Card */}
@@ -316,9 +319,9 @@ export default function Profile() {
               <Separator />
 
               <p className="text-sm text-muted-foreground">
-                Member since: {new Date(profile.createdAt).toLocaleDateString()}
+                Member since: {formatLocalizedDate(new Date(profile.createdAt), i18n.language)}
                 {profile.updatedAt && (
-                  <> • Last updated: {new Date(profile.updatedAt).toLocaleDateString()}</>
+                  <> • Last updated: {formatLocalizedDate(new Date(profile.updatedAt), i18n.language)}</>
                 )}
               </p>
             </CardContent>

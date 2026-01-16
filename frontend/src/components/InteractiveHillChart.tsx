@@ -1,4 +1,6 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import { 
   Clock, 
   BarChart3, 
@@ -53,6 +55,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
   onPointsChange,
   readonly = false,
 }) => {
+  const { i18n } = useTranslation();
   const { showToast } = useToast();
   const [points, setPoints] = useState<HillChartPoint[]>(initialPoints);
   const [draggedPoint, setDraggedPoint] = useState<HillChartPoint | null>(null);
@@ -270,7 +273,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {entry.userName && `by ${entry.userName} • `}
-                          {new Date(entry.createdAt).toLocaleString()}
+                          {formatLocalizedDateTime(new Date(entry.createdAt), i18n.language)}
                           {entry.note && ` • "${entry.note}"`}
                         </p>
                       </div>

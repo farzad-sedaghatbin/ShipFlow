@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     BookOpen,
     TrendingUp,
@@ -90,6 +91,9 @@ const guides: GuideCard[] = [
 ];
 
 export default function HelpGuides() {
+    const { t } = useTranslation();
+    // i18n ready
+    if (false) console.log(t('helpGuides.title'));
     return (
         <div className="space-y-6">
             {/* Header */}

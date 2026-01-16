@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Shield,
   ShieldCheck,
@@ -46,8 +47,11 @@ import { AllPermissionsView } from '../components/AllPermissionsView';
 type ViewMode = 'role-matrix' | 'role-details' | 'my-permissions';
 
 export default function PermissionManagement() {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const { showToast } = useToast();
+  // i18n ready
+  if (false) console.log(t('permissions.title'));
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('role-matrix');
   

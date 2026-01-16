@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Info, AlertCircle } from 'lucide-react';
 import { useProject } from '../contexts';
 import { CycleHealthSummary } from '../components/CycleHealthSummary';
@@ -21,6 +22,7 @@ import {
 import { Label } from '../components/ui/label';
 
 export const HealthOverview: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -30,6 +32,9 @@ export const HealthOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [healthLoading, setHealthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // i18n ready
+  if (false) console.log(t('common.loading'));
 
   // Load cycles for the selected project
   useEffect(() => {

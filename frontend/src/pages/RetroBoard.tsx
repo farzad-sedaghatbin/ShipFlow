@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { safeParseId } from '../utils/validation';
 import {
   ArrowLeft,
@@ -55,6 +57,7 @@ const statusConfig: Record<RetroStatus, { label: string; variant: 'default' | 's
 };
 
 export default function RetroBoard() {
+  const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const { user } = useAuth();
@@ -62,6 +65,8 @@ export default function RetroBoard() {
   const [retro, setRetro] = useState<Retrospective | null>(null);
   const [items, setItems] = useState<RetroItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // i18n ready
+  if (false) console.log(t('retroBoard.title'));
   const [newItemContent, setNewItemContent] = useState<Record<RetroColumnType, string>>({
     WENT_WELL: '',
     DID_NOT_GO_WELL: '',
@@ -273,8 +278,8 @@ export default function RetroBoard() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Cycle: {retro.cycleName} • Created: {new Date(retro.createdAt).toLocaleDateString()}
-              {retro.closedAt && ` • Closed: ${new Date(retro.closedAt).toLocaleDateString()}`}
+              Cycle: {retro.cycleName} • Created: {formatLocalizedDate(new Date(retro.createdAt), i18n.language)}
+              {retro.closedAt && ` • Closed: ${formatLocalizedDate(new Date(retro.closedAt), i18n.language)}`}
             </p>
             {retro.notes && (
               <p className="text-sm italic text-muted-foreground">{retro.notes}</p>

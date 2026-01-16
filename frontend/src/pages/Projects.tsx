@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Pencil,
@@ -58,6 +59,7 @@ const PROJECT_COLORS = [
 ];
 
 export default function Projects() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -97,7 +99,7 @@ export default function Projects() {
       setProjects(data);
     } catch (error: any) {
       if (error.name !== 'CanceledError') {
-        showToast('Failed to load projects', 'error');
+        showToast(t('projects.loadFailed'), 'error');
       }
     } finally {
       setLoading(false);
@@ -176,10 +178,10 @@ export default function Projects() {
       setSaving(true);
       if (editingProject) {
         await projectService.update(editingProject.id, formData);
-        showToast('Project updated successfully', 'success');
+        showToast(t('projects.updateSuccess'), 'success');
       } else {
         await projectService.create(formData);
-        showToast('Project created successfully', 'success');
+        showToast(t('projects.createSuccess'), 'success');
       }
       handleCloseDialog();
       loadProjects();
@@ -195,7 +197,7 @@ export default function Projects() {
     if (!deleteDialog.project) return;
     try {
       await projectService.delete(deleteDialog.project.id);
-      showToast('Project deleted successfully', 'success');
+      showToast(t('projects.deleteSuccess'), 'success');
       setDeleteDialog({ open: false, project: null });
       loadProjects();
       refreshProjects(); // Refresh toolbar project list
@@ -294,7 +296,7 @@ export default function Projects() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Folder className="h-6 w-6" />
-            Projects
+            {t('projects.title')}
           </h1>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
@@ -302,7 +304,7 @@ export default function Projects() {
               onClick={() => setShowArchived(!showArchived)}
               size="sm"
             >
-              {showArchived ? 'Show Active Only' : 'Show All'}
+              {showArchived ? t('projects.showActiveOnly') : t('projects.showAll')}
             </Button>
             <Button
               onClick={() => handleOpenDialog()}
@@ -310,7 +312,7 @@ export default function Projects() {
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              New Project
+              {t('projects.newProject')}
             </Button>
           </div>
         </div>
@@ -320,7 +322,7 @@ export default function Projects() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search projects by name, key, description, or owner..."
+              placeholder={t('projects.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -329,13 +331,13 @@ export default function Projects() {
           <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <ArrowUpDown className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t('projects.sortBy')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-              <SelectItem value="key">Project Key</SelectItem>
-              <SelectItem value="cycles">Most Cycles</SelectItem>
-              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="name">{t('projects.sortByName')}</SelectItem>
+              <SelectItem value="key">{t('projects.sortByKey')}</SelectItem>
+              <SelectItem value="cycles">{t('projects.sortByCycles')}</SelectItem>
+              <SelectItem value="recent">{t('projects.sortByRecent')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -345,16 +347,16 @@ export default function Projects() {
         <Card className="p-8">
           <EmptyState
             illustration={<EmptyProjectsIllustration />}
-            title={searchTerm ? 'No projects found' : 'No projects yet'}
+            title={searchTerm ? t('projects.noProjectsFound') : t('projects.noProjects')}
             description={
               searchTerm
-                ? `No projects match "${searchTerm}". Try a different search term.`
-                : "Create your first project to get started with Shape Up cycles and track your team's progress."
+                ? `${t('projects.noProjectsMatch')} "${searchTerm}". ${t('projects.tryDifferentSearch')}`
+                : t('projects.noProjectsDescription')
             }
             action={
               !searchTerm
                 ? {
-                    label: 'Create First Project',
+                    label: t('projects.createFirstProject'),
                     onClick: () => handleOpenDialog(),
                     startIcon: <Plus className="h-4 w-4" />,
                   }
@@ -403,22 +405,22 @@ export default function Projects() {
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    {project.cycleCount || 0} cycles
+                    {project.cycleCount || 0} {t('projects.cycles')}
                   </Badge>
                   {project.activeCycleCount !== undefined && project.activeCycleCount > 0 && (
                     <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
                       <Play className="h-3 w-3" />
-                      {project.activeCycleCount} active
+                      {project.activeCycleCount} {t('projects.cycleActive')}
                     </Badge>
                   )}
                   {!project.isActive && (
-                    <Badge variant="secondary">Archived</Badge>
+                    <Badge variant="secondary">{t('projects.archived')}</Badge>
                   )}
                 </div>
 
                 {project.ownerName && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Owner: {project.ownerName}
+                    {t('projects.owner')}: {project.ownerName}
                   </p>
                 )}
               </CardContent>
@@ -439,7 +441,7 @@ export default function Projects() {
                         <Eye className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>View Details</TooltipContent>
+                    <TooltipContent>{t('projects.viewDetails')}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -455,7 +457,7 @@ export default function Projects() {
                         <TrendingUp className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>View Cycles</TooltipContent>
+                    <TooltipContent>{t('projects.viewCycles')}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -471,7 +473,7 @@ export default function Projects() {
                         <Pencil className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Edit</TooltipContent>
+                    <TooltipContent>{t('common.edit')}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -491,7 +493,7 @@ export default function Projects() {
                         )}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{project.isActive ? 'Archive' : 'Activate'}</TooltipContent>
+                    <TooltipContent>{project.isActive ? t('projects.archive') : t('projects.activate')}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -508,7 +510,7 @@ export default function Projects() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Delete</TooltipContent>
+                    <TooltipContent>{t('common.delete')}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </CardFooter>
@@ -522,12 +524,12 @@ export default function Projects() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingProject ? 'Edit Project' : 'Create New Project'}
+              {editingProject ? t('projects.editProject') : t('projects.createNewProject')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Project Name *</Label>
+              <Label htmlFor="name">{t('projects.projectName')} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -540,11 +542,11 @@ export default function Projects() {
               {fieldErrors.name ? (
                 <p className="text-xs text-destructive">{fieldErrors.name}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Give your project a descriptive name</p>
+                <p className="text-xs text-muted-foreground">{t('projects.nameDescriptive')}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectKey">Project Key *</Label>
+              <Label htmlFor="projectKey">{t('projects.projectKey')} *</Label>
               <Input
                 id="projectKey"
                 value={formData.projectKey}
@@ -559,11 +561,11 @@ export default function Projects() {
               {fieldErrors.projectKey ? (
                 <p className="text-xs text-destructive">{fieldErrors.projectKey}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">2-10 uppercase letters/numbers (auto-generated from name)</p>
+                <p className="text-xs text-muted-foreground">{t('projects.keyFormat')}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('common.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -572,7 +574,7 @@ export default function Projects() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Project Color</Label>
+              <Label>{t('projects.projectColor')}</Label>
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Select project color">
                 {PROJECT_COLORS.map((color) => (
                   <button
@@ -592,7 +594,7 @@ export default function Projects() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="logoUrl">Logo URL (optional)</Label>
+              <Label htmlFor="logoUrl">{t('projects.logoUrl')}</Label>
               <Input
                 id="logoUrl"
                 value={formData.logoUrl || ''}
@@ -603,14 +605,14 @@ export default function Projects() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <LoadingButton
               onClick={handleSave}
               loading={saving}
-              loadingText="Saving..."
+              loadingText={t('projects.saving')}
             >
-              {editingProject ? 'Update' : 'Create'}
+              {editingProject ? t('common.update') : t('common.create')}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -620,17 +622,17 @@ export default function Projects() {
       <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, project: deleteDialog.project })}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
+            <DialogTitle>{t('projects.deleteProject')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.project?.name}"? This action cannot be undone.
+              {t('projects.confirmDelete')} "{deleteDialog.project?.name}"? {t('projects.confirmDeleteDescription')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, project: null })}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

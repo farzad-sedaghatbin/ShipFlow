@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   RefreshCw,
   FileText,
@@ -46,6 +48,7 @@ import {
 import { DashboardCustomizer } from '../components/DashboardCustomizer';
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
   const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
@@ -158,33 +161,33 @@ export default function Dashboard() {
           <CardContent className="py-6">
             <EmptyState
               illustration={<WelcomeIllustration width={280} height={200} />}
-              title="Welcome to ShipFlow! 🎉"
-              description="You're all set to start shipping. Shape Up is about making meaningful progress in focused cycles. Let's get you started with your first cycle."
+              title={t('dashboard.welcome.title')}
+              description={t('dashboard.welcome.description')}
               size="large"
               onboardingSteps={[
                 {
                   icon: '🔄',
-                  title: 'Create a Cycle',
-                  description: 'Start with a 6-week cycle. This is your focused shipping window.',
+                  title: t('dashboard.welcome.steps.createCycle.title'),
+                  description: t('dashboard.welcome.steps.createCycle.description'),
                 },
                 {
                   icon: '💡',
-                  title: 'Add Pitches',
-                  description: 'Shape your ideas into pitches with clear scope and appetite.',
+                  title: t('dashboard.welcome.steps.addPitches.title'),
+                  description: t('dashboard.welcome.steps.addPitches.description'),
                 },
                 {
                   icon: '⛰️',
-                  title: 'Track on Hill Chart',
-                  description: 'Visualize progress as you figure things out and make them happen.',
+                  title: t('dashboard.welcome.steps.trackProgress.title'),
+                  description: t('dashboard.welcome.steps.trackProgress.description'),
                 },
               ]}
               action={{
-                label: 'Create Your First Cycle',
+                label: t('dashboard.welcome.createFirstCycle'),
                 onClick: () => window.location.href = '/cycles/new',
                 startIcon: <Rocket className="w-4 h-4 mr-2" />,
               }}
               secondaryAction={{
-                label: 'Learn About Shape Up',
+                label: t('dashboard.welcome.learnMore'),
                 onClick: () => window.open('https://basecamp.com/shapeup', '_blank'),
               }}
             />
@@ -198,9 +201,11 @@ export default function Dashboard() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? 'Showing data from all projects' : `Showing data for ${currentProject?.name}`}
+            {isAllProjectsSelected 
+              ? t('dashboard.showingAllProjects') 
+              : t('dashboard.showingProject', { name: currentProject?.name })}
           </p>
         </div>
         <Button
@@ -210,7 +215,7 @@ export default function Dashboard() {
           className="gap-2"
         >
           <Settings className="w-4 h-4" />
-          {showCustomizer ? 'Hide' : 'Customize'} Widgets
+          {showCustomizer ? t('dashboard.hideWidgets') : t('dashboard.customizeWidgets')}
         </Button>
       </div>
 
@@ -232,7 +237,7 @@ export default function Dashboard() {
               <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-2.5 mr-2 shadow-lg shadow-primary/30">
                 <RefreshCw className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-sm text-muted-foreground font-semibold">Active Cycles</span>
+              <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.activeCycles')}</span>
             </div>
             <p className="text-3xl font-extrabold text-primary">{activeCycles.length}</p>
           </CardContent>
@@ -249,7 +254,7 @@ export default function Dashboard() {
               <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-violet-500/30">
                 <FileText className="w-5 h-5 text-white" />
               </div>
-              <span className="text-sm text-muted-foreground font-semibold">Total Pitches</span>
+              <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.totalPitches')}</span>
             </div>
             <p className="text-3xl font-extrabold text-violet-500">{totalPitches}</p>
           </CardContent>
@@ -266,7 +271,7 @@ export default function Dashboard() {
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-emerald-500/30">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-sm text-muted-foreground font-semibold">Completed</span>
+              <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.completed')}</span>
             </div>
             <p className="text-3xl font-extrabold text-emerald-500">{completedPitches}</p>
           </CardContent>
@@ -283,7 +288,7 @@ export default function Dashboard() {
               <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-2.5 mr-2 shadow-lg shadow-amber-500/30">
                 <Users className="w-5 h-5 text-white" />
               </div>
-              <span className="text-sm text-muted-foreground font-semibold">In Progress</span>
+              <span className="text-sm text-muted-foreground font-semibold">{t('dashboard.inProgress')}</span>
             </div>
             <p className="text-3xl font-extrabold text-amber-600">{inProgressPitches}</p>
           </CardContent>
@@ -316,20 +321,20 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">Active Cycles</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.activeCycles')}</h2>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/cycles">View All</Link>
+                  <Link to="/cycles">{t('common.viewAll')}</Link>
                 </Button>
               </div>
               {activeCycles.length === 0 ? (
                 <EmptyState
                   illustration={<EmptyCyclesIllustration width={160} height={120} />}
-                  title="No active cycles"
-                  description="Start a new cycle to begin shipping"
+                  title={t('dashboard.noActiveCycles')}
+                  description={t('dashboard.noActiveCyclesDescription')}
                   size="small"
                   compact
                   action={{
-                    label: 'New Cycle',
+                    label: t('dashboard.newCycle'),
                     onClick: () => window.location.href = '/cycles/new',
                     startIcon: <Plus className="w-4 h-4 mr-1" />,
                   }}
@@ -357,7 +362,7 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(cycle.startDate).toLocaleDateString()} - {new Date(cycle.endDate).toLocaleDateString()}
+                        {formatLocalizedDate(new Date(cycle.startDate), i18n.language)} - {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
                       </p>
                     </Link>
                   ))}
@@ -378,20 +383,20 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">Recent Pitches</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.recentPitches')}</h2>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/pitches">View All</Link>
+                  <Link to="/pitches">{t('common.viewAll')}</Link>
                 </Button>
               </div>
               {recentPitches.length === 0 ? (
                 <EmptyState
                   illustration={<EmptyPitchesIllustration width={160} height={120} />}
-                  title="No pitches yet"
-                  description="Shape your ideas into actionable pitches"
+                  title={t('dashboard.noPitches')}
+                  description={t('dashboard.noPitchesDescription')}
                   size="small"
                   compact
                   action={{
-                    label: 'Create Pitch',
+                    label: t('dashboard.createPitch'),
                     onClick: () => window.location.href = '/pitches/new',
                     startIcon: <Plus className="w-4 h-4 mr-1" />,
                   }}
@@ -409,7 +414,7 @@ export default function Dashboard() {
                         <StatusChip status={pitch.status} />
                       </div>
                       <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>{pitch.teamName || 'Unassigned'} • {pitch.appetiteDays} days</span>
+                        <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')}</span>
                         <span>{pitch.progressPercentage?.toFixed(0) || 0}%</span>
                       </div>
                       <Progress
@@ -430,7 +435,7 @@ export default function Dashboard() {
         {/* Cycle Risk Overview */}
         {activeCycles.length > 0 && (
           <div className="col-span-full">
-            <h2 className="text-lg font-semibold text-foreground mb-2">AI Risk Analysis</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">{t('dashboard.aiRiskAnalysis')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {activeCycles.slice(0, 3).map((cycle) => (
                 <CycleRiskOverview

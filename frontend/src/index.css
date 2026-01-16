@@ -133,6 +133,112 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* ============================================
+   RTL (Right-to-Left) Support
+   ============================================ */
+
+/* RTL direction base */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+/* RTL text alignment */
+html[dir="rtl"] body {
+  text-align: right;
+}
+
+/* RTL-aware flexbox gaps */
+html[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+/* RTL-aware icon positioning */
+html[dir="rtl"] .icon-start {
+  margin-inline-end: 0.5rem;
+  margin-inline-start: 0;
+}
+
+html[dir="rtl"] .icon-end {
+  margin-inline-start: 0.5rem;
+  margin-inline-end: 0;
+}
+
+/* Persian/Farsi font support */
+html[lang="fa"] {
+  font-family: "Vazirmatn", "Inter", system-ui, -apple-system, sans-serif;
+}
+
+html[lang="fa"] .font-mono {
+  font-family: "Vazir Code", "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* RTL-aware sidebar positioning */
+html[dir="rtl"] .sidebar-left {
+  left: auto;
+  right: 0;
+  border-left: 1px solid var(--color-sidebar-border);
+  border-right: none;
+}
+
+/* RTL-aware dropdown menus */
+html[dir="rtl"] [data-align="end"] {
+  --radix-dropdown-menu-content-transform-origin: top left;
+}
+
+html[dir="rtl"] [data-side="right"] {
+  --radix-popper-transform-origin: left center;
+}
+
+/* RTL-aware progress bars */
+html[dir="rtl"] .progress-bar {
+  transform-origin: right;
+}
+
+/* RTL-aware breadcrumb separators */
+html[dir="rtl"] .breadcrumb-separator {
+  transform: scaleX(-1);
+}
+
+/* RTL-aware chevrons and arrows */
+html[dir="rtl"] .chevron-right,
+html[dir="rtl"] .arrow-right {
+  transform: scaleX(-1);
+}
+
+html[dir="rtl"] .chevron-left,
+html[dir="rtl"] .arrow-left {
+  transform: scaleX(-1);
+}
+
+/* RTL-aware form elements */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: right;
+}
+
+html[dir="rtl"] input[type="number"] {
+  text-align: left; /* Numbers stay LTR */
+  direction: ltr;
+}
+
+/* RTL-aware tables */
+html[dir="rtl"] table {
+  direction: rtl;
+}
+
+html[dir="rtl"] th,
+html[dir="rtl"] td {
+  text-align: right;
+}
+
+/* RTL-aware list markers */
+html[dir="rtl"] ul,
+html[dir="rtl"] ol {
+  padding-inline-start: 1.5rem;
+  padding-inline-end: 0;
+}
+
 /* Focus styles - Linear-style subtle ring */
 *:focus-visible {
   @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;

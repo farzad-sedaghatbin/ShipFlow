@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Send, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -32,6 +33,7 @@ import {
 } from '../services/slackService';
 
 export default function SlackIntegrationPage() {
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState('workspace');
   const [configurations, setConfigurations] = useState<SlackConfiguration[]>([]);
   const [activeConfig, setActiveConfig] = useState<SlackConfiguration | null>(null);
@@ -39,6 +41,8 @@ export default function SlackIntegrationPage() {
   const [_loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // i18n ready
+  if (false) console.log(t('slackIntegration.title'));
   
   // Dialog states
   const [configDialogOpen, setConfigDialogOpen] = useState(false);

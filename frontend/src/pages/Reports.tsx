@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Sheet, Loader2 } from 'lucide-react';
 import {
   BarChart,
@@ -42,11 +43,14 @@ import { cn } from '../lib/utils';
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function Reports() {
+  const { t } = useTranslation();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
+  // i18n ready
+  if (false) console.log(t('common.loading'));
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -162,7 +166,7 @@ export default function Reports() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-8">Reports</h1>
+        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
         <div className="flex justify-center items-center min-h-[40vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -174,13 +178,13 @@ export default function Reports() {
   if (cycles.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-8">Reports</h1>
+        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
         <Card>
           <CardContent className="py-12">
             <EmptyState
               illustration={<EmptyReportsIllustration />}
-              title="No cycles found"
-              description="Create a cycle first to generate reports. Go to the Cycles page to get started."
+              title={t('reportsPage.noCyclesFound')}
+              description={t('reportsPage.noCyclesDesc')}
               size="medium"
             />
           </CardContent>
@@ -192,11 +196,11 @@ export default function Reports() {
   return (
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <h1 className="text-2xl font-bold">Reports</h1>
+        <h1 className="text-2xl font-bold">{t('reportsPage.title')}</h1>
         <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
           <Select value={selectedCycle} onValueChange={setSelectedCycle}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select cycle" />
+              <SelectValue placeholder={t('reportsPage.selectCycle')} />
             </SelectTrigger>
             <SelectContent>
               {cycles.map((cycle) => (
@@ -213,7 +217,7 @@ export default function Reports() {
               size="sm"
             >
               <FileText className="h-4 w-4 mr-2" />
-              Export PDF
+              {t('reportsPage.exportPDF')}
             </Button>
             <Button
               variant="outline"
@@ -222,7 +226,7 @@ export default function Reports() {
               size="sm"
             >
               <Sheet className="h-4 w-4 mr-2" />
-              Export CSV
+              {t('reportsPage.exportCSV')}
             </Button>
           </div>
         </div>
@@ -237,8 +241,8 @@ export default function Reports() {
           <CardContent className="py-12">
             <EmptyState
               illustration={<EmptyReportsIllustration />}
-              title="Select a cycle to view reports"
-              description="Choose a cycle from the dropdown above to see detailed analytics and export options"
+              title={t('reportsPage.selectCycleToView')}
+              description={t('reportsPage.selectCycleDesc')}
               size="medium"
             />
           </CardContent>
@@ -249,31 +253,31 @@ export default function Reports() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">Total Pitches</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.totalPitches')}</p>
                 <p className="text-3xl font-bold">{report.totalPitches}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.completed')}</p>
                 <p className="text-3xl font-bold text-green-600">{report.completedPitches}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.inProgress')}</p>
                 <p className="text-3xl font-bold text-primary">{report.inProgressPitches}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">Appetite (h)</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.appetiteHours')}</p>
                 <p className="text-3xl font-bold">{report.totalAppetiteHours.toFixed(0)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">Actual (h)</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.actualHours')}</p>
                 <p className={cn(
                   'text-3xl font-bold',
                   report.totalActualHours > report.totalAppetiteHours ? 'text-destructive' : 'text-green-600'
@@ -284,7 +288,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">Efficiency</p>
+                <p className="text-sm text-muted-foreground">{t('reportsPage.efficiency')}</p>
                 <p className={cn(
                   'text-3xl font-bold',
                   report.efficiencyPercentage > 100 ? 'text-destructive' : 'text-green-600'

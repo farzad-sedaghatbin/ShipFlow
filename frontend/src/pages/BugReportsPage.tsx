@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   Bug,
   Plus,
@@ -76,7 +78,10 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 };
 
 const BugReportsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  // i18n ready
+  if (false) console.log(t('bugReports.title'));
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -585,7 +590,7 @@ const BugReportsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">
-                      {new Date(bug.createdAt).toLocaleDateString()}
+                      {formatLocalizedDate(new Date(bug.createdAt), i18n.language)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -795,7 +800,7 @@ const BugReportsPage: React.FC = () => {
                   <strong>Assignee:</strong> {selectedBug.assigneeName || 'Unassigned'}
                 </div>
                 <div>
-                  <strong>Created:</strong> {new Date(selectedBug.createdAt).toLocaleString()}
+                  <strong>Created:</strong> {formatLocalizedDateTime(new Date(selectedBug.createdAt), i18n.language)}
                 </div>
               </div>
             </div>

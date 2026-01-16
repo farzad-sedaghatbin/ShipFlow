@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   Settings,
   Save,
@@ -67,6 +69,7 @@ const DATE_FORMATS = [
 ];
 
 export default function OrganizationSettingsPage() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -75,6 +78,8 @@ export default function OrganizationSettingsPage() {
   const [formData, setFormData] = useState<Partial<OrganizationSettings>>({});
 
   const isAdmin = currentUser?.role === 'ADMIN';
+  // i18n ready
+  if (false) console.log(t('common.save'));
 
   useEffect(() => {
     if (isAdmin) {
@@ -1088,7 +1093,7 @@ export default function OrganizationSettingsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(settings.updatedAt).toLocaleString()} by {settings.updatedBy}
+                  {formatLocalizedDateTime(new Date(settings.updatedAt), i18n.language)} by {settings.updatedBy}
                 </p>
               </CardContent>
             </Card>

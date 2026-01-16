@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../../utils/dateLocalization';
 import { RefreshCw, Calendar, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -19,6 +21,7 @@ interface CycleProgress {
 }
 
 export function CycleProgressWidget() {
+  const { i18n } = useTranslation();
   const [cycles, setCycles] = useState<CycleProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -138,7 +141,7 @@ export function CycleProgressWidget() {
 
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                   <Calendar className="w-3 h-3" />
-                  {new Date(cycle.endDate).toLocaleDateString()}
+                  {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
                   {progressPercentage < timeProgress && (
                     <>
                       <span>•</span>
