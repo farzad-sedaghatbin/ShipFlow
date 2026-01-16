@@ -50,6 +50,10 @@ public class HillChartService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Search hill chart points (scopes) by name or description.
+     * Minimum 3 characters required to prevent performance issues with large datasets.
+     */
     public List<HillChartPointDTO> searchHillChartPoints(String query) {
         if (query == null || query.trim().length() < 3) {
             return List.of();

@@ -172,16 +172,10 @@ const TestCaseFormPage: React.FC = () => {
     }
   };
 
-  const loadTasksForCycle = async (cycleId: number) => {
-    try {
-      const response = await taskService.getByCycleId(cycleId, 0, 200, 'createdAt', 'desc');
-      // Handle both Task[] and Page<Task> response types
-      const taskData = Array.isArray(response.data) ? response.data : response.data.content;
-      setTasks(taskData);
-    } catch (err) {
-      console.error('Failed to load tasks', err);
-      setTasks([]);
-    }
+  const loadTasksForCycle = async (_cycleId: number) => {
+    // Tasks are loaded on-demand via search dropdown, not preloaded
+    // This prevents loading all tasks upfront for better scalability
+    setTasks([]);
   };
 
   const loadTestCase = async () => {

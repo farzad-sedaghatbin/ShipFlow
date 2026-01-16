@@ -104,6 +104,10 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Search tasks by title or description.
+     * Minimum 3 characters required to prevent performance issues with large datasets.
+     */
     public Page<TaskDTO> searchTasks(String query, Pageable pageable) {
         if (query == null || query.trim().length() < 3) {
             return Page.empty(pageable);

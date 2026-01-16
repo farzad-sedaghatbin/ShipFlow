@@ -84,14 +84,14 @@ public class TaskController {
     @GetMapping("/search")
     @Operation(summary = "Search tasks",
                description = "Search tasks by title or description. Minimum 3 characters required.")
-    public ResponseEntity<Page<TaskDTO>> searchTasks(
+    public ResponseEntity<?> searchTasks(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder) {
         if (q == null || q.trim().length() < 3) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
         }
         Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
