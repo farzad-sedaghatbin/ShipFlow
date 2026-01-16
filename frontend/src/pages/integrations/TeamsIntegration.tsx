@@ -107,7 +107,7 @@ export default function TeamsIntegration() {
 
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch Teams configurations');
+      setError(err.response?.data?.message || t('teamsIntegration.fetchConfigsFailed'));
     } finally {
       setLoading(false);
     }
@@ -118,14 +118,14 @@ export default function TeamsIntegration() {
       const channels = await teamsService.getChannelConfigs(configId);
       setChannelConfigs(channels);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch channel configurations');
+      setError(err.response?.data?.message || t('teamsIntegration.fetchChannelsFailed'));
     }
   };
 
   const handleCreateConfiguration = async () => {
     try {
       await teamsService.createConfiguration(configForm);
-      setSuccess('Microsoft Teams workspace configured successfully');
+      setSuccess(t('teamsIntegration.workspaceConfigured'));
       setConfigDialogOpen(false);
       setConfigForm({
         tenantName: '',
@@ -135,21 +135,21 @@ export default function TeamsIntegration() {
       });
       fetchConfigurations();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create Teams configuration');
+      setError(err.response?.data?.message || t('teamsIntegration.createConfigFailed'));
     }
   };
 
   const handleDeleteConfiguration = async (configId: number) => {
-    if (!confirm('Are you sure you want to delete this Teams configuration?')) {
+    if (!confirm(t('teamsIntegration.confirmDeleteConfig'))) {
       return;
     }
 
     try {
       await teamsService.deleteConfiguration(configId);
-      setSuccess('Teams configuration deleted successfully');
+      setSuccess(t('teamsIntegration.configDeleted'));
       fetchConfigurations();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete Teams configuration');
+      setError(err.response?.data?.message || t('teamsIntegration.deleteConfigFailed'));
     }
   };
 
@@ -158,7 +158,7 @@ export default function TeamsIntegration() {
 
     try {
       await teamsService.createChannelConfig(activeConfig.id, channelForm);
-      setSuccess('Channel configuration saved successfully');
+      setSuccess(t('teamsIntegration.channelConfigSaved'));
       setChannelDialogOpen(false);
       setChannelForm({
         channelName: '',
@@ -174,23 +174,23 @@ export default function TeamsIntegration() {
       });
       fetchChannelConfigs(activeConfig.id);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create channel configuration');
+      setError(err.response?.data?.message || t('teamsIntegration.createChannelFailed'));
     }
   };
 
   const handleDeleteChannelConfig = async (channelConfigId: number) => {
-    if (!confirm('Are you sure you want to delete this channel configuration?')) {
+    if (!confirm(t('teamsIntegration.confirmDeleteChannel'))) {
       return;
     }
 
     try {
       await teamsService.deleteChannelConfig(channelConfigId);
-      setSuccess('Channel configuration deleted successfully');
+      setSuccess(t('teamsIntegration.channelDeleted'));
       if (activeConfig) {
         fetchChannelConfigs(activeConfig.id);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete channel configuration');
+      setError(err.response?.data?.message || t('teamsIntegration.deleteChannelFailed'));
     }
   };
 
@@ -202,10 +202,10 @@ export default function TeamsIntegration() {
         message: testMessage,
         channel: testChannel,
       });
-      setSuccess('Test notification sent successfully');
+      setSuccess(t('teamsIntegration.testNotificationSent'));
       setTestDialogOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send test notification');
+      setError(err.response?.data?.message || t('teamsIntegration.sendTestFailed'));
     }
   };
 
@@ -213,19 +213,19 @@ export default function TeamsIntegration() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Microsoft Teams Integration</h1>
+          <h1 className="text-3xl font-bold">{t('teamsIntegration.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Connect ShipFlow to Microsoft Teams for real-time notifications
+            {t('teamsIntegration.description')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setHelpDialogOpen(true)}>
             <HelpCircle className="mr-2 h-4 w-4" />
-            Setup Guide
+            {t('teamsIntegration.setupGuide')}
           </Button>
           <Button onClick={() => setConfigDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Configure Tenant
+            {t('teamsIntegration.configureTenant')}
           </Button>
           <Button variant="ghost" size="icon" onClick={fetchConfigurations}>
             <RefreshCw className="h-4 w-4" />
@@ -247,18 +247,18 @@ export default function TeamsIntegration() {
 
       <Tabs value={tabValue} onValueChange={setTabValue} className="mb-4">
         <TabsList>
-          <TabsTrigger value="workspace">Tenant Configuration</TabsTrigger>
+          <TabsTrigger value="workspace">{t('teamsIntegration.tenantConfiguration')}</TabsTrigger>
           <TabsTrigger value="channels" disabled={!activeConfig}>
-            Channel Notifications
+            {t('teamsIntegration.channelNotifications')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="workspace" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Teams Tenant Configuration</CardTitle>
+              <CardTitle>{t('teamsIntegration.tenantConfigurationTitle')}</CardTitle>
               <CardDescription>
-                Configure your Microsoft Teams tenant with an incoming webhook URL
+                {t('teamsIntegration.tenantConfigurationDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -268,7 +268,7 @@ export default function TeamsIntegration() {
                     {t('teamsIntegration.noTenant')}
                   </p>
                   <Button onClick={() => setHelpDialogOpen(true)} variant="outline">
-                    View Setup Guide
+                    {t('teamsIntegration.viewSetupGuide')}
                   </Button>
                 </div>
               ) : (
@@ -276,11 +276,11 @@ export default function TeamsIntegration() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Tenant Name</TableHead>
-                        <TableHead>Webhook URL</TableHead>
-                        <TableHead>Default Channel</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t('teamsIntegration.tenantName')}</TableHead>
+                        <TableHead>{t('teamsIntegration.webhookUrl')}</TableHead>
+                        <TableHead>{t('teamsIntegration.defaultChannel')}</TableHead>
+                        <TableHead>{t('common.status')}</TableHead>
+                        <TableHead className="text-right">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -295,7 +295,7 @@ export default function TeamsIntegration() {
                           <TableCell>{config.defaultChannel || '-'}</TableCell>
                           <TableCell>
                             <Badge variant={config.isEnabled ? 'default' : 'secondary'}>
-                              {config.isEnabled ? 'Enabled' : 'Disabled'}
+                              {config.isEnabled ? t('teamsIntegration.enabled') : t('teamsIntegration.disabled')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -332,14 +332,14 @@ export default function TeamsIntegration() {
         <TabsContent value="channels" className="mt-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-xl font-semibold">Channel Notification Settings</h2>
+              <h2 className="text-xl font-semibold">{t('teamsIntegration.channelSettingsTitle')}</h2>
               <p className="text-sm text-muted-foreground">
-                Configure which notifications are sent to specific Teams channels
+                {t('teamsIntegration.channelSettingsDescription')}
               </p>
             </div>
             <Button onClick={() => setChannelDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Channel
+              {t('teamsIntegration.addChannel')}
             </Button>
           </div>
 
@@ -354,12 +354,12 @@ export default function TeamsIntegration() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Channel Name</TableHead>
-                        <TableHead>Task Assigned</TableHead>
-                        <TableHead>Task Completed</TableHead>
-                        <TableHead>Task Blocked</TableHead>
-                        <TableHead>Cycle Events</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t('teamsIntegration.channelName')}</TableHead>
+                        <TableHead>{t('teamsIntegration.taskAssigned')}</TableHead>
+                        <TableHead>{t('teamsIntegration.taskCompleted')}</TableHead>
+                        <TableHead>{t('teamsIntegration.taskBlocked')}</TableHead>
+                        <TableHead>{t('teamsIntegration.cycleEvents')}</TableHead>
+                        <TableHead className="text-right">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -368,17 +368,17 @@ export default function TeamsIntegration() {
                           <TableCell className="font-medium">{channel.channelName}</TableCell>
                           <TableCell>
                             <Badge variant={channel.notifyTaskAssigned ? 'default' : 'secondary'}>
-                              {channel.notifyTaskAssigned ? 'Yes' : 'No'}
+                              {channel.notifyTaskAssigned ? t('common.yes') : t('common.no')}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={channel.notifyTaskCompleted ? 'default' : 'secondary'}>
-                              {channel.notifyTaskCompleted ? 'Yes' : 'No'}
+                              {channel.notifyTaskCompleted ? t('common.yes') : t('common.no')}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={channel.notifyTaskBlocked ? 'default' : 'secondary'}>
-                              {channel.notifyTaskBlocked ? 'Yes' : 'No'}
+                              {channel.notifyTaskBlocked ? t('common.yes') : t('common.no')}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -389,7 +389,7 @@ export default function TeamsIntegration() {
                                   : 'secondary'
                               }
                             >
-                              {channel.notifyCycleStarted || channel.notifyCycleCooldown ? 'Yes' : 'No'}
+                              {channel.notifyCycleStarted || channel.notifyCycleCooldown ? t('common.yes') : t('common.no')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -416,67 +416,64 @@ export default function TeamsIntegration() {
       <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Microsoft Teams Integration Setup Guide</DialogTitle>
+            <DialogTitle>{t('teamsIntegration.setupGuideTitle')}</DialogTitle>
             <DialogDescription>
-              Follow these steps to connect ShipFlow to Microsoft Teams
+              {t('teamsIntegration.setupGuideDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <h4 className="font-semibold">Step 1: Create an Incoming Webhook</h4>
+              <h4 className="font-semibold">{t('teamsIntegration.step1Title')}</h4>
               <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-2">
-                <li>Open Microsoft Teams and go to the channel where you want notifications</li>
-                <li>Click on the <strong>•••</strong> (More options) next to the channel name</li>
-                <li>Select <strong>Connectors</strong> (or <strong>Manage connectors</strong>)</li>
-                <li>Search for <strong>Incoming Webhook</strong> and click <strong>Configure</strong></li>
-                <li>Give your webhook a name (e.g., "ShipFlow") and optionally upload an icon</li>
-                <li>Click <strong>Create</strong></li>
-                <li>Copy the webhook URL that is generated</li>
+                <li>{t('teamsIntegration.step1_1')}</li>
+                <li>{t('teamsIntegration.step1_2')}</li>
+                <li>{t('teamsIntegration.step1_3')}</li>
+                <li>{t('teamsIntegration.step1_4')}</li>
+                <li dangerouslySetInnerHTML={{ __html: t('teamsIntegration.webhookNameExample') }} />
+                <li>{t('teamsIntegration.step1_6')}</li>
+                <li>{t('teamsIntegration.step1_7')}</li>
               </ol>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-semibold">Step 2: Configure in ShipFlow</h4>
+              <h4 className="font-semibold">{t('teamsIntegration.step2Title')}</h4>
               <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-2">
-                <li>Click <strong>Configure Tenant</strong> above</li>
-                <li>Enter your organization/tenant name</li>
-                <li>Paste the webhook URL you copied from Teams</li>
-                <li>Optionally set a default channel name</li>
-                <li>Click <strong>Save</strong></li>
+                <li>{t('teamsIntegration.step2_1')}</li>
+                <li>{t('teamsIntegration.step2_2')}</li>
+                <li>{t('teamsIntegration.step2_3')}</li>
+                <li>{t('teamsIntegration.step2_4')}</li>
+                <li>{t('teamsIntegration.step2_5')}</li>
               </ol>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-semibold">Step 3: Test the Integration</h4>
+              <h4 className="font-semibold">{t('teamsIntegration.step3Title')}</h4>
               <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-2">
-                <li>Click the <strong>Send</strong> icon next to your configuration</li>
-                <li>Enter a test message</li>
-                <li>Click <strong>Send Test</strong></li>
-                <li>Check your Teams channel for the notification</li>
+                <li>{t('teamsIntegration.step3_1')}</li>
+                <li>{t('teamsIntegration.step3_2')}</li>
+                <li>{t('teamsIntegration.step3_3')}</li>
+                <li>{t('teamsIntegration.step3_4')}</li>
               </ol>
             </div>
 
             <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-semibold mb-2">💡 Tip: Multiple Channels</h4>
-              <p className="text-sm text-muted-foreground">
-                You can create webhooks for multiple channels and configure different notification
-                preferences for each. Go to the "Channel Notifications" tab to add more channels.
-              </p>
+              <h4 className="font-semibold mb-2">{t('teamsIntegration.multipleChannelsTip')}</h4>
+              <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('teamsIntegration.channelPreferences') }} />
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">📋 Supported Notifications</h4>
+              <h4 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">{t('teamsIntegration.supportedNotificationsTitle')}</h4>
               <ul className="text-sm text-blue-600 dark:text-blue-300 space-y-1">
-                <li>• Task assigned, completed, or blocked</li>
-                <li>• Pitch shaped</li>
-                <li>• Cycle started or entered cooldown</li>
-                <li>• Betting completed</li>
-                <li>• Sprint started</li>
+                <li>• {t('teamsIntegration.notifyTaskEvents')}</li>
+                <li>• {t('teamsIntegration.notifyPitchEvents')}</li>
+                <li>• {t('teamsIntegration.notifyCycleEvents')}</li>
+                <li>• {t('teamsIntegration.notifyBettingEvents')}</li>
+                <li>• {t('teamsIntegration.notifySprintEvents')}</li>
               </ul>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setHelpDialogOpen(false)}>Got it!</Button>
+            <Button onClick={() => setHelpDialogOpen(false)}>{t('teamsIntegration.gotIt')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -485,14 +482,14 @@ export default function TeamsIntegration() {
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Configure Microsoft Teams</DialogTitle>
+            <DialogTitle>{t('teamsIntegration.configureTenantTitle')}</DialogTitle>
             <DialogDescription>
-              Enter your Teams tenant details and incoming webhook URL
+              {t('teamsIntegration.configureTenantDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="tenantName">Tenant/Organization Name</Label>
+              <Label htmlFor="tenantName">{t('teamsIntegration.tenantOrganizationName')}</Label>
               <Input
                 id="tenantName"
                 value={configForm.tenantName}
@@ -501,19 +498,19 @@ export default function TeamsIntegration() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="webhookUrl">Webhook URL</Label>
+              <Label htmlFor="webhookUrl">{t('teamsIntegration.webhookUrl')}</Label>
               <Input
                 id="webhookUrl"
                 value={configForm.webhookUrl}
                 onChange={(e) => setConfigForm({ ...configForm, webhookUrl: e.target.value })}
-                placeholder="https://outlook.office.com/webhook/..."
+                placeholder={t('teamsIntegration.webhookPlaceholder')}
               />
               <p className="text-xs text-muted-foreground">
-                Get this from Teams: Channel → Connectors → Incoming Webhook
+                {t('teamsIntegration.webhookHelp')}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="defaultChannel">Default Channel (optional)</Label>
+              <Label htmlFor="defaultChannel">{t('teamsIntegration.defaultChannelOptional')}</Label>
               <Input
                 id="defaultChannel"
                 value={configForm.defaultChannel}
@@ -527,14 +524,14 @@ export default function TeamsIntegration() {
                 checked={configForm.isEnabled}
                 onCheckedChange={(checked) => setConfigForm({ ...configForm, isEnabled: checked })}
               />
-              <Label htmlFor="isEnabled">Enable Teams Integration</Label>
+              <Label htmlFor="isEnabled">{t('teamsIntegration.enableIntegration')}</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleCreateConfiguration}>Save</Button>
+            <Button onClick={handleCreateConfiguration}>{t('common.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -543,14 +540,14 @@ export default function TeamsIntegration() {
       <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Configure Channel Notifications</DialogTitle>
+            <DialogTitle>{t('teamsIntegration.configureChannelTitle')}</DialogTitle>
             <DialogDescription>
-              Choose which notifications to send to this Teams channel
+              {t('teamsIntegration.configureChannelDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="channelName">Channel Name</Label>
+              <Label htmlFor="channelName">{t('teamsIntegration.channelName')}</Label>
               <Input
                 id="channelName"
                 value={channelForm.channelName}
@@ -559,7 +556,7 @@ export default function TeamsIntegration() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channelWebhookUrl">Channel-Specific Webhook URL (optional)</Label>
+              <Label htmlFor="channelWebhookUrl">{t('teamsIntegration.channelWebhookOptional')}</Label>
               <Input
                 id="channelWebhookUrl"
                 value={channelForm.channelWebhookUrl}
@@ -571,7 +568,7 @@ export default function TeamsIntegration() {
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-3">Notification Preferences</h4>
+              <h4 className="text-sm font-medium mb-3">{t('teamsIntegration.notificationPreferences')}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -658,9 +655,9 @@ export default function TeamsIntegration() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setChannelDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleCreateChannelConfig}>Save</Button>
+            <Button onClick={handleCreateChannelConfig}>{t('common.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -669,14 +666,14 @@ export default function TeamsIntegration() {
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Send Test Notification</DialogTitle>
+            <DialogTitle>{t('teamsIntegration.sendTestTitle')}</DialogTitle>
             <DialogDescription>
-              Send a test message to verify your Teams integration is working
+              {t('teamsIntegration.sendTestDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="testMessage">Message</Label>
+              <Label htmlFor="testMessage">{t('teamsIntegration.message')}</Label>
               <textarea
                 id="testMessage"
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -686,7 +683,7 @@ export default function TeamsIntegration() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="testChannel">Channel (optional)</Label>
+              <Label htmlFor="testChannel">{t('teamsIntegration.channelOptional')}</Label>
               <Input
                 id="testChannel"
                 value={testChannel}
@@ -697,11 +694,11 @@ export default function TeamsIntegration() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTestDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSendTestNotification}>
               <Send className="mr-2 h-4 w-4" />
-              Send Test
+              {t('teamsIntegration.sendTest')}
             </Button>
           </DialogFooter>
         </DialogContent>
