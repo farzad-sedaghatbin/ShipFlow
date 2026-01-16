@@ -502,7 +502,7 @@ export default function People() {
                   id="avatarUrl"
                   value={formData.avatarUrl}
                   onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  placeholder="https://example.com/avatar.jpg"
+                  placeholder={t('peopleManagement.avatarPlaceholder')}
                 />
               </div>
             </div>
@@ -546,11 +546,11 @@ export default function People() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Team</TableHead>
-                      <TableHead>Cycle</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t('peopleManagement.team')}</TableHead>
+                      <TableHead>{t('peopleManagement.cycle')}</TableHead>
+                      <TableHead>{t('peopleManagement.role')}</TableHead>
+                      <TableHead>{t('peopleManagement.period')}</TableHead>
+                      <TableHead>{t('peopleManagement.assignmentStatus')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -575,7 +575,7 @@ export default function People() {
                             variant={assignment.isActive ? 'default' : 'secondary'}
                             className={cn(assignment.isActive && 'bg-green-500 hover:bg-green-600')}
                           >
-                            {assignment.isActive ? 'Active' : 'Past'}
+                            {assignment.isActive ? t('peopleManagement.assignmentActive') : t('peopleManagement.assignmentPast')}
                           </Badge>
                         </TableCell>
                       </TableRow>
