@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import {
   BugReport,
@@ -6,7 +6,12 @@ import {
   UpdateBugReportRequest,
   BugSeverity,
   BugStatus,
+  HillChartPoint,
+  Task,
 } from '../types';
+import { hillChartApi } from '../services/hillChartApi';
+import { taskService } from '../services/taskService';
+import { useDebounce } from '../hooks/useDebounce';
 import {
   Dialog,
   DialogContent,
@@ -76,6 +81,16 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
+  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [scopeSearch, setScopeSearch] = useState('');
+  const [taskSearch, setTaskSearch] = useState('');
+  const [searchingScopes, setSearchingScopes] = useState(false);
+  const [searchingTasks, setSearchingTasks] = useState(false);
+  
+  // Debounce search queries - 300ms delay
+  const debouncedScopeSearch = useDebounce(scopeSearch, 300);
+  const debouncedTaskSearch = useDebounce(taskSearch, 300);
 
   const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({
     title: bugReport?.title || '',
@@ -91,7 +106,104 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     cycleId: bugReport?.cycleId || cycleId,
     teamId: bugReport?.teamId || teamId,
     testRunId: bugReport?.testRunId || testRunId,
+    scopeId: bugReport?.scopeId,
+    taskId: bugReport?.taskId,
   });
+
+  // Load initial scopes based on pitch context
+  useEffect(() => {
+    const loadScopes = async () => {
+      if (!open) return;
+      
+      try {
+        if (pitchId) {
+          // Load scopes for specific pitch
+          const scopesRes = await hillChartApi.getHillChartPointsByPitch(pitchId);
+          setScopes(scopesRes);
+        } else {
+          // No pitch context - start with empty, user must search
+          setScopes([]);
+        }
+      } catch (err) {
+        console.error('Failed to load scopes:', err);
+        setScopes([]);
+      }
+    };
+    loadScopes();
+  }, [open, pitchId]);
+
+  // Load initial tasks based on cycle context
+  useEffect(() => {
+    const loadTasks = async () => {
+      if (!open) return;
+      
+      try {
+        if (cycleId) {
+          // Load tasks for specific cycle
+          const tasksRes = await taskService.getByCycleId(cycleId, 0, 200, 'createdAt', 'desc');
+          const taskData = Array.isArray(tasksRes.data) ? tasksRes.data : tasksRes.data.content;
+          setTasks(taskData);
+        } else {
+          // No cycle context - start with empty, user must search
+          setTasks([]);
+        }
+      } catch (err) {
+        console.error('Failed to load tasks:', err);
+        setTasks([]);
+      }
+    };
+    loadTasks();
+  }, [open, cycleId]);
+
+  // Server-side search for scopes (minimum 3 characters)
+  useEffect(() => {
+    const searchScopes = async () => {
+      if (!open || debouncedScopeSearch.length < 3) {
+        if (!pitchId && debouncedScopeSearch.length > 0 && debouncedScopeSearch.length < 3) {
+          // Show message that more characters needed
+          setScopes([]);
+        }
+        return;
+      }
+      
+      setSearchingScopes(true);
+      try {
+        const scopesRes = await hillChartApi.searchHillChartPoints(debouncedScopeSearch);
+        setScopes(scopesRes);
+      } catch (err) {
+        console.error('Failed to search scopes:', err);
+        setScopes([]);
+      } finally {
+        setSearchingScopes(false);
+      }
+    };
+    searchScopes();
+  }, [open, debouncedScopeSearch, pitchId]);
+
+  // Server-side search for tasks (minimum 3 characters)
+  useEffect(() => {
+    const searchTasks = async () => {
+      if (!open || debouncedTaskSearch.length < 3) {
+        if (!cycleId && debouncedTaskSearch.length > 0 && debouncedTaskSearch.length < 3) {
+          // Show message that more characters needed
+          setTasks([]);
+        }
+        return;
+      }
+      
+      setSearchingTasks(true);
+      try {
+        const tasksRes = await taskService.search(debouncedTaskSearch, 0, 50);
+        setTasks(tasksRes.data.content);
+      } catch (err) {
+        console.error('Failed to search tasks:', err);
+        setTasks([]);
+      } finally {
+        setSearchingTasks(false);
+      }
+    };
+    searchTasks();
+  }, [open, debouncedTaskSearch, cycleId]);
 
   const handleChange = (field: keyof CreateBugReportRequest, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -225,6 +337,101 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                 </Select>
               </div>
             )}
+          </div>
+
+          {/* Scope & Task Traceability */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Scope (optional)</Label>
+              <Select
+                value={formData.scopeId ? String(formData.scopeId) : 'none'}
+                onValueChange={(value) => handleChange('scopeId', value === 'none' ? undefined : Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={pitchId && scopes.length === 0 ? "Loading scopes..." : "No specific scope"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 pb-2">
+                    <Input
+                      placeholder="Search scopes..."
+                      value={scopeSearch}
+                      onChange={(e) => setScopeSearch(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  <SelectItem value="none">No specific scope</SelectItem>
+                  {searchingScopes ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                  ) : !pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                  ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
+                  ) : scopes.length === 0 && !pitchId ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
+                  ) : (
+                    scopes.slice(0, 50).map((scope) => (
+                      <SelectItem key={scope.id} value={String(scope.id)}>
+                        {scope.scope}
+                      </SelectItem>
+                    ))
+                  )}
+                  {scopes.length > 50 && (
+                    <div className="py-2 text-center text-xs text-muted-foreground">
+                      Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {pitchId ? `Link to a specific scope (${scopes.length} available)` : 'Search to find scopes (min 3 chars)'}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Related Task (optional)</Label>
+              <Select
+                value={formData.taskId ? String(formData.taskId) : 'none'}
+                onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 pb-2">
+                    <Input
+                      placeholder="Search tasks..."
+                      value={taskSearch}
+                      onChange={(e) => setTaskSearch(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  <SelectItem value="none">No related task</SelectItem>
+                  {searchingTasks ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                  ) : !cycleId && taskSearch.length > 0 && taskSearch.length < 3 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                  ) : tasks.length === 0 && taskSearch.length >= 3 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">No tasks found</div>
+                  ) : tasks.length === 0 && !cycleId ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">Type to search tasks</div>
+                  ) : (
+                    tasks.slice(0, 50).map((task) => (
+                      <SelectItem key={task.id} value={String(task.id)}>
+                        {task.title}
+                      </SelectItem>
+                    ))
+                  )}
+                  {tasks.length > 50 && (
+                    <div className="py-2 text-center text-xs text-muted-foreground">
+                      Showing first 50 of {tasks.length} tasks. Refine your search for more specific results.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Search to find tasks (min 3 chars)'}
+              </p>
+            </div>
           </div>
 
           {/* Steps to Reproduce */}

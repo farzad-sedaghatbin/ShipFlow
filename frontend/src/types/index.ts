@@ -515,6 +515,13 @@ export interface Task {
   projectId?: number;
   projectName?: string;
   projectKey?: string;
+  
+  // Pitch and Scope relationships
+  pitchId?: number;
+  pitchTitle?: string;
+  scopeId?: number;
+  scopeName?: string;
+  
   assigneeId?: number;
   assigneeName?: string;
   assigneeAvatarUrl?: string;
@@ -543,6 +550,8 @@ export interface CreateTaskRequest {
   title: string;
   description?: string;
   cycleId: number;
+  pitchId?: number;
+  scopeId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;
   category?: TaskCategory;
@@ -614,6 +623,13 @@ export interface TestCase {
   cycleName?: string;
   teamId?: number;
   teamName?: string;
+  
+  // Scope and Task relationships
+  scopeId?: number;
+  scopeName?: string;
+  taskId?: number;
+  taskTitle?: string;
+  
   type: TestCaseType;
   priority: TestCasePriority;
   status: TestCaseStatus;
@@ -642,6 +658,8 @@ export interface CreateTestCaseRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   type: TestCaseType;
   priority: TestCasePriority;
   status?: TestCaseStatus;
@@ -659,6 +677,8 @@ export interface UpdateTestCaseRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   type?: TestCaseType;
   priority?: TestCasePriority;
   status?: TestCaseStatus;
@@ -682,6 +702,13 @@ export interface BugReport {
   teamId?: number;
   teamName?: string;
   testRunId?: number;
+  
+  // Scope and Task relationships
+  scopeId?: number;
+  scopeName?: string;
+  taskId?: number;
+  taskTitle?: string;
+  
   severity: BugSeverity;
   status: BugStatus;
   tags?: string;
@@ -708,6 +735,8 @@ export interface CreateBugReportRequest {
   cycleId?: number;
   teamId?: number;
   testRunId?: number;
+  scopeId?: number;
+  taskId?: number;
   severity: BugSeverity;
   status?: BugStatus;
   tags?: string[];
@@ -725,6 +754,8 @@ export interface UpdateBugReportRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   severity?: BugSeverity;
   status?: BugStatus;
   tags?: string[];

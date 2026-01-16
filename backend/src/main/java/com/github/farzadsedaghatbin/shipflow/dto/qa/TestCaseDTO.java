@@ -29,6 +29,15 @@ public class TestCaseDTO {
     private String cycleName;
     private Long teamId;
     private String teamName;
+    
+    // Scope relationship
+    private Long scopeId;
+    private String scopeName;
+    
+    // Task relationship
+    private Long taskId;
+    private String taskTitle;
+    
     private TestCaseType type;
     private TestCasePriority priority;
     private TestCaseStatus status;

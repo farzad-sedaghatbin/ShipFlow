@@ -8,6 +8,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
@@ -16,6 +18,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +44,8 @@ public class TaskService {
     private final PersonRepository personRepository;
     private final UserRepository userRepository;
     private final TaskDependencyRepository taskDependencyRepository;
+    private final PitchRepository pitchRepository;
+    private final HillChartPointRepository hillChartPointRepository;
     private final DashboardNotificationService notificationService;
 
     public List<TaskDTO> getAllTasks() {
@@ -97,6 +103,14 @@ public class TaskService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+    
+    public Page<TaskDTO> searchTasks(String query, Pageable pageable) {
+        if (query == null || query.trim().length() < 3) {
+            return Page.empty(pageable);
+        }
+        return taskRepository.searchTasks(query.trim(), pageable)
+                .map(this::toDTO);
+    }
 
     public List<TaskDTO> getTasksByProjectId(Long projectId) {
         return taskRepository.findByProjectId(projectId)
@@ -146,6 +160,20 @@ public class TaskService {
             Person pairAssignee = personRepository.findById(request.getPairAssigneeId())
                     .orElseThrow(() -> new IllegalArgumentException("Pair assignee not found with id: " + request.getPairAssigneeId()));
             task.setPairAssignee(pairAssignee);
+        }
+
+        // Set pitch if provided
+        if (request.getPitchId() != null) {
+            Pitch pitch = pitchRepository.findById(request.getPitchId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+            task.setPitch(pitch);
+        }
+
+        // Set scope if provided
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found with id: " + request.getScopeId()));
+            task.setScope(scope);
         }
 
         // Set created by current user's person
@@ -237,6 +265,24 @@ public class TaskService {
             task.setAssignee(newAssignee);
         } else {
             task.setAssignee(null);
+        }
+
+        // Handle pitch changes
+        if (request.getPitchId() != null) {
+            Pitch pitch = pitchRepository.findById(request.getPitchId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+            task.setPitch(pitch);
+        } else {
+            task.setPitch(null);
+        }
+
+        // Handle scope changes
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found with id: " + request.getScopeId()));
+            task.setScope(scope);
+        } else {
+            task.setScope(null);
         }
 
         if (request.getPairAssigneeId() != null) {
@@ -579,6 +625,10 @@ public class TaskService {
                 .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
                 .projectName(task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)
                 .projectKey(task.getCycle().getProject() != null ? task.getCycle().getProject().getProjectKey() : null)
+                .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
+                .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
+                .scopeId(task.getScope() != null ? task.getScope().getId() : null)
+                .scopeName(task.getScope() != null ? task.getScope().getScope() : null)
                 .assigneeId(task.getAssignee() != null ? task.getAssignee().getId() : null)
                 .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
                 .assigneeAvatarUrl(task.getAssignee() != null ? task.getAssignee().getAvatarUrl() : null)

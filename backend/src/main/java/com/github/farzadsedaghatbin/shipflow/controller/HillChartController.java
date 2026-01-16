@@ -39,6 +39,17 @@ public class HillChartController {
         return ResponseEntity.ok(hillChartService.getAllHillChartPoints());
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Search hill chart points (scopes)",
+               description = "Search scopes by name or description. Minimum 3 characters required.")
+    public ResponseEntity<List<HillChartPointDTO>> searchHillChartPoints(@RequestParam String q) {
+        if (q == null || q.trim().length() < 3) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(hillChartService.searchHillChartPoints(q));
+    }
+
     @GetMapping("/pitch/{pitchId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get hill chart points by pitch")

@@ -49,6 +49,15 @@ public class HillChartService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+    
+    public List<HillChartPointDTO> searchHillChartPoints(String query) {
+        if (query == null || query.trim().length() < 3) {
+            return List.of();
+        }
+        return hillChartPointRepository.searchHillChartPoints(query.trim()).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
     public HillChartPointDTO getHillChartPointById(Long id) {
         HillChartPoint point = hillChartPointRepository.findById(id)

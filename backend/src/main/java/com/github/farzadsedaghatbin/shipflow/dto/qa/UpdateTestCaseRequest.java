@@ -34,6 +34,10 @@ public class UpdateTestCaseRequest {
     
     private Long teamId;
     
+    private Long scopeId;
+    
+    private Long taskId;
+    
     private TestCaseType type;
     
     private TestCasePriority priority;

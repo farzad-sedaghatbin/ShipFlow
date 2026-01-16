@@ -31,6 +31,8 @@ public class BugReportService {
     private final CycleRepository cycleRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final HillChartPointRepository hillChartPointRepository;
+    private final TaskRepository taskRepository;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -84,6 +86,20 @@ public class BugReportService {
             TestRun testRun = testRunRepository.findById(request.getTestRunId())
                     .orElseThrow(() -> new IllegalArgumentException("Test run not found: " + request.getTestRunId()));
             bugReport.setTestRun(testRun);
+        }
+
+        // Set scope if provided
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
+            bugReport.setScope(scope);
+        }
+
+        // Set task if provided
+        if (request.getTaskId() != null) {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+            bugReport.setTask(task);
         }
 
         if (request.getAssigneeId() != null) {
@@ -146,6 +162,21 @@ public class BugReportService {
                     .orElseThrow(() -> new IllegalArgumentException("Team not found: " + request.getTeamId()));
             bugReport.setTeam(team);
         }
+        
+        // Update scope if provided
+        if (request.getScopeId() != null) {
+            HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
+            bugReport.setScope(scope);
+        }
+        
+        // Update task if provided
+        if (request.getTaskId() != null) {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+            bugReport.setTask(task);
+        }
+        
         if (request.getAssigneeId() != null) {
             User assignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new IllegalArgumentException("Assignee not found: " + request.getAssigneeId()));
@@ -366,6 +397,10 @@ public class BugReportService {
                 .teamId(bugReport.getTeam() != null ? bugReport.getTeam().getId() : null)
                 .teamName(bugReport.getTeam() != null ? bugReport.getTeam().getName() : null)
                 .testRunId(bugReport.getTestRun() != null ? bugReport.getTestRun().getId() : null)
+                .scopeId(bugReport.getScope() != null ? bugReport.getScope().getId() : null)
+                .scopeName(bugReport.getScope() != null ? bugReport.getScope().getScope() : null)
+                .taskId(bugReport.getTask() != null ? bugReport.getTask().getId() : null)
+                .taskTitle(bugReport.getTask() != null ? bugReport.getTask().getTitle() : null)
                 .severity(bugReport.getSeverity())
                 .status(bugReport.getStatus())
                 .tags(bugReport.getTags())

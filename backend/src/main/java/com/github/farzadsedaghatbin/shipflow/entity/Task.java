@@ -51,6 +51,22 @@ public class Task {
     @JoinColumn(name = "cycle_id", nullable = false)
     private Cycle cycle;
 
+    /**
+     * The pitch this task is associated with (optional).
+     * Links the task to a specific pitch for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pitch_id")
+    private Pitch pitch;
+
+    /**
+     * The scope (hill chart point) this task is associated with (optional).
+     * Links the task to a specific scope for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scope_id")
+    private HillChartPoint scope;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
     private Person assignee;

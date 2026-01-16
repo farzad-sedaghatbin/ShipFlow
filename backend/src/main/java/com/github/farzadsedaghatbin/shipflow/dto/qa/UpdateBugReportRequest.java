@@ -35,6 +35,10 @@ public class UpdateBugReportRequest {
     
     private Long teamId;
     
+    private Long scopeId;
+    
+    private Long taskId;
+    
     private BugSeverity severity;
     
     private BugStatus status;
