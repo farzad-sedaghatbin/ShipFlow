@@ -79,8 +79,6 @@ const TestCasesPage: React.FC = () => {
   const navigate = useNavigate();
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('testCases.title'));
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TestCaseStatus | 'all'>('all');
@@ -269,7 +267,7 @@ const TestCasesPage: React.FC = () => {
             <SelectItem value="all">{t('testCases.allStatus')}</SelectItem>
             {['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'].map((status) => (
               <SelectItem key={status} value={status}>
-                {status}
+                {t(`testCases.statusValues.${status}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -285,7 +283,7 @@ const TestCasesPage: React.FC = () => {
             <SelectItem value="all">{t('testCases.allTypes')}</SelectItem>
             {['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE'].map((type) => (
               <SelectItem key={type} value={type}>
-                {type}
+                {t(`testCases.typeValues.${type}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -301,7 +299,7 @@ const TestCasesPage: React.FC = () => {
             <SelectItem value="all">{t('testCases.allPriority')}</SelectItem>
             {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((priority) => (
               <SelectItem key={priority} value={priority}>
-                {priority}
+                {t(`testCases.priorityValues.${priority}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -377,14 +375,14 @@ const TestCasesPage: React.FC = () => {
                   <span className="max-w-[300px] truncate block">{tc.title}</span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{tc.type}</Badge>
+                  <Badge variant="outline">{t(`testCases.typeValues.${tc.type}`)}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={priorityVariants[tc.priority]}>{tc.priority}</Badge>
+                  <Badge variant={priorityVariants[tc.priority]}>{t(`testCases.priorityValues.${tc.priority}`)}</Badge>
                 </TableCell>
                 <TableCell>
                   <Badge className={cn('font-medium', statusVariants[tc.status])}>
-                    {tc.status}
+                    {t(`testCases.statusValues.${tc.status}`)}
                   </Badge>
                 </TableCell>
                 <TableCell>
