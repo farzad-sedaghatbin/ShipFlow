@@ -51,8 +51,8 @@ i18n
     },
   });
 
-// Handle RTL languages and document attributes
-i18n.on('languageChanged', (lng) => {
+// Function to update document direction and attributes
+function updateDocumentDirection(lng: string) {
   const langConfig = SUPPORTED_LANGUAGES[lng as SupportedLanguage];
   const dir = langConfig?.dir || 'ltr';
   
@@ -73,6 +73,19 @@ i18n.on('languageChanged', (lng) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`Language changed to: ${lng}, Direction: ${dir}, Calendar: ${langConfig?.calendar || 'gregorian'}`);
   }
+}
+
+// Handle RTL languages and document attributes
+i18n.on('languageChanged', updateDocumentDirection);
+
+// Set initial direction on load
+i18n.on('initialized', () => {
+  updateDocumentDirection(i18n.language);
 });
+
+// Also set direction immediately if i18n is already initialized
+if (i18n.isInitialized) {
+  updateDocumentDirection(i18n.language);
+}
 
 export default i18n;
