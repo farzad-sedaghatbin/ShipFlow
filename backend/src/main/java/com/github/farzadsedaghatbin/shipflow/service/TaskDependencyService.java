@@ -27,6 +27,7 @@ public class TaskDependencyService {
     private final TaskDependencyRepository taskDependencyRepository;
     private final TaskRepository taskRepository;
     private final LocalizationService localizationService;
+    private final MessageService messageService;
 
     /**
      * Add a dependency between tasks.
@@ -86,7 +87,7 @@ public class TaskDependencyService {
      */
     public Map<String, List<TaskDependencyDTO>> getDependenciesForTask(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         List<TaskDependency> outgoing = taskDependencyRepository.findBySourceTaskId(taskId);
@@ -104,7 +105,7 @@ public class TaskDependencyService {
      */
     public List<TaskDependencyDTO> getBlockingDependencies(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         return taskDependencyRepository.findBlockingDependenciesByTaskId(taskId)
@@ -118,7 +119,7 @@ public class TaskDependencyService {
      */
     public List<TaskDependencyDTO> getBlockedByDependencies(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         return taskDependencyRepository.findBlockedByDependenciesByTaskId(taskId)

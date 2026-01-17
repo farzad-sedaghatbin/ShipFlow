@@ -26,6 +26,7 @@ public class RetroService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final LocalizationService localizationService;
+    private final MessageService messageService;
 
     // ==================== RETRO CRUD ====================
 
@@ -291,12 +292,12 @@ public class RetroService {
         
         // Validate same retrospective
         if (!targetItem.getRetrospective().getId().equals(sourceItem.getRetrospective().getId())) {
-            throw new IllegalStateException("Cannot merge items from different retrospectives");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.different.retros"));
         }
         
         // Validate same column
         if (targetItem.getColumnType() != sourceItem.getColumnType()) {
-            throw new IllegalStateException("Cannot merge items from different columns");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.different.columns"));
         }
         
         Retrospective retro = targetItem.getRetrospective();
@@ -305,7 +306,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot merge items in a closed retrospective");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.closed"));
         }
         
         // Cannot merge into an already merged item
@@ -347,7 +348,7 @@ public class RetroService {
                 .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
         
         if (item.getMergedInto() == null) {
-            throw new IllegalStateException("Item is not merged");
+            throw new IllegalStateException(messageService.getMessage("error.retro.item.not.merged"));
         }
         
         Retrospective retro = item.getRetrospective();
@@ -356,7 +357,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot unmerge items in a closed retrospective");
+            throw new IllegalStateException(messageService.getMessage("error.retro.unmerge.closed"));
         }
         
         item.setMergedInto(null);
@@ -425,7 +426,7 @@ public class RetroService {
 
     private void validateRetrospectivesEnabled(Long projectId) {
         if (!isRetrospectivesEnabled(projectId)) {
-            throw new IllegalStateException("Retrospectives feature is disabled for this project");
+            throw new IllegalStateException(messageService.getMessage("error.retro.feature.disabled"));
         }
     }
 

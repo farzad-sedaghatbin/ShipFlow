@@ -47,7 +47,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function MyWorkLogs() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);

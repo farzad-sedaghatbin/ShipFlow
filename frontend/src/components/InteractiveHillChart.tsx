@@ -55,7 +55,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
   onPointsChange,
   readonly = false,
 }) => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const { showToast } = useToast();
   const [points, setPoints] = useState<HillChartPoint[]>(initialPoints);
   const [draggedPoint, setDraggedPoint] = useState<HillChartPoint | null>(null);
@@ -109,7 +109,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
       setConfidence(70);
       onPointsChange?.();
     } catch (err) {
-      showToast('Failed to update position', 'error');
+      showToast(t('errors.updatePositionFailed'), 'error');
       // Revert local change
       setPoints(initialPoints);
       console.error(err);
@@ -142,7 +142,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
       setAnalysis(analysisData);
       setShowHistory(true);
     } catch (err) {
-      showToast('Failed to load history', 'error');
+      showToast(t('errors.loadHistoryFailed'), 'error');
       console.error(err);
     } finally {
       setLoadingHistory(false);

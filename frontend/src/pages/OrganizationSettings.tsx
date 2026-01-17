@@ -94,7 +94,7 @@ export default function OrganizationSettingsPage() {
       if (error.response?.status === 404) {
         // Settings don't exist yet, use defaults
         const defaultSettings: Partial<OrganizationSettings> = {
-          organizationName: 'My Organization',
+          organizationName: t('organizationSettings.defaults.organizationName'),
           defaultCycleLengthWeeks: 6,
           defaultCooldownWeeks: 2,
           riskThresholds: DEFAULT_RISK_THRESHOLDS,
@@ -103,28 +103,28 @@ export default function OrganizationSettingsPage() {
           enableNotifications: true,
           enableAIFeatures: true,
           taskCategories: [
-            { name: 'PITCH_SCOPE', description: 'Work related to pitch deliverables', color: '#3B82F6', isActive: true, order: 1 },
-            { name: 'DEBT_IMPROVEMENT', description: 'Technical debt and improvements', color: '#F59E0B', isActive: true, order: 2 },
+            { name: 'PITCH_SCOPE', description: t('organizationSettings.defaults.taskCategory.pitchScope'), color: '#3B82F6', isActive: true, order: 1 },
+            { name: 'DEBT_IMPROVEMENT', description: t('organizationSettings.defaults.taskCategory.debtImprovement'), color: '#F59E0B', isActive: true, order: 2 },
           ],
           pitchCategories: [
-            { name: 'FEATURE', description: 'New feature development', color: '#10B981', isActive: true, order: 1 },
-            { name: 'INFRASTRUCTURE', description: 'Infrastructure and architecture', color: '#6366F1', isActive: true, order: 2 },
-            { name: 'REFACTOR', description: 'Code refactoring', color: '#8B5CF6', isActive: true, order: 3 },
-            { name: 'BUG_FIX', description: 'Bug fixes', color: '#EF4444', isActive: true, order: 4 },
+            { name: 'FEATURE', description: t('organizationSettings.defaults.pitchCategory.feature'), color: '#10B981', isActive: true, order: 1 },
+            { name: 'INFRASTRUCTURE', description: t('organizationSettings.defaults.pitchCategory.infrastructure'), color: '#6366F1', isActive: true, order: 2 },
+            { name: 'REFACTOR', description: t('organizationSettings.defaults.pitchCategory.refactor'), color: '#8B5CF6', isActive: true, order: 3 },
+            { name: 'BUG_FIX', description: t('organizationSettings.defaults.pitchCategory.bugFix'), color: '#EF4444', isActive: true, order: 4 },
           ],
           colors: DEFAULT_COLORS,
           bugStatuses: [
-            { name: 'NEW', description: 'Newly reported', color: '#3B82F6', isActive: true, order: 1, isClosed: false },
-            { name: 'IN_PROGRESS', description: 'Being worked on', color: '#F59E0B', isActive: true, order: 2, isClosed: false },
-            { name: 'FIXED', description: 'Fix implemented', color: '#10B981', isActive: true, order: 3, isClosed: true },
-            { name: 'VERIFIED', description: 'Fix verified', color: '#22C55E', isActive: true, order: 4, isClosed: true },
-            { name: 'WONT_FIX', description: 'Will not fix', color: '#6B7280', isActive: true, order: 5, isClosed: true },
+            { name: 'NEW', description: t('organizationSettings.defaults.bugStatus.new'), color: '#3B82F6', isActive: true, order: 1, isClosed: false },
+            { name: 'IN_PROGRESS', description: t('organizationSettings.defaults.bugStatus.inProgress'), color: '#F59E0B', isActive: true, order: 2, isClosed: false },
+            { name: 'FIXED', description: t('organizationSettings.defaults.bugStatus.fixed'), color: '#10B981', isActive: true, order: 3, isClosed: true },
+            { name: 'VERIFIED', description: t('organizationSettings.defaults.bugStatus.verified'), color: '#22C55E', isActive: true, order: 4, isClosed: true },
+            { name: 'WONT_FIX', description: t('organizationSettings.defaults.bugStatus.wontFix'), color: '#6B7280', isActive: true, order: 5, isClosed: true },
           ],
           severityLevels: [
-            { name: 'CRITICAL', description: 'System down or data loss', color: '#DC2626', isActive: true, order: 1, priority: 1 },
-            { name: 'HIGH', description: 'Major feature broken', color: '#F59E0B', isActive: true, order: 2, priority: 2 },
-            { name: 'MEDIUM', description: 'Feature partially broken', color: '#3B82F6', isActive: true, order: 3, priority: 3 },
-            { name: 'LOW', description: 'Minor issue or cosmetic', color: '#10B981', isActive: true, order: 4, priority: 4 },
+            { name: 'CRITICAL', description: t('organizationSettings.defaults.severity.critical'), color: '#DC2626', isActive: true, order: 1, priority: 1 },
+            { name: 'HIGH', description: t('organizationSettings.defaults.severity.high'), color: '#F59E0B', isActive: true, order: 2, priority: 2 },
+            { name: 'MEDIUM', description: t('organizationSettings.defaults.severity.medium'), color: '#3B82F6', isActive: true, order: 3, priority: 3 },
+            { name: 'LOW', description: t('organizationSettings.defaults.severity.low'), color: '#10B981', isActive: true, order: 4, priority: 4 },
           ],
         };
         setFormData(defaultSettings);

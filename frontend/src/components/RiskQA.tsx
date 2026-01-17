@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, MessageSquare, Bot, User, Loader2, X } from 'lucide-react';
 import { riskService } from '../services/riskService';
 import { Button } from './ui/button';
@@ -21,6 +22,7 @@ interface Message {
 }
 
 export const RiskQA: React.FC<RiskQAProps> = ({ pitchId }) => {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ export const RiskQA: React.FC<RiskQAProps> = ({ pitchId }) => {
         }]);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to get answer');
+      setError(err.message || t('errors.getAnswerFailed'));
     } finally {
       setLoading(false);
     }

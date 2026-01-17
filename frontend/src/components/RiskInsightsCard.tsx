@@ -48,7 +48,7 @@ interface RiskInsightsCardProps {
 }
 
 export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardProps) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [riskData, setRiskData] = useState<PitchRiskDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -79,7 +79,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
       }
     } catch (error: any) {
       console.error('Failed to load risk analysis:', error);
-      onError?.('Failed to load risk analysis');
+      onError?.(t('errors.loadRiskAnalysisFailed'));
       setLoading(false);
     }
   };
@@ -91,7 +91,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
       setRiskData(response.data);
     } catch (error: any) {
       console.error('Failed to refresh risk analysis:', error);
-      onError?.('Failed to refresh risk analysis');
+      onError?.(t('errors.refreshRiskAnalysisFailed'));
     } finally {
       setRefreshing(false);
     }

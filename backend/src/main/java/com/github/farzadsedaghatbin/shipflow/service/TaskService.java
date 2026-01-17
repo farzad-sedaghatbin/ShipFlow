@@ -47,6 +47,7 @@ public class TaskService {
     private final PitchRepository pitchRepository;
     private final HillChartPointRepository hillChartPointRepository;
     private final DashboardNotificationService notificationService;
+    private final MessageService messageService;
 
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll()
@@ -135,7 +136,7 @@ public class TaskService {
             
             // Ensure parent task belongs to the same cycle
             if (!parentTask.getCycle().getId().equals(request.getCycleId())) {
-                throw new IllegalArgumentException("Parent task must belong to the same cycle");
+                throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
             }
         }
 
@@ -220,12 +221,12 @@ public class TaskService {
                 
                 // Prevent circular references
                 if (isCircularReference(task, parentTask)) {
-                    throw new IllegalArgumentException("Cannot set parent task: would create a circular reference");
+                    throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
                 }
                 
                 // Ensure parent task belongs to the same cycle
                 if (!parentTask.getCycle().getId().equals(task.getCycle().getId())) {
-                    throw new IllegalArgumentException("Parent task must belong to the same cycle");
+                    throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
                 }
                 
                 task.setParentTask(parentTask);
@@ -370,7 +371,7 @@ public class TaskService {
 
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
-            throw new IllegalArgumentException("Task not found with id: " + id);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", id));
         }
         taskRepository.deleteById(id);
     }
@@ -426,7 +427,7 @@ public class TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
         if (user.getPerson() == null) {
-            throw new IllegalArgumentException("Your account is not linked to a person profile. Please contact an administrator.");
+            throw new IllegalArgumentException(messageService.getMessage("error.user.no.person.profile"));
         }
 
         return user.getPerson();

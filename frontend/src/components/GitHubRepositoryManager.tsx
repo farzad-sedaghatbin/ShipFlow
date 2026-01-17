@@ -63,7 +63,7 @@ export default function GitHubRepositoryManager() {
       resetForm();
       loadRepositories();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register repository');
+      setError(err.response?.data?.message || t('errors.registerRepositoryFailed'));
     } finally {
       setLoading(false);
     }

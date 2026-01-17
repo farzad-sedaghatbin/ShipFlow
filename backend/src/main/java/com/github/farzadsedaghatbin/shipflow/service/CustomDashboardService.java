@@ -31,6 +31,7 @@ public class CustomDashboardService {
     private final ObjectMapper objectMapper;
     private final jakarta.persistence.EntityManager entityManager;
     private final LocalizationService localizationService;
+    private final MessageService messageService;
 
     /**
      * Create a new custom dashboard
@@ -300,7 +301,7 @@ public class CustomDashboardService {
                 settingsJson = objectMapper.writeValueAsString(request.getConfig());
             } catch (Exception e) {
                 log.error("Error serializing widget config", e);
-                throw new IllegalArgumentException("Invalid widget configuration");
+                throw new IllegalArgumentException(messageService.getMessage("error.dashboard.widget.config.invalid"));
             }
         }
 

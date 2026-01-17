@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
@@ -23,6 +24,7 @@ interface GitHubLinksProps {
 }
 
 export default function GitHubLinks({ taskId, pitchId, title = 'GitHub Activity' }: GitHubLinksProps) {
+  const { t } = useTranslation();
   const [links, setLinks] = useState<GitHubLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function GitHubLinks({ taskId, pitchId, title = 'GitHub Activity'
       }
     } catch (err) {
       console.error('Failed to load GitHub links:', err);
-      setError('Failed to load GitHub activity');
+      setError(t('errors.loadGitHubActivityFailed'));
     } finally {
       setLoading(false);
     }

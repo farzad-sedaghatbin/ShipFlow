@@ -13,15 +13,15 @@ export default function BettingMeetingGuide() {
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Running a Betting Meeting</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.bettingMeeting.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Learn how to conduct effective betting meetings and make informed cycle commitments
+                    {t('guides.bettingMeeting.subtitle')}
                 </p>
             </div>
 
@@ -32,19 +32,14 @@ export default function BettingMeetingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Dices className="h-5 w-5" />
-                        What is a Betting Meeting?
+                        {t('guides.bettingMeeting.whatTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        A <strong>betting meeting</strong> is where stakeholders decide which pitches to commit to
-                        for the next cycle. It's called "betting" because you're placing bets on what will deliver
-                        the most value given the fixed time constraint.
-                    </p>
+                    <p>{t('guides.bettingMeeting.whatDesc')}</p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Key Principle:</strong> In Shape Up, you bet on pitches, not tasks.
-                            Each pitch should be well-shaped with clear boundaries and appetite (time budget).
+                            <strong>{t('guides.bettingMeeting.keyPrinciple')}</strong> {t('guides.bettingMeeting.keyPrincipleDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -53,13 +48,13 @@ export default function BettingMeetingGuide() {
             {/* Before the Meeting */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Before the Meeting: Preparation</CardTitle>
-                    <CardDescription>Set yourself up for success</CardDescription>
+                    <CardTitle>{t('guides.bettingMeeting.beforeTitle')}</CardTitle>
+                    <CardDescription>{t('guides.bettingMeeting.beforeSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">1. Review Available Pitches</h4>
+                    <h4 className="font-semibold">{t('guides.bettingMeeting.step1Title')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        Navigate to the <strong>Pitch Board</strong> to see all available pitches for consideration.
+                        {t('guides.bettingMeeting.step1Desc')}
                     </p>
                     <div className="rounded-lg border bg-muted/50 p-4">
                         <img
@@ -76,30 +71,30 @@ export default function BettingMeetingGuide() {
                         </div>
                     </div>
 
-                    <h4 className="font-semibold mt-6">2. Evaluate Each Pitch</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.step2Title')}</h4>
                     <p className="text-sm text-muted-foreground mb-2">
-                        Click on each pitch to review its details. Look for:
+                        {t('guides.bettingMeeting.step2Desc')}
                     </p>
                     <ul className="space-y-2 ml-6">
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span><strong>Problem statement:</strong> Is the problem clearly defined?</span>
+                            <span>{t('guides.bettingMeeting.problemStatement')}</span>
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span><strong>Appetite:</strong> How much time are we willing to spend?</span>
+                            <span>{t('guides.bettingMeeting.appetite')}</span>
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span><strong>Solution sketch:</strong> Is there a clear approach?</span>
+                            <span>{t('guides.bettingMeeting.solutionSketch')}</span>
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span><strong>Risks:</strong> What could go wrong?</span>
+                            <span>{t('guides.bettingMeeting.risks')}</span>
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span><strong>No-gos:</strong> What's explicitly out of scope?</span>
+                            <span>{t('guides.bettingMeeting.noGos')}</span>
                         </li>
                     </ul>
 
@@ -118,10 +113,9 @@ export default function BettingMeetingGuide() {
                         </div>
                     </div>
 
-                    <h4 className="font-semibold mt-6">3. Check AI Risk Assessments</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.step3Title')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        Use the AI Risk Advisor to identify potential issues before committing. This can reveal
-                        hidden complexities or dependencies.
+                        {t('guides.bettingMeeting.step3Desc')}
                     </p>
                 </CardContent>
             </Card>
@@ -131,14 +125,14 @@ export default function BettingMeetingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        During the Meeting: Making Decisions
+                        {t('guides.bettingMeeting.duringTitle')}
                     </CardTitle>
-                    <CardDescription>The betting table in action</CardDescription>
+                    <CardDescription>{t('guides.bettingMeeting.duringSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">Using the Betting Table</h4>
+                    <h4 className="font-semibold">{t('guides.bettingMeeting.usingTableTitle')}</h4>
                     <p className="text-sm text-muted-foreground mb-2">
-                        Navigate to <strong>Betting Table</strong> to see all pitches in one view:
+                        {t('guides.bettingMeeting.usingTableDesc')}
                     </p>
 
                     <div className="rounded-lg border bg-muted/50 p-4">
@@ -156,40 +150,38 @@ export default function BettingMeetingGuide() {
                         </div>
                     </div>
 
-                    <h4 className="font-semibold mt-6">Decision Framework</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.decisionFramework')}</h4>
                     <div className="space-y-3">
                         <div className="rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 p-4">
-                            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">✅ Bet On It</h5>
+                            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">{t('guides.bettingMeeting.betOnIt')}</h5>
                             <p className="text-sm text-green-800 dark:text-green-200">
-                                The pitch is well-shaped, valuable, and fits within the cycle's capacity.
-                                Mark it as "Approved" or "Committed" in the betting table.
+                                {t('guides.bettingMeeting.betOnItDesc')}
                             </p>
                         </div>
 
                         <div className="rounded-lg border-2 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950 p-4">
-                            <h5 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">⏸️ Table It</h5>
+                            <h5 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">{t('guides.bettingMeeting.tableIt')}</h5>
                             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                Good idea but needs more shaping, or not the right time. Keep it in the backlog
-                                for future consideration.
+                                {t('guides.bettingMeeting.tableItDesc')}
                             </p>
                         </div>
 
                         <div className="rounded-lg border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-4">
-                            <h5 className="font-semibold text-red-900 dark:text-red-100 mb-2">❌ Pass</h5>
+                            <h5 className="font-semibold text-red-900 dark:text-red-100 mb-2">{t('guides.bettingMeeting.pass')}</h5>
                             <p className="text-sm text-red-800 dark:text-red-200">
-                                Not aligned with current priorities or too risky. Mark as "Rejected" with a clear reason.
+                                {t('guides.bettingMeeting.passDesc')}
                             </p>
                         </div>
                     </div>
 
-                    <h4 className="font-semibold mt-6">Key Questions to Ask</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.keyQuestions')}</h4>
                     <ul className="space-y-2 ml-6 text-sm">
-                        <li>• Does this pitch solve a real problem for our users?</li>
-                        <li>• Is the appetite (time budget) realistic?</li>
-                        <li>• Do we have the right people available?</li>
-                        <li>• Are there any blocking dependencies?</li>
-                        <li>• What's the opportunity cost of choosing this over other pitches?</li>
-                        <li>• Can we ship something valuable within the time box?</li>
+                        <li>• {t('guides.bettingMeeting.question1')}</li>
+                        <li>• {t('guides.bettingMeeting.question2')}</li>
+                        <li>• {t('guides.bettingMeeting.question3')}</li>
+                        <li>• {t('guides.bettingMeeting.question4')}</li>
+                        <li>• {t('guides.bettingMeeting.question5')}</li>
+                        <li>• {t('guides.bettingMeeting.question6')}</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -197,39 +189,37 @@ export default function BettingMeetingGuide() {
             {/* After the Meeting */}
             <Card>
                 <CardHeader>
-                    <CardTitle>After the Meeting: Finalizing Commitments</CardTitle>
-                    <CardDescription>Setting up the cycle for success</CardDescription>
+                    <CardTitle>{t('guides.bettingMeeting.afterTitle')}</CardTitle>
+                    <CardDescription>{t('guides.bettingMeeting.afterSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">1. Create or Update the Cycle</h4>
+                    <h4 className="font-semibold">{t('guides.bettingMeeting.after1Title')}</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-2 text-sm">
-                        <li>Navigate to <strong>Cycles</strong> in the sidebar</li>
-                        <li>Click <strong>"New Cycle"</strong> or select an upcoming cycle</li>
-                        <li>Set the cycle dates (typically 6 weeks)</li>
-                        <li>Add the approved pitches to the cycle</li>
+                        <li>{t('guides.bettingMeeting.after1Step1')}</li>
+                        <li>{t('guides.bettingMeeting.after1Step2')}</li>
+                        <li>{t('guides.bettingMeeting.after1Step3')}</li>
+                        <li>{t('guides.bettingMeeting.after1Step4')}</li>
                     </ol>
 
-                    <h4 className="font-semibold mt-6">2. Assign Teams</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.after2Title')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        For each approved pitch, assign the team members who will work on it. Each pitch
-                        typically gets a small team (1-2 people).
+                        {t('guides.bettingMeeting.after2Desc')}
                     </p>
 
-                    <h4 className="font-semibold mt-6">3. Communicate Decisions</h4>
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.after3Title')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        Make sure everyone knows:
+                        {t('guides.bettingMeeting.after3Desc')}
                     </p>
                     <ul className="space-y-1 ml-6 text-sm">
-                        <li>• What was approved and why</li>
-                        <li>• What was deferred and why</li>
-                        <li>• Who is working on what</li>
-                        <li>• When the cycle starts and ends</li>
+                        <li>• {t('guides.bettingMeeting.after3Item1')}</li>
+                        <li>• {t('guides.bettingMeeting.after3Item2')}</li>
+                        <li>• {t('guides.bettingMeeting.after3Item3')}</li>
+                        <li>• {t('guides.bettingMeeting.after3Item4')}</li>
                     </ul>
 
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4 mt-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Pro Tip:</strong> Use the Meetings feature to document the betting meeting
-                            decisions and share notes with the team.
+                            <strong>{t('guides.bettingMeeting.after3ProTip')}</strong> {t('guides.bettingMeeting.after3ProTipDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -238,21 +228,17 @@ export default function BettingMeetingGuide() {
             {/* Best Practices */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Best Practices</CardTitle>
+                    <CardTitle>{t('guides.bettingMeeting.bestPracticesTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ul className="space-y-3">
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                                <strong>Keep it small:</strong> Limit betting meetings to key stakeholders (2-4 people)
-                            </div>
+                            <div dangerouslySetInnerHTML={{ __html: t('guides.bettingMeeting.bestPractice1') }} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                                <strong>Time-box discussions:</strong> Spend 5-10 minutes per pitch maximum
-                            </div>
+                            <div dangerouslySetInnerHTML={{ __html: t('guides.bettingMeeting.bestPractice2') }} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />

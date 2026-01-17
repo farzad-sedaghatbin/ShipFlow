@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubWebhookEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubWebhookEventRepository;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class GitHubWebhookService {
     private final GitHubWebhookEventRepository webhookEventRepository;
     private final GitHubIntegrationService integrationService;
     private final ObjectMapper objectMapper;
+    private final MessageService messageService;
 
     private static final String HMAC_SHA256 = "HmacSHA256";
 
@@ -139,7 +141,7 @@ public class GitHubWebhookService {
             }
         } catch (Exception e) {
             log.error("Error processing push event", e);
-            throw new RuntimeException("Failed to process push event", e);
+            throw new RuntimeException(messageService.getMessage("error.github.push.event.failed"), e);
         }
     }
 
@@ -195,7 +197,7 @@ public class GitHubWebhookService {
             log.info("Processed PR #{} ({}) from webhook", prNumber, action);
         } catch (Exception e) {
             log.error("Error processing pull request event", e);
-            throw new RuntimeException("Failed to process pull request event", e);
+            throw new RuntimeException(messageService.getMessage("error.github.pr.event.failed"), e);
         }
     }
 
@@ -215,7 +217,7 @@ public class GitHubWebhookService {
             // Branch creation/deletion handling can be implemented here if needed
         } catch (Exception e) {
             log.error("Error processing branch event", e);
-            throw new RuntimeException("Failed to process branch event", e);
+            throw new RuntimeException(messageService.getMessage("error.github.branch.event.failed"), e);
         }
     }
 

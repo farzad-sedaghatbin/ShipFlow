@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
 import { Button } from './ui/button';
@@ -21,6 +22,7 @@ interface TimerWidgetProps {
 }
 
 const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
+  const { t } = useTranslation();
   const [activeTimer, setActiveTimer] = useState<WorkLogTimer | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -93,7 +95,7 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
         onTimerStopped();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to stop timer');
+      setError(err.response?.data?.message || t('errors.stopTimerFailed'));
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       setElapsedSeconds(0);
       setConfirmDialog(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to cancel timer');
+      setError(err.response?.data?.message || t('errors.cancelTimerFailed'));
     } finally {
       setLoading(false);
     }

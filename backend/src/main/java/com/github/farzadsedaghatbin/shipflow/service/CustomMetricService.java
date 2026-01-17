@@ -35,6 +35,7 @@ public class CustomMetricService {
     private final TaskRepository taskRepository;
     private final TeamRepository teamRepository;
     private final MetricFormulaParser formulaParser;
+    private final MessageService messageService;
 
     /**
      * Create a new custom metric
@@ -46,12 +47,12 @@ public class CustomMetricService {
         // Validate formula
         ValidationResult validation = formulaParser.validateFormula(request.getFormula());
         if (!validation.isValid()) {
-            throw new IllegalArgumentException("Invalid formula: " + validation.getErrorMessage());
+            throw new IllegalArgumentException(messageService.getMessage("error.metric.formula.invalid", validation.getErrorMessage()));
         }
 
         // Check for duplicate name
         if (customMetricRepository.existsByUserIdAndName(userId, request.getName())) {
-            throw new IllegalArgumentException("A metric with name '" + request.getName() + "' already exists");
+            throw new IllegalArgumentException(messageService.getMessage("error.metric.name.exists", request.getName()));
         }
 
         User user = userRepository.findById(userId)
@@ -117,7 +118,7 @@ public class CustomMetricService {
             // Check for duplicate name (excluding current metric)
             if (!request.getName().equals(metric.getName()) &&
                     customMetricRepository.existsByUserIdAndName(userId, request.getName())) {
-                throw new IllegalArgumentException("A metric with name '" + request.getName() + "' already exists");
+                throw new IllegalArgumentException(messageService.getMessage("error.metric.name.exists", request.getName()));
             }
             metric.setName(request.getName());
         }
@@ -129,7 +130,7 @@ public class CustomMetricService {
         if (request.getFormula() != null) {
             ValidationResult validation = formulaParser.validateFormula(request.getFormula());
             if (!validation.isValid()) {
-                throw new IllegalArgumentException("Invalid formula: " + validation.getErrorMessage());
+                throw new IllegalArgumentException(messageService.getMessage("error.metric.formula.invalid", validation.getErrorMessage()));
             }
             metric.setFormula(request.getFormula());
         }

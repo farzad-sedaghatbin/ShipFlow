@@ -30,6 +30,7 @@ public class BettingTableService {
     private final TeamRepository teamRepository;
     private final PitchRepository pitchRepository;
     private final WorkLogRepository workLogRepository;
+    private final MessageService messageService;
 
     private static final double HOURS_PER_DAY = 8.0;
 
@@ -138,8 +139,8 @@ public class BettingTableService {
         bettingSlotRepository.findByCycleIdAndTeamIdAndPosition(
                 request.getCycleId(), request.getTeamId(), request.getPosition())
                 .ifPresent(existing -> {
-                    throw new IllegalArgumentException("Slot position " + request.getPosition() + 
-                            " already exists for team " + team.getName() + " in this cycle");
+                    throw new IllegalArgumentException(
+                            messageService.getMessage("error.betting.slot.position.exists", request.getPosition(), team.getName()));
                 });
 
         BettingSlot slot = BettingSlot.builder()
@@ -171,7 +172,7 @@ public class BettingTableService {
         
         List<Team> teams = teamRepository.findByCycleId(cycleId);
         if (teams.isEmpty()) {
-            throw new IllegalArgumentException("No teams found for cycle. Create teams first.");
+            throw new IllegalArgumentException(messageService.getMessage("error.betting.no.teams"));
         }
 
         List<BettingSlot> newSlots = new ArrayList<>();
@@ -211,7 +212,7 @@ public class BettingTableService {
         // Check if pitch is already assigned elsewhere
         bettingSlotRepository.findByPitchId(pitchId).ifPresent(existingSlot -> {
             if (!existingSlot.getId().equals(slotId)) {
-                throw new IllegalArgumentException("Pitch is already assigned to another slot. Remove it first.");
+                throw new IllegalArgumentException(messageService.getMessage("error.betting.pitch.already.assigned"));
             }
         });
 
@@ -325,16 +326,16 @@ public class BettingTableService {
         // Validate dates within cycle
         Cycle cycle = slot.getCycle();
         if (startDate.isBefore(cycle.getStartDate()) || endDate.isAfter(cycle.getEndDate())) {
-            throw new IllegalArgumentException("Slot dates must be within cycle dates (" + 
-                    cycle.getStartDate() + " to " + cycle.getEndDate() + ")");
+            throw new IllegalArgumentException(
+                    messageService.getMessage("error.betting.slot.dates.invalid", cycle.getStartDate(), cycle.getEndDate()));
         }
 
         // If pitch is assigned, validate it still fits
         if (slot.getPitch() != null) {
             long newDays = ChronoUnit.DAYS.between(startDate, endDate);
             if (slot.getPitch().getAppetiteDays() > newDays) {
-                throw new IllegalArgumentException("Cannot resize slot: assigned pitch requires " + 
-                        slot.getPitch().getAppetiteDays() + " days but new slot is only " + newDays + " days");
+                throw new IllegalArgumentException(
+                        messageService.getMessage("error.betting.slot.resize.invalid", slot.getPitch().getAppetiteDays(), newDays));
             }
         }
 
@@ -382,8 +383,7 @@ public class BettingTableService {
         if (!slot.canFitPitch(pitch.getAppetiteDays())) {
             long slotDays = ChronoUnit.DAYS.between(slot.getStartDate(), slot.getEndDate());
             throw new IllegalArgumentException(
-                    String.format("Pitch '%s' requires %d days but slot only has %d days available",
-                            pitch.getTitle(), pitch.getAppetiteDays(), slotDays));
+                    messageService.getMessage("error.betting.pitch.doesnt.fit", pitch.getTitle(), pitch.getAppetiteDays(), slotDays));
         }
     }
 

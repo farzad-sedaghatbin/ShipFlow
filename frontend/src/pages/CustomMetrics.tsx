@@ -91,7 +91,7 @@ export default function CustomMetrics() {
     return (
       <div className="container mx-auto py-6 px-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Custom Metrics</h1>
+          <h1 className="text-3xl font-bold">{t('customMetrics.title')}</h1>
         </div>
         <TableSkeleton rows={5} columns={5} />
       </div>

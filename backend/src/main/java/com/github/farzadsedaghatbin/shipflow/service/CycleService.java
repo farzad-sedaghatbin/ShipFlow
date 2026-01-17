@@ -37,6 +37,7 @@ public class CycleService {
     private final DashboardNotificationService notificationService;
     private final UserRepository userRepository;
     private final OrganizationSettingsService organizationSettingsService;
+    private final MessageService messageService;
 
     public List<CycleDTO> getAllCycles() {
         return cycleRepository.findAllByOrderByStartDateDesc()
@@ -288,7 +289,7 @@ public class CycleService {
         } catch (Exception e) {
             // Throw exception to surface authentication/authorization issues
             log.error("Failed to determine current user's role when checking cycle date override privileges", e);
-            throw new RuntimeException("Unable to verify user permissions for cycle date override", e);
+            throw new RuntimeException(messageService.getMessage("error.cycle.permissions.verification.failed"), e);
         }
     }
 }

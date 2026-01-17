@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service.slack;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.*;
 import com.github.farzadsedaghatbin.shipflow.repository.slack.*;
+import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;

@@ -35,6 +35,7 @@ public class WorkLogService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AICacheService cacheService;
+    private final MessageService messageService;
 
     public List<WorkLogDTO> getAllWorkLogs() {
         return workLogRepository.findAll()
@@ -88,7 +89,7 @@ public class WorkLogService {
         // Validate that either pitchId or taskId is provided, but not both
         if ((request.getPitchId() == null && request.getTaskId() == null) ||
             (request.getPitchId() != null && request.getTaskId() != null)) {
-            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+            throw new IllegalArgumentException(messageService.getMessage("error.worklog.pitch.or.task.required"));
         }
         
         Person person = personRepository.findById(request.getPersonId())
@@ -185,7 +186,7 @@ public class WorkLogService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
         
         if (user.getPerson() == null) {
-            throw new IllegalArgumentException("Your account is not linked to a person profile. Please contact an administrator.");
+            throw new IllegalArgumentException(messageService.getMessage("error.user.no.person.profile"));
         }
         
         return user.getPerson();
@@ -231,7 +232,7 @@ public class WorkLogService {
         // Validate that either pitchId or taskId is provided, but not both
         if ((request.getPitchId() == null && request.getTaskId() == null) ||
             (request.getPitchId() != null && request.getTaskId() != null)) {
-            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+            throw new IllegalArgumentException(messageService.getMessage("error.worklog.pitch.or.task.required"));
         }
         
         Person person = getCurrentUserPerson();
@@ -273,7 +274,7 @@ public class WorkLogService {
         // Validate that either pitchId or taskId is provided, but not both
         if ((request.getPitchId() == null && request.getTaskId() == null) ||
             (request.getPitchId() != null && request.getTaskId() != null)) {
-            throw new IllegalArgumentException("Either pitchId or taskId must be provided, but not both");
+            throw new IllegalArgumentException(messageService.getMessage("error.worklog.pitch.or.task.required"));
         }
         
         Person person = getCurrentUserPerson();
@@ -282,7 +283,7 @@ public class WorkLogService {
         
         // Verify ownership
         if (!workLog.getPerson().getId().equals(person.getId())) {
-            throw new IllegalArgumentException("You can only update your own work logs");
+            throw new IllegalArgumentException(messageService.getMessage("error.worklog.update.own.only"));
         }
         
         Pitch pitch = null;
@@ -322,7 +323,7 @@ public class WorkLogService {
         
         // Verify ownership
         if (!workLog.getPerson().getId().equals(person.getId())) {
-            throw new IllegalArgumentException("You can only delete your own work logs");
+            throw new IllegalArgumentException(messageService.getMessage("error.worklog.delete.own.only"));
         }
         
         workLogRepository.deleteById(id);

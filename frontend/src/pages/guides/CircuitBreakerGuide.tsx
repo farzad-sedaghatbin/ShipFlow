@@ -13,15 +13,15 @@ export default function CircuitBreakerGuide() {
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Circuit Breaker</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.circuitBreaker.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    The Shape Up safety valve - detect and respond to scope overflow
+                    {t('guides.circuitBreaker.subtitle')}
                 </p>
             </div>
 
@@ -32,25 +32,17 @@ export default function CircuitBreakerGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Shield className="h-5 w-5" />
-                        The Fixed Time, Variable Scope Principle
+                        {t('guides.circuitBreaker.principleTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        In Shape Up methodology, <strong>time is fixed</strong>, not scope. When a pitch consistently
-                        goes over its appetite (time budget), it signals a fundamental problem: the scope wasn't
-                        properly shaped or unexpected complexity emerged.
-                    </p>
+                    <p>{t('guides.circuitBreaker.principleDesc')}</p>
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
                         <p className="text-sm text-amber-900 dark:text-amber-100">
-                            <strong>🎯 Shape Up Wisdom:</strong> "If a pitch is taking too long, something is wrong.
-                            You don't extend the deadline—you either cut scope or kill the pitch."
+                            <strong>{t('guides.circuitBreaker.wisdom')}</strong> {t('guides.circuitBreaker.wisdomDesc')}
                         </p>
                     </div>
-                    <p>
-                        The Circuit Breaker is ShipFlow's automated mechanism to flag these situations and help teams
-                        make the tough decisions that Shape Up requires.
-                    </p>
+                    <p>{t('guides.circuitBreaker.mechanismDesc')}</p>
                 </CardContent>
             </Card>
 
@@ -59,9 +51,9 @@ export default function CircuitBreakerGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5" />
-                        How Circuit Breaker Works
+                        {t('guides.circuitBreaker.howTitle')}
                     </CardTitle>
-                    <CardDescription>Automated overflow detection and alerts</CardDescription>
+                    <CardDescription>{t('guides.circuitBreaker.howSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-3">
@@ -70,9 +62,9 @@ export default function CircuitBreakerGuide() {
                                 1
                             </div>
                             <div className="flex-1">
-                                <p className="font-medium">Continuous Monitoring</p>
+                                <p className="font-medium">{t('guides.circuitBreaker.step1Title')}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    ShipFlow tracks work logs against each pitch's appetite (time budget) in real-time.
+                                    {t('guides.circuitBreaker.step1Desc')}
                                 </p>
                             </div>
                         </div>
@@ -82,10 +74,9 @@ export default function CircuitBreakerGuide() {
                                 2
                             </div>
                             <div className="flex-1">
-                                <p className="font-medium">Threshold Detection</p>
+                                <p className="font-medium">{t('guides.circuitBreaker.step2Title')}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    When a pitch reaches your configured threshold (default 80% of appetite), it appears
-                                    in the overflow detection list with color-coded severity.
+                                    {t('guides.circuitBreaker.step2Desc')}
                                 </p>
                             </div>
                         </div>
@@ -95,33 +86,32 @@ export default function CircuitBreakerGuide() {
                                 3
                             </div>
                             <div className="flex-1">
-                                <p className="font-medium">Team Notification</p>
+                                <p className="font-medium">{t('guides.circuitBreaker.step3Title')}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    When you trigger a circuit breaker, all team members assigned to the pitch receive
-                                    a dashboard notification to discuss the situation.
+                                    {t('guides.circuitBreaker.step3Desc')}
                                 </p>
                             </div>
                         </div>
                     </div>
 
                     <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-                        <p className="text-sm font-medium">Severity Levels:</p>
+                        <p className="text-sm font-medium">{t('guides.circuitBreaker.severityTitle')}</p>
                         <div className="grid gap-2">
                             <div className="flex items-center gap-2 text-sm">
                                 <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                                <span className="text-muted-foreground">&lt; 80%: Within budget</span>
+                                <span className="text-muted-foreground">{t('guides.circuitBreaker.severityLow')}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                                <span className="text-muted-foreground">80-89%: Warning zone</span>
+                                <span className="text-muted-foreground">{t('guides.circuitBreaker.severityWarning')}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <div className="h-3 w-3 rounded-full bg-orange-500"></div>
-                                <span className="text-muted-foreground">90-99%: Critical</span>
+                                <span className="text-muted-foreground">{t('guides.circuitBreaker.severityCritical')}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                                <span className="text-muted-foreground">≥ 100%: Over budget</span>
+                                <span className="text-muted-foreground">{t('guides.circuitBreaker.severityOver')}</span>
                             </div>
                         </div>
                     </div>
@@ -133,21 +123,20 @@ export default function CircuitBreakerGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
-                        Accessing the Circuit Breaker Monitor
+                        {t('guides.circuitBreaker.accessTitle')}
                     </CardTitle>
-                    <CardDescription>Where to find and configure overflow detection</CardDescription>
+                    <CardDescription>{t('guides.circuitBreaker.accessSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>Navigate to your <strong>Active Cycle</strong></li>
-                        <li>Look for the <strong>Circuit Breaker</strong> link in the cycle navigation</li>
-                        <li>Or access via <code>/cycles/:cycleId/circuit-breaker</code></li>
+                        <li>{t('guides.circuitBreaker.accessStep1')}</li>
+                        <li>{t('guides.circuitBreaker.accessStep2')}</li>
+                        <li>{t('guides.circuitBreaker.accessStep3')}</li>
                     </ol>
 
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Tip:</strong> Adjust the detection threshold slider (50-150%) to match your
-                            team's tolerance for scope expansion. Conservative teams use 80%, more flexible teams may use 100%.
+                            <strong>{t('guides.circuitBreaker.accessTip')}</strong> {t('guides.circuitBreaker.accessTipDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -158,35 +147,35 @@ export default function CircuitBreakerGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
-                        Triggering a Circuit Breaker
+                        {t('guides.circuitBreaker.triggerTitle')}
                     </CardTitle>
-                    <CardDescription>When to flag a pitch for team discussion</CardDescription>
+                    <CardDescription>{t('guides.circuitBreaker.triggerSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        When a pitch appears in the overflow list, you can <strong>trigger the circuit breaker</strong> to:
+                        {t('guides.circuitBreaker.triggerDesc')}
                     </p>
                     <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                        <li>Alert the team that this pitch needs immediate attention</li>
-                        <li>Document the specific overflow reason (e.g., "Unexpected API complexity")</li>
-                        <li>Force a conversation about scope reduction or pitch cancellation</li>
-                        <li>Generate dashboard notifications for all pitch stakeholders</li>
+                        <li>{t('guides.circuitBreaker.triggerItem1')}</li>
+                        <li>{t('guides.circuitBreaker.triggerItem2')}</li>
+                        <li>{t('guides.circuitBreaker.triggerItem3')}</li>
+                        <li>{t('guides.circuitBreaker.triggerItem4')}</li>
                     </ul>
 
                     <div className="rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 p-4">
                         <p className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-2">
-                            ⚠️ What Triggering Does:
+                            {t('guides.circuitBreaker.triggerDoesTitle')}
                         </p>
                         <ul className="text-sm text-orange-900 dark:text-orange-100 space-y-1">
-                            <li>✓ Flags the pitch with a red "Circuit Breaker" badge</li>
-                            <li>✓ Sends notifications to all team members</li>
-                            <li>✓ Adds 50 risk points in risk analysis</li>
-                            <li>✓ Moves pitch to high-priority discussion queue</li>
+                            <li>{t('guides.circuitBreaker.triggerDoes1')}</li>
+                            <li>{t('guides.circuitBreaker.triggerDoes2')}</li>
+                            <li>{t('guides.circuitBreaker.triggerDoes3')}</li>
+                            <li>{t('guides.circuitBreaker.triggerDoes4')}</li>
                         </ul>
                     </div>
 
                     <p className="text-sm text-muted-foreground">
-                        After triggering, the team should meet to decide: <strong>cut scope</strong> or <strong>kill the pitch</strong>.
+                        {t('guides.circuitBreaker.triggerAfter')}
                     </p>
                 </CardContent>
             </Card>
@@ -202,36 +191,34 @@ export default function CircuitBreakerGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        When scope can't be cut enough to finish within the appetite, Shape Up says: <strong>kill it</strong>.
-                        This isn't failure—it's discipline.
+                        {t('guides.circuitBreaker.killDesc')}
                     </p>
 
                     <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-4">
                         <p className="text-sm text-red-900 dark:text-red-100 mb-2">
-                            <strong>🛑 Killing a Pitch:</strong>
+                            <strong>{t('guides.circuitBreaker.killDoesTitle')}</strong>
                         </p>
                         <ul className="text-sm text-red-900 dark:text-red-100 space-y-1">
-                            <li>• Changes pitch status to <code>CANCELLED</code></li>
-                            <li>• Notifies all team members with the cancellation reason</li>
-                            <li>• Preserves work logs and history for future reference</li>
-                            <li>• Frees up team capacity for other work</li>
+                            <li>{t('guides.circuitBreaker.killDoes1')}</li>
+                            <li>{t('guides.circuitBreaker.killDoes2')}</li>
+                            <li>{t('guides.circuitBreaker.killDoes3')}</li>
+                            <li>{t('guides.circuitBreaker.killDoes4')}</li>
                         </ul>
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">When to Kill a Pitch:</p>
+                        <p className="text-sm font-medium">{t('guides.circuitBreaker.killWhenTitle')}</p>
                         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                            <li>It's consistently running 50%+ over appetite with no end in sight</li>
-                            <li>The core problem turned out to be different than shaped</li>
-                            <li>Technical complexity emerged that makes the appetite unrealistic</li>
-                            <li>The business value no longer justifies the expanded investment</li>
+                            <li>{t('guides.circuitBreaker.killWhen1')}</li>
+                            <li>{t('guides.circuitBreaker.killWhen2')}</li>
+                            <li>{t('guides.circuitBreaker.killWhen3')}</li>
+                            <li>{t('guides.circuitBreaker.killWhen4')}</li>
                         </ul>
                     </div>
 
                     <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-4">
                         <p className="text-sm text-green-900 dark:text-green-100">
-                            <strong>✅ Remember:</strong> A killed pitch isn't wasted work. The learnings inform better
-                            shaping for future cycles. You can always re-pitch with a better understanding and more realistic appetite.
+                            <strong>{t('guides.circuitBreaker.killRemember')}</strong> {t('guides.circuitBreaker.killRememberDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -242,18 +229,18 @@ export default function CircuitBreakerGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <CheckCircle2 className="h-5 w-5" />
-                        Resolving a Circuit Breaker
+                        {t('guides.circuitBreaker.resolveTitle')}
                     </CardTitle>
-                    <CardDescription>When you've addressed the overflow</CardDescription>
+                    <CardDescription>{t('guides.circuitBreaker.resolveSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        If the team successfully cuts scope and gets back on track, you can <strong>resolve the circuit breaker</strong>:
+                        {t('guides.circuitBreaker.resolveDesc')}
                     </p>
                     <ol className="list-decimal list-inside space-y-2">
-                        <li>Select the new status (typically <code>IN_PROGRESS</code> or <code>TESTING</code>)</li>
-                        <li>Click "Resolve Circuit Breaker"</li>
-                        <li>The pitch returns to normal tracking without the warning flag</li>
+                        <li>{t('guides.circuitBreaker.resolveStep1')}</li>
+                        <li>{t('guides.circuitBreaker.resolveStep2')}</li>
+                        <li>{t('guides.circuitBreaker.resolveStep3')}</li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4">

@@ -28,6 +28,7 @@ public class BugReportService {
     private final BugReportRepository bugReportRepository;
     private final TestRunRepository testRunRepository;
     private final PitchRepository pitchRepository;
+    private final MessageService messageService;
     private final CycleRepository cycleRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
@@ -373,7 +374,7 @@ public class BugReportService {
 
     private void checkFeatureEnabled() {
         if (!testManagementEnabled) {
-            throw new IllegalArgumentException("QA Test Management feature is not enabled");
+            throw new IllegalArgumentException(messageService.getMessage("error.qa.test.management.disabled"));
         }
     }
 

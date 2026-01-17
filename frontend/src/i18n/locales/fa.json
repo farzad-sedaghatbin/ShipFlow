@@ -510,6 +510,30 @@
     "loadingFailed": "بارگذاری داده‌ها ناموفق بود.",
     "saveFailed": "ذخیره تغییرات ناموفق بود.",
     "deleteFailed": "حذف ناموفق بود.",
+    "stopTimerFailed": "توقف تایمر ناموفق بود",
+    "cancelTimerFailed": "لغو تایمر ناموفق بود",
+    "loadNotesFailed": "بارگذاری یادداشت‌ها ناموفق بود",
+    "saveNoteFailed": "ذخیره یادداشت ناموفق بود",
+    "deleteNoteFailed": "حذف یادداشت ناموفق بود",
+    "loadGitHubActivityFailed": "بارگذاری فعالیت GitHub ناموفق بود",
+    "updatePositionFailed": "به‌روزرسانی موقعیت ناموفق بود",
+    "loadHistoryFailed": "بارگذاری تاریخچه ناموفق بود",
+    "loadRiskAnalysisFailed": "بارگذاری تحلیل ریسک ناموفق بود",
+    "refreshRiskAnalysisFailed": "به‌روزرسانی تحلیل ریسک ناموفق بود",
+    "loadRiskOverviewFailed": "بارگذاری خلاصه ریسک ناموفق بود",
+    "refreshRiskOverviewFailed": "به‌روزرسانی خلاصه ریسک ناموفق بود",
+    "savePermissionFailed": "ذخیره مجوز ناموفق بود",
+    "registerRepositoryFailed": "ثبت مخزن ناموفق بود",
+    "getAnswerFailed": "دریافت پاسخ ناموفق بود",
+    "submitFeedbackFailed": "ارسال بازخورد ناموفق بود",
+    "loadCycleHealthFailed": "بارگذاری خلاصه سلامت چرخه ناموفق بود",
+    "saveBugReportFailed": "ذخیره گزارش باگ ناموفق بود",
+    "loadDependenciesFailed": "بارگذاری وابستگی‌های وظیفه ناموفق بود",
+    "addDependencyFailed": "افزودن وابستگی ناموفق بود",
+    "removeDependencyFailed": "حذف وابستگی ناموفق بود",
+    "saveTestCaseFailed": "ذخیره مورد تست ناموفق بود",
+    "generateTestCasesFailed": "تولید موارد تست ناموفق بود",
+    "acceptSuggestionFailed": "پذیرش پیشنهاد ناموفق بود",
     "projectNotFound": "پروژه یافت نشد",
     "cycleNotFound": "سیکل یافت نشد",
     "pitchNotFound": "پیچ یافت نشد",
@@ -2662,7 +2686,36 @@
     "failedToApplyProfile": "اعمال پروفایل ریسک ناموفق بود",
     "profileNotFound": "پروفایل \"{{profile}}\" یافت نشد",
     "confirmReset": "آیا مطمئن هستید که می‌خواهید همه تنظیمات را به پیش‌فرض بازنشانی کنید؟ این عمل قابل بازگشت نیست.",
-    "permissionDenied": "شما مجوز دسترسی به این صفحه را ندارید. نقش مدیر مورد نیاز است."
+    "permissionDenied": "شما مجوز دسترسی به این صفحه را ندارید. نقش مدیر مورد نیاز است.",
+    "defaults": {
+      "organizationName": "سازمان من",
+      "taskCategory": {
+        "pitchScope": "کارهای مربوط به تحویلی‌های پیچ",
+        "debtImprovement": "بدهی فنی و بهبودها"
+      },
+      "pitchCategory": {
+        "feature": "توسعه قابلیت جدید",
+        "infrastructure": "زیرساخت و معماری",
+        "refactor": "بازنویسی کد",
+        "bugFix": "رفع باگ‌ها"
+      },
+      "bugStatus": {
+        "new": "گزارش تازه شده",
+        "inProgress": "در حال کار",
+        "fixed": "رفع شده",
+        "verified": "تأیید شده",
+        "wontFix": "رفع نخواهد شد"
+      },
+      "severity": {
+        "critical": "سیستم از کار افتاده یا از دست رفتن داده",
+        "high": "قابلیت اصلی خراب شده",
+        "medium": "قابلیت به صورت جزئی خراب شده",
+        "low": "مشکل جزئی یا ظاهری"
+      }
+    },
+    "loadFailed": "بارگذاری تنظیمات سازمان ناموفق بود",
+    "updateSuccess": "تنظیمات سازمان با موفقیت به‌روزرسانی شد",
+    "updateFailed": "به‌روزرسانی تنظیمات سازمان ناموفق بود"
   },
   "dashboardManager": {
     "title": "گزارش‌ها",

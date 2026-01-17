@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Plus, X, AlertCircle, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ interface TaskDependenciesProps {
 }
 
 export default function TaskDependencies({ taskId, cycleId, onDependenciesChange }: TaskDependenciesProps) {
+  const { t } = useTranslation();
   const [blockingTasks, setBlockingTasks] = useState<TaskDependency[]>([]);
   const [blockedByTasks, setBlockedByTasks] = useState<TaskDependency[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       setBlockedByTasks(response.data.blockedBy || []);
     } catch (error) {
       console.error('Failed to load dependencies:', error);
-      toast.error('Failed to load task dependencies');
+      toast.error(t('errors.loadDependenciesFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       await loadDependencies();
       onDependenciesChange?.();
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to add dependency';
+      const message = error.response?.data?.message || t('errors.addDependencyFailed');
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -109,7 +111,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       onDependenciesChange?.();
     } catch (error) {
       console.error('Failed to remove dependency:', error);
-      toast.error('Failed to remove dependency');
+      toast.error(t('errors.removeDependencyFailed'));
     }
   };
 

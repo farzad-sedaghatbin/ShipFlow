@@ -519,6 +519,190 @@
     "loadingFailed": "Failed to load data.",
     "saveFailed": "Failed to save changes.",
     "deleteFailed": "Failed to delete.",
+    "stopTimerFailed": "Failed to stop timer",
+    "cancelTimerFailed": "Failed to cancel timer",
+    "loadNotesFailed": "Failed to load notes",
+    "saveNoteFailed": "Failed to save note",
+    "deleteNoteFailed": "Failed to delete note",
+    "loadGitHubActivityFailed": "Failed to load GitHub activity",
+    "updatePositionFailed": "Failed to update position",
+    "loadHistoryFailed": "Failed to load history",
+    "loadRiskAnalysisFailed": "Failed to load risk analysis",
+    "refreshRiskAnalysisFailed": "Failed to refresh risk analysis",
+    "loadRiskOverviewFailed": "Failed to load risk overview",
+    "refreshRiskOverviewFailed": "Failed to refresh risk overview",
+    "savePermissionFailed": "Failed to save permission",
+    "registerRepositoryFailed": "Failed to register repository",
+    "getAnswerFailed": "Failed to get answer",
+    "submitFeedbackFailed": "Failed to submit feedback",
+    "loadCycleHealthFailed": "Failed to load cycle health summary",
+    "saveBugReportFailed": "Failed to save bug report",
+    "loadDependenciesFailed": "Failed to load task dependencies",
+    "http": {
+      "400": {
+        "title": "Invalid Request",
+        "message": "The information provided is incorrect or incomplete.",
+        "action": "Please check your input and try again."
+      },
+      "401": {
+        "title": "Session Expired",
+        "message": "Your session has expired for security reasons.",
+        "action": "Please log in again to continue."
+      },
+      "403": {
+        "title": "Access Denied",
+        "message": "You don't have permission to perform this action.",
+        "action": "Contact your administrator if you need access."
+      },
+      "404": {
+        "title": "Not Found",
+        "message": "The requested item could not be found.",
+        "action": "It may have been deleted or moved."
+      },
+      "409": {
+        "title": "Conflict",
+        "message": "This action conflicts with existing data.",
+        "action": "The item may already exist or has been modified."
+      },
+      "422": {
+        "title": "Validation Error",
+        "message": "The provided data did not pass validation.",
+        "action": "Please check the highlighted fields and try again."
+      },
+      "429": {
+        "title": "Too Many Requests",
+        "message": "You've made too many requests in a short time.",
+        "action": "Please wait a moment and try again."
+      },
+      "500": {
+        "title": "Server Error",
+        "message": "Something went wrong on our end.",
+        "action": "Please try again in a few moments."
+      },
+      "502": {
+        "title": "Service Unavailable",
+        "message": "The server is temporarily unavailable.",
+        "action": "Please try again in a few moments."
+      },
+      "503": {
+        "title": "Service Unavailable",
+        "message": "The service is temporarily unavailable.",
+        "action": "Please try again later."
+      }
+    },
+    "domain": {
+      "project": {
+        "name": {
+          "required": "Project name is required",
+          "duplicate": "A project with this name already exists"
+        },
+        "key": {
+          "required": "Project key is required",
+          "duplicate": "A project with this key already exists",
+          "invalid": "Project key must be 2-10 uppercase letters or numbers"
+        },
+        "hasCycles": "Cannot delete project with existing cycles",
+        "notFound": "Project not found"
+      },
+      "cycle": {
+        "name": {
+          "required": "Cycle name is required"
+        },
+        "dates": {
+          "required": "Start and end dates are required",
+          "invalid": "End date must be after start date"
+        },
+        "project": {
+          "required": "Please select a project"
+        },
+        "notFound": "Cycle not found",
+        "hasPitches": "Cannot delete cycle with existing pitches"
+      },
+      "pitch": {
+        "title": {
+          "required": "Pitch title is required"
+        },
+        "cycle": {
+          "required": "Please select a cycle"
+        },
+        "appetite": {
+          "invalid": "Appetite must be between 1 and 42 days"
+        },
+        "notFound": "Pitch not found",
+        "hasTasks": "Cannot delete pitch with existing tasks"
+      },
+      "task": {
+        "title": {
+          "required": "Task title is required"
+        },
+        "cycle": {
+          "required": "Please select a cycle"
+        },
+        "notFound": "Task not found",
+        "estimate": {
+          "invalid": "Estimate hours must be a positive number"
+        }
+      },
+      "team": {
+        "name": {
+          "required": "Team name is required",
+          "duplicate": "A team with this name already exists"
+        },
+        "notFound": "Team not found",
+        "hasMembers": "Cannot delete team with existing members"
+      },
+      "person": {
+        "name": {
+          "required": "Person name is required"
+        },
+        "email": {
+          "required": "Email is required",
+          "invalid": "Please enter a valid email address",
+          "duplicate": "A person with this email already exists"
+        },
+        "notFound": "Person not found"
+      },
+      "auth": {
+        "invalidCredentials": "Invalid username or password",
+        "accountLocked": "Account is locked. Contact your administrator.",
+        "accountDisabled": "Account is disabled. Contact your administrator.",
+        "tokenExpired": "Your session has expired. Please log in again.",
+        "tokenInvalid": "Invalid session. Please log in again."
+      },
+      "worklog": {
+        "hours": {
+          "required": "Hours worked is required",
+          "invalid": "Hours must be between 0.25 and 24"
+        },
+        "date": {
+          "required": "Work date is required",
+          "future": "Work date cannot be in the future"
+        }
+      },
+      "document": {
+        "file": {
+          "required": "Please select a file to upload",
+          "tooLarge": "File size exceeds the maximum limit (10MB)",
+          "typeInvalid": "This file type is not supported"
+        }
+      },
+      "validation": {
+        "failed": "Please check the form for errors"
+      },
+      "unknown": {
+        "error": "An unexpected error occurred. Please try again."
+      },
+      "connection": {
+        "title": "Connection Error",
+        "message": "Unable to connect to the server.",
+        "action": "Please check your internet connection and try again."
+      }
+    },
+    "addDependencyFailed": "Failed to add dependency",
+    "removeDependencyFailed": "Failed to remove dependency",
+    "saveTestCaseFailed": "Failed to save test case",
+    "generateTestCasesFailed": "Failed to generate test cases",
+    "acceptSuggestionFailed": "Failed to accept suggestion",
     "projectNotFound": "Project not found",
     "cycleNotFound": "Cycle not found",
     "pitchNotFound": "Pitch not found",
@@ -1662,7 +1846,36 @@
     "failedToApplyProfile": "Failed to apply risk profile",
     "profileNotFound": "Profile \"{{profile}}\" not found",
     "confirmReset": "Are you sure you want to reset all settings to defaults? This cannot be undone.",
-    "permissionDenied": "You do not have permission to access this page. Admin role required."
+    "permissionDenied": "You do not have permission to access this page. Admin role required.",
+    "defaults": {
+      "organizationName": "My Organization",
+      "taskCategory": {
+        "pitchScope": "Work related to pitch deliverables",
+        "debtImprovement": "Technical debt and improvements"
+      },
+      "pitchCategory": {
+        "feature": "New feature development",
+        "infrastructure": "Infrastructure and architecture",
+        "refactor": "Code refactoring",
+        "bugFix": "Bug fixes"
+      },
+      "bugStatus": {
+        "new": "Newly reported",
+        "inProgress": "Being worked on",
+        "fixed": "Fix implemented",
+        "verified": "Fix verified",
+        "wontFix": "Will not fix"
+      },
+      "severity": {
+        "critical": "System down or data loss",
+        "high": "Major feature broken",
+        "medium": "Feature partially broken",
+        "low": "Minor issue or cosmetic"
+      }
+    },
+    "loadFailed": "Failed to load organization settings",
+    "updateSuccess": "Organization settings updated successfully",
+    "updateFailed": "Failed to update organization settings"
   },
   "userManagement": {
     "title": "User Management",
@@ -4228,6 +4441,291 @@
       "limitItem2": "**Garbage in, garbage out:** AI quality depends on clear, detailed pitch descriptions.",
       "limitItem3": "**Update pitches:** If you reshape a pitch, re-run the AI analysis to get updated insights.",
       "limitItem4": "**Not a blocker:** Risk flags are warnings, not hard stops. Teams can still bet on high-risk pitches if they accept the tradeoffs."
+    },
+    "bettingMeeting": {
+      "title": "Running a Betting Meeting",
+      "subtitle": "Learn how to conduct effective betting meetings and make informed cycle commitments",
+      "whatTitle": "What is a Betting Meeting?",
+      "whatDesc": "A **betting meeting** is where stakeholders decide which pitches to commit to for the next cycle. It's called \"betting\" because you're placing bets on what will deliver the most value given the fixed time constraint.",
+      "keyPrinciple": "💡 Key Principle:",
+      "keyPrincipleDesc": "In Shape Up, you bet on pitches, not tasks. Each pitch should be well-shaped with clear boundaries and appetite (time budget).",
+      "beforeTitle": "Before the Meeting: Preparation",
+      "beforeSubtitle": "Set yourself up for success",
+      "step1Title": "1. Review Available Pitches",
+      "step1Desc": "Navigate to the **Pitch Board** to see all available pitches for consideration.",
+      "step2Title": "2. Evaluate Each Pitch",
+      "step2Desc": "Click on each pitch to review its details. Look for:",
+      "step3Title": "3. Check AI Risk Assessments",
+      "step3Desc": "Use the AI Risk Advisor to identify potential issues before committing. This can reveal hidden complexities or dependencies.",
+      "problemStatement": "**Problem statement:** Is the problem clearly defined?",
+      "appetite": "**Appetite:** How much time are we willing to spend?",
+      "solutionSketch": "**Solution sketch:** Is there a clear approach?",
+      "risks": "**Risks:** What could go wrong?",
+      "noGos": "**No-gos:** What's explicitly out of scope?",
+      "duringTitle": "During the Meeting: Making Decisions",
+      "duringSubtitle": "The betting table in action",
+      "usingTableTitle": "Using the Betting Table",
+      "usingTableDesc": "Navigate to **Betting Table** to see all pitches in one view:",
+      "decisionFramework": "Decision Framework",
+      "betOnIt": "✅ Bet On It",
+      "betOnItDesc": "The pitch is well-shaped, valuable, and fits within the cycle's capacity. Mark it as \"Approved\" or \"Committed\" in the betting table.",
+      "tableIt": "⏸️ Table It",
+      "tableItDesc": "Good idea but needs more shaping, or not the right time. Keep it in the backlog for future consideration.",
+      "pass": "❌ Pass",
+      "passDesc": "Not aligned with current priorities or too risky. Mark as \"Rejected\" with a clear reason.",
+      "keyQuestions": "Key Questions to Ask",
+      "question1": "Does this pitch solve a real problem for our users?",
+      "question2": "Is the appetite (time budget) realistic?",
+      "question3": "Do we have the right people available?",
+      "question4": "Are there any blocking dependencies?",
+      "question5": "What's the opportunity cost of choosing this over other pitches?",
+      "question6": "Can we ship something valuable within the time box?",
+      "afterTitle": "After the Meeting: Finalizing Commitments",
+      "afterSubtitle": "Setting up the cycle for success",
+      "after1Title": "1. Create or Update the Cycle",
+      "after1Step1": "Navigate to **Cycles** in the sidebar",
+      "after1Step2": "Click **\"New Cycle\"** or select an upcoming cycle",
+      "after1Step3": "Set the cycle dates (typically 6 weeks)",
+      "after1Step4": "Add the approved pitches to the cycle",
+      "after2Title": "2. Assign Teams",
+      "after2Desc": "For each approved pitch, assign the team members who will work on it. Each pitch typically gets a small team (1-2 people).",
+      "after3Title": "3. Communicate Decisions",
+      "after3Desc": "Make sure everyone knows:",
+      "after3Item1": "What was approved and why",
+      "after3Item2": "What was deferred and why",
+      "after3Item3": "Who is working on what",
+      "after3Item4": "When the cycle starts and ends",
+      "after3ProTip": "💡 Pro Tip:",
+      "after3ProTipDesc": "Use the Meetings feature to document the betting meeting decisions and share notes with the team.",
+      "bestPracticesTitle": "Best Practices",
+      "bestPractice1": "**Keep it small:** Limit betting meetings to key stakeholders (2-4 people)",
+      "bestPractice2": "**Time-box discussions:** Spend 5-10 minutes per pitch maximum"
+    },
+    "hillCharts": {
+      "title": "Understanding Hill Charts",
+      "subtitle": "Master the hill chart visualization to track progress and identify risks",
+      "whatTitle": "What is a Hill Chart?",
+      "whatDesc": "A **hill chart** is a unique visualization tool from the Shape Up methodology that shows where work items are in their journey from unknown to known to done.",
+      "unlike": "Unlike traditional progress bars or burn-down charts, hill charts reveal the *nature* of the work being done, not just the quantity completed.",
+      "keyInsight": "💡 Key Insight:",
+      "keyInsightDesc": "A task stuck on the uphill side indicates uncertainty and unknowns, while movement downhill shows confident execution.",
+      "twoPhasesTitle": "The Two Phases of Work",
+      "twoPhasesSubtitle": "Understanding uphill vs. downhill",
+      "uphillTitle": "Uphill (Figuring Out)",
+      "uphillItem1": "Exploring unknowns",
+      "uphillItem2": "Making key decisions",
+      "uphillItem3": "Solving hard problems",
+      "uphillItem4": "High uncertainty",
+      "downhillTitle": "Downhill (Making It Happen)",
+      "downhillItem1": "Executing with confidence",
+      "downhillItem2": "Clear path forward",
+      "downhillItem3": "Predictable progress",
+      "downhillItem4": "Low uncertainty",
+      "readingTitle": "How to Read a Hill Chart",
+      "readingSubtitle": "Interpreting positions and movement",
+      "position1Title": "Starting Point (Far Left)",
+      "position1Desc": "Work just started, lots of unknowns, team is exploring and researching",
+      "position2Title": "Climbing Uphill",
+      "position2Desc": "Making progress on figuring things out, but still facing uncertainties",
+      "position3Title": "Top of the Hill",
+      "position3Desc": "Critical transition point - unknowns are resolved, ready to execute",
+      "position4Title": "Going Downhill",
+      "position4Desc": "Confident execution, clear path to completion, predictable timeline",
+      "position5Title": "Finish Line (Far Right)",
+      "position5Desc": "Work is complete and ready for delivery",
+      "usingTitle": "Using Hill Charts in ShipFlow",
+      "usingSubtitle": "Interactive features and best practices",
+      "movingTitle": "Moving Items on the Chart",
+      "movingStep1": "Navigate to a pitch or cycle hill chart",
+      "movingStep2": "Click and drag any item (scope or task) on the chart",
+      "movingStep3": "Position it based on your current understanding:",
+      "movingStep3a": "Left side if you're still figuring things out",
+      "movingStep3b": "Right side if you know what to do and are executing",
+      "movingStep4": "The position is automatically saved",
+      "warningTitle": "⚠️ Warning Signs",
+      "warnStuckUphill": "**Stuck uphill:** Item hasn't moved in days - may need help or discussion",
+      "warnMovingBackward": "**Moving backward:** New unknowns discovered - reassess scope or approach",
+      "warnTooManyUphill": "**Too many uphill:** Cycle may be overloaded with uncertain work",
+      "hillBestPracticesTitle": "Best Practices"
+    },
+    "reports": {
+      "title": "Reports & Dashboards",
+      "subtitle": "Visualize your team's performance with custom dashboards and metrics",
+      "dashboardManagerTitle": "Dashboard Manager",
+      "dashboardManagerDesc": "The Dashboard Manager allows you to create custom views of your project data. You can have multiple dashboards for different purposes (e.g., \"Executive Overview,\" \"Team Velocity,\" \"QA Metrics\").",
+      "cycleReportsTitle": "Cycle Reports",
+      "cycleReportsSubtitle": "Deep dive into cycle performance",
+      "cycleReportsDesc": "Cycle reports provide standardized metrics for every 6-week cycle, including:",
+      "scopeCompletion": "Scope Completion Rate",
+      "hillChartVelocity": "Hill Chart Velocity",
+      "teamCapacity": "Team Capacity vs. Actual",
+      "dashboardTemplatesTitle": "Dashboard Templates",
+      "dashboardTemplatesSubtitle": "Start quickly with pre-built reporting boards",
+      "dashboardTemplatesDesc": "ShipFlow comes with several default templates to help you get started without building from scratch. Click **\"Use Template\"** on the main Reports page to browse:",
+      "weeklySync": "**Weekly Sync:** Overview of active pitches and blockers for standups.",
+      "cycleReview": "**Cycle Review:** Comprehensive metrics for the end-of-cycle retrospective.",
+      "executiveSummary": "**Executive Summary:** High-level view of project health and risks.",
+      "customTitle": "Customizing Your View",
+      "customSubtitle": "Build what you need",
+      "customStep1": "Go to **Reports**",
+      "customStep2": "Click **\"New Report Board\"**",
+      "customStep3": "Give it a name and optional description",
+      "customStep4": "Use **\"Add Widget\"** to select from available metric types",
+      "tip": "💡 Tip:",
+      "tipDesc": "You can set any custom dashboard as your default view so it loads automatically when you visit the Reports section."
+    },
+    "circuitBreaker": {
+      "title": "Circuit Breaker",
+      "subtitle": "The Shape Up safety valve - detect and respond to scope overflow",
+      "principleTitle": "The Fixed Time, Variable Scope Principle",
+      "principleDesc": "In Shape Up methodology, **time is fixed**, not scope. When a pitch consistently goes over its appetite (time budget), it signals a fundamental problem: the scope wasn't properly shaped or unexpected complexity emerged.",
+      "wisdom": "🎯 Shape Up Wisdom:",
+      "wisdomDesc": "\"If a pitch is taking too long, something is wrong. You don't extend the deadline—you either cut scope or kill the pitch.\"",
+      "mechanismDesc": "The Circuit Breaker is ShipFlow's automated mechanism to flag these situations and help teams make the tough decisions that Shape Up requires.",
+      "howTitle": "How Circuit Breaker Works",
+      "howSubtitle": "Automated overflow detection and alerts",
+      "step1Title": "Continuous Monitoring",
+      "step1Desc": "ShipFlow tracks work logs against each pitch's appetite (time budget) in real-time.",
+      "step2Title": "Threshold Detection",
+      "step2Desc": "When a pitch reaches your configured threshold (default 80% of appetite), it appears in the overflow detection list with color-coded severity.",
+      "step3Title": "Team Notification",
+      "step3Desc": "When you trigger a circuit breaker, all team members assigned to the pitch receive a dashboard notification to discuss the situation.",
+      "accessTitle": "Accessing the Circuit Breaker Monitor",
+      "accessSubtitle": "Where to find and configure overflow detection",
+      "accessStep1": "Navigate to your **Active Cycle**",
+      "accessStep2": "Look for the **Circuit Breaker** link in the cycle navigation",
+      "accessStep3": "Or access via `/cycles/:cycleId/circuit-breaker`",
+      "accessTip": "💡 Tip:",
+      "accessTipDesc": "Adjust the detection threshold slider (50-150%) to match your team's tolerance for scope expansion. Conservative teams use 80%, more flexible teams may use 100%.",
+      "severityTitle": "Severity Levels:",
+      "severityLow": "< 80%: Within budget",
+      "severityWarning": "80-89%: Warning zone",
+      "severityCritical": "90-99%: Critical",
+      "severityOver": "≥ 100%: Over budget",
+      "triggerTitle": "Triggering a Circuit Breaker",
+      "triggerSubtitle": "When to flag a pitch for team discussion",
+      "triggerDesc": "When a pitch appears in the overflow list, you can **trigger the circuit breaker** to:",
+      "triggerItem1": "Alert the team that this pitch needs immediate attention",
+      "triggerItem2": "Document the specific overflow reason (e.g., \"Unexpected API complexity\")",
+      "triggerItem3": "Force a conversation about scope reduction or pitch cancellation",
+      "triggerItem4": "Generate dashboard notifications for all pitch stakeholders",
+      "triggerDoesTitle": "⚠️ What Triggering Does:",
+      "triggerDoes1": "✓ Flags the pitch with a red \"Circuit Breaker\" badge",
+      "triggerDoes2": "✓ Sends notifications to all team members",
+      "triggerDoes3": "✓ Adds 50 risk points in risk analysis",
+      "triggerDoes4": "✓ Moves pitch to high-priority discussion queue",
+      "triggerAfter": "After triggering, the team should meet to decide: **cut scope** or **kill the pitch**.",
+      "killTitle": "Killing a Pitch",
+      "killSubtitle": "The hardest but sometimes necessary decision",
+      "killDesc": "When scope can't be cut enough to finish within the appetite, Shape Up says: **kill it**. This isn't failure—it's discipline.",
+      "killDoesTitle": "🛑 Killing a Pitch:",
+      "killDoes1": "• Changes pitch status to `CANCELLED`",
+      "killDoes2": "• Notifies all team members with the cancellation reason",
+      "killDoes3": "• Preserves work logs and history for future reference",
+      "killDoes4": "• Frees up team capacity for other work",
+      "killWhenTitle": "When to Kill a Pitch:",
+      "killWhen1": "It's consistently running 50%+ over appetite with no end in sight",
+      "killWhen2": "The core problem turned out to be different than shaped",
+      "killWhen3": "Technical complexity emerged that makes the appetite unrealistic",
+      "killWhen4": "The business value no longer justifies the expanded investment",
+      "killRemember": "✅ Remember:",
+      "killRememberDesc": "A killed pitch isn't wasted work. The learnings inform better shaping for future cycles. You can always re-pitch with a better understanding and more realistic appetite.",
+      "resolveTitle": "Resolving a Circuit Breaker",
+      "resolveSubtitle": "When you've addressed the overflow",
+      "resolveDesc": "If the team successfully cuts scope and gets back on track, you can **resolve the circuit breaker**:",
+      "resolveStep1": "Select the new status (typically `IN_PROGRESS` or `TESTING`)",
+      "resolveStep2": "Click \"Resolve Circuit Breaker\"",
+      "resolveStep3": "The pitch returns to normal tracking without the warning flag"
+    },
+    "cycleSetup": {
+      "title": "Setting Up Your First Cycle",
+      "subtitle": "Complete walkthrough of creating and managing a work cycle in ShipFlow",
+      "whatTitle": "What is a Cycle?",
+      "whatDesc": "In Shape Up, a **cycle** is a fixed period of time (typically 6 weeks) during which teams work on committed pitches. Cycles provide rhythm and focus, with clear start and end dates.",
+      "keyConcept": "💡 Key Concept:",
+      "keyConceptDesc": "After each 6-week cycle, there's a 2-week \"cool-down\" period for bug fixes, exploration, and planning the next cycle.",
+      "step1Title": "Step 1: Creating a New Cycle",
+      "step1Subtitle": "Set up the basic cycle structure",
+      "step2Title": "Step 2: Adding Pitches to the Cycle",
+      "step2Subtitle": "Commit to the work you'll tackle",
+      "step3Title": "Step 3: Assigning Teams",
+      "step3Subtitle": "Allocate team members to pitches",
+      "important": "⚠️ Important:",
+      "importantDesc": "Once a cycle starts, avoid changing the end date. Fixed time is a core principle of Shape Up.",
+      "step1Item1": "Navigate to **Cycles** in the sidebar",
+      "step1Item2": "Click the **\"New Cycle\"** button",
+      "step1Item3": "Fill in the cycle details:",
+      "step1Item3a": "**Name:** e.g., \"Cycle 1 - Q1 2026\" or \"January Cycle\"",
+      "step1Item3b": "**Start Date:** When the cycle begins",
+      "step1Item3c": "**End Date:** Typically 6 weeks from start",
+      "step1Item3d": "**Project:** Associate with a project (optional)",
+      "step1Item3e": "**Description:** Brief overview of cycle goals",
+      "step1Item4": "Click **\"Create Cycle\"**",
+      "step2Desc": "After creating a cycle, add the pitches that were approved during the betting meeting:",
+      "step2Option1Title": "Option 1: From the Cycle Detail Page",
+      "step2Option1Step1": "Open the cycle you just created",
+      "step2Option1Step2": "Look for the **\"Add Pitch\"** or **\"Manage Pitches\"** button",
+      "step2Option1Step3": "Select pitches from the available list",
+      "step2Option1Step4": "Click **\"Add to Cycle\"**",
+      "step2Option2Title": "Option 2: From the Betting Table",
+      "step2Option2Step1": "Navigate to **Betting Table**",
+      "step2Option2Step2": "For each approved pitch, select the cycle from the dropdown",
+      "step2Option2Step3": "The pitch is automatically added to that cycle",
+      "step3Desc": "Each pitch in the cycle needs a small team (typically 1-2 people) assigned to it:",
+      "step3Step1": "From the cycle detail page, click on a pitch",
+      "step3Step2": "In the pitch detail view, look for the **\"Assign Team\"** section",
+      "step3Step3": "Add team members:",
+      "step3Step3a": "1 designer (for UI/UX work)",
+      "step3Step3b": "1-2 developers (for implementation)",
+      "step3Step4": "Save the assignments",
+      "step3Tip": "💡 Shape Up Principle:",
+      "step3TipDesc": "Keep teams small. Two people working together can move faster and communicate better than larger groups.",
+      "step4Title": "Step 4: Tracking Progress During the Cycle",
+      "step4Subtitle": "Monitor work and identify risks",
+      "step4UseHillTitle": "Use Hill Charts",
+      "step4UseHillDesc": "Navigate to the cycle's hill chart to see visual progress of all pitches. Team members should update their positions regularly.",
+      "step4HealthTitle": "Check Health Overview",
+      "step4HealthDesc": "Visit **Health Overview** to see aggregate metrics:",
+      "step4HealthItem1": "Overall cycle health score",
+      "step4HealthItem2": "Pitches at risk",
+      "step4HealthItem3": "Velocity and burn-down",
+      "step4HealthItem4": "Team capacity utilization"
+    },
+    "qaTesting": {
+      "title": "QA & Testing",
+      "subtitle": "Manage test cases, run manual tests, and track bugs within your cycles",
+      "integratedTitle": "Integrated QA",
+      "integratedDesc": "ShipFlow integrates QA directly into the development cycle. Instead of treating testing as an afterthought, you can define test cases alongside your scopes and track quality in real-time.",
+      "bestPractice": "💡 Best Practice:",
+      "bestPracticeDesc": "Create test cases during the \"Shaping\" phase or early in the \"Build\" phase to clarify requirements before code is written.",
+      "testCasesTitle": "Managing Test Cases",
+      "testCasesSubtitle": "Define how features should be verified",
+      "testCasesStep1": "Navigate to **QA & Testing > Test Cases**",
+      "testCasesStep2": "Click **\"New Test Case\"**",
+      "testCasesStep3": "Fill in the details:",
+      "testCasesStep3a": "**Title:** Clear, concise summary of what's being tested",
+      "testCasesStep3b": "**Pre-conditions:** State required before testing starts",
+      "testCasesStep3c": "**Steps:** Numbered actions to perform",
+      "testCasesStep3d": "**Expected Result:** What should happen if successful",
+      "testCasesStep3e": "**Priority:** Critical, High, Medium, or Low",
+      "testCasesStep4": "Link it to a specific **Pitch** or **Cycle** to track coverage",
+      "aiGenerationTitle": "AI Test Generation",
+      "aiGenerationSubtitle": "Speed up test creation with AI",
+      "aiDesc": "ShipFlow can automatically generate test cases based on your pitch descriptions and scope definitions.",
+      "aiHowToUseTitle": "How to use it:",
+      "aiHowToStep1": "Go to **Generate with AI** in the Test Cases page",
+      "aiHowToStep2": "Select the **Pitch** you want to test",
+      "aiHowToStep3": "Review the suggested test cases",
+      "aiHowToStep4": "Click **\"Save Selected\"** to add them to your library",
+      "aiWhyUseTitle": "Why use AI?",
+      "aiWhyItem1": "Discover edge cases you might miss",
+      "aiWhyItem2": "Save time on writing boilerplate steps",
+      "aiWhyItem3": "Standardize test case format",
+      "bugReportsTitle": "Bug Reports",
+      "bugReportsSubtitle": "Track issues found during testing",
+      "bugReportsDesc": "When a test fails or you find an issue during exploratory testing, log a bug report.",
+      "bugSeverity": "**Severity:** From \"Low\" (cosmetic) to \"Critical\" (system down)",
+      "bugStatus": "**Status:** Open → In Progress → Resolved → Verified"
     }
   },
   "circuitBreaker": {

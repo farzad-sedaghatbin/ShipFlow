@@ -71,7 +71,7 @@ export function PermissionEditDialog({
       onSave();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save permission');
+      setError(err.response?.data?.message || t('errors.savePermissionFailed'));
     } finally {
       setSaving(false);
     }
