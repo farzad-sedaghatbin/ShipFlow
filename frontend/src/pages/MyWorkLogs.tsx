@@ -52,8 +52,6 @@ export default function MyWorkLogs() {
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  // i18n ready
-  if (false) console.log(t('myWorkLogs.title'));
   const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('all');

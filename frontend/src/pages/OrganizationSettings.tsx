@@ -78,8 +78,6 @@ export default function OrganizationSettingsPage() {
   const [formData, setFormData] = useState<Partial<OrganizationSettings>>({});
 
   const isAdmin = currentUser?.role === 'ADMIN';
-  // i18n ready
-  if (false) console.log(t('common.save'));
 
   useEffect(() => {
     if (isAdmin) {

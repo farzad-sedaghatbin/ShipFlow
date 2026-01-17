@@ -63,8 +63,6 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
-  // i18n ready
-  if (false) console.log(t('taskDetail.title'));
   
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);

@@ -71,8 +71,6 @@ export default function RetroList() {
   const [retros, setRetros] = useState<Retrospective[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('retroList.title'));
   const [retroEnabled, setRetroEnabled] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'status' | 'cycle' | 'recent'>('recent');

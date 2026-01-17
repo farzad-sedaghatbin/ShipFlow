@@ -23,8 +23,6 @@ export default function DashboardView() {
   const [widgets, setWidgets] = useState<DashboardWidgetConfig[]>([]);
   const [metrics, setMetrics] = useState<CustomMetric[]>([]);
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('dashboardCustomizer.title'));
   const [editMode, setEditMode] = useState(false);
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [showWidgetSettings, setShowWidgetSettings] = useState(false);

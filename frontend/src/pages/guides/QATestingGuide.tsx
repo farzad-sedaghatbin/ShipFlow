@@ -7,7 +7,6 @@ import { Separator } from '@/components/ui/separator';
 
 export default function QATestingGuide() {
     const { t } = useTranslation();
-    if (false) console.log(t);
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}

@@ -49,8 +49,6 @@ export default function Reports() {
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
-  // i18n ready
-  if (false) console.log(t('common.loading'));
 
   useEffect(() => {
     const abortController = new AbortController();

@@ -114,8 +114,6 @@ export default function BacklogPage() {
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  // i18n ready
-  if (false) console.log(t('common.loading'));
   const [activeCategory, setActiveCategory] = useState<TaskCategory>(categoryFromUrl || 'PITCH_SCOPE');
   const [tabValue, setTabValue] = useState('all');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);

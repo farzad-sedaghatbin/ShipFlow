@@ -50,8 +50,6 @@ export default function PermissionManagement() {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const { showToast } = useToast();
-  // i18n ready
-  if (false) console.log(t('permissions.title'));
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('role-matrix');
   

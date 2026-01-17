@@ -65,8 +65,6 @@ export default function UserManagement() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  // i18n ready
-  if (false) console.log(t('common.loading'));
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);

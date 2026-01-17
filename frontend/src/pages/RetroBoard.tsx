@@ -65,8 +65,6 @@ export default function RetroBoard() {
   const [retro, setRetro] = useState<Retrospective | null>(null);
   const [items, setItems] = useState<RetroItem[]>([]);
   const [loading, setLoading] = useState(true);
-  // i18n ready
-  if (false) console.log(t('retroBoard.title'));
   const [newItemContent, setNewItemContent] = useState<Record<RetroColumnType, string>>({
     WENT_WELL: '',
     DID_NOT_GO_WELL: '',

@@ -55,8 +55,6 @@ export default function ProjectDetail() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
-  // i18n ready
-  if (false) console.log(t('projectDetail.title'));
 
   const loadData = useCallback(async () => {
     if (!id) return;

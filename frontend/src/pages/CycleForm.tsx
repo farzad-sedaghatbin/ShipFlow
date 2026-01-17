@@ -42,8 +42,6 @@ export default function CycleForm() {
     endDate: '',
     phase: 'BUILD',
   });
-  // i18n ready
-  if (false) console.log(t('cycleForm.title'));
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [useAutoEndDate, setUseAutoEndDate] = useState<boolean>(true);

@@ -35,8 +35,6 @@ import {
 
 export default function TeamsIntegration() {
   const { t } = useTranslation();
-  // i18n ready
-  if (false) console.log(t('teamsIntegration.title'));
   const [tabValue, setTabValue] = useState('workspace');
   const [configurations, setConfigurations] = useState<TeamsConfiguration[]>([]);
   const [activeConfig, setActiveConfig] = useState<TeamsConfiguration | null>(null);

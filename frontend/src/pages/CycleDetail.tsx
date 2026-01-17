@@ -55,8 +55,6 @@ export default function CycleDetail() {
   const [retroEnabled, setRetroEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [closeCycleDialog, setCloseCycleDialog] = useState(false);
-  // i18n ready
-  if (false) console.log(t('cycleDetail.title'));
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
 

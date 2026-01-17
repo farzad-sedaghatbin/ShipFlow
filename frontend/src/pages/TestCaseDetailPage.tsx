@@ -50,8 +50,6 @@ const TestCaseDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
-  // i18n ready
-  if (false) console.log(t('testCases.title'));
 
   const [testCase, setTestCase] = useState<TestCase | null>(null);
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);

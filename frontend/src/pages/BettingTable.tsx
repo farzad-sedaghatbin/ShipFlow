@@ -246,8 +246,6 @@ export default function BettingTablePage() {
   const [loading, setLoading] = useState(true);
   const [generatingSlots, setGeneratingSlots] = useState(false);
   const [activePitch, setActivePitch] = useState<Pitch | null>(null);
-  // i18n ready
-  if (false) console.log(t('bettingTable.title'));
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

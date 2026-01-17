@@ -82,8 +82,6 @@ export default function PitchDetail() {
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  // i18n ready
-  if (false) console.log(t('pitchDetail.title'), i18n.language);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
