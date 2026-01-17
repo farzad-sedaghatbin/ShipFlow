@@ -103,13 +103,22 @@ public class DocumentService {
                         .build();
             }
 
+            // Sanitize original filename to prevent path traversal
+            String sanitizedFileName = sanitizeFileName(originalFileName);
+            
             // Generate unique file name
-            String uniqueFileName = UUID.randomUUID().toString() + "_" + originalFileName;
+            String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedFileName;
 
             // Save file to disk
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
             Path filePath = uploadPath.resolve(uniqueFileName);
+            
+            // Verify the resolved path is still within the upload directory (additional security check)
+            if (!filePath.normalize().startsWith(uploadPath)) {
+                throw new SecurityException("Invalid file path detected");
+            }
+            
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Extract text from document
@@ -377,5 +386,31 @@ public class DocumentService {
         }
 
         return indexed;
+    }
+
+    /**
+     * Sanitizes a filename to prevent path traversal attacks.
+     * Removes all path separators and only keeps the filename portion.
+     */
+    private String sanitizeFileName(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return "unnamed";
+        }
+        
+        // Get just the filename, removing any path components
+        String name = Paths.get(filename).getFileName().toString();
+        
+        // Remove any remaining path traversal sequences and null bytes
+        name = name.replaceAll("\\.\\.", "")
+                   .replaceAll("[\\/\\\\]", "")
+                   .replaceAll("\\x00", "")
+                   .trim();
+        
+        // If nothing is left after sanitization, use a default name
+        if (name.isEmpty()) {
+            return "unnamed";
+        }
+        
+        return name;
     }
 }

@@ -1004,8 +1004,8 @@ public class QAService {
             terms.add("done");
         }
         
-        // Extract hyphenated words
-        java.util.regex.Pattern hyphenPattern = java.util.regex.Pattern.compile("\\b\\w+-\\w+\\b");
+        // Extract hyphenated words (using possessive quantifiers to prevent ReDoS)
+        java.util.regex.Pattern hyphenPattern = java.util.regex.Pattern.compile("\\b\\w++-\\w++\\b");
         java.util.regex.Matcher hyphenMatcher = hyphenPattern.matcher(lowerQuestion);
         while (hyphenMatcher.find()) {
             String hyphenated = hyphenMatcher.group().trim();

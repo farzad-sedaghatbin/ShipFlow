@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/slack")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Slack Integration", description = "APIs for managing Slack integration and notifications")
 public class SlackIntegrationController {
 
@@ -94,8 +96,9 @@ public class SlackIntegrationController {
             slackService.sendTestNotification(configId, request);
             return ResponseEntity.ok(messageService.getMessage("slack.notification.sent"));
         } catch (Exception e) {
+            log.error("Failed to send test notification for config {}: {}", configId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(messageService.getMessage("slack.test.failed", e.getMessage()));
+                    .body(messageService.getMessage("slack.test.failed"));
         }
     }
 
