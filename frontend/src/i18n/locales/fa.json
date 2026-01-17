@@ -2113,6 +2113,7 @@
     "tryNext": "در دفعه بعد امتحان کنیم",
     "actions": "اقدامات",
     "addItem": "افزودن مورد",
+    "items": "مورد",
     "anonymous": "ناشناس",
     "vote": "رأی",
     "votes": "رأی‌ها",
@@ -3474,7 +3475,45 @@
     "fullSupport": "پشتیبانی کامل",
     "partialSupport": "پشتیبانی جزئی",
     "notSupported": "پشتیبانی نمی‌شود",
-    "comingSoon": "به زودی"
+    "comingSoon": "به زودی",
+    "competitorData": {
+      "linear": {
+        "name": "Linear",
+        "description": "ردیابی مسائل مدرن برای تیم‌های با کارایی بالا",
+        "pricing": "از ۸ دلار به ازای هر کاربر در ماه",
+        "bestFor": "استارتاپ‌های پویا"
+      },
+      "asana": {
+        "name": "Asana",
+        "description": "پلتفرم مدیریت کار برای تیم‌ها",
+        "pricing": "از ۱۰.۹۹ دلار به ازای هر کاربر در ماه",
+        "bestFor": "تیم‌های بازاریابی و خلاق"
+      },
+      "monday": {
+        "name": "Monday.com",
+        "description": "سیستم عامل کار برای تیم‌های همه اندازه",
+        "pricing": "از ۹ دلار به ازای هر کاربر در ماه",
+        "bestFor": "تیم‌های غیر فنی"
+      },
+      "jira": {
+        "name": "Jira",
+        "description": "ردیابی پروژه برای تیم‌های نرم‌افزار",
+        "pricing": "از ۷.۷۵ دلار به ازای هر کاربر در ماه",
+        "bestFor": "Agile/Scrum سازمانی"
+      },
+      "basecamp": {
+        "name": "Basecamp",
+        "description": "مدیریت پروژه همه کاره",
+        "pricing": "۲۹۹ دلار در ماه ثابت",
+        "bestFor": "آژانس‌های کوچک"
+      },
+      "clickup": {
+        "name": "ClickUp",
+        "description": "اپلیکیشن همه کاره برای کار",
+        "pricing": "از ۷ دلار به ازای هر کاربر در ماه",
+        "bestFor": "تیم‌هایی که همه چیز را می‌خواهند"
+      }
+    }
   },
   "testCaseForm": {
     "createTitle": "ایجاد مورد تست",

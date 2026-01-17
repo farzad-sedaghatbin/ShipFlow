@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.teams.*;
 import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class TeamsIntegrationController {
 
     private static final Logger LOGGER = Logger.getLogger(TeamsIntegrationController.class.getName());
     private final TeamsIntegrationService teamsService;
+    private final MessageService messageService;
 
     @PostMapping("/configurations")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -92,7 +94,7 @@ public class TeamsIntegrationController {
             @RequestBody TestTeamsNotificationRequest request) {
         try {
             teamsService.sendTestNotification(configId, request);
-            return ResponseEntity.ok("Test notification sent successfully");
+            return ResponseEntity.ok(messageService.getMessage("teams.notification.sent"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to send test notification for config ID: " + configId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

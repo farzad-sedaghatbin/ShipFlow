@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.SlackNotificationHistory;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class SlackIntegrationController {
 
     private final SlackIntegrationService slackService;
+    private final MessageService messageService;
 
     @PostMapping("/configurations")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -90,10 +92,10 @@ public class SlackIntegrationController {
             @RequestBody TestSlackNotificationRequest request) {
         try {
             slackService.sendTestNotification(configId, request);
-            return ResponseEntity.ok("Test notification sent successfully");
+            return ResponseEntity.ok(messageService.getMessage("slack.notification.sent"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to send test notification: " + e.getMessage());
+                    .body(messageService.getMessage("slack.test.failed", e.getMessage()));
         }
     }
 

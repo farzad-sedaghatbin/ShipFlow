@@ -3092,6 +3092,7 @@
     "tryNext": "Try Next",
     "actions": "Actions",
     "addItem": "Add Item",
+    "items": "items",
     "anonymous": "Anonymous",
     "vote": "Vote",
     "votes": "votes",
@@ -3892,7 +3893,45 @@
     "fullSupport": "Full support",
     "partialSupport": "Partial support",
     "notSupported": "Not supported",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "competitorData": {
+      "linear": {
+        "name": "Linear",
+        "description": "Modern issue tracking for high-performance teams",
+        "pricing": "From $8/user/mo",
+        "bestFor": "Fast-moving startups"
+      },
+      "asana": {
+        "name": "Asana",
+        "description": "Work management platform for teams",
+        "pricing": "From $10.99/user/mo",
+        "bestFor": "Marketing & creative teams"
+      },
+      "monday": {
+        "name": "Monday.com",
+        "description": "Work OS for teams of all sizes",
+        "pricing": "From $9/user/mo",
+        "bestFor": "Non-technical teams"
+      },
+      "jira": {
+        "name": "Jira",
+        "description": "Project tracking for software teams",
+        "pricing": "From $7.75/user/mo",
+        "bestFor": "Enterprise Agile/Scrum"
+      },
+      "basecamp": {
+        "name": "Basecamp",
+        "description": "All-in-one project management",
+        "pricing": "$299/mo flat",
+        "bestFor": "Small agencies"
+      },
+      "clickup": {
+        "name": "ClickUp",
+        "description": "Everything app for work",
+        "pricing": "From $7/user/mo",
+        "bestFor": "Teams wanting all-in-one"
+      }
+    }
   },
   "guides": {
     "backToHelp": "Back to Help & Guides",

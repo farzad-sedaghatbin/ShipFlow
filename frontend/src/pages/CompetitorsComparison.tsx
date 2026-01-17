@@ -107,50 +107,14 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'i18n', feature: 'Date/time localization', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
 ];
 
-const competitors = [
-  {
-    name: 'Linear',
-    description: 'Modern issue tracking for high-performance teams',
-    pricing: 'From $8/user/mo',
-    bestFor: 'Fast-moving startups',
-    color: 'purple',
-  },
-  {
-    name: 'Asana',
-    description: 'Work management platform for teams',
-    pricing: 'From $10.99/user/mo',
-    bestFor: 'Marketing & creative teams',
-    color: 'red',
-  },
-  {
-    name: 'Monday.com',
-    description: 'Work OS for teams of all sizes',
-    pricing: 'From $9/user/mo',
-    bestFor: 'Non-technical teams',
-    color: 'orange',
-  },
-  {
-    name: 'Jira',
-    description: 'Project tracking for software teams',
-    pricing: 'From $7.75/user/mo',
-    bestFor: 'Enterprise Agile/Scrum',
-    color: 'blue',
-  },
-  {
-    name: 'Basecamp',
-    description: 'All-in-one project management',
-    pricing: '$299/mo flat',
-    bestFor: 'Small agencies',
-    color: 'green',
-  },
-  {
-    name: 'ClickUp',
-    description: 'Everything app for work',
-    pricing: 'From $7/user/mo',
-    bestFor: 'Teams wanting all-in-one',
-    color: 'pink',
-  },
-];
+const competitorColors = {
+  linear: 'purple',
+  asana: 'red',
+  monday: 'orange',
+  jira: 'blue',
+  basecamp: 'green',
+  clickup: 'pink',
+};
 
 const renderFeatureCell = (value: boolean | 'partial' | 'coming') => {
   if (value === true) {
@@ -171,6 +135,16 @@ const renderFeatureCell = (value: boolean | 'partial' | 'coming') => {
 export default function CompetitorsComparison() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Get competitor data from translations
+  const competitors = [
+    { key: 'linear', color: competitorColors.linear },
+    { key: 'asana', color: competitorColors.asana },
+    { key: 'monday', color: competitorColors.monday },
+    { key: 'jira', color: competitorColors.jira },
+    { key: 'basecamp', color: competitorColors.basecamp },
+    { key: 'clickup', color: competitorColors.clickup },
+  ];
 
   // Group features by category
   const categories = [...new Set(comparisonFeatures.map(f => f.category))];
@@ -214,8 +188,8 @@ export default function CompetitorsComparison() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {competitors.map((comp) => (
-              <Badge key={comp.name} variant="outline" className="text-sm">
-                vs {comp.name}
+              <Badge key={comp.key} variant="outline" className="text-sm">
+                vs {t(`competitorsComparison.competitorData.${comp.key}.name`)}
               </Badge>
             ))}
           </div>

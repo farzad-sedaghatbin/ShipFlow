@@ -320,7 +320,7 @@ export default function RetroList() {
                       <p className="text-sm mt-2">{retro.notes}</p>
                     )}
                     <p className="text-sm text-muted-foreground mt-2">
-                      {retro.itemCount || 0} {t('retroBoardPage.addItem').toLowerCase()}
+                      {retro.itemCount || 0} {t('retroBoardPage.items')}
                     </p>
                   </div>
                   <div className="flex gap-1 ml-4 flex-shrink-0">

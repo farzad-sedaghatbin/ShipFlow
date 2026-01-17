@@ -354,7 +354,7 @@ export default function Reports() {
                   <p className="text-2xl font-bold">{report.totalTaskEstimateHours.toFixed(0)}h</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Actual Hours</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.actualHours')}</p>
                   <p className={cn(
                     'text-2xl font-bold',
                     report.totalTaskActualHours > report.totalTaskEstimateHours ? 'text-destructive' : 'text-green-600'
