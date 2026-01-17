@@ -313,7 +313,7 @@ export default function MeetingList() {
             className="flex-1 sm:flex-none"
           >
             <Filter className="h-4 w-4 mr-2" />
-            {t('meetingList.filters')}
+            {t('meetingList.filtersButton')}
           </Button>
           <Button onClick={() => handleOpenDialog()} className="flex-1 sm:flex-none">
             <Plus className="h-4 w-4 mr-2" />

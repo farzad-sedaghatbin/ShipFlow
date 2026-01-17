@@ -387,30 +387,44 @@ export default function Teams() {
                     {team.assignments?.length || 0} {t('teams.membersCount')}
                   </Badge>
                   <div className="flex-1" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleOpenTeamDialog(team);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleOpenTeamDialog(team);
+                      }
+                    }}
                     aria-label={t('teams.editTeam')}
                   >
                     <Pencil className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-destructive hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteTeam(team.id);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteTeam(team.id);
+                      }
+                    }}
                     aria-label={t('teams.deleteTeam')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  </Button>
+                  </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
