@@ -30,6 +30,7 @@ public class TestCaseService {
     private final UserRepository userRepository;
     private final HillChartPointRepository hillChartPointRepository;
     private final TaskRepository taskRepository;
+    private final LocalizationService localizationService;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -295,7 +296,7 @@ public class TestCaseService {
 
     private void checkFeatureEnabled() {
         if (!testManagementEnabled) {
-            throw new RuntimeException("QA Test Management feature is not enabled");
+            throw new RuntimeException(localizationService.getMessage("qa.feature.disabled"));
         }
     }
 

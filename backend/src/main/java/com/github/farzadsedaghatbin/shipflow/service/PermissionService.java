@@ -28,6 +28,7 @@ public class PermissionService {
 
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
+    private final LocalizationService localizationService;
 
     /**
      * Check if a user has a specific permission on a resource
@@ -194,7 +195,7 @@ public class PermissionService {
         );
         
         if (existing.isPresent()) {
-            throw new IllegalArgumentException("Permission already exists for " + role + " - " + resourceType + " - " + permissionType);
+            throw new IllegalArgumentException(localizationService.getMessage("permission.already.exists", role, resourceType, permissionType));
         }
 
         Permission permission = Permission.builder()
@@ -220,7 +221,7 @@ public class PermissionService {
     @Transactional
     public Permission updatePermission(Long id, String description) {
         Permission permission = permissionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Permission not found with ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(localizationService.getMessage("permission.not.found", id)));
         
         permission.setDescription(description);
         permission = permissionRepository.save(permission);
@@ -237,7 +238,7 @@ public class PermissionService {
     @Transactional
     public void deletePermission(Long id) {
         if (!permissionRepository.existsById(id)) {
-            throw new IllegalArgumentException("Permission not found with ID: " + id);
+            throw new IllegalArgumentException(localizationService.getMessage("permission.not.found", id));
         }
         permissionRepository.deleteById(id);
         log.info("Deleted permission with ID: {}", id);

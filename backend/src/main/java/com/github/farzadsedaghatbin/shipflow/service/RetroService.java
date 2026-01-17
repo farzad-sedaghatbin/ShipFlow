@@ -25,6 +25,7 @@ public class RetroService {
     private final CycleRepository cycleRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final LocalizationService localizationService;
 
     // ==================== RETRO CRUD ====================
 
@@ -105,7 +106,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot update a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.update.closed"));
         }
         
         if (request.getTitle() != null) {
@@ -128,7 +129,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot open a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.open.closed"));
         }
         
         retro.setStatus(RetroStatus.OPEN);
@@ -182,7 +183,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot add items to a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.add.items.closed"));
         }
         
         User currentUser = getCurrentUser();
@@ -210,7 +211,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot update items in a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.update.items.closed"));
         }
         
         item.setContent(content);
@@ -228,7 +229,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot delete items from a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.delete.items.closed"));
         }
         
         retroItemRepository.deleteById(itemId);
@@ -246,17 +247,17 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot vote on items in a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.closed"));
         }
         
         // Cannot vote on merged items
         if (item.getMergedInto() != null) {
-            throw new IllegalStateException("Cannot vote on a merged item");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.merged"));
         }
         
         User currentUser = getCurrentUser();
         if (currentUser == null) {
-            throw new IllegalStateException("User not found");
+            throw new IllegalStateException(localizationService.getMessage("retro.user.not.found"));
         }
         
         boolean hasVoted = retroItemVoteRepository.existsByRetroItemIdAndUserId(itemId, currentUser.getId());

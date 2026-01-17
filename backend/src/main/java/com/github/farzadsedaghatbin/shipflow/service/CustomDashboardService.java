@@ -30,6 +30,7 @@ public class CustomDashboardService {
     private final TeamRepository teamRepository;
     private final ObjectMapper objectMapper;
     private final jakarta.persistence.EntityManager entityManager;
+    private final LocalizationService localizationService;
 
     /**
      * Create a new custom dashboard
@@ -49,7 +50,7 @@ public class CustomDashboardService {
                     .orElseThrow(() -> new IllegalArgumentException("Template not found: " + request.getCloneFromTemplateId()));
 
             if (!template.getIsTemplate()) {
-                throw new IllegalArgumentException("Cannot clone from non-template dashboard");
+                throw new IllegalArgumentException(localizationService.getMessage("dashboard.not.template"));
             }
 
             // Always generate unique name when cloning from template
@@ -59,7 +60,7 @@ public class CustomDashboardService {
             dashboard = cloneFromTemplate(user, dashboardName, request.getDescription(), template);
         } else {            // Check for duplicate name when creating new dashboard
             if (customDashboardRepository.existsByUserIdAndName(userId, request.getName())) {
-                throw new IllegalArgumentException("A dashboard with name '" + request.getName() + "' already exists");
+                throw new IllegalArgumentException(localizationService.getMessage("dashboard.name.duplicate", request.getName()));
             }
             // Resolve scope entities if provided
             Cycle cycle = null;
@@ -118,18 +119,18 @@ public class CustomDashboardService {
 
         // Verify ownership
         if (!dashboard.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to update this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.update"));
         }
 
         // Cannot update system templates
         if (dashboard.getIsTemplate()) {
-            throw new IllegalArgumentException("Cannot update system templates");
+            throw new IllegalArgumentException(localizationService.getMessage("dashboard.system.template"));
         }
 
         if (request.getName() != null) {
             if (!request.getName().equals(dashboard.getName()) &&
                     customDashboardRepository.existsByUserIdAndName(userId, request.getName())) {
-                throw new IllegalArgumentException("A dashboard with name '" + request.getName() + "' already exists");
+                throw new IllegalArgumentException(localizationService.getMessage("dashboard.name.duplicate", request.getName()));
             }
             dashboard.setName(request.getName());
         }
@@ -160,12 +161,12 @@ public class CustomDashboardService {
 
         // Verify ownership (allow deleting own dashboards, even if created from template)
         if (!dashboard.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to delete this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.delete"));
         }
 
         // Cannot delete system templates (templates with null user or marked as template)
         if (Boolean.TRUE.equals(dashboard.getIsTemplate())) {
-            throw new IllegalArgumentException("Cannot delete system templates");
+            throw new IllegalArgumentException(localizationService.getMessage("dashboard.cannot.delete.template"));
         }
 
         customDashboardRepository.delete(dashboard);
@@ -214,7 +215,7 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Dashboard not found: " + dashboardId));
 
         if (!dashboard.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to modify this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.modify"));
         }
 
         // Clear all defaults for this user
@@ -240,7 +241,7 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Dashboard not found: " + dashboardId));
 
         if (!dashboard.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to modify this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.modify"));
         }
 
         // Toggle the filter
@@ -273,7 +274,7 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Dashboard not found: " + dashboardId));
 
         if (!dashboard.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to modify this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.modify"));
         }
 
         // Validate widget reference if provided
@@ -335,11 +336,11 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Widget config not found: " + widgetConfigId));
 
         if (!config.getDashboard().getId().equals(dashboardId)) {
-            throw new IllegalArgumentException("Widget does not belong to this dashboard");
+            throw new IllegalArgumentException(localizationService.getMessage("dashboard.widget.not.belong"));
         }
 
         if (!config.getDashboard().getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to modify this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.modify"));
         }
 
         // Update fields
@@ -386,7 +387,7 @@ public class CustomDashboardService {
                 config.setSettings(settingsJson);
             } catch (Exception e) {
                 log.error("Error serializing widget config", e);
-                throw new IllegalArgumentException("Invalid widget configuration");
+                throw new IllegalArgumentException(localizationService.getMessage("dashboard.widget.invalid"));
             }
         }
 
@@ -406,11 +407,11 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Widget config not found: " + widgetConfigId));
 
         if (!config.getDashboard().getId().equals(dashboardId)) {
-            throw new IllegalArgumentException("Widget does not belong to this dashboard");
+            throw new IllegalArgumentException(localizationService.getMessage("dashboard.widget.not.belong"));
         }
 
         if (!config.getDashboard().getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to modify this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.modify"));
         }
 
         widgetConfigRepository.delete(config);
@@ -425,7 +426,7 @@ public class CustomDashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Dashboard not found: " + dashboardId));
 
         if (!dashboard.getUser().getId().equals(userId) && !dashboard.getIsTemplate()) {
-            throw new SecurityException("Not authorized to view this dashboard");
+            throw new SecurityException(localizationService.getMessage("dashboard.unauthorized.view"));
         }
 
         return widgetConfigRepository.findByDashboardIdOrderByDisplayOrderAsc(dashboardId);

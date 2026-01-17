@@ -28,6 +28,7 @@ public class NoteService {
     private final CycleRepository cycleRepository;
     private final UserRepository userRepository;
     private final KnowledgeIngestionService knowledgeIngestionService;
+    private final LocalizationService localizationService;
 
     @Autowired
     public NoteService(
@@ -37,7 +38,8 @@ public class NoteService {
             TeamRepository teamRepository,
             CycleRepository cycleRepository,
             UserRepository userRepository,
-            @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService) {
+            @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService,
+            LocalizationService localizationService) {
         this.noteRepository = noteRepository;
         this.pitchRepository = pitchRepository;
         this.meetingRepository = meetingRepository;
@@ -45,6 +47,7 @@ public class NoteService {
         this.cycleRepository = cycleRepository;
         this.userRepository = userRepository;
         this.knowledgeIngestionService = knowledgeIngestionService;
+        this.localizationService = localizationService;
     }
 
     /**
@@ -86,7 +89,7 @@ public class NoteService {
 
         // Verify ownership
         if (!note.getAuthorId().equals(userId)) {
-            throw new RuntimeException("You can only edit your own notes");
+            throw new RuntimeException(localizationService.getMessage("note.unauthorized.edit"));
         }
 
         note.setTitle(request.getTitle());
@@ -113,7 +116,7 @@ public class NoteService {
 
         // Verify ownership
         if (!note.getAuthorId().equals(userId)) {
-            throw new RuntimeException("You can only delete your own notes");
+            throw new RuntimeException(localizationService.getMessage("note.unauthorized.delete"));
         }
 
         noteRepository.delete(note);

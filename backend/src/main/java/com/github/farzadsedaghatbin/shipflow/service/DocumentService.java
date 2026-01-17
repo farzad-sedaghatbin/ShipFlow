@@ -57,6 +57,7 @@ public class DocumentService {
     );
 
     private final UploadedDocumentRepository documentRepository;
+    private final LocalizationService localizationService;
 
     @Autowired(required = false)
     private KnowledgeIngestionService knowledgeIngestionService;
@@ -306,7 +307,7 @@ public class DocumentService {
             Resource resource = new UrlResource(filePath.toUri());
             
             if (!resource.exists() || !resource.isReadable()) {
-                throw new RuntimeException("File not found or not readable: " + document.getOriginalFileName());
+                throw new RuntimeException(localizationService.getMessage("document.not.found", document.getOriginalFileName()));
             }
             
             // Determine content type
@@ -319,7 +320,7 @@ public class DocumentService {
                     .body(resource);
                     
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Error reading file: " + e.getMessage(), e);
+            throw new RuntimeException(localizationService.getMessage("document.read.error", e.getMessage()), e);
         }
     }
 

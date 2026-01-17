@@ -22,6 +22,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final CycleRepository cycleRepository;
+    private final LocalizationService localizationService;
 
     @Transactional(readOnly = true)
     public List<ProjectDTO> findAll() {
@@ -54,7 +55,7 @@ public class ProjectService {
     @Transactional
     public ProjectDTO create(CreateProjectRequest request) {
         if (projectRepository.existsByProjectKey(request.getProjectKey().toUpperCase())) {
-            throw new IllegalArgumentException("Project key already exists: " + request.getProjectKey());
+            throw new IllegalArgumentException(localizationService.getMessage("project.key.exists", request.getProjectKey()));
         }
 
         Project project = Project.builder()
@@ -84,7 +85,7 @@ public class ProjectService {
         // Check if key is being changed and if new key exists
         if (!project.getProjectKey().equals(request.getProjectKey().toUpperCase())) {
             if (projectRepository.existsByProjectKey(request.getProjectKey().toUpperCase())) {
-                throw new IllegalArgumentException("Project key already exists: " + request.getProjectKey());
+                throw new IllegalArgumentException(localizationService.getMessage("project.key.exists", request.getProjectKey()));
             }
             project.setProjectKey(request.getProjectKey().toUpperCase());
         }
@@ -132,7 +133,7 @@ public class ProjectService {
         // Check if project has cycles
         long cycleCount = cycleRepository.countByProjectId(id);
         if (cycleCount > 0) {
-            throw new IllegalArgumentException("Cannot delete project with existing cycles. Deactivate it instead.");
+            throw new IllegalArgumentException(localizationService.getMessage("project.cannot.delete.with.cycles"));
         }
         
         projectRepository.delete(project);

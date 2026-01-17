@@ -47,6 +47,7 @@ public class ReportService {
     private final TeamAssignmentRepository teamAssignmentRepository;
     private final TaskRepository taskRepository;
     private final RiskAnalysisService riskAnalysisService;
+    private final LocalizationService localizationService;
 
     @SuppressWarnings("null")
     public CycleReportDTO getCycleReport(Long cycleId) {
@@ -299,7 +300,7 @@ public class ReportService {
 
             document.close();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF report", e);
+            throw new RuntimeException(localizationService.getMessage("report.pdf.failed"), e);
         }
 
         return baos.toByteArray();
