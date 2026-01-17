@@ -311,12 +311,12 @@ public class RetroService {
         
         // Cannot merge into an already merged item
         if (targetItem.getMergedInto() != null) {
-            throw new IllegalStateException("Cannot merge into an already merged item");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.into.merged"));
         }
         
         // Cannot merge an item that is already merged
         if (sourceItem.getMergedInto() != null) {
-            throw new IllegalStateException("Source item is already merged");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.already.merged"));
         }
         
         // Transfer votes from source to target

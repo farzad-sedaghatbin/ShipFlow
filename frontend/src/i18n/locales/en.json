@@ -152,6 +152,41 @@
     "myProfile": "My Profile",
     "openNavigation": "Open navigation menu"
   },
+  "welcomeTour": {
+    "title": "Welcome to ShipFlow! 👋",
+    "description": "ShipFlow helps you manage projects using the Shape Up methodology - with cycles, pitches, and hill charts to track progress.",
+    "takeAQuickTour": "Take a quick tour to learn the key features and get started.",
+    "startTour": "Start Tour",
+    "skipForNow": "Skip for Now",
+    "features": {
+      "createProjects": {
+        "emoji": "📁",
+        "title": "Create Projects",
+        "description": "Organize your work into distinct projects"
+      },
+      "planCycles": {
+        "emoji": "🔄",
+        "title": "Plan Cycles",
+        "description": "Set up 6-week development cycles with build and cooldown phases"
+      },
+      "shapePitches": {
+        "emoji": "📋",
+        "title": "Shape Pitches",
+        "description": "Define shaped work items with time appetites"
+      },
+      "trackHillCharts": {
+        "emoji": "⛰️",
+        "title": "Track with Hill Charts",
+        "description": "Visualize progress from \"figuring it out\" to \"making it happen\""
+      }
+    }
+  },
+  "keyboardShortcuts": {
+    "title": "Keyboard Shortcuts",
+    "navigation": "Navigation",
+    "quickActions": "Quick Actions",
+    "general": "General"
+  },
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",

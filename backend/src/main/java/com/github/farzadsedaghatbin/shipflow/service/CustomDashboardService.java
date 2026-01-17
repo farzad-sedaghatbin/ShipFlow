@@ -196,10 +196,10 @@ public class CustomDashboardService {
      */
     public CustomDashboardDTO getDashboard(Long userId, Long dashboardId) {
         CustomDashboard dashboard = customDashboardRepository.findById(dashboardId)
-                .orElseThrow(() -> new IllegalArgumentException("Dashboard not found: " + dashboardId));
+                .orElseThrow(() -> new IllegalArgumentException(messageService.getMessage("error.dashboard.not.found", dashboardId)));
 
         if (!dashboard.getUser().getId().equals(userId) && !dashboard.getIsTemplate()) {
-            throw new SecurityException("Not authorized to view this dashboard");
+            throw new SecurityException(messageService.getMessage("error.dashboard.unauthorized"));
         }
 
         return toDTO(dashboard);

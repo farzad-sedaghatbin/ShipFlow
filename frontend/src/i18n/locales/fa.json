@@ -155,6 +155,41 @@
     "myProfile": "پروفایل من",
     "openNavigation": "باز کردن منوی ناوبری"
   },
+  "welcomeTour": {
+    "title": "به ShipFlow خوش آمدید! 👋",
+    "description": "ShipFlow به شما کمک می‌کند تا پروژه‌ها را با استفاده از روش Shape Up مدیریت کنید - با سیکل‌ها، پیچ‌ها و نمودارهای تپه برای پیگیری پیشرفت.",
+    "takeAQuickTour": "یک تور سریع برای آشنایی با ویژگی‌های کلیدی و شروع کار.",
+    "startTour": "شروع تور",
+    "skipForNow": "بعداً",
+    "features": {
+      "createProjects": {
+        "emoji": "📁",
+        "title": "ایجاد پروژه‌ها",
+        "description": "کار خود را در پروژه‌های مجزا سازماندهی کنید"
+      },
+      "planCycles": {
+        "emoji": "🔄",
+        "title": "برنامه‌ریزی سیکل‌ها",
+        "description": "سیکل‌های توسعه ۶ هفته‌ای با فازهای ساخت و استراحت تنظیم کنید"
+      },
+      "shapePitches": {
+        "emoji": "📋",
+        "title": "شکل‌دهی پیچ‌ها",
+        "description": "موارد کاری شکل‌یافته با محدودیت زمانی تعریف کنید"
+      },
+      "trackHillCharts": {
+        "emoji": "⛰️",
+        "title": "پیگیری با نمودار تپه",
+        "description": "پیشرفت را از \"درک موضوع\" تا \"اجرای آن\" تصویرسازی کنید"
+      }
+    }
+  },
+  "keyboardShortcuts": {
+    "title": "میانبرهای صفحه‌کلید",
+    "navigation": "ناوبری",
+    "quickActions": "دسترسی سریع",
+    "general": "عمومی"
+  },
   "auth": {
     "signIn": "ورود",
     "signOut": "خروج",
