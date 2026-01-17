@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.QAInteraction;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.NoteService;
 import com.github.farzadsedaghatbin.shipflow.service.QAService;
 import io.swagger.v3.oas.annotations.Operation;
