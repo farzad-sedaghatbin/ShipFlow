@@ -150,6 +150,8 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
+| **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
@@ -199,6 +201,34 @@ ShipFlow is fully responsive and works on all device sizes:
 - **Responsive Tables**: Horizontal scroll for data-heavy views
 - **Optimized Forms**: Full-width inputs and filters on small screens
 - **Mobile Breakpoints**: Optimized for 375px (iPhone SE), 414px (standard phones), and all tablet sizes
+
+## 🌍 Internationalization (i18n) & RTL Support
+
+ShipFlow provides comprehensive multilingual support with full RTL (Right-to-Left) layout capabilities:
+
+### Supported Languages
+- **English** (en) - 4,800+ translation keys
+- **Farsi/Persian** (فارسی) - 3,650+ translation keys with full RTL layout
+
+### RTL Features
+- **Automatic Direction Switching**: Layout direction changes automatically based on language selection
+- **Logical CSS Properties**: Uses Tailwind's logical properties (me-, ms-, start-, end-) for proper RTL rendering
+- **Bidirectional Grids**: React Grid Layout configured for RTL with dynamic width calculation
+- **Mirrored Components**: Navigation, forms, tables, and charts properly mirrored in RTL mode
+- **RTL-Aware Icons**: Directional icons (arrows, chevrons) automatically flip for RTL languages
+- **Mixed Content Support**: Handles LTR content (e.g., code, URLs) within RTL documents
+
+### Language Switching
+- **Persistent Preference**: Language choice saved to localStorage
+- **No Reload Required**: Instant language switching without page refresh
+- **Complete Coverage**: All UI components, messages, forms, charts, and tooltips localized
+- **Date/Time Localization**: Automatic date and number formatting per locale
+
+### Adding New Languages
+1. Create new translation file: `frontend/src/i18n/locales/{language-code}.json`
+2. Add language configuration to `frontend/src/i18n/index.ts`
+3. Update `isRTLLanguage()` function if adding an RTL language
+4. Language will automatically appear in the language switcher
 
 ### Keyboard Shortcuts
 

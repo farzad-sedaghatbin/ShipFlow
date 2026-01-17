@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Farsi (Persian) Language Support**: Comprehensive RTL internationalization
+  - **Complete Translation Coverage**: 3,650+ translation keys in Persian (fa.json)
+    - All UI components, forms, navigation, and messages fully translated
+    - Dashboard widgets, reports, meetings, and QA sections localized
+    - Chart labels, tooltips, and data visualizations in Farsi
+  - **RTL Layout Support**: Full right-to-left layout implementation
+    - Tailwind CSS logical properties (me-, ms-, start-, end-) throughout application
+    - React Grid Layout configured for RTL with proper direction handling
+    - Dynamic text direction based on language selection (ltr/rtl)
+    - Bidirectional text rendering for mixed content
+  - **Responsive Grid Layouts**: Dynamic width calculation for RTL compatibility
+    - Container-aware grid sizing using useRef and resize listeners
+    - Prevents widget overflow in RTL mode
+    - Proper grid positioning calculations for both LTR and RTL
+  - **Language Switching**: Seamless language toggle in user interface
+    - Persistent language preference in localStorage
+    - Automatic direction and font changes
+    - No page reload required for language switch
+
 - **Microsoft Teams Integration**: Full integration with Microsoft Teams for real-time notifications
   - **Backend Features**:
     - Database tables for Teams configuration, channel settings, and notification history (V54 migration)

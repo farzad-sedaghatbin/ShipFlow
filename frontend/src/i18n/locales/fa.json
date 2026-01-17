@@ -55,7 +55,8 @@
     "days": "روز",
     "setDefault": "تنظیم به عنوان پیش‌فرض",
     "setDefaultSuccess": "\"{{name}}\" به عنوان پیش‌فرض تنظیم شد",
-    "setDefaultFailed": "تنظیم پیش‌فرض ناموفق بود"
+    "setDefaultFailed": "تنظیم پیش‌فرض ناموفق بود",
+    "github": "گیت‌هاب"
   },
   "nav": {
     "dashboard": "داشبورد",

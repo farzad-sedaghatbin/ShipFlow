@@ -300,7 +300,7 @@ export default function Landing() {
                     {t('landing.openSourceDesc')}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {['MIT License', 'Self-Hosted', 'Docker Ready', 'WCAG 2.1 AA', 'Active Development'].map((label) => (
+                    {['MIT License', 'Self-Hosted', 'Docker Ready', 'WCAG 2.1 AA', 'RTL Support', 'Active Development'].map((label) => (
                       <Badge key={label} variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         {label}

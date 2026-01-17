@@ -52,7 +52,8 @@
     "optional": "Optional",
     "required": "Required",
     "unassigned": "Unassigned",
-    "days": "days"
+    "days": "days",
+    "github": "GitHub"
   },
   "nav": {
     "dashboard": "Dashboard",

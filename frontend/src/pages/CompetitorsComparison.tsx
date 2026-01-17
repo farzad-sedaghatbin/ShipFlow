@@ -42,61 +42,69 @@ interface ComparisonFeature {
   monday: boolean | 'partial';
   jira: boolean | 'partial';
   basecamp: boolean | 'partial';
+  clickup: boolean | 'partial';
 }
 
 const comparisonFeatures: ComparisonFeature[] = [
   // Shape Up Methodology
-  { category: 'Shape Up', feature: 'Native Shape Up methodology', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true },
-  { category: 'Shape Up', feature: '6-week fixed cycles', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true },
-  { category: 'Shape Up', feature: 'Betting table for pitches', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'Shape Up', feature: 'Appetite-based budgeting', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true },
-  { category: 'Shape Up', feature: 'Circuit breaker mechanism', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'Shape Up', feature: 'Pitch shaping workflow', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial' },
-  { category: 'Shape Up', feature: 'Cooldown periods', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true },
+  { category: 'Shape Up', feature: 'Native Shape Up methodology', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
+  { category: 'Shape Up', feature: '6-week fixed cycles', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
+  { category: 'Shape Up', feature: 'Betting table for pitches', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Shape Up', feature: 'Appetite-based budgeting', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
+  { category: 'Shape Up', feature: 'Circuit breaker mechanism', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Shape Up', feature: 'Pitch shaping workflow', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
+  { category: 'Shape Up', feature: 'Cooldown periods', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   
   // Progress Visualization
-  { category: 'Progress', feature: 'Hill charts', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true },
-  { category: 'Progress', feature: 'Interactive hill chart editing', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'Progress', feature: 'Gantt charts', shipflow: false, linear: false, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'Progress', feature: 'Kanban boards', shipflow: false, linear: true, asana: true, monday: true, jira: true, basecamp: true },
-  { category: 'Progress', feature: 'Sprint burndown', shipflow: false, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: false },
+  { category: 'Progress', feature: 'Hill charts', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
+  { category: 'Progress', feature: 'Interactive hill chart editing', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Progress', feature: 'Gantt charts', shipflow: false, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Progress', feature: 'Kanban boards', shipflow: false, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Progress', feature: 'Sprint burndown', shipflow: false, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: false, clickup: true },
   
   // AI & Intelligence
-  { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false },
-  { category: 'AI Features', feature: 'AI test case generation', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'AI Features', feature: 'AI pitch document extraction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
+  { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: 'partial' },
+  { category: 'AI Features', feature: 'AI test case generation', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'AI pitch document extraction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   
   // QA & Testing
-  { category: 'QA', feature: 'Integrated test management', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false },
-  { category: 'QA', feature: 'Bug tracking', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'QA', feature: 'Test execution & runs', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false },
-  { category: 'QA', feature: 'Traceability links', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false },
+  { category: 'QA', feature: 'Integrated test management', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'QA', feature: 'Bug tracking', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'QA', feature: 'Test execution & runs', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'QA', feature: 'Traceability links', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
   
   // Team & Collaboration
-  { category: 'Team', feature: 'Retrospectives', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false },
-  { category: 'Team', feature: 'Anonymous retro submissions', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'Team', feature: 'Work log timers', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'Team', feature: 'Task dependencies', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false },
+  { category: 'Team', feature: 'Retrospectives', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Team', feature: 'Anonymous retro submissions', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Team', feature: 'Work log timers', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Team', feature: 'Task dependencies', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   
   // Integrations
-  { category: 'Integrations', feature: 'GitHub integration', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'Integrations', feature: 'Slack notifications', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true },
-  { category: 'Integrations', feature: 'Microsoft Teams', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false },
-  { category: 'Integrations', feature: 'Webhooks', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true },
+  { category: 'Integrations', feature: 'GitHub integration', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Integrations', feature: 'Slack notifications', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Microsoft Teams', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Integrations', feature: 'Webhooks', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   
   // Deployment & Pricing
-  { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false },
-  { category: 'Deployment', feature: 'Open source', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false },
-  { category: 'Deployment', feature: 'Docker ready', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false },
-  { category: 'Deployment', feature: 'Free tier', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false },
+  { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
+  { category: 'Deployment', feature: 'Open source', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Deployment', feature: 'Docker ready', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
+  { category: 'Deployment', feature: 'Free tier', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   
   // Accessibility
-  { category: 'Accessibility', feature: 'WCAG 2.1 AA compliant', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial' },
-  { category: 'Accessibility', feature: 'Keyboard navigation', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true },
-  { category: 'Accessibility', feature: 'Screen reader support', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial' },
+  { category: 'Accessibility', feature: 'WCAG 2.1 AA compliant', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial', clickup: 'partial' },
+  { category: 'Accessibility', feature: 'Keyboard navigation', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Accessibility', feature: 'Screen reader support', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial', clickup: 'partial' },
+  { category: 'Accessibility', feature: 'Mobile responsive', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  
+  // Internationalization
+  { category: 'i18n', feature: 'Multilingual UI', shipflow: true, linear: 'partial', asana: 'partial', monday: true, jira: true, basecamp: 'partial', clickup: 'partial' },
+  { category: 'i18n', feature: 'RTL language support', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'i18n', feature: 'Farsi/Persian translation', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'i18n', feature: 'Date/time localization', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
 ];
 
 const competitors = [
@@ -134,6 +142,13 @@ const competitors = [
     pricing: '$299/mo flat',
     bestFor: 'Small agencies',
     color: 'green',
+  },
+  {
+    name: 'ClickUp',
+    description: 'Everything app for work',
+    pricing: 'From $7/user/mo',
+    bestFor: 'Teams wanting all-in-one',
+    color: 'pink',
   },
 ];
 
@@ -285,6 +300,17 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
+            
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-6">
+                <Users className="h-10 w-10 text-primary mb-4" />
+                <h3 className="font-semibold text-lg mb-2">RTL Language Support</h3>
+                <p className="text-sm text-muted-foreground">
+                  Full right-to-left layout support for Farsi, Arabic, and Hebrew.
+                  The only Shape Up tool with native RTL capabilities.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -320,13 +346,14 @@ export default function CompetitorsComparison() {
                     <TableHead className="text-center w-[100px]">Monday</TableHead>
                     <TableHead className="text-center w-[100px]">Jira</TableHead>
                     <TableHead className="text-center w-[100px]">Basecamp</TableHead>
+                    <TableHead className="text-center w-[100px]">ClickUp</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {categories.map((category) => (
                     <>
                       <TableRow key={category} className="bg-muted/30">
-                        <TableCell colSpan={7} className="font-semibold text-primary py-3">
+                        <TableCell colSpan={8} className="font-semibold text-primary py-3">
                           {category}
                         </TableCell>
                       </TableRow>
@@ -352,6 +379,9 @@ export default function CompetitorsComparison() {
                             </TableCell>
                             <TableCell className="text-center">
                               {renderFeatureCell(feature.basecamp)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {renderFeatureCell(feature.clickup)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -463,6 +493,24 @@ export default function CompetitorsComparison() {
                   <p><strong className="text-green-500">ShipFlow wins:</strong> Full Shape Up implementation, AI features, QA tools, free, interactive hill charts</p>
                   <p><strong className="text-amber-500">Basecamp wins:</strong> Message boards, campfire chat, simpler for non-dev teams</p>
                   <p><strong>Best for:</strong> Basecamp invented Shape Up but ShipFlow implements it fully for dev teams</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* vs ClickUp */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-pink-500" />
+                  vs ClickUp
+                </CardTitle>
+                <CardDescription>Everything app for work</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <p><strong className="text-green-500">ShipFlow wins:</strong> Native Shape Up methodology, hill charts, AI test generation, self-hosted, truly free</p>
+                  <p><strong className="text-amber-500">ClickUp wins:</strong> More views (List, Board, Calendar, Timeline), docs, whiteboards, extensive customization</p>
+                  <p><strong>Best for:</strong> ClickUp for teams wanting everything, ShipFlow for focused Shape Up development</p>
                 </div>
               </CardContent>
             </Card>
