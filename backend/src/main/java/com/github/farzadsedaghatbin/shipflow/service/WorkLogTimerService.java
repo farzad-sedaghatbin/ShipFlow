@@ -29,6 +29,7 @@ public class WorkLogTimerService {
     private final TaskRepository taskRepository;
     private final WorkLogRepository workLogRepository;
     private final UserRepository userRepository;
+    private final LocalizationService localizationService;
 
     public WorkLogTimerDTO startTimer(StartTimerRequest request) {
         Person person = getCurrentUserPerson();
@@ -36,13 +37,13 @@ public class WorkLogTimerService {
         // Validate pitch or task
         if ((request.getPitchId() == null && request.getTaskId() == null) ||
             (request.getPitchId() != null && request.getTaskId() != null)) {
-            throw new BadRequestException("Either pitchId or taskId must be provided (but not both)");
+            throw new BadRequestException(localizationService.getMessage("timer.invalid.params"));
         }
         
         // Check if user already has an active timer
         Optional<WorkLogTimer> existingTimer = timerRepository.findByPersonId(person.getId());
         if (existingTimer.isPresent()) {
-            throw new BadRequestException("You already have an active timer. Please stop it before starting a new one.");
+            throw new BadRequestException(localizationService.getMessage("timer.already.active"));
         }
         
         // Validate pitch or task existence
@@ -150,7 +151,7 @@ public class WorkLogTimerService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
         
         if (user.getPerson() == null) {
-            throw new IllegalArgumentException("Your account is not linked to a person profile. Please contact an administrator.");
+            throw new IllegalArgumentException(localizationService.getMessage("timer.no.person.profile"));
         }
         
         return user.getPerson();

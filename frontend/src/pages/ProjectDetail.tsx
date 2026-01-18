@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Pencil,
@@ -43,6 +44,7 @@ import {
 } from '../components/ui/tooltip';
 
 export default function ProjectDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -93,15 +95,15 @@ export default function ProjectDetail() {
     try {
       if (project.isActive) {
         await projectService.deactivate(project.id);
-        showToast('Project archived successfully', 'success');
+        showToast(t('projectDetail.projectArchived'), 'success');
       } else {
         await projectService.activate(project.id);
-        showToast('Project activated successfully', 'success');
+        showToast(t('projectDetail.projectActivated'), 'success');
       }
       loadData();
       refreshProjects();
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to update project status'), 'error');
+      showToast(getUserFriendlyError(error, t('projectDetail.updateStatusFailed')), 'error');
     }
   };
 
@@ -110,11 +112,11 @@ export default function ProjectDetail() {
     
     try {
       await projectService.delete(project.id);
-      showToast('Project deleted successfully', 'success');
+      showToast(t('projectDetail.projectDeleted'), 'success');
       refreshProjects();
       navigate('/projects');
     } catch (error) {
-      showToast(getUserFriendlyError(error, 'Failed to delete project'), 'error');
+      showToast(getUserFriendlyError(error, t('projectDetail.deleteFailed')), 'error');
     }
   };
 
@@ -125,23 +127,23 @@ export default function ProjectDetail() {
     
     if (now >= startDate && now <= endDate) {
       return (
-        <Badge className="bg-green-500" aria-label="Active cycle">
+        <Badge className="bg-green-500" aria-label={t('projectDetail.activeCycle')}>
           <Play className="h-3 w-3 mr-1" aria-hidden="true" />
-          Active
+          {t('projectDetail.active')}
         </Badge>
       );
     } else if (now > endDate) {
       return (
-        <Badge variant="secondary" aria-label="Completed cycle">
+        <Badge variant="secondary" aria-label={t('projectDetail.completedCycle')}>
           <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden="true" />
-          Completed
+          {t('projectDetail.completed')}
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" aria-label="Upcoming cycle">
+        <Badge variant="outline" aria-label={t('projectDetail.upcomingCycle')}>
           <Pause className="h-3 w-3 mr-1" aria-hidden="true" />
-          Upcoming
+          {t('projectDetail.upcoming')}
         </Badge>
       );
     }
@@ -158,9 +160,9 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Project not found</p>
+        <p className="text-muted-foreground">{t('projectDetail.notFound')}</p>
         <Button onClick={() => navigate('/projects')} className="mt-4">
-          Go to Projects
+          {t('projectDetail.goToProjects')}
         </Button>
       </div>
     );
@@ -185,7 +187,7 @@ export default function ProjectDetail() {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/projects')}
-          aria-label="Back to projects"
+          aria-label={t('projectDetail.backToProjects')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -206,7 +208,7 @@ export default function ProjectDetail() {
                   {project.projectKey}
                 </Badge>
                 {!project.isActive && (
-                  <Badge variant="secondary">Archived</Badge>
+                  <Badge variant="secondary">{t('projectDetail.archived')}</Badge>
                 )}
               </div>
             </div>
@@ -222,7 +224,7 @@ export default function ProjectDetail() {
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Edit Project</TooltipContent>
+              <TooltipContent>{t('projectDetail.editProject')}</TooltipContent>
             </Tooltip>
             
             <Tooltip>
@@ -236,7 +238,7 @@ export default function ProjectDetail() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {project.isActive ? 'Archive' : 'Activate'}
+                {project.isActive ? t('projectDetail.archive') : t('projectDetail.activate')}
               </TooltipContent>
             </Tooltip>
             
@@ -253,7 +255,7 @@ export default function ProjectDetail() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {(project.cycleCount || 0) > 0 ? 'Cannot delete project with cycles' : 'Delete'}
+                {(project.cycleCount || 0) > 0 ? t('projectDetail.cannotDelete') : t('projectDetail.delete')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -264,7 +266,7 @@ export default function ProjectDetail() {
       {project.description && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Description</CardTitle>
+            <CardTitle className="text-lg">{t('projectDetail.description')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">{project.description}</p>
@@ -281,7 +283,7 @@ export default function ProjectDetail() {
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Cycles</p>
+                <p className="text-sm text-muted-foreground">{t('projectDetail.totalCycles')}</p>
                 <p className="text-2xl font-bold">{project.cycleCount || 0}</p>
               </div>
             </div>
@@ -295,7 +297,7 @@ export default function ProjectDetail() {
                 <Play className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Active Cycles</p>
+                <p className="text-sm text-muted-foreground">{t('projectDetail.activeCycles')}</p>
                 <p className="text-2xl font-bold">{activeCycles.length}</p>
               </div>
             </div>
@@ -309,7 +311,7 @@ export default function ProjectDetail() {
                 <CheckCircle2 className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-sm text-muted-foreground">{t('projectDetail.completed')}</p>
                 <p className="text-2xl font-bold">{completedCycles.length}</p>
               </div>
             </div>
@@ -323,7 +325,7 @@ export default function ProjectDetail() {
                 <Users className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Teams</p>
+                <p className="text-sm text-muted-foreground">{t('projectDetail.teams')}</p>
                 <p className="text-2xl font-bold">{teams.length}</p>
               </div>
             </div>
@@ -335,7 +337,7 @@ export default function ProjectDetail() {
       {project.ownerName && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Project Owner</CardTitle>
+            <CardTitle className="text-lg">{t('projectDetail.projectOwner')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -350,17 +352,17 @@ export default function ProjectDetail() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Cycles</CardTitle>
+            <CardTitle className="text-lg">{t('projectDetail.cycles')}</CardTitle>
             <Button size="sm" onClick={() => navigate(`/cycles/new?project=${project.id}`)}>
               <Plus className="h-4 w-4 mr-2" />
-              New Cycle
+              {t('projectDetail.newCycle')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {cycles.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              No cycles yet. Create your first cycle to get started.
+              {t('projectDetail.noCycles')}
             </p>
           ) : (
             <div className="space-y-3">
@@ -386,7 +388,7 @@ export default function ProjectDetail() {
                         {cycle.pitchCount !== undefined && (
                           <div className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
-                            {cycle.pitchCount} pitches
+                            {cycle.pitchCount} {t('projectDetail.pitches')}
                           </div>
                         )}
                       </div>
@@ -403,7 +405,7 @@ export default function ProjectDetail() {
       {teams.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Teams</CardTitle>
+            <CardTitle className="text-lg">{t('projectDetail.teams')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -420,13 +422,13 @@ export default function ProjectDetail() {
                       <p className="font-medium">{team.name}</p>
                       {team.cycleName && (
                         <p className="text-sm text-muted-foreground">
-                          Cycle: {team.cycleName}
+                          {t('projectDetail.cycle')}: {team.cycleName}
                         </p>
                       )}
                     </div>
                   </div>
                   <Badge variant="outline">
-                    {team.assignments?.length || 0} members
+                    {team.assignments?.length || 0} {t('projectDetail.members')}
                   </Badge>
                 </div>
               ))}
@@ -439,17 +441,17 @@ export default function ProjectDetail() {
       <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
+            <DialogTitle>{t('projectDetail.deleteProject')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{project.name}"? This action cannot be undone.
+              {t('projectDetail.deleteConfirm', { name: project.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

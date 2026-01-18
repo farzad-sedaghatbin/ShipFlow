@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   ArrowLeft,
   Pencil,
@@ -44,6 +46,7 @@ const getRunStatusStyle = (status: string): string => {
 };
 
 const TestCaseDetailPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
@@ -59,7 +62,7 @@ const TestCaseDetailPage: React.FC = () => {
 
   const loadTestCase = async () => {
     if (id === null) {
-      setError('Invalid test case ID');
+      setError(t('testCaseDetail.invalidId'));
       setLoading(false);
       return;
     }
@@ -73,7 +76,7 @@ const TestCaseDetailPage: React.FC = () => {
       setTestCase(tcResponse.data);
       setTestRuns(runsResponse.data);
     } catch (err) {
-      setError('Failed to load test case');
+      setError(t('testCaseDetail.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,7 @@ const TestCaseDetailPage: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Invalid test case ID</span>
+          <span className="text-sm">{t('testCaseDetail.invalidId')}</span>
         </div>
       </div>
     );
@@ -103,11 +106,11 @@ const TestCaseDetailPage: React.FC = () => {
       <div>
         <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="mb-4 gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('testCaseDetail.back')}
         </Button>
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">{error || 'Test case not found'}</span>
+          <span className="text-sm">{error || t('testCaseDetail.notFound')}</span>
         </div>
       </div>
     );
@@ -120,11 +123,11 @@ const TestCaseDetailPage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6 flex-wrap">
         <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('testCaseDetail.back')}
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold truncate">{testCase.title}</h1>
-          <p className="text-sm text-muted-foreground">Test Case #{testCase.id}</p>
+          <p className="text-sm text-muted-foreground">{t('testCaseDetail.title', { id: testCase.id })}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -133,14 +136,14 @@ const TestCaseDetailPage: React.FC = () => {
             className="gap-2"
           >
             <Pencil className="h-4 w-4" />
-            Edit
+            {t('testCaseDetail.edit')}
           </Button>
           <Button
             onClick={() => navigate(`/qa/test-cases/${id}/run`)}
             className="gap-2"
           >
             <Play className="h-4 w-4" />
-            Run Test
+            {t('testCaseDetail.runTest')}
           </Button>
         </div>
       </div>
@@ -149,37 +152,37 @@ const TestCaseDetailPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Test Case Details</CardTitle>
+              <CardTitle>{t('testCaseDetail.details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Description</p>
-                <p className="text-sm">{testCase.description || 'No description provided'}</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.description')}</p>
+                <p className="text-sm">{testCase.description || t('testCaseDetail.noDescription')}</p>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Preconditions</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.preconditions')}</p>
                 <div className="p-3 rounded-lg bg-muted border border-border">
                   <pre className="whitespace-pre-wrap text-sm font-mono">
-                    {testCase.preconditions || 'None specified'}
+                    {testCase.preconditions || t('testCaseDetail.noPreconditions')}
                   </pre>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Test Steps</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.testSteps')}</p>
                 <div className="p-3 rounded-lg bg-muted border border-border">
                   <pre className="whitespace-pre-wrap text-sm font-mono">
-                    {testCase.steps || 'No steps defined'}
+                    {testCase.steps || t('testCaseDetail.noSteps')}
                   </pre>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Expected Result</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.expectedResult')}</p>
                 <div className="p-3 rounded-lg bg-muted border border-border">
                   <pre className="whitespace-pre-wrap text-sm font-mono">
-                    {testCase.expectedResult || 'No expected result defined'}
+                    {testCase.expectedResult || t('testCaseDetail.noExpectedResult')}
                   </pre>
                 </div>
               </div>
@@ -188,11 +191,11 @@ const TestCaseDetailPage: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Test Run History</CardTitle>
+              <CardTitle>{t('testCaseDetail.testRunHistory')}</CardTitle>
             </CardHeader>
             <CardContent>
               {testRuns.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No test runs recorded yet.</p>
+                <p className="text-sm text-muted-foreground">{t('testCaseDetail.noRuns')}</p>
               ) : (
                 <div className="space-y-3">
                   {testRuns.map((run) => (
@@ -202,7 +205,7 @@ const TestCaseDetailPage: React.FC = () => {
                           {run.status}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          {run.executedAt ? new Date(run.executedAt).toLocaleString() : 'Not executed'}
+                          {run.executedAt ? formatLocalizedDateTime(new Date(run.executedAt), i18n.language) : 'Not executed'}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
@@ -223,23 +226,23 @@ const TestCaseDetailPage: React.FC = () => {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Properties</CardTitle>
+              <CardTitle>{t('testCaseDetail.properties')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Status</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.status')}</p>
                 <Badge className={cn("text-xs", getStatusStyle(testCase.status))}>
                   {testCase.status}
                 </Badge>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Type</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.type')}</p>
                 <Badge variant="outline" className="text-xs">{testCase.type}</Badge>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Priority</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.priority')}</p>
                 <Badge className={cn("text-xs", getPriorityStyle(testCase.priority))}>
                   {testCase.priority}
                 </Badge>
@@ -247,21 +250,21 @@ const TestCaseDetailPage: React.FC = () => {
 
               {testCase.pitchId && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Pitch</p>
-                  <p className="text-sm">{testCase.pitchTitle || `Pitch #${testCase.pitchId}`}</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.pitch')}</p>
+                  <p className="text-sm">{testCase.pitchTitle || t('testCaseDetail.pitchId', { id: testCase.pitchId })}</p>
                 </div>
               )}
 
               {testCase.estimatedMinutes && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Estimated Time</p>
-                  <p className="text-sm">{testCase.estimatedMinutes} minutes</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.estimatedTime')}</p>
+                  <p className="text-sm">{t('testCaseDetail.minutes', { minutes: testCase.estimatedMinutes })}</p>
                 </div>
               )}
 
               {tags.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Tags</p>
+                  <p className="text-sm text-muted-foreground mb-2">{t('testCaseDetail.tags')}</p>
                   <div className="flex flex-wrap gap-1">
                     {tags.map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">{tag}</Badge>
@@ -273,16 +276,16 @@ const TestCaseDetailPage: React.FC = () => {
               <div className="border-t border-border pt-4" />
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Created</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.created')}</p>
                 <p className="text-sm">
-                  {testCase.createdAt ? new Date(testCase.createdAt).toLocaleString() : 'Unknown'}
+                  {testCase.createdAt ? formatLocalizedDateTime(new Date(testCase.createdAt), i18n.language) : t('testCaseDetail.unknown')}
                 </p>
               </div>
 
               {testCase.updatedAt && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Last Updated</p>
-                  <p className="text-sm">{new Date(testCase.updatedAt).toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t('testCaseDetail.lastUpdated')}</p>
+                  <p className="text-sm">{formatLocalizedDateTime(new Date(testCase.updatedAt), i18n.language)}</p>
                 </div>
               )}
             </CardContent>

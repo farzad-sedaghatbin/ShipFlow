@@ -32,6 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,6 +54,9 @@ class MyWorkLogServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private WorkLogService workLogService;
 
@@ -70,7 +74,25 @@ class MyWorkLogServiceTest {
     private WorkLog otherPersonWorkLog;
 
     @BeforeEach
-    void setUp() {
+    void setUp() {        
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("delete") && key.contains("own")) return "You can only delete your own work logs";
+            if (key.contains("update") && key.contains("own")) return "You can only update your own work logs";
+            if (key.contains("own.only")) return "You can only update your own work logs";
+            if (key.contains("no.person.profile")) return "User is not linked to a person profile";
+            if (key.contains("update.own")) return "You can only update your own work logs";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("delete") && key.contains("own")) return "You can only delete your own work logs";
+            if (key.contains("update") && key.contains("own")) return "You can only update your own work logs";
+            if (key.contains("own.only")) return "You can only update your own work logs";
+            if (key.contains("no.person.profile")) return "User is not linked to a person profile";
+            if (key.contains("update.own")) return "You can only update your own work logs";
+            return key;
+        });
         // Set up security context
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn("testuser");

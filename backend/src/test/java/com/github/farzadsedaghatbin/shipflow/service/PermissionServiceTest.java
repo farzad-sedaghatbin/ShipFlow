@@ -41,6 +41,9 @@ class PermissionServiceTest {
     @Mock
     private SecurityContext securityContext;
 
+    @Mock
+    private LocalizationService localizationService;
+
     @InjectMocks
     private PermissionService permissionService;
 
@@ -49,6 +52,19 @@ class PermissionServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("permission.already.exists")) return "Permission already exists";
+            if (key.contains("permission.not.found")) return "Permission not found";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("permission.already.exists")) return "Permission already exists";
+            if (key.contains("permission.not.found")) return "Permission not found";
+            return key;
+        });
+
         testUser = User.builder()
                 .id(1L)
                 .username("testuser")

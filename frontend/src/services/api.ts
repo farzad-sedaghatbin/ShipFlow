@@ -1,6 +1,14 @@
 import axios, { AxiosError } from 'axios';
 import { getStoredToken, clearAuth, showGlobalToast } from '../contexts';
-import { getUserFriendlyError, httpStatusMessages } from '../utils/errorMessages';
+import { getUserFriendlyError } from '../utils/errorMessages';
+
+// Hard-coded messages for global error handling (interceptor doesn't have access to i18n)
+const GLOBAL_ERROR_MESSAGES = {
+  unauthorized: 'Your session has expired for security reasons.',
+  forbidden: "You don't have permission to perform this action.",
+  serverError: 'Something went wrong on our end.',
+  networkError: 'Unable to connect. Please check your internet connection.',
+};
 
 const api = axios.create({
   baseURL: '/api',
@@ -38,13 +46,13 @@ api.interceptors.response.use(
 
     if (status === 401) {
       // Unauthorized - token expired or invalid
-      showGlobalToast(httpStatusMessages[401].message, 'error');
+      showGlobalToast(GLOBAL_ERROR_MESSAGES.unauthorized, 'error');
       clearAuth();
       // Redirect to login
       window.location.href = '/login';
     } else if (status === 403) {
       // Forbidden - no permission
-      showGlobalToast(httpStatusMessages[403].message, 'error');
+      showGlobalToast(GLOBAL_ERROR_MESSAGES.forbidden, 'error');
     } else if (status === 404) {
       // Don't show toast for 404 - let the component handle it for better UX
       // Some 404s are expected (e.g., checking if something exists)
@@ -55,9 +63,9 @@ api.interceptors.response.use(
       // Conflict - duplicate data
       showGlobalToast(userMessage, 'warning');
     } else if (status && status >= 500) {
-      showGlobalToast(httpStatusMessages[500].message, 'error');
+      showGlobalToast(GLOBAL_ERROR_MESSAGES.serverError, 'error');
     } else if (!error.response) {
-      showGlobalToast('Unable to connect. Please check your internet connection.', 'error');
+      showGlobalToast(GLOBAL_ERROR_MESSAGES.networkError, 'error');
     }
 
     // Log for debugging but don't expose technical details to users

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   RefreshCw,
   Clock,
@@ -60,6 +62,7 @@ export function RecentActivityFeed({
   compact = false,
   projectId 
 }: RecentActivityFeedProps) {
+  const { i18n } = useTranslation();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -263,7 +266,7 @@ export function RecentActivityFeed({
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {parseDate(activity.timestamp).toLocaleString()}
+                            {formatLocalizedDateTime(parseDate(activity.timestamp), i18n.language)}
                           </TooltipContent>
                         </Tooltip>
                       </div>

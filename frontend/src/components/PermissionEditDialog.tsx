@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Edit, Plus, X } from 'lucide-react';
 import {
   Dialog,
@@ -46,6 +47,7 @@ export function PermissionEditDialog({
   mode,
   permission,
 }: PermissionEditDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<CreatePermissionRequest>({
     role: permission?.role || 'ADMIN',
     resourceType: permission?.resourceType || 'CYCLE',
@@ -69,7 +71,7 @@ export function PermissionEditDialog({
       onSave();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save permission');
+      setError(err.response?.data?.message || t('errors.savePermissionFailed'));
     } finally {
       setSaving(false);
     }
@@ -83,19 +85,19 @@ export function PermissionEditDialog({
             {mode === 'create' ? (
               <>
                 <Plus className="h-5 w-5 inline mr-2" />
-                Create Permission
+                {t('permissions.dialog.createTitle')}
               </>
             ) : (
               <>
                 <Edit className="h-5 w-5 inline mr-2" />
-                Edit Permission
+                {t('permissions.dialog.editTitle')}
               </>
             )}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Add a new permission to the system'
-              : 'Update the permission description'}
+              ? t('permissions.dialog.createDescription')
+              : t('permissions.dialog.editDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -105,7 +107,7 @@ export function PermissionEditDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
+            <Label htmlFor="role">{t('permissions.dialog.role')}</Label>
             <Select
               value={formData.role}
               onValueChange={(value) =>
@@ -127,7 +129,7 @@ export function PermissionEditDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="resource">Resource Type</Label>
+            <Label htmlFor="resource">{t('permissions.dialog.resourceType')}</Label>
             <Select
               value={formData.resourceType}
               onValueChange={(value) =>
@@ -149,7 +151,7 @@ export function PermissionEditDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="permission">Permission Type</Label>
+            <Label htmlFor="permission">{t('permissions.dialog.permissionType')}</Label>
             <Select
               value={formData.permissionType}
               onValueChange={(value) =>
@@ -171,14 +173,14 @@ export function PermissionEditDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('permissions.dialog.description')}</Label>
             <Input
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Optional description"
+              placeholder={t('permissions.dialog.descriptionPlaceholder')}
             />
           </div>
         </div>
@@ -190,10 +192,10 @@ export function PermissionEditDialog({
             disabled={saving}
           >
             <X className="h-4 w-4 mr-2" />
-            Cancel
+            {t('permissions.dialog.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
+            {saving ? t('permissions.dialog.saving') : t(mode === 'create' ? 'permissions.dialog.create' : 'permissions.dialog.update')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, SkipForward, Compass } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTour } from '../contexts';
 import {
   Dialog,
@@ -14,6 +15,7 @@ const WELCOME_SHOWN_KEY = 'shipflow_welcome_shown';
 
 export const WelcomeTourDialog: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const { startTour, hasCompletedTour } = useTour();
 
   useEffect(() => {
@@ -40,24 +42,24 @@ export const WelcomeTourDialog: React.FC = () => {
 
   const features = [
     {
-      emoji: '📁',
-      title: 'Create Projects',
-      description: 'Organize your work into distinct projects',
+      emoji: t('welcomeTour.features.createProjects.emoji'),
+      title: t('welcomeTour.features.createProjects.title'),
+      description: t('welcomeTour.features.createProjects.description'),
     },
     {
-      emoji: '🔄',
-      title: 'Plan Cycles',
-      description: 'Set up 6-week development cycles with build and cooldown phases',
+      emoji: t('welcomeTour.features.planCycles.emoji'),
+      title: t('welcomeTour.features.planCycles.title'),
+      description: t('welcomeTour.features.planCycles.description'),
     },
     {
-      emoji: '📋',
-      title: 'Shape Pitches',
-      description: 'Define shaped work items with time appetites',
+      emoji: t('welcomeTour.features.shapePitches.emoji'),
+      title: t('welcomeTour.features.shapePitches.title'),
+      description: t('welcomeTour.features.shapePitches.description'),
     },
     {
-      emoji: '⛰️',
-      title: 'Track with Hill Charts',
-      description: 'Visualize progress from "figuring it out" to "making it happen"',
+      emoji: t('welcomeTour.features.trackHillCharts.emoji'),
+      title: t('welcomeTour.features.trackHillCharts.title'),
+      description: t('welcomeTour.features.trackHillCharts.description'),
     },
   ];
 
@@ -69,14 +71,13 @@ export const WelcomeTourDialog: React.FC = () => {
             <Compass className="h-10 w-10" />
           </div>
           <DialogTitle className="text-2xl font-bold text-white">
-            Welcome to ShipFlow! 👋
+            {t('welcomeTour.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="text-center pb-2">
           <p className="text-sm text-white/80 mb-6">
-            ShipFlow helps you manage projects using the Shape Up methodology - 
-            with cycles, pitches, and hill charts to track progress.
+            {t('welcomeTour.description')}
           </p>
           
           <div className="space-y-3 text-left mb-6">
@@ -98,7 +99,7 @@ export const WelcomeTourDialog: React.FC = () => {
           </div>
           
           <p className="text-xs text-white/60">
-            Would you like a quick guided tour to learn the basics?
+            {t('welcomeTour.takeAQuickTour')}
           </p>
         </div>
         
@@ -109,14 +110,14 @@ export const WelcomeTourDialog: React.FC = () => {
             className="text-white/70 hover:text-white hover:bg-white/10"
           >
             <SkipForward className="h-4 w-4 mr-2" />
-            Skip for Now
+            {t('welcomeTour.skipForNow')}
           </Button>
           <Button
             onClick={handleStartTour}
             className="bg-primary hover:bg-primary/90 px-6"
           >
             <Play className="h-4 w-4 mr-2" />
-            Start Guided Tour
+            {t('welcomeTour.startTour')}
           </Button>
         </DialogFooter>
       </DialogContent>

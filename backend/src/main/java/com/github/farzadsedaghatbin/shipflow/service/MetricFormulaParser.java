@@ -23,9 +23,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class MetricFormulaParser {
 
-    private static final Pattern FUNCTION_PATTERN = Pattern.compile("(SUM|AVG|COUNT|MIN|MAX)\\(([^)]+)\\)");
+    private static final Pattern FUNCTION_PATTERN = Pattern.compile("(SUM|AVG|COUNT|MIN|MAX)\\(([^)]++)\\)");
     private static final Pattern WHERE_PATTERN = Pattern.compile("WHERE\\s+([^)]+)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern FIELD_PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\.([a-zA-Z_][a-zA-Z0-9_]*)");
+    private static final Pattern FIELD_PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]++)\\.([a-zA-Z_][a-zA-Z0-9_]++)");
 
     /**
      * Validates a metric formula for syntax errors

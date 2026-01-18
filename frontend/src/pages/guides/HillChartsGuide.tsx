@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, TrendingUp, Circle, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function HillChartsGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Understanding Hill Charts</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.hillCharts.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Master the hill chart visualization to track progress and identify risks
+                    {t('guides.hillCharts.subtitle')}
                 </p>
             </div>
 
@@ -30,22 +32,15 @@ export default function HillChartsGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
-                        What is a Hill Chart?
+                        {t('guides.hillCharts.whatTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        A <strong>hill chart</strong> is a unique visualization tool from the Shape Up methodology
-                        that shows where work items are in their journey from unknown to known to done.
-                    </p>
-                    <p>
-                        Unlike traditional progress bars or burn-down charts, hill charts reveal the <em>nature</em> of
-                        the work being done, not just the quantity completed.
-                    </p>
+                    <p>{t('guides.hillCharts.whatDesc')}</p>
+                    <p>{t('guides.hillCharts.unlike')}</p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Key Insight:</strong> A task stuck on the uphill side indicates uncertainty
-                            and unknowns, while movement downhill shows confident execution.
+                            <strong>{t('guides.hillCharts.keyInsight')}</strong> {t('guides.hillCharts.keyInsightDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -54,8 +49,8 @@ export default function HillChartsGuide() {
             {/* The Two Phases */}
             <Card>
                 <CardHeader>
-                    <CardTitle>The Two Phases of Work</CardTitle>
-                    <CardDescription>Understanding uphill vs. downhill</CardDescription>
+                    <CardTitle>{t('guides.hillCharts.twoPhasesTitle')}</CardTitle>
+                    <CardDescription>{t('guides.hillCharts.twoPhasesSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-4">
@@ -65,24 +60,24 @@ export default function HillChartsGuide() {
                                 <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center">
                                     <Circle className="h-4 w-4 text-white" />
                                 </div>
-                                <h3 className="font-semibold text-lg">Uphill (Figuring Out)</h3>
+                                <h3 className="font-semibold text-lg">{t('guides.hillCharts.uphillTitle')}</h3>
                             </div>
                             <ul className="space-y-2 text-sm">
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                    <span>Exploring unknowns</span>
+                                    <span>{t('guides.hillCharts.uphillItem1')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                    <span>Making key decisions</span>
+                                    <span>{t('guides.hillCharts.uphillItem2')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                    <span>Solving hard problems</span>
+                                    <span>{t('guides.hillCharts.uphillItem3')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                    <span>High uncertainty</span>
+                                    <span>{t('guides.hillCharts.uphillItem4')}</span>
                                 </li>
                             </ul>
                         </div>
@@ -93,24 +88,24 @@ export default function HillChartsGuide() {
                                 <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
                                     <CheckCircle2 className="h-4 w-4 text-white" />
                                 </div>
-                                <h3 className="font-semibold text-lg">Downhill (Making It Happen)</h3>
+                                <h3 className="font-semibold text-lg">{t('guides.hillCharts.downhillTitle')}</h3>
                             </div>
                             <ul className="space-y-2 text-sm">
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span>Executing with confidence</span>
+                                    <span>{t('guides.hillCharts.downhillItem1')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span>Clear path forward</span>
+                                    <span>{t('guides.hillCharts.downhillItem2')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span>Predictable progress</span>
+                                    <span>{t('guides.hillCharts.downhillItem3')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span>Low uncertainty</span>
+                                    <span>{t('guides.hillCharts.downhillItem4')}</span>
                                 </li>
                             </ul>
                         </div>
@@ -207,21 +202,21 @@ export default function HillChartsGuide() {
             {/* Using Hill Charts */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Using Hill Charts in ShipFlow</CardTitle>
-                    <CardDescription>Interactive features and best practices</CardDescription>
+                    <CardTitle>{t('guides.hillCharts.usingTitle')}</CardTitle>
+                    <CardDescription>{t('guides.hillCharts.usingSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">Moving Items on the Chart</h4>
+                    <h4 className="font-semibold">{t('guides.hillCharts.movingTitle')}</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>Navigate to a pitch or cycle hill chart</li>
-                        <li>Click and drag any item (scope or task) on the chart</li>
-                        <li>Position it based on your current understanding:
+                        <li>{t('guides.hillCharts.movingStep1')}</li>
+                        <li>{t('guides.hillCharts.movingStep2')}</li>
+                        <li>{t('guides.hillCharts.movingStep3')}
                             <ul className="list-disc list-inside ml-6 mt-1 space-y-1 text-sm text-muted-foreground">
-                                <li>Left side if you're still figuring things out</li>
-                                <li>Right side if you know what to do and are executing</li>
+                                <li>{t('guides.hillCharts.movingStep3a')}</li>
+                                <li>{t('guides.hillCharts.movingStep3b')}</li>
                             </ul>
                         </li>
-                        <li>The position is automatically saved</li>
+                        <li>{t('guides.hillCharts.movingStep4')}</li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4 mt-4">
@@ -240,11 +235,11 @@ export default function HillChartsGuide() {
                     </div>
 
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4 mt-4">
-                        <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">⚠️ Warning Signs</h4>
+                        <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">{t('guides.hillCharts.warningTitle')}</h4>
                         <ul className="space-y-1 text-sm text-amber-900 dark:text-amber-100">
-                            <li>• <strong>Stuck uphill:</strong> Item hasn't moved in days - may need help or discussion</li>
-                            <li>• <strong>Moving backward:</strong> New unknowns discovered - reassess scope or approach</li>
-                            <li>• <strong>Too many uphill:</strong> Cycle may be overloaded with uncertain work</li>
+                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnStuckUphill') }} /></li>
+                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnMovingBackward') }} /></li>
+                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnTooManyUphill') }} /></li>
                         </ul>
                     </div>
                 </CardContent>

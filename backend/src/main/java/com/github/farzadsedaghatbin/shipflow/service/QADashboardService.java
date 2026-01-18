@@ -26,6 +26,7 @@ public class QADashboardService {
     private final TestRunRepository testRunRepository;
     private final PitchRepository pitchRepository;
     private final CycleRepository cycleRepository;
+    private final MessageService messageService;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -239,7 +240,7 @@ public class QADashboardService {
 
     private void checkFeatureEnabled() {
         if (!testManagementEnabled) {
-            throw new RuntimeException("QA Test Management feature is not enabled");
+            throw new RuntimeException(messageService.getMessage("error.qa.test.management.disabled"));
         }
     }
 }

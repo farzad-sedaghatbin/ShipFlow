@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import {
   BugReport,
@@ -77,6 +78,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   teamId,
   testRunId,
 }) => {
+  const { t } = useTranslation();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,7 +247,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       await onSubmit(formData as CreateBugReportRequest);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save bug report');
+      setError(err instanceof Error ? err.message : t('errors.saveBugReportFailed'));
     } finally {
       setLoading(false);
     }

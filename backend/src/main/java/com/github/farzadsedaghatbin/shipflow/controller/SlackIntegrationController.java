@@ -3,10 +3,12 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.SlackNotificationHistory;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,10 +20,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/slack")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Slack Integration", description = "APIs for managing Slack integration and notifications")
 public class SlackIntegrationController {
 
     private final SlackIntegrationService slackService;
+    private final MessageService messageService;
 
     @PostMapping("/configurations")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -90,10 +94,11 @@ public class SlackIntegrationController {
             @RequestBody TestSlackNotificationRequest request) {
         try {
             slackService.sendTestNotification(configId, request);
-            return ResponseEntity.ok("Test notification sent successfully");
+            return ResponseEntity.ok(messageService.getMessage("slack.notification.sent"));
         } catch (Exception e) {
+            log.error("Failed to send test notification for config {}: {}", configId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to send test notification: " + e.getMessage());
+                    .body(messageService.getMessage("slack.test.failed"));
         }
     }
 

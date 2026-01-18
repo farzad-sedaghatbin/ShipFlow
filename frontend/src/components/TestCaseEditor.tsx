@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Save,
   Trash2,
@@ -88,6 +89,7 @@ const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   teamId,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const isEdit = !!testCase;
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -146,7 +148,7 @@ const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     try {
       await onSave(formData as CreateTestCaseRequest);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save test case');
+      setError(err instanceof Error ? err.message : t('errors.saveTestCaseFailed'));
     } finally {
       setSaving(false);
     }

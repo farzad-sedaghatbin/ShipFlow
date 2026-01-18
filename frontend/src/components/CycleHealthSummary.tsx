@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, AlertTriangle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { PitchHealthCard } from './PitchHealthCard';
 import { 
@@ -23,6 +24,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
   cycleId, 
   onPitchClick 
 }) => {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<CycleHealthSummaryDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
         const data = await pitchHealthService.getCycleHealth(cycleId);
         setSummary(data);
       } catch (err) {
-        setError('Failed to load cycle health summary');
+        setError(t('errors.loadCycleHealthFailed'));
         console.error(err);
       } finally {
         setLoading(false);

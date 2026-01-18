@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   Settings,
   Save,
@@ -67,6 +69,7 @@ const DATE_FORMATS = [
 ];
 
 export default function OrganizationSettingsPage() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -91,7 +94,7 @@ export default function OrganizationSettingsPage() {
       if (error.response?.status === 404) {
         // Settings don't exist yet, use defaults
         const defaultSettings: Partial<OrganizationSettings> = {
-          organizationName: 'My Organization',
+          organizationName: t('organizationSettings.defaults.organizationName'),
           defaultCycleLengthWeeks: 6,
           defaultCooldownWeeks: 2,
           riskThresholds: DEFAULT_RISK_THRESHOLDS,
@@ -100,33 +103,33 @@ export default function OrganizationSettingsPage() {
           enableNotifications: true,
           enableAIFeatures: true,
           taskCategories: [
-            { name: 'PITCH_SCOPE', description: 'Work related to pitch deliverables', color: '#3B82F6', isActive: true, order: 1 },
-            { name: 'DEBT_IMPROVEMENT', description: 'Technical debt and improvements', color: '#F59E0B', isActive: true, order: 2 },
+            { name: 'PITCH_SCOPE', description: t('organizationSettings.defaults.taskCategory.pitchScope'), color: '#3B82F6', isActive: true, order: 1 },
+            { name: 'DEBT_IMPROVEMENT', description: t('organizationSettings.defaults.taskCategory.debtImprovement'), color: '#F59E0B', isActive: true, order: 2 },
           ],
           pitchCategories: [
-            { name: 'FEATURE', description: 'New feature development', color: '#10B981', isActive: true, order: 1 },
-            { name: 'INFRASTRUCTURE', description: 'Infrastructure and architecture', color: '#6366F1', isActive: true, order: 2 },
-            { name: 'REFACTOR', description: 'Code refactoring', color: '#8B5CF6', isActive: true, order: 3 },
-            { name: 'BUG_FIX', description: 'Bug fixes', color: '#EF4444', isActive: true, order: 4 },
+            { name: 'FEATURE', description: t('organizationSettings.defaults.pitchCategory.feature'), color: '#10B981', isActive: true, order: 1 },
+            { name: 'INFRASTRUCTURE', description: t('organizationSettings.defaults.pitchCategory.infrastructure'), color: '#6366F1', isActive: true, order: 2 },
+            { name: 'REFACTOR', description: t('organizationSettings.defaults.pitchCategory.refactor'), color: '#8B5CF6', isActive: true, order: 3 },
+            { name: 'BUG_FIX', description: t('organizationSettings.defaults.pitchCategory.bugFix'), color: '#EF4444', isActive: true, order: 4 },
           ],
           colors: DEFAULT_COLORS,
           bugStatuses: [
-            { name: 'NEW', description: 'Newly reported', color: '#3B82F6', isActive: true, order: 1, isClosed: false },
-            { name: 'IN_PROGRESS', description: 'Being worked on', color: '#F59E0B', isActive: true, order: 2, isClosed: false },
-            { name: 'FIXED', description: 'Fix implemented', color: '#10B981', isActive: true, order: 3, isClosed: true },
-            { name: 'VERIFIED', description: 'Fix verified', color: '#22C55E', isActive: true, order: 4, isClosed: true },
-            { name: 'WONT_FIX', description: 'Will not fix', color: '#6B7280', isActive: true, order: 5, isClosed: true },
+            { name: 'NEW', description: t('organizationSettings.defaults.bugStatus.new'), color: '#3B82F6', isActive: true, order: 1, isClosed: false },
+            { name: 'IN_PROGRESS', description: t('organizationSettings.defaults.bugStatus.inProgress'), color: '#F59E0B', isActive: true, order: 2, isClosed: false },
+            { name: 'FIXED', description: t('organizationSettings.defaults.bugStatus.fixed'), color: '#10B981', isActive: true, order: 3, isClosed: true },
+            { name: 'VERIFIED', description: t('organizationSettings.defaults.bugStatus.verified'), color: '#22C55E', isActive: true, order: 4, isClosed: true },
+            { name: 'WONT_FIX', description: t('organizationSettings.defaults.bugStatus.wontFix'), color: '#6B7280', isActive: true, order: 5, isClosed: true },
           ],
           severityLevels: [
-            { name: 'CRITICAL', description: 'System down or data loss', color: '#DC2626', isActive: true, order: 1, priority: 1 },
-            { name: 'HIGH', description: 'Major feature broken', color: '#F59E0B', isActive: true, order: 2, priority: 2 },
-            { name: 'MEDIUM', description: 'Feature partially broken', color: '#3B82F6', isActive: true, order: 3, priority: 3 },
-            { name: 'LOW', description: 'Minor issue or cosmetic', color: '#10B981', isActive: true, order: 4, priority: 4 },
+            { name: 'CRITICAL', description: t('organizationSettings.defaults.severity.critical'), color: '#DC2626', isActive: true, order: 1, priority: 1 },
+            { name: 'HIGH', description: t('organizationSettings.defaults.severity.high'), color: '#F59E0B', isActive: true, order: 2, priority: 2 },
+            { name: 'MEDIUM', description: t('organizationSettings.defaults.severity.medium'), color: '#3B82F6', isActive: true, order: 3, priority: 3 },
+            { name: 'LOW', description: t('organizationSettings.defaults.severity.low'), color: '#10B981', isActive: true, order: 4, priority: 4 },
           ],
         };
         setFormData(defaultSettings);
       } else {
-        showToast('Failed to load organization settings', 'error');
+        showToast(t('organizationSettings.loadFailed'), 'error');
       }
     } finally {
       setLoading(false);
@@ -139,16 +142,16 @@ export default function OrganizationSettingsPage() {
       const response = await organizationSettingsService.updateSettings(formData);
       setSettings(response.data);
       setFormData(response.data);
-      showToast('Organization settings saved successfully', 'success');
+      showToast(t('organizationSettings.updateSuccess'), 'success');
     } catch (error) {
-      showToast('Failed to save settings', 'error');
+      showToast(t('organizationSettings.updateFailed'), 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+    if (!confirm(t('organizationSettings.confirmReset'))) {
       return;
     }
 
@@ -157,9 +160,9 @@ export default function OrganizationSettingsPage() {
       const response = await organizationSettingsService.resetToDefaults();
       setSettings(response.data);
       setFormData(response.data);
-      showToast('Settings reset to defaults', 'success');
+      showToast(t('organizationSettings.resetSuccess'), 'success');
     } catch (error) {
-      showToast('Failed to reset settings', 'error');
+      showToast(t('organizationSettings.resetFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -194,7 +197,7 @@ export default function OrganizationSettingsPage() {
       
       if (!profiles || !Array.isArray(profiles)) {
         console.error('Invalid response format:', response);
-        showToast('Failed to load risk profiles', 'error');
+        showToast(t('organizationSettings.failedToLoadProfiles'), 'error');
         return;
       }
       
@@ -202,7 +205,7 @@ export default function OrganizationSettingsPage() {
       
       if (!selectedProfile) {
         console.error('Profile not found:', profileName, 'Available:', profiles.map(p => p.name));
-        showToast(`Profile "${profileName}" not found`, 'error');
+        showToast(t('organizationSettings.profileNotFound', { profile: profileName }), 'error');
         return;
       }
       
@@ -215,10 +218,10 @@ export default function OrganizationSettingsPage() {
           timeWeight: selectedProfile.timeWeight,
         },
       });
-      showToast(`"${selectedProfile.displayName}" profile applied successfully`, 'success');
+      showToast(t('organizationSettings.profileApplied', { profile: selectedProfile.displayName }), 'success');
     } catch (error) {
       console.error('Error applying risk profile:', error);
-      showToast('Failed to apply risk profile', 'error');
+      showToast(t('organizationSettings.failedToApplyProfile'), 'error');
     }
   };
 
@@ -237,7 +240,7 @@ export default function OrganizationSettingsPage() {
         <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription>
-            You do not have permission to access this page. Admin role required.
+            {t('organizationSettings.noPermission')}
           </AlertDescription>
         </Alert>
       </div>
@@ -259,27 +262,27 @@ export default function OrganizationSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Settings className="h-6 w-6" />
-            Organization Settings
+            {t('organizationSettings.title')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure organization-wide defaults and preferences
+            {t('organizationSettings.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleReset} disabled={saving} size="sm">
             <RotateCcw className="mr-2 h-4 w-4" />
-            Reset to Defaults
+            {t('organizationSettings.resetToDefaults')}
           </Button>
           <Button onClick={handleSave} disabled={saving} size="sm">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {t('organizationSettings.saving')}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Save Changes
+                {t('organizationSettings.saveChanges')}
               </>
             )}
           </Button>
@@ -288,14 +291,14 @@ export default function OrganizationSettingsPage() {
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="cycles">Cycles</TabsTrigger>
-          <TabsTrigger value="risk">Risk Thresholds</TabsTrigger>
-          <TabsTrigger value="weights">Risk Weights</TabsTrigger>
-          <TabsTrigger value="colors">Colors</TabsTrigger>
-          <TabsTrigger value="bugs">Bug Config</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="general">{t('organizationSettings.general')}</TabsTrigger>
+          <TabsTrigger value="cycles">{t('organizationSettings.cycles')}</TabsTrigger>
+          <TabsTrigger value="risk">{t('organizationSettings.risk')}</TabsTrigger>
+          <TabsTrigger value="weights">{t('organizationSettings.weights')}</TabsTrigger>
+          <TabsTrigger value="colors">{t('organizationSettings.colors')}</TabsTrigger>
+          <TabsTrigger value="bugs">{t('organizationSettings.bugs')}</TabsTrigger>
+          <TabsTrigger value="categories">{t('organizationSettings.categories')}</TabsTrigger>
+          <TabsTrigger value="features">{t('organizationSettings.features')}</TabsTrigger>
         </TabsList>
 
         {/* General Settings */}
@@ -304,24 +307,24 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
-                General Information
+                {t('organizationSettings.generalInfo')}
               </CardTitle>
-              <CardDescription>Basic organization information and preferences</CardDescription>
+              <CardDescription>{t('organizationSettings.generalDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="orgName">Organization Name</Label>
+                <Label htmlFor="orgName">{t('organizationSettings.organizationName')}</Label>
                 <Input
                   id="orgName"
                   value={formData.organizationName || ''}
                   onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
-                  placeholder="My Organization"
+                  placeholder={t('organizationSettings.organizationNamePlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="timezone">Time Zone</Label>
+                  <Label htmlFor="timezone">{t('organizationSettings.timeZone')}</Label>
                   <select
                     id="timezone"
                     value={formData.timeZone || 'UTC'}
@@ -337,7 +340,7 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dateFormat">Date Format</Label>
+                  <Label htmlFor="dateFormat">{t('organizationSettings.dateFormat')}</Label>
                   <select
                     id="dateFormat"
                     value={formData.dateFormat || 'MM/DD/YYYY'}
@@ -362,14 +365,14 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Cycle Configuration
+                {t('organizationSettings.cycleConfiguration')}
               </CardTitle>
-              <CardDescription>Default cycle and cooldown duration settings</CardDescription>
+              <CardDescription>{t('organizationSettings.cycleDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="cycleLength">Default Cycle Length (weeks)</Label>
+                  <Label htmlFor="cycleLength">{t('organizationSettings.defaultCycleLength')}</Label>
                   <Input
                     id="cycleLength"
                     type="number"
@@ -381,12 +384,12 @@ export default function OrganizationSettingsPage() {
                     }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Standard Shape Up cycle is 6 weeks
+                    {t('organizationSettings.defaultCycleLengthNote')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cooldownLength">Default Cooldown (weeks)</Label>
+                  <Label htmlFor="cooldownLength">{t('organizationSettings.defaultCooldown')}</Label>
                   <Input
                     id="cooldownLength"
                     type="number"
@@ -398,7 +401,7 @@ export default function OrganizationSettingsPage() {
                     }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Cooldown period between cycles (typically 2 weeks)
+                    {t('organizationSettings.defaultCooldownNote')}
                   </p>
                 </div>
               </div>
@@ -406,7 +409,7 @@ export default function OrganizationSettingsPage() {
               <Alert>
                 <Clock className="h-4 w-4" />
                 <AlertDescription>
-                  These defaults will be applied when creating new cycles. Existing cycles will not be affected.
+                  {t('organizationSettings.cycleDefaultsNote')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -419,23 +422,23 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                Risk Thresholds
+                {t('organizationSettings.riskThresholds')}
               </CardTitle>
               <CardDescription>
-                Configure score ranges for risk levels (0-100 scale)
+                {t('organizationSettings.riskThresholdsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
                   <div>
-                    <div className="font-medium text-green-900 dark:text-green-100">LOW Risk</div>
+                    <div className="font-medium text-green-900 dark:text-green-100">{t('organizationSettings.lowRisk')}</div>
                     <div className="text-sm text-green-700 dark:text-green-300">
-                      Score: 0 - {formData.riskThresholds?.lowMax || 30}
+                      {t('organizationSettings.lowRiskRange', { max: formData.riskThresholds?.lowMax || 30 })}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lowMax" className="text-xs">Max Score</Label>
+                    <Label htmlFor="lowMax" className="text-xs">{t('organizationSettings.maxScore')}</Label>
                     <Input
                       id="lowMax"
                       type="number"
@@ -450,13 +453,13 @@ export default function OrganizationSettingsPage() {
 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900">
                   <div>
-                    <div className="font-medium text-yellow-900 dark:text-yellow-100">MEDIUM Risk</div>
+                    <div className="font-medium text-yellow-900 dark:text-yellow-100">{t('organizationSettings.mediumRisk')}</div>
                     <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                      Score: {(formData.riskThresholds?.lowMax || 30) + 1} - {formData.riskThresholds?.mediumMax || 60}
+                      {t('organizationSettings.mediumRiskRange', { min: (formData.riskThresholds?.lowMax || 30) + 1, max: formData.riskThresholds?.mediumMax || 60 })}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="mediumMax" className="text-xs">Max Score</Label>
+                    <Label htmlFor="mediumMax" className="text-xs">{t('organizationSettings.maxScore')}</Label>
                     <Input
                       id="mediumMax"
                       type="number"
@@ -471,13 +474,13 @@ export default function OrganizationSettingsPage() {
 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900">
                   <div>
-                    <div className="font-medium text-orange-900 dark:text-orange-100">HIGH Risk</div>
+                    <div className="font-medium text-orange-900 dark:text-orange-100">{t('organizationSettings.highRisk')}</div>
                     <div className="text-sm text-orange-700 dark:text-orange-300">
-                      Score: {(formData.riskThresholds?.mediumMax || 60) + 1} - {formData.riskThresholds?.highMax || 85}
+                      {t('organizationSettings.highRiskRange', { min: (formData.riskThresholds?.mediumMax || 60) + 1, max: formData.riskThresholds?.highMax || 85 })}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="highMax" className="text-xs">Max Score</Label>
+                    <Label htmlFor="highMax" className="text-xs">{t('organizationSettings.maxScore')}</Label>
                     <Input
                       id="highMax"
                       type="number"
@@ -491,9 +494,9 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
-                  <div className="font-medium text-red-900 dark:text-red-100">CRITICAL Risk</div>
+                  <div className="font-medium text-red-900 dark:text-red-100">{t('organizationSettings.criticalRisk')}</div>
                   <div className="text-sm text-red-700 dark:text-red-300">
-                    Score: {(formData.riskThresholds?.highMax || 85) + 1} - 100
+                    {t('organizationSettings.criticalRiskRange', { min: (formData.riskThresholds?.highMax || 85) + 1 })}
                   </div>
                 </div>
               </div>
@@ -501,7 +504,7 @@ export default function OrganizationSettingsPage() {
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Changes to risk thresholds will affect how existing pitches are categorized.
+                  {t('organizationSettings.thresholdsChangeNote')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -514,16 +517,16 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5" />
-                Risk Factor Weights
+                {t('organizationSettings.riskWeights')}
               </CardTitle>
               <CardDescription>
-                Configure how much each factor contributes to the overall risk score (must sum to 100%)
+                {t('organizationSettings.riskWeightsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Preset Profiles */}
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">Quick Profiles</Label>
+                <Label className="text-sm font-semibold">{t('organizationSettings.quickProfiles')}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                   <Button
                     type="button"
@@ -532,7 +535,7 @@ export default function OrganizationSettingsPage() {
                     onClick={() => applyRiskProfile('balanced')}
                     className="justify-start"
                   >
-                    ⚖️ Balanced
+                    ⚖️ {t('organizationSettings.balanced')}
                   </Button>
                   <Button
                     type="button"
@@ -541,7 +544,7 @@ export default function OrganizationSettingsPage() {
                     onClick={() => applyRiskProfile('conservative')}
                     className="justify-start"
                   >
-                    🛡️ Conservative
+                    🛡️ {t('organizationSettings.conservative')}
                   </Button>
                   <Button
                     type="button"
@@ -550,7 +553,7 @@ export default function OrganizationSettingsPage() {
                     onClick={() => applyRiskProfile('aggressive')}
                     className="justify-start"
                   >
-                    🚀 Aggressive
+                    🚀 {t('organizationSettings.aggressive')}
                   </Button>
                   <Button
                     type="button"
@@ -559,7 +562,7 @@ export default function OrganizationSettingsPage() {
                     onClick={() => applyRiskProfile('quality_focused')}
                     className="justify-start"
                   >
-                    🎯 Quality Focus
+                    🎯 {t('organizationSettings.qualityFocus')}
                   </Button>
                   <Button
                     type="button"
@@ -568,11 +571,11 @@ export default function OrganizationSettingsPage() {
                     onClick={() => applyRiskProfile('time_critical')}
                     className="justify-start"
                   >
-                    ⏱️ Time Critical
+                    ⏱️ {t('organizationSettings.timeCritical')}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Click a profile to quickly apply preset weight distributions
+                  {t('organizationSettings.profilesNote')}
                 </p>
               </div>
 
@@ -582,7 +585,7 @@ export default function OrganizationSettingsPage() {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="budgetWeight" className="font-medium">💰 Budget Weight</Label>
+                    <Label htmlFor="budgetWeight" className="font-medium">💰 {t('organizationSettings.budgetWeight')}</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="budgetWeight"
@@ -606,13 +609,13 @@ export default function OrganizationSettingsPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    How spending compares to appetite and schedule
+                    {t('organizationSettings.budgetWeightDesc')}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="bugsWeight" className="font-medium">🐛 Bugs Weight</Label>
+                    <Label htmlFor="bugsWeight" className="font-medium">🐛 {t('organizationSettings.bugsWeight')}</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="bugsWeight"
@@ -636,13 +639,13 @@ export default function OrganizationSettingsPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Critical bugs, bug density, and resolution rate
+                    {t('organizationSettings.bugsWeightDesc')}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="scopeWeight" className="font-medium">📊 Scope Weight</Label>
+                    <Label htmlFor="scopeWeight" className="font-medium">📊 {t('organizationSettings.scopeWeight')}</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="scopeWeight"
@@ -666,13 +669,13 @@ export default function OrganizationSettingsPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Hill chart progress and scope completion status
+                    {t('organizationSettings.scopeWeightDesc')}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="timeWeight" className="font-medium">⏰ Time Weight</Label>
+                    <Label htmlFor="timeWeight" className="font-medium">⏰ {t('organizationSettings.timeWeight')}</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="timeWeight"
@@ -696,7 +699,7 @@ export default function OrganizationSettingsPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Status appropriateness for time remaining
+                    {t('organizationSettings.timeWeightDesc')}
                   </p>
                 </div>
               </div>
@@ -706,11 +709,11 @@ export default function OrganizationSettingsPage() {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="flex items-center justify-between">
-                    <span>Total weight: <strong>{getRiskWeightsSum()}%</strong></span>
+                    <span>{t('organizationSettings.totalWeight')}: <strong>{getRiskWeightsSum()}%</strong></span>
                     {isRiskWeightsValid() ? (
-                      <Badge variant="default" className="bg-green-500">✓ Valid</Badge>
+                      <Badge variant="default" className="bg-green-500">✓ {t('organizationSettings.valid')}</Badge>
                     ) : (
-                      <Badge variant="destructive">Must equal 100%</Badge>
+                      <Badge variant="destructive">{t('organizationSettings.mustEqual100')}</Badge>
                     )}
                   </div>
                 </AlertDescription>
@@ -719,7 +722,7 @@ export default function OrganizationSettingsPage() {
               <Alert>
                 <ShieldAlert className="h-4 w-4" />
                 <AlertDescription>
-                  Weight changes affect how risk scores are calculated. Higher weights make that factor more influential in the final risk assessment.
+                  {t('organizationSettings.weightsChangeNote')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -732,16 +735,16 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Color Configuration
+                {t('organizationSettings.colorConfiguration')}
               </CardTitle>
               <CardDescription>
-                Customize colors for appetite/actual hours visualization
+                {t('organizationSettings.colorsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="appetiteColor">Appetite Hours Color</Label>
+                  <Label htmlFor="appetiteColor">{t('organizationSettings.appetiteHoursColor')}</Label>
                   <div className="flex gap-2 items-center">
                     <Input
                       id="appetiteColor"
@@ -759,11 +762,11 @@ export default function OrganizationSettingsPage() {
                       {formData.colors?.appetiteHours || DEFAULT_COLORS.appetiteHours}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Color for planned/budget hours</p>
+                  <p className="text-xs text-muted-foreground">{t('organizationSettings.appetiteHoursColorDesc')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="actualColor">Actual Hours Color</Label>
+                  <Label htmlFor="actualColor">{t('organizationSettings.actualHoursColor')}</Label>
                   <div className="flex gap-2 items-center">
                     <Input
                       id="actualColor"
@@ -781,11 +784,11 @@ export default function OrganizationSettingsPage() {
                       {formData.colors?.actualHours || DEFAULT_COLORS.actualHours}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Color for logged/actual hours</p>
+                  <p className="text-xs text-muted-foreground">{t('organizationSettings.actualHoursColorDesc')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="overBudgetColor">Over Budget Color</Label>
+                  <Label htmlFor="overBudgetColor">{t('organizationSettings.overBudgetColor')}</Label>
                   <div className="flex gap-2 items-center">
                     <Input
                       id="overBudgetColor"
@@ -803,11 +806,11 @@ export default function OrganizationSettingsPage() {
                       {formData.colors?.overBudget || DEFAULT_COLORS.overBudget}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Warning color when over budget</p>
+                  <p className="text-xs text-muted-foreground">{t('organizationSettings.overBudgetColorDesc')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="underBudgetColor">Under Budget Color</Label>
+                  <Label htmlFor="underBudgetColor">{t('organizationSettings.underBudgetColor')}</Label>
                   <div className="flex gap-2 items-center">
                     <Input
                       id="underBudgetColor"
@@ -825,14 +828,14 @@ export default function OrganizationSettingsPage() {
                       {formData.colors?.underBudget || DEFAULT_COLORS.underBudget}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Success color when under budget</p>
+                  <p className="text-xs text-muted-foreground">{t('organizationSettings.underBudgetColorDesc')}</p>
                 </div>
               </div>
 
               <Alert>
                 <Palette className="h-4 w-4" />
                 <AlertDescription>
-                  Colors will be applied to charts, progress bars, and hour tracking displays.
+                  {t('organizationSettings.colorsApplyNote')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -845,13 +848,13 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bug className="h-5 w-5" />
-                Bug Tracking Configuration
+                {t('organizationSettings.bugTracking')}
               </CardTitle>
-              <CardDescription>Configure bug statuses and severity levels</CardDescription>
+              <CardDescription>{t('organizationSettings.bugTrackingDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold mb-3">Bug Statuses</h3>
+                <h3 className="font-semibold mb-3">{t('organizationSettings.bugStatuses')}</h3>
                 <div className="space-y-2">
                   {formData.bugStatuses?.map((status, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
@@ -874,7 +877,7 @@ export default function OrganizationSettingsPage() {
                             setFormData({ ...formData, bugStatuses: updated });
                           }}
                           className="font-medium"
-                          placeholder="Status name"
+                          placeholder={t('organizationSettings.statusName')}
                         />
                         <Input
                           value={status.description}
@@ -884,7 +887,7 @@ export default function OrganizationSettingsPage() {
                             setFormData({ ...formData, bugStatuses: updated });
                           }}
                           className="text-sm"
-                          placeholder="Description"
+                          placeholder={t('organizationSettings.description')}
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -897,7 +900,7 @@ export default function OrganizationSettingsPage() {
                               setFormData({ ...formData, bugStatuses: updated });
                             }}
                           />
-                          <Label className="text-xs">Active</Label>
+                          <Label className="text-xs">{t('organizationSettings.active')}</Label>
                         </div>
                         <div className="flex items-center gap-1">
                           <Switch
@@ -908,7 +911,7 @@ export default function OrganizationSettingsPage() {
                               setFormData({ ...formData, bugStatuses: updated });
                             }}
                           />
-                          <Label className="text-xs">Closed</Label>
+                          <Label className="text-xs">{t('organizationSettings.closed')}</Label>
                         </div>
                       </div>
                     </div>
@@ -919,7 +922,7 @@ export default function OrganizationSettingsPage() {
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-3">Severity Levels</h3>
+                <h3 className="font-semibold mb-3">{t('organizationSettings.severityLevels')}</h3>
                 <div className="space-y-2">
                   {formData.severityLevels?.map((severity, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
@@ -942,7 +945,7 @@ export default function OrganizationSettingsPage() {
                             setFormData({ ...formData, severityLevels: updated });
                           }}
                           className="font-medium"
-                          placeholder="Severity name"
+                          placeholder={t('organizationSettings.severityName')}
                         />
                         <Input
                           value={severity.description}
@@ -952,12 +955,12 @@ export default function OrganizationSettingsPage() {
                             setFormData({ ...formData, severityLevels: updated });
                           }}
                           className="text-sm"
-                          placeholder="Description"
+                          placeholder={t('organizationSettings.description')}
                         />
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                          <Label className="text-xs">Priority:</Label>
+                          <Label className="text-xs">{t('organizationSettings.priority')}:</Label>
                           <Input
                             type="number"
                             min="1"
@@ -980,7 +983,7 @@ export default function OrganizationSettingsPage() {
                               setFormData({ ...formData, severityLevels: updated });
                             }}
                           />
-                          <Label className="text-xs">Active</Label>
+                          <Label className="text-xs">{t('organizationSettings.active')}</Label>
                         </div>
                       </div>
                     </div>
@@ -997,13 +1000,13 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Tags className="h-5 w-5" />
-                Task & Pitch Categories
+                {t('organizationSettings.taskPitchCategories')}
               </CardTitle>
-              <CardDescription>Manage custom categories for tasks and pitches</CardDescription>
+              <CardDescription>{t('organizationSettings.categoriesDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold mb-3">Task Categories</h3>
+                <h3 className="font-semibold mb-3">{t('organizationSettings.taskCategories')}</h3>
                 <div className="space-y-2">
                   {formData.taskCategories?.map((category, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
@@ -1026,7 +1029,7 @@ export default function OrganizationSettingsPage() {
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-3">Pitch Categories</h3>
+                <h3 className="font-semibold mb-3">{t('organizationSettings.pitchCategories')}</h3>
                 <div className="space-y-2">
                   {formData.pitchCategories?.map((category, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
@@ -1055,19 +1058,19 @@ export default function OrganizationSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                Feature Toggles
+                {t('organizationSettings.featureToggles')}
               </CardTitle>
-              <CardDescription>Enable or disable organization-wide features</CardDescription>
+              <CardDescription>{t('organizationSettings.featuresDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor="ai-features">AI-Powered Features</Label>
+                    <Label htmlFor="ai-features">{t('organizationSettings.aiFeatures')}</Label>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Enable AI for risk analysis, Q&A, and intelligent suggestions
+                    {t('organizationSettings.aiFeaturesDesc')}
                   </p>
                 </div>
                 <Switch
@@ -1084,11 +1087,11 @@ export default function OrganizationSettingsPage() {
           {settings && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Last Updated</CardTitle>
+                <CardTitle className="text-sm">{t('organizationSettings.lastUpdated')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(settings.updatedAt).toLocaleString()} by {settings.updatedBy}
+                  {formatLocalizedDateTime(new Date(settings.updatedAt), i18n.language)} by {settings.updatedBy}
                 </p>
               </CardContent>
             </Card>

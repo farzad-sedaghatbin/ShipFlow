@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../../utils/dateLocalization';
 import { Clock, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +10,7 @@ import { Cycle } from '../../types';
 import { cn } from '@/lib/utils';
 
 export function UpcomingDeadlinesWidget() {
+  const { t, i18n } = useTranslation();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,11 +62,11 @@ export function UpcomingDeadlinesWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-500" />
-            Upcoming Deadlines
+            {t('widgets.upcomingDeadlines')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -74,12 +77,12 @@ export function UpcomingDeadlinesWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-500" />
-          Upcoming Deadlines
+          {t('widgets.upcomingDeadlines')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {cycles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No upcoming cycle deadlines</p>
+          <p className="text-sm text-muted-foreground">{t('widgets.noUpcomingDeadlines')}</p>
         ) : (
           <div className="space-y-2">
             {cycles.map((cycle) => {
@@ -103,7 +106,7 @@ export function UpcomingDeadlinesWidget() {
                   </div>
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                     <Calendar className="w-3 h-3" />
-                    Ends: {new Date(cycle.endDate).toLocaleDateString()}
+                    Ends: {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
                   </div>
                 </Link>
               );

@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.github.CreateGitHubRepositoryRe
 import com.github.farzadsedaghatbin.shipflow.dto.github.GitHubLinkDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.github.GitHubRepositoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.GitHubLinkType;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.github.GitHubIntegrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,9 @@ class GitHubIntegrationControllerTest {
 
     @MockBean
     private GitHubIntegrationService integrationService;
+
+    @MockBean
+    private MessageService messageService;
 
     @Test
     @WithMockUser(roles = "ADMIN")

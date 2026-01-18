@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
@@ -58,14 +59,35 @@ import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
+import { isRTLLanguage } from './i18n';
 
 function App() {
   const { showToast } = useToast();
+  const { i18n } = useTranslation();
 
   // Connect toast handler for use in api interceptors
   useEffect(() => {
     setToastHandler(showToast);
   }, [showToast]);
+
+  // Ensure RTL direction is always set correctly on every render
+  useEffect(() => {
+    const currentLang = i18n.language;
+    const dir = isRTLLanguage(currentLang) ? 'rtl' : 'ltr';
+    
+    if (document.documentElement.dir !== dir) {
+      document.documentElement.dir = dir;
+      document.documentElement.lang = currentLang;
+      
+      if (dir === 'rtl') {
+        document.body.classList.add('rtl');
+        document.body.classList.remove('ltr');
+      } else {
+        document.body.classList.add('ltr');
+        document.body.classList.remove('rtl');
+      }
+    }
+  }, [i18n.language]);
 
   return (
     <Routes>

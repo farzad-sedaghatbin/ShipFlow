@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs from 'dayjs';
 import { safeParseId } from '../utils/validation';
 import {
@@ -71,6 +74,7 @@ interface ShapeUpFields {
 }
 
 export default function PitchDetail() {
+  const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
@@ -164,10 +168,10 @@ export default function PitchDetail() {
     if (!pitch) return;
     try {
       await pitchService.updateStatus(pitch.id, newStatus);
-      showSuccess('Status updated successfully!');
+      showSuccess(t('pitchDetailPage.statusUpdated'));
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to update status'));
+      showError(getUserFriendlyError(error, t('pitchDetailPage.statusUpdateFailed')));
     }
   };
 
@@ -185,11 +189,11 @@ export default function PitchDetail() {
         status: pitch.status,
         ...shapeUpFields,
       });
-      showSuccess('Shape Up details saved successfully!');
+      showSuccess(t('pitchDetailPage.shapeUpSaved'));
       setEditingShapeUp(false);
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to save Shape Up details'));
+      showError(getUserFriendlyError(error, t('pitchDetailPage.saveFailed')));
     } finally {
       setSavingShapeUp(false);
     }
@@ -225,7 +229,7 @@ export default function PitchDetail() {
         pitchId: pitch.id,
         date: workLogDate,
       });
-      showSuccess('Work log created successfully!');
+      showSuccess(t('pitchDetailPage.workLogAdded'));
       setWorkLogDialog(false);
       setNewWorkLog({
         personId: 0,
@@ -237,7 +241,7 @@ export default function PitchDetail() {
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to create work log'));
+      showError(getUserFriendlyError(error, t('pitchDetailPage.workLogFailed')));
     } finally {
       setSaving(false);
     }
@@ -247,10 +251,10 @@ export default function PitchDetail() {
     if (!pitch) return;
     try {
       await workLogService.delete(workLogId);
-      showSuccess('Work log deleted successfully!');
+      showSuccess(t('pitchDetailPage.workLogDeleted'));
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to delete work log'));
+      showError(getUserFriendlyError(error, t('pitchDetailPage.workLogDeleteFailed')));
     }
   };
 
@@ -271,12 +275,12 @@ export default function PitchDetail() {
           try {
             await documentService.uploadForMeeting(createdMeeting.id, file);
           } catch (docError) {
-            showError('Some meeting documents failed to upload');
+            showError(t('pitchDetailPage.documentUploadFailed'));
           }
         }
       }
       
-      showSuccess('Meeting created successfully!');
+      showSuccess(t('pitchDetailPage.meetingScheduled'));
       setMeetingDialog(false);
       setNewMeeting({
         pitchId: 0,
@@ -291,7 +295,7 @@ export default function PitchDetail() {
       setShowMeetingDocUpload(false);
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to create meeting'));
+      showError(getUserFriendlyError(error, t('pitchDetailPage.meetingFailed')));
     } finally {
       setSaving(false);
     }
@@ -309,7 +313,7 @@ export default function PitchDetail() {
     return (
       <div className="p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-          <span className="text-sm">Invalid pitch ID</span>
+          <span className="text-sm">{t('pitchDetailPage.invalidPitchId')}</span>
         </div>
       </div>
     );
@@ -322,9 +326,9 @@ export default function PitchDetail() {
   if (!pitch) {
     return (
       <div>
-        <p className="text-muted-foreground">Pitch not found</p>
+        <p className="text-muted-foreground">{t('pitchDetailPage.pitchNotFound')}</p>
         <Button variant="link" asChild className="px-0">
-          <Link to="/pitches">Back to Pitches</Link>
+          <Link to="/pitches">{t('pitchDetailPage.backToPitches')}</Link>
         </Button>
       </div>
     );
@@ -341,7 +345,7 @@ export default function PitchDetail() {
             {pitch.title}
           </h1>
           <p className="text-muted-foreground mb-1">
-            {pitch.teamName || 'Unassigned'} • {pitch.cycleName}
+            {pitch.teamName || t('common.unassigned')} • {pitch.cycleName}
           </p>
           {pitch.description && (
             <p className="text-muted-foreground mt-4">
@@ -351,7 +355,7 @@ export default function PitchDetail() {
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/pitches/${pitch.id}/hill-chart`}>Hill Chart</Link>
+            <Link to={`/pitches/${pitch.id}/hill-chart`}>{t('pitchDetailPage.hillChart')}</Link>
           </Button>
           <StatusChip status={pitch.status} size="medium" />
           <Select
@@ -359,16 +363,16 @@ export default function PitchDetail() {
             onValueChange={(value) => handleStatusChange(value as PitchStatus)}
           >
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('pitchDetailPage.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="STARTED">Started</SelectItem>
-              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-              <SelectItem value="TESTING">Testing</SelectItem>
-              <SelectItem value="DONE">Done</SelectItem>
-              <SelectItem value="COOLDOWN">Cooldown</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="PENDING">{t('status.pending')}</SelectItem>
+              <SelectItem value="STARTED">{t('status.started')}</SelectItem>
+              <SelectItem value="IN_PROGRESS">{t('status.inProgress')}</SelectItem>
+              <SelectItem value="TESTING">{t('status.testing')}</SelectItem>
+              <SelectItem value="DONE">{t('status.done')}</SelectItem>
+              <SelectItem value="COOLDOWN">{t('status.cooldown')}</SelectItem>
+              <SelectItem value="CANCELLED">{t('status.cancelled')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -378,8 +382,8 @@ export default function PitchDetail() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Appetite</p>
-            <p className="text-3xl font-bold">{pitch.appetiteDays} days</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('pitchDetailPage.appetite')}</p>
+            <p className="text-3xl font-bold">{pitch.appetiteDays} {t('common.days')}</p>
             <p className="text-sm text-muted-foreground">
               ({pitch.appetiteHours?.toFixed(0)} hours)
             </p>
@@ -387,7 +391,7 @@ export default function PitchDetail() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Actual Time</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('pitchDetailPage.actualHours')}</p>
             <p
               className={cn(
                 'text-3xl font-bold',
@@ -402,7 +406,7 @@ export default function PitchDetail() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Progress</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('dashboard.progress')}</p>
             <p className="text-3xl font-bold">
               {pitch.progressPercentage?.toFixed(0) || 0}%
             </p>
@@ -410,7 +414,7 @@ export default function PitchDetail() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Work Entries</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('pitchDetailPage.workLogs')}</p>
             <p className="text-3xl font-bold">{workLogs.length}</p>
           </CardContent>
         </Card>
@@ -420,7 +424,7 @@ export default function PitchDetail() {
       <div className="mb-6">
         <ProgressBar
           value={pitch.progressPercentage || 0}
-          label="Budget Progress"
+          label={t('dashboard.budgetProgress')}
           color={(pitch.progressPercentage || 0) > 100 ? 'error' : 'primary'}
         />
       </div>
@@ -431,21 +435,21 @@ export default function PitchDetail() {
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary" />
-              Shape Up Details
+              {t('pitchDetailPage.shapeUpDetails')}
             </CardTitle>
             {!editingShapeUp ? (
               <Button variant="outline" size="sm" onClick={() => setEditingShapeUp(true)}>
                 <Edit2 className="h-4 w-4 mr-1" />
-                Edit
+                {t('pitchDetailPage.editShapeUp')}
               </Button>
             ) : (
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={handleCancelShapeUpEdit} disabled={savingShapeUp}>
-                  Cancel
+                  {t('pitchDetailPage.cancelEdit')}
                 </Button>
                 <Button size="sm" onClick={handleSaveShapeUp} disabled={savingShapeUp}>
                   {savingShapeUp ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                  Save
+                  {savingShapeUp ? t('pitchDetailPage.saving') : t('pitchDetailPage.saveShapeUp')}
                 </Button>
               </div>
             )}
@@ -459,12 +463,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
-                  Problem Statement
+                  {t('pitchDetailPage.problemStatement')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.problemStatement}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, problemStatement: e.target.value }))}
-                  placeholder="What problem are we solving? Why does this matter?"
+                  placeholder={t('pitchDetailPage.problemPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -473,12 +477,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-yellow-500" />
-                  Solution (Hatched)
+                  {t('pitchDetailPage.solution')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.solution}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, solution: e.target.value }))}
-                  placeholder="The proposed solution and approach."
+                  placeholder={t('pitchDetailPage.solutionPlaceholder')}
                   rows={4}
                 />
               </div>
@@ -487,12 +491,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Ban className="h-4 w-4 text-red-500" />
-                  Rabbit Holes
+                  {t('pitchDetailPage.rabbitHoles')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.rabbitHoles}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, rabbitHoles: e.target.value }))}
-                  placeholder="Edge cases to avoid, potential time sinks."
+                  placeholder={t('pitchDetailPage.rabbitHolesPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -501,12 +505,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Risks & Unknowns
+                  {t('pitchDetailPage.risks')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.risks}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, risks: e.target.value }))}
-                  placeholder="Known risks, technical challenges, or unknowns."
+                  placeholder={t('pitchDetailPage.risksPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -515,12 +519,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <X className="h-4 w-4 text-red-500" />
-                  No-Gos (Out of Scope)
+                  {t('pitchDetailPage.noGos')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.noGos}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, noGos: e.target.value }))}
-                  placeholder="Things explicitly NOT being built."
+                  placeholder={t('pitchDetailPage.noGosPlaceholder')}
                   rows={2}
                 />
               </div>
@@ -529,12 +533,12 @@ export default function PitchDetail() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-blue-500" />
-                  Wireframe / Prototype Links
+                  {t('pitchDetailPage.wireframeLinks')}
                 </Label>
                 <Textarea
                   value={shapeUpFields.wireframeLinks}
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, wireframeLinks: e.target.value }))}
-                  placeholder="Links to Figma, wireframes, mockups (one per line)"
+                  placeholder={t('pitchDetailPage.wireframeLinksPlaceholder')}
                   rows={2}
                 />
               </div>
@@ -546,7 +550,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
-                    Problem Statement
+                    {t('pitchDetailPage.problemStatement')}
                   </h4>
                   <p className="text-muted-foreground whitespace-pre-wrap">{pitch.problemStatement}</p>
                 </div>
@@ -556,7 +560,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <Lightbulb className="h-4 w-4 text-yellow-500" />
-                    Solution
+                    {t('pitchDetailPage.solution')}
                   </h4>
                   <p className="text-muted-foreground whitespace-pre-wrap">{pitch.solution}</p>
                 </div>
@@ -566,7 +570,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <Ban className="h-4 w-4 text-red-500" />
-                    Rabbit Holes
+                    {t('pitchDetailPage.rabbitHoles')}
                   </h4>
                   <p className="text-muted-foreground whitespace-pre-wrap">{pitch.rabbitHoles}</p>
                 </div>
@@ -576,7 +580,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    Risks & Unknowns
+                    {t('pitchDetailPage.risks')}
                   </h4>
                   <p className="text-muted-foreground whitespace-pre-wrap">{pitch.risks}</p>
                 </div>
@@ -586,7 +590,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <X className="h-4 w-4 text-red-500" />
-                    No-Gos
+                    {t('pitchDetailPage.noGos')}
                   </h4>
                   <p className="text-muted-foreground whitespace-pre-wrap">{pitch.noGos}</p>
                 </div>
@@ -596,7 +600,7 @@ export default function PitchDetail() {
                 <div>
                   <h4 className="font-semibold flex items-center gap-2 mb-2">
                     <Link2 className="h-4 w-4 text-blue-500" />
-                    Wireframe Links
+                    {t('pitchDetailPage.wireframeLinks')}
                   </h4>
                   <div className="space-y-1">
                     {pitch.wireframeLinks.split('\n').map((link, idx) => {
@@ -629,11 +633,11 @@ export default function PitchDetail() {
             <div className="text-center py-8">
               <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
               <p className="text-muted-foreground mb-4">
-                No Shape Up details defined yet. Add problem statement, solution, rabbit holes, and risks to fully shape this pitch.
+                {t('pitchDetailPage.noShapeUpDetails')}
               </p>
               <Button variant="outline" onClick={() => setEditingShapeUp(true)}>
                 <Edit2 className="h-4 w-4 mr-2" />
-                Add Shape Up Details
+                {t('pitchDetailPage.addShapeUpDetails')}
               </Button>
             </div>
           )}
@@ -647,11 +651,11 @@ export default function PitchDetail() {
         {/* Documents Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Documents</CardTitle>
+            <CardTitle>{t('pitchDetailPage.documents')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Upload documents (PDF, DOCX, TXT) to add their content to the knowledge base for Q&A.
+              {t('pitchDetailPage.documentsDescription')}
             </p>
             <DocumentDropZone
               entityType="PITCH"
@@ -667,7 +671,7 @@ export default function PitchDetail() {
         <NotesList 
           contextType="pitch" 
           contextId={pitch.id} 
-          title="Pitch Notes"
+          title={t('pitchDetailPage.notes')}
         />
 
         {/* Work Logs and Meetings - Two columns on desktop */}
@@ -676,16 +680,16 @@ export default function PitchDetail() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Work Logs</CardTitle>
+                <CardTitle>{t('pitchDetailPage.workLogs')}</CardTitle>
                 <Button size="sm" onClick={() => setWorkLogDialog(true)}>
                   <Plus className="h-4 w-4 mr-1" />
-                  Add
+                  {t('pitchDetailPage.add')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {workLogs.length === 0 ? (
-                <p className="text-muted-foreground">No work logs yet</p>
+                <p className="text-muted-foreground">{t('pitchDetailPage.noWorkLogs')}</p>
               ) : (
                 <div className="space-y-1">
                   {workLogs.map((wl, index) => (
@@ -697,7 +701,7 @@ export default function PitchDetail() {
                             <Badge variant="secondary">{wl.hoursSpent}h</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(wl.date).toLocaleDateString()}
+                            {formatLocalizedDate(new Date(wl.date), i18n.language)}
                             {wl.note && ` • ${wl.note}`}
                           </p>
                         </div>
@@ -723,16 +727,16 @@ export default function PitchDetail() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Meetings</CardTitle>
+                <CardTitle>{t('pitchDetailPage.meetings')}</CardTitle>
                 <Button size="sm" onClick={() => setMeetingDialog(true)}>
                   <Plus className="h-4 w-4 mr-1" />
-                  Add
+                  {t('pitchDetailPage.add')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {meetings.length === 0 ? (
-                <p className="text-muted-foreground">No meetings yet</p>
+                <p className="text-muted-foreground">{t('pitchDetailPage.noMeetings')}</p>
               ) : (
                 <div className="space-y-1">
                   {meetings.map((m, index) => (
@@ -741,7 +745,7 @@ export default function PitchDetail() {
                         <div className="flex gap-2 items-center mb-2">
                           <Badge variant="outline">{m.type}</Badge>
                           <span className="text-sm text-muted-foreground">
-                            {new Date(m.dateHeld).toLocaleDateString()}
+                            {formatLocalizedDate(new Date(m.dateHeld), i18n.language)}
                           </span>
                         </div>
                         <div className="flex gap-2 mb-2">
@@ -778,11 +782,11 @@ export default function PitchDetail() {
       <Dialog open={workLogDialog} onOpenChange={setWorkLogDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Work Log</DialogTitle>
+            <DialogTitle>{t('pitchDetailPage.addWorkLog')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="person">Person *</Label>
+              <Label htmlFor="person">{t('pitchDetailPage.person')} *</Label>
               <Select
                 value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
                 onValueChange={(value) =>
@@ -790,7 +794,7 @@ export default function PitchDetail() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select person" />
+                  <SelectValue placeholder={t('pitchDetailPage.selectPerson')} />
                 </SelectTrigger>
                 <SelectContent>
                   {persons.map((p) => (
@@ -803,17 +807,16 @@ export default function PitchDetail() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="worklog-date">Date *</Label>
-                <Input
+                <Label htmlFor="worklog-date">{t('pitchDetailPage.date')} *</Label>
+                <LocalizedDateInput
                   id="worklog-date"
-                  type="date"
                   value={workLogDate}
-                  onChange={(e) => setWorkLogDate(e.target.value)}
-                  required
+                  onChange={setWorkLogDate}
+                  aria-required="true"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hours">Hours *</Label>
+                <Label htmlFor="hours">{t('pitchDetailPage.hours')} *</Label>
                 <Input
                   id="hours"
                   type="number"
@@ -831,7 +834,7 @@ export default function PitchDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="note">Note</Label>
+              <Label htmlFor="note">{t('pitchDetailPage.note')}</Label>
               <Textarea
                 id="note"
                 value={newWorkLog.note}
@@ -844,13 +847,13 @@ export default function PitchDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWorkLogDialog(false)}>
-              Cancel
+              {t('pitchDetailPage.cancel')}
             </Button>
             <Button
               onClick={handleCreateWorkLog}
               disabled={!newWorkLog.personId || !newWorkLog.hoursSpent}
             >
-              Add
+              {t('pitchDetailPage.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -860,12 +863,12 @@ export default function PitchDetail() {
       <Dialog open={meetingDialog} onOpenChange={setMeetingDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Meeting</DialogTitle>
+            <DialogTitle>{t('pitchDetailPage.addMeeting')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="meeting-type">Type *</Label>
+                <Label htmlFor="meeting-type">{t('pitchDetailPage.type')} *</Label>
                 <Select
                   value={newMeeting.type}
                   onValueChange={(value) =>
@@ -873,32 +876,31 @@ export default function PitchDetail() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={t('pitchDetailPage.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SHAPING">Shaping</SelectItem>
-                    <SelectItem value="BETTING">Betting</SelectItem>
-                    <SelectItem value="KICKOFF">Kickoff</SelectItem>
-                    <SelectItem value="STANDUP">Standup</SelectItem>
-                    <SelectItem value="DEMO">Demo</SelectItem>
-                    <SelectItem value="RETROSPECTIVE">Retrospective</SelectItem>
-                    <SelectItem value="HILL_CHART_REVIEW">Hill Chart Review</SelectItem>
+                    <SelectItem value="SHAPING">{t('meetings.type.shaping')}</SelectItem>
+                    <SelectItem value="BETTING">{t('meetings.type.betting')}</SelectItem>
+                    <SelectItem value="KICKOFF">{t('meetings.type.kickoff')}</SelectItem>
+                    <SelectItem value="STANDUP">{t('meetings.type.standup')}</SelectItem>
+                    <SelectItem value="DEMO">{t('meetings.type.demo')}</SelectItem>
+                    <SelectItem value="RETROSPECTIVE">{t('meetings.type.retrospective')}</SelectItem>
+                    <SelectItem value="HILL_CHART_REVIEW">{t('meetings.type.hillChartReview')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="meeting-date">Date *</Label>
-                <Input
+                <Label htmlFor="meeting-date">{t('pitchDetailPage.date')} *</Label>
+                <LocalizedDateInput
                   id="meeting-date"
-                  type="date"
                   value={meetingDate}
-                  onChange={(e) => setMeetingDate(e.target.value)}
-                  required
+                  onChange={setMeetingDate}
+                  aria-required="true"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dor">DOR Ready</Label>
+              <Label htmlFor="dor">{t('pitchDetailPage.dor')}</Label>
               <Select
                 value={newMeeting.dorReady ? 'yes' : 'no'}
                 onValueChange={(value) =>
@@ -909,13 +911,13 @@ export default function PitchDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
+                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dod">DOD Ready</Label>
+              <Label htmlFor="dod">{t('pitchDetailPage.dod')}</Label>
               <Select
                 value={newMeeting.dodReady ? 'yes' : 'no'}
                 onValueChange={(value) =>
@@ -926,13 +928,13 @@ export default function PitchDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
+                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="meeting-notes">Notes</Label>
+              <Label htmlFor="meeting-notes">{t('pitchDetailPage.meetingNotes')}</Label>
               <Textarea
                 id="meeting-notes"
                 value={newMeeting.notes}
@@ -954,12 +956,12 @@ export default function PitchDetail() {
                     ) : (
                       <ChevronDown className="h-4 w-4 mr-1" />
                     )}
-                    {showMeetingDocUpload ? 'Hide' : 'Add'} Documents (MOM, etc.)
+                    {showMeetingDocUpload ? t('pitchDetailPage.hideDocuments') : t('pitchDetailPage.addDocuments')} (MOM, etc.)
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-3">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Attach meeting documents (PDF, Word, Text) to be indexed for Q&A
+                    {t('pitchDetailPage.meetingDocsDesc')}
                   </p>
                   <div
                     className="border-2 border-dashed border-border rounded-md p-4 text-center cursor-pointer hover:border-primary hover:bg-accent transition-colors"
@@ -986,7 +988,7 @@ export default function PitchDetail() {
                       }
                     />
                     <p className="text-muted-foreground">
-                      Drop files here or click to select
+                      {t('pitchDetailPage.dropFiles')}
                     </p>
                   </div>
                   {meetingPendingDocs.length > 0 && (
@@ -1015,9 +1017,9 @@ export default function PitchDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMeetingDialog(false)}>
-              Cancel
+              {t('pitchDetailPage.cancel')}
             </Button>
-            <Button onClick={handleCreateMeeting}>Add</Button>
+            <Button onClick={handleCreateMeeting}>{t('pitchDetailPage.add')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import KPIWidget from './KPIWidget';
@@ -26,9 +28,35 @@ export default function DashboardGrid({
   onWidgetRemove,
   onWidgetConfigure
 }: DashboardGridProps) {
+  const { i18n } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [layout, setLayout] = useState<Layout>([]);
   const [widgetDataMap, setWidgetDataMap] = useState<Map<number, WidgetData>>(new Map());
   const [loadingWidgets, setLoadingWidgets] = useState<Set<number>>(new Set());
+
+  // Update container width on mount and resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth;
+        if (width > 0) {
+          setContainerWidth(width);
+        }
+      }
+    };
+
+    // Use RAF to ensure DOM is fully rendered
+    const rafId = requestAnimationFrame(() => {
+      updateWidth();
+    });
+    
+    window.addEventListener('resize', updateWidth);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateWidth);
+    };
+  }, []);
 
   // Memoize widget IDs to prevent unnecessary re-renders
   const widgetIds = useMemo(() => 
@@ -133,7 +161,7 @@ export default function DashboardGrid({
         let chartData = [];
         if (data?.data?.history) {
           chartData = data.data.history.map((h: any) => ({
-            name: new Date(h.timestamp).toLocaleDateString(),
+            name: formatLocalizedDate(new Date(h.timestamp), i18n.language),
             value: h.value
           }));
         }
@@ -151,8 +179,8 @@ export default function DashboardGrid({
         let tableData = [];
         if (data?.data?.history) {
           tableData = data.data.history.map((item: any) => ({
-            date: new Date(item.timestamp).toLocaleDateString(),
-            time: new Date(item.timestamp).toLocaleTimeString(),
+            date: formatLocalizedDate(new Date(item.timestamp), i18n.language),
+            time: formatLocalizedDateTime(new Date(item.timestamp), i18n.language).split(' ').slice(1).join(' '), // Get time part
             value: item.value,
             ...item
           }));
@@ -180,31 +208,32 @@ export default function DashboardGrid({
   };
 
   return (
-    <div className="w-full">
-      <GridLayout
-        className="layout"
-        layout={layout}
-        width={1200}
-        gridConfig={{
-          rowHeight: 100,
-          cols: 12
-        }}
-        dragConfig={{
-          enabled: editable,
-          handle: ".drag-handle"
-        }}
-        resizeConfig={{
-          enabled: editable
-        }}
-        onLayoutChange={handleLayoutChange}
-      >
-        {widgets.map((widget, index) => (
+    <div ref={containerRef} className="w-full">
+      {containerWidth > 0 && (
+        <GridLayout
+          className="layout"
+          layout={layout}
+          width={containerWidth}
+          gridConfig={{
+            rowHeight: 100,
+            cols: 12
+          }}
+          dragConfig={{
+            enabled: editable,
+            handle: ".drag-handle"
+          }}
+          resizeConfig={{
+            enabled: editable
+          }}
+          onLayoutChange={handleLayoutChange}
+        >
+          {widgets.map((widget, index) => (
           <div
             key={widget.id?.toString() || `widget-${index}`}
             className="bg-background border rounded-lg shadow-sm relative group"
           >
             {editable && (
-              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 end-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="drag-handle cursor-move">
                   <Button variant="ghost" size="icon" className="h-7 w-7">
                     <GripVertical className="h-4 w-4" />
@@ -236,6 +265,7 @@ export default function DashboardGrid({
           </div>
         ))}
       </GridLayout>
+      )}
     </div>
   );
 }

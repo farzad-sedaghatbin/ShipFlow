@@ -211,6 +211,10 @@ public class PitchService {
                 .risks(pitch.getRisks())
                 .noGos(pitch.getNoGos())
                 .wireframeLinks(pitch.getWireframeLinks())
+                // Circuit breaker fields
+                .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
+                .circuitBreakerReason(pitch.getCircuitBreakerReason())
+                .circuitBreakerDate(pitch.getCircuitBreakerDate())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, LogIn, Info, Loader2 } from 'lucide-react';
 import { useAuth, useToast } from '../contexts';
 import { authService } from '../services/authService';
@@ -13,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
 export default function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -53,11 +55,11 @@ export default function Login() {
       }
 
       login(token, { userId, username: user, role, personId, personName });
-      showSuccess('Welcome back! Login successful.');
+      showSuccess(t('login.loginSuccess'));
       navigate(from, { replace: true });
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message 
-        || 'Invalid username or password';
+        || t('login.invalidCredentials');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -74,10 +76,10 @@ export default function Login() {
           <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-primary/5 to-primary/10 min-h-[200px] md:min-h-0">
             <LoginIllustration width={240} height={180} />
             <h2 className="mt-6 text-xl font-bold text-primary text-center">
-              Shape Up Your Projects
+              {t('login.shapeUpProjects')}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground text-center max-w-[280px]">
-              Track cycles, manage pitches, and visualize progress with hill charts
+              {t('login.tagline')}
             </p>
           </div>
 
@@ -89,7 +91,7 @@ export default function Login() {
                 <h1 className="text-2xl font-bold text-primary">ShipFlow</h1>
               </div>
               <p className="text-sm text-muted-foreground">
-                Sign in to continue to your workspace
+                {t('login.signInToContinue')}
               </p>
             </div>
 
@@ -101,7 +103,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t('login.username')}</Label>
                 <Input
                   id="username"
                   value={username}
@@ -109,12 +111,12 @@ export default function Login() {
                   required
                   autoFocus={!username}
                   autoComplete="username"
-                  placeholder="Enter your username"
+                  placeholder={t('login.username')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('login.password')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -123,7 +125,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    placeholder="Enter your password"
+                    placeholder={t('login.password')}
                     className="pr-10"
                   />
                   <Button
@@ -132,7 +134,7 @@ export default function Login() {
                     size="icon"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -150,7 +152,7 @@ export default function Login() {
                   onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                 />
                 <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
-                  Remember me
+                  {t('login.rememberMe')}
                 </Label>
               </div>
 
@@ -163,12 +165,12 @@ export default function Login() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Signing in...
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
                     <LogIn className="h-4 w-4 mr-2" />
-                    Sign In
+                    {t('login.signIn')}
                   </>
                 )}
               </Button>

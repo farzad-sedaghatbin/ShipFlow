@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, PlayCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { workLogService } from '../services/workLogService';
@@ -12,6 +13,8 @@ import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
 import { cn } from '../lib/utils';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -44,6 +47,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function MyWorkLogs() {
+  const { i18n } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
@@ -455,11 +459,10 @@ export default function MyWorkLogs() {
               )}
               <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="date-input">Date *</Label>
-                <Input
+                <LocalizedDateInput
                   id="date-input"
-                  type="date"
                   value={workLogDate}
-                  onChange={(e) => setWorkLogDate(e.target.value)}
+                  onChange={(value) => setWorkLogDate(value)}
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
@@ -559,7 +562,7 @@ export default function MyWorkLogs() {
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {new Date(wl.date).toLocaleDateString()}
+                          {formatLocalizedDate(wl.date, i18n.language)}
                           {wl.date === dayjs().format('YYYY-MM-DD') && (
                             <Badge variant="default" className="text-xs">Today</Badge>
                           )}
@@ -680,11 +683,10 @@ export default function MyWorkLogs() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-date">Date *</Label>
-                <Input
+                <LocalizedDateInput
                   id="edit-date"
-                  type="date"
                   value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
+                  onChange={(value) => setEditDate(value)}
                 />
               </div>
               <div className="space-y-2">

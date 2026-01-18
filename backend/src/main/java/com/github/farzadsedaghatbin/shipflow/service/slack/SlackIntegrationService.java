@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service.slack;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.*;
 import com.github.farzadsedaghatbin.shipflow.repository.slack.*;
+import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -33,6 +34,7 @@ public class SlackIntegrationService {
     private final SlackChannelConfigRepository channelConfigRepository;
     private final SlackNotificationHistoryRepository historyRepository;
     private final RestTemplate restTemplate;
+    private final LocalizationService localizationService;
 
     /**
      * Create or update Slack workspace configuration
@@ -243,7 +245,7 @@ public class SlackIntegrationService {
             log.info("Sent test notification to Slack workspace: {}", config.getWorkspaceName());
         } catch (Exception e) {
             log.error("Failed to send test notification: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to send test notification: " + e.getMessage());
+            throw new RuntimeException(localizationService.getMessage("slack.test.failed", e.getMessage()));
         }
     }
 

@@ -1,6 +1,7 @@
 /**
  * User-friendly error messages for common API errors
  * Maps technical errors to readable messages
+ * Now supports i18n through translation function parameter
  */
 
 export interface ApiErrorDetails {
@@ -9,137 +10,84 @@ export interface ApiErrorDetails {
   action?: string;
 }
 
-// Common HTTP status code messages
-export const httpStatusMessages: Record<number, ApiErrorDetails> = {
-  400: {
-    title: 'Invalid Request',
-    message: 'The information provided is incorrect or incomplete.',
-    action: 'Please check your input and try again.',
-  },
-  401: {
-    title: 'Session Expired',
-    message: 'Your session has expired for security reasons.',
-    action: 'Please log in again to continue.',
-  },
-  403: {
-    title: 'Access Denied',
-    message: "You don't have permission to perform this action.",
-    action: 'Contact your administrator if you need access.',
-  },
-  404: {
-    title: 'Not Found',
-    message: 'The requested item could not be found.',
-    action: 'It may have been deleted or moved.',
-  },
-  409: {
-    title: 'Conflict',
-    message: 'This action conflicts with existing data.',
-    action: 'The item may already exist or has been modified.',
-  },
-  422: {
-    title: 'Validation Error',
-    message: 'The provided data did not pass validation.',
-    action: 'Please check the highlighted fields and try again.',
-  },
-  429: {
-    title: 'Too Many Requests',
-    message: "You've made too many requests in a short time.",
-    action: 'Please wait a moment and try again.',
-  },
-  500: {
-    title: 'Server Error',
-    message: 'Something went wrong on our end.',
-    action: 'Please try again in a few moments.',
-  },
-  502: {
-    title: 'Service Unavailable',
-    message: 'The server is temporarily unavailable.',
-    action: 'Please try again in a few moments.',
-  },
-  503: {
-    title: 'Service Unavailable',
-    message: 'The service is temporarily unavailable.',
-    action: 'Please try again later.',
-  },
-};
+type TranslateFn = (key: string, options?: Record<string, unknown>) => string;
 
-// Domain-specific error messages
-export const domainErrorMessages: Record<string, string> = {
-  // Project errors
-  'project.name.required': 'Project name is required',
-  'project.name.duplicate': 'A project with this name already exists',
-  'project.key.required': 'Project key is required',
-  'project.key.duplicate': 'A project with this key already exists',
-  'project.key.invalid': 'Project key must be 2-10 uppercase letters or numbers',
-  'project.has.cycles': 'Cannot delete project with existing cycles',
-  'project.not.found': 'Project not found',
-
-  // Cycle errors
-  'cycle.name.required': 'Cycle name is required',
-  'cycle.dates.required': 'Start and end dates are required',
-  'cycle.dates.invalid': 'End date must be after start date',
-  'cycle.project.required': 'Please select a project',
-  'cycle.not.found': 'Cycle not found',
-  'cycle.has.pitches': 'Cannot delete cycle with existing pitches',
-
-  // Pitch errors
-  'pitch.title.required': 'Pitch title is required',
-  'pitch.cycle.required': 'Please select a cycle',
-  'pitch.appetite.invalid': 'Appetite must be between 1 and 42 days',
-  'pitch.not.found': 'Pitch not found',
-  'pitch.has.tasks': 'Cannot delete pitch with existing tasks',
-
-  // Task errors
-  'task.title.required': 'Task title is required',
-  'task.cycle.required': 'Please select a cycle',
-  'task.not.found': 'Task not found',
-  'task.estimate.invalid': 'Estimate hours must be a positive number',
-
-  // Team errors
-  'team.name.required': 'Team name is required',
-  'team.name.duplicate': 'A team with this name already exists',
-  'team.not.found': 'Team not found',
-  'team.has.members': 'Cannot delete team with existing members',
-
-  // Person errors
-  'person.name.required': 'Person name is required',
-  'person.email.required': 'Email is required',
-  'person.email.invalid': 'Please enter a valid email address',
-  'person.email.duplicate': 'A person with this email already exists',
-  'person.not.found': 'Person not found',
-
-  // Auth errors
-  'auth.invalid.credentials': 'Invalid username or password',
-  'auth.account.locked': 'Account is locked. Contact your administrator.',
-  'auth.account.disabled': 'Account is disabled. Contact your administrator.',
-  'auth.token.expired': 'Your session has expired. Please log in again.',
-  'auth.token.invalid': 'Invalid session. Please log in again.',
-
-  // Work log errors
-  'worklog.hours.required': 'Hours worked is required',
-  'worklog.hours.invalid': 'Hours must be between 0.25 and 24',
-  'worklog.date.required': 'Work date is required',
-  'worklog.date.future': 'Work date cannot be in the future',
-
-  // Document errors
-  'document.file.required': 'Please select a file to upload',
-  'document.file.too.large': 'File size exceeds the maximum limit (10MB)',
-  'document.type.invalid': 'This file type is not supported',
-
-  // Generic errors
-  'validation.failed': 'Please check the form for errors',
-  'network.error': 'Unable to connect. Please check your internet connection.',
-  'unknown.error': 'An unexpected error occurred. Please try again.',
+// Legacy domain error message mapping (for backward compatibility with backend error codes)
+const domainErrorCodeMapping: Record<string, string> = {
+  'project.name.required': 'errors.domain.project.name.required',
+  'project.name.duplicate': 'errors.domain.project.name.duplicate',
+  'project.key.required': 'errors.domain.project.key.required',
+  'project.key.duplicate': 'errors.domain.project.key.duplicate',
+  'project.key.invalid': 'errors.domain.project.key.invalid',
+  'project.has.cycles': 'errors.domain.project.hasCycles',
+  'project.not.found': 'errors.domain.project.notFound',
+  
+  'cycle.name.required': 'errors.domain.cycle.name.required',
+  'cycle.dates.required': 'errors.domain.cycle.dates.required',
+  'cycle.dates.invalid': 'errors.domain.cycle.dates.invalid',
+  'cycle.project.required': 'errors.domain.cycle.project.required',
+  'cycle.not.found': 'errors.domain.cycle.notFound',
+  'cycle.has.pitches': 'errors.domain.cycle.hasPitches',
+  
+  'pitch.title.required': 'errors.domain.pitch.title.required',
+  'pitch.cycle.required': 'errors.domain.pitch.cycle.required',
+  'pitch.appetite.invalid': 'errors.domain.pitch.appetite.invalid',
+  'pitch.not.found': 'errors.domain.pitch.notFound',
+  'pitch.has.tasks': 'errors.domain.pitch.hasTasks',
+  
+  'task.title.required': 'errors.domain.task.title.required',
+  'task.cycle.required': 'errors.domain.task.cycle.required',
+  'task.not.found': 'errors.domain.task.notFound',
+  'task.estimate.invalid': 'errors.domain.task.estimate.invalid',
+  
+  'team.name.required': 'errors.domain.team.name.required',
+  'team.name.duplicate': 'errors.domain.team.name.duplicate',
+  'team.not.found': 'errors.domain.team.notFound',
+  'team.has.members': 'errors.domain.team.hasMembers',
+  
+  'person.name.required': 'errors.domain.person.name.required',
+  'person.email.required': 'errors.domain.person.email.required',
+  'person.email.invalid': 'errors.domain.person.email.invalid',
+  'person.email.duplicate': 'errors.domain.person.email.duplicate',
+  'person.not.found': 'errors.domain.person.notFound',
+  
+  'auth.invalid.credentials': 'errors.domain.auth.invalidCredentials',
+  'auth.account.locked': 'errors.domain.auth.accountLocked',
+  'auth.account.disabled': 'errors.domain.auth.accountDisabled',
+  'auth.token.expired': 'errors.domain.auth.tokenExpired',
+  'auth.token.invalid': 'errors.domain.auth.tokenInvalid',
+  
+  'worklog.hours.required': 'errors.domain.worklog.hours.required',
+  'worklog.hours.invalid': 'errors.domain.worklog.hours.invalid',
+  'worklog.date.required': 'errors.domain.worklog.date.required',
+  'worklog.date.future': 'errors.domain.worklog.date.future',
+  
+  'document.file.required': 'errors.domain.document.file.required',
+  'document.file.too.large': 'errors.domain.document.file.tooLarge',
+  'document.type.invalid': 'errors.domain.document.file.typeInvalid',
+  
+  'validation.failed': 'errors.domain.validation.failed',
+  'network.error': 'errors.networkError',
+  'unknown.error': 'errors.domain.unknown.error',
 };
 
 /**
  * Get a user-friendly error message from an API error
+ * @param error - The error object from API call
+ * @param tOrFallback - Either translation function from useTranslation hook OR fallback message string (for backward compatibility)
+ * @param fallbackMessage - Optional fallback message if first param is translation function
  */
 export function getUserFriendlyError(
   error: unknown,
+  tOrFallback?: TranslateFn | string,
   fallbackMessage = 'An unexpected error occurred'
 ): string {
-  if (!error) return fallbackMessage;
+  // Determine if second param is translation function or fallback string
+  const isTranslationFn = typeof tOrFallback === 'function';
+  const t = isTranslationFn ? tOrFallback : undefined;
+  const fallback = isTranslationFn ? fallbackMessage : (tOrFallback || fallbackMessage);
+  
+  if (!error) return t ? t('errors.domain.unknown.error') : fallback;
 
   // Handle axios-style errors
   const axiosError = error as {
@@ -157,19 +105,19 @@ export function getUserFriendlyError(
 
   // Check for error code from backend
   const errorCode = axiosError.response?.data?.errorCode;
-  if (errorCode && domainErrorMessages[errorCode]) {
-    return domainErrorMessages[errorCode];
+  if (errorCode && domainErrorCodeMapping[errorCode]) {
+    return t ? t(domainErrorCodeMapping[errorCode]) : fallback;
   }
 
   // Check for backend message
   const backendMessage = axiosError.response?.data?.message || axiosError.response?.data?.error;
   if (backendMessage) {
-    // Check if the backend message matches a domain error
-    const matchedDomain = Object.entries(domainErrorMessages).find(
-      ([, msg]) => msg.toLowerCase() === backendMessage.toLowerCase()
+    // Check if the backend message matches a domain error code
+    const matchedCode = Object.keys(domainErrorCodeMapping).find(
+      code => code === backendMessage || backendMessage.toLowerCase().includes(code.toLowerCase())
     );
-    if (matchedDomain) {
-      return matchedDomain[1];
+    if (matchedCode && t) {
+      return t(domainErrorCodeMapping[matchedCode]);
     }
     return backendMessage;
   }
@@ -185,25 +133,32 @@ export function getUserFriendlyError(
 
   // Check for HTTP status code
   const status = axiosError.response?.status;
-  if (status && httpStatusMessages[status]) {
-    return httpStatusMessages[status].message;
+  if (status && t) {
+    const statusKey = `errors.http.${status}.message`;
+    const translated = t(statusKey);
+    // Check if translation exists (doesn't return the key itself)
+    if (translated !== statusKey) {
+      return translated;
+    }
   }
 
   // Check for network error
   if (!axiosError.response && axiosError.message) {
     if (axiosError.message.includes('Network Error') || axiosError.message.includes('ERR_NETWORK')) {
-      return domainErrorMessages['network.error'];
+      return t ? t('errors.networkError') : 'Network error occurred';
     }
     return axiosError.message;
   }
 
-  return fallbackMessage;
+  return t ? t('errors.domain.unknown.error') : fallback;
 }
 
 /**
  * Get detailed error info including title, message, and action
+ * @param error - The error object from API call
+ * @param t - Translation function from useTranslation hook
  */
-export function getDetailedError(error: unknown): ApiErrorDetails {
+export function getDetailedError(error: unknown, t?: TranslateFn): ApiErrorDetails {
   const axiosError = error as {
     response?: {
       status?: number;
@@ -213,21 +168,36 @@ export function getDetailedError(error: unknown): ApiErrorDetails {
   };
 
   const status = axiosError.response?.status;
-  if (status && httpStatusMessages[status]) {
-    return httpStatusMessages[status];
+  if (status && t) {
+    const titleKey = `errors.http.${status}.title`;
+    const messageKey = `errors.http.${status}.message`;
+    const actionKey = `errors.http.${status}.action`;
+    
+    const title = t(titleKey);
+    const message = t(messageKey);
+    const action = t(actionKey);
+    
+    // Check if translations exist
+    if (title !== titleKey && message !== messageKey) {
+      return {
+        title,
+        message,
+        action: action !== actionKey ? action : undefined,
+      };
+    }
   }
 
   if (!axiosError.response) {
     return {
-      title: 'Connection Error',
-      message: 'Unable to connect to the server.',
-      action: 'Please check your internet connection and try again.',
+      title: t ? t('errors.domain.connection.title') : 'Connection Error',
+      message: t ? t('errors.domain.connection.message') : 'Unable to connect to the server.',
+      action: t ? t('errors.domain.connection.action') : 'Please check your internet connection and try again.',
     };
   }
 
   return {
-    title: 'Error',
-    message: getUserFriendlyError(error),
+    title: t ? t('errors.genericError') : 'Error',
+    message: getUserFriendlyError(error, t),
   };
 }
 

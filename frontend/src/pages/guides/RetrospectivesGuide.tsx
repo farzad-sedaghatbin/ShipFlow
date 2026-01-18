@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, RotateCcw, MessageSquare, ThumbsUp, ThumbsDown, Lightbulb, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function RetrospectivesGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
@@ -17,9 +19,9 @@ export default function RetrospectivesGuide() {
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Retrospectives</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.retrospectives.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Learn from every cycle and improve your team's process
+                    {t('guides.retrospectives.subtitle')}
                 </p>
             </div>
 
@@ -30,18 +32,16 @@ export default function RetrospectivesGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <RotateCcw className="h-5 w-5" />
-                        The Cool-down Ritual
+                        {t('guides.retrospectives.cooldownTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        In Shape Up, the <strong>cool-down</strong> period isn't just for bug fixes—it's for reflection.
-                        Retrospectives in ShipFlow are designed to capture what went well and what didn't while the memory is fresh.
+                        {t('guides.retrospectives.cooldownDesc')}
                     </p>
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
                         <p className="text-sm text-amber-900 dark:text-amber-100">
-                            <strong>⚠️ Requirement:</strong> You must complete a retrospective before you can fully close a cycle
-                            in ShipFlow. This ensures continuous improvement is built into the process.
+                            <strong>⚠️ {t('guides.retrospectives.requirement')}</strong> {t('guides.retrospectives.requirementDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -52,9 +52,9 @@ export default function RetrospectivesGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5" />
-                        Running a Retro
+                        {t('guides.retrospectives.runningTitle')}
                     </CardTitle>
-                    <CardDescription>Setting up the board for your team</CardDescription>
+                    <CardDescription>{t('guides.retrospectives.runningSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
@@ -92,7 +92,7 @@ export default function RetrospectivesGuide() {
                         The retro board is divided into three standard columns. Team members can add cards with their name
                         attached or submit anonymously for psychological safety.
                     </p>
-                    
+
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
                             <strong>🔒 Anonymous Submissions:</strong> When creating a retro item, check the "Post anonymously"

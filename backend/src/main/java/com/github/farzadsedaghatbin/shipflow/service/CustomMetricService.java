@@ -35,6 +35,7 @@ public class CustomMetricService {
     private final TaskRepository taskRepository;
     private final TeamRepository teamRepository;
     private final MetricFormulaParser formulaParser;
+    private final MessageService messageService;
 
     /**
      * Create a new custom metric
@@ -46,12 +47,12 @@ public class CustomMetricService {
         // Validate formula
         ValidationResult validation = formulaParser.validateFormula(request.getFormula());
         if (!validation.isValid()) {
-            throw new IllegalArgumentException("Invalid formula: " + validation.getErrorMessage());
+            throw new IllegalArgumentException(messageService.getMessage("error.metric.formula.invalid", validation.getErrorMessage()));
         }
 
         // Check for duplicate name
         if (customMetricRepository.existsByUserIdAndName(userId, request.getName())) {
-            throw new IllegalArgumentException("A metric with name '" + request.getName() + "' already exists");
+            throw new IllegalArgumentException(messageService.getMessage("error.metric.name.exists", request.getName()));
         }
 
         User user = userRepository.findById(userId)
@@ -105,11 +106,11 @@ public class CustomMetricService {
         log.info("Updating custom metric {} for user {}", metricId, userId);
 
         CustomMetric metric = customMetricRepository.findById(metricId)
-                .orElseThrow(() -> new IllegalArgumentException("Metric not found: " + metricId));
+                .orElseThrow(() -> new IllegalArgumentException(messageService.getMessage("error.metric.not.found", metricId)));
 
         // Verify ownership
         if (!metric.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to update this metric");
+            throw new SecurityException(messageService.getMessage("error.metric.unauthorized.update"));
         }
 
         // Update fields if provided
@@ -117,7 +118,7 @@ public class CustomMetricService {
             // Check for duplicate name (excluding current metric)
             if (!request.getName().equals(metric.getName()) &&
                     customMetricRepository.existsByUserIdAndName(userId, request.getName())) {
-                throw new IllegalArgumentException("A metric with name '" + request.getName() + "' already exists");
+                throw new IllegalArgumentException(messageService.getMessage("error.metric.name.exists", request.getName()));
             }
             metric.setName(request.getName());
         }
@@ -129,7 +130,7 @@ public class CustomMetricService {
         if (request.getFormula() != null) {
             ValidationResult validation = formulaParser.validateFormula(request.getFormula());
             if (!validation.isValid()) {
-                throw new IllegalArgumentException("Invalid formula: " + validation.getErrorMessage());
+                throw new IllegalArgumentException(messageService.getMessage("error.metric.formula.invalid", validation.getErrorMessage()));
             }
             metric.setFormula(request.getFormula());
         }
@@ -168,11 +169,11 @@ public class CustomMetricService {
         log.info("Deleting custom metric {} for user {}", metricId, userId);
 
         CustomMetric metric = customMetricRepository.findById(metricId)
-                .orElseThrow(() -> new IllegalArgumentException("Metric not found: " + metricId));
+                .orElseThrow(() -> new IllegalArgumentException(messageService.getMessage("error.metric.not.found", metricId)));
 
         // Verify ownership
         if (!metric.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to delete this metric");
+            throw new SecurityException(messageService.getMessage("error.metric.unauthorized.delete"));
         }
 
         customMetricRepository.delete(metric);
@@ -193,10 +194,10 @@ public class CustomMetricService {
      */
     public CustomMetricDTO getMetric(Long userId, Long metricId) {
         CustomMetric metric = customMetricRepository.findById(metricId)
-                .orElseThrow(() -> new IllegalArgumentException("Metric not found: " + metricId));
+                .orElseThrow(() -> new IllegalArgumentException(messageService.getMessage("error.metric.not.found", metricId)));
 
         if (!metric.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to view this metric");
+            throw new SecurityException(messageService.getMessage("error.metric.unauthorized.view"));
         }
 
         return toDTO(metric);
@@ -210,10 +211,10 @@ public class CustomMetricService {
         log.info("Calculating value for metric {} (user: {})", metricId, userId);
 
         CustomMetric metric = customMetricRepository.findById(metricId)
-                .orElseThrow(() -> new IllegalArgumentException("Metric not found: " + metricId));
+                .orElseThrow(() -> new IllegalArgumentException(messageService.getMessage("error.metric.not.found", metricId)));
 
         if (!metric.getUser().getId().equals(userId)) {
-            throw new SecurityException("Not authorized to calculate this metric");
+            throw new SecurityException(messageService.getMessage("error.metric.unauthorized.calculate"));
         }
 
         // Build data context based on data source

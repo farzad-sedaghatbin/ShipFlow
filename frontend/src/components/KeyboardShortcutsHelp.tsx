@@ -1,4 +1,5 @@
 import { Keyboard } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { KeyboardShortcut } from '../hooks/useKeyboardShortcuts';
 import {
   Dialog,
@@ -52,6 +53,7 @@ function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
 }
 
 export function KeyboardShortcutsHelp({ open, onClose, shortcuts }: KeyboardShortcutsHelpProps) {
+  const { t } = useTranslation();
   const navigationShortcuts = shortcuts.filter((s) => s.category === 'navigation');
   const actionShortcuts = shortcuts.filter((s) => s.category === 'actions');
   const generalShortcuts = shortcuts.filter((s) => s.category === 'general');
@@ -62,7 +64,7 @@ export function KeyboardShortcutsHelp({ open, onClose, shortcuts }: KeyboardShor
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5 text-primary" aria-hidden="true" />
-            Keyboard Shortcuts
+            {t('keyboardShortcuts.title')}
           </DialogTitle>
         </DialogHeader>
         
@@ -71,7 +73,7 @@ export function KeyboardShortcutsHelp({ open, onClose, shortcuts }: KeyboardShor
           {navigationShortcuts.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-primary mb-2">
-                Navigation
+                {t('keyboardShortcuts.navigation')}
               </h3>
               <div className="space-y-0.5">
                 {navigationShortcuts.map((shortcut, idx) => (
@@ -85,7 +87,7 @@ export function KeyboardShortcutsHelp({ open, onClose, shortcuts }: KeyboardShor
           {actionShortcuts.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-primary mb-2">
-                Quick Actions
+                {t('keyboardShortcuts.quickActions')}
               </h3>
               <div className="space-y-0.5">
                 {actionShortcuts.map((shortcut, idx) => (
@@ -99,7 +101,7 @@ export function KeyboardShortcutsHelp({ open, onClose, shortcuts }: KeyboardShor
           {generalShortcuts.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-primary mb-2">
-                General
+                {t('keyboardShortcuts.general')}
               </h3>
               <div className="space-y-0.5">
                 {generalShortcuts.map((shortcut, idx) => (

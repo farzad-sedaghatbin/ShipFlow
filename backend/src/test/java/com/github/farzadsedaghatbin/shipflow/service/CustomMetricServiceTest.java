@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static org.mockito.Mockito.lenient;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -52,6 +54,9 @@ class CustomMetricServiceTest {
     
     @Mock
     private TeamRepository teamRepository;
+    
+    @Mock
+    private MessageService messageService;
 
     @InjectMocks
     private CustomMetricService customMetricService;
@@ -64,6 +69,23 @@ class CustomMetricServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("metric.not.found")) return "Custom metric not found";
+            if (key.contains("metric.formula.invalid")) return "Invalid formula: validation error";
+            if (key.contains("metric.name.exists")) return "Metric name already exists";
+            if (key.contains("unauthorized")) return "Not authorized";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("metric.not.found")) return "Custom metric not found";
+            if (key.contains("metric.formula.invalid")) return "Invalid formula: validation error";
+            if (key.contains("metric.name.exists")) return "Metric name already exists";
+            if (key.contains("unauthorized")) return "Not authorized";
+            return key;
+        });
+        
         testUser = new User();
         testUser.setId(1L);
         testUser.setUsername("testuser");

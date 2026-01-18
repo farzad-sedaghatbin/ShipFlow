@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Loader2,
@@ -58,6 +59,7 @@ import {
 const statusColumns: PitchStatus[] = ['PENDING', 'SHAPED', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
 
 export default function PitchBoard() {
+  const { t } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -138,7 +140,7 @@ export default function PitchBoard() {
       const response = await pitchService.getByCycleId(cycleId);
       setPitches(response.data);
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to load pitches'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.loadFailed')));
     }
   };
 
@@ -149,7 +151,7 @@ export default function PitchBoard() {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to update status'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.updateStatusFailed')));
     }
   };
 
@@ -158,15 +160,15 @@ export default function PitchBoard() {
     const errors: Record<string, string> = {};
 
     if (!newPitch.title.trim()) {
-      errors.title = 'Pitch title is required';
+      errors.title = t('pitchBoard.pitchTitleRequired');
     } else if (newPitch.title.trim().length < 3) {
-      errors.title = 'Pitch title must be at least 3 characters';
+      errors.title = t('pitchBoard.pitchTitleMinLength');
     }
 
     if (!newPitch.appetiteDays || newPitch.appetiteDays < 1) {
-      errors.appetiteDays = 'Appetite must be at least 1 day';
+      errors.appetiteDays = t('pitchBoard.appetiteMin');
     } else if (newPitch.appetiteDays > 42) {
-      errors.appetiteDays = 'Appetite cannot exceed 6 weeks (42 days)';
+      errors.appetiteDays = t('pitchBoard.appetiteMax');
     }
 
     setFieldErrors(errors);
@@ -192,27 +194,27 @@ export default function PitchBoard() {
       if (extractedDocumentId && createdPitch.id) {
         try {
           await documentService.linkDocumentToPitch(extractedDocumentId, createdPitch.id);
-          showSuccess('Pitch created with document!');
+          showSuccess(t('pitchBoard.pitchCreatedWithDoc'));
         } catch (docError) {
           console.error('Document linking error:', docError);
-          showError('Pitch created but failed to link document');
+          showError(t('pitchBoard.docLinkFailed'));
         }
       }
       
       // Upload any additional pending documents
       if (pendingDocuments.length > 0 && createdPitch.id) {
-        showSuccess('Pitch created! Uploading additional documents...');
+        showSuccess(t('pitchBoard.pitchCreatedUploading'));
         for (const file of pendingDocuments) {
           try {
             await documentService.uploadForPitch(createdPitch.id, file);
           } catch (docError) {
             console.error('Document upload error:', docError);
-            showError(`Failed to upload ${file.name}`);
+            showError(t('pitchBoard.docUploadFailed', { name: file.name }));
           }
         }
-        showSuccess(`Pitch created with ${pendingDocuments.length} additional document(s)!`);
+        showSuccess(t('pitchBoard.pitchCreatedWithDocs', { count: pendingDocuments.length }));
       } else if (!extractedDocumentId) {
-        showSuccess('Pitch created successfully!');
+        showSuccess(t('pitchBoard.pitchCreated'));
       }
       
       setCreateDialog(false);
@@ -242,7 +244,7 @@ export default function PitchBoard() {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
-      showError(getUserFriendlyError(error, 'Failed to create pitch'));
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.createFailed')));
     } finally {
       setSaving(false);
     }
@@ -303,16 +305,16 @@ export default function PitchBoard() {
         }
         // Switch to Shape Up tab to show extracted data
         setActiveTab('shaping');
-        showSuccess('Pitch data extracted and added to knowledge base! Review the Shape Up fields and create the pitch.');
+        showSuccess(t('pitchBoard.dataExtracted'));
       } else {
         setExtractedDocumentName('');
         setExtractedDocumentId(null);
-        showError(extracted.errorMessage || 'Failed to extract pitch data');
+        showError(extracted.errorMessage || t('pitchBoard.extractionFailed'));
       }
     } catch (error) {
       setExtractedDocumentName('');
       setExtractedDocumentId(null);
-      showError(getUserFriendlyError(error, 'Failed to extract pitch data from document'));
+      showError(getUserFriendlyError(error, t('pitchBoard.extractionError')));
     } finally {
       setExtracting(false);
     }
@@ -369,15 +371,15 @@ export default function PitchBoard() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Pitch Board</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('pitchBoard.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {isAllProjectsSelected ? 'All projects' : currentProject?.name}
+              {isAllProjectsSelected ? t('pitchBoard.allProjects') : currentProject?.name}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select value={selectedCycle} onValueChange={setSelectedCycle}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Select cycle" />
+                <SelectValue placeholder={t('pitchBoard.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
                 {cycles.map((cycle) => (
@@ -394,7 +396,7 @@ export default function PitchBoard() {
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              New Pitch
+              {t('pitchBoard.newPitch')}
             </Button>
           </div>
         </div>
@@ -405,7 +407,7 @@ export default function PitchBoard() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search pitches by title, description, or team..."
+                placeholder={t('pitchBoard.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -414,12 +416,12 @@ export default function PitchBoard() {
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={t('pitchBoard.sortBy')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="title">Title (A-Z)</SelectItem>
-                <SelectItem value="appetite">Appetite (Days)</SelectItem>
-                <SelectItem value="team">Team</SelectItem>
+                <SelectItem value="title">{t('pitchBoard.sortTitle')}</SelectItem>
+                <SelectItem value="appetite">{t('pitchBoard.sortAppetite')}</SelectItem>
+                <SelectItem value="team">{t('pitchBoard.sortTeam')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -432,8 +434,8 @@ export default function PitchBoard() {
           <CardContent className="py-12">
             <EmptyState
               illustration={<EmptyPitchesIllustration />}
-              title="No cycle selected"
-              description="Please select a cycle from the dropdown above to view and manage pitches"
+              title={t('pitchBoard.noCycleSelected')}
+              description={t('pitchBoard.noCycleDescription')}
               size="medium"
             />
           </CardContent>
@@ -463,7 +465,7 @@ export default function PitchBoard() {
                         {pitch.title}
                       </Link>
                       <p className="text-sm text-muted-foreground mb-3 mt-1">
-                        {pitch.teamName || 'Unassigned'} • {pitch.appetiteDays}d
+                        {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                       </p>
                       <ProgressBar
                         value={pitch.progressPercentage || 0}
@@ -495,8 +497,8 @@ export default function PitchBoard() {
                   <Card className="opacity-60 border-dashed">
                     <CardContent className="py-6">
                       <EmptyState
-                        title="No pitches"
-                        description={`Drag pitches here or create a new ${status.toLowerCase().replace('_', ' ')} pitch`}
+                        title={t('pitchBoard.noPitches')}
+                        description={t('pitchBoard.noPitchesDescription', { status: status.toLowerCase().replace('_', ' ') })}
                         size="small"
                         compact
                       />
@@ -513,22 +515,22 @@ export default function PitchBoard() {
       <Dialog open={createDialog} onOpenChange={(open) => !open && handleCloseDialog()}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Pitch</DialogTitle>
+            <DialogTitle>{t('pitchBoard.createNewPitch')}</DialogTitle>
             <DialogDescription>
-              Add a new pitch to the current cycle. Use the Shape Up tab to add problem statement, solution, and risks.
+              {t('pitchBoard.createDescription')}
             </DialogDescription>
           </DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="basic">{t('pitchBoard.basicInfo')}</TabsTrigger>
               <TabsTrigger value="shaping">
                 <Target className="h-4 w-4 mr-1" />
-                Shape Up
+                {t('pitchBoard.shapeUp')}
               </TabsTrigger>
               <TabsTrigger value="documents">
                 <FileUp className="h-4 w-4 mr-1" />
-                Documents
+                {t('pitchBoard.documents')}
               </TabsTrigger>
             </TabsList>
             
@@ -536,7 +538,7 @@ export default function PitchBoard() {
             <TabsContent value="basic" className="space-y-4 mt-4">
               {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-title">Title *</Label>
+                <Label htmlFor="pitch-title">{t('pitchBoard.pitchTitle')} *</Label>
                 <Input
                   id="pitch-title"
                   value={newPitch.title}
@@ -544,7 +546,7 @@ export default function PitchBoard() {
                     setNewPitch({ ...newPitch, title: e.target.value });
                     setFieldErrors((prev) => ({ ...prev, title: '' }));
                   }}
-                  placeholder="Give your pitch a clear, descriptive title"
+                  placeholder={t('pitchBoard.pitchTitlePlaceholder')}
                   className={fieldErrors.title ? 'border-destructive' : ''}
                 />
                 {fieldErrors.title && (
@@ -554,12 +556,12 @@ export default function PitchBoard() {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-description">Description</Label>
+                <Label htmlFor="pitch-description">{t('pitchBoard.description')}</Label>
                 <Textarea
                   id="pitch-description"
                   value={newPitch.description}
                   onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
-                  placeholder="Brief summary of the pitch"
+                  placeholder={t('pitchBoard.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -567,7 +569,7 @@ export default function PitchBoard() {
               {/* Appetite & Team */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pitch-appetite">Appetite (days) *</Label>
+                  <Label htmlFor="pitch-appetite">{t('pitchBoard.appetite')} *</Label>
                   <Input
                     id="pitch-appetite"
                     type="number"
@@ -583,11 +585,11 @@ export default function PitchBoard() {
                   {fieldErrors.appetiteDays ? (
                     <p className="text-xs text-destructive">{fieldErrors.appetiteDays}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">1-42 days</p>
+                    <p className="text-xs text-muted-foreground">{t('pitchBoard.appetiteDays')}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Team</Label>
+                  <Label>{t('pitchBoard.team')}</Label>
                   <Select
                     value={newPitch.teamId?.toString() || 'unassigned'}
                     onValueChange={(value) => 
@@ -595,10 +597,10 @@ export default function PitchBoard() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select team" />
+                      <SelectValue placeholder={t('pitchBoard.selectTeam')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">{t('pitchBoard.unassigned')}</SelectItem>
                       {teams.map((team) => (
                         <SelectItem key={team.id} value={team.id.toString()}>
                           {team.name}
@@ -615,7 +617,7 @@ export default function PitchBoard() {
               <div className="bg-muted/50 rounded-lg p-3 mb-4">
                 <p className="text-sm text-muted-foreground">
                   <Target className="h-4 w-4 inline mr-1" />
-                  Shape Up methodology fields help define the pitch narrative: the problem, solution, rabbit holes to avoid, and risks.
+                  {t('pitchBoard.shapeUpMethodology')}
                 </p>
               </div>
 
@@ -623,13 +625,13 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-problem" className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
-                  Problem Statement
+                  {t('pitchBoard.problemStatement')}
                 </Label>
                 <Textarea
                   id="pitch-problem"
                   value={newPitch.problemStatement || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, problemStatement: e.target.value })}
-                  placeholder="What problem are we solving? Why does this matter? Who is affected?"
+                  placeholder={t('pitchBoard.problemPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -638,13 +640,13 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-solution" className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-yellow-500" />
-                  Solution (Hatched)
+                  {t('pitchBoard.solution')}
                 </Label>
                 <Textarea
                   id="pitch-solution"
                   value={newPitch.solution || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, solution: e.target.value })}
-                  placeholder="The proposed solution. Fat-marker sketch of the approach, key elements, and how it addresses the problem."
+                  placeholder={t('pitchBoard.solutionPlaceholder')}
                   rows={4}
                 />
               </div>
@@ -653,13 +655,13 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-rabbitholes" className="flex items-center gap-2">
                   <Ban className="h-4 w-4 text-red-500" />
-                  Rabbit Holes
+                  {t('pitchBoard.rabbitHoles')}
                 </Label>
                 <Textarea
                   id="pitch-rabbitholes"
                   value={newPitch.rabbitHoles || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, rabbitHoles: e.target.value })}
-                  placeholder="Edge cases to avoid, potential time sinks, areas that could derail the project."
+                  placeholder={t('pitchBoard.rabbitHolesPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -668,13 +670,13 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-risks" className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Risks & Unknowns
+                  {t('pitchBoard.risks')}
                 </Label>
                 <Textarea
                   id="pitch-risks"
                   value={newPitch.risks || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, risks: e.target.value })}
-                  placeholder="Known risks, technical challenges, dependencies, or unknowns that need investigation."
+                  placeholder={t('pitchBoard.risksPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -683,13 +685,13 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-nogos" className="flex items-center gap-2">
                   <X className="h-4 w-4 text-red-500" />
-                  No-Gos (Out of Scope)
+                  {t('pitchBoard.noGos')}
                 </Label>
                 <Textarea
                   id="pitch-nogos"
                   value={newPitch.noGos || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, noGos: e.target.value })}
-                  placeholder="Things explicitly NOT being built. Clear boundaries for the project."
+                  placeholder={t('pitchBoard.noGosPlaceholder')}
                   rows={2}
                 />
               </div>
@@ -698,16 +700,16 @@ export default function PitchBoard() {
               <div className="space-y-2">
                 <Label htmlFor="pitch-wireframes" className="flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-blue-500" />
-                  Wireframe / Prototype Links
+                  {t('pitchBoard.wireframeLinks')}
                 </Label>
                 <Textarea
                   id="pitch-wireframes"
                   value={newPitch.wireframeLinks || ''}
                   onChange={(e) => setNewPitch({ ...newPitch, wireframeLinks: e.target.value })}
-                  placeholder="Figma, wireframes, mockups (one URL per line)\n\nhttps://figma.com/...\nhttps://miro.com/..."
+                  placeholder={t('pitchBoard.wireframeLinksPlaceholder')}
                   rows={3}
                 />
-                <p className="text-xs text-muted-foreground">Enter multiple links, one per line</p>
+                <p className="text-xs text-muted-foreground">{t('pitchBoard.multipleLinks')}</p>
               </div>
             </TabsContent>
 
@@ -719,15 +721,15 @@ export default function PitchBoard() {
                   <div className="flex items-center gap-2">
                     <FileUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">Document Extracted</p>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">{t('pitchBoard.documentExtracted')}</p>
                       <p className="text-xs text-green-700 dark:text-green-300">{extractedDocumentName}</p>
                     </div>
                     <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">
-                      ✓ Processed
+                      {t('pitchBoard.processed')}
                     </Badge>
                   </div>
                   <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                    Review the extracted data in the Shape Up tab. You can extract from another document below to replace this data.
+                    {t('pitchBoard.reviewExtracted')}
                   </p>
                 </div>
               )}
@@ -736,11 +738,11 @@ export default function PitchBoard() {
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="h-5 w-5 text-purple-500" />
-                  <h4 className="font-semibold">AI-Powered Extraction</h4>
+                  <h4 className="font-semibold">{t('pitchBoard.aiExtraction')}</h4>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Upload a pitch document to automatically extract problem statement, solution, rabbit holes, and risks using AI.
-                  {extractedDocumentName && " Upload another to replace the current extracted data."}
+                  {t('pitchBoard.aiExtractionDescription')}
+                  {extractedDocumentName && ` ${t('pitchBoard.replaceExtracted')}`}
                 </p>
                 <div
                   className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/50 transition-colors"
@@ -764,13 +766,13 @@ export default function PitchBoard() {
                   {extracting ? (
                     <>
                       <Loader2 className="h-8 w-8 mx-auto text-purple-500 animate-spin mb-2" />
-                      <p className="text-sm text-purple-600 dark:text-purple-400">Extracting pitch data...</p>
+                      <p className="text-sm text-purple-600 dark:text-purple-400">{t('pitchBoard.extracting')}</p>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-8 w-8 mx-auto text-purple-400 mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        Drop a pitch document or click to extract Shape Up fields
+                        {t('pitchBoard.dropDocument')}
                       </p>
                     </>
                   )}
@@ -779,9 +781,9 @@ export default function PitchBoard() {
 
               {/* Regular Document Upload */}
               <div className="space-y-2">
-                <h4 className="font-medium">Attach Supporting Documents</h4>
+                <h4 className="font-medium">{t('pitchBoard.supportingDocuments')}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Add additional reference documents (no extraction needed). These will be available for download and indexed for Q&A.
+                  {t('pitchBoard.supportingDescription')}
                 </p>
                 <div
                   className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
@@ -804,7 +806,7 @@ export default function PitchBoard() {
                   />
                   <FileUp className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    Drop files here or click to select multiple documents
+                    {t('pitchBoard.dropFiles')}
                   </p>
                 </div>
                 {pendingDocuments.length > 0 && (
@@ -828,15 +830,15 @@ export default function PitchBoard() {
           
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={handleCloseDialog} disabled={saving || extracting}>
-              Cancel
+              {t('pitchBoard.cancel')}
             </Button>
             <LoadingButton
               onClick={handleCreatePitch}
               loading={saving}
-              loadingText="Creating..."
+              loadingText={t('pitchBoard.creating')}
               disabled={extracting}
             >
-              Create Pitch
+              {t('pitchBoard.createPitch')}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

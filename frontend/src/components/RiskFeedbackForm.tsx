@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { 
   riskFeedbackService, 
@@ -47,6 +48,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
   currentRiskScore,
   onFeedbackSubmitted,
 }) => {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState<FeedbackRating>('ACCURATE');
@@ -87,7 +89,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
       setAlreadySubmitted(true);
       onFeedbackSubmitted?.();
     } catch (err) {
-      showToast('Failed to submit feedback', 'error');
+      showToast(t('errors.submitFeedbackFailed'), 'error');
       console.error(err);
     } finally {
       setSubmitting(false);

@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.QAInteraction;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.NoteService;
 import com.github.farzadsedaghatbin.shipflow.service.QAService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +36,7 @@ public class QAController {
     private final QAService qaService;
     private final NoteService noteService;
     private final UserRepository userRepository;
+    private final MessageService messageService;
 
     @Autowired(required = false)
     private KnowledgeIngestionService knowledgeIngestionService;
@@ -90,7 +92,7 @@ public class QAController {
 
         Long userId = getUserId(userDetails);
         qaService.submitFeedback(request, userId);
-        return ResponseEntity.ok(Map.of("message", "Feedback submitted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.feedback.submitted")));
     }
     
     /**
@@ -170,7 +172,7 @@ public class QAController {
         
         Long userId = getUserId(userDetails);
         noteService.deleteNote(id, userId);
-        return ResponseEntity.ok(Map.of("message", "Note deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.note.deleted")));
     }
 
     /**

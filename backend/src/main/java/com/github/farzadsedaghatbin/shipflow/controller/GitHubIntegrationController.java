@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.github.*;
 import com.github.farzadsedaghatbin.shipflow.service.github.GitHubIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import java.util.List;
 public class GitHubIntegrationController {
 
     private final GitHubIntegrationService integrationService;
+    private final MessageService messageService;
 
     @PostMapping("/repositories")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -27,7 +29,7 @@ public class GitHubIntegrationController {
                description = "Register a new GitHub repository to enable webhook integration")
     public ResponseEntity<String> registerRepository(@Valid @RequestBody CreateGitHubRepositoryRequest request) {
         integrationService.createOrUpdateRepository(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Repository registered successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.getMessage("github.repository.registered"));
     }
 
     @GetMapping("/repositories")

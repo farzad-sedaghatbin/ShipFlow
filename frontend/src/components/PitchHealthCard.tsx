@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { ChevronDown, Circle, Clock, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { PitchHealthDTO, getHealthLabel, getQAStatusLabel } from '../services/pitchHealthService';
 import { Card, CardContent } from './ui/card';
@@ -29,6 +31,7 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
   compact = false,
   onClick 
 }) => {
+  const { i18n } = useTranslation();
   const [expanded, setExpanded] = React.useState(false);
 
   const appetiteStatus = health.appetiteUsedPercent > 100 
@@ -281,7 +284,7 @@ export const PitchHealthCard: React.FC<PitchHealthCardProps> = ({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Cycle End</p>
-                  <p className="text-sm">{new Date(health.cycleEndDate).toLocaleDateString()}</p>
+                  <p className="text-sm">{formatLocalizedDate(new Date(health.cycleEndDate), i18n.language)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Status</p>

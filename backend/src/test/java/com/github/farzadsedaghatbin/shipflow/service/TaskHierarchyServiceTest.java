@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,9 @@ class TaskHierarchyServiceTest {
     @Mock
     private DashboardNotificationService notificationService;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private TaskService taskService;
 
@@ -57,6 +61,19 @@ class TaskHierarchyServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("parent.different.cycle")) return "Parent task must belong to the same cycle";
+            if (key.contains("circular.reference")) return "circular reference";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("parent.different.cycle")) return "Parent task must belong to the same cycle";
+            if (key.contains("circular.reference")) return "circular reference";
+            return key;
+        });
+
         Project project = Project.builder()
                 .id(1L)
                 .name("Test Project")

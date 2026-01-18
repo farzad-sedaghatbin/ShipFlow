@@ -48,6 +48,7 @@ public class QAService {
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final ChatLanguageModel chatLanguageModel;
+    private final MessageService messageService;
     private final KnowledgeIngestionService knowledgeIngestionService;
     private final QAConfig qaConfig;
     private final AIConfig aiConfig;
@@ -83,7 +84,8 @@ public class QAService {
             @Autowired(required = false) FeedbackLearningService feedbackLearningService,
             @Autowired(required = false) LLMCacheService llmCacheService,
             @Autowired(required = false) PromptCompressor promptCompressor,
-            @Autowired(required = false) ContentGuardrails contentGuardrails) {
+            @Autowired(required = false) ContentGuardrails contentGuardrails,
+            MessageService messageService) {
         this.knowledgeItemRepository = knowledgeItemRepository;
         this.qaInteractionRepository = qaInteractionRepository;
         this.embeddingModel = embeddingModel;
@@ -103,6 +105,7 @@ public class QAService {
         this.contextWindowManager = contextWindowManager;
         this.conversationManager = conversationManager;
         this.securityFilter = securityFilter;
+        this.messageService = messageService;
     }
 
     /**
@@ -226,7 +229,7 @@ public class QAService {
                 questionEmbedding = embeddingModel.embed(request.getQuestion()).content();
             } catch (Exception e) {
                 log.error("Embedding service failed: {}", e.getMessage(), e);
-                throw new RuntimeException("Unable to process question - embedding service unavailable", e);
+                throw new RuntimeException(messageService.getMessage("error.qa.embedding.unavailable"), e);
             }
 
             // 3. Retrieve relevant knowledge chunks with fallback
@@ -267,7 +270,7 @@ public class QAService {
                         return cached;
                     }
                     
-                    throw new RuntimeException("Vector store unavailable and no cached response found", e);
+                    throw new RuntimeException(messageService.getMessage("error.qa.vector.store.unavailable"), e);
                 }
             }
             
@@ -529,7 +532,7 @@ public class QAService {
 
         // Verify the user owns this interaction
         if (!interaction.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only provide feedback on your own questions");
+            throw new RuntimeException(messageService.getMessage("error.qa.feedback.not.owner"));
         }
 
         interaction.setFeedbackType(request.getFeedbackType());
@@ -1001,8 +1004,8 @@ public class QAService {
             terms.add("done");
         }
         
-        // Extract hyphenated words
-        java.util.regex.Pattern hyphenPattern = java.util.regex.Pattern.compile("\\b\\w+-\\w+\\b");
+        // Extract hyphenated words (using possessive quantifiers to prevent ReDoS)
+        java.util.regex.Pattern hyphenPattern = java.util.regex.Pattern.compile("\\b\\w++-\\w++\\b");
         java.util.regex.Matcher hyphenMatcher = hyphenPattern.matcher(lowerQuestion);
         while (hyphenMatcher.find()) {
             String hyphenated = hyphenMatcher.group().trim();

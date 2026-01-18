@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Bot, FlaskConical, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -24,6 +25,7 @@ import { TestCaseSuggestion, Pitch, TestCaseType, GenerateTestCasesResponse } fr
 const testCaseTypes: TestCaseType[] = ['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE', 'PERFORMANCE', 'SECURITY', 'USABILITY', 'ACCESSIBILITY'];
 
 const AITestGeneratePage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -60,7 +62,7 @@ const AITestGeneratePage: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!selectedPitchId) {
-      setError('Please select a pitch');
+      setError(t('aiTestGenerate.selectPitchRequired'));
       return;
     }
 
@@ -77,7 +79,7 @@ const AITestGeneratePage: React.FC = () => {
       const result: GenerateTestCasesResponse = response.data;
       
       if (!result.aiEnabled) {
-        setError(result.errorMessage || 'AI test generation is not enabled');
+        setError(result.errorMessage || t('aiTestGenerate.aiNotEnabled'));
         return;
       }
       
@@ -89,7 +91,7 @@ const AITestGeneratePage: React.FC = () => {
       setGeneratedTests(result.suggestions || []);
       setSelectedTests((result.suggestions || []).map((_: TestCaseSuggestion, idx: number) => idx));
     } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.errorMessage || 'Failed to generate test cases. AI service may not be configured.');
+      setError(err.response?.data?.message || err.response?.data?.errorMessage || t('aiTestGenerate.generateFailed'));
     } finally {
       setGenerating(false);
     }
@@ -105,7 +107,7 @@ const AITestGeneratePage: React.FC = () => {
 
   const handleSaveSelected = async () => {
     if (selectedTests.length === 0) {
-      setError('Please select at least one test case to save');
+      setError(t('aiTestGenerate.selectAtLeastOne'));
       return;
     }
 
@@ -131,7 +133,7 @@ const AITestGeneratePage: React.FC = () => {
       }
       navigate('/qa/test-cases');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save test cases');
+      setError(err.response?.data?.message || t('aiTestGenerate.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -143,10 +145,10 @@ const AITestGeneratePage: React.FC = () => {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/qa/test-cases')}>
           <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
+          {t('aiTestGenerate.back')}
         </Button>
         <Bot className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">AI Test Case Generator</h1>
+        <h1 className="text-2xl font-bold">{t('aiTestGenerate.title')}</h1>
       </div>
 
       {/* Error Alert */}
@@ -156,8 +158,7 @@ const AITestGeneratePage: React.FC = () => {
             {error}
             {(error.includes('not enabled') || error.includes('not available')) && (
               <p className="mt-2 text-sm">
-                To enable AI test generation, ensure Ollama is running locally with a model like Mistral.
-                Set <code className="bg-muted px-1 py-0.5 rounded text-xs">app.ai.risk-analysis.enabled=true</code> in application properties.
+                {t('aiTestGenerate.aiConfigHint')}
               </p>
             )}
           </AlertDescription>
@@ -170,18 +171,18 @@ const AITestGeneratePage: React.FC = () => {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Generation Settings</CardTitle>
+              <CardTitle>{t('aiTestGenerate.generationSettings')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Pitch Select */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-select">Select Pitch *</Label>
+                <Label htmlFor="pitch-select">{t('aiTestGenerate.selectPitch')} *</Label>
                 <Select
                   value={selectedPitchId}
                   onValueChange={setSelectedPitchId}
                 >
                   <SelectTrigger id="pitch-select">
-                    <SelectValue placeholder="Choose a pitch" />
+                    <SelectValue placeholder={t('aiTestGenerate.choosePitch')} />
                   </SelectTrigger>
                   <SelectContent>
                     {pitches.map((pitch) => (
@@ -195,7 +196,7 @@ const AITestGeneratePage: React.FC = () => {
 
               {/* Test Types */}
               <div className="space-y-2">
-                <Label>Test Types to Generate</Label>
+                <Label>{t('aiTestGenerate.testTypesToGenerate')}</Label>
                 <div className="rounded-md border">
                   <ScrollArea className="h-[200px] p-2">
                     <div className="space-y-1">
@@ -225,10 +226,10 @@ const AITestGeneratePage: React.FC = () => {
 
               {/* Additional Context */}
               <div className="space-y-2">
-                <Label htmlFor="context">Additional Context (Optional)</Label>
+                <Label htmlFor="context">{t('aiTestGenerate.additionalContext')}</Label>
                 <Textarea
                   id="context"
-                  placeholder="Provide any additional context or specific areas to focus on..."
+                  placeholder={t('aiTestGenerate.contextPlaceholder')}
                   rows={4}
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
@@ -246,7 +247,7 @@ const AITestGeneratePage: React.FC = () => {
                 ) : (
                   <FlaskConical className="h-4 w-4 mr-2" />
                 )}
-                {generating ? 'Generating...' : 'Generate Test Cases'}
+                {generating ? t('aiTestGenerate.generating') : t('aiTestGenerate.generateButton')}
               </Button>
             </CardContent>
           </Card>
@@ -256,7 +257,7 @@ const AITestGeneratePage: React.FC = () => {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle>Generated Test Cases</CardTitle>
+              <CardTitle>{t('aiTestGenerate.generatedTestCases')}</CardTitle>
               {generatedTests.length > 0 && (
                 <Button
                   onClick={handleSaveSelected}
@@ -265,10 +266,10 @@ const AITestGeneratePage: React.FC = () => {
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Saving...
+                      {t('aiTestGenerate.saving')}
                     </>
                   ) : (
-                    `Save Selected (${selectedTests.length})`
+                    `${t('aiTestGenerate.saveSelected')} (${selectedTests.length})`
                   )}
                 </Button>
               )}
@@ -277,25 +278,25 @@ const AITestGeneratePage: React.FC = () => {
             <CardContent className="pt-6">
               {generating ? (
                 <AILoadingState
-                  title="Generating Test Cases"
-                  subtitle="AI is analyzing your pitch and creating comprehensive test cases..."
+                  title={t('aiTestGenerate.generatingTitle')}
+                  subtitle={t('aiTestGenerate.generatingSubtitle')}
                   steps={[
-                    'Reading pitch requirements...',
-                    'Analyzing acceptance criteria...',
-                    'Identifying test scenarios...',
-                    'Creating functional tests...',
-                    'Generating edge cases...',
-                    'Finalizing test cases...',
+                    t('aiTestGenerate.readingRequirements'),
+                    t('aiTestGenerate.analyzingCriteria'),
+                    t('aiTestGenerate.identifyingScenarios'),
+                    t('aiTestGenerate.creatingTests'),
+                    t('aiTestGenerate.generatingEdgeCases'),
+                    t('aiTestGenerate.finalizingTests'),
                   ]}
                 />
               ) : generatedTests.length === 0 ? (
                 <div className="text-center py-16">
                   <Bot className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
-                    Select a pitch and click "Generate Test Cases" to create AI-powered test cases.
+                    {t('aiTestGenerate.emptyStateTitle')}
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    The AI will analyze the pitch details and generate relevant test cases.
+                    {t('aiTestGenerate.emptyStateDesc')}
                   </p>
                 </div>
               ) : (
@@ -314,28 +315,28 @@ const AITestGeneratePage: React.FC = () => {
                         <div className="flex-1 space-y-2">
                           <h4 className="font-semibold">{tc.title}</h4>
                           <p className="text-sm text-muted-foreground">
-                            Type: {tc.suggestedType || 'FUNCTIONAL'} | Priority: {tc.suggestedPriority || 'MEDIUM'}
-                            {tc.confidenceScore && ` | Confidence: ${Math.round(tc.confidenceScore * 100)}%`}
+                            {t('aiTestGenerate.type')}: {tc.suggestedType || 'FUNCTIONAL'} | {t('aiTestGenerate.priority')}: {tc.suggestedPriority || 'MEDIUM'}
+                            {tc.confidenceScore && ` | ${t('aiTestGenerate.confidence')}: ${Math.round(tc.confidenceScore * 100)}%`}
                           </p>
                           <p className="text-sm">{tc.description}</p>
                           
                           {tc.steps && (
                             <div>
-                              <p className="text-sm font-medium text-muted-foreground">Steps:</p>
+                              <p className="text-sm font-medium text-muted-foreground">{t('aiTestGenerate.steps')}:</p>
                               <p className="text-sm whitespace-pre-wrap">{tc.steps}</p>
                             </div>
                           )}
                           
                           {tc.expectedResult && (
                             <div>
-                              <p className="text-sm font-medium text-muted-foreground">Expected Result:</p>
+                              <p className="text-sm font-medium text-muted-foreground">{t('aiTestGenerate.expectedResult')}:</p>
                               <p className="text-sm whitespace-pre-wrap">{tc.expectedResult}</p>
                             </div>
                           )}
                           
                           {tc.suggestedTags && tc.suggestedTags.length > 0 && (
                             <p className="text-sm text-muted-foreground">
-                              Tags: {tc.suggestedTags.join(', ')}
+                              {t('aiTestGenerate.tags')}: {tc.suggestedTags.join(', ')}
                             </p>
                           )}
                         </div>

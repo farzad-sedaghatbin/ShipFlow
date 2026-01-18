@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   User,
   Pencil,
@@ -33,6 +35,7 @@ import {
 } from '../components/ui/dialog';
 
 export default function Profile() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +72,7 @@ export default function Profile() {
         department: response.data.department,
       });
     } catch (error) {
-      showToast('Failed to load profile', 'error');
+      showToast(t('profile.loadFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -81,9 +84,9 @@ export default function Profile() {
       const response = await api.put<UserProfile>('/users/me/profile', editForm);
       setProfile(response.data);
       setEditing(false);
-      showToast('Profile updated successfully', 'success');
+      showToast(t('profilePage.profileUpdated'), 'success');
     } catch (error) {
-      showToast('Failed to update profile', 'error');
+      showToast(t('profilePage.failedToLoad'), 'error');
     } finally {
       setSaving(false);
     }
@@ -91,18 +94,18 @@ export default function Profile() {
 
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
+      showToast(t('profilePage.passwordMismatch'), 'error');
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+      showToast(t('profilePage.passwordMinLength'), 'error');
       return;
     }
 
     setChangingPassword(true);
     try {
       await api.put(`/users/${profile?.id}/password`, passwordForm);
-      showToast('Password changed successfully', 'success');
+      showToast(t('profilePage.passwordChanged'), 'success');
       setPasswordDialogOpen(false);
       setPasswordForm({ currentPassword: '', newPassword: '' });
       setConfirmPassword('');
@@ -135,14 +138,14 @@ export default function Profile() {
   if (!profile) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>Failed to load profile</AlertDescription>
+        <AlertDescription>{t('profilePage.failedToLoad')}</AlertDescription>
       </Alert>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('profilePage.title')}</h1>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Profile Card */}
@@ -158,12 +161,12 @@ export default function Profile() {
               
               {editing && (
                 <div className="mb-4">
-                  <Label htmlFor="avatar-url" className="sr-only">Avatar URL</Label>
+                  <Label htmlFor="avatar-url" className="sr-only">{t('profilePage.avatarUrl')}</Label>
                   <div className="relative">
                     <Camera className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="avatar-url"
-                      placeholder="Avatar URL"
+                      placeholder={t('profilePage.avatarUrl')}
                       value={editForm.avatarUrl || ''}
                       onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })}
                       className="pl-10"
@@ -189,7 +192,7 @@ export default function Profile() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Lock className="h-4 w-4" />
-                Security
+                {t('profilePage.security')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -198,7 +201,7 @@ export default function Profile() {
                 className="w-full"
                 onClick={() => setPasswordDialogOpen(true)}
               >
-                Change Password
+                {t('profilePage.changePassword')}
               </Button>
             </CardContent>
           </Card>
@@ -208,11 +211,11 @@ export default function Profile() {
         <div className="md:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Profile Details</CardTitle>
+              <CardTitle>{t('profilePage.profileDetails')}</CardTitle>
               {!editing ? (
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
-                  Edit Profile
+                  {t('profilePage.editProfile')}
                 </Button>
               ) : (
                 <div className="flex gap-2">
@@ -231,7 +234,7 @@ export default function Profile() {
                     }}
                   >
                     <X className="h-4 w-4 mr-2" />
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button size="sm" onClick={handleSaveProfile} disabled={saving}>
                     {saving ? (
@@ -239,7 +242,7 @@ export default function Profile() {
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}
-                    Save
+                    {t('common.save')}
                   </Button>
                 </div>
               )}
@@ -249,7 +252,7 @@ export default function Profile() {
               
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">{t('profilePage.username')}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -261,7 +264,7 @@ export default function Profile() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('profilePage.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -271,7 +274,7 @@ export default function Profile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
+                  <Label htmlFor="department">{t('profilePage.department')}</Label>
                   <Input
                     id="department"
                     value={editing ? editForm.department || '' : profile.department || ''}
@@ -280,7 +283,7 @@ export default function Profile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">{t('profilePage.role')}</Label>
                   <Input
                     id="role"
                     value={profile.role.replace('_', ' ')}
@@ -290,35 +293,35 @@ export default function Profile() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
+                <Label htmlFor="skills">{t('profilePage.skills')}</Label>
                 <Input
                   id="skills"
                   value={editing ? editForm.skills || '' : profile.skills || ''}
                   onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
                   disabled={!editing}
-                  placeholder="e.g., Java, React, TypeScript, SQL"
+                  placeholder={t('profilePage.skillsPlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground">Comma-separated list of skills</p>
+                <p className="text-xs text-muted-foreground">{t('profilePage.skillsHelp')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">{t('profilePage.bio')}</Label>
                 <Textarea
                   id="bio"
                   rows={4}
                   value={editing ? editForm.bio || '' : profile.bio || ''}
                   onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                   disabled={!editing}
-                  placeholder="Tell us about yourself..."
+                  placeholder={t('profilePage.bioPlaceholder')}
                 />
               </div>
 
               <Separator />
 
               <p className="text-sm text-muted-foreground">
-                Member since: {new Date(profile.createdAt).toLocaleDateString()}
+                {t('profilePage.memberSince')}: {formatLocalizedDate(new Date(profile.createdAt), i18n.language)}
                 {profile.updatedAt && (
-                  <> • Last updated: {new Date(profile.updatedAt).toLocaleDateString()}</>
+                  <> • {t('profilePage.lastUpdated')}: {formatLocalizedDate(new Date(profile.updatedAt), i18n.language)}</>
                 )}
               </p>
             </CardContent>
@@ -330,14 +333,14 @@ export default function Profile() {
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t('profilePage.changePassword')}</DialogTitle>
             <DialogDescription>
-              Enter your current password and choose a new password.
+              {t('profilePage.changePasswordDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
+              <Label htmlFor="current-password">{t('profilePage.currentPassword')}</Label>
               <div className="relative">
                 <Input
                   id="current-password"
@@ -357,7 +360,7 @@ export default function Profile() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{t('profilePage.newPassword')}</Label>
               <div className="relative">
                 <Input
                   id="new-password"
@@ -375,10 +378,10 @@ export default function Profile() {
                   {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+              <p className="text-xs text-muted-foreground">{t('profilePage.minChars')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Label htmlFor="confirm-password">{t('profilePage.confirmPassword')}</Label>
               <Input
                 id="confirm-password"
                 type={showNewPassword ? 'text' : 'password'}
@@ -387,19 +390,19 @@ export default function Profile() {
                 className={confirmPassword !== '' && confirmPassword !== passwordForm.newPassword ? 'border-destructive' : ''}
               />
               {confirmPassword !== '' && confirmPassword !== passwordForm.newPassword && (
-                <p className="text-xs text-destructive">Passwords do not match</p>
+                <p className="text-xs text-destructive">{t('profilePage.passwordsDoNotMatch')}</p>
               )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleChangePassword}
               disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !confirmPassword}
             >
-              {changingPassword ? 'Changing...' : 'Change Password'}
+              {changingPassword ? t('profilePage.changing') : t('profilePage.changePassword')}
             </Button>
           </DialogFooter>
         </DialogContent>

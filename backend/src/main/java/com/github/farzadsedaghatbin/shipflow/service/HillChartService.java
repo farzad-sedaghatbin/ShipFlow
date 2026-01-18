@@ -37,6 +37,7 @@ public class HillChartService {
     private final PitchRepository pitchRepository;
     private final UserRepository userRepository;
     private final WorkLogRepository workLogRepository;
+    private final MessageService messageService;
 
     public List<HillChartPointDTO> getAllHillChartPoints() {
         return hillChartPointRepository.findAll().stream()
@@ -104,7 +105,7 @@ public class HillChartService {
 
     public void deleteHillChartPoint(Long id) {
         if (!hillChartPointRepository.existsById(id)) {
-            throw new RuntimeException("Hill chart point not found with id: " + id);
+            throw new RuntimeException(messageService.getMessage("error.hill.chart.point.not.found", id));
         }
         hillChartPointRepository.deleteById(id);
     }

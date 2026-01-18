@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Lightbulb,
@@ -57,6 +58,7 @@ export default function CycleRiskOverview({
   compact = false,
   onError,
 }: CycleRiskOverviewProps) {
+  const { t } = useTranslation();
   const [riskData, setRiskData] = useState<CycleRiskOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -84,7 +86,7 @@ export default function CycleRiskOverview({
       }
     } catch (error: any) {
       console.error('Failed to load cycle risk overview:', error);
-      onError?.('Failed to load risk overview');
+      onError?.(t('errors.loadRiskOverviewFailed'));
       setLoading(false);
     }
   };
@@ -96,7 +98,7 @@ export default function CycleRiskOverview({
       setRiskData(response.data);
     } catch (error: any) {
       console.error('Failed to refresh cycle risk:', error);
-      onError?.('Failed to refresh risk overview');
+      onError?.(t('errors.refreshRiskOverviewFailed'));
     } finally {
       setRefreshing(false);
     }

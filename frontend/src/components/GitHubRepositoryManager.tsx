@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import { githubService } from '../services/githubService';
 import { GitHubRepository, CreateGitHubRepositoryRequest } from '../types/github';
 
 export default function GitHubRepositoryManager() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ export default function GitHubRepositoryManager() {
       resetForm();
       loadRepositories();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register repository');
+      setError(err.response?.data?.message || t('errors.registerRepositoryFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,10 +96,10 @@ export default function GitHubRepositoryManager() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>GitHub Integration</CardTitle>
+            <CardTitle>{t('githubRepositoryManager.title')}</CardTitle>
             <Button onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Repository
+              {t('githubRepositoryManager.addRepository')}
             </Button>
           </div>
         </CardHeader>
@@ -105,12 +107,12 @@ export default function GitHubRepositoryManager() {
           <Alert>
             <AlertDescription>
               <div className="space-y-2">
-                <div className="font-semibold">Setup Instructions:</div>
+                <div className="font-semibold">{t('githubRepositoryManager.setupInstructions')}</div>
                 <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Add your repository below</li>
-                  <li>Copy the webhook URL and configure it in your GitHub repository settings</li>
-                  <li>Set webhook events: Push, Pull Request, Create, Delete</li>
-                  <li>Optionally add a webhook secret for security</li>
+                  <li>{t('githubRepositoryManager.setupStep1')}</li>
+                  <li>{t('githubRepositoryManager.setupStep2')}</li>
+                  <li>{t('githubRepositoryManager.setupStep3')}</li>
+                  <li>{t('githubRepositoryManager.setupStep4')}</li>
                 </ol>
               </div>
             </AlertDescription>
@@ -140,10 +142,10 @@ export default function GitHubRepositoryManager() {
                     <div className="flex items-center gap-2">
                       <Github className="h-4 w-4" />
                       <span className="font-medium">{repo.fullName}</span>
-                      {repo.isActive && <Badge variant="success">Active</Badge>}
+                      {repo.isActive && <Badge variant="success">{t('githubRepositoryManager.active')}</Badge>}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-0.5">
-                      <div>Default branch: {repo.defaultBranch}</div>
+                      <div>{t('githubRepositoryManager.defaultBranch')}: {repo.defaultBranch}</div>
                       {repo.url && <div className="text-xs">{repo.url}</div>}
                     </div>
                   </div>
@@ -153,7 +155,7 @@ export default function GitHubRepositoryManager() {
           ) : (
             <Alert>
               <AlertDescription>
-                No repositories configured yet. Click "Add Repository" to get started.
+                {t('githubRepositoryManager.noRepositories')}
               </AlertDescription>
             </Alert>
           )}
@@ -164,9 +166,9 @@ export default function GitHubRepositoryManager() {
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Add GitHub Repository</DialogTitle>
+              <DialogTitle>{t('githubRepositoryManager.addRepository')}</DialogTitle>
               <DialogDescription>
-                Configure a GitHub repository for automatic linking
+                {t('githubRepositoryManager.dialogDescription')}
               </DialogDescription>
             </DialogHeader>
             
@@ -178,83 +180,83 @@ export default function GitHubRepositoryManager() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="owner">Repository Owner *</Label>
+                <Label htmlFor="owner">{t('githubRepositoryManager.repositoryOwner')} *</Label>
                 <Input
                   id="owner"
                   value={formData.owner}
                   onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                  placeholder="GitHub username or organization"
+                  placeholder={t('githubRepositoryManager.ownerPlaceholder')}
                   required
                 />
-                <p className="text-xs text-muted-foreground">GitHub username or organization name</p>
+                <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.ownerHelp')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Repository Name *</Label>
+                <Label htmlFor="name">{t('githubRepositoryManager.repositoryName')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="my-project"
+                  placeholder={t('githubRepositoryManager.namePlaceholder')}
                   required
                 />
-                <p className="text-xs text-muted-foreground">Repository name (e.g., my-project)</p>
+                <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.nameHelp')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="url">Repository URL</Label>
+                <Label htmlFor="url">{t('githubRepositoryManager.repositoryUrl')}</Label>
                 <Input
                   id="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="https://github.com/owner/repo"
+                  placeholder={t('githubRepositoryManager.urlPlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground">Optional: GitHub repository URL</p>
+                <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.urlHelp')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="branch">Default Branch</Label>
+                <Label htmlFor="branch">{t('githubRepositoryManager.defaultBranch')}</Label>
                 <Input
                   id="branch"
                   value={formData.defaultBranch}
                   onChange={(e) => setFormData({ ...formData, defaultBranch: e.target.value })}
-                  placeholder="main"
+                  placeholder={t('githubRepositoryManager.branchPlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground">Usually 'main' or 'master'</p>
+                <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.branchHelp')}</p>
               </div>
 
               <Separator />
 
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Webhook Configuration</h4>
+                <h4 className="text-sm font-medium">{t('githubRepositoryManager.webhookConfig')}</h4>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="secret">Webhook Secret</Label>
+                  <Label htmlFor="secret">{t('githubRepositoryManager.webhookSecret')}</Label>
                   <Input
                     id="secret"
                     type="password"
                     value={formData.webhookSecret}
                     onChange={(e) => setFormData({ ...formData, webhookSecret: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">Optional: Secret for validating webhook requests</p>
+                  <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.secretHelp')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="token">Access Token</Label>
+                  <Label htmlFor="token">{t('githubRepositoryManager.accessToken')}</Label>
                   <Input
                     id="token"
                     type="password"
                     value={formData.accessToken}
                     onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">Optional: GitHub Personal Access Token for private repos</p>
+                  <p className="text-xs text-muted-foreground">{t('githubRepositoryManager.tokenHelp')}</p>
                 </div>
               </div>
 
               <Separator />
 
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Auto-linking Options</h4>
+                <h4 className="text-sm font-medium">{t('githubRepositoryManager.autoLinkOptions')}</h4>
                 
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3">
@@ -265,10 +267,10 @@ export default function GitHubRepositoryManager() {
                     />
                     <div className="space-y-1 flex-1">
                       <Label htmlFor="autolink" className="cursor-pointer">
-                        Auto-link commits and PRs to tasks
+                        {t('githubRepositoryManager.autoLinkCommits')}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Automatically link commits and PRs that mention "Task #123" or "Pitch #45"
+                        {t('githubRepositoryManager.autoLinkCommitsHelp')}
                       </p>
                     </div>
                   </div>
@@ -281,10 +283,10 @@ export default function GitHubRepositoryManager() {
                     />
                     <div className="space-y-1 flex-1">
                       <Label htmlFor="autoclose" className="cursor-pointer">
-                        Auto-close tasks when PR is merged
+                        {t('githubRepositoryManager.autoCloseTasks')}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Automatically close tasks when PRs with "closes #123", "fixes #123", or "resolves #123" are merged
+                        {t('githubRepositoryManager.autoCloseTasksHelp')}
                       </p>
                     </div>
                   </div>
@@ -294,10 +296,10 @@ export default function GitHubRepositoryManager() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Adding...' : 'Add Repository'}
+                {loading ? t('githubRepositoryManager.adding') : t('githubRepositoryManager.addRepository')}
               </Button>
             </DialogFooter>
           </form>

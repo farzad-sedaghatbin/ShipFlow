@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, LayoutDashboard, BarChart3, LineChart, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function ReportsGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Reports & Dashboards</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.reports.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Visualize your team's performance with custom dashboards and metrics
+                    {t('guides.reports.subtitle')}
                 </p>
             </div>
 
@@ -30,14 +32,11 @@ export default function ReportsGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <LayoutDashboard className="h-5 w-5" />
-                        Dashboard Manager
+                        {t('guides.reports.dashboardManagerTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        The Dashboard Manager allows you to create custom views of your project data. You can have multiple dashboards
-                        for different purposes (e.g., "Executive Overview," "Team Velocity," "QA Metrics").
-                    </p>
+                    <p>{t('guides.reports.dashboardManagerDesc')}</p>
                     <div className="rounded-lg border bg-muted/50 p-4">
                         <img
                             src="/guides/dashboard-manager.png"

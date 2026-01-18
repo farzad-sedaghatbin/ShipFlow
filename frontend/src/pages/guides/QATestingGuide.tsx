@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckSquare, Bug, Sparkles, Beaker } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function QATestingGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">QA & Testing</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.qaTesting.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Manage test cases, run manual tests, and track bugs within your cycles
+                    {t('guides.qaTesting.subtitle')}
                 </p>
             </div>
 
@@ -30,19 +32,14 @@ export default function QATestingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Beaker className="h-5 w-5" />
-                        Integrated QA
+                        {t('guides.qaTesting.integratedTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        ShipFlow integrates QA directly into the development cycle. Instead of treating testing
-                        as an afterthought, you can define test cases alongside your scopes and track quality
-                        in real-time.
-                    </p>
+                    <p>{t('guides.qaTesting.integratedDesc')}</p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Best Practice:</strong> Create test cases during the "Shaping" phase or early
-                            in the "Build" phase to clarify requirements before code is written.
+                            <strong>{t('guides.qaTesting.bestPractice')}</strong> {t('guides.qaTesting.bestPracticeDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -53,24 +50,24 @@ export default function QATestingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <CheckSquare className="h-5 w-5" />
-                        Managing Test Cases
+                        {t('guides.qaTesting.testCasesTitle')}
                     </CardTitle>
-                    <CardDescription>Define how features should be verified</CardDescription>
+                    <CardDescription>{t('guides.qaTesting.testCasesSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>Navigate to <strong>QA & Testing {'>'} Test Cases</strong></li>
-                        <li>Click <strong>"New Test Case"</strong></li>
-                        <li>Fill in the details:
+                        <li>{t('guides.qaTesting.testCasesStep1')}</li>
+                        <li>{t('guides.qaTesting.testCasesStep2')}</li>
+                        <li>{t('guides.qaTesting.testCasesStep3')}
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
-                                <li><strong>Title:</strong> Clear, concise summary of what's being tested</li>
-                                <li><strong>Pre-conditions:</strong> State required before testing starts</li>
-                                <li><strong>Steps:</strong> Numbered actions to perform</li>
-                                <li><strong>Expected Result:</strong> What should happen if successful</li>
-                                <li><strong>Priority:</strong> Critical, High, Medium, or Low</li>
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3a') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3b') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3c') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3d') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3e') }} />
                             </ul>
                         </li>
-                        <li>Link it to a specific <strong>Pitch</strong> or <strong>Cycle</strong> to track coverage</li>
+                        <li>{t('guides.qaTesting.testCasesStep4')}</li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4 mt-4">
@@ -95,30 +92,30 @@ export default function QATestingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-purple-500" />
-                        AI Test Generation
+                        {t('guides.qaTesting.aiGenerationTitle')}
                     </CardTitle>
-                    <CardDescription>Speed up test creation with AI</CardDescription>
+                    <CardDescription>{t('guides.qaTesting.aiGenerationSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        ShipFlow can automatically generate test cases based on your pitch descriptions and scope definitions.
+                        {t('guides.qaTesting.aiGenerationDesc')}
                     </p>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="rounded-lg border p-4">
-                            <h4 className="font-semibold mb-2">How to use it:</h4>
+                            <h4 className="font-semibold mb-2">{t('guides.qaTesting.aiHowToUseTitle')}</h4>
                             <ol className="list-decimal list-inside space-y-2 text-sm">
-                                <li>Go to <strong>Generate with AI</strong> in the Test Cases page</li>
-                                <li>Select the <strong>Pitch</strong> you want to test</li>
-                                <li>Review the suggested test cases</li>
-                                <li>Click <strong>"Save Selected"</strong> to add them to your library</li>
+                                <li>{t('guides.qaTesting.aiHowToStep1')}</li>
+                                <li>{t('guides.qaTesting.aiHowToStep2')}</li>
+                                <li>{t('guides.qaTesting.aiHowToStep3')}</li>
+                                <li>{t('guides.qaTesting.aiHowToStep4')}</li>
                             </ol>
                         </div>
                         <div className="rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 p-4">
-                            <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">Why use AI?</h4>
+                            <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">{t('guides.qaTesting.aiWhyUseTitle')}</h4>
                             <ul className="list-disc list-inside space-y-1 text-sm text-purple-800 dark:text-purple-200">
-                                <li>Discover edge cases you might miss</li>
-                                <li>Save time on writing boilerplate steps</li>
-                                <li>Standardize test case format</li>
+                                <li>{t('guides.qaTesting.aiWhyItem1')}</li>
+                                <li>{t('guides.qaTesting.aiWhyItem2')}</li>
+                                <li>{t('guides.qaTesting.aiWhyItem3')}</li>
                             </ul>
                         </div>
                     </div>
@@ -130,22 +127,22 @@ export default function QATestingGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Bug className="h-5 w-5" />
-                        Bug Reports
+                        {t('guides.qaTesting.bugReportsTitle')}
                     </CardTitle>
-                    <CardDescription>Track issues found during testing</CardDescription>
+                    <CardDescription>{t('guides.qaTesting.bugReportsSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        When a test fails or you find an issue during exploratory testing, log a bug report.
+                        {t('guides.qaTesting.bugReportsDesc')}
                     </p>
                     <ul className="space-y-2 text-sm">
                         <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]">Severity:</span>
-                            <span>From "Low" (cosmetic) to "Critical" (system down)</span>
+                            <span className="font-semibold min-w-[80px]" dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.bugSeverity').split(':')[0] + ':' }} />
+                            <span>{t('guides.qaTesting.bugSeverity').split(':').slice(1).join(':').trim()}</span>
                         </li>
                         <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]">Status:</span>
-                            <span>Open → In Progress → Resolved → Verified</span>
+                            <span className="font-semibold min-w-[80px]" dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.bugStatus').split(':')[0] + ':' }} />
+                            <span>{t('guides.qaTesting.bugStatus').split(':').slice(1).join(':').trim()}</span>
                         </li>
                     </ul>
 

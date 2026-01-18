@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import { 
   AlertTriangle, 
   Lightbulb, 
@@ -46,6 +48,7 @@ interface RiskInsightsCardProps {
 }
 
 export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardProps) {
+  const { i18n, t } = useTranslation();
   const [riskData, setRiskData] = useState<PitchRiskDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -76,7 +79,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
       }
     } catch (error: any) {
       console.error('Failed to load risk analysis:', error);
-      onError?.('Failed to load risk analysis');
+      onError?.(t('errors.loadRiskAnalysisFailed'));
       setLoading(false);
     }
   };
@@ -88,7 +91,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
       setRiskData(response.data);
     } catch (error: any) {
       console.error('Failed to refresh risk analysis:', error);
-      onError?.('Failed to refresh risk analysis');
+      onError?.(t('errors.refreshRiskAnalysisFailed'));
     } finally {
       setRefreshing(false);
     }
@@ -209,7 +212,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Analyzed {new Date(riskData.analyzedAt).toLocaleString()}
+              Analyzed {formatLocalizedDateTime(new Date(riskData.analyzedAt), i18n.language)}
             </p>
           </div>
           <TooltipProvider>

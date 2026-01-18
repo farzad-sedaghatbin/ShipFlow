@@ -51,6 +51,9 @@ class WorkLogServiceTest {
     @Mock
     private AICacheService cacheService;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private WorkLogService workLogService;
 
@@ -215,6 +218,9 @@ class WorkLogServiceTest {
         invalidRequest.setDate(LocalDate.now());
         invalidRequest.setHoursSpent(BigDecimal.valueOf(4.0));
 
+        when(messageService.getMessage("error.worklog.pitch.or.task.required"))
+                .thenReturn("Either pitchId or taskId must be provided");
+
         assertThatThrownBy(() -> workLogService.createWorkLog(invalidRequest))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Either pitchId or taskId must be provided");
@@ -228,6 +234,9 @@ class WorkLogServiceTest {
         invalidRequest.setTaskId(1L);
         invalidRequest.setDate(LocalDate.now());
         invalidRequest.setHoursSpent(BigDecimal.valueOf(4.0));
+
+        when(messageService.getMessage("error.worklog.pitch.or.task.required"))
+                .thenReturn("Either pitchId or taskId must be provided, but not both");
 
         assertThatThrownBy(() -> workLogService.createWorkLog(invalidRequest))
                 .isInstanceOf(IllegalArgumentException.class)

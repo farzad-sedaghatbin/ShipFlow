@@ -29,6 +29,7 @@ public class UserService {
     private final PersonRepository personRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MessageService messageService;
 
     @Transactional(readOnly = true)
     public List<UserDTO> findAll() {
@@ -60,7 +61,7 @@ public class UserService {
     @Transactional
     public UserDTO createUser(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists: " + request.getUsername());
+            throw new IllegalArgumentException(messageService.getMessage("error.user.username.exists", request.getUsername()));
         }
 
         User user = User.builder()
@@ -132,7 +133,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+            throw new IllegalArgumentException(messageService.getMessage("error.user.password.incorrect"));
         }
         
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -168,7 +169,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
         
         if (!resetToken.isValid()) {
-            throw new IllegalArgumentException("Password reset token has expired");
+            throw new IllegalArgumentException(messageService.getMessage("error.user.reset.token.expired"));
         }
         
         User user = resetToken.getUser();
@@ -211,7 +212,7 @@ public class UserService {
         // Update email if provided
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Email already in use");
+                throw new IllegalArgumentException(messageService.getMessage("error.user.email.in.use"));
             }
             user.setEmail(request.getEmail());
         }

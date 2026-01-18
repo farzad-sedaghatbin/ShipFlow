@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Repeat, Calendar, FileText, Users, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function CycleSetupGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
             <Button asChild variant="ghost" size="sm">
                 <Link to="/help" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Help & Guides
+                    {t('guides.backToHelp')}
                 </Link>
             </Button>
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Setting Up Your First Cycle</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.cycleSetup.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Complete walkthrough of creating and managing a work cycle in ShipFlow
+                    {t('guides.cycleSetup.subtitle')}
                 </p>
             </div>
 
@@ -30,19 +32,14 @@ export default function CycleSetupGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Repeat className="h-5 w-5" />
-                        What is a Cycle?
+                        {t('guides.cycleSetup.whatTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>
-                        In Shape Up, a <strong>cycle</strong> is a fixed period of time (typically 6 weeks) during
-                        which teams work on committed pitches. Cycles provide rhythm and focus, with clear start
-                        and end dates.
-                    </p>
+                    <p>{t('guides.cycleSetup.whatDesc')}</p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Key Concept:</strong> After each 6-week cycle, there's a 2-week "cool-down"
-                            period for bug fixes, exploration, and planning the next cycle.
+                            <strong>{t('guides.cycleSetup.keyConcept')}</strong> {t('guides.cycleSetup.keyConceptDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -53,24 +50,24 @@ export default function CycleSetupGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
-                        Step 1: Creating a New Cycle
+                        {t('guides.cycleSetup.step1Title')}
                     </CardTitle>
-                    <CardDescription>Set up the basic cycle structure</CardDescription>
+                    <CardDescription>{t('guides.cycleSetup.step1Subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>Navigate to <strong>Cycles</strong> in the sidebar</li>
-                        <li>Click the <strong>"New Cycle"</strong> button</li>
-                        <li>Fill in the cycle details:
+                        <li>{t('guides.cycleSetup.step1Item1')}</li>
+                        <li>{t('guides.cycleSetup.step1Item2')}</li>
+                        <li>{t('guides.cycleSetup.step1Item3')}
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
-                                <li><strong>Name:</strong> e.g., "Cycle 1 - Q1 2026" or "January Cycle"</li>
-                                <li><strong>Start Date:</strong> When the cycle begins</li>
-                                <li><strong>End Date:</strong> Typically 6 weeks from start</li>
-                                <li><strong>Project:</strong> Associate with a project (optional)</li>
-                                <li><strong>Description:</strong> Brief overview of cycle goals</li>
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3a') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3b') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3c') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3d') }} />
+                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3e') }} />
                             </ul>
                         </li>
-                        <li>Click <strong>"Create Cycle"</strong></li>
+                        <li>{t('guides.cycleSetup.step1Item4')}</li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4">
@@ -90,8 +87,7 @@ export default function CycleSetupGuide() {
 
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
                         <p className="text-sm text-amber-900 dark:text-amber-100">
-                            <strong>⚠️ Important:</strong> Once a cycle starts, avoid changing the end date.
-                            Fixed time is a core principle of Shape Up.
+                            <strong>{t('guides.cycleSetup.important')}</strong> {t('guides.cycleSetup.importantDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -102,28 +98,28 @@ export default function CycleSetupGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5" />
-                        Step 2: Adding Pitches to the Cycle
+                        {t('guides.cycleSetup.step2Title')}
                     </CardTitle>
-                    <CardDescription>Commit to the work you'll tackle</CardDescription>
+                    <CardDescription>{t('guides.cycleSetup.step2Subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        After creating a cycle, add the pitches that were approved during the betting meeting:
+                        {t('guides.cycleSetup.step2Desc')}
                     </p>
 
-                    <h4 className="font-semibold">Option 1: From the Cycle Detail Page</h4>
+                    <h4 className="font-semibold">{t('guides.cycleSetup.step2Option1Title')}</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-2 text-sm">
-                        <li>Open the cycle you just created</li>
-                        <li>Look for the <strong>"Add Pitch"</strong> or <strong>"Manage Pitches"</strong> button</li>
-                        <li>Select pitches from the available list</li>
-                        <li>Click <strong>"Add to Cycle"</strong></li>
+                        <li>{t('guides.cycleSetup.step2Option1Step1')}</li>
+                        <li>{t('guides.cycleSetup.step2Option1Step2')}</li>
+                        <li>{t('guides.cycleSetup.step2Option1Step3')}</li>
+                        <li>{t('guides.cycleSetup.step2Option1Step4')}</li>
                     </ol>
 
-                    <h4 className="font-semibold mt-4">Option 2: From the Betting Table</h4>
+                    <h4 className="font-semibold mt-4">{t('guides.cycleSetup.step2Option2Title')}</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-2 text-sm">
-                        <li>Navigate to <strong>Betting Table</strong></li>
-                        <li>For each approved pitch, select the cycle from the dropdown</li>
-                        <li>The pitch is automatically added to that cycle</li>
+                        <li>{t('guides.cycleSetup.step2Option2Step1')}</li>
+                        <li>{t('guides.cycleSetup.step2Option2Step2')}</li>
+                        <li>{t('guides.cycleSetup.step2Option2Step3')}</li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4 mt-4">
@@ -148,31 +144,30 @@ export default function CycleSetupGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Step 3: Assigning Team Members
+                        {t('guides.cycleSetup.step3Title')}
                     </CardTitle>
-                    <CardDescription>Allocate people to pitches</CardDescription>
+                    <CardDescription>{t('guides.cycleSetup.step3Subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        Each pitch in the cycle needs a small team (typically 1-2 people) assigned to it:
+                        {t('guides.cycleSetup.step3Desc')}
                     </p>
 
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>From the cycle detail page, click on a pitch</li>
-                        <li>In the pitch detail view, look for the <strong>"Assign Team"</strong> section</li>
-                        <li>Add team members:
+                        <li>{t('guides.cycleSetup.step3Step1')}</li>
+                        <li>{t('guides.cycleSetup.step3Step2')}</li>
+                        <li>{t('guides.cycleSetup.step3Step3')}
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
-                                <li>1 designer (for UI/UX work)</li>
-                                <li>1-2 developers (for implementation)</li>
+                                <li>{t('guides.cycleSetup.step3Step3a')}</li>
+                                <li>{t('guides.cycleSetup.step3Step3b')}</li>
                             </ul>
                         </li>
-                        <li>Save the assignments</li>
+                        <li>{t('guides.cycleSetup.step3Step4')}</li>
                     </ol>
 
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 Shape Up Principle:</strong> Keep teams small. Two people working together
-                            can move faster and communicate better than larger groups.
+                            <strong>{t('guides.cycleSetup.step3Tip')}</strong> {t('guides.cycleSetup.step3TipDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -181,25 +176,24 @@ export default function CycleSetupGuide() {
             {/* Step 4: Tracking Progress */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Step 4: Tracking Progress During the Cycle</CardTitle>
-                    <CardDescription>Monitor work and identify risks</CardDescription>
+                    <CardTitle>{t('guides.cycleSetup.step4Title')}</CardTitle>
+                    <CardDescription>{t('guides.cycleSetup.step4Subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">Use Hill Charts</h4>
+                    <h4 className="font-semibold">{t('guides.cycleSetup.step4UseHillTitle')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        Navigate to the cycle's hill chart to see visual progress of all pitches. Team members
-                        should update their positions regularly.
+                        {t('guides.cycleSetup.step4UseHillDesc')}
                     </p>
 
-                    <h4 className="font-semibold mt-4">Check Health Overview</h4>
+                    <h4 className="font-semibold mt-4">{t('guides.cycleSetup.step4HealthTitle')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        Visit <strong>Health Overview</strong> to see aggregate metrics:
+                        {t('guides.cycleSetup.step4HealthDesc')}
                     </p>
                     <ul className="space-y-1 ml-6 text-sm">
-                        <li>• Overall cycle health score</li>
-                        <li>• Pitches at risk</li>
-                        <li>• Velocity and burn-down</li>
-                        <li>• Team capacity utilization</li>
+                        <li>• {t('guides.cycleSetup.step4HealthItem1')}</li>
+                        <li>• {t('guides.cycleSetup.step4HealthItem2')}</li>
+                        <li>• {t('guides.cycleSetup.step4HealthItem3')}</li>
+                        <li>• {t('guides.cycleSetup.step4HealthItem4')}</li>
                     </ul>
 
                     <h4 className="font-semibold mt-4">Daily Check-ins</h4>

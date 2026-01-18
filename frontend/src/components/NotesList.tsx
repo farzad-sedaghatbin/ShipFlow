@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   Plus,
   Pencil,
@@ -50,6 +52,7 @@ export const NotesList: React.FC<NotesListProps> = ({
   contextId,
   title = 'Notes',
 }) => {
+  const { i18n, t } = useTranslation();
   const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +135,7 @@ export const NotesList: React.FC<NotesListProps> = ({
       setNotes(response.data);
       setError(null);
     } catch (err: any) {
-      setError('Failed to load notes');
+      setError(t('errors.loadNotesFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -177,7 +180,7 @@ export const NotesList: React.FC<NotesListProps> = ({
       handleCloseDialog();
       loadNotes();
     } catch (err: any) {
-      setError('Failed to save note');
+      setError(t('errors.saveNoteFailed'));
       console.error(err);
     }
   };
@@ -190,7 +193,7 @@ export const NotesList: React.FC<NotesListProps> = ({
       setDeleteDialog({ open: false, note: null });
       loadNotes();
     } catch (err: any) {
-      setError('Failed to delete note');
+      setError(t('errors.deleteNoteFailed'));
       console.error(err);
     }
   };
@@ -293,7 +296,7 @@ export const NotesList: React.FC<NotesListProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {note.authorName && `By ${note.authorName} • `}
-                        {new Date(note.createdAt).toLocaleDateString()}
+                        {formatLocalizedDate(new Date(note.createdAt), i18n.language)}
                       </span>
                       <div className="flex gap-1">
                         <TooltipProvider>

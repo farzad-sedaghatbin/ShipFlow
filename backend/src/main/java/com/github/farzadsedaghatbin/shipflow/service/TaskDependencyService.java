@@ -26,6 +26,8 @@ public class TaskDependencyService {
 
     private final TaskDependencyRepository taskDependencyRepository;
     private final TaskRepository taskRepository;
+    private final LocalizationService localizationService;
+    private final MessageService messageService;
 
     /**
      * Add a dependency between tasks.
@@ -41,22 +43,22 @@ public class TaskDependencyService {
 
         // Validate tasks are in the same cycle
         if (!sourceTask.getCycle().getId().equals(targetTask.getCycle().getId())) {
-            throw new BadRequestException("Tasks must be in the same cycle to create dependencies");
+            throw new BadRequestException(localizationService.getMessage("dependency.same.cycle.required"));
         }
 
         // Prevent self-dependencies
         if (sourceTaskId.equals(request.getTargetTaskId())) {
-            throw new BadRequestException("A task cannot depend on itself");
+            throw new BadRequestException(localizationService.getMessage("dependency.self.reference"));
         }
 
         // Check if dependency already exists
         if (taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(sourceTaskId, request.getTargetTaskId()).isPresent()) {
-            throw new BadRequestException("Dependency already exists between these tasks");
+            throw new BadRequestException(localizationService.getMessage("dependency.already.exists"));
         }
 
         // Check for circular dependencies
         if (wouldCreateCircularDependency(sourceTaskId, request.getTargetTaskId())) {
-            throw new BadRequestException("This dependency would create a circular reference");
+            throw new BadRequestException(localizationService.getMessage("dependency.circular.reference"));
         }
 
         // Create the dependency
@@ -75,7 +77,7 @@ public class TaskDependencyService {
      */
     public void removeDependency(Long dependencyId) {
         if (!taskDependencyRepository.existsById(dependencyId)) {
-            throw new IllegalArgumentException("Dependency not found with id: " + dependencyId);
+            throw new IllegalArgumentException(localizationService.getMessage("dependency.not.found", dependencyId));
         }
         taskDependencyRepository.deleteById(dependencyId);
     }
@@ -85,7 +87,7 @@ public class TaskDependencyService {
      */
     public Map<String, List<TaskDependencyDTO>> getDependenciesForTask(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         List<TaskDependency> outgoing = taskDependencyRepository.findBySourceTaskId(taskId);
@@ -103,7 +105,7 @@ public class TaskDependencyService {
      */
     public List<TaskDependencyDTO> getBlockingDependencies(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         return taskDependencyRepository.findBlockingDependenciesByTaskId(taskId)
@@ -117,7 +119,7 @@ public class TaskDependencyService {
      */
     public List<TaskDependencyDTO> getBlockedByDependencies(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
-            throw new IllegalArgumentException("Task not found with id: " + taskId);
+            throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
         }
 
         return taskDependencyRepository.findBlockedByDependenciesByTaskId(taskId)

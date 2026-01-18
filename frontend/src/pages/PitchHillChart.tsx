@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, AlertCircle, Info, X } from 'lucide-react';
 import { HillChart } from '../components/HillChart';
 import { hillChartApi } from '../services/hillChartApi';
@@ -30,6 +31,7 @@ import {
 } from '../components/ui/alert-dialog';
 
 export const PitchHillChart: React.FC = () => {
+  const { t } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
   const pitchId = safeParseId(pitchIdParam);
   const [points, setPoints] = useState<HillChartPoint[]>([]);
@@ -62,7 +64,7 @@ export const PitchHillChart: React.FC = () => {
       setPoints(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load hill chart data');
+      setError(t('pitchHillChart.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -97,7 +99,7 @@ export const PitchHillChart: React.FC = () => {
       setDeleteDialog({ open: false, point: null });
       await loadHillChartPoints();
     } catch (err) {
-      setError('Failed to delete point');
+      setError(t('pitchHillChart.deleteFailed'));
       console.error(err);
     }
   };
@@ -126,7 +128,7 @@ export const PitchHillChart: React.FC = () => {
       setDialogOpen(false);
       await loadHillChartPoints();
     } catch (err) {
-      setError('Failed to save point');
+      setError(t('pitchHillChart.saveFailed'));
       console.error(err);
     }
   };
@@ -145,7 +147,7 @@ export const PitchHillChart: React.FC = () => {
         )
       );
     } catch (err) {
-      setError('Failed to update position');
+      setError(t('pitchHillChart.updateFailed'));
       console.error(err);
       // Reload to get correct state
       await loadHillChartPoints();
@@ -157,7 +159,7 @@ export const PitchHillChart: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Invalid pitch ID</span>
+          <span className="text-sm">{t('pitchHillChart.invalidId')}</span>
         </div>
       </div>
     );
@@ -174,10 +176,10 @@ export const PitchHillChart: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Progress Hill Chart</h1>
+        <h1 className="text-3xl font-bold">{t('pitchHillChart.title')}</h1>
         <Button onClick={handleAddPoint} className="gap-2">
           <Plus className="h-4 w-4" />
-          Add Scope
+          {t('pitchHillChart.addScope')}
         </Button>
       </div>
 
@@ -196,15 +198,14 @@ export const PitchHillChart: React.FC = () => {
       <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500">
         <Info className="h-4 w-4 shrink-0" />
         <p className="text-sm">
-          <strong>Hill Chart Guide:</strong> Drag points to update progress.
-          Left side (0-50%) = Figuring things out. Right side (50-100%) = Making it happen.
+          <strong>{t('pitchHillChart.guideTitle')}</strong> {t('pitchHillChart.guideText')}
         </p>
       </div>
 
       {points.length === 0 ? (
         <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 animate-in fade-in duration-500">
           <Info className="h-4 w-4" />
-          <span className="text-sm">No scopes added yet. Click "Add Scope" to start tracking progress on the hill chart.</span>
+          <span className="text-sm">{t('pitchHillChart.noScopes')}</span>
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -221,33 +222,33 @@ export const PitchHillChart: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingPoint ? 'Edit Scope' : 'Add Scope'}</DialogTitle>
+            <DialogTitle>{editingPoint ? t('pitchHillChart.editScope') : t('pitchHillChart.addScope')}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="scope">Scope Name *</Label>
+              <Label htmlFor="scope">{t('pitchHillChart.scopeName')} *</Label>
               <Input
                 id="scope"
                 value={formData.scope}
                 onChange={(e) => setFormData({ ...formData, scope: e.target.value })}
-                placeholder="e.g., User Authentication"
+                placeholder={t('pitchHillChart.scopePlaceholder')}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">{t('common.description')} *</Label>
               <Textarea
                 id="description"
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="What needs to be done?"
+                placeholder={t('pitchHillChart.descriptionPlaceholder')}
               />
             </div>
 
             <div className="space-y-3">
-              <Label>Initial Position: {formData.position}%</Label>
+              <Label>{t('pitchHillChart.initialPosition')}: {formData.position}%</Label>
               <Slider
                 value={[formData.position]}
                 onValueChange={([value]) => setFormData({ ...formData, position: value })}
@@ -264,21 +265,21 @@ export const PitchHillChart: React.FC = () => {
               </div>
               <p className="text-xs text-muted-foreground">
                 {formData.position < 50 
-                  ? '🔍 Figuring things out (Uphill)'
-                  : '🚀 Making it happen (Downhill)'}
+                  ? t('pitchHillChart.figuringOut')
+                  : t('pitchHillChart.makingHappen')}
               </p>
             </div>
           </div>
           
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={!formData.scope || !formData.description}
             >
-              {editingPoint ? 'Update' : 'Add'}
+              {editingPoint ? t('common.update') : t('common.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -291,18 +292,18 @@ export const PitchHillChart: React.FC = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Hill Chart Point</AlertDialogTitle>
+            <AlertDialogTitle>{t('pitchHillChart.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteDialog.point?.scope}"? This action cannot be undone.
+              {t('pitchHillChart.deleteConfirm', { scope: deleteDialog.point?.scope })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeletePoint}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

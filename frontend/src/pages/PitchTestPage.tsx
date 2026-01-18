@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { Play, Plus, Bug, Sparkles, ClipboardList, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
@@ -20,6 +22,7 @@ import AISuggestionPanel from '../components/AISuggestionPanel';
 import { safeParseId } from '../utils/validation';
 
 const PitchTestPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
   const pitchId = safeParseId(pitchIdParam);
   const navigate = useNavigate();
@@ -42,7 +45,7 @@ const PitchTestPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardContent className="p-6">
-            <p className="text-center text-destructive">Invalid pitch ID</p>
+            <p className="text-center text-destructive">{t('pitchTest.invalidId')}</p>
           </CardContent>
         </Card>
       </div>
@@ -64,7 +67,7 @@ const PitchTestPage: React.FC = () => {
       setBugReports(bugsRes.data);
       setCoverage(coverageRes.data);
     } catch (err) {
-      setError('Failed to load test data');
+      setError(t('pitchTest.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -124,19 +127,19 @@ const PitchTestPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Test Management</h1>
+          <h1 className="text-3xl font-bold">{t('pitchTest.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Pitch #{pitchId}
+            {t('pitchTest.pitchId', { id: pitchId })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate(`/qa/test-cases/new?pitchId=${pitchId}`)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Test Case
+            {t('pitchTest.addTestCase')}
           </Button>
           <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => navigate(`/qa/bugs/new?pitchId=${pitchId}`)}>
             <Bug className="mr-2 h-4 w-4" />
-            Report Bug
+            {t('pitchTest.reportBug')}
           </Button>
         </div>
       </div>
@@ -154,28 +157,28 @@ const PitchTestPage: React.FC = () => {
         </div>
         <Card>
           <CardContent className="pt-6">
-            <h3 className="text-sm font-medium mb-4">Quick Stats</h3>
+            <h3 className="text-sm font-medium mb-4">{t('pitchTest.quickStats')}</h3>
             <div className="grid grid-cols-4 gap-4">
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-bold">{testCases.length}</span>
-                <span className="text-xs text-muted-foreground">Test Cases</span>
+                <span className="text-xs text-muted-foreground">{t('pitchTest.testCasesCount')}</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-bold text-green-600">{stats.passed}</span>
-                <span className="text-xs text-muted-foreground">Passed</span>
+                <span className="text-xs text-muted-foreground">{t('pitchTest.passed')}</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-bold text-red-600">{stats.failed}</span>
-                <span className="text-xs text-muted-foreground">Failed</span>
+                <span className="text-xs text-muted-foreground">{t('pitchTest.failed')}</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-bold text-red-600">{openBugs}</span>
-                <span className="text-xs text-muted-foreground">Open Bugs</span>
+                <span className="text-xs text-muted-foreground">{t('pitchTest.openBugs')}</span>
               </div>
             </div>
             {criticalBugs > 0 && (
               <div className="mt-4 p-3 rounded-md bg-destructive/10 border border-destructive text-destructive text-sm">
-                {criticalBugs} critical/blocker bug{criticalBugs > 1 ? 's' : ''} require immediate attention!
+                {t('pitchTest.criticalBugs', { count: criticalBugs, s: criticalBugs > 1 ? 's' : '' })}
               </div>
             )}
           </CardContent>
@@ -191,28 +194,28 @@ const PitchTestPage: React.FC = () => {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <ClipboardList className="mr-2 h-4 w-4" />
-              Test Cases ({testCases.length})
+              {t('pitchTest.testCasesTab', { count: testCases.length })}
             </TabsTrigger>
             <TabsTrigger 
               value="test-runs" 
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <Play className="mr-2 h-4 w-4" />
-              Test Runs ({testRuns.length})
+              {t('pitchTest.testRunsTab', { count: testRuns.length })}
             </TabsTrigger>
             <TabsTrigger 
               value="bugs" 
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <Bug className="mr-2 h-4 w-4" />
-              Bugs ({bugReports.length})
+              {t('pitchTest.bugsTab', { count: bugReports.length })}
             </TabsTrigger>
             <TabsTrigger 
               value="ai-suggestions" 
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              AI Suggestions
+              {t('pitchTest.aiSuggestionsTab')}
             </TabsTrigger>
           </TabsList>
 
@@ -220,21 +223,21 @@ const PitchTestPage: React.FC = () => {
             {testCases.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  No test cases yet for this pitch
+                  {t('pitchTest.noTestCases')}
                 </p>
                 <Button
                   onClick={() => navigate(`/qa/test-cases/new?pitchId=${pitchId}`)}
                   className="mr-2"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Test Case
+                  {t('pitchTest.createTestCase')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setTab('ai-suggestions')}
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Generate with AI
+                  {t('pitchTest.generateWithAI')}
                 </Button>
               </div>
             ) : (
@@ -254,8 +257,8 @@ const PitchTestPage: React.FC = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {tc.totalRuns && tc.totalRuns > 0
-                            ? `Pass rate: ${tc.passRate?.toFixed(0)}% (${tc.passedRuns}/${tc.totalRuns} runs)`
-                            : 'Not yet executed'}
+                            ? t('pitchTest.passRate', { rate: tc.passRate?.toFixed(0), passed: tc.passedRuns, total: tc.totalRuns })
+                            : t('pitchTest.notExecuted')}
                         </p>
                       </div>
                     </div>
@@ -296,7 +299,7 @@ const PitchTestPage: React.FC = () => {
                               <Sparkles className="h-4 w-4 text-primary" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>AI Generated</p>
+                              <p>{t('pitchTest.aiGenerated')}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -316,14 +319,14 @@ const PitchTestPage: React.FC = () => {
             {bugReports.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  No bugs reported for this pitch
+                  {t('pitchTest.noBugs')}
                 </p>
                 <Button
                   variant="destructive"
                   onClick={() => navigate(`/qa/bugs/new?pitchId=${pitchId}`)}
                 >
                   <Bug className="mr-2 h-4 w-4" />
-                  Report Bug
+                  {t('pitchTest.reportBug')}
                 </Button>
               </div>
             ) : (
@@ -342,8 +345,8 @@ const PitchTestPage: React.FC = () => {
                           <span className="text-sm">{bug.title}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>Reported by {bug.reporterName || 'Unknown'}</span>
-                          <span>{new Date(bug.createdAt).toLocaleDateString()}</span>
+                          <span>{t('pitchTest.reportedBy', { name: bug.reporterName || 'Unknown' })}</span>
+                          <span>{formatLocalizedDate(new Date(bug.createdAt), i18n.language)}</span>
                         </div>
                       </div>
                     </div>

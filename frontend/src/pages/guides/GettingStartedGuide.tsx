@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, LogIn, LayoutDashboard, Folder, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function GettingStartedGuide() {
+    const { t } = useTranslation();
     return (
         <div className="w-full max-w-none space-y-6">
             {/* Back Navigation */}
@@ -17,9 +19,9 @@ export default function GettingStartedGuide() {
 
             {/* Header */}
             <div>
-                <h1 className="text-4xl font-bold tracking-tight">Getting Started with ShipFlow</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t('guides.gettingStarted.title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Learn the basics of ShipFlow and start managing your projects using the Shape Up methodology
+                    {t('guides.gettingStarted.subtitle')}
                 </p>
             </div>
 
@@ -30,20 +32,16 @@ export default function GettingStartedGuide() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <LogIn className="h-5 w-5" />
-                        Welcome to ShipFlow
+                        {t('guides.gettingStarted.welcome')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        ShipFlow is a project management tool built around the <strong>Shape Up methodology</strong>
-                        developed by Basecamp. It helps teams work in focused cycles, make informed betting decisions,
-                        and track progress through hill charts.
+                        {t('guides.gettingStarted.intro')}
                     </p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>💡 What is Shape Up?</strong> Shape Up is a product development methodology
-                            that emphasizes fixed time, variable scope, and small batch sizes. Teams work in
-                            6-week cycles with 2-week cool-down periods.
+                            <strong>{t('guides.gettingStarted.whatIsShapeUp')}</strong> {t('guides.gettingStarted.shapeUpDesc')}
                         </p>
                     </div>
                 </CardContent>
@@ -52,8 +50,8 @@ export default function GettingStartedGuide() {
             {/* Step 1: Logging In */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Step 1: Logging In</CardTitle>
-                    <CardDescription>Access your ShipFlow workspace</CardDescription>
+                    <CardTitle>{t('guides.gettingStarted.step1Title')}</CardTitle>
+                    <CardDescription>{t('guides.gettingStarted.step1Subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
@@ -76,7 +74,7 @@ export default function GettingStartedGuide() {
                         </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        <strong>First time?</strong> Contact your administrator to get your login credentials.
+                        <strong>{t('guides.gettingStarted.firstTime')}</strong> {t('guides.gettingStarted.firstTimeDesc')}
                     </p>
                 </CardContent>
             </Card>
