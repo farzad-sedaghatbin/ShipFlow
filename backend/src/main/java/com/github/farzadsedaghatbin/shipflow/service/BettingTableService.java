@@ -455,6 +455,10 @@ public class BettingTableService {
                 .totalHoursSpent(totalHours)
                 .appetiteHours(appetiteHours)
                 .progressPercentage(Math.min(progress, 100))
+                // Circuit breaker fields
+                .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
+                .circuitBreakerReason(pitch.getCircuitBreakerReason())
+                .circuitBreakerDate(pitch.getCircuitBreakerDate())
                 .build();
     }
 

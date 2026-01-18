@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,9 @@ class ProjectServiceTest {
     @Mock
     private CycleRepository cycleRepository;
 
+    @Mock
+    private LocalizationService localizationService;
+
     @InjectMocks
     private ProjectService projectService;
 
@@ -47,6 +51,21 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("project.key.exists")) return "Project key already exists";
+            if (key.contains("project.has.cycles")) return "Cannot delete project with existing cycles";
+            if (key.contains("project.cannot.delete.with.cycles")) return "Cannot delete project with existing cycles";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("project.key.exists")) return "Project key already exists";
+            if (key.contains("project.has.cycles")) return "Cannot delete project with existing cycles";
+            if (key.contains("project.cannot.delete.with.cycles")) return "Cannot delete project with existing cycles";
+            return key;
+        });
+
         testOwner = User.builder()
                 .id(1L)
                 .username("owner")

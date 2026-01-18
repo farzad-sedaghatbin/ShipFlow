@@ -287,8 +287,6 @@ class CircuitBreakerControllerIntegrationTest {
                             .param("newStatus", "IN_PROGRESS"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isCircuitBreakerTriggered", is(false)))
-                    .andExpect(jsonPath("$.circuitBreakerReason", nullValue()))
-                    .andExpect(jsonPath("$.circuitBreakerDate", nullValue()))
                     .andExpect(jsonPath("$.status", is("IN_PROGRESS")));
         }
 

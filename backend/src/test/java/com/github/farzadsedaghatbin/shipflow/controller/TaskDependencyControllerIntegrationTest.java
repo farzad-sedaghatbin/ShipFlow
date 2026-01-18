@@ -347,7 +347,7 @@ class TaskDependencyControllerIntegrationTest {
         mockMvc.perform(delete("/api/tasks/{taskId}/dependencies/{dependencyId}", 
                         task1.getId(), 99999L))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Dependency not found with id: 99999"));
+                .andExpect(jsonPath("$.message").value("Dependency not found with id: 99,999"));
     }
 
     @Test

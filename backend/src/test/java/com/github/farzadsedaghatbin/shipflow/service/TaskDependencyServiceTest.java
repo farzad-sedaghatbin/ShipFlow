@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +38,12 @@ class TaskDependencyServiceTest {
 
     @Mock
     private TaskRepository taskRepository;
+
+    @Mock
+    private LocalizationService localizationService;
+
+    @Mock
+    private MessageService messageService;
 
     @InjectMocks
     private TaskDependencyService taskDependencyService;
@@ -49,6 +56,41 @@ class TaskDependencyServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.different.cycle")) return "Tasks must belong to the same cycle";
+            if (key.contains("task.self.dependency")) return "A task cannot depend on itself";
+            if (key.contains("dependency.circular")) return "Circular dependency detected - would create circular reference";
+            if (key.contains("dependency.self.reference")) return "Task cannot depend on itself";
+            if (key.contains("dependency.same.cycle.required")) return "Tasks must be in the same cycle";
+            if (key.contains("dependency.already.exists")) return "Dependency already exists";
+            if (key.contains("dependency.not.found")) return "Dependency not found between tasks";
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.different.cycle")) return "Tasks must belong to the same cycle";
+            if (key.contains("task.self.dependency")) return "A task cannot depend on itself";
+            if (key.contains("dependency.circular")) return "Circular dependency detected - would create circular reference";
+            if (key.contains("dependency.self.reference")) return "Task cannot depend on itself";
+            if (key.contains("dependency.same.cycle.required")) return "Tasks must be in the same cycle";
+            if (key.contains("dependency.already.exists")) return "Dependency already exists";
+            if (key.contains("dependency.not.found")) return "Dependency not found between tasks";
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+
         testCycle = Cycle.builder()
                 .id(1L)
                 .name("Test Cycle")

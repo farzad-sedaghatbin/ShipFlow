@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.TestAIConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.SlackNotificationHistory;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ class SlackIntegrationControllerTest {
 
     @MockBean
     private SlackIntegrationService slackService;
+
+    @MockBean
+    private MessageService messageService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -226,6 +230,7 @@ class SlackIntegrationControllerTest {
                 .build();
 
         doNothing().when(slackService).sendTestNotification(anyLong(), any());
+        when(messageService.getMessage("slack.notification.sent")).thenReturn("Test notification sent successfully");
 
         // When & Then
         mockMvc.perform(post("/api/slack/configurations/1/test")

@@ -41,6 +41,12 @@ class CustomDashboardServiceTest {
     @Mock
     private TeamRepository teamRepository;
 
+    @Mock
+    private LocalizationService localizationService;
+
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private CustomDashboardService customDashboardService;
 
@@ -52,6 +58,33 @@ class CustomDashboardServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("unauthorized")) return "Not authorized to access this dashboard";
+            if (key.contains("dashboard.not.found")) return "Dashboard not found";
+            if (key.contains("dashboard.name.duplicate")) return "Dashboard name already exists";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("unauthorized")) return "Not authorized to access this dashboard";
+            if (key.contains("dashboard.not.found")) return "Dashboard not found";
+            if (key.contains("dashboard.name.duplicate")) return "Dashboard name already exists";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("unauthorized")) return "Not authorized to access this dashboard";
+            if (key.contains("dashboard.not.found")) return "Dashboard not found";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("unauthorized")) return "Not authorized to access this dashboard";
+            if (key.contains("dashboard.not.found")) return "Dashboard not found";
+            return key;
+        });
+        
         testUser = new User();
         testUser.setId(1L);
         testUser.setUsername("testuser");

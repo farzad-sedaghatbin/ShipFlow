@@ -25,8 +25,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;import static org.mockito.ArgumentMatchers.anyString;import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for DocumentService.
@@ -40,6 +39,9 @@ class DocumentServiceTest {
     @Mock
     private KnowledgeIngestionService knowledgeIngestionService;
 
+    @Mock
+    private LocalizationService localizationService;
+
     @InjectMocks
     private DocumentService documentService;
 
@@ -48,6 +50,19 @@ class DocumentServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("file.not.found")) return "File not found or not readable";
+            if (key.contains("document.not.found")) return "File not found or not readable";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("file.not.found")) return "File not found or not readable";
+            if (key.contains("document.not.found")) return "File not found or not readable";
+            return key;
+        });
+        
         ReflectionTestUtils.setField(documentService, "uploadDir", tempDir.toString());
         ReflectionTestUtils.setField(documentService, "maxFileSize", 10485760L); // 10MB
     }

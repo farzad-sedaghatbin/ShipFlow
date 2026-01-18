@@ -51,6 +51,9 @@ class WorkLogTimerServiceTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private LocalizationService localizationService;
+
     @InjectMocks
     private WorkLogTimerService timerService;
 
@@ -163,6 +166,9 @@ class WorkLogTimerServiceTest {
                 .note("Invalid request")
                 .build();
 
+        when(localizationService.getMessage("timer.invalid.params"))
+                .thenReturn("Either pitchId or taskId must be provided");
+
         // When / Then
         assertThatThrownBy(() -> timerService.startTimer(request))
                 .isInstanceOf(BadRequestException.class)
@@ -177,7 +183,8 @@ class WorkLogTimerServiceTest {
                 .taskId(1L)
                 .note("Invalid request")
                 .build();
-
+        when(localizationService.getMessage("timer.invalid.params"))
+                .thenReturn("Either pitchId or taskId must be provided, but not both");
         // When / Then
         assertThatThrownBy(() -> timerService.startTimer(request))
                 .isInstanceOf(BadRequestException.class)
@@ -199,6 +206,9 @@ class WorkLogTimerServiceTest {
                 .build();
 
         when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(existingTimer));
+
+        when(localizationService.getMessage("timer.already.active"))
+                .thenReturn("You already have an active timer");
 
         // When / Then
         assertThatThrownBy(() -> timerService.startTimer(request))
