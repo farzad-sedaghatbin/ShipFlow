@@ -231,7 +231,8 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
   // Determine which nav items to show based on project type
   // When "All Projects" is selected, show Shape Up navigation (full features)
-  const mainNavItems = (isKanbanProject && !isAllProjectsSelected) ? kanbanMainNavItems : shapeUpMainNavItems;
+  const showKanbanFeatures = isKanbanProject && !isAllProjectsSelected;
+  const mainNavItems = showKanbanFeatures ? kanbanMainNavItems : shapeUpMainNavItems;
   const showCycleWorkspace = !isKanbanProject || isAllProjectsSelected;
 
   return (
@@ -287,7 +288,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
           
           {/* Reports - For Kanban projects, show directly (not in Cycle Workspace) */}
-          {isKanbanProject && !isAllProjectsSelected && (
+          {showKanbanFeatures && (
             <NavItem
               item={{ textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' }}
               isActive={currentPath.startsWith('/reports')}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
@@ -49,6 +49,7 @@ import { DashboardCustomizer } from '../components/DashboardCustomizer';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
   const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
@@ -214,12 +215,13 @@ export default function Dashboard() {
               }}
               secondaryAction={{
                 label: t('dashboard.welcome.learnMore'),
-                onClick: () => window.open(
-                  isKanbanProject 
-                    ? '/help/project-types'
-                    : 'https://basecamp.com/shapeup',
-                  isKanbanProject ? '_self' : '_blank'
-                ),
+                onClick: () => {
+                  if (isKanbanProject) {
+                    navigate('/help/project-types');
+                  } else {
+                    window.open('https://basecamp.com/shapeup', '_blank');
+                  }
+                },
               }}
             />
           </CardContent>

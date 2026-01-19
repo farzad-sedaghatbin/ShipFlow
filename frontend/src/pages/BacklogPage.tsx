@@ -83,7 +83,7 @@ import TimerWidget from '../components/TimerWidget';
 import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import KanbanBoard from '../components/KanbanBoard';
-import { useProject } from '../contexts';
+import { useProject, useAuth } from '../contexts';
 
 // View mode type
 type ViewMode = 'list' | 'kanban';
@@ -110,6 +110,7 @@ export default function BacklogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
   const { isKanbanProject, currentProject } = useProject();
+  const { user } = useAuth();
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -307,9 +308,8 @@ export default function BacklogPage() {
         }
         
         // Filter by tab (my tasks)
-        if (tabValue === 'my') {
-          // This would need current user's person ID - for now, filter if assignee matches
-          // TODO: Implement proper "my tasks" filtering for Kanban
+        if (tabValue === 'my' && user?.personId) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.assigneeId === user.personId);
         }
         
         setTasks(filteredTasks);

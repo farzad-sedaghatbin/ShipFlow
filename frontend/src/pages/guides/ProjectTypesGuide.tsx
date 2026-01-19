@@ -34,7 +34,7 @@ export default function ProjectTypesGuide() {
             </Button>
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               <Layers className="h-3 w-3 mr-1" />
-              Project Types Guide
+              {t('helpGuides.projectTypes')}
             </Badge>
           </div>
         </div>
