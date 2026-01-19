@@ -54,17 +54,21 @@ export default function Reports() {
 
   useEffect(() => {
     const abortController = new AbortController();
-    loadCycles();
+    if (!isKanbanProject) {
+      loadCycles();
+    } else {
+      setLoading(false);
+    }
     return () => abortController.abort();
-  }, []);
+  }, [isKanbanProject]);
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (selectedCycle) {
+    if (selectedCycle && !isKanbanProject) {
       loadReport(Number(selectedCycle));
     }
     return () => abortController.abort();
-  }, [selectedCycle]);
+  }, [selectedCycle, isKanbanProject]);
 
   const loadCycles = async () => {
     try {
