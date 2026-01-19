@@ -7,7 +7,6 @@ import {
   Zap,
   Target,
   TrendingUp,
-  Calendar,
   CheckCircle,
   AlertCircle,
   ArrowRight,
