@@ -154,10 +154,10 @@ export default function Reports() {
 
   const riskData = report?.riskDistribution
     ? [
-        { name: t('reportsPage.lowRiskLabel'), value: report.riskDistribution.lowRiskCount, color: '#10b981' },
-        { name: t('reportsPage.mediumRiskLabel'), value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
-        { name: t('reportsPage.highRiskLabel'), value: report.riskDistribution.highRiskCount, color: '#f97316' },
-        { name: t('reportsPage.criticalRiskLabel'), value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
+        { name: t('reportsPage.lowRisk'), value: report.riskDistribution.lowRiskCount, color: '#10b981' },
+        { name: t('reportsPage.mediumRisk'), value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
+        { name: t('reportsPage.highRisk'), value: report.riskDistribution.highRiskCount, color: '#f97316' },
+        { name: t('reportsPage.criticalRisk'), value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -375,7 +375,7 @@ export default function Reports() {
                   <p className="text-2xl font-bold text-green-600">{report.completedTasks}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">{t('reportsPage.estimateHours')}</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.estHours')}</p>
                   <p className="text-2xl font-bold">{report.totalTaskEstimateHours.toFixed(0)}h</p>
                 </div>
                 <div className="text-center">
@@ -413,7 +413,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>{t('reportsPage.pitchStatusDist')}</CardTitle>
+                <CardTitle>{t('reportsPage.pitchStatusDistribution')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
