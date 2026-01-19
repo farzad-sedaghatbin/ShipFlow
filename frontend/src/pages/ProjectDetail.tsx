@@ -15,6 +15,8 @@ import {
   Play,
   Pause,
   CheckCircle2,
+  ListTodo,
+  Kanban,
 } from 'lucide-react';
 import { Project, Cycle, Team } from '../types';
 import projectService from '../services/projectService';
@@ -248,14 +250,14 @@ export default function ProjectDetail() {
                   variant="outline"
                   size="icon"
                   onClick={() => setDeleteDialog(true)}
-                  disabled={(project.cycleCount || 0) > 0}
+                  disabled={project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0}
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {(project.cycleCount || 0) > 0 ? t('projectDetail.cannotDelete') : t('projectDetail.delete')}
+                {project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0 ? t('projectDetail.cannotDelete') : t('projectDetail.delete')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -275,48 +277,60 @@ export default function ProjectDetail() {
       )}
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${project.projectType === 'KANBAN' ? 'md:grid-cols-2' : 'md:grid-cols-4'}`}>
+        {/* Project Type Badge */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
+              <div className={`p-2 rounded-lg ${project.projectType === 'KANBAN' ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
+                {project.projectType === 'KANBAN' ? (
+                  <Kanban className="h-5 w-5 text-purple-600" />
+                ) : (
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                )}
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t('projectDetail.totalCycles')}</p>
-                <p className="text-2xl font-bold">{project.cycleCount || 0}</p>
+                <p className="text-sm text-muted-foreground">{t('projectDetail.projectType')}</p>
+                <p className="text-2xl font-bold">
+                  {project.projectType === 'KANBAN' ? t('projects.kanban') : t('projects.shapeUp')}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Play className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('projectDetail.activeCycles')}</p>
-                <p className="text-2xl font-bold">{activeCycles.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Shape Up specific stats */}
+        {project.projectType !== 'KANBAN' && (
+          <>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <Play className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t('projectDetail.activeCycles')}</p>
+                    <p className="text-2xl font-bold">{activeCycles.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <CheckCircle2 className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('projectDetail.completed')}</p>
-                <p className="text-2xl font-bold">{completedCycles.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t('projectDetail.completedCycles')}</p>
+                    <p className="text-2xl font-bold">{completedCycles.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         <Card>
           <CardContent className="pt-6">
@@ -348,58 +362,80 @@ export default function ProjectDetail() {
         </Card>
       )}
 
-      {/* Cycles List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">{t('projectDetail.cycles')}</CardTitle>
-            <Button size="sm" onClick={() => navigate(`/cycles/new?project=${project.id}`)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('projectDetail.newCycle')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {cycles.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              {t('projectDetail.noCycles')}
+      {/* Kanban: Quick Access to Backlog */}
+      {project.projectType === 'KANBAN' && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">{t('projectDetail.backlog')}</CardTitle>
+              <Button size="sm" onClick={() => navigate('/backlog')}>
+                <ListTodo className="h-4 w-4 mr-2" />
+                {t('projectDetail.viewBacklog')}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {t('projectDetail.kanbanDescription')}
             </p>
-          ) : (
-            <div className="space-y-3">
-              {cycles.map((cycle) => (
-                <Link
-                  key={cycle.id}
-                  to={`/cycles/${cycle.id}`}
-                  className="block p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{cycle.name}</h4>
-                        {getCycleStatusBadge(cycle)}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" aria-hidden="true" />
-                          <time dateTime={cycle.startDate}>{formatDate(cycle.startDate)}</time>
-                          {' - '}
-                          <time dateTime={cycle.endDate}>{formatDate(cycle.endDate)}</time>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shape Up: Cycles List */}
+      {project.projectType !== 'KANBAN' && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">{t('projectDetail.cycles')}</CardTitle>
+              <Button size="sm" onClick={() => navigate(`/cycles/new?project=${project.id}`)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('projectDetail.newCycle')}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {cycles.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {t('projectDetail.noCycles')}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {cycles.map((cycle) => (
+                  <Link
+                    key={cycle.id}
+                    to={`/cycles/${cycle.id}`}
+                    className="block p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold">{cycle.name}</h4>
+                          {getCycleStatusBadge(cycle)}
                         </div>
-                        {cycle.pitchCount !== undefined && (
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            {cycle.pitchCount} {t('projectDetail.pitches')}
+                            <Calendar className="h-3 w-3" aria-hidden="true" />
+                            <time dateTime={cycle.startDate}>{formatDate(cycle.startDate)}</time>
+                            {' - '}
+                            <time dateTime={cycle.endDate}>{formatDate(cycle.endDate)}</time>
                           </div>
-                        )}
+                          {cycle.pitchCount !== undefined && (
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              {cycle.pitchCount} {t('projectDetail.pitches')}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Teams List */}
       {teams.length > 0 && (

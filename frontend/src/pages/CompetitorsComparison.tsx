@@ -54,12 +54,13 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'Shape Up', feature: 'Circuit breaker mechanism', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Shape Up', feature: 'Pitch shaping workflow', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
   { category: 'Shape Up', feature: 'Cooldown periods', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
+  { category: 'Shape Up', feature: 'Dual mode (Shape Up + Kanban)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   
   // Progress Visualization
   { category: 'Progress', feature: 'Hill charts', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Progress', feature: 'Interactive hill chart editing', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Progress', feature: 'Gantt charts', shipflow: false, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  { category: 'Progress', feature: 'Kanban boards', shipflow: false, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Progress', feature: 'Kanban boards', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   { category: 'Progress', feature: 'Sprint burndown', shipflow: false, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: false, clickup: true },
   
   // AI & Intelligence

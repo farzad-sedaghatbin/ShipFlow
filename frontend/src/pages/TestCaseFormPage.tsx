@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useProject } from '../contexts';
 import { safeParseId } from '../utils/validation';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { pitchService } from '../services/pitchService';
@@ -46,6 +47,7 @@ const TestCaseFormPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
+  const { isKanbanProject } = useProject();
   const id = safeParseId(idParam);
   const isEdit = !!id;
 
@@ -288,73 +290,76 @@ const TestCaseFormPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('testCaseForm.pitch')}</Label>
-                <Select
-                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('testCaseForm.selectPitch')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={String(pitch.id)}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('testCaseForm.scope')}</Label>
-                <Select
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : "No specific scope"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 pb-2">
-                      <Input
-                        placeholder={t('testCaseForm.searchScopes')}
-                        value={scopeSearch}
-                        onChange={(e) => setScopeSearch(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                    <SelectItem value="none">No specific scope</SelectItem>
-                    {searchingScopes ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.searching')}</div>
-                    ) : !formData.pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.minCharacters')}</div>
-                    ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
-                    ) : scopes.length === 0 && !formData.pitchId ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
-                    ) : (
-                      scopes.slice(0, 50).map((scope) => (
-                        <SelectItem key={scope.id} value={String(scope.id)}>
-                          {scope.scope}
+            {/* Hide pitch and scope fields for Kanban projects - they are Shape Up concepts */}
+            {!isKanbanProject && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('testCaseForm.pitch')}</Label>
+                  <Select
+                    value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                    onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('testCaseForm.selectPitch')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {pitches.map((pitch) => (
+                        <SelectItem key={pitch.id} value={String(pitch.id)}>
+                          {pitch.title}
                         </SelectItem>
-                      ))
-                    )}
-                    {scopes.length > 50 && (
-                      <div className="py-2 text-center text-xs text-muted-foreground">
-                        Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t('testCaseForm.scope')}</Label>
+                  <Select
+                    value={formData.scopeId ? String(formData.scopeId) : 'none'}
+                    onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : "No specific scope"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="px-2 pb-2">
+                        <Input
+                          placeholder={t('testCaseForm.searchScopes')}
+                          value={scopeSearch}
+                          onChange={(e) => setScopeSearch(e.target.value)}
+                          className="h-8"
+                        />
                       </div>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {formData.pitchId ? `${scopes.length} scopes available for selected pitch` : 'Search to find scopes (min 3 chars)'}
-                </p>
+                      <SelectItem value="none">No specific scope</SelectItem>
+                      {searchingScopes ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.searching')}</div>
+                      ) : !formData.pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.minCharacters')}</div>
+                      ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
+                      ) : scopes.length === 0 && !formData.pitchId ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
+                      ) : (
+                        scopes.slice(0, 50).map((scope) => (
+                          <SelectItem key={scope.id} value={String(scope.id)}>
+                            {scope.scope}
+                          </SelectItem>
+                        ))
+                      )}
+                      {scopes.length > 50 && (
+                        <div className="py-2 text-center text-xs text-muted-foreground">
+                          Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.pitchId ? `${scopes.length} scopes available for selected pitch` : 'Search to find scopes (min 3 chars)'}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

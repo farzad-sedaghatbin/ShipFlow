@@ -68,6 +68,7 @@ import { QAFloatingButton } from './QAFloatingButton';
 import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
+import { useProject } from '../contexts';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -80,14 +81,20 @@ interface NavItemConfig {
   tourId?: string;
 }
 
-// Main navigation items (always visible)
-const mainNavItems: NavItemConfig[] = [
+// Main navigation items for Shape Up mode (with Cycles)
+const shapeUpMainNavItems: NavItemConfig[] = [
   { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
   { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
   { textKey: 'nav.cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
 ];
 
-// Cycle Workspace - contextual items when viewing cycle content
+// Main navigation items for Kanban mode (no Cycles)
+const kanbanMainNavItems: NavItemConfig[] = [
+  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
+  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
+];
+
+// Cycle Workspace - contextual items when viewing cycle content (Shape Up only)
 const cycleWorkspaceItems: NavItemConfig[] = [
   { textKey: 'nav.pitchBoard', icon: FileText, path: '/pitches', tourId: 'pitches-menu' },
   { textKey: 'nav.betting', icon: Dices, path: '/betting', tourId: 'betting-menu' },
@@ -214,12 +221,18 @@ function SectionHeader({ textKey }: { textKey: string }) {
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
   const { user } = useAuth();
+  const { isKanbanProject, isAllProjectsSelected } = useProject();
   const currentPath = location.pathname;
 
   // Check if we're in a cycle context (viewing pitches, betting, health, retros, reports)
   const isCycleContext = ['/pitches', '/betting', '/health', '/retros', '/reports'].some(
     path => currentPath.startsWith(path)
   ) || /\/cycles\/\d+/.test(currentPath);
+
+  // Determine which nav items to show based on project type
+  // When "All Projects" is selected, show Shape Up navigation (full features)
+  const mainNavItems = (isKanbanProject && !isAllProjectsSelected) ? kanbanMainNavItems : shapeUpMainNavItems;
+  const showCycleWorkspace = !isKanbanProject || isAllProjectsSelected;
 
   return (
     <div className="flex h-full flex-col" data-tour="sidebar">
@@ -245,16 +258,20 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           ))}
 
-          {/* Cycle Workspace Section */}
-          <SectionHeader textKey="nav.sections.cycleWorkspace" />
-          <NavGroup
-            titleKey="nav.groups.cycleTools"
-            icon={Target}
-            items={cycleWorkspaceItems}
-            currentPath={currentPath}
-            onItemClick={onItemClick}
-            defaultOpen={isCycleContext}
-          />
+          {/* Cycle Workspace Section - Only for Shape Up projects or All Projects */}
+          {showCycleWorkspace && (
+            <>
+              <SectionHeader textKey="nav.sections.cycleWorkspace" />
+              <NavGroup
+                titleKey="nav.groups.cycleTools"
+                icon={Target}
+                items={cycleWorkspaceItems}
+                currentPath={currentPath}
+                onItemClick={onItemClick}
+                defaultOpen={isCycleContext}
+              />
+            </>
+          )}
 
           {/* Work Management Section - Direct items, no collapsible groups */}
           <SectionHeader textKey="nav.sections.workManagement" />
@@ -268,6 +285,15 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             isActive={currentPath.startsWith('/time')}
             onClick={onItemClick}
           />
+          
+          {/* Reports - For Kanban projects, show directly (not in Cycle Workspace) */}
+          {isKanbanProject && !isAllProjectsSelected && (
+            <NavItem
+              item={{ textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' }}
+              isActive={currentPath.startsWith('/reports')}
+              onClick={onItemClick}
+            />
+          )}
 
           {/* Meetings */}
           {meetingsItems.map((item) => (

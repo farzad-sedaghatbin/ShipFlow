@@ -11,7 +11,8 @@ import {
     Beaker,
     RotateCcw,
     BarChart3,
-    Zap
+    Zap,
+    Layers
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,13 @@ export default function HelpGuides() {
             icon: BookOpen,
             path: '/help/getting-started',
             color: 'text-blue-500',
+        },
+        {
+            title: t('helpGuides.projectTypes'),
+            description: t('helpGuides.projectTypesDesc'),
+            icon: Layers,
+            path: '/help/project-types',
+            color: 'text-teal-500',
         },
         {
             title: t('helpGuides.hillCharts'),

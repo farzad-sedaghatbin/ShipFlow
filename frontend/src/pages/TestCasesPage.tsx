@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -50,6 +50,7 @@ import { cn } from '../lib/utils';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
+import { useProject } from '../contexts';
 import {
   TestCase,
   TestCaseStatus,
@@ -77,6 +78,7 @@ const statusVariants: Record<TestCaseStatus, string> = {
 const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,9 +95,22 @@ const TestCasesPage: React.FC = () => {
     testCase: null,
   });
 
+  // Filter cycles by current project
+  const filteredCycles = useMemo(() => {
+    if (isAllProjectsSelected) return cycles;
+    return cycles.filter(c => c.projectId === currentProject?.id);
+  }, [cycles, currentProject, isAllProjectsSelected]);
+
+  // Filter pitches by current project's cycles
+  const filteredPitches = useMemo(() => {
+    if (isAllProjectsSelected) return pitches;
+    const projectCycleIds = new Set(filteredCycles.map(c => c.id));
+    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+  }, [pitches, filteredCycles, isAllProjectsSelected]);
+
   useEffect(() => {
     loadTestCases();
-  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter]);
+  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, currentProject?.id]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -137,7 +152,16 @@ const TestCasesPage: React.FC = () => {
       } else {
         response = await qaTestManagementService.getAllTestCases();
       }
-      setTestCases(response.data);
+      
+      let cases = response.data;
+      // Filter by current project if one is selected
+      if (!isAllProjectsSelected && currentProject) {
+        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
+        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
+        cases = cases.filter(tc => tc.pitchId && projectPitchIds.has(tc.pitchId));
+      }
+      
+      setTestCases(cases);
     } catch (err) {
       setError(t('testCases.loadFailed'));
       console.error(err);
@@ -304,38 +328,43 @@ const TestCasesPage: React.FC = () => {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={cycleFilter.toString()}
-          onValueChange={(value) => setCycleFilter(value === 'all' ? 'all' : parseInt(value))}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('testCases.cycle')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('testCases.allCycles')}</SelectItem>
-            {cycles.map((cycle) => (
-              <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                {cycle.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={pitchFilter.toString()}
-          onValueChange={(value) => setPitchFilter(value === 'all' ? 'all' : parseInt(value))}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('testCases.pitch')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('testCases.allPitches')}</SelectItem>
-            {pitches.map((pitch) => (
-              <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                {pitch.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Hide cycle and pitch filters for Kanban projects - Shape Up concepts */}
+        {!isKanbanProject && (
+          <>
+            <Select
+              value={cycleFilter.toString()}
+              onValueChange={(value) => setCycleFilter(value === 'all' ? 'all' : parseInt(value))}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('testCases.cycle')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('testCases.allCycles')}</SelectItem>
+                {filteredCycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={pitchFilter.toString()}
+              onValueChange={(value) => setPitchFilter(value === 'all' ? 'all' : parseInt(value))}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('testCases.pitch')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('testCases.allPitches')}</SelectItem>
+                {filteredPitches.map((pitch) => (
+                  <SelectItem key={pitch.id} value={pitch.id.toString()}>
+                    {pitch.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
       {/* Test Cases Table */}

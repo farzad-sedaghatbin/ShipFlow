@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Project Type System**: Support for both Kanban and Shape Up methodologies
+  - **Backend Implementation**:
+    - New `ProjectType` enum (SHAPE_UP, KANBAN) with database migration V55
+    - Automatic "Continuous Flow" cycle creation for Kanban projects
+    - `ProjectDTO` and `CreateProjectRequest` include projectType field
+    - Backward compatibility: All existing projects default to SHAPE_UP
+    - Comprehensive unit tests in `ProjectTypeTest.java` (5 tests, 100% pass rate)
+  - **Frontend Implementation**:
+    - Project type selection in create/edit project dialogs
+    - `useProject` context with `isKanbanProject` computed property
+    - Conditional navigation: Cycles menu hidden for Kanban projects
+    - Automatic view switching: Kanban projects default to board view
+  - **Kanban-Specific Features**:
+    - Pitch/scope fields hidden in task/bug/testcase forms
+    - Cycle and pitch filters hidden in list views (BacklogPage, WorkLogsPage, TestCasesPage, BugReportsPage)
+    - Terminology changes: "Feature Tasks" vs "Pitch Tasks" based on project type
+    - Kanban board enhancements: subtask creation, timer start functionality
+  - **Project-Based Filtering**:
+    - All pages filter data by currently selected project
+    - "All Projects" selection shows data from all projects
+    - Consistent filtering across BacklogPage, WorkLogsPage, TestCasesPage, BugReportsPage, MeetingList
+  - **Documentation**:
+    - Comprehensive architecture doc: `PROJECT_TYPE_ARCHITECTURE.md`
+    - Updated README.md with project type feature comparison
+    - Test coverage documentation and implementation summary
+    - New comprehensive guide: `ProjectTypesGuide.tsx` explaining both modes
+    - Updated landing page with dual mode feature highlight
+    - Updated competitor comparison page with Kanban support
+  - **UI Consistency & Internationalization**:
+    - Dashboard hides cycle/pitch widgets for Kanban projects
+    - Reports page shows appropriate message for Kanban (no cycle-based reports)
+    - Documentation guides updated with project type disclaimers
+    - Complete Farsi translations for dual mode features
+    - Help & Guides page includes Project Types guide
+
 - **Farsi (Persian) Language Support**: Comprehensive RTL internationalization
   - **Complete Translation Coverage**: 3,650+ translation keys in Persian (fa.json)
     - All UI components, forms, navigation, and messages fully translated

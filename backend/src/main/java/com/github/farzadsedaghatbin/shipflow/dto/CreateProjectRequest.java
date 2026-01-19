@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -31,4 +32,12 @@ public class CreateProjectRequest {
     private String logoUrl;
 
     private Long ownerId;
+
+    /**
+     * Project methodology type.
+     * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown (default)
+     * KANBAN: Continuous flow with visual board, no cycles
+     */
+    @Builder.Default
+    private ProjectType projectType = ProjectType.SHAPE_UP;
 }

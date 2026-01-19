@@ -219,6 +219,8 @@
     "welcome": {
       "title": "Welcome to ShipFlow! 🎉",
       "description": "You're all set to start shipping. Shape Up is about making meaningful progress in focused cycles. Let's get you started with your first cycle.",
+      "kanbanTitle": "Welcome to Your Kanban Project! 🎉",
+      "kanbanDescription": "You're ready to start managing tasks in continuous flow. Let's get you started with your first task.",
       "steps": {
         "createCycle": {
           "title": "Create a Cycle",
@@ -231,9 +233,22 @@
         "trackProgress": {
           "title": "Track on Hill Chart",
           "description": "Visualize progress as you figure things out and make them happen."
+        },
+        "createTasks": {
+          "title": "Create Tasks",
+          "description": "Add tasks to your backlog and organize them on the Kanban board"
+        },
+        "moveCards": {
+          "title": "Move Cards",
+          "description": "Drag tasks through TODO, In Progress, and Done columns"
+        },
+        "trackTime": {
+          "title": "Track Time",
+          "description": "Use work log timers to track effort on each task"
         }
       },
       "createFirstCycle": "Create Your First Cycle",
+      "createFirstTask": "Create First Task",
       "learnMore": "Learn About Shape Up"
     },
     "overview": "Overview",
@@ -286,6 +301,11 @@
     "projectKey": "Project Key",
     "projectDescription": "Description",
     "projectColor": "Project Color",
+    "projectType": "Project Type",
+    "shapeUp": "Shape Up",
+    "shapeUpDescription": "6-week cycles with betting, pitches & cooldown",
+    "kanban": "Kanban",
+    "kanbanDescription": "Continuous flow with visual board",
     "selectColor": "Select Color",
     "selectColorValue": "Select a color",
     "logoUrl": "Logo URL (optional)",
@@ -303,6 +323,8 @@
     "viewDetailsFor": "View details for {{name}}",
     "viewCycles": "View Cycles",
     "viewCyclesFor": "View cycles for {{name}}",
+    "viewBacklog": "View Backlog",
+    "viewBacklogFor": "View backlog for {{name}}",
     "editProjectFor": "Edit {{name}}",
     "activate": "Activate",
     "noProjectsFound": "No projects found",
@@ -1140,6 +1162,8 @@
     "newToShipFlow": "New to ShipFlow? Start with \"Getting Started with ShipFlow\" to learn the fundamentals, then explore other guides based on your needs.",
     "gettingStarted": "Getting Started with ShipFlow",
     "gettingStartedDesc": "Learn the basics of ShipFlow, from logging in to navigating the interface and understanding core concepts.",
+    "projectTypes": "Dual Project Modes",
+    "projectTypesDesc": "Understand Shape Up vs Kanban modes and choose the right methodology for each project.",
     "hillCharts": "Understanding Hill Charts",
     "hillChartsDesc": "Master the hill chart visualization to track progress through the figuring-out and making-it-happen phases.",
     "bettingMeeting": "Running a Betting Meeting",
@@ -1206,6 +1230,7 @@
     "cannotDeleteWithCycles": "Cannot delete project with cycles",
     "archived": "Archived",
     "description": "Description",
+    "projectType": "Project Type",
     "totalCycles": "Total Cycles",
     "activeCycles": "Active Cycles",
     "activeCycle": "Active Cycle",
@@ -1232,6 +1257,9 @@
     "teams": "Teams",
     "cycles": "Cycles",
     "cycle": "Cycle",
+    "backlog": "Backlog",
+    "viewBacklog": "View Backlog",
+    "kanbanDescription": "This is a Kanban project with continuous flow. Manage your tasks in the backlog using the Kanban board view.",
     "projectOwner": "Project Owner",
     "deleteProject": "Delete Project",
     "deleteConfirm": "Are you sure you want to delete '{{name}}'? This action cannot be undone.",
@@ -2108,6 +2136,8 @@
     "title": "Reports",
     "noCyclesFound": "No Cycles Found",
     "noCyclesDesc": "Create a cycle first to generate reports",
+    "kanbanTitle": "Cycle Reports Not Available",
+    "kanbanDesc": "Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.",
     "selectCycle": "Select Cycle",
     "exportPDF": "Export PDF",
     "exportCSV": "Export CSV",
@@ -2164,7 +2194,9 @@
     "allCycles": "All Cycles",
     "newTask": "New Task",
     "selectCycleToCreate": "Please select a cycle to create a task",
+    "noDefaultCycle": "No default cycle found for this project",
     "pitchTasks": "Pitch Tasks",
+    "featureTasks": "Feature Tasks",
     "debtImprovements": "Debt & Improvements",
     "taskOverview": "Task Overview",
     "total": "Total",
@@ -2260,6 +2292,7 @@
     },
     "categoryDescription": {
       "pitchScope": "Tasks within the pitch scope",
+      "featureScope": "Feature tasks for this project",
       "debtImprovement": "Technical debt and improvements",
       "bug": "Software defects and issues",
       "feature": "New functionality requests",
@@ -2267,6 +2300,16 @@
       "research": "Investigation and exploration tasks",
       "chore": "Maintenance and housekeeping tasks"
     },
+    "viewMode": {
+      "list": "List View",
+      "kanban": "Kanban Board"
+    },
+    "kanban": {
+      "noTasks": "No tasks in this column",
+      "dragToMove": "Drag to move between columns"
+    },
+    "blockedBy": "Blocked ({{count}})",
+    "blocking": "Blocking ({{count}})",
     "statusOptions": {
       "todo": "To Do",
       "backlog": "Backlog",
@@ -3242,6 +3285,8 @@
     "taskInDiscovery": "task in discovery",
     "featuresTitle": "Everything You Need for Shape Up",
     "featuresDesc": "From cycle planning to risk analysis, ShipFlow provides all the tools your team needs to implement Shape Up successfully.",
+    "dualProjectModes": "Dual Project Modes",
+    "dualProjectModesDesc": "Choose between Shape Up (6-week cycles with betting) or Kanban (continuous flow) mode for each project. The only tool that supports both methodologies natively.",
     "cycleManagement": "Cycle Management",
     "cycleManagementDesc": "Create and manage 6-week development cycles with betting and building phases following Shape Up methodology.",
     "hillCharts": "Hill Charts",

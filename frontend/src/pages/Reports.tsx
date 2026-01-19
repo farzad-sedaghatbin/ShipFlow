@@ -39,11 +39,13 @@ import StatusChip from '../components/StatusChip';
 import EmptyState from '../components/EmptyState';
 import { EmptyReportsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
+import { useProject } from '../contexts';
 
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function Reports() {
   const { t } = useTranslation();
+  const { isKanbanProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
@@ -168,6 +170,25 @@ export default function Reports() {
         <div className="flex justify-center items-center min-h-[40vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      </div>
+    );
+  }
+
+  // Show message for Kanban projects
+  if (isKanbanProject) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
+        <Card>
+          <CardContent className="py-12">
+            <EmptyState
+              illustration={<EmptyReportsIllustration />}
+              title={t('reportsPage.kanbanTitle', 'Cycle Reports Not Available')}
+              description={t('reportsPage.kanbanDesc', 'Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.')}
+              size="medium"
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -218,6 +218,8 @@
     "welcome": {
       "title": "به ShipFlow خوش آمدید! 🎉",
       "description": "شما آماده شروع ارسال هستید. Shape Up درباره پیشرفت معنادار در سیکل‌های متمرکز است. بیایید با اولین سیکل شما شروع کنیم.",
+      "kanbanTitle": "به پروژه کانبان خود خوش آمدید! 🎉",
+      "kanbanDescription": "شما آماده مدیریت وظایف در جریان مداوم هستید. بیایید با اولین وظیفه شما شروع کنیم.",
       "steps": {
         "createCycle": {
           "title": "ایجاد سیکل",
@@ -230,9 +232,22 @@
         "trackProgress": {
           "title": "پیگیری در نمودار تپه",
           "description": "پیشرفت را در حالی که چیزها را می‌فهمید و انجام می‌دهید تصویرسازی کنید."
+        },
+        "createTasks": {
+          "title": "ایجاد وظایف",
+          "description": "وظایف را به بک‌لاگ خود اضافه کنید و آن‌ها را در تخته کانبان سازماندهی کنید"
+        },
+        "moveCards": {
+          "title": "جابجایی کارت‌ها",
+          "description": "وظایف را از ستون‌های TODO، در حال انجام و انجام شده بکشید"
+        },
+        "trackTime": {
+          "title": "ثبت زمان",
+          "description": "از تایمرهای گزارش کار برای پیگیری تلاش در هر وظیفه استفاده کنید"
         }
       },
       "createFirstCycle": "ایجاد اولین سیکل",
+      "createFirstTask": "ایجاد اولین وظیفه",
       "learnMore": "درباره Shape Up بیشتر بدانید"
     },
     "overview": "نمای کلی",
@@ -282,6 +297,11 @@
     "projectKey": "کلید پروژه",
     "projectDescription": "توضیحات",
     "projectColor": "رنگ پروژه",
+    "projectType": "نوع پروژه",
+    "shapeUp": "Shape Up",
+    "shapeUpDescription": "چرخه‌های ۶ هفته‌ای با شرط‌بندی و پیچ",
+    "kanban": "کانبان",
+    "kanbanDescription": "جریان مداوم با تخته بصری",
     "selectColor": "انتخاب رنگ",
     "selectColorValue": "یک رنگ انتخاب کنید",
     "logoUrl": "آدرس لوگو (اختیاری)",
@@ -296,6 +316,8 @@
     "viewDetailsFor": "مشاهده جزئیات {{name}}",
     "viewCycles": "مشاهده چرخه‌ها",
     "viewCyclesFor": "مشاهده چرخه‌های {{name}}",
+    "viewBacklog": "مشاهده باکلاگ",
+    "viewBacklogFor": "مشاهده باکلاگ {{name}}",
     "editProjectFor": "ویرایش {{name}}",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟",
     "confirmDeleteDescription": "این عمل پروژه و تمام داده‌های مرتبط را برای همیشه حذف می‌کند. این عمل قابل بازگشت نیست.",
@@ -842,6 +864,8 @@
     "aiPoweredTestDesc": "تولید موارد تست با هوش مصنوعی، اجرای مجموعه تست‌ها، ردیابی پوشش و حفظ کیفیت با گزارش باگ یکپارچه.",
     "wcagAccessible": "قابل دسترس WCAG 2.1 AA",
     "wcagAccessibleDesc": "ناوبری کامل صفحه‌کلید، پشتیبانی صفحه‌خوان، کنتراست بالا و نشانگرهای فوکوس برای همه کاربران.",
+    "dualProjectModes": "حالت‌های دوگانه پروژه",
+    "dualProjectModesDesc": "بین حالت Shape Up (سیکل‌های ۶ هفته‌ای با شرط‌بندی) یا Kanban (جریان مداوم) برای هر پروژه انتخاب کنید. تنها ابزاری که هر دو روش را به صورت بومی پشتیبانی می‌کند.",
     "everythingYouNeed": "همه چیز برای Shape Up",
     "everythingDesc": "از برنامه‌ریزی سیکل تا تحلیل ریسک، ShipFlow همه ابزارهای مورد نیاز تیم شما را برای پیاده‌سازی موفق Shape Up فراهم می‌کند.",
     "howItWorks": "Shape Up چگونه کار می‌کند",
@@ -970,6 +994,8 @@
     "newToShipFlow": "تازه‌وارد ShipFlow هستید؟ با \"شروع کار با ShipFlow\" شروع کنید تا مبانی را یاد بگیرید، سپس بر اساس نیازهای خود راهنماهای دیگر را کاوش کنید.",
     "gettingStarted": "شروع کار با ShipFlow",
     "gettingStartedDesc": "اصول اولیه ShipFlow را یاد بگیرید، از ورود به سیستم تا پیمایش در رابط کاربری و درک مفاهیم اصلی.",
+    "projectTypes": "حالت‌های دوگانه پروژه",
+    "projectTypesDesc": "تفاوت حالت‌های Shape Up و Kanban را درک کنید و روش مناسب برای هر پروژه را انتخاب کنید.",
     "hillCharts": "درک نمودارهای تپه",
     "hillChartsDesc": "تسلط بر تصویرسازی نمودار تپه برای پیگیری پیشرفت از مرحله فهمیدن تا انجام دادن.",
     "bettingMeeting": "برگزاری جلسه شرط‌بندی",
@@ -1035,8 +1061,10 @@
     "delete": "حذف پروژه",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
     "description": "توضیحات",
+    "projectType": "نوع پروژه",
     "totalCycles": "مجموع چرخه‌ها",
     "activeCycles": "چرخه‌های فعال",
+    "completedCycles": "چرخه‌های تکمیل شده",
     "completed": "تکمیل شده",
     "teams": "تیم‌ها",
     "projectOwner": "مالک پروژه",
@@ -1046,6 +1074,9 @@
     "pitches": "پیچ",
     "cycle": "چرخه",
     "members": "عضو",
+    "backlog": "باکلاگ",
+    "viewBacklog": "مشاهده باکلاگ",
+    "kanbanDescription": "این یک پروژه کانبان با جریان مداوم است. وظایف خود را در باکلاگ با استفاده از نمای تخته کانبان مدیریت کنید.",
     "deleteProject": "حذف پروژه",
     "deleteConfirm": "آیا مطمئن هستید که می‌خواهید {{name}} را حذف کنید؟ این عملیات قابل بازگشت نیست.",
     "notFound": "پروژه یافت نشد",
@@ -1684,6 +1715,8 @@
     "title": "گزارش‌ها",
     "noCyclesFound": "سیکلی یافت نشد",
     "noCyclesDesc": "ابتدا یک سیکل ایجاد کنید تا گزارش تولید شود",
+    "kanbanTitle": "گزارش‌های سیکل در دسترس نیست",
+    "kanbanDesc": "گزارش‌های مبتنی بر سیکل فقط برای پروژه‌های Shape Up در دسترس هستند. پروژه‌های Kanban از جریان مداوم بدون سیکل‌های ثابت استفاده می‌کنند.",
     "selectCycle": "انتخاب سیکل",
     "exportPDF": "خروجی PDF",
     "exportCSV": "خروجی CSV",
@@ -2277,11 +2310,14 @@
     "viewDetails": "مشاهده جزئیات",
     "allCycles": "همه چرخه‌ها",
     "selectCycleToCreate": "لطفاً یک چرخه خاص را برای ایجاد تسک انتخاب کنید",
+    "noDefaultCycle": "چرخه پیش‌فرضی برای این پروژه یافت نشد",
     "categoryDescription": {
       "pitchScope": "تسک‌های مربوط به پیچ‌های چرخه فعلی",
+      "featureScope": "تسک‌های ویژگی برای این پروژه",
       "debtImprovement": "بدهی فنی، بهبودها و کارهای نگهداری"
     },
     "pitchTasks": "تسک‌های پیچ",
+    "featureTasks": "تسک‌های ویژگی",
     "debtImprovements": "بدهی و بهبودها",
     "taskOverview": "نمای کلی تسک‌ها",
     "total": "کل",
@@ -2484,7 +2520,16 @@
     "categoryFiguring": "در حال فهمیدن موارد",
     "categoryMakingProgress": "در حال پیشرفت",
     "categoryNiceToHave": "خوب است داشته باشیم",
-    "categoryMustHave": "باید داشته باشیم"
+    "categoryMustHave": "باید داشته باشیم",
+    "viewMode": {
+      "list": "نمای لیست",
+      "kanban": "نمای کانبان"
+    },
+    "kanban": {
+      "noTasks": "هیچ تسکی در این ستون نیست",
+      "blockedBy": "مسدود توسط",
+      "blocking": "مسدودکننده"
+    }
   },
   "pitchBoard": {
     "title": "تابلوی پیچ",

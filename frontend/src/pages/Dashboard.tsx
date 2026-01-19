@@ -49,7 +49,7 @@ import { DashboardCustomizer } from '../components/DashboardCustomizer';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
   const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -155,40 +155,71 @@ export default function Dashboard() {
 
   // Welcome screen for new users
   if (isNewUser) {
+    const kanbanSteps = [
+      {
+        icon: '📋',
+        title: t('dashboard.welcome.steps.createTasks.title', 'Create Tasks'),
+        description: t('dashboard.welcome.steps.createTasks.description', 'Add tasks to your backlog and organize them on the Kanban board'),
+      },
+      {
+        icon: '🎯',
+        title: t('dashboard.welcome.steps.moveCards.title', 'Move Cards'),
+        description: t('dashboard.welcome.steps.moveCards.description', 'Drag tasks through TODO, In Progress, and Done columns'),
+      },
+      {
+        icon: '⏱️',
+        title: t('dashboard.welcome.steps.trackTime.title', 'Track Time'),
+        description: t('dashboard.welcome.steps.trackTime.description', 'Use work log timers to track effort on each task'),
+      },
+    ];
+
+    const shapeUpSteps = [
+      {
+        icon: '🔄',
+        title: t('dashboard.welcome.steps.createCycle.title'),
+        description: t('dashboard.welcome.steps.createCycle.description'),
+      },
+      {
+        icon: '💡',
+        title: t('dashboard.welcome.steps.addPitches.title'),
+        description: t('dashboard.welcome.steps.addPitches.description'),
+      },
+      {
+        icon: '⛰️',
+        title: t('dashboard.welcome.steps.trackProgress.title'),
+        description: t('dashboard.welcome.steps.trackProgress.description'),
+      },
+    ];
+
     return (
       <div>
         <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/10 mb-4">
           <CardContent className="py-6">
             <EmptyState
               illustration={<WelcomeIllustration width={280} height={200} />}
-              title={t('dashboard.welcome.title')}
-              description={t('dashboard.welcome.description')}
+              title={isKanbanProject 
+                ? t('dashboard.welcome.kanbanTitle', 'Welcome to Your Kanban Project')
+                : t('dashboard.welcome.title')}
+              description={isKanbanProject
+                ? t('dashboard.welcome.kanbanDescription', 'Start adding tasks and managing your continuous workflow')
+                : t('dashboard.welcome.description')}
               size="large"
-              onboardingSteps={[
-                {
-                  icon: '🔄',
-                  title: t('dashboard.welcome.steps.createCycle.title'),
-                  description: t('dashboard.welcome.steps.createCycle.description'),
-                },
-                {
-                  icon: '💡',
-                  title: t('dashboard.welcome.steps.addPitches.title'),
-                  description: t('dashboard.welcome.steps.addPitches.description'),
-                },
-                {
-                  icon: '⛰️',
-                  title: t('dashboard.welcome.steps.trackProgress.title'),
-                  description: t('dashboard.welcome.steps.trackProgress.description'),
-                },
-              ]}
+              onboardingSteps={isKanbanProject ? kanbanSteps : shapeUpSteps}
               action={{
-                label: t('dashboard.welcome.createFirstCycle'),
-                onClick: () => window.location.href = '/cycles/new',
+                label: isKanbanProject 
+                  ? t('dashboard.welcome.createFirstTask', 'Create First Task')
+                  : t('dashboard.welcome.createFirstCycle'),
+                onClick: () => window.location.href = isKanbanProject ? '/backlog' : '/cycles/new',
                 startIcon: <Rocket className="w-4 h-4 me-2" />,
               }}
               secondaryAction={{
                 label: t('dashboard.welcome.learnMore'),
-                onClick: () => window.open('https://basecamp.com/shapeup', '_blank'),
+                onClick: () => window.open(
+                  isKanbanProject 
+                    ? '/help/project-types'
+                    : 'https://basecamp.com/shapeup',
+                  isKanbanProject ? '_self' : '_blank'
+                ),
               }}
             />
           </CardContent>
@@ -226,6 +257,7 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {!isKanbanProject && (
         <AnimatedCard
           delay={0.1}
           animation="fadeUp"
@@ -242,7 +274,9 @@ export default function Dashboard() {
             <p className="text-3xl font-extrabold text-primary">{activeCycles.length}</p>
           </CardContent>
         </AnimatedCard>
+        )}
 
+        {!isKanbanProject && (
         <AnimatedCard
           delay={0.2}
           animation="fadeUp"
@@ -259,6 +293,7 @@ export default function Dashboard() {
             <p className="text-3xl font-extrabold text-violet-500">{totalPitches}</p>
           </CardContent>
         </AnimatedCard>
+        )}
 
         <AnimatedCard
           delay={0.3}
@@ -316,6 +351,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Left Column: Active Cycles + Hill Chart */}
+        {!isKanbanProject && (
         <MotionContainer delay={0.6} className="space-y-3">
           {/* Active Cycles */}
           <Card>
@@ -377,8 +413,10 @@ export default function Dashboard() {
             projectId={isAllProjectsSelected ? undefined : currentProject?.id}
           />
         </MotionContainer>
+        )}
 
         {/* Right Column: Recent Pitches */}
+        {!isKanbanProject && (
         <MotionContainer delay={0.7}>
           <Card>
             <CardContent className="p-4">
@@ -431,9 +469,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </MotionContainer>
+        )}
 
         {/* Cycle Risk Overview */}
-        {activeCycles.length > 0 && (
+        {!isKanbanProject && activeCycles.length > 0 && (
           <div className="col-span-full">
             <h2 className="text-lg font-semibold text-foreground mb-2">{t('dashboard.aiRiskAnalysis')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -450,7 +489,7 @@ export default function Dashboard() {
         )}
 
         {/* Full Risk Overview for First Active Cycle */}
-        {activeCycles.length > 0 && (
+        {!isKanbanProject && activeCycles.length > 0 && (
           <div className="col-span-full">
             <CycleRiskOverview
               cycleId={activeCycles[0].id}

@@ -124,6 +124,43 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public Page<TaskDTO> getTasksByProjectIdPaged(Long projectId, Pageable pageable) {
+        return taskRepository.findByProjectIdPaged(projectId, pageable)
+                .map(this::toDTO);
+    }
+
+    public Page<TaskDTO> getTasksByProjectIdAndCategory(Long projectId, TaskCategory category, Pageable pageable) {
+        return taskRepository.findByProjectIdAndCategory(projectId, category, pageable)
+                .map(this::toDTO);
+    }
+
+    public TaskStatisticsDTO getTaskStatisticsByProjectId(Long projectId) {
+        List<Task> tasks = taskRepository.findByProjectId(projectId);
+        
+        long totalTasks = tasks.size();
+        long backlogTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BACKLOG).count();
+        long todoTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count();
+        long inProgressTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count();
+        long blockedTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BLOCKED).count();
+        long inReviewTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_REVIEW).count();
+        long doneTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
+        long cancelledTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.CANCELLED).count();
+        
+        double completionPercentage = totalTasks > 0 ? (doneTasks * 100.0 / totalTasks) : 0;
+        
+        return TaskStatisticsDTO.builder()
+                .totalTasks((int) totalTasks)
+                .backlogTasks((int) backlogTasks)
+                .todoTasks((int) todoTasks)
+                .inProgressTasks((int) inProgressTasks)
+                .blockedTasks((int) blockedTasks)
+                .inReviewTasks((int) inReviewTasks)
+                .doneTasks((int) doneTasks)
+                .cancelledTasks((int) cancelledTasks)
+                .completionPercentage(Math.round(completionPercentage * 100.0) / 100.0)
+                .build();
+    }
+
     public TaskDTO createTask(CreateTaskRequest request) {
         Cycle cycle = cycleRepository.findById(request.getCycleId())
                 .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));

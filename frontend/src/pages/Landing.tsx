@@ -37,6 +37,11 @@ export default function Landing() {
   const features = [
     {
       icon: <TrendingUp className="h-10 w-10" />,
+      title: t('landing.dualProjectModes'),
+      description: t('landing.dualProjectModesDesc'),
+    },
+    {
+      icon: <TrendingUp className="h-10 w-10" />,
       title: t('landing.cycleManagement'),
       description: t('landing.cycleManagementDesc'),
     },
