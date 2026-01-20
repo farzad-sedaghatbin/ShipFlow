@@ -15,7 +15,13 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## ✨ Features
 
-- **Cycles**: 6-week development cycles with betting table
+- **Dual Project Modes**: Flexible support for different project methodologies
+  - **Shape Up Mode**: 6-week cycle methodology with pitches, betting, hill charts
+  - **Kanban Mode**: Continuous flow with board-first visualization
+  - Automatic UI adaptation based on project type (cycles hidden for Kanban)
+  - Default "Continuous Flow" cycle created automatically for Kanban projects
+  - Pitch and scope fields hidden in Kanban projects (Shape Up concepts)
+- **Cycles**: 6-week development cycles with betting table (Shape Up projects)
   - **Auto-Calculated Cycle Dates**: End dates automatically calculated from organization settings
     - Default 6-week cycles aligned with Shape Up methodology
     - Configurable cycle length in Organization Settings (4-12 weeks)
@@ -143,6 +149,8 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | Feature | ShipFlow | Linear | Asana | Monday.com | Jira | Basecamp |
 |---------|----------|--------|-------|------------|------|----------|
 | **Native Shape Up** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
+| **Kanban Mode** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Dual Mode (Shape Up + Kanban)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **6-Week Cycles** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Hill Charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |

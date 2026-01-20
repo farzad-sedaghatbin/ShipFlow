@@ -41,6 +41,13 @@ export type RetroStatus = 'DRAFT' | 'OPEN' | 'CLOSED';
 export type RetroColumnType = 'WENT_WELL' | 'DID_NOT_GO_WELL' | 'TRY_NEXT' | 'ACTIONS';
 export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
+/**
+ * Project methodology type.
+ * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
+ * KANBAN: Continuous flow with visual board, no cycles
+ */
+export type ProjectType = 'SHAPE_UP' | 'KANBAN';
+
 // Project DTOs
 export interface Project {
   id: number;
@@ -53,6 +60,10 @@ export interface Project {
   ownerName?: string;
   isActive: boolean;
   enableRetrospectives?: boolean;
+  /**
+   * Project methodology type - determines available features and navigation.
+   */
+  projectType: ProjectType;
   createdAt: string;
   updatedAt?: string;
   cycleCount?: number;
@@ -66,6 +77,10 @@ export interface CreateProjectRequest {
   color?: string;
   logoUrl?: string;
   ownerId?: number;
+  /**
+   * Project methodology type. Defaults to SHAPE_UP if not provided.
+   */
+  projectType?: ProjectType;
 }
 
 // Cycle DTOs

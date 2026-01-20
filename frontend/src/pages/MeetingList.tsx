@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -15,7 +15,8 @@ import { meetingService } from '../services/meetingService';
 import { pitchService } from '../services/pitchService';
 import { retroService } from '../services/retroService';
 import { personService } from '../services/personService';
-import { Meeting, Pitch, CreateMeetingRequest, MeetingType, MeetingAction, ActionStatus, Retrospective, Person } from '../types';
+import { cycleService } from '../services/cycleService';
+import { Meeting, Pitch, CreateMeetingRequest, MeetingType, MeetingAction, ActionStatus, Retrospective, Person, Cycle } from '../types';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { MeetingDocumentsDialog } from '../components/MeetingDocumentsDialog';
 import EmptyState from '../components/EmptyState';
@@ -65,9 +66,10 @@ const meetingTypes: MeetingType[] = ['SHAPING', 'BETTING', 'KICKOFF', 'STANDUP',
 export default function MeetingList() {
   const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
-  const { currentProject } = useProject();
+  const { currentProject, isAllProjectsSelected } = useProject();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
   const [retrospectives, setRetrospectives] = useState<Retrospective[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +97,13 @@ export default function MeetingList() {
     endDate: '',
   });
 
+  // Filter pitches by current project
+  const filteredPitches = useMemo(() => {
+    if (isAllProjectsSelected) return pitches;
+    const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject?.id).map(c => c.id));
+    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+  }, [pitches, cycles, currentProject, isAllProjectsSelected]);
+
   const [formData, setFormData] = useState<CreateMeetingRequest>({
     pitchId: undefined,
     type: 'STANDUP',
@@ -117,23 +126,27 @@ export default function MeetingList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [pitchesRes, retrospectivesRes, personsRes] = await Promise.all([
+      const [pitchesRes, cyclesRes, retrospectivesRes, personsRes] = await Promise.all([
         pitchService.getAll(),
+        cycleService.getAll(),
         currentProject 
           ? retroService.getByProject(currentProject.id).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
         personService.getAll(true), // Get active persons
       ]);
       setPitches(pitchesRes.data);
+      setCycles(cyclesRes.data);
       setRetrospectives(retrospectivesRes.data || []);
       setPersons(personsRes);
       
-      // Load meetings with pagination and filters
+      // Load meetings with pagination, filters, and project filter
       const hasFilters = filters.types.length > 0 || filters.startDate || filters.endDate || 
                         filters.dorReady !== undefined || filters.dodReady !== undefined;
       
-      const meetingsRes = hasFilters
+      // Always use getWithFilters if a project is selected to pass projectId
+      const meetingsRes = (hasFilters || currentProject)
         ? await meetingService.getWithFilters({
+            projectId: currentProject?.id,
             types: filters.types.length > 0 ? filters.types : undefined,
             startDate: filters.startDate || undefined,
             endDate: filters.endDate || undefined,
@@ -679,7 +692,7 @@ export default function MeetingList() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t('meetingList.dialog.none')}</SelectItem>
-                    {pitches.map((p) => (
+                    {filteredPitches.map((p) => (
                       <SelectItem key={p.id} value={p.id.toString()}>
                         {p.title}
                       </SelectItem>

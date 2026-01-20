@@ -78,6 +78,27 @@ export const taskService = {
   getByAssigneeId: (assigneeId: number) => api.get<Task[]>(`/tasks/assignee/${assigneeId}`),
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
+  getByProjectIdPaged: (projectId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/paged`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
+  getByProjectIdAndCategory: (projectId: number, category: TaskCategory, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/category/${category}`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
+  getStatisticsByProjectId: (projectId: number) => api.get<TaskStatistics>(`/tasks/project/${projectId}/statistics`),
   search: (query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>('/tasks/search', {
       params: {

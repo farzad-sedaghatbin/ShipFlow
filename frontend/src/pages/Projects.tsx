@@ -13,6 +13,9 @@ import {
   Search,
   ArrowUpDown,
   Eye,
+  Layers,
+  Kanban,
+  ListTodo,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -72,6 +75,7 @@ export default function Projects() {
     projectKey: '',
     description: '',
     color: PROJECT_COLORS[0],
+    projectType: 'SHAPE_UP',
   });
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -116,6 +120,7 @@ export default function Projects() {
         color: project.color || PROJECT_COLORS[0],
         logoUrl: project.logoUrl,
         ownerId: project.ownerId,
+        projectType: project.projectType || 'SHAPE_UP',
       });
     } else {
       setEditingProject(null);
@@ -124,6 +129,7 @@ export default function Projects() {
         projectKey: '',
         description: '',
         color: PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)],
+        projectType: 'SHAPE_UP',
       });
     }
     setFieldErrors({});
@@ -223,7 +229,12 @@ export default function Projects() {
   };
 
   const handleViewCycles = (project: Project) => {
-    navigate(`/cycles?project=${project.id}`);
+    // For Kanban projects, navigate to backlog instead of cycles
+    if (project.projectType === 'KANBAN') {
+      navigate(`/backlog`);
+    } else {
+      navigate(`/cycles?project=${project.id}`);
+    }
   };
 
   const handleViewDetails = (project: Project, e?: React.MouseEvent) => {
@@ -403,15 +414,24 @@ export default function Projects() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    {project.cycleCount || 0} {t('projects.cycles')}
-                  </Badge>
-                  {project.activeCycleCount !== undefined && project.activeCycleCount > 0 && (
-                    <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
-                      <Play className="h-3 w-3" />
-                      {project.activeCycleCount} {t('projects.cycleActive')}
+                  {project.projectType === 'KANBAN' ? (
+                    <Badge variant="outline" className="flex items-center gap-1 text-purple-600 border-purple-600">
+                      <Kanban className="h-3 w-3" />
+                      {t('projects.kanban')}
                     </Badge>
+                  ) : (
+                    <>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        {project.cycleCount || 0} {t('projects.cycles')}
+                      </Badge>
+                      {project.activeCycleCount !== undefined && project.activeCycleCount > 0 && (
+                        <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
+                          <Play className="h-3 w-3" />
+                          {project.activeCycleCount} {t('projects.cycleActive')}
+                        </Badge>
+                      )}
+                    </>
                   )}
                   {!project.isActive && (
                     <Badge variant="secondary">{t('projects.archived')}</Badge>
@@ -452,12 +472,20 @@ export default function Projects() {
                           e.stopPropagation();
                           handleViewCycles(project);
                         }}
-                        aria-label={t('projects.viewCyclesFor', { name: project.name })}
+                        aria-label={project.projectType === 'KANBAN' 
+                          ? t('projects.viewBacklogFor', { name: project.name })
+                          : t('projects.viewCyclesFor', { name: project.name })}
                       >
-                        <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                        {project.projectType === 'KANBAN' ? (
+                          <ListTodo className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                        )}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{t('projects.viewCycles')}</TooltipContent>
+                    <TooltipContent>
+                      {project.projectType === 'KANBAN' ? t('projects.viewBacklog') : t('projects.viewCycles')}
+                    </TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -504,7 +532,7 @@ export default function Projects() {
                           e.stopPropagation();
                           setDeleteDialog({ open: true, project });
                         }}
-                        disabled={(project.cycleCount || 0) > 0}
+                        disabled={project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -563,6 +591,59 @@ export default function Projects() {
               ) : (
                 <p className="text-xs text-muted-foreground">{t('projects.keyFormat')}</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label>{t('projects.projectType')} *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, projectType: 'SHAPE_UP' })}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all',
+                    formData.projectType === 'SHAPE_UP'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  <Layers className={cn(
+                    'h-8 w-8',
+                    formData.projectType === 'SHAPE_UP' ? 'text-primary' : 'text-muted-foreground'
+                  )} />
+                  <span className={cn(
+                    'font-medium text-sm',
+                    formData.projectType === 'SHAPE_UP' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
+                    {t('projects.shapeUp')}
+                  </span>
+                  <span className="text-xs text-muted-foreground text-center">
+                    {t('projects.shapeUpDescription')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, projectType: 'KANBAN' })}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all',
+                    formData.projectType === 'KANBAN'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  <Kanban className={cn(
+                    'h-8 w-8',
+                    formData.projectType === 'KANBAN' ? 'text-primary' : 'text-muted-foreground'
+                  )} />
+                  <span className={cn(
+                    'font-medium text-sm',
+                    formData.projectType === 'KANBAN' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
+                    {t('projects.kanban')}
+                  </span>
+                  <span className="text-xs text-muted-foreground text-center">
+                    {t('projects.kanbanDescription')}
+                  </span>
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">{t('common.description')}</Label>

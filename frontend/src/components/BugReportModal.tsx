@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
+import { useProject } from '../contexts';
 import {
   BugReport,
   CreateBugReportRequest,
@@ -79,6 +80,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   testRunId,
 }) => {
   const { t } = useTranslation();
+  const { isKanbanProject } = useProject();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -342,52 +344,55 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
           </div>
 
           {/* Scope & Task Traceability */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Scope (optional)</Label>
-              <Select
-                value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                onValueChange={(value) => handleChange('scopeId', value === 'none' ? undefined : Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={pitchId && scopes.length === 0 ? "Loading scopes..." : "No specific scope"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Search scopes..."
-                      value={scopeSearch}
-                      onChange={(e) => setScopeSearch(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-                  <SelectItem value="none">No specific scope</SelectItem>
-                  {searchingScopes ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
-                  ) : !pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
-                  ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
-                  ) : scopes.length === 0 && !pitchId ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
-                  ) : (
-                    scopes.slice(0, 50).map((scope) => (
-                      <SelectItem key={scope.id} value={String(scope.id)}>
-                        {scope.scope}
-                      </SelectItem>
-                    ))
-                  )}
-                  {scopes.length > 50 && (
-                    <div className="py-2 text-center text-xs text-muted-foreground">
-                      Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+          <div className={`grid grid-cols-1 ${!isKanbanProject ? 'sm:grid-cols-2' : ''} gap-4`}>
+            {/* Hide scope field for Kanban projects - scope is a Shape Up concept tied to pitches */}
+            {!isKanbanProject && (
+              <div className="space-y-2">
+                <Label>Scope (optional)</Label>
+                <Select
+                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
+                  onValueChange={(value) => handleChange('scopeId', value === 'none' ? undefined : Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={pitchId && scopes.length === 0 ? "Loading scopes..." : "No specific scope"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 pb-2">
+                      <Input
+                        placeholder="Search scopes..."
+                        value={scopeSearch}
+                        onChange={(e) => setScopeSearch(e.target.value)}
+                        className="h-8"
+                      />
                     </div>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {pitchId ? `Link to a specific scope (${scopes.length} available)` : 'Search to find scopes (min 3 chars)'}
-              </p>
-            </div>
+                    <SelectItem value="none">No specific scope</SelectItem>
+                    {searchingScopes ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                    ) : !pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                    ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
+                    ) : scopes.length === 0 && !pitchId ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
+                    ) : (
+                      scopes.slice(0, 50).map((scope) => (
+                        <SelectItem key={scope.id} value={String(scope.id)}>
+                          {scope.scope}
+                        </SelectItem>
+                      ))
+                    )}
+                    {scopes.length > 50 && (
+                      <div className="py-2 text-center text-xs text-muted-foreground">
+                        Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {pitchId ? `Link to a specific scope (${scopes.length} available)` : 'Search to find scopes (min 3 chars)'}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Related Task (optional)</Label>

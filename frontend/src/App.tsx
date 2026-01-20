@@ -54,6 +54,7 @@ import HillChartsGuide from './pages/guides/HillChartsGuide';
 import BettingMeetingGuide from './pages/guides/BettingMeetingGuide';
 import AIRiskAdvisorGuide from './pages/guides/AIRiskAdvisorGuide';
 import CycleSetupGuide from './pages/guides/CycleSetupGuide';
+import ProjectTypesGuide from './pages/guides/ProjectTypesGuide';
 import QATestingGuide from './pages/guides/QATestingGuide';
 import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
@@ -184,6 +185,7 @@ function App() {
                     <Route path="help/betting-meeting" element={<BettingMeetingGuide />} />
                     <Route path="help/ai-risk-advisor" element={<AIRiskAdvisorGuide />} />
                     <Route path="help/cycle-setup" element={<CycleSetupGuide />} />
+                    <Route path="help/project-types" element={<ProjectTypesGuide />} />
                     <Route path="help/qa-testing" element={<QATestingGuide />} />
                     <Route path="help/retrospectives" element={<RetrospectivesGuide />} />
                     <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />

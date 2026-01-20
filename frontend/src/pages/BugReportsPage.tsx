@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
@@ -55,6 +55,7 @@ import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
+import { useProject } from '../contexts';
 import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
 
@@ -79,6 +80,7 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -102,9 +104,22 @@ const BugReportsPage: React.FC = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
 
+  // Filter cycles by current project
+  const filteredCycles = useMemo(() => {
+    if (isAllProjectsSelected) return cycles;
+    return cycles.filter(c => c.projectId === currentProject?.id);
+  }, [cycles, currentProject, isAllProjectsSelected]);
+
+  // Filter pitches by current project's cycles
+  const filteredPitches = useMemo(() => {
+    if (isAllProjectsSelected) return pitches;
+    const projectCycleIds = new Set(filteredCycles.map(c => c.id));
+    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+  }, [pitches, filteredCycles, isAllProjectsSelected]);
+
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -144,7 +159,16 @@ const BugReportsPage: React.FC = () => {
       } else {
         response = await qaTestManagementService.getAllBugReports(page, rowsPerPage, sortBy, sortOrder);
       }
-      setBugReports(response.data.content);
+      
+      let bugs = response.data.content;
+      // Filter by current project if one is selected
+      if (!isAllProjectsSelected && currentProject) {
+        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
+        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
+        bugs = bugs.filter(bug => bug.pitchId && projectPitchIds.has(bug.pitchId));
+      }
+      
+      setBugReports(bugs);
       setTotalElements(response.data.totalElements);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
@@ -426,48 +450,50 @@ const BugReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Cycle and Pitch Filters Row */}
-        <div className="flex flex-wrap gap-4">
-          <div className="min-w-[180px]">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
-            <Select
-              value={cycleFilter?.toString() ?? 'all'}
-              onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('bugReports.filters.allCycles')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('bugReports.filters.allCycles')}</SelectItem>
-                {cycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                    {cycle.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Cycle and Pitch Filters Row - Hidden for Kanban projects (Shape Up concepts) */}
+        {!isKanbanProject && (
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-[180px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
+              <Select
+                value={cycleFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('bugReports.filters.allCycles')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('bugReports.filters.allCycles')}</SelectItem>
+                  {filteredCycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                      {cycle.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="min-w-[180px]">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
-            <Select
-              value={pitchFilter?.toString() ?? 'all'}
-              onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('bugReports.filters.allPitches')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('bugReports.filters.allPitches')}</SelectItem>
-                {pitches.map((pitch) => (
-                  <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                    {pitch.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="min-w-[180px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
+              <Select
+                value={pitchFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('bugReports.filters.allPitches')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('bugReports.filters.allPitches')}</SelectItem>
+                  {filteredPitches.map((pitch) => (
+                    <SelectItem key={pitch.id} value={pitch.id.toString()}>
+                      {pitch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Bug Reports Table */}

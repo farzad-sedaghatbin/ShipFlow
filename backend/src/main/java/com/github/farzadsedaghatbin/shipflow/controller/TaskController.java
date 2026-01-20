@@ -184,6 +184,39 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getTasksByProjectId(projectId));
     }
 
+    @GetMapping("/project/{projectId}/paged")
+    @Operation(summary = "Get tasks by project ID with pagination")
+    public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdPaged(
+            @PathVariable Long projectId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(taskService.getTasksByProjectIdPaged(projectId, pageable));
+    }
+
+    @GetMapping("/project/{projectId}/category/{category}")
+    @Operation(summary = "Get tasks by project ID and category with pagination")
+    public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdAndCategory(
+            @PathVariable Long projectId,
+            @PathVariable TaskCategory category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+        Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(taskService.getTasksByProjectIdAndCategory(projectId, category, pageable));
+    }
+
+    @GetMapping("/project/{projectId}/statistics")
+    @Operation(summary = "Get task statistics for a project")
+    public ResponseEntity<TaskStatisticsDTO> getTaskStatisticsByProjectId(@PathVariable Long projectId) {
+        return ResponseEntity.ok(taskService.getTaskStatisticsByProjectId(projectId));
+    }
+
     @GetMapping("/cycle/{cycleId}/statistics")
     @Operation(summary = "Get task statistics for a cycle",
                description = "Returns aggregated statistics about tasks in a cycle")

@@ -39,11 +39,13 @@ import StatusChip from '../components/StatusChip';
 import EmptyState from '../components/EmptyState';
 import { EmptyReportsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
+import { useProject } from '../contexts';
 
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function Reports() {
   const { t } = useTranslation();
+  const { isKanbanProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
@@ -52,17 +54,21 @@ export default function Reports() {
 
   useEffect(() => {
     const abortController = new AbortController();
-    loadCycles();
+    if (!isKanbanProject) {
+      loadCycles();
+    } else {
+      setLoading(false);
+    }
     return () => abortController.abort();
-  }, []);
+  }, [isKanbanProject]);
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (selectedCycle) {
+    if (selectedCycle && !isKanbanProject) {
       loadReport(Number(selectedCycle));
     }
     return () => abortController.abort();
-  }, [selectedCycle]);
+  }, [selectedCycle, isKanbanProject]);
 
   const loadCycles = async () => {
     try {
@@ -148,10 +154,10 @@ export default function Reports() {
 
   const riskData = report?.riskDistribution
     ? [
-        { name: t('reportsPage.lowRiskLabel'), value: report.riskDistribution.lowRiskCount, color: '#10b981' },
-        { name: t('reportsPage.mediumRiskLabel'), value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
-        { name: t('reportsPage.highRiskLabel'), value: report.riskDistribution.highRiskCount, color: '#f97316' },
-        { name: t('reportsPage.criticalRiskLabel'), value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
+        { name: t('reportsPage.lowRisk'), value: report.riskDistribution.lowRiskCount, color: '#10b981' },
+        { name: t('reportsPage.mediumRisk'), value: report.riskDistribution.mediumRiskCount, color: '#f59e0b' },
+        { name: t('reportsPage.highRisk'), value: report.riskDistribution.highRiskCount, color: '#f97316' },
+        { name: t('reportsPage.criticalRisk'), value: report.riskDistribution.criticalRiskCount, color: '#ef4444' },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -168,6 +174,25 @@ export default function Reports() {
         <div className="flex justify-center items-center min-h-[40vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      </div>
+    );
+  }
+
+  // Show message for Kanban projects
+  if (isKanbanProject) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
+        <Card>
+          <CardContent className="py-12">
+            <EmptyState
+              illustration={<EmptyReportsIllustration />}
+              title={t('reportsPage.kanbanTitle', 'Cycle Reports Not Available')}
+              description={t('reportsPage.kanbanDesc', 'Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.')}
+              size="medium"
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -350,7 +375,7 @@ export default function Reports() {
                   <p className="text-2xl font-bold text-green-600">{report.completedTasks}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">{t('reportsPage.estimateHours')}</p>
+                  <p className="text-sm text-muted-foreground">{t('reportsPage.estHours')}</p>
                   <p className="text-2xl font-bold">{report.totalTaskEstimateHours.toFixed(0)}h</p>
                 </div>
                 <div className="text-center">
@@ -388,7 +413,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>{t('reportsPage.pitchStatusDist')}</CardTitle>
+                <CardTitle>{t('reportsPage.pitchStatusDistribution')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>

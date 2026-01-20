@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, Users, User } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -8,7 +8,7 @@ import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { taskService } from '../services/taskService';
 import { WorkLog, Pitch, Cycle, Person, Task, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
-import { useAuth, useToast } from '../contexts';
+import { useAuth, useToast, useProject } from '../contexts';
 import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -50,6 +50,7 @@ export default function WorkLogsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -95,10 +96,17 @@ export default function WorkLogsPage() {
   const [editTaskId, setEditTaskId] = useState<string>('');
   const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('task');
 
+  // Filter cycles by current project
+  const filteredCycles = useMemo(() => {
+    if (isAllProjectsSelected) return cycles;
+    return cycles.filter(c => c.projectId === currentProject?.id);
+  }, [cycles, currentProject, isAllProjectsSelected]);
+
   useEffect(() => {
     loadInitialData();
   }, []);
 
+  // Reload data when project changes
   useEffect(() => {
     if (selectedCycle) {
       if (selectedCycle === 'all') {
@@ -113,7 +121,7 @@ export default function WorkLogsPage() {
         loadTasks(cycleId);
       }
     }
-  }, [selectedCycle, activeTab]);
+  }, [selectedCycle, activeTab, currentProject?.id]);
 
   const loadInitialData = async () => {
     try {
@@ -133,26 +141,48 @@ export default function WorkLogsPage() {
 
   const loadWorkLogs = async (cycleIdOrAll: number | string) => {
     try {
+      let logs: WorkLog[] = [];
       if (cycleIdOrAll === 'all') {
         // Load all work logs across all cycles
         if (activeTab === 'my') {
           const response = await workLogService.getMy();
-          setWorkLogs(response.data);
+          logs = response.data;
         } else {
           const response = await workLogService.getAll();
-          setWorkLogs(response.data);
+          logs = response.data;
         }
       } else {
         // Load work logs for specific cycle
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
           const response = await workLogService.getMyByCycle(cycleId);
-          setWorkLogs(response.data);
+          logs = response.data;
         } else {
           const response = await workLogService.getByCycleId(cycleId);
-          setWorkLogs(response.data);
+          logs = response.data;
         }
       }
+      
+      // Filter by current project if one is selected
+      if (!isAllProjectsSelected && currentProject) {
+        // Filter logs that belong to tasks/pitches in cycles of the current project
+        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
+        logs = logs.filter(log => {
+          // If the log has a cycleId directly, check it
+          // Otherwise filter by pitch/task's cycle
+          if (log.pitchId) {
+            const pitch = pitches.find(p => p.id === log.pitchId);
+            return pitch ? projectCycleIds.has(pitch.cycleId) : false;
+          }
+          if (log.taskId) {
+            const task = tasks.find(t => t.id === log.taskId);
+            return task ? projectCycleIds.has(task.cycleId) : false;
+          }
+          return false;
+        });
+      }
+      
+      setWorkLogs(logs);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
@@ -170,7 +200,13 @@ export default function WorkLogsPage() {
   const loadAllPitches = async () => {
     try {
       const response = await pitchService.getAll();
-      setPitches(response.data);
+      let allPitches = response.data;
+      // Filter by current project if one is selected
+      if (!isAllProjectsSelected && currentProject) {
+        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
+        allPitches = allPitches.filter(p => projectCycleIds.has(p.cycleId));
+      }
+      setPitches(allPitches);
     } catch (error) {
       console.error('Failed to load pitches:', error);
     }
@@ -191,8 +227,14 @@ export default function WorkLogsPage() {
 
   const loadAllTasks = async () => {
     try {
-      const response = await taskService.getAll(0, 1000);
-      setTasks(response.data.content || []);
+      // For a specific project, load by project ID if available
+      if (!isAllProjectsSelected && currentProject) {
+        const response = await taskService.getByProjectIdPaged(currentProject.id, 0, 1000);
+        setTasks(response.data.content || []);
+      } else {
+        const response = await taskService.getAll(0, 1000);
+        setTasks(response.data.content || []);
+      }
     } catch (error) {
       console.error('Failed to load tasks:', error);
     }
@@ -358,22 +400,25 @@ export default function WorkLogsPage() {
           <p className="text-muted-foreground">Track time spent on pitches</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select
-            value={selectedCycle}
-            onValueChange={setSelectedCycle}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder={t('workLogsPage.selectCycle')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('workLogsPage.allCycles')}</SelectItem>
-              {cycles.map((cycle) => (
-                <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                  {cycle.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Hide cycle selector for Kanban projects - they only have the hidden "Continuous Flow" cycle */}
+          {!isKanbanProject && (
+            <Select
+              value={selectedCycle}
+              onValueChange={setSelectedCycle}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder={t('workLogsPage.selectCycle')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('workLogsPage.allCycles')}</SelectItem>
+                {filteredCycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 

@@ -57,7 +57,24 @@
     "setDefault": "Set as Default",
     "project": "Project",
     "by": "by",
-    "title": "Title"
+    "title": "Title",
+    "hideDetails": "Hide Details",
+    "showDetails": "Show Details",
+    "tryAgain": "Try Again",
+    "goHome": "Go Home",
+    "refreshPage": "Refresh Page",
+    "reportBug": "Report Bug",
+    "nameRequired": "Name is required",
+    "updateSuccess": "Updated successfully",
+    "createSuccess": "Created successfully",
+    "saveFailed": "Failed to save",
+    "cannotDeleteDefault": "Cannot delete default item",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
+    "tryDifferentSearch": "Try a different search term",
+    "setDefaultFailed": "Failed to set as default",
+    "setDefaultSuccess": "Set as default successfully"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -219,6 +236,8 @@
     "welcome": {
       "title": "Welcome to ShipFlow! 🎉",
       "description": "You're all set to start shipping. Shape Up is about making meaningful progress in focused cycles. Let's get you started with your first cycle.",
+      "kanbanTitle": "Welcome to Your Kanban Project! 🎉",
+      "kanbanDescription": "You're ready to start managing tasks in continuous flow. Let's get you started with your first task.",
       "steps": {
         "createCycle": {
           "title": "Create a Cycle",
@@ -231,9 +250,22 @@
         "trackProgress": {
           "title": "Track on Hill Chart",
           "description": "Visualize progress as you figure things out and make them happen."
+        },
+        "createTasks": {
+          "title": "Create Tasks",
+          "description": "Add tasks to your backlog and organize them on the Kanban board"
+        },
+        "moveCards": {
+          "title": "Move Cards",
+          "description": "Drag tasks through TODO, In Progress, and Done columns"
+        },
+        "trackTime": {
+          "title": "Track Time",
+          "description": "Use work log timers to track effort on each task"
         }
       },
       "createFirstCycle": "Create Your First Cycle",
+      "createFirstTask": "Create First Task",
       "learnMore": "Learn About Shape Up"
     },
     "overview": "Overview",
@@ -260,7 +292,9 @@
     "noPitches": "No pitches yet",
     "noPitchesDescription": "Shape your ideas into actionable pitches",
     "createPitch": "Create Pitch",
-    "aiRiskAnalysis": "AI Risk Analysis"
+    "aiRiskAnalysis": "AI Risk Analysis",
+    "progress": "Progress",
+    "budgetProgress": "Budget Progress"
   },
   "projects": {
     "title": "Projects",
@@ -286,6 +320,11 @@
     "projectKey": "Project Key",
     "projectDescription": "Description",
     "projectColor": "Project Color",
+    "projectType": "Project Type",
+    "shapeUp": "Shape Up",
+    "shapeUpDescription": "6-week cycles with betting, pitches & cooldown",
+    "kanban": "Kanban",
+    "kanbanDescription": "Continuous flow with visual board",
     "selectColor": "Select Color",
     "selectColorValue": "Select a color",
     "logoUrl": "Logo URL (optional)",
@@ -303,6 +342,8 @@
     "viewDetailsFor": "View details for {{name}}",
     "viewCycles": "View Cycles",
     "viewCyclesFor": "View cycles for {{name}}",
+    "viewBacklog": "View Backlog",
+    "viewBacklogFor": "View backlog for {{name}}",
     "editProjectFor": "Edit {{name}}",
     "activate": "Activate",
     "noProjectsFound": "No projects found",
@@ -323,7 +364,17 @@
     "archiveSuccess": "Project archived successfully",
     "restoreSuccess": "Project restored successfully",
     "archiveProjectSuccess": "Project archived successfully",
-    "activateProjectSuccess": "Project activated successfully"
+    "activateProjectSuccess": "Project activated successfully",
+    "activateSuccess": "Project activated successfully",
+    "noProjectsMatch": "No projects match your search",
+    "errors": {
+      "nameRequired": "Project name is required",
+      "keyRequired": "Project key is required",
+      "keyFormat": "Project key must be 2-10 uppercase letters/numbers",
+      "saveFailed": "Failed to save project",
+      "deleteFailed": "Failed to delete project",
+      "updateStatusFailed": "Failed to update project status"
+    }
   },
   "cycles": {
     "title": "Cycles",
@@ -389,7 +440,8 @@
     "cycleDeleted": "Cycle deleted successfully!",
     "failedToUpdate": "Failed to update cycle status",
     "failedToDelete": "Failed to delete cycle",
-    "failedToLoad": "Failed to load cycles"
+    "failedToLoad": "Failed to load cycles",
+    "members": "Members"
   },
   "pitches": {
     "title": "Pitches",
@@ -423,6 +475,15 @@
       "cooldown": "Cooldown",
       "cancelled": "Cancelled"
     }
+  },
+  "status": {
+    "pending": "Pending",
+    "started": "Started",
+    "inProgress": "In Progress",
+    "testing": "Testing",
+    "done": "Done",
+    "cooldown": "Cooldown",
+    "cancelled": "Cancelled"
   },
   "betting": {
     "title": "Betting Table",
@@ -552,7 +613,16 @@
     "attendees": "Attendees",
     "agenda": "Agenda",
     "notes": "Notes",
-    "noMeetings": "No meetings scheduled"
+    "noMeetings": "No meetings scheduled",
+    "type": {
+      "shaping": "Shaping Meeting",
+      "betting": "Betting Meeting",
+      "kickoff": "Kickoff Meeting",
+      "standup": "Standup Meeting",
+      "demo": "Demo Meeting",
+      "retrospective": "Retrospective Meeting",
+      "hillChartReview": "Hill Chart Review"
+    }
   },
   "reports": {
     "title": "Reports",
@@ -691,6 +761,8 @@
     "loadCycleHealthFailed": "Failed to load cycle health summary",
     "saveBugReportFailed": "Failed to save bug report",
     "loadDependenciesFailed": "Failed to load task dependencies",
+    "errorDescription": "An error occurred",
+    "componentError": "Component Error",
     "http": {
       "400": {
         "title": "Invalid Request",
@@ -1140,6 +1212,8 @@
     "newToShipFlow": "New to ShipFlow? Start with \"Getting Started with ShipFlow\" to learn the fundamentals, then explore other guides based on your needs.",
     "gettingStarted": "Getting Started with ShipFlow",
     "gettingStartedDesc": "Learn the basics of ShipFlow, from logging in to navigating the interface and understanding core concepts.",
+    "projectTypes": "Dual Project Modes",
+    "projectTypesDesc": "Understand Shape Up vs Kanban modes and choose the right methodology for each project.",
     "hillCharts": "Understanding Hill Charts",
     "hillChartsDesc": "Master the hill chart visualization to track progress through the figuring-out and making-it-happen phases.",
     "bettingMeeting": "Running a Betting Meeting",
@@ -1206,6 +1280,7 @@
     "cannotDeleteWithCycles": "Cannot delete project with cycles",
     "archived": "Archived",
     "description": "Description",
+    "projectType": "Project Type",
     "totalCycles": "Total Cycles",
     "activeCycles": "Active Cycles",
     "activeCycle": "Active Cycle",
@@ -1232,6 +1307,9 @@
     "teams": "Teams",
     "cycles": "Cycles",
     "cycle": "Cycle",
+    "backlog": "Backlog",
+    "viewBacklog": "View Backlog",
+    "kanbanDescription": "This is a Kanban project with continuous flow. Manage your tasks in the backlog using the Kanban board view.",
     "projectOwner": "Project Owner",
     "deleteProject": "Delete Project",
     "deleteConfirm": "Are you sure you want to delete '{{name}}'? This action cannot be undone.",
@@ -1243,7 +1321,11 @@
     "deleteFailed": "Failed to delete project",
     "loadFailed": "Failed to load project details",
     "notFound": "Project not found",
-    "goToProjects": "Go to Projects"
+    "goToProjects": "Go to Projects",
+    "key": "[Translation needed: کلید پروژه]",
+    "owner": "[Translation needed: مالک پروژه]",
+    "status": "Status",
+    "updateSuccess": "[Translation needed: پروژه با موفقیت به‌روزرسانی شد]"
   },
   "taskDetail": {
     "title": "Title",
@@ -1308,7 +1390,13 @@
     "medium": "Medium",
     "high": "High",
     "urgent": "Urgent",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "attachments": "Attachments",
+    "category": "Category",
+    "comments": "Comments",
+    "deleteTask": "[Translation needed: حذف وظیفه]",
+    "updateSuccess": "[Translation needed: وظیفه با موفقیت به‌روزرسانی شد]",
+    "workLogs": "[Translation needed: گزارش‌های کار]"
   },
   "bettingTable": {
     "title": "Betting Table",
@@ -1335,7 +1423,18 @@
     "noTeamTracks": "No team tracks available. Please select a cycle with allocated teams.",
     "selectCycleFirst": "Please select a cycle to view the betting table",
     "allocated": "Allocated",
-    "available": "Available"
+    "available": "Available",
+    "appetite": "[Translation needed: اشتها]",
+    "approve": "[Translation needed: تأیید]",
+    "discussion": "[Translation needed: بحث]",
+    "pitch": "Pitches",
+    "reject": "[Translation needed: رد]",
+    "results": "[Translation needed: نتایج]",
+    "subtitle": "[Translation needed: بررسی و رأی به پیچ‌ها برای چرخه بعدی]",
+    "team": "[Translation needed: تیم]",
+    "vote": "[Translation needed: رأی]",
+    "voteSuccess": "[Translation needed: رأی با موفقیت ثبت شد]",
+    "votes": "[Translation needed: آرا]"
   },
   "retroBoard": {
     "title": "Retrospective Board",
@@ -1384,7 +1483,12 @@
     "retroClosed": "Retrospective closed!",
     "retroCloseFailed": "Failed to close retrospective",
     "loadFailed": "Failed to load retro",
-    "featureDisabled": "Retrospectives feature is disabled for this project"
+    "featureDisabled": "Retrospectives feature is disabled for this project",
+    "actionItems": "[Translation needed: اقدامات]",
+    "addCard": "[Translation needed: افزودن کارت]",
+    "createRetro": "[Translation needed: ایجاد بازنگری]",
+    "saveSuccess": "[Translation needed: بازنگری با موفقیت ذخیره شد]",
+    "toImprove": "[Translation needed: برای بهبود]"
   },
   "meetingList": {
     "title": "Meetings",
@@ -1629,7 +1733,11 @@
     "selectProject": "Please select a specific project to view retrospectives.",
     "featureDisabled": "Retrospectives feature is disabled for this project.",
     "enableInSettings": "You can enable it in project settings.",
-    "required": "*"
+    "required": "*",
+    "createSuccess": "[Translation needed: بازنگری با موفقیت ایجاد شد]",
+    "facilitator": "[Translation needed: تسهیل‌گر]",
+    "noRetros": "[Translation needed: هیچ بازنگری یافت نشد]",
+    "viewRetro": "[Translation needed: مشاهده بازنگری]"
   },
   "myWorkLogs": {
     "title": "My Work Logs",
@@ -1645,80 +1753,86 @@
     "loadFailed": "Failed to load work logs"
   },
   "testCases": {
-    "title": "Test Cases",
-    "newTestCase": "New Test Case",
-    "searchPlaceholder": "Search test cases...",
-    "searchLabel": "Search test cases",
-    "filterByStatus": "Filter by Status",
-    "allStatuses": "All Statuses",
-    "allStatus": "All Statuses",
-    "allTypes": "All Types",
-    "allPriorities": "All Priorities",
-    "allPriority": "All Priorities",
-    "type": "Type",
-    "pitch": "Pitch",
-    "key": "Key",
-    "tableTitle": "Title",
-    "passRate": "Pass Rate",
-    "aiGenerated": "AI Generated",
-    "statusValues": {
-      "DRAFT": "Draft",
-      "READY": "Ready",
-      "APPROVED": "Approved",
-      "DEPRECATED": "Deprecated",
-      "ARCHIVED": "Archived"
-    },
-    "typeValues": {
-      "FUNCTIONAL": "Functional",
-      "INTEGRATION": "Integration",
-      "UNIT": "Unit",
-      "E2E": "E2E",
-      "REGRESSION": "Regression",
-      "SMOKE": "Smoke"
-    },
-    "priorityValues": {
-      "LOW": "Low",
-      "MEDIUM": "Medium",
-      "HIGH": "High",
-      "CRITICAL": "Critical"
-    },
-    "noTestCases": "No test cases found",
-    "noTestCasesDesc": "Create your first test case to start tracking quality",
-    "createTestCase": "Create Test Case",
-    "name": "Name",
-    "description": "Description",
-    "status": "Status",
-    "priority": "Priority",
-    "lastRun": "Last Run",
+    "noMatch": "No test cases match your search",
     "actions": "Actions",
-    "view": "View",
-    "edit": "Edit",
-    "delete": "Delete",
-    "run": "Run",
-    "pending": "Pending",
-    "passed": "Passed",
-    "failed": "Failed",
-    "skipped": "Skipped",
-    "low": "Low",
-    "medium": "Medium",
-    "high": "High",
-    "critical": "Critical",
-    "never": "Never",
-    "generateAI": "Generate with AI",
-    "totalTestCases": "Total Test Cases",
-    "approved": "Approved",
-    "ready": "Ready",
-    "cycle": "Cycle",
+    "aiGenerated": "AI Generated",
     "allCycles": "All Cycles",
     "allPitches": "All Pitches",
-    "runTest": "Run Test",
-    "noRuns": "No test runs yet",
-    "deleteTestCase": "Delete Test Case",
-    "deleteConfirm": "Are you sure you want to delete this test case?",
-    "testCaseDeleted": "Test case deleted successfully",
-    "deleteFailed": "Failed to delete test case",
+    "allPriorities": "All Priorities",
+    "allPriority": "All Priorities",
+    "allStatus": "All Statuses",
+    "allStatuses": "All Statuses",
+    "allTypes": "All Types",
+    "approved": "Approved",
+    "assignee": "Assignee",
     "confirmDelete": "Are you sure you want to delete this test case?",
-    "loadFailed": "Failed to load test cases"
+    "createSuccess": "Test case created successfully",
+    "createTestCase": "Create Test Case",
+    "critical": "Critical",
+    "cycle": "Cycle",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this test case?",
+    "deleteFailed": "Failed to delete test case",
+    "deleteSuccess": "Test case deleted successfully",
+    "deleteTestCase": "Delete Test Case",
+    "description": "Description",
+    "edit": "Edit",
+    "editTestCase": "Edit Test Case",
+    "failed": "Failed",
+    "filterByStatus": "Filter by Status",
+    "generateAI": "Generate with AI",
+    "high": "High",
+    "key": "Key",
+    "lastRun": "Last Run",
+    "loadFailed": "Failed to load test cases",
+    "low": "Low",
+    "medium": "Medium",
+    "name": "Name",
+    "never": "Never",
+    "newTestCase": "New Test Case",
+    "noRuns": "No runs yet",
+    "noTestCases": "No test cases found",
+    "noTestCasesDesc": "Create your first test case to start tracking quality",
+    "passRate": "Pass Rate",
+    "passed": "Passed",
+    "pending": "Pending",
+    "pitch": "Pitches",
+    "priority": "Priority",
+    "priorityValues": {
+      "CRITICAL": "Critical",
+      "HIGH": "High",
+      "LOW": "Low",
+      "MEDIUM": "Medium"
+    },
+    "ready": "Ready",
+    "run": "Run",
+    "runTest": "Run Test",
+    "searchLabel": "Search test cases...",
+    "searchPlaceholder": "Search test cases...",
+    "skipped": "Skipped",
+    "status": "Status",
+    "statusValues": {
+      "APPROVED": "Approved",
+      "ARCHIVED": "Archived",
+      "DEPRECATED": "Deprecated",
+      "DRAFT": "Draft",
+      "READY": "Ready"
+    },
+    "tableTitle": "Title",
+    "testCaseDeleted": "Test case deleted successfully",
+    "title": "Test Cases",
+    "totalTestCases": "Total Test Cases",
+    "type": "Type",
+    "view": "View",
+    "typeValues": {
+      "E2E": "End-to-End",
+      "FUNCTIONAL": "Functional",
+      "INTEGRATION": "Integration",
+      "REGRESSION": "Regression",
+      "SMOKE": "Smoke",
+      "UNIT": "Unit"
+    },
+    "updateSuccess": "Test case updated successfully"
   },
   "bugReports": {
     "title": "Bug Reports",
@@ -1814,8 +1928,22 @@
       "reporter": "Reporter",
       "assignee": "Assignee",
       "created": "Created",
-      "closeButton": "Close"
-    }
+      "closeButton": "Close",
+      "noDescription": "No description provided",
+      "notProvided": "Not provided"
+    },
+    "assignee": "Assignee",
+    "createBug": "Bug Report",
+    "createSuccess": "Bug reported successfully",
+    "cycle": "Cycle",
+    "deleteSuccess": "Bug deleted successfully",
+    "editBug": "Edit Bug",
+    "noBugs": "[Translation needed: هیچ باگی گزارش نشده]",
+    "pitch": "Pitches",
+    "reporter": "Reporter",
+    "severity": "Severity",
+    "status": "Status",
+    "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]"
   },
   "chartConfig": {
     "title": "Chart Configuration",
@@ -1977,7 +2105,25 @@
     "upcomingDeadlines": "Upcoming Deadlines",
     "noOverdueTasks": "No overdue tasks! 🎉",
     "noBlockedTasks": "No blocked tasks",
-    "noUpcomingDeadlines": "No upcoming cycle deadlines"
+    "noUpcomingDeadlines": "No upcoming cycle deadlines",
+    "behindSchedule": "Behind Schedule",
+    "complete": "Complete",
+    "completed": "Completed",
+    "completionRate": "Completion Rate",
+    "cycleProgress": "Cycle Progress",
+    "inProgress": "In Progress",
+    "inProgressTasks": "In Progress",
+    "loading": "Loading...",
+    "myTasks": "My Tasks",
+    "noActiveCycles": "No active cycles",
+    "noActiveTasks": "No active tasks",
+    "noTeamData": "No team data available",
+    "pitches": "Pitches",
+    "recentActivity": "Recent Activity",
+    "remaining": "Remaining",
+    "teamWorkload": "Team Workload",
+    "timeProgress": "Time Progress",
+    "workProgress": "Work Progress"
   },
   "dashboardCustomizer": {
     "title": "Widget Configuration",
@@ -2077,7 +2223,8 @@
     "channelLoadFailed": "Failed to fetch channel configurations",
     "channelCreateFailed": "Failed to create channel configuration",
     "channelDeleteFailed": "Failed to delete channel configuration",
-    "testFailed": "Failed to send test notification"
+    "testFailed": "Failed to send test notification",
+    "actions": "Actions"
   },
   "customMetrics": {
     "title": "Custom Metrics",
@@ -2108,6 +2255,8 @@
     "title": "Reports",
     "noCyclesFound": "No Cycles Found",
     "noCyclesDesc": "Create a cycle first to generate reports",
+    "kanbanTitle": "Cycle Reports Not Available",
+    "kanbanDesc": "Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.",
     "selectCycle": "Select Cycle",
     "exportPDF": "Export PDF",
     "exportCSV": "Export CSV",
@@ -2156,7 +2305,9 @@
     "role": "Role",
     "totalHours": "Total Hours",
     "workDays": "Work Days",
-    "avgHoursPerDay": "Avg Hours/Day"
+    "avgHoursPerDay": "Avg Hours/Day",
+    "notStarted": "Not Started",
+    "hoursByMember": "Hours by Team Member"
   },
   "backlogPage": {
     "title": "Backlog",
@@ -2164,7 +2315,9 @@
     "allCycles": "All Cycles",
     "newTask": "New Task",
     "selectCycleToCreate": "Please select a cycle to create a task",
+    "noDefaultCycle": "No default cycle found for this project",
     "pitchTasks": "Pitch Tasks",
+    "featureTasks": "Feature Tasks",
     "debtImprovements": "Debt & Improvements",
     "taskOverview": "Task Overview",
     "total": "Total",
@@ -2244,22 +2397,32 @@
       "dependencies": "Dependencies",
       "allTasks": "All Tasks",
       "blockedTasks": "Blocked Tasks",
-      "blockingTasks": "Blocking Tasks"
+      "blockingTasks": "Blocking Tasks",
+      "all": "All",
+      "assignee": "Assignee",
+      "blocked": "Blocked",
+      "blocking": "Blocking",
+      "dependency": "Dependencies"
     },
     "sort": {
       "priority": "Priority",
       "lastUpdated": "Last Updated",
       "createdDate": "Created Date",
-      "title": "Title"
+      "title": "Title",
+      "createdAt": "Created Date",
+      "dueDate": "Due Date",
+      "status": "Status"
     },
     "stats": {
       "total": "Total Items",
       "backlog": "Backlog",
       "inProgress": "In Progress",
-      "done": "Done"
+      "done": "Done",
+      "avgCompletion": "Average Completion"
     },
     "categoryDescription": {
       "pitchScope": "Tasks within the pitch scope",
+      "featureScope": "Feature tasks for this project",
       "debtImprovement": "Technical debt and improvements",
       "bug": "Software defects and issues",
       "feature": "New functionality requests",
@@ -2267,6 +2430,18 @@
       "research": "Investigation and exploration tasks",
       "chore": "Maintenance and housekeeping tasks"
     },
+    "viewMode": {
+      "list": "List View",
+      "kanban": "Kanban Board"
+    },
+    "kanban": {
+      "noTasks": "No tasks in this column",
+      "dragToMove": "Drag to move between columns",
+      "blockedBy": "Blocked By",
+      "blocking": "Blocking"
+    },
+    "blockedBy": "Blocked ({{count}})",
+    "blocking": "Blocking ({{count}})",
     "statusOptions": {
       "todo": "To Do",
       "backlog": "Backlog",
@@ -2290,7 +2465,9 @@
       "improvement": "Improvement",
       "research": "Research",
       "chore": "Chore",
-      "epic": "Epic"
+      "epic": "Epic",
+      "debtImprovement": "Debt & Improvement",
+      "pitchScope": "Pitch Scope"
     },
     "table": {
       "title": "Title",
@@ -2309,7 +2486,101 @@
     "emptyState": {
       "title": "No backlog items",
       "message": "Start adding items to your backlog"
-    }
+    },
+    "activity": "Activity",
+    "actual": "Actual",
+    "actualHours": "Actual Hours",
+    "addComment": "Add Comment",
+    "addDependency": "Add Dependency",
+    "addSubtask": "Add Subtask",
+    "addTask": "Add Task",
+    "andMore": "... and {{count}} more",
+    "attachments": "Attachments",
+    "avgHoursPerTask": "Average Hours per Task",
+    "back": "Back",
+    "blockedByCount": "Blocked by {{count}} task(s)",
+    "blockedTasks": "Blocked Tasks",
+    "blockingCount": "Blocking {{count}} task(s)",
+    "blocks": "Blocking",
+    "category": "Category",
+    "categoryFiguring": "Figuring it out",
+    "categoryMakingProgress": "Making Progress",
+    "categoryMustHave": "Must Have",
+    "categoryNiceToHave": "Nice to Have",
+    "clearFilters": "Clear Filters",
+    "comments": "Comments",
+    "completedAt": "Completed At",
+    "completedTasks": "Completed Tasks",
+    "completionRate": "Completion Rate",
+    "confirmDelete": "Are you sure you want to delete this task?",
+    "createDebtTask": "Create Technical Debt or Improvement Task",
+    "createFirstTask": "Create your first task to get started",
+    "createSubtaskUnder": "Create subtask under selected parent task",
+    "createTaskForPitch": "Create task related to pitch in this cycle",
+    "cycle": "Cycle",
+    "deleteConfirm": "Delete Confirmation",
+    "dependencies": "Dependencies",
+    "emptyDesc": "Create your first task to start tracking work.",
+    "emptyTitle": "No tasks found",
+    "enterTags": "Enter tags (comma-separated)",
+    "estimate": "Estimate",
+    "estimatedHours": "Estimated Hours",
+    "filterByAssignee": "Filter by Assignee",
+    "filterByCycle": "Filter by Cycle",
+    "filterByPitch": "Filter by Pitch",
+    "filterByPriority": "Filter by Priority",
+    "filterByStatus": "Filter by Status",
+    "hillChart": "Hill Chart Position",
+    "inProgressTasks": "In Progress Tasks",
+    "loadingCycles": "Loading cycles...",
+    "loadingPeople": "Loading people...",
+    "loadingPitches": "Loading pitches...",
+    "loadingTasks": "Loading tasks...",
+    "logWork": "Log Work",
+    "noTasksFound": "No tasks found in this category. Create your first task to get started.",
+    "noTasksYet": "No tasks yet",
+    "overdueTasks": "Overdue Tasks",
+    "page": "Page {{current}} of {{total}}",
+    "pairAssigneeName": "Pair Assignee",
+    "parentTask": "Parent Task",
+    "priority": "Priority",
+    "priorityHigh": "High",
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityUrgent": "Urgent",
+    "progress": "Progress",
+    "required": "Required",
+    "saveTask": "Save Task",
+    "search": "Search tasks...",
+    "selectCategory": "Select Category",
+    "selectCycleMessage": "Select a cycle to view and manage tasks",
+    "selectCyclePrompt": "Select Cycle",
+    "selectDate": "Select Date",
+    "selectPerson": "Select Person",
+    "selectPitch": "Select Pitch",
+    "selectScope": "Select Scope",
+    "showingPage": "Showing {{start}} to {{end}} of {{total}} tasks",
+    "statistics": "Statistics",
+    "status": "Status",
+    "statusBacklog": "Backlog",
+    "statusBlocked": "Blocked",
+    "statusCancelled": "Cancelled",
+    "statusDone": "Done",
+    "statusInProgress": "In Progress",
+    "statusInReview": "In Review",
+    "statusTodo": "To Do",
+    "stopTimer": "Stop Timer",
+    "stopTimerFirst": "Stop the current timer first",
+    "subtaskCount": "{{count}} subtask(s)",
+    "subtasks": "Subtasks",
+    "taskDeleteFailed": "[Translation needed: حذف تسک ناموفق بود]",
+    "taskLoadFailed": "[Translation needed: بارگذاری تسک‌ها ناموفق بود]",
+    "taskName": "[Translation needed: نام تسک]",
+    "taskSaveFailed": "[Translation needed: ذخیره تسک ناموفق بود]",
+    "timerRunning": "[Translation needed: تایمر برای این تسک در حال اجرا است]",
+    "totalTasks": "[Translation needed: کل تسک‌ها]",
+    "update": "[Translation needed: بروزرسانی]",
+    "uploadFile": "[Translation needed: آپلود فایل]"
   },
   "healthOverview": {
     "title": "Pitch Health Overview",
@@ -2506,7 +2777,14 @@
         "medium": "Medium",
         "low": "Low"
       }
-    }
+    },
+    "failedToReset": "[Translation needed: بازنشانی تنظیمات ناموفق بود]",
+    "failedToSave": "Failed to save settings",
+    "mustEqual100": "[Translation needed: باید ۱۰۰% باشد]",
+    "permissionDenied": "[Translation needed: شما مجوز دسترسی به این صفحه را ندارید. نقش مدیر مورد نیاز است.]",
+    "settingsReset": "[Translation needed: تنظیمات به پیش‌فرض بازنشانی شدند]",
+    "settingsSaved": "[Translation needed: تنظیمات سازمان با موفقیت ذخیره شد]",
+    "updatedBy": "[Translation needed: توسط {{user}}]"
   },
   "userManagement": {
     "title": "User Management",
@@ -2588,7 +2866,11 @@
     "admins": "Admins",
     "developers": "Developers",
     "activeUsers": "Active Users",
-    "pendingUsers": "Pending Users"
+    "pendingUsers": "Pending Users",
+    "creating": "[Translation needed: در حال ایجاد...]",
+    "editRole": "[Translation needed: تغییر نقش]",
+    "selectNewRole": "[Translation needed: نقش جدید را انتخاب کنید]",
+    "userDeactivated": "[Translation needed: کاربر با موفقیت غیرفعال شد]"
   },
   "pitchBoard": {
     "title": "Pitch Board",
@@ -2692,7 +2974,9 @@
       "loadFailed": "Failed to load pitches",
       "updateStatusFailed": "Failed to update pitch status",
       "createFailed": "Failed to create pitch"
-    }
+    },
+    "replaceExtracted": "Replace with Extracted Data",
+    "extracting": "Extracting data from document..."
   },
   "profilePage": {
     "title": "My Profile",
@@ -2728,7 +3012,23 @@
     "loadFailed": "Failed to load profile",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "avatarUrl": "[Translation needed: آدرس تصویر پروفایل]",
+    "bioPlaceholder": "[Translation needed: درباره خودتان بگویید...]",
+    "changePasswordDesc": "[Translation needed: رمز عبور فعلی خود را وارد کرده و رمز عبور جدید را انتخاب کنید.]",
+    "changing": "[Translation needed: در حال تغییر...]",
+    "editProfile": "[Translation needed: ویرایش پروفایل]",
+    "failedToLoad": "[Translation needed: بارگذاری پروفایل ناموفق بود]",
+    "lastUpdated": "[Translation needed: آخرین به‌روزرسانی]",
+    "minChars": "[Translation needed: حداقل ۶ کاراکتر]",
+    "passwordChanged": "[Translation needed: رمز عبور با موفقیت تغییر کرد]",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "profileDetails": "[Translation needed: جزئیات پروفایل]",
+    "profileUpdated": "Profile updated successfully",
+    "security": "[Translation needed: امنیت]",
+    "skillsHelp": "[Translation needed: لیست مهارت‌ها با کاما جدا شده]",
+    "skillsPlaceholder": "[Translation needed: مثلاً Java، React، TypeScript، SQL]"
   },
   "landingPage": {
     "heroTitle": "Shape Up Your Software Development",
@@ -2806,7 +3106,9 @@
     "circuitBreaker": "Circuit Breaker",
     "circuitBreakerDesc": "Detect and respond to scope overflow using Shape Up's fixed-time safety valve.",
     "reports": "Reports & Dashboards",
-    "reportsDesc": "Visualize metrics, track velocity, and create custom reporting dashboards."
+    "reportsDesc": "Visualize metrics, track velocity, and create custom reporting dashboards.",
+    "tasksInDiscovery": "[Translation needed: {{count}} وظیفه در کشف]",
+    "tasksInProgress": "[Translation needed: {{count}} وظیفه در حال انجام]"
   },
   "pitchDetailPage": {
     "title": "Pitch Details",
@@ -2893,7 +3195,8 @@
     "workLogDeleted": "Work log deleted successfully!",
     "workLogDeleteFailed": "Failed to delete work log",
     "documentUploadFailed": "Some meeting documents failed to upload",
-    "meetingFailed": "Failed to create meeting"
+    "meetingFailed": "Failed to create meeting",
+    "youCanEnable": "You can enable this feature in organization settings"
   },
   "cycleDetailPage": {
     "title": "Cycle Details",
@@ -3242,6 +3545,8 @@
     "taskInDiscovery": "task in discovery",
     "featuresTitle": "Everything You Need for Shape Up",
     "featuresDesc": "From cycle planning to risk analysis, ShipFlow provides all the tools your team needs to implement Shape Up successfully.",
+    "dualProjectModes": "Dual Project Modes",
+    "dualProjectModesDesc": "Choose between Shape Up (6-week cycles with betting) or Kanban (continuous flow) mode for each project. The only tool that supports both methodologies natively.",
     "cycleManagement": "Cycle Management",
     "cycleManagementDesc": "Create and manage 6-week development cycles with betting and building phases following Shape Up methodology.",
     "hillCharts": "Hill Charts",
@@ -3269,7 +3574,44 @@
     "cooldownStep": "Cooldown",
     "cooldownStepDesc": "Two weeks for bug fixes, technical debt, and exploring new ideas before the next cycle.",
     "openSourceTitle": "Open Source & Free Forever",
-    "openSourceDesc": "ShipFlow is completely free and open source. Self-host it on your infrastructure with full control over your data."
+    "openSourceDesc": "ShipFlow is completely free and open source. Self-host it on your infrastructure with full control over your data.",
+    "activeDevelopment": "Active Development",
+    "aiPoweredTest": "AI-Powered Test & QA",
+    "aiPoweredTestDesc": "Generate test cases with AI, execute test suites, track coverage, and maintain quality with integrated bug reporting.",
+    "bet": "Bet",
+    "betDesc": "Leadership reviews shaped pitches at the betting table and decides which ones to commit to.",
+    "build": "Build",
+    "buildDesc": "Small teams work autonomously to build and ship within the fixed time appetite.",
+    "contributing": "Contributing",
+    "cooldown": "Cooldown",
+    "cooldownDesc": "Two weeks for bug fixes, technical debt, and exploring new ideas before the next cycle.",
+    "copyright": "© {{year}} ShipFlow. Open source under MIT License.",
+    "demoCredentials": "Demo: admin / admin123",
+    "description": "A full-stack application for tracking development cycles using the Shape Up methodology by Basecamp. Features AI-powered risk analysis, interactive hill charts, and comprehensive team collaboration tools.",
+    "dockerReady": "Docker Ready",
+    "everythingDesc": "From cycle planning to risk analysis, ShipFlow provides all the tools your team needs to implement Shape Up successfully.",
+    "everythingYouNeed": "Everything You Need for Shape Up",
+    "features": "Features",
+    "figuringItOut": "Figuring it out",
+    "getStartedFree": "Get Started - It's Free",
+    "github": "GitHub",
+    "howItWorks": "How Shape Up Works",
+    "makingItHappen": "Making it happen",
+    "mitLicense": "MIT License",
+    "mitLicensed": "MIT licensed and open for contributions. Built with modern tech stack: React 18, TypeScript, Spring Boot 3, Java 17+, shadcn/ui, and LangChain4j.",
+    "openSourceAndFree": "Open Source & Free",
+    "openSourceSelfHosted": "Open Source & Self-Hosted",
+    "readyDesc": "Start tracking your development cycles with AI insights today.",
+    "readyToShapeUp": "Ready to Shape Up Your Projects?",
+    "selfHosted": "Self-Hosted",
+    "shape": "Shape",
+    "shapeDesc": "Senior people work on shaping pitches - defining the problem, setting boundaries, and outlining a solution.",
+    "shapeUpBook": "Shape Up Book",
+    "starOnGitHub": "Star on GitHub",
+    "subtitle": "Shape Up Your Software Development",
+    "techStack": "Tech Stack",
+    "viewLicense": "View License",
+    "wcag21AA": "WCAG 2.1 AA"
   },
   "dashboardManager": {
     "title": "Reports",
@@ -3373,7 +3715,27 @@
     "workLogAdded": "Work log added successfully",
     "workLogUpdated": "Work log updated successfully",
     "workLogFailed": "Failed to save work log",
-    "loadFailed": "Failed to load data"
+    "loadFailed": "Failed to load data",
+    "workLogAddFailed": "Failed to add work log",
+    "workLogDeleted": "Work log deleted successfully",
+    "workLogDeleteFailed": "Failed to delete work log",
+    "cycle": "Cycle",
+    "selectCycle": "Select a cycle",
+    "logDailyWork": "Log Daily Work",
+    "person": "Person",
+    "selectPerson": "Select a person",
+    "pitch": "Pitch",
+    "selectPitch": "Select a pitch",
+    "note": "Note",
+    "optionalNote": "Optional note about the work",
+    "add": "Add",
+    "recentWorkLogs": "Recent Work Logs",
+    "total": "Total",
+    "hoursUnit": "hours",
+    "noWorkLogs": "No work logs yet",
+    "noWorkLogsDesc": "Start logging work to track progress",
+    "teamMember": "Team Member",
+    "actions": "Actions"
   },
   "testCaseForm": {
     "createTitle": "Create Test Case",
@@ -3419,6 +3781,37 @@
     "saveFailed": "Failed to save test case",
     "pitchLoadFailed": "Failed to load pitches",
     "scopeLoadFailed": "Failed to load scopes"
+  },
+  "testRun": {
+    "loadFailed": "Failed to load test run",
+    "recordFailed": "Failed to record test run",
+    "invalidId": "Invalid test case ID",
+    "notFound": "Test case not found",
+    "title": "Run Test",
+    "recordSuccess": "Test run recorded successfully",
+    "testCaseDetails": "Test Case Details",
+    "preconditions": "Preconditions",
+    "testSteps": "Test Steps",
+    "noSteps": "No test steps defined",
+    "expectedResult": "Expected Result",
+    "noExpectedResult": "No expected result defined",
+    "recordTitle": "Record Test Run",
+    "status": "Test Status",
+    "selectStatus": "Select test status",
+    "actualResult": "Actual Result",
+    "actualResultPlaceholder": "What actually happened during the test?",
+    "duration": "Duration (seconds)",
+    "environmentDetails": "Environment Details",
+    "environment": "Environment",
+    "environmentPlaceholder": "e.g., Chrome 120, Windows 11",
+    "environmentHint": "Browser, OS, or other relevant environment details",
+    "buildVersion": "Build/Version",
+    "buildPlaceholder": "e.g., v1.2.3",
+    "buildHint": "Application version or build number",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any additional observations or comments",
+    "recording": "Recording Test Run",
+    "recordButton": "Record Test Run"
   },
   "testCaseDetail": {
     "title": "Test Case #{id}",
@@ -3601,7 +3994,8 @@
     "channelNamePlaceholder": "General",
     "teamNamePlaceholder": "General",
     "webhookPlaceholder": "Leave empty to use tenant webhook",
-    "channelWebhookPlaceholder": "Leave empty to use default channel"
+    "channelWebhookPlaceholder": "Leave empty to use default channel",
+    "cycleEvents": "Cycle Events"
   },
   "permissionManagement": {
     "title": "Permission Management",
@@ -4365,8 +4759,6 @@
       "subtitle": "Manage test cases, run manual tests, and track bugs within your cycles",
       "integratedTitle": "Integrated QA",
       "integratedDesc": "ShipFlow integrates QA directly into the development cycle. Instead of treating testing as an afterthought, you can define test cases alongside your scopes and track quality in real-time.",
-      "bestPractice": "💡 Best Practice:",
-      "bestPracticeDesc": "Create test cases during the \"Shaping\" phase or early in the \"Build\" phase to clarify requirements before code is written.",
       "testCasesTitle": "Managing Test Cases",
       "testCasesSubtitle": "Define how features should be verified",
       "testCasesStep1": "Navigate to **QA & Testing > Test Cases**",
@@ -4378,8 +4770,11 @@
       "testCasesStep3d": "**Expected Result:** What should happen if successful",
       "testCasesStep3e": "**Priority:** Critical, High, Medium, or Low",
       "testCasesStep4": "Link it to a specific **Pitch** or **Cycle** to track coverage",
+      "bestPractice": "💡 Best Practice:",
+      "bestPracticeDesc": "Create test cases during the \"Shaping\" phase or early in the \"Build\" phase to clarify requirements before code is written.",
       "aiGenerationTitle": "AI Test Generation",
       "aiGenerationSubtitle": "Speed up test creation with AI",
+      "aiGenerationDesc": "Speed up test creation with AI-powered generation",
       "aiDesc": "ShipFlow can automatically generate test cases based on your pitch descriptions and scope definitions.",
       "aiHowToUseTitle": "How to use it:",
       "aiHowToStep1": "Go to **Generate with AI** in the Test Cases page",
@@ -4461,5 +4856,13 @@
     "autoCloseTasks": "Auto-close tasks when PR is merged",
     "autoCloseTasksHelp": "Automatically close tasks when PRs with \"closes #123\", \"fixes #123\", or \"resolves #123\" are merged",
     "adding": "Adding..."
-  }
+  },
+  "competitors": {
+    "ctaTitle": "Ready to Shape Up?",
+    "ctaSubtitle": "Start shipping with focus and confidence",
+    "getStarted": "Get Started Free",
+    "copyright": "© 2024 ShipFlow. Open Source & Free.",
+    "home": "Home"
+  },
+  "cycleId": "Cycle ID"
 }

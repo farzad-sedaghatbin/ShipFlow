@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Shield,
   List,
+  Kanban,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,7 +82,11 @@ import { EmptyTasksIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
 import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import KanbanBoard from '../components/KanbanBoard';
+import { useProject, useAuth } from '../contexts';
 
+// View mode type
+type ViewMode = 'list' | 'kanban';
 
 const statusOptions: { value: TaskStatus; labelKey: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', labelKey: 'backlogPage.statusOptions.backlog', variant: 'secondary' },
@@ -104,6 +109,8 @@ export default function BacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
+  const { isKanbanProject, currentProject } = useProject();
+  const { user } = useAuth();
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -117,6 +124,8 @@ export default function BacklogPage() {
   const [activeCategory, setActiveCategory] = useState<TaskCategory>(categoryFromUrl || 'PITCH_SCOPE');
   const [tabValue, setTabValue] = useState('all');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
+  // View mode: Kanban projects default to kanban view, Shape Up defaults to list
+  const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
@@ -167,10 +176,23 @@ export default function BacklogPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_assigneeDropdownOpen, _setAssigneeDropdownOpen] = useState(false);
 
+  // Sync view mode when project type changes
+  useEffect(() => {
+    // Set default view mode based on project type
+    setViewMode(isKanbanProject ? 'kanban' : 'list');
+  }, [isKanbanProject]);
+
   useEffect(() => {
     loadInitialData();
     loadActiveTimer();
   }, []);
+
+  // Re-load when project changes (for Kanban auto-select)
+  useEffect(() => {
+    if (currentProject) {
+      loadInitialData();
+    }
+  }, [currentProject?.id, isKanbanProject]);
 
   useEffect(() => {
     // Load pitches when dialog opens
@@ -184,7 +206,12 @@ export default function BacklogPage() {
   }, [dialogOpen, formData.cycleId]);
 
   useEffect(() => {
-    if (selectedCycle) {
+    // For Kanban projects, load tasks by project (no cycle needed)
+    if (isKanbanProject && currentProject) {
+      loadTasks();
+      loadStatistics();
+    } else if (selectedCycle) {
+      // For Shape Up projects, load tasks by cycle
       loadTasks();
       loadStatistics();
     } else {
@@ -194,7 +221,7 @@ export default function BacklogPage() {
       setTasksLoading(false);
       setStatistics(null);
     }
-  }, [selectedCycle, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder]);
+  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter]);
 
   // Sync URL param to state when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -211,7 +238,16 @@ export default function BacklogPage() {
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
-      // Default to 'all' - don't auto-select first cycle
+      
+      // For Kanban projects, auto-select the first (default) cycle
+      if (isKanbanProject && currentProject) {
+        // Filter cycles to only those belonging to the current project
+        const projectCycles = cyclesRes.data.filter(c => c.projectId === currentProject.id);
+        if (projectCycles.length > 0) {
+          setSelectedCycle(projectCycles[0].id);
+        }
+      }
+      // For Shape Up or "All Projects", default to 'all'
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -233,6 +269,63 @@ export default function BacklogPage() {
   };
 
   const loadTasks = async () => {
+    // For Kanban projects, load tasks by project, not by cycle
+    if (isKanbanProject && currentProject) {
+      setTasksLoading(true);
+      const timeout = setTimeout(() => setTasksLoading(false), 10000);
+      
+      try {
+        const response = await taskService.getByProjectIdAndCategory(
+          currentProject.id, 
+          activeCategory, 
+          page, 
+          rowsPerPage, 
+          sortBy, 
+          sortOrder
+        );
+        let filteredTasks = response?.data?.content || [];
+        
+        // Apply additional filters
+        if (statusFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
+          );
+        }
+        if (priorityFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
+          );
+        }
+        if (assigneeFilter.length > 0) {
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
+          );
+        }
+        if (dependencyFilter === 'blocked') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
+        } else if (dependencyFilter === 'blocking') {
+          filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Filter by tab (my tasks)
+        if (tabValue === 'my' && user?.personId) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.assigneeId === user.personId);
+        }
+        
+        setTasks(filteredTasks);
+        setTotalElements(response?.data?.totalElements || 0);
+      } catch (error) {
+        console.error('Failed to load project tasks:', error);
+        setTasks([]);
+        setTotalElements(0);
+      } finally {
+        clearTimeout(timeout);
+        setTasksLoading(false);
+      }
+      return;
+    }
+    
+    // For Shape Up projects, use cycle-based loading
     if (!selectedCycle) {
       setTasks([]);
       setTotalElements(0);
@@ -359,6 +452,18 @@ export default function BacklogPage() {
   };
 
   const loadStatistics = async () => {
+    // For Kanban projects, load project-based statistics
+    if (isKanbanProject && currentProject) {
+      try {
+        const response = await taskService.getStatisticsByProjectId(currentProject.id);
+        setStatistics(response.data);
+      } catch (error) {
+        console.error('Failed to load project statistics:', error);
+      }
+      return;
+    }
+    
+    // For Shape Up, load cycle-based statistics
     if (!selectedCycle || selectedCycle === 'all') return;
     try {
       const response = await taskService.getStatisticsByCycleId(selectedCycle);
@@ -432,16 +537,32 @@ export default function BacklogPage() {
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
-      // Only allow creating new task if a specific cycle is selected
-      if (!selectedCycle || selectedCycle === 'all') {
+      // For Kanban projects, use the auto-selected cycle or find the project's default cycle
+      // For Shape Up, require a specific cycle to be selected
+      if (!isKanbanProject && (!selectedCycle || selectedCycle === 'all')) {
         toast.error(t('backlogPage.selectCycleToCreate'));
         return;
       }
+      
+      // Get the cycle ID to use
+      let cycleIdToUse = typeof selectedCycle === 'number' ? selectedCycle : 0;
+      
+      // For Kanban projects, if no cycle is selected yet, find the project's default cycle
+      if (isKanbanProject && currentProject && cycleIdToUse === 0) {
+        const projectCycles = cycles.filter(c => c.projectId === currentProject.id);
+        if (projectCycles.length > 0) {
+          cycleIdToUse = projectCycles[0].id;
+        } else {
+          toast.error(t('backlogPage.noDefaultCycle'));
+          return;
+        }
+      }
+      
       setEditingTask(null);
       setFormData({
         title: '',
         description: '',
-        cycleId: selectedCycle,
+        cycleId: cycleIdToUse,
         status: 'BACKLOG',
         priority: 'MEDIUM',
         estimateHours: undefined,
@@ -521,7 +642,9 @@ export default function BacklogPage() {
     // Timer stopped - reload data and clear active timer
     setActiveTimerTaskId(null);
     loadTasks();
-    if (selectedCycle !== 'all') {
+    // For Kanban projects, always load statistics (they're project-based)
+    // For Shape Up, only load if a specific cycle is selected
+    if (isKanbanProject || selectedCycle !== 'all') {
       loadStatistics();
     }
   };
@@ -563,7 +686,8 @@ export default function BacklogPage() {
       errors.title = t('backlogPage.titleMinLength');
     }
 
-    if (!formData.cycleId || formData.cycleId === 0) {
+    // Skip cycle validation for Kanban projects (cycle is auto-selected)
+    if (!isKanbanProject && (!formData.cycleId || formData.cycleId === 0)) {
       errors.cycleId = t('backlogPage.cycleRequired');
     }
 
@@ -658,9 +782,12 @@ export default function BacklogPage() {
 
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
-  const categoryTitle = activeCategory === 'PITCH_SCOPE' ? t('backlogPage.pitchTasks') : t('backlogPage.debtImprovements');
+  // Use different labels for Kanban vs Shape Up projects
+  const categoryTitle = activeCategory === 'PITCH_SCOPE' 
+    ? (isKanbanProject ? t('backlogPage.featureTasks') : t('backlogPage.pitchTasks'))
+    : t('backlogPage.debtImprovements');
   const categoryDescription = activeCategory === 'PITCH_SCOPE' 
-    ? t('backlogPage.categoryDescription.pitchScope')
+    ? (isKanbanProject ? t('backlogPage.categoryDescription.featureScope') : t('backlogPage.categoryDescription.pitchScope'))
     : t('backlogPage.categoryDescription.debtImprovement');
 
   if (loading) {
@@ -683,43 +810,86 @@ export default function BacklogPage() {
           <p className="text-muted-foreground">{categoryDescription}</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Cycle Selector */}
-          <Select
-            value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
-            onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder={t('backlogPage.selectCycle')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('backlogPage.allCycles')}</SelectItem>
-              {cycles.map((cycle) => (
-                <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                  {cycle.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
+          {/* Cycle Selector - Hidden for Kanban projects */}
+          {!isKanbanProject && (
+            <Select
+              value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
+              onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder={t('backlogPage.selectCycle')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('backlogPage.allCycles')}</SelectItem>
+                {cycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center border rounded-md">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button 
-                    onClick={() => handleOpenDialog()} 
-                    disabled={selectedCycle === 'all' || !selectedCycle}
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="rounded-r-none"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('backlogPage.newTask')}
+                    <List className="h-4 w-4" />
                   </Button>
-                </span>
-              </TooltipTrigger>
-              {(selectedCycle === 'all' || !selectedCycle) && (
-                <TooltipContent>
-                  <p>{t('backlogPage.selectCycleToCreate')}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+                </TooltipTrigger>
+                <TooltipContent>{t('backlogPage.viewMode.list')}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('kanban')}
+                    className="rounded-l-none"
+                  >
+                    <Kanban className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('backlogPage.viewMode.kanban')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {/* New Task Button - For Kanban, always enabled; for Shape Up, requires cycle selection */}
+          {isKanbanProject ? (
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('backlogPage.newTask')}
+            </Button>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button 
+                      onClick={() => handleOpenDialog()} 
+                      disabled={selectedCycle === 'all' || !selectedCycle}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t('backlogPage.newTask')}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {(selectedCycle === 'all' || !selectedCycle) && (
+                  <TooltipContent>
+                    <p>{t('backlogPage.selectCycleToCreate')}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 
@@ -728,7 +898,7 @@ export default function BacklogPage() {
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="PITCH_SCOPE" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            {t('backlogPage.pitchTasks')}
+            {isKanbanProject ? t('backlogPage.featureTasks') : t('backlogPage.pitchTasks')}
           </TabsTrigger>
           <TabsTrigger value="DEBT_IMPROVEMENT" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
@@ -905,10 +1075,36 @@ export default function BacklogPage() {
         </div>
 
         <TabsContent value="all" className="mt-0">
-          <TaskTable />
+          {viewMode === 'kanban' ? (
+            <KanbanBoard
+              tasks={tasks}
+              onStatusChange={handleQuickStatusChange}
+              onViewTask={(task) => setViewDialog({ open: true, task })}
+              onEditTask={(task) => handleOpenDialog(task)}
+              onDeleteTask={(taskId) => setDeleteDialog({ open: true, taskId })}
+              onAddSubtask={handleAddSubTask}
+              onStartTimer={handleStartTimer}
+              loading={tasksLoading}
+            />
+          ) : (
+            <TaskTable />
+          )}
         </TabsContent>
         <TabsContent value="my" className="mt-0">
-          <TaskTable />
+          {viewMode === 'kanban' ? (
+            <KanbanBoard
+              tasks={tasks}
+              onStatusChange={handleQuickStatusChange}
+              onViewTask={(task) => setViewDialog({ open: true, task })}
+              onEditTask={(task) => handleOpenDialog(task)}
+              onDeleteTask={(taskId) => setDeleteDialog({ open: true, taskId })}
+              onAddSubtask={handleAddSubTask}
+              onStartTimer={handleStartTimer}
+              loading={tasksLoading}
+            />
+          ) : (
+            <TaskTable />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -1069,47 +1265,50 @@ export default function BacklogPage() {
                 placeholder={t('backlogPage.commaSeparated')}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>{t('backlogPage.pitch')}</Label>
-                <Select
-                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                  onValueChange={handlePitchChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('backlogPage.noPitch')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={String(pitch.id)}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Hide pitch and scope fields for Kanban projects */}
+            {!isKanbanProject && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>{t('backlogPage.pitch')}</Label>
+                  <Select
+                    value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                    onValueChange={handlePitchChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('backlogPage.noPitch')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
+                      {pitches.map((pitch) => (
+                        <SelectItem key={pitch.id} value={String(pitch.id)}>
+                          {pitch.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t('backlogPage.scope')}</Label>
+                  <Select
+                    value={formData.scopeId ? String(formData.scopeId) : 'none'}
+                    onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
+                    disabled={!formData.pitchId || scopes.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
+                      {scopes.map((scope) => (
+                        <SelectItem key={scope.id} value={String(scope.id)}>
+                          {scope.scope}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>{t('backlogPage.scope')}</Label>
-                <Select
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                  disabled={!formData.pitchId || scopes.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
-                    {scopes.map((scope) => (
-                      <SelectItem key={scope.id} value={String(scope.id)}>
-                        {scope.scope}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog}>

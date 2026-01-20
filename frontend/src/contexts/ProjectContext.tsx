@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Project } from '../types';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import { Project, ProjectType } from '../types';
 import projectService from '../services/projectService';
 
 // Special value to represent "All Projects" selection
@@ -11,6 +11,12 @@ interface ProjectContextType {
   loading: boolean;
   error: string | null;
   isAllProjectsSelected: boolean;
+  /** Returns true if current project uses Kanban methodology */
+  isKanbanProject: boolean;
+  /** Returns true if current project uses Shape Up methodology */
+  isShapeUpProject: boolean;
+  /** Returns the project type of the current project, or null if all projects selected */
+  currentProjectType: ProjectType | null;
   selectProject: (project: Project | null) => void;
   selectAllProjects: () => void;
   refreshProjects: () => Promise<void>;
@@ -85,6 +91,22 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const isAllProjectsSelected = currentProject === null;
 
+  // Computed properties for project type
+  const currentProjectType = useMemo(() => 
+    currentProject?.projectType ?? null, 
+    [currentProject]
+  );
+  
+  const isKanbanProject = useMemo(() => 
+    currentProject?.projectType === 'KANBAN', 
+    [currentProject]
+  );
+  
+  const isShapeUpProject = useMemo(() => 
+    currentProject?.projectType === 'SHAPE_UP' || currentProject === null, 
+    [currentProject]
+  );
+
   return (
     <ProjectContext.Provider
       value={{
@@ -93,6 +115,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         isAllProjectsSelected,
+        isKanbanProject,
+        isShapeUpProject,
+        currentProjectType,
         selectProject,
         selectAllProjects,
         refreshProjects,

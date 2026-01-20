@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,12 @@ public class ProjectDTO {
     private Long ownerId;
     private String ownerName;
     private Boolean isActive;
+    /**
+     * Project methodology type.
+     * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
+     * KANBAN: Continuous flow with visual board, no cycles
+     */
+    private ProjectType projectType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer cycleCount;

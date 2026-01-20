@@ -44,6 +44,12 @@ export default function GettingStartedGuide() {
                             <strong>{t('guides.gettingStarted.whatIsShapeUp')}</strong> {t('guides.gettingStarted.shapeUpDesc')}
                         </p>
                     </div>
+                    <div className="rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 p-4">
+                        <p className="text-sm text-purple-900 dark:text-purple-100">
+                            <strong>Dual Project Modes:</strong> ShipFlow supports both Shape Up (6-week cycles) and Kanban (continuous flow) methodologies. 
+                            When creating a project, you can choose which approach fits your needs. See the <Link to="/help/project-types" className="underline font-semibold">Project Types Guide</Link> for more details.
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
 

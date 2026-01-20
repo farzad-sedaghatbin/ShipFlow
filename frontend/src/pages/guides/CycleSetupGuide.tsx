@@ -27,6 +27,22 @@ export default function CycleSetupGuide() {
 
             <Separator />
 
+            {/* Shape Up Only Notice */}
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 p-4">
+                <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                            Shape Up Projects Only
+                        </p>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                            This guide applies to <strong>Shape Up</strong> projects with 6-week cycles. Kanban projects use continuous flow without fixed cycles. 
+                            See the <Link to="/help/project-types" className="underline font-semibold">Project Types Guide</Link> to learn about the differences.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Introduction */}
             <Card>
                 <CardHeader>
