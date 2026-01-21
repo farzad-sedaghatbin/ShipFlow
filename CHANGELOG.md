@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **LLM Plugin Architecture**: Complete refactoring to pluggable AI provider system
+  - **Core Architecture**:
+    - Created `LLMProvider` interface for all provider implementations
+    - Implemented `LLMProviderFactory` with Spring auto-discovery for automatic provider registration
+    - Added `LLMProviderType` enum supporting: ollama, runpod, openai, anthropic (future), google (future), azure-openai (future)
+    - Created `LLMProviderConfig` builder pattern for flexible, provider-agnostic configuration
+    - Replaced monolithic `RunPodChatModel` class with modular provider implementations
+  - **Provider Implementations**:
+    - **OllamaLLMProvider**: Local/self-hosted AI (privacy-first, no API costs)
+    - **OpenAILLMProvider**: Production-grade ChatGPT integration (gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo)
+    - **RunPodLLMProvider**: Cloud GPU serverless compute with async job polling
+  - **Configuration System**:
+    - Updated `application.properties` with provider-specific sections (ollama, openai, runpod)
+    - Added `application-dev.properties` configuration for local development (defaults to Ollama)
+    - Created `.env.example` with all provider configuration templates
+    - Updated Docker Compose files to support all three providers via environment variables
+  - **Testing**:
+    - Created 4 new test classes covering the LLM plugin system:
+      - `LLMProviderConfigTest`: Configuration builder and extra params (8 tests)
+      - `LLMProviderFactoryTest`: Factory auto-discovery and model creation (13 tests)
+      - `LLMProviderTypeTest`: Enum validation and config parsing (7 tests)
+      - `OllamaLLMProviderTest`, `OpenAILLMProviderTest`, `RunPodLLMProviderTest`: Provider-specific tests (22 tests)
+    - Total: 53 new unit tests, 100% pass rate, 94% instruction coverage on LLM package
+    - All tests passing: 1018 total, 0 failures
+  - **Developer Experience**:
+    - Enhanced `start-dev.sh` with provider-specific validation (checks Ollama only when AI_PROVIDER=ollama)
+    - Added provider display names and descriptive error messages
+    - Created comprehensive README in `backend/src/main/java/.../llm/README.md` with:
+      - Architecture overview and diagrams
+      - Step-by-step guide for adding new providers
+      - Configuration examples and usage patterns
+  - **Extensibility**:
+    - Framework ready for future providers (Anthropic Claude, Google Gemini, Azure OpenAI)
+    - Provider plugins auto-discovered via Spring's component scanning
+    - No code changes needed to switch providers (environment variable only)
+
+### Fixed
+- **Circuit Breaker Monitor**: Fixed URL parameter handling
+  - Changed from `/cycles/:id/circuit-breaker` to `/cycles/:cycleId/circuit-breaker`
+  - Updated `useParams` hook to correctly parse `cycleId` parameter
+  - Resolved 404 errors when navigating to circuit breaker page from cycle detail
+- **AI Cache Controller**: Added missing `AIConfig` dependency injection
+  - Injected `AIConfig` to access provider information
+  - Added `/api/cache/ai-provider` endpoint to display current AI provider and model
+  - Shows provider display name (e.g., "OpenAI ChatGPT", "Ollama (Local)", "RunPod (Cloud GPU)")
+- **Circuit Breaker Service**: Fixed axios import to use centralized API client
+  - Changed from direct `axios` import to `api` from `./api`
+  - Ensures all API requests use consistent base URL and interceptors
+  - Maintains authentication headers across all circuit breaker requests
+- **Translation Interpolation**: Fixed string interpolation in English and Persian translations
+  - Changed `{count}` and `{threshold}` to `{{count}}` and `{{threshold}}` (i18next syntax)
+  - Fixed circuit breaker and cycle detail pages showing raw placeholder strings
+- **Flyway Configuration**: Changed `spring.flyway.clean-disabled` to `true` in `application-dev.properties`
+  - Prevents accidental database wipes during development restarts
+  - Preserves sample data and work logs across application restarts
+  - Developers can still manually clean database when needed
+
+### Changed
+- **AI Risk Analysis Logging**: Enhanced logging with provider and timing information
+  - Added provider name and model to AI generation logs ("🤖 Generating AI insights using provider: openai (model: gpt-4o-mini)")
+  - Added execution time tracking for AI requests ("✅ AI response received in 2345ms")
+  - Improved debugging and performance monitoring capabilities
+- **Cycle Risk Overview Component**: Enhanced AI insights rendering
+  - Changed from plain list items to Markdown rendering for insights and recommendations
+  - Supports bold, italic, code blocks, and formatting in AI-generated content
+  - Improves readability of structured AI responses
+- **Cycle Detail Navigation**: Added Circuit Breaker button to cycle header
+  - Placed ⚡ icon button next to Hill Chart and Edit buttons
+  - Improves discoverability of circuit breaker feature
+  - Consistent with Shape Up methodology's safety valve concept
+- **Competitors Comparison Page**: Updated AI features description
+  - Highlights pluggable LLM architecture with provider choice (Ollama, OpenAI, RunPod)
+  - Emphasizes "Privacy-first or production-ready—your choice"
+  - Clarifies deployment flexibility (local, cloud, or GPU-accelerated)
+- **Circuit Breaker Guide**: Added "Re-pitching Killed Work" section
+  - Documents how to learn from killed pitches and re-pitch smarter
+  - Provides step-by-step guide and example scenario
+  - Includes Shape Up wisdom: "The best teams kill pitches early and re-pitch smarter, not harder"
+  - Updated access instructions to reflect new navigation (button in cycle header vs. separate link)
+
+### Development
+- **Database Migration**: Added V56 with circuit breaker test data
+  - Populates Cycle 4 pitches with realistic work logs
+  - Demonstrates overflow detection (116%, 120%, 85%, 55%, 118% of appetite)
+  - Enables testing of circuit breaker functionality with real data
+  - Updates pitch statuses to reflect active development (IN_PROGRESS, STARTED)
+
 - **Project Type System**: Support for both Kanban and Shape Up methodologies
   - **Backend Implementation**:
     - New `ProjectType` enum (SHAPE_UP, KANBAN) with database migration V55

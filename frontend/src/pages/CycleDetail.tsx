@@ -15,6 +15,7 @@ import {
   Clock,
   Target,
   Loader2,
+  Zap,
 } from 'lucide-react';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
@@ -179,6 +180,12 @@ export default function CycleDetail() {
             <Link to={`/cycles/${cycle.id}/hill-chart`}>
               <BarChart3 className="h-4 w-4 mr-2" />
               {t('cycleDetailPage.hillChart')}
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/cycles/${cycle.id}/circuit-breaker`}>
+              <Zap className="h-4 w-4 mr-2" />
+              {t('cycleDetailPage.circuitBreaker')}
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>

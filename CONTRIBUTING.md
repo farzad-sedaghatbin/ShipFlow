@@ -15,7 +15,10 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 - **Java 17+** - [Download OpenJDK](https://adoptium.net/)
 - **Node.js 18+** - [Download Node.js](https://nodejs.org/)
 - **Docker** (optional) - [Download Docker](https://www.docker.com/)
-- **Ollama** (for AI features) - [Download Ollama](https://ollama.ai/)
+- **AI Provider** (choose one for AI features):
+  - **Ollama** (recommended for development, no API key) - [Download Ollama](https://ollama.ai/)
+  - **OpenAI** (production-ready) - Get API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+  - **RunPod** (cloud GPU) - Get API key from [RunPod](https://www.runpod.io/)
 
 ### Development Setup
 
@@ -51,12 +54,36 @@ docker-compose up --build
 
 ### AI Features Setup (Optional)
 
+ShipFlow supports multiple AI providers. Choose one:
+
+**Option A: Ollama (Local, No API Key)**
 1. Install Ollama: https://ollama.ai/
 2. Pull the Mistral model:
    ```bash
-   ollama pull mistral
+   ollama pull mistral:instruct
+   ollama serve
    ```
-3. Ensure Ollama is running on `http://localhost:11434`
+3. Create `.env`:
+   ```bash
+   AI_PROVIDER=ollama
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=mistral:instruct
+   ```
+
+**Option B: OpenAI ChatGPT (Production)**
+1. Get API key from https://platform.openai.com/api-keys
+2. Create `.env`:
+   ```bash
+   AI_PROVIDER=openai
+   OPENAI_API_KEY=sk-your-api-key-here
+   OPENAI_MODEL=gpt-4-turbo-preview
+   ```
+
+**Option C: RunPod (Cloud GPU)**
+1. Set up RunPod endpoint and get API key
+2. Use `.env.example` as template
+
+See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for detailed configuration.
 
 ## 📝 Making Changes
 

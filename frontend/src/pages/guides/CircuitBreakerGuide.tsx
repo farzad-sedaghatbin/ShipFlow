@@ -252,6 +252,45 @@ export default function CircuitBreakerGuide() {
                 </CardContent>
             </Card>
 
+            {/* Re-pitching Killed Work */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        {t('guides.circuitBreaker.repitchTitle')}
+                    </CardTitle>
+                    <CardDescription>{t('guides.circuitBreaker.repitchSubtitle')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p>{t('guides.circuitBreaker.repitchDesc')}</p>
+
+                    <div className="space-y-3">
+                        <p className="font-medium text-sm">{t('guides.circuitBreaker.repitchHowTitle')}</p>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                            <li>{t('guides.circuitBreaker.repitchHow1')}</li>
+                            <li>{t('guides.circuitBreaker.repitchHow2')}</li>
+                            <li>{t('guides.circuitBreaker.repitchHow3')}</li>
+                            <li>{t('guides.circuitBreaker.repitchHow4')}</li>
+                        </ol>
+                    </div>
+
+                    <div className="rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 p-4">
+                        <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
+                            {t('guides.circuitBreaker.repitchExampleTitle')}
+                        </p>
+                        <div className="text-sm text-purple-900 dark:text-purple-100 space-y-1">
+                            <p><strong>{t('guides.circuitBreaker.repitchEx1Label')}</strong> {t('guides.circuitBreaker.repitchEx1Text')}</p>
+                            <p><strong>{t('guides.circuitBreaker.repitchEx2Label')}</strong> {t('guides.circuitBreaker.repitchEx2Text')}</p>
+                            <p><strong>{t('guides.circuitBreaker.repitchEx3Label')}</strong> {t('guides.circuitBreaker.repitchEx3Text')}</p>
+                        </div>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground">
+                        {t('guides.circuitBreaker.repitchWisdom')}
+                    </p>
+                </CardContent>
+            </Card>
+
             {/* Best Practices */}
             <Card>
                 <CardHeader>

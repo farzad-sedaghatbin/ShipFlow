@@ -22,8 +22,8 @@ import { Slider } from '../components/ui/slider';
 
 export default function CircuitBreakerMonitor() {
   const { t } = useTranslation();
-  const { id: idParam } = useParams<{ id: string }>();
-  const cycleId = safeParseId(idParam);
+  const { cycleId: cycleIdParam } = useParams<{ cycleId: string }>();
+  const cycleId = safeParseId(cycleIdParam);
   const { showSuccess, showError } = useToast();
 
   const [overflows, setOverflows] = useState<CircuitBreaker[]>([]);

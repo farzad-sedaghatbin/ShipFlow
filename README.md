@@ -119,11 +119,18 @@ A modern project management application implementing the [Shape Up](https://base
   - Automated status detection without manual assignment
   - All thresholds and weights customizable per organization with sensible defaults
 - **AI-Powered Q&A**: Enhanced RAG-based knowledge retrieval from project documents
+  - **Pluggable LLM Architecture**: Choose your AI provider via simple configuration
+    - **Ollama** (local/self-hosted): Privacy-first, no API costs, runs on your hardware
+    - **OpenAI ChatGPT**: Production-grade GPT-4o/GPT-4o-mini for high-quality responses
+    - **RunPod** (cloud GPU): Scalable serverless GPU compute with pay-per-use pricing
+  - Easy provider switching via environment variables (no code changes required)
+  - Extensible plugin system - add new providers by implementing `LLMProvider` interface
   - Smart relevance filtering (0.70 threshold)
   - Source citation tracking
   - RAG evaluation metrics (faithfulness, relevance)
   - Semantic caching for faster responses
 - **QA Test Case Generation**: AI-assisted test case generation with validation
+  - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)
   - Automated quality validation
   - Historical test pattern learning
@@ -167,7 +174,12 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
 - **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
 - **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
-- **AI-Powered**: RAG-based document Q&A and automated test case generation
+- **AI-Powered**: Pluggable LLM architecture with provider flexibility
+  - **Local AI (Ollama)**: Privacy-first, no API costs, perfect for local development or self-hosted deployments
+  - **Cloud AI (OpenAI)**: Production-grade GPT-4o/GPT-4o-mini for complex reasoning and high-quality responses
+  - **Serverless GPU (RunPod)**: Pay-per-use cloud GPU compute for scalable deployments
+  - RAG-based document Q&A and automated test case generation work with all providers
+  - Switch providers via configuration—no code changes needed
 - **Complete Control**: Self-hosted with full data ownership
 
 [→ View Full Comparison](/compare)
@@ -253,6 +265,7 @@ Press `?` to view all keyboard shortcuts:
 
 ```bash
 # 1. Set up environment (choose one option)
+
 # Option A: Ollama (recommended for development - no API keys needed)
 cat > .env << 'EOF'
 AI_PROVIDER=ollama
@@ -261,7 +274,14 @@ OLLAMA_MODEL=mistral:instruct
 EOF
 brew install ollama && ollama pull mistral:instruct && ollama serve
 
-# Option B: RunPod (cloud AI - requires API key)
+# Option B: OpenAI ChatGPT (production-ready, requires API key)
+cat > .env << 'EOF'
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-your-api-key-here
+OPENAI_MODEL=gpt-4-turbo-preview
+EOF
+
+# Option C: RunPod (cloud GPU - requires API key)
 cp .env.example .env
 # Edit .env with your RunPod credentials
 

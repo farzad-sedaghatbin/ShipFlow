@@ -11,7 +11,9 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Load environment variables from .env file if it exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
     echo "📝 Loading environment variables from .env file..."
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+    set -a
+    source "$PROJECT_ROOT/.env"
+    set +a
 fi
 
 echo "🚀 Starting ShipFlow in Development Mode..."
@@ -38,7 +40,8 @@ port_in_use() {
 echo -e "${BLUE}Checking prerequisites...${NC}"
 
 # Read AI provider from application-dev.properties or environment variable
-AI_PROVIDER="${AI_PROVIDER}"
+# Spring Boot uses APP_AI_PROVIDER environment variable -> maps to app.ai.provider
+AI_PROVIDER="${APP_AI_PROVIDER}"
 if [ -z "$AI_PROVIDER" ]; then
     # Try to read from application-dev.properties
     if [ -f "$PROJECT_ROOT/backend/src/main/resources/application-dev.properties" ]; then
@@ -79,6 +82,10 @@ if ! command_exists npm; then
     exit 1
 fi
 echo -e "${GREEN}✓ npm $(npm -v) found${NC}"
+
+# Check AI Provider
+AI_PROVIDER=${AI_PROVIDER:-ollama}
+echo -e "${BLUE}Configured AI Provider: ${AI_PROVIDER}${NC}"
 
 # Check for Ollama only if provider is 'ollama'
 if [ "$AI_PROVIDER" = "ollama" ]; then
@@ -131,12 +138,33 @@ if [ "$AI_PROVIDER" = "ollama" ]; then
     else
         echo -e "${RED}Error: Ollama is not installed${NC}"
         echo -e "${RED}  Install from: https://ollama.ai${NC}"
-        echo -e "${RED}  Or change AI_PROVIDER to 'runpod' in application.properties${NC}"
+        echo -e "${RED}  Or change AI_PROVIDER to 'openai' or 'runpod' in your .env${NC}"
         exit 1
     fi
-else
+elif [ "$AI_PROVIDER" = "openai" ]; then
+    echo -e "${GREEN}✓ Using OpenAI (ChatGPT) for AI${NC}"
+    if [ -z "$APP_AI_OPENAI_API_KEY" ]; then
+        echo -e "${RED}Error: APP_AI_OPENAI_API_KEY is not set${NC}"
+        echo -e "${RED}  Please set it in your .env file${NC}"
+        exit 1
+    else
+        echo -e "${GREEN}✓ OpenAI API key is configured${NC}"
+        echo -e "${BLUE}  Model: ${APP_AI_OPENAI_MODEL:-gpt-4-turbo-preview}${NC}"
+    fi
+elif [ "$AI_PROVIDER" = "runpod" ]; then
     echo -e "${GREEN}✓ Using RunPod for AI (cloud GPU)${NC}"
-    echo -e "${BLUE}  Skipping local Ollama checks${NC}"
+    if [ -z "$APP_AI_RUNPOD_API_KEY" ]; then
+        echo -e "${RED}Error: APP_AI_RUNPOD_API_KEY is not set${NC}"
+        echo -e "${RED}  Please set it in your .env file${NC}"
+        exit 1
+    else
+        echo -e "${GREEN}✓ RunPod API key is configured${NC}"
+        echo -e "${BLUE}  Model: ${RUNPOD_MODEL:-mistral:instruct}${NC}"
+    fi
+else
+    echo -e "${YELLOW}Warning: Unknown AI provider '${AI_PROVIDER}'${NC}"
+    echo -e "${YELLOW}  Supported: ollama, openai, runpod${NC}"
+    echo -e "${BLUE}  Continuing with configured provider...${NC}"
 fi
 
 # Check ports

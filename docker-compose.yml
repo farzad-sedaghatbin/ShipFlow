@@ -34,19 +34,23 @@ services:
       DB_NAME: shipflowdb
       DB_USERNAME: shipflow
       DB_PASSWORD: shipflow_secret
-      # AI Provider Selection: 'runpod' (cloud GPU) or 'ollama' (local/self-hosted)
+      # AI Provider Selection: 'ollama' (local), 'openai' (ChatGPT), or 'runpod' (cloud GPU)
       AI_PROVIDER: ${AI_PROVIDER:-runpod}
       AI_RISK_ENABLED: "true"
-      # RunPod Configuration (default)
+      # Ollama Configuration (local/self-hosted)
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:instruct}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
+      # OpenAI Configuration (ChatGPT)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4-turbo-preview}
+      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-120}
+      # RunPod Configuration (cloud GPU)
       RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
       RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
       RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
       RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
-      # Ollama Configuration (for local/self-hosted)
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:instruct}
-      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
       QA_VECTOR_STORE_TYPE: chromadb

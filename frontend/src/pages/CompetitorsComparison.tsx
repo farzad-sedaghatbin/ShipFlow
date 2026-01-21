@@ -237,8 +237,9 @@ export default function CompetitorsComparison() {
                 <Brain className="h-10 w-10 text-primary mb-4" />
                 <h3 className="font-semibold text-lg mb-2">AI-Powered Insights</h3>
                 <p className="text-sm text-muted-foreground">
+                  Pluggable LLM architecture: Choose Ollama (local), OpenAI ChatGPT, or RunPod (cloud GPU).
                   Get automated risk analysis, AI-generated test cases, and intelligent pitch
-                  document extraction. No other Shape Up tool offers this.
+                  document extraction. Privacy-first or production-ready—your choice.
                 </p>
               </CardContent>
             </Card>
