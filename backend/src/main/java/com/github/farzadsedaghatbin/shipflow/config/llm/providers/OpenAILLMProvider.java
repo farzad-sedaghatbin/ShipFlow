@@ -112,11 +112,6 @@ public class OpenAILLMProvider implements LLMProvider {
             throw new IllegalArgumentException("OpenAI requires an API key (app.ai.openai.api-key). " +
                     "Get one at https://platform.openai.com/api-keys");
         }
-        
-        // Validate API key format (should start with sk-)
-        if (!config.getApiKey().startsWith("sk-")) {
-            log.warn("OpenAI API key does not start with 'sk-'. Ensure you're using a valid API key.");
-        }
     }
 
     @Override
