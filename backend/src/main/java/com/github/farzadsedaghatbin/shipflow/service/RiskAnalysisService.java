@@ -426,7 +426,14 @@ public class RiskAnalysisService {
                 If the question is not related to the pitch or risk management, politely redirect to relevant topics.
                 """, context, question);
 
+            log.info("🤖 Answering risk question using provider: {} (model: {})", 
+                    aiConfig.getProvider(), aiConfig.getModelName());
+            
+            long startTime = System.currentTimeMillis();
             String answer = chatLanguageModel.generate(prompt);
+            long duration = System.currentTimeMillis() - startTime;
+            
+            log.info("✅ AI answer received in {}ms", duration);
 
             return RiskQuestionResponse.builder()
                     .pitchId(pitchId)
@@ -583,9 +590,16 @@ public class RiskAnalysisService {
 
     private AIAnalysisResult generateAIInsights(Pitch pitch, List<RiskFactor> factors, 
                                                  double progress, double cycleProgress) {
+        log.info("🤖 Generating AI insights using provider: {} (model: {})", 
+                aiConfig.getProvider(), aiConfig.getModelName());
+        
         String prompt = buildAIPrompt(pitch, factors, progress, cycleProgress);
         
+        long startTime = System.currentTimeMillis();
         String response = chatLanguageModel.generate(prompt);
+        long duration = System.currentTimeMillis() - startTime;
+        
+        log.info("✅ AI response received in {}ms", duration);
         return parseAIResponse(response);
     }
 

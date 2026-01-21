@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Markdown } from '@/components/ui/markdown';
 
 interface CycleRiskOverviewProps {
   cycleId: number;
@@ -407,13 +408,13 @@ export default function CycleRiskOverview({
             {aiLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </div>
           {riskData.cycleInsights.length > 0 ? (
-            <ul className="space-y-1">
+            <div className="space-y-2">
               {riskData.cycleInsights.map((insight, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
-                  • {insight}
-                </li>
+                <div key={index} className="text-sm text-muted-foreground">
+                  <Markdown content={insight} />
+                </div>
               ))}
-            </ul>
+            </div>
           ) : aiLoading ? (
             <div className="space-y-1">
               <Skeleton className="w-[90%] h-4" />
@@ -433,13 +434,13 @@ export default function CycleRiskOverview({
             {aiLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </div>
           {riskData.cycleRecommendations.length > 0 ? (
-            <ol className="space-y-1">
+            <div className="space-y-2">
               {riskData.cycleRecommendations.map((rec, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
-                  {index + 1}. {rec}
-                </li>
+                <div key={index} className="text-sm text-muted-foreground">
+                  <Markdown content={rec} />
+                </div>
               ))}
-            </ol>
+            </div>
           ) : aiLoading ? (
             <div className="space-y-1">
               <Skeleton className="w-[95%] h-4" />

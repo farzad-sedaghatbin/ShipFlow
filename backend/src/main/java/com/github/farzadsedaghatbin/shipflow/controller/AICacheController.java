@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.service.AICacheService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,11 +28,34 @@ public class AICacheController {
 
     private final AICacheService cacheService;
     private final AICacheConfig cacheConfig;
+    private final AIConfig aiConfig;
 
     @GetMapping("/stats")
     @Operation(summary = "Get cache statistics", description = "Returns current cache statistics including entry counts and hit rates")
     public ResponseEntity<AICacheService.CacheStats> getCacheStats() {
         return ResponseEntity.ok(cacheService.getCacheStats());
+    }
+
+    @GetMapping("/ai-provider")
+    @Operation(summary = "Get AI provider information", description = "Returns information about the currently configured AI provider")
+    public ResponseEntity<Map<String, Object>> getAIProviderInfo() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("provider", aiConfig.getProvider());
+        info.put("model", aiConfig.getModelName());
+        info.put("enabled", aiConfig.isAiRiskAnalysisEnabled());
+        
+        // Add provider display name
+        String providerName = switch (aiConfig.getProvider().toLowerCase()) {
+            case "openai" -> "OpenAI ChatGPT";
+            case "ollama" -> "Ollama (Local)";
+            case "runpod" -> "RunPod (Cloud GPU)";
+            case "anthropic" -> "Anthropic Claude";
+            case "google" -> "Google Gemini";
+            default -> aiConfig.getProvider();
+        };
+        info.put("providerName", providerName);
+        
+        return ResponseEntity.ok(info);
     }
 
     @GetMapping("/config")
