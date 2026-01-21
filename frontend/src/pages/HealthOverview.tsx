@@ -155,7 +155,7 @@ export const HealthOverview: React.FC = () => {
               <SelectContent>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={String(cycle.id)}>
-                    {t('healthOverview.cycleName', { name: cycle.name, active: cycle.isActive ? t('healthOverview.active') : '' })}
+                    {cycle.name} {cycle.isActive && `(${t('healthOverview.active')})`}
                   </SelectItem>
                 ))}
               </SelectContent>
