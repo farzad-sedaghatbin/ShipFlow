@@ -239,13 +239,19 @@ export default function BacklogPage() {
       setCycles(cyclesRes.data);
       setPersons(personsRes);
       
-      // For Kanban projects, auto-select the first (default) cycle
-      if (isKanbanProject && currentProject) {
+      // Auto-select the first cycle of current project (for both Kanban and Shape Up)
+      if (currentProject) {
         // Filter cycles to only those belonging to the current project
         const projectCycles = cyclesRes.data.filter(c => c.projectId === currentProject.id);
         if (projectCycles.length > 0) {
           setSelectedCycle(projectCycles[0].id);
+        } else {
+          // No cycles for this project, default to 'all'
+          setSelectedCycle('all');
         }
+      } else {
+        // No project selected (All Projects view), default to 'all'
+        setSelectedCycle('all');
       }
       // For Shape Up or "All Projects", default to 'all'
     } catch (error) {
@@ -816,16 +822,43 @@ export default function BacklogPage() {
               value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
               onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[250px]">
                 <SelectValue placeholder={t('backlogPage.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('backlogPage.allCycles')}</SelectItem>
-                {cycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                    {cycle.name}
-                  </SelectItem>
-                ))}
+                
+                {/* Current Project Cycles */}
+                {currentProject && cycles.filter(c => c.projectId === currentProject.id).length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      {currentProject.name}
+                    </div>
+                    {cycles
+                      .filter(c => c.projectId === currentProject.id)
+                      .map((cycle) => (
+                        <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                          {cycle.name}
+                        </SelectItem>
+                      ))}
+                  </>
+                )}
+                
+                {/* Other Projects Cycles */}
+                {cycles.filter(c => !currentProject || c.projectId !== currentProject.id).length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      {t('backlogPage.otherProjects')}
+                    </div>
+                    {cycles
+                      .filter(c => !currentProject || c.projectId !== currentProject.id)
+                      .map((cycle) => (
+                        <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                          {cycle.name}
+                        </SelectItem>
+                      ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           )}
