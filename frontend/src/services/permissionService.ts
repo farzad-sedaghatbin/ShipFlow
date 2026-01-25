@@ -7,7 +7,7 @@ export interface Permission {
   permissionType: PermissionType;
 }
 
-export type UserRole = 'ADMIN' | 'PROJECT_MANAGER' | 'PRODUCT' | 'DEVELOPER' | 'QA';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'READONLY';
 
 export type ResourceType = 
   | 'CYCLE' 
@@ -153,7 +153,7 @@ class PermissionService {
    * Get all available user roles
    */
   getUserRoles(): UserRole[] {
-    return ['ADMIN', 'PROJECT_MANAGER', 'PRODUCT', 'DEVELOPER', 'QA'];
+    return ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
   }
 
   /**
@@ -200,10 +200,9 @@ class PermissionService {
   getRoleBadgeColor(role: UserRole): string {
     const colors: Record<UserRole, string> = {
       'ADMIN': 'destructive',
-      'PROJECT_MANAGER': 'default',
-      'PRODUCT': 'secondary',
-      'DEVELOPER': 'info',
-      'QA': 'warning'
+      'MANAGER': 'default',
+      'MEMBER': 'secondary',
+      'READONLY': 'outline'
     };
     return colors[role] || 'default';
   }

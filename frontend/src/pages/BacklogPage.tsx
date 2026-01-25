@@ -233,7 +233,7 @@ export default function BacklogPage() {
   const loadInitialData = async () => {
     try {
       const [cyclesRes, personsRes] = await Promise.all([
-        cycleService.getActive(),
+        cycleService.getMyActiveCycles(),
         personService.getAll(),
       ]);
       setCycles(cyclesRes.data);
@@ -491,7 +491,7 @@ export default function BacklogPage() {
 
   const loadAllPitches = async () => {
     try {
-      const response = await pitchService.getAll();
+      const response = await pitchService.getMyPitches();
       setPitches(response.data);
     } catch (error) {
       console.error('Failed to load pitches:', error);

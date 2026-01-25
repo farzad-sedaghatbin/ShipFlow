@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.risk;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,14 +20,16 @@ public class PitchRiskDTO {
     
     /**
      * Overall risk score (0-100).
-     * 0-30: Low risk
-     * 31-60: Medium risk
-     * 61-100: High risk
+     * Thresholds are configurable via OrganizationSettings:
+     * - LOW: score <= lowMax (default: 30)
+     * - MEDIUM: score > lowMax && <= mediumMax (default: 31-60)
+     * - HIGH: score > mediumMax && <= highMax (default: 61-85)
+     * - CRITICAL: score > highMax (default: > 85)
      */
     private Integer riskScore;
     
     /**
-     * Risk level category derived from score.
+     * Risk level category derived from score using configurable thresholds.
      */
     private RiskLevel riskLevel;
     
@@ -64,11 +67,4 @@ public class PitchRiskDTO {
      * Error message if analysis failed.
      */
     private String errorMessage;
-    
-    public enum RiskLevel {
-        LOW,
-        MEDIUM,
-        HIGH,
-        CRITICAL
-    }
 }

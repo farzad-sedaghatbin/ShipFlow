@@ -33,8 +33,8 @@ export function CycleProgressWidget() {
     try {
       setLoading(true);
       const [cyclesRes, pitchesRes] = await Promise.all([
-        cycleService.getActive(),
-        pitchService.getAll(),
+        cycleService.getMyActiveCycles(),
+        pitchService.getMyPitches(),
       ]);
 
       const today = new Date();

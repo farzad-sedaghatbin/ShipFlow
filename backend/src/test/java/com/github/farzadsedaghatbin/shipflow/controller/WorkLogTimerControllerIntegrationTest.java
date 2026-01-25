@@ -68,26 +68,25 @@ public class WorkLogTimerControllerIntegrationTest {
         taskRepository.deleteAll();
         pitchRepository.deleteAll();
         cycleRepository.deleteAll();
-        personRepository.deleteAll();
         userRepository.deleteAll();
+        personRepository.deleteAll();
 
-        // Create test data
-        testUser = User.builder()
-                .username("testuser")
-                .password("password")
-                .role(UserRole.DEVELOPER)
-                .build();
-        testUser = userRepository.save(testUser);
-
+        // Create test person first
         testPerson = Person.builder()
                 .name("Test Person")
-                .email("test@example.com")
+                .email("timer-test@example.com")
                 .isActive(true)
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
         testPerson = personRepository.save(testPerson);
 
-        testUser.setPerson(testPerson);
+        // Create test user with person
+        testUser = User.builder()
+                .username("worklog-timer-test-user")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .person(testPerson)
+                .build();
         testUser = userRepository.save(testUser);
 
         testCycle = Cycle.builder()
@@ -117,7 +116,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldStartTimerForPitch() throws Exception {
         StartTimerRequest request = StartTimerRequest.builder()
                 .pitchId(testPitch.getId())
@@ -138,7 +137,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldStartTimerForTask() throws Exception {
         StartTimerRequest request = StartTimerRequest.builder()
                 .taskId(testTask.getId())
@@ -158,7 +157,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldRejectStartingMultipleTimers() throws Exception {
         // Start first timer
         StartTimerRequest request1 = StartTimerRequest.builder()
@@ -184,7 +183,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldStopTimerAndCreateWorkLog() throws Exception {
         // Start timer
         StartTimerRequest request = StartTimerRequest.builder()
@@ -213,7 +212,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldGetActiveTimer() throws Exception {
         // Start timer
         StartTimerRequest request = StartTimerRequest.builder()
@@ -236,7 +235,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldReturnNotFoundWhenNoActiveTimer() throws Exception {
         mockMvc.perform(get("/api/timers/active"))
                 .andExpect(status().isOk())
@@ -244,7 +243,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldCancelTimer() throws Exception {
         // Start timer
         StartTimerRequest request = StartTimerRequest.builder()
@@ -271,7 +270,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldRejectInvalidRequest() throws Exception {
         // Request without pitchId or taskId
         StartTimerRequest request = StartTimerRequest.builder()
@@ -285,7 +284,7 @@ public class WorkLogTimerControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "worklog-timer-test-user")
     void shouldRejectBothPitchAndTask() throws Exception {
         // Request with both pitchId and taskId
         StartTimerRequest request = StartTimerRequest.builder()

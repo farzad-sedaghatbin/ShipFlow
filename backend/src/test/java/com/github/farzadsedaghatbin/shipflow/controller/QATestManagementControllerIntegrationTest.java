@@ -76,10 +76,10 @@ class QATestManagementControllerIntegrationTest {
         testCycle = cycleRepository.save(testCycle);
 
         testUser = User.builder()
-                .username("testuser")
+                .username("qa-test-user")
                 .password("password")
                 .email("test@example.com")
-                .role(UserRole.QA)
+                .role(UserRole.MEMBER)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .build();

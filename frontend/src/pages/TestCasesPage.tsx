@@ -119,8 +119,8 @@ const TestCasesPage: React.FC = () => {
   const loadCyclesAndPitches = async () => {
     try {
       const [cyclesRes, pitchesRes] = await Promise.all([
-        cycleService.getAll(),
-        pitchService.getAll(),
+        cycleService.getMyCycles(),
+        pitchService.getMyPitches(),
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);

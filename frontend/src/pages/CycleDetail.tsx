@@ -21,13 +21,14 @@ import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { teamService } from '../services/teamService';
 import { retroService } from '../services/retroService';
+import { usePermission } from '../hooks/usePermission';
 import { Cycle, Pitch, Team, CycleRetroStatus } from '../types';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import TaskStatisticsCard from '../components/TaskStatisticsCard';
-import { useAuth, useToast } from '../contexts';
+import { useToast } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -47,7 +48,7 @@ export default function CycleDetail() {
   const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
-  const { user } = useAuth();
+
   const { showSuccess, showError } = useToast();
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -57,7 +58,8 @@ export default function CycleDetail() {
   const [loading, setLoading] = useState(true);
   const [closeCycleDialog, setCloseCycleDialog] = useState(false);
 
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+  const { hasPermissionSync } = usePermission();
+  const canManageCycle = hasPermissionSync('CYCLE', 'MANAGE');
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -194,7 +196,7 @@ export default function CycleDetail() {
               {t('cycleDetailPage.edit')}
             </Link>
           </Button>
-          {cycle.isActive && isAdmin && (
+          {cycle.isActive && canManageCycle && (
             <Button
               variant="default"
               size="sm"

@@ -5,13 +5,19 @@ import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class PitchService {
 
     private static final double HOURS_PER_DAY = 8.0;
@@ -29,6 +36,7 @@ public class PitchService {
     private final CycleRepository cycleRepository;
     private final TeamRepository teamRepository;
     private final WorkLogRepository workLogRepository;
+    private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AICacheService cacheService;
 
@@ -37,6 +45,40 @@ public class PitchService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get pitches that the current user has access to.
+     * ADMINs can see all pitches, other users see only pitches from accessible projects.
+     */
+    public List<PitchDTO> getAccessiblePitches() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        
+        // ADMINs can see all pitches
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            return getAllPitches();
+        }
+        
+        return pitchRepository.findAccessiblePitchesByUserId(currentUser.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the currently authenticated user.
+     */
+    private User getCurrentUser() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            return userRepository.findByUsername(username).orElse(null);
+        } catch (Exception e) {
+            log.warn("Failed to get current user: {}", e.getMessage());
+            return null;
+        }
     }
 
     public List<PitchDTO> getPitchesByCycleId(Long cycleId) {

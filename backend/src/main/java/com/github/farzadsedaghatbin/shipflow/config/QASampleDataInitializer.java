@@ -53,7 +53,7 @@ public class QASampleDataInitializer implements CommandLineRunner {
 
         User qaUser = userRepository.findByUsername("carol")
                 .orElseGet(() -> userRepository.findAll().stream()
-                        .filter(u -> u.getRole() == UserRole.QA)
+                        .filter(u -> u.getRole() == UserRole.MEMBER)
                         .findFirst()
                         .orElse(null));
 

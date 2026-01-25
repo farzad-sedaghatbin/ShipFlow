@@ -38,7 +38,7 @@ export const HealthOverview: React.FC = () => {
     const loadCycles = async () => {
       try {
         setLoading(true);
-        const response = await cycleService.getAll();
+        const response = await cycleService.getMyCycles();
         const projectCycles = currentProject
           ? response.data.filter((c: Cycle) => c.projectId === currentProject.id)
           : response.data;
@@ -155,7 +155,7 @@ export const HealthOverview: React.FC = () => {
               <SelectContent>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={String(cycle.id)}>
-                    {t('healthOverview.cycleName', { name: cycle.name, active: cycle.isActive ? t('healthOverview.active') : '' })}
+                    {cycle.name} {cycle.isActive && `(${t('healthOverview.active')})`}
                   </SelectItem>
                 ))}
               </SelectContent>

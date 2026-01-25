@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -59,7 +60,7 @@ class RiskAnalysisCacheTest {
         void shouldCachePitchRiskWithInfiniteTTL() {
             // Given
             Long pitchId = 1L;
-            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.HIGH, 75);
+            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, RiskLevel.HIGH, 75);
             String dataHash = "hash_v1";
             
             // When
@@ -68,7 +69,7 @@ class RiskAnalysisCacheTest {
             
             // Then
             assertThat(result).isPresent();
-            assertThat(result.get().getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.HIGH);
+            assertThat(result.get().getRiskLevel()).isEqualTo(RiskLevel.HIGH);
             assertThat(result.get().getRiskScore()).isEqualTo(75);
         }
 
@@ -77,7 +78,7 @@ class RiskAnalysisCacheTest {
         void shouldInvalidateCacheWhenDataHashChanges() {
             // Given
             Long pitchId = 1L;
-            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.MEDIUM, 50);
+            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, RiskLevel.MEDIUM, 50);
             
             // Cache with original hash
             cacheService.cachePitchRisk(pitchId, true, riskData, "hash_v1");
@@ -97,7 +98,7 @@ class RiskAnalysisCacheTest {
         void shouldKeepCacheWhenHashUnchanged() {
             // Given
             Long pitchId = 1L;
-            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.LOW, 25);
+            PitchRiskDTO riskData = createTestPitchRiskDTO(pitchId, RiskLevel.LOW, 25);
             String dataHash = "consistent_hash";
             
             // Cache with hash
@@ -120,8 +121,8 @@ class RiskAnalysisCacheTest {
             // Given
             Long pitchId = 1L;
             
-            PitchRiskDTO aiRisk = createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.HIGH, 80);
-            PitchRiskDTO ruleRisk = createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.MEDIUM, 50);
+            PitchRiskDTO aiRisk = createTestPitchRiskDTO(pitchId, RiskLevel.HIGH, 80);
+            PitchRiskDTO ruleRisk = createTestPitchRiskDTO(pitchId, RiskLevel.MEDIUM, 50);
             
             // When - Use same hash since it's the same pitch data, just different analysis modes
             String dataHash = "same_pitch_data";
@@ -133,11 +134,11 @@ class RiskAnalysisCacheTest {
             
             // Then
             assertThat(aiResult).isPresent();
-            assertThat(aiResult.get().getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.HIGH);
+            assertThat(aiResult.get().getRiskLevel()).isEqualTo(RiskLevel.HIGH);
             assertThat(aiResult.get().getRiskScore()).isEqualTo(80);
             
             assertThat(ruleResult).isPresent();
-            assertThat(ruleResult.get().getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.MEDIUM);
+            assertThat(ruleResult.get().getRiskLevel()).isEqualTo(RiskLevel.MEDIUM);
             assertThat(ruleResult.get().getRiskScore()).isEqualTo(50);
         }
 
@@ -147,8 +148,8 @@ class RiskAnalysisCacheTest {
             // Given - Use same hash for same pitch
             Long pitchId = 1L;
             String dataHash = "same_data_hash";
-            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.HIGH, 75), dataHash);
-            cacheService.cachePitchRisk(pitchId, false, createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.MEDIUM, 50), dataHash);
+            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, RiskLevel.HIGH, 75), dataHash);
+            cacheService.cachePitchRisk(pitchId, false, createTestPitchRiskDTO(pitchId, RiskLevel.MEDIUM, 50), dataHash);
             
             // Verify cached
             assertThat(cacheService.getCachedPitchRisk(pitchId, true)).isPresent();
@@ -166,9 +167,9 @@ class RiskAnalysisCacheTest {
         @DisplayName("Should not affect other pitches when invalidating")
         void shouldNotAffectOtherPitchesWhenInvalidating() {
             // Given
-            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, PitchRiskDTO.RiskLevel.HIGH, 75), "hash1");
-            cacheService.cachePitchRisk(2L, true, createTestPitchRiskDTO(2L, PitchRiskDTO.RiskLevel.LOW, 25), "hash2");
-            cacheService.cachePitchRisk(3L, true, createTestPitchRiskDTO(3L, PitchRiskDTO.RiskLevel.MEDIUM, 50), "hash3");
+            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, RiskLevel.HIGH, 75), "hash1");
+            cacheService.cachePitchRisk(2L, true, createTestPitchRiskDTO(2L, RiskLevel.LOW, 25), "hash2");
+            cacheService.cachePitchRisk(3L, true, createTestPitchRiskDTO(3L, RiskLevel.MEDIUM, 50), "hash3");
             
             // When - Invalidate only pitch 2
             cacheService.invalidatePitchRiskCache(2L);
@@ -189,7 +190,7 @@ class RiskAnalysisCacheTest {
         void shouldCacheCycleRiskWithInfiniteTTL() {
             // Given
             Long cycleId = 1L;
-            CycleRiskOverviewDTO riskData = createTestCycleRiskDTO(cycleId, PitchRiskDTO.RiskLevel.MEDIUM, 3, 2, 1);
+            CycleRiskOverviewDTO riskData = createTestCycleRiskDTO(cycleId, RiskLevel.MEDIUM, 3, 2, 1);
             
             // When
             cacheService.cacheCycleRisk(cycleId, true, riskData);
@@ -197,7 +198,7 @@ class RiskAnalysisCacheTest {
             
             // Then
             assertThat(result).isPresent();
-            assertThat(result.get().getOverallRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.MEDIUM);
+            assertThat(result.get().getOverallRiskLevel()).isEqualTo(RiskLevel.MEDIUM);
             assertThat(result.get().getHighRiskPitches()).isEqualTo(3);
         }
 
@@ -206,8 +207,8 @@ class RiskAnalysisCacheTest {
         void shouldInvalidateCycleCache() {
             // Given
             Long cycleId = 1L;
-            cacheService.cacheCycleRisk(cycleId, true, createTestCycleRiskDTO(cycleId, PitchRiskDTO.RiskLevel.HIGH, 5, 3, 2));
-            cacheService.cacheCycleRisk(cycleId, false, createTestCycleRiskDTO(cycleId, PitchRiskDTO.RiskLevel.MEDIUM, 3, 2, 1));
+            cacheService.cacheCycleRisk(cycleId, true, createTestCycleRiskDTO(cycleId, RiskLevel.HIGH, 5, 3, 2));
+            cacheService.cacheCycleRisk(cycleId, false, createTestCycleRiskDTO(cycleId, RiskLevel.MEDIUM, 3, 2, 1));
             
             // When
             cacheService.invalidateCycleRiskCache(cycleId);
@@ -222,7 +223,7 @@ class RiskAnalysisCacheTest {
         void shouldTrackHitCountForCycleRiskCache() {
             // Given
             Long cycleId = 1L;
-            cacheService.cacheCycleRisk(cycleId, true, createTestCycleRiskDTO(cycleId, PitchRiskDTO.RiskLevel.LOW, 1, 0, 0));
+            cacheService.cacheCycleRisk(cycleId, true, createTestCycleRiskDTO(cycleId, RiskLevel.LOW, 1, 0, 0));
             
             // When - Multiple accesses
             cacheService.getCachedCycleRisk(cycleId, true);
@@ -247,7 +248,7 @@ class RiskAnalysisCacheTest {
             Long pitchId = 1L;
             
             // When
-            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.HIGH, 75), "hash");
+            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, RiskLevel.HIGH, 75), "hash");
             Optional<PitchRiskDTO> result = cacheService.getCachedPitchRisk(pitchId, true);
             
             // Then
@@ -262,7 +263,7 @@ class RiskAnalysisCacheTest {
             Long pitchId = 1L;
             
             // When
-            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, PitchRiskDTO.RiskLevel.HIGH, 75), "hash");
+            cacheService.cachePitchRisk(pitchId, true, createTestPitchRiskDTO(pitchId, RiskLevel.HIGH, 75), "hash");
             Optional<PitchRiskDTO> result = cacheService.getCachedPitchRisk(pitchId, true);
             
             // Then
@@ -273,8 +274,8 @@ class RiskAnalysisCacheTest {
         @DisplayName("Should return correct stats with provider info")
         void shouldReturnCorrectStatsWithProviderInfo() {
             // Given
-            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, PitchRiskDTO.RiskLevel.HIGH, 75), "h1");
-            cacheService.cacheCycleRisk(1L, true, createTestCycleRiskDTO(1L, PitchRiskDTO.RiskLevel.MEDIUM, 2, 1, 0));
+            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, RiskLevel.HIGH, 75), "h1");
+            cacheService.cacheCycleRisk(1L, true, createTestCycleRiskDTO(1L, RiskLevel.MEDIUM, 2, 1, 0));
             
             // When
             AICacheService.CacheStats stats = cacheService.getCacheStats();
@@ -296,9 +297,9 @@ class RiskAnalysisCacheTest {
         @DisplayName("Should clear all caches")
         void shouldClearAllCaches() {
             // Given
-            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, PitchRiskDTO.RiskLevel.HIGH, 75), "h1");
-            cacheService.cachePitchRisk(2L, true, createTestPitchRiskDTO(2L, PitchRiskDTO.RiskLevel.LOW, 25), "h2");
-            cacheService.cacheCycleRisk(1L, true, createTestCycleRiskDTO(1L, PitchRiskDTO.RiskLevel.MEDIUM, 2, 1, 0));
+            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, RiskLevel.HIGH, 75), "h1");
+            cacheService.cachePitchRisk(2L, true, createTestPitchRiskDTO(2L, RiskLevel.LOW, 25), "h2");
+            cacheService.cacheCycleRisk(1L, true, createTestCycleRiskDTO(1L, RiskLevel.MEDIUM, 2, 1, 0));
             
             assertThat(cacheService.getCacheStats().getTotalEntries()).isEqualTo(3);
             
@@ -316,7 +317,7 @@ class RiskAnalysisCacheTest {
         @DisplayName("Should not break during cleanup with no expired entries")
         void shouldNotBreakDuringCleanupWithNoExpiredEntries() {
             // Given - All entries have infinite TTL (no expiration)
-            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, PitchRiskDTO.RiskLevel.HIGH, 75), "h1");
+            cacheService.cachePitchRisk(1L, true, createTestPitchRiskDTO(1L, RiskLevel.HIGH, 75), "h1");
             
             // When
             cacheService.cleanupExpiredEntries();
@@ -330,7 +331,7 @@ class RiskAnalysisCacheTest {
     // HELPER METHODS
     // ===========================================
 
-    private PitchRiskDTO createTestPitchRiskDTO(Long pitchId, PitchRiskDTO.RiskLevel riskLevel, Integer riskScore) {
+    private PitchRiskDTO createTestPitchRiskDTO(Long pitchId, RiskLevel riskLevel, Integer riskScore) {
         PitchRiskDTO dto = new PitchRiskDTO();
         dto.setPitchId(pitchId);
         dto.setRiskLevel(riskLevel);
@@ -338,7 +339,7 @@ class RiskAnalysisCacheTest {
         return dto;
     }
 
-    private CycleRiskOverviewDTO createTestCycleRiskDTO(Long cycleId, PitchRiskDTO.RiskLevel overallRiskLevel, 
+    private CycleRiskOverviewDTO createTestCycleRiskDTO(Long cycleId, RiskLevel overallRiskLevel, 
             int highRisk, int mediumRisk, int lowRisk) {
         CycleRiskOverviewDTO dto = new CycleRiskOverviewDTO();
         dto.setCycleId(cycleId);

@@ -6,6 +6,9 @@ import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "admin", roles = {"ADMIN"})
 class MeetingControllerIntegrationTest {
 
     @Autowired
@@ -57,6 +59,12 @@ class MeetingControllerIntegrationTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     private Cycle testCycle;
     private Pitch testPitch;
     private Meeting testMeeting;
@@ -67,11 +75,13 @@ class MeetingControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         meetingRepository.deleteAll();
+        retrospectiveRepository.deleteAll();
         pitchRepository.deleteAll();
         cycleRepository.deleteAll();
-        retrospectiveRepository.deleteAll();
-        personRepository.deleteAll();
         projectRepository.deleteAll();
+        permissionRepository.deleteAll();
+        userRepository.deleteAll();
+        personRepository.deleteAll();
         
         // Create test project
         testProject = Project.builder()
@@ -108,6 +118,36 @@ class MeetingControllerIntegrationTest {
                 .createdAt(LocalDateTime.now())
                 .build();
         testPerson = personRepository.save(testPerson);
+
+        User testUser = User.builder()
+                .username("meeting-test-user")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .person(testPerson)
+                .isActive(true)
+                .build();
+        testUser = userRepository.save(testUser);
+        
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.READ)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.CREATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.UPDATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.DELETE)
+                .build());
         
         testRetrospective = Retrospective.builder()
                 .title("Test Retrospective")
@@ -131,6 +171,7 @@ class MeetingControllerIntegrationTest {
         testMeeting = meetingRepository.save(testMeeting);
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getAllMeetings_ShouldReturnMeetings() throws Exception {
         mockMvc.perform(get("/api/meetings"))
@@ -140,6 +181,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].type", is("KICKOFF")));
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingById_WhenExists_ShouldReturnMeeting() throws Exception {
         mockMvc.perform(get("/api/meetings/{id}", testMeeting.getId()))
@@ -149,12 +191,14 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.type", is("KICKOFF")));
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingById_WhenNotExists_ShouldReturn404() throws Exception {
         mockMvc.perform(get("/api/meetings/{id}", 9999L))
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void createMeeting_WithValidData_ShouldCreateMeeting() throws Exception {
         CreateMeetingRequest request = CreateMeetingRequest.builder()
@@ -173,6 +217,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.type", is("STANDUP")));
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void updateMeeting_WhenExists_ShouldUpdateMeeting() throws Exception {
         CreateMeetingRequest request = CreateMeetingRequest.builder()
@@ -191,6 +236,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.type", is("DEMO")));
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void deleteMeeting_WhenExists_ShouldDeleteMeeting() throws Exception {
         mockMvc.perform(delete("/api/meetings/{id}", testMeeting.getId()))
@@ -200,6 +246,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingsByPitch_ShouldReturnMeetingsForPitch() throws Exception {
         mockMvc.perform(get("/api/meetings/pitch/{pitchId}", testPitch.getId()))
@@ -209,6 +256,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].type", is("KICKOFF")));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getAllMeetingsPaginated_ShouldReturnPagedMeetings() throws Exception {
         // Create additional meetings for pagination testing
@@ -237,6 +285,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.size", is(20)));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingsWithFilters_ByType_ShouldReturnFilteredMeetings() throws Exception {
         // Create meetings of different types
@@ -257,6 +306,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.content[*].type", everyItem(is("DEMO"))));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingsWithFilters_ByDateRange_ShouldReturnFilteredMeetings() throws Exception {
         LocalDate startDate = LocalDate.now().minusDays(7);
@@ -271,6 +321,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void getMeetingsWithFilters_ByDorReady_ShouldReturnFilteredMeetings() throws Exception {
         // Create meeting with DOR ready
@@ -291,6 +342,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.content[*].dorReady", everyItem(is(true))));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void createMeeting_WithActionItems_ShouldCreateMeetingWithActions() throws Exception {
         List<MeetingActionDTO> actions = new ArrayList<>();
@@ -328,6 +380,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.actions[0].status", is("OPEN")));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void createMeeting_WithRetrospective_ShouldLinkRetrospective() throws Exception {
         CreateMeetingRequest request = CreateMeetingRequest.builder()
@@ -349,6 +402,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.retrospectiveTitle", is("Test Retrospective")));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void updateMeeting_WithActionItems_ShouldUpdateActions() throws Exception {
         List<MeetingActionDTO> actions = new ArrayList<>();
@@ -389,6 +443,7 @@ class MeetingControllerIntegrationTest {
                 .andExpect(jsonPath("$.actions[1].description", is("Review code")));
     }
     
+    @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
     @Test
     void createMeeting_WithMultipleActionStatuses_ShouldHandleAllStatuses() throws Exception {
         List<MeetingActionDTO> actions = new ArrayList<>();

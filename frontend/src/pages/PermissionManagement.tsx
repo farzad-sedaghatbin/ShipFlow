@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { usePermission } from '../hooks/usePermission';
 import {
   Table,
   TableBody,
@@ -81,7 +82,8 @@ export default function PermissionManagement() {
   const [selectedPermIds, setSelectedPermIds] = useState<Set<number>>(new Set());
   const [groupBy, setGroupBy] = useState<'none' | 'role' | 'resource'>('role');
   
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const { hasPermissionSync } = usePermission();
+  const canManagePermissions = hasPermissionSync('SYSTEM', 'MANAGE');
   const roles = permissionService.getUserRoles();
   const resources = permissionService.getResourceTypes();
   const permissionTypes = permissionService.getPermissionTypes();
@@ -97,7 +99,7 @@ export default function PermissionManagement() {
       const userPerms = await permissionService.getCurrentUserPermissions();
       setMyPermissions(userPerms.permissions);
 
-      if (isAdmin) {
+      if (canManagePermissions) {
         // Admins see all permissions
         const all = await permissionService.getAllPermissions();
         setAllPermissions(all);
@@ -185,7 +187,7 @@ export default function PermissionManagement() {
     return permissionService.getResourceLabel(resource).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  if (!isAdmin && viewMode !== 'my-permissions') {
+  if (!canManagePermissions && viewMode !== 'my-permissions') {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Alert className="border-amber-500">
@@ -238,10 +240,10 @@ export default function PermissionManagement() {
             {t('permissions.title')}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isAdmin ? t('permissions.subtitle') : t('permissions.viewOnly')}
+            {canManagePermissions ? t('permissions.subtitle') : t('permissions.viewOnly')}
           </p>
         </div>
-        {isAdmin && (
+        {canManagePermissions && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -256,7 +258,7 @@ export default function PermissionManagement() {
       </div>
 
       {/* Info Banner - only show for non-admin users */}
-      {!isAdmin && (
+      {!canManagePermissions && (
         <Alert className="mb-6 border-blue-500">
           <Info className="h-5 w-5 text-blue-500" />
           <AlertDescription>
@@ -377,7 +379,7 @@ export default function PermissionManagement() {
           <AllPermissionsView
             allPermissions={allPermissions}
             loading={loading}
-            isAdmin={isAdmin}
+            isAdmin={canManagePermissions}
             currentUserRole={currentUser?.role as UserRole}
             permissionSearch={permissionSearch}
             setPermissionSearch={setPermissionSearch}

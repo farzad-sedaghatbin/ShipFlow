@@ -15,6 +15,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
+import { usePermission } from '../hooks/usePermission';
 import api from '../services/api';
 import { User as UserType, UserRole, CreateUserRequest, Person } from '../types';
 import { cn } from '../lib/utils';
@@ -55,12 +56,13 @@ import {
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
-const USER_ROLES: UserRole[] = ['ADMIN', 'PROJECT_MANAGER', 'PRODUCT', 'DEVELOPER', 'QA'];
+const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
 
 export default function UserManagement() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
+  const { hasPermissionSync } = usePermission();
   const [users, setUsers] = useState<UserType[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,26 +74,39 @@ export default function UserManagement() {
     username: '',
     password: '',
     email: '',
-    role: 'DEVELOPER',
+    role: 'MEMBER',
   });
   const [saving, setSaving] = useState(false);
 
   // Role change dialog
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>('DEVELOPER');
+  const [newRole, setNewRole] = useState<UserRole>('MEMBER');
 
-  // Check if current user is admin
-  const isAdmin = currentUser?.role === 'ADMIN';
+  // Check if current user has user management permission
+  const canManageUsers = hasPermissionSync('USER', 'MANAGE');
+
+  // Only admins can manage users
+  if (!canManageUsers) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {t('common.accessDenied')}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (isAdmin) {
+    if (canManageUsers) {
       fetchUsers();
       fetchPeople();
     }
     return () => abortController.abort();
-  }, [isAdmin]);
+  }, [canManageUsers]);
 
   const fetchUsers = async () => {
     try {
@@ -118,14 +133,14 @@ export default function UserManagement() {
       username: '',
       password: '',
       email: '',
-      role: 'DEVELOPER',
+      role: 'MEMBER',
     });
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setFormData({ username: '', password: '', email: '', role: 'DEVELOPER' });
+    setFormData({ username: '', password: '', email: '', role: 'MEMBER' });
   };
 
   const handleSave = async () => {
@@ -207,10 +222,9 @@ export default function UserManagement() {
   const getRoleClassName = (role: UserRole): string => {
     const classNames: Record<UserRole, string> = {
       ADMIN: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-      PROJECT_MANAGER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-      PRODUCT: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-      DEVELOPER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      QA: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      MANAGER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      MEMBER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      READONLY: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
     };
     return classNames[role];
   };
@@ -222,7 +236,7 @@ export default function UserManagement() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isAdmin) {
+  if (!canManageUsers) {
     return (
       <div className="p-4">
         <Alert variant="destructive">
@@ -293,12 +307,12 @@ export default function UserManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t('userManagement.developers')}
+              {t('userManagement.members')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {users.filter((u) => u.role === 'DEVELOPER').length}
+              {users.filter((u) => u.role === 'MEMBER').length}
             </div>
           </CardContent>
         </Card>

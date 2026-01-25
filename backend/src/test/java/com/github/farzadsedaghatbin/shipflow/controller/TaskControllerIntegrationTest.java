@@ -49,6 +49,9 @@ class TaskControllerIntegrationTest {
     @Autowired
     private CycleRepository cycleRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private Cycle testCycle;
     private Person testPerson;
     private Person testPairPerson;
@@ -58,7 +61,12 @@ class TaskControllerIntegrationTest {
     void setUp() {
         taskRepository.deleteAll();
         cycleRepository.deleteAll();
+        userRepository.deleteAll();
         personRepository.deleteAll();
+        taskRepository.flush();
+        cycleRepository.flush();
+        userRepository.flush();
+        personRepository.flush();
 
         testCycle = Cycle.builder()
                 .name("Test Cycle")
@@ -97,6 +105,7 @@ class TaskControllerIntegrationTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
         testTask = taskRepository.save(testTask);
+        taskRepository.flush();
     }
 
     @Test

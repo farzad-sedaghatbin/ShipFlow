@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -57,6 +58,7 @@ public class QAController {
      * Ask a question.
      */
     @PostMapping("/ask")
+    @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'READ')")
     @Operation(summary = "Ask a question", description = "Submit a question and receive an AI-generated answer based on stored knowledge")
     public ResponseEntity<QAResponse> askQuestion(
             @Valid @RequestBody AskQuestionRequest request,

@@ -72,7 +72,7 @@ export default function Reports() {
 
   const loadCycles = async () => {
     try {
-      const response = await cycleService.getAll();
+      const response = await cycleService.getMyCycles();
       setCycles(response.data);
       if (response.data.length > 0) {
         setSelectedCycle(String(response.data[0].id));

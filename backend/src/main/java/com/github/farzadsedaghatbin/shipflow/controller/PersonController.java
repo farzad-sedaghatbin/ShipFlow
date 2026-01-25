@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class PersonController {
     private final PersonService personService;
     
     @PostMapping
+    @PreAuthorize("@permissionService.hasPermission('USER', 'CREATE')")
     @Operation(summary = "Create a new person")
     public ResponseEntity<PersonDTO> createPerson(@Valid @RequestBody CreatePersonRequest request) {
         PersonDTO created = personService.createPerson(request);
@@ -29,6 +31,7 @@ public class PersonController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('USER', 'READ')")
     @Operation(summary = "Get person by ID")
     public ResponseEntity<PersonDTO> getPersonById(@PathVariable Long id) {
         PersonDTO person = personService.getPersonById(id);
@@ -36,6 +39,7 @@ public class PersonController {
     }
     
     @GetMapping
+    @PreAuthorize("@permissionService.hasPermission('USER', 'READ')")
     @Operation(summary = "Get all persons")
     public ResponseEntity<List<PersonDTO>> getAllPersons(
             @RequestParam(required = false) Boolean active,
@@ -53,6 +57,7 @@ public class PersonController {
     }
     
     @GetMapping("/team/{teamId}")
+    @PreAuthorize("@permissionService.hasPermission('USER', 'READ')")
     @Operation(summary = "Get persons assigned to a team")
     public ResponseEntity<List<PersonDTO>> getPersonsByTeam(@PathVariable Long teamId) {
         List<PersonDTO> persons = personService.getPersonsByTeam(teamId);
@@ -60,6 +65,7 @@ public class PersonController {
     }
     
     @GetMapping("/cycle/{cycleId}")
+    @PreAuthorize("@permissionService.hasPermission('USER', 'READ')")
     @Operation(summary = "Get persons assigned to teams in a cycle")
     public ResponseEntity<List<PersonDTO>> getPersonsByCycle(@PathVariable Long cycleId) {
         List<PersonDTO> persons = personService.getPersonsByCycle(cycleId);
@@ -67,6 +73,7 @@ public class PersonController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('USER', 'UPDATE')")
     @Operation(summary = "Update a person")
     public ResponseEntity<PersonDTO> updatePerson(
             @PathVariable Long id,

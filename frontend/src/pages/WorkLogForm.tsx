@@ -69,7 +69,7 @@ export default function WorkLogForm() {
   const loadInitialData = async () => {
     try {
       const [cyclesRes, personsData] = await Promise.all([
-        cycleService.getActive(),
+        cycleService.getMyActiveCycles(),
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);

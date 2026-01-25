@@ -66,14 +66,14 @@ public class SampleDataInitializer implements CommandLineRunner {
         Person henry = createPerson("Henry Wilson", "henry.wilson@example.com", "Android, Kotlin, Mobile Development", null);
 
         // Create users for sample persons
-        createUser("alice", "password", UserRole.DEVELOPER, alice);
-        createUser("bob", "password", UserRole.DEVELOPER, bob);
-        createUser("carol", "password", UserRole.QA, carol);
-        createUser("dave", "password", UserRole.DEVELOPER, dave);
-        createUser("eve", "password", UserRole.PRODUCT, eve);
-        createUser("frank", "password", UserRole.PROJECT_MANAGER, frank);
-        createUser("grace", "password", UserRole.DEVELOPER, grace);
-        createUser("henry", "password", UserRole.DEVELOPER, henry);
+        createUser("alice", "password", UserRole.MEMBER, alice);
+        createUser("bob", "password", UserRole.MEMBER, bob);
+        createUser("carol", "password", UserRole.MEMBER, carol);
+        createUser("dave", "password", UserRole.MEMBER, dave);
+        createUser("eve", "password", UserRole.MEMBER, eve);
+        createUser("frank", "password", UserRole.MANAGER, frank);
+        createUser("grace", "password", UserRole.MEMBER, grace);
+        createUser("henry", "password", UserRole.MEMBER, henry);
 
         // Create projects first
         User aliceUser = userRepository.findByUsername("alice").orElse(null);

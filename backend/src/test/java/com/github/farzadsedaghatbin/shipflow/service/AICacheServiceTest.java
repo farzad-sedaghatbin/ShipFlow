@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.QAResponse;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -99,9 +100,9 @@ class AICacheServiceTest {
             // Given
             Long pitchId = 1L;
             PitchRiskDTO aiRisk = createTestPitchRiskDTO(pitchId);
-            aiRisk.setRiskLevel(PitchRiskDTO.RiskLevel.HIGH);
+            aiRisk.setRiskLevel(RiskLevel.HIGH);
             PitchRiskDTO ruleRisk = createTestPitchRiskDTO(pitchId);
-            ruleRisk.setRiskLevel(PitchRiskDTO.RiskLevel.MEDIUM);
+            ruleRisk.setRiskLevel(RiskLevel.MEDIUM);
             
             // When - Use same hash since it's the same pitch data, just different analysis modes
             String dataHash = "same_pitch_data_hash";
@@ -113,9 +114,9 @@ class AICacheServiceTest {
             
             // Then
             assertThat(aiResult).isPresent();
-            assertThat(aiResult.get().getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.HIGH);
+            assertThat(aiResult.get().getRiskLevel()).isEqualTo(RiskLevel.HIGH);
             assertThat(ruleResult).isPresent();
-            assertThat(ruleResult.get().getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.MEDIUM);
+            assertThat(ruleResult.get().getRiskLevel()).isEqualTo(RiskLevel.MEDIUM);
         }
 
         @Test
@@ -465,7 +466,7 @@ class AICacheServiceTest {
     private PitchRiskDTO createTestPitchRiskDTO(Long pitchId) {
         PitchRiskDTO dto = new PitchRiskDTO();
         dto.setPitchId(pitchId);
-        dto.setRiskLevel(PitchRiskDTO.RiskLevel.MEDIUM);
+        dto.setRiskLevel(RiskLevel.MEDIUM);
         dto.setRiskScore(50);
         return dto;
     }
@@ -473,7 +474,7 @@ class AICacheServiceTest {
     private CycleRiskOverviewDTO createTestCycleRiskDTO(Long cycleId) {
         CycleRiskOverviewDTO dto = new CycleRiskOverviewDTO();
         dto.setCycleId(cycleId);
-        dto.setOverallRiskLevel(PitchRiskDTO.RiskLevel.LOW);
+        dto.setOverallRiskLevel(RiskLevel.LOW);
         return dto;
     }
     

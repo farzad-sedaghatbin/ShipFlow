@@ -105,7 +105,7 @@ export default function MyWorkLogs() {
 
   const loadInitialData = async () => {
     try {
-      const cyclesRes = await cycleService.getActive();
+      const cyclesRes = await cycleService.getMyActiveCycles();
       setCycles(cyclesRes.data);
       // Default to 'all' - load all work logs
       loadAllWorkLogs();
@@ -613,7 +613,7 @@ export default function MyWorkLogs() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Work Log</DialogTitle>
           </DialogHeader>

@@ -68,7 +68,7 @@ class ProjectTypeTest {
         testOwner = User.builder()
                 .id(1L)
                 .username("owner")
-                .role(UserRole.PROJECT_MANAGER)
+                .role(UserRole.MANAGER)
                 .build();
     }
 

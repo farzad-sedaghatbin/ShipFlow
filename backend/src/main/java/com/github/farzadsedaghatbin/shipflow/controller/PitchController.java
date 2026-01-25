@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,9 +27,16 @@ public class PitchController {
     private final PitchService pitchService;
 
     @GetMapping
-    @Operation(summary = "Get all pitches")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all pitches (Admin only)")
     public ResponseEntity<List<PitchDTO>> getAllPitches() {
         return ResponseEntity.ok(pitchService.getAllPitches());
+    }
+
+    @GetMapping("/my-pitches")
+    @Operation(summary = "Get pitches accessible to current user")
+    public ResponseEntity<List<PitchDTO>> getMyPitches() {
+        return ResponseEntity.ok(pitchService.getAccessiblePitches());
     }
 
     @GetMapping("/cycle/{cycleId}")

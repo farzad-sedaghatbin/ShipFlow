@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
@@ -209,14 +210,14 @@ public class PitchHealthService {
 
         // Risk breakdown
         int healthyCount = (int) pitchHealthList.stream()
-                .filter(p -> p.getRiskLevel() == PitchRiskDTO.RiskLevel.LOW)
+                .filter(p -> p.getRiskLevel() == RiskLevel.LOW)
                 .count();
         int atRiskCount = (int) pitchHealthList.stream()
-                .filter(p -> p.getRiskLevel() == PitchRiskDTO.RiskLevel.MEDIUM)
+                .filter(p -> p.getRiskLevel() == RiskLevel.MEDIUM)
                 .count();
         int criticalCount = (int) pitchHealthList.stream()
-                .filter(p -> p.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH || 
-                           p.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .filter(p -> p.getRiskLevel() == RiskLevel.HIGH || 
+                           p.getRiskLevel() == RiskLevel.CRITICAL)
                 .count();
 
         // Budget calculations
@@ -243,13 +244,13 @@ public class PitchHealthService {
                 .count();
 
         // Determine overall health
-        PitchRiskDTO.RiskLevel overallHealth;
+        RiskLevel overallHealth;
         if (criticalCount > 0) {
-            overallHealth = PitchRiskDTO.RiskLevel.HIGH;
+            overallHealth = RiskLevel.HIGH;
         } else if (atRiskCount > healthyCount) {
-            overallHealth = PitchRiskDTO.RiskLevel.MEDIUM;
+            overallHealth = RiskLevel.MEDIUM;
         } else {
-            overallHealth = PitchRiskDTO.RiskLevel.LOW;
+            overallHealth = RiskLevel.LOW;
         }
 
         return CycleHealthSummaryDTO.builder()
@@ -334,7 +335,7 @@ public class PitchHealthService {
 
     private PitchHealthDTO buildPitchHealth(Pitch pitch, boolean includeAI, Map<Long, Double> hoursMap) {
         // Get risk level - use rule-based calculation for fast mode
-        PitchRiskDTO.RiskLevel riskLevel;
+        RiskLevel riskLevel;
         
         if (includeAI && riskAnalysisService != null) {
             // AI mode - slower but more accurate
@@ -407,7 +408,7 @@ public class PitchHealthService {
      * 
      * This provides immediate, data-driven risk assessment without manual input.
      */
-    private PitchRiskDTO.RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
+    private RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
         // Get configurable thresholds and weights from organization settings
         var thresholds = getThresholds();
         var weights = getWeights();
@@ -457,13 +458,13 @@ public class PitchHealthService {
         
         // Determine risk level from blended score (using configurable thresholds)
         if (finalRiskScore > thresholds.getHighMax()) {
-            return PitchRiskDTO.RiskLevel.CRITICAL;
+            return RiskLevel.CRITICAL;
         } else if (finalRiskScore > thresholds.getMediumMax()) {
-            return PitchRiskDTO.RiskLevel.HIGH;
+            return RiskLevel.HIGH;
         } else if (finalRiskScore > thresholds.getLowMax()) {
-            return PitchRiskDTO.RiskLevel.MEDIUM;
+            return RiskLevel.MEDIUM;
         }
-        return PitchRiskDTO.RiskLevel.LOW;
+        return RiskLevel.LOW;
     }
     
     /**
@@ -819,7 +820,7 @@ public class PitchHealthService {
         return summary.toString();
     }
 
-    private String getRiskColor(PitchRiskDTO.RiskLevel level) {
+    private String getRiskColor(RiskLevel level) {
         if (level == null) return "#9e9e9e"; // grey
         switch (level) {
             case LOW:

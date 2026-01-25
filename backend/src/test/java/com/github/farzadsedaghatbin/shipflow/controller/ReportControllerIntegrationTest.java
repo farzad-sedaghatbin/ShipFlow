@@ -2,7 +2,16 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.Permission;
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.ReportService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,12 +48,68 @@ class ReportControllerIntegrationTest {
     @MockBean
     private ReportService reportService;
 
+    @Autowired
+    private com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    @BeforeEach
+    void setUp() {
+        // Clear all permissions before each test
+        userRepository.deleteAll();
+        personRepository.deleteAll();
+        permissionRepository.deleteAll();
+
+        // Create test person and user
+        Person testPerson = Person.builder()
+                .name("Test User")
+                .email("testuser@example.com")
+                .build();
+        testPerson = personRepository.save(testPerson);
+
+        User testUser = User.builder()
+                .username("testuser")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .person(testPerson)
+                .isActive(true)
+                .build();
+        userRepository.save(testUser);
+
+        // Set up permissions for MEMBER role to access reports and cycles
+        Permission cycleReadPermission = Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.CYCLE)
+                .permissionType(PermissionType.READ)
+                .build();
+
+        Permission cycleUpdatePermission = Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.CYCLE)
+                .permissionType(PermissionType.UPDATE)
+                .build();
+
+        Permission reportViewPermission = Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.REPORT)
+                .permissionType(PermissionType.READ)
+                .build();
+
+        permissionRepository.save(cycleReadPermission);
+        permissionRepository.save(cycleUpdatePermission);
+        permissionRepository.save(reportViewPermission);
+    }
+
     @Nested
     @DisplayName("GET /api/reports/cycle/{cycleId}/enhanced")
     class GetEnhancedReportTests {
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should return enhanced cycle report with 200 OK")
         void shouldReturnEnhancedReport() throws Exception {
             // Given
@@ -78,7 +143,7 @@ class ReportControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should return risk distribution details")
         void shouldReturnRiskDistribution() throws Exception {
             // Given
@@ -98,7 +163,7 @@ class ReportControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should return team member statistics")
         void shouldReturnTeamMemberStats() throws Exception {
             // Given
@@ -115,7 +180,7 @@ class ReportControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should return variance analysis metrics")
         void shouldReturnVarianceMetrics() throws Exception {
             // Given
@@ -131,7 +196,7 @@ class ReportControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should return out-of-scope work metrics")
         void shouldReturnOutOfScopeMetrics() throws Exception {
             // Given
@@ -155,7 +220,7 @@ class ReportControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should handle non-existent cycle gracefully")
         void shouldHandleNonExistentCycle() throws Exception {
             // Given
@@ -173,7 +238,7 @@ class ReportControllerIntegrationTest {
     class CsvExportTests {
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should export CSV with correct content type")
         void shouldExportCsvWithCorrectContentType() throws Exception {
             // Given
@@ -194,7 +259,7 @@ class ReportControllerIntegrationTest {
     class PdfExportTests {
 
         @Test
-        @WithMockUser(username = "testuser", roles = "USER")
+        @WithMockUser(username = "testuser", roles = "MEMBER")
         @DisplayName("Should export PDF with correct content type")
         void shouldExportPdfWithCorrectContentType() throws Exception {
             // Given

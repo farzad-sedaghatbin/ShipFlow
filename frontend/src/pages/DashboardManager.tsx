@@ -65,8 +65,8 @@ export default function DashboardManager() {
   const loadScopeData = async () => {
     try {
       const [cyclesData, pitchesData, teamsData] = await Promise.all([
-        cycleService.getAll(),
-        pitchService.getAll(),
+        cycleService.getMyCycles(),
+        pitchService.getMyPitches(),
         teamService.getAll()
       ]);
       setCycles(cyclesData.data);

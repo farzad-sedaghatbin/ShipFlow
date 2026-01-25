@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +50,7 @@ public class DocumentController {
      * Upload a document and extract its text content.
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'UPDATE')")
     @Operation(summary = "Upload document", description = "Upload a document (PDF, DOCX, TXT) and extract its text for knowledge base")
     public ResponseEntity<DocumentUploadResponse> uploadDocument(
             @RequestParam("file") MultipartFile file,
@@ -72,6 +74,7 @@ public class DocumentController {
      * Upload a document for a pitch.
      */
     @PostMapping(value = "/pitch/{pitchId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'UPDATE')")
     @Operation(summary = "Upload document for pitch", description = "Upload a document for a pitch and extract text for Q&A")
     public ResponseEntity<DocumentUploadResponse> uploadDocumentForPitch(
             @PathVariable Long pitchId,

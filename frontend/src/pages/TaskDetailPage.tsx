@@ -100,7 +100,7 @@ export default function TaskDetailPage() {
   const loadInitialData = async () => {
     try {
       const [cyclesRes, personsRes] = await Promise.all([
-        cycleService.getActive(),
+        cycleService.getMyActiveCycles(),
         personService.getAll(),
       ]);
       setCycles(cyclesRes.data);

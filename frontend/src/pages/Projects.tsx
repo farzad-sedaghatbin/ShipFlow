@@ -97,8 +97,10 @@ export default function Projects() {
   const loadProjects = async () => {
     try {
       setLoading(true);
+      // Use scoped access - getMyProjects returns all accessible projects (including inactive for managers)
+      // getActive returns only active projects the user has access to
       const data = showArchived
-        ? await projectService.getAll()
+        ? await projectService.getMyProjects()
         : await projectService.getActive();
       setProjects(data);
     } catch (error: any) {

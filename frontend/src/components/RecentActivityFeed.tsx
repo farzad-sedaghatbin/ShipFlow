@@ -76,8 +76,8 @@ export function RecentActivityFeed({
       
       const [workLogsRes, pitchesRes, cyclesRes] = await Promise.all([
         workLogService.getMy(),
-        pitchService.getAll(),
-        cycleService.getActive(),
+        pitchService.getMyPitches(),
+        cycleService.getMyActiveCycles(),
       ]);
 
       const activityItems: ActivityItem[] = [];

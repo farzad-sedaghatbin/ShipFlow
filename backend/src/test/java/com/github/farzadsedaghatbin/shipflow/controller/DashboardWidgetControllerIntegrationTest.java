@@ -5,10 +5,14 @@ import com.github.farzadsedaghatbin.shipflow.dto.dashboard.CreateDashboardWidget
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardWidgetDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.UpdateDashboardWidgetRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
+import com.github.farzadsedaghatbin.shipflow.entity.Permission;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,12 +54,16 @@ class DashboardWidgetControllerIntegrationTest {
     @Autowired
     private PersonRepository personRepository;
 
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     private User testUser;
     private DashboardWidget testWidget;
 
     @BeforeEach
     void setUp() {
         dashboardWidgetRepository.deleteAll();
+        permissionRepository.deleteAll();
         userRepository.deleteAll();
         personRepository.deleteAll();
         
@@ -68,13 +76,30 @@ class DashboardWidgetControllerIntegrationTest {
         testPerson = personRepository.save(testPerson);
 
         testUser = User.builder()
-                .username("testuser")
+                .username("dashboard-test-user")
                 .password("password")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .build();
         testUser = userRepository.save(testUser);
+
+        // Grant DASHBOARD permissions for MEMBER role
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.DASHBOARD)
+                .permissionType(PermissionType.READ)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.DASHBOARD)
+                .permissionType(PermissionType.UPDATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.DASHBOARD)
+                .permissionType(PermissionType.DELETE)
+                .build());
 
         // Create test widget
         testWidget = DashboardWidget.builder()
@@ -87,7 +112,7 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void getUserWidgets_ShouldReturnWidgets() throws Exception {
         mockMvc.perform(get("/api/dashboard/widgets"))
                 .andExpect(status().isOk())
@@ -97,7 +122,7 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void getVisibleWidgets_ShouldReturnOnlyVisibleWidgets() throws Exception {
         // Create hidden widget
         DashboardWidget hiddenWidget = DashboardWidget.builder()
@@ -116,7 +141,7 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void createWidget_WithValidData_ShouldCreateWidget() throws Exception {
         CreateDashboardWidgetRequest request = CreateDashboardWidgetRequest.builder()
                 .widgetType("NEW_WIDGET")
@@ -134,7 +159,7 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void updateWidget_WhenExists_ShouldUpdateWidget() throws Exception {
         UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder()
                 .isVisible(false)
@@ -150,7 +175,7 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void bulkUpdateWidgets_ShouldUpdateMultipleWidgets() throws Exception {
         DashboardWidget widget2 = DashboardWidget.builder()
                 .user(testUser)
@@ -187,14 +212,14 @@ class DashboardWidgetControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void deleteWidget_WhenExists_ShouldDeleteWidget() throws Exception {
         mockMvc.perform(delete("/api/dashboard/widgets/" + testWidget.getId()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "DEVELOPER")
+    @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
     void resetToDefaults_ShouldResetWidgets() throws Exception {
         // First delete existing widgets to avoid conflict
         dashboardWidgetRepository.deleteByUserId(testUser.getId());

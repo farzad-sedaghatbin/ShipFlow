@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
+import { usePermission } from '../hooks/usePermission';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -220,8 +221,8 @@ function SectionHeader({ textKey }: { textKey: string }) {
 
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
-  const { user } = useAuth();
   const { isKanbanProject, isAllProjectsSelected } = useProject();
+  const { hasPermissionSync } = usePermission();
   const currentPath = location.pathname;
 
   // Check if we're in a cycle context (viewing pitches, betting, health, retros, reports)
@@ -336,7 +337,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
         </nav>
 
         {/* Admin Section */}
-        {user?.role === 'ADMIN' && (
+        {hasPermissionSync('SYSTEM', 'MANAGE') && (
           <>
             <SectionHeader textKey="nav.sections.administration" />
             <nav className="flex flex-col gap-1">

@@ -269,7 +269,7 @@ export default function BettingTablePage() {
     try {
       let cyclesPromise;
       if (isAllProjectsSelected) {
-        cyclesPromise = cycleService.getActive();
+        cyclesPromise = cycleService.getMyActiveCycles();
       } else if (currentProject) {
         cyclesPromise = cycleService.getActiveByProject(currentProject.id);
       } else {

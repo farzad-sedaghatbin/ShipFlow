@@ -16,9 +16,10 @@ import {
   Palette,
   Bug,
 } from 'lucide-react';
-import { useToast, useAuth } from '../contexts';
+import { useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
 import { OrganizationSettings, RiskThresholds, ColorSettings } from '../types/organizationSettings';
+import { usePermission } from '../hooks/usePermission';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -71,19 +72,19 @@ const DATE_FORMATS = [
 export default function OrganizationSettingsPage() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
-  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [formData, setFormData] = useState<Partial<OrganizationSettings>>({});
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const { hasPermissionSync } = usePermission();
+  const canManageSettings = hasPermissionSync('SYSTEM', 'MANAGE');
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canManageSettings) {
       fetchSettings();
     }
-  }, [isAdmin]);
+  }, [canManageSettings]);
 
   const fetchSettings = async () => {
     try {
@@ -234,7 +235,7 @@ export default function OrganizationSettingsPage() {
     return getRiskWeightsSum() === 100;
   };
 
-  if (!isAdmin) {
+  if (!canManageSettings) {
     return (
       <div className="p-4">
         <Alert variant="destructive">

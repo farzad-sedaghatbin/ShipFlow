@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { cycleService } from '../services/cycleService';
-import { useProject, useAuth, useToast } from '../contexts';
+import { useProject, useToast } from '../contexts';
+import { usePermission } from '../hooks/usePermission';
 import { Retrospective, Cycle, RetroStatus } from '../types';
 import EmptyState from '../components/EmptyState';
 
@@ -66,7 +67,6 @@ export default function RetroList() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected } = useProject();
-  const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [retros, setRetros] = useState<Retrospective[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -81,7 +81,8 @@ export default function RetroList() {
   });
   const [newRetro, setNewRetro] = useState({ title: '', notes: '', cycleId: '' });
 
-  const isAdmin = user?.role === 'ADMIN';
+  const { hasPermissionSync } = usePermission();
+  const canCreateRetro = hasPermissionSync('RETROSPECTIVE', 'CREATE');
 
   useEffect(() => {
     if (currentProject && !isAllProjectsSelected) {
@@ -204,7 +205,7 @@ export default function RetroList() {
         <Alert variant="warning" className="mb-4">
           <AlertDescription>
             {t('retroListPage.retrosDisabled')}
-            {isAdmin && ` ${t('pitchDetailPage.youCanEnable')}`}
+            {canCreateRetro && ` ${t('pitchDetailPage.youCanEnable')}`}
           </AlertDescription>
         </Alert>
       </div>
@@ -358,7 +359,7 @@ export default function RetroList() {
                       </TooltipProvider>
                     )}
 
-                    {retro.status === 'OPEN' && isAdmin && (
+                    {retro.status === 'OPEN' && canCreateRetro && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -376,7 +377,7 @@ export default function RetroList() {
                       </TooltipProvider>
                     )}
 
-                    {isAdmin && (
+                    {canCreateRetro && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>

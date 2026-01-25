@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,7 @@ public class DashboardWidgetController {
     private final UserService userService;
 
     @GetMapping
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'READ')")
     @Operation(summary = "Get user's dashboard widgets", 
                description = "Get all widget configurations for the current user")
     public ResponseEntity<List<DashboardWidgetDTO>> getUserWidgets() {
@@ -38,6 +40,7 @@ public class DashboardWidgetController {
     }
 
     @GetMapping("/visible")
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'READ')")
     @Operation(summary = "Get visible widgets", 
                description = "Get only visible widgets for the current user")
     public ResponseEntity<List<DashboardWidgetDTO>> getVisibleWidgets() {
@@ -47,6 +50,7 @@ public class DashboardWidgetController {
     }
 
     @PostMapping
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
     @Operation(summary = "Create a new widget", 
                description = "Add a new widget to the user's dashboard")
     public ResponseEntity<DashboardWidgetDTO> createWidget(
@@ -57,6 +61,7 @@ public class DashboardWidgetController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
     @Operation(summary = "Update a widget", 
                description = "Update widget visibility, order, or settings")
     public ResponseEntity<DashboardWidgetDTO> updateWidget(
@@ -67,6 +72,7 @@ public class DashboardWidgetController {
     }
 
     @PutMapping("/bulk")
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
     @Operation(summary = "Bulk update widgets", 
                description = "Update multiple widgets at once (useful for reordering)")
     public ResponseEntity<List<DashboardWidgetDTO>> bulkUpdateWidgets(
@@ -77,6 +83,7 @@ public class DashboardWidgetController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'DELETE')")
     @Operation(summary = "Delete a widget", 
                description = "Remove a widget from the dashboard")
     public ResponseEntity<Void> deleteWidget(@PathVariable Long id) {
@@ -85,6 +92,7 @@ public class DashboardWidgetController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
     @Operation(summary = "Reset to defaults", 
                description = "Reset all widgets to default configuration")
     public ResponseEntity<List<DashboardWidgetDTO>> resetToDefaults() {
