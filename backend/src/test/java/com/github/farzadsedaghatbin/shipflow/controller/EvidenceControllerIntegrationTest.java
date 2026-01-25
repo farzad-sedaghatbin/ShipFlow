@@ -101,7 +101,7 @@ class EvidenceControllerIntegrationTest {
         testPerson = personRepository.save(testPerson);
 
         User testUser = User.builder()
-                .username("testuser")
+                .username("evidence-test-user")
                 .password("password")
                 .role(UserRole.MEMBER)
                 .person(testPerson)
@@ -152,7 +152,7 @@ class EvidenceControllerIntegrationTest {
         testEvidence = evidenceRepository.save(testEvidence);
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getAllEvidence_ShouldReturnEvidence() throws Exception {
         mockMvc.perform(get("/api/evidences"))
@@ -162,7 +162,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].description", is("Test Evidence Description")));
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceById_WhenExists_ShouldReturnEvidence() throws Exception {
         mockMvc.perform(get("/api/evidences/{id}", testEvidence.getId()))
@@ -172,14 +172,14 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("Test Evidence Description")));
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceById_WhenNotExists_ShouldReturn404() throws Exception {
         mockMvc.perform(get("/api/evidences/{id}", 9999L))
                 .andExpect(status().isBadRequest());
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void createEvidence_WithValidData_ShouldCreateEvidence() throws Exception {
         CreateEvidenceRequest request = CreateEvidenceRequest.builder()
@@ -197,7 +197,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("New Evidence Description")));
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void updateEvidence_WhenExists_ShouldUpdateEvidence() throws Exception {
         CreateEvidenceRequest request = CreateEvidenceRequest.builder()
@@ -215,7 +215,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("Updated Evidence Description")));
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void deleteEvidence_WhenExists_ShouldDeleteEvidence() throws Exception {
         mockMvc.perform(delete("/api/evidences/{id}", testEvidence.getId()))
@@ -225,7 +225,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @WithMockUser(username = "testuser", roles = "MEMBER")
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceByPitch_ShouldReturnEvidenceForPitch() throws Exception {
         mockMvc.perform(get("/api/evidences/pitch/{pitchId}", testPitch.getId()))

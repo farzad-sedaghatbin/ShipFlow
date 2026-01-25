@@ -575,8 +575,8 @@ export default function PitchBoard() {
                     type="number"
                     value={newPitch.appetiteDays}
                     onChange={(e) => {
-                      const value = e.target.value === '' ? '' : parseInt(e.target.value);
-                      setNewPitch({ ...newPitch, appetiteDays: value as any });
+                      const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                      setNewPitch({ ...newPitch, appetiteDays: value });
                       setFieldErrors((prev) => ({ ...prev, appetiteDays: '' }));
                     }}
                     min={1}

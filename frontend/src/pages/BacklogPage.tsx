@@ -239,7 +239,8 @@ export default function BacklogPage() {
       setCycles(cyclesRes.data);
       setPersons(personsRes);
       
-      // Auto-select the first cycle of current project (for both Kanban and Shape Up)
+      // Auto-select the first cycle of current project
+      // (applies to both Kanban and Shape Up project types)
       if (currentProject) {
         // Filter cycles to only those belonging to the current project
         const projectCycles = cyclesRes.data.filter(c => c.projectId === currentProject.id);
@@ -253,7 +254,6 @@ export default function BacklogPage() {
         // No project selected (All Projects view), default to 'all'
         setSelectedCycle('all');
       }
-      // For Shape Up or "All Projects", default to 'all'
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
