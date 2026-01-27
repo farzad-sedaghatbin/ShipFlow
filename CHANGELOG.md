@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-01-27
+
+### Fixed
+- **Critical Database Migration Fixes** (Production Blocking)
+  - **V59 Migration** (Pitch Risk History):
+    - Fixed H2-incompatible inline INDEX syntax - separated into individual CREATE INDEX statements
+    - Fixed TEXT/CLOB type mismatch in `PitchRiskHistory` entity causing schema validation errors
+    - Updated entity to use `@Lob` annotation for proper CLOB mapping
+  - **V60 Migration** (User Projects):
+    - Replaced MySQL-specific `ON DUPLICATE KEY UPDATE` with H2-compatible `MERGE INTO` statement
+    - Ensures data migration works correctly across different database environments
+  - These fixes ensure application starts successfully with H2 database in all environments
+
+## [0.3.0] - 2026-01-27
+
 ### Added
 - **Pluggable Vector Store Architecture**: Complete refactoring to pluggable vector database system
   - **Core Architecture**:
@@ -257,12 +272,6 @@ All notable changes to this project will be documented in this file.
 - **Task List UX**: Blocker badge tooltip now shows actual task titles instead of just count
 - **Backend**: Task DTOs now include children (subtasks) array for displaying subtask count and details
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
 - **Configurable Risk Factor Weights**:
   - Risk calculation now uses configurable weights instead of fixed percentages
   - 4 risk factors with adjustable weights: Budget (default 25%), Bugs (default 30%), Scope (default 25%), Time (default 20%)
@@ -395,6 +404,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **H2 SQL Syntax**: Removed WHERE clause from partial index for H2 compatibility
 - **Document Visibility**: Added extractedDocumentName state to show uploaded document name
 - **Tab Navigation**: Implemented activeTab state for controlled tab switching
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.1] - 2026-01-14
 
