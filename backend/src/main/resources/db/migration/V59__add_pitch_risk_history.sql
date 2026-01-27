@@ -6,17 +6,17 @@ CREATE TABLE pitch_risk_history (
     pitch_id BIGINT NOT NULL,
     risk_score INT NOT NULL,
     risk_level VARCHAR(20) NOT NULL,
-    risk_factors_json TEXT,
+    risk_factors_json CLOB,
     recorded_at TIMESTAMP NOT NULL,
     trigger_type VARCHAR(20) NOT NULL,
     
     CONSTRAINT fk_pitch_risk_history_pitch 
-        FOREIGN KEY (pitch_id) REFERENCES pitches(id) ON DELETE CASCADE,
-    
-    INDEX idx_pitch_risk_history_pitch (pitch_id),
-    INDEX idx_pitch_risk_history_date (recorded_at),
-    INDEX idx_pitch_risk_history_pitch_date (pitch_id, recorded_at)
+        FOREIGN KEY (pitch_id) REFERENCES pitches(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_pitch_risk_history_pitch ON pitch_risk_history (pitch_id);
+CREATE INDEX idx_pitch_risk_history_date ON pitch_risk_history (recorded_at);
+CREATE INDEX idx_pitch_risk_history_pitch_date ON pitch_risk_history (pitch_id, recorded_at);
 
 COMMENT ON TABLE pitch_risk_history IS 'Historical snapshots of pitch risk scores for trend analysis';
 COMMENT ON COLUMN pitch_risk_history.risk_factors_json IS 'Serialized JSON array of risk factors contributing to the score';
