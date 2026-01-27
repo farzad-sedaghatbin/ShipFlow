@@ -53,15 +53,16 @@ services:
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
-      QA_VECTOR_STORE_TYPE: chromadb
-      CHROMADB_HOST: chromadb
-      CHROMADB_PORT: 8000
+      QA_VECTORSTORE_PROVIDER: qdrant
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6334
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-shipflow_qdrant_key}
     ports:
       - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
-      chromadb:
+      qdrant:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
@@ -73,24 +74,23 @@ services:
       - shipflow-network
     restart: unless-stopped
 
-  # ChromaDB for Q&A Vector Store
-  chromadb:
-    image: chromadb/chroma:latest
-    container_name: shipflow-chromadb
+  # Qdrant Vector Database (Production Recommended)
+  # High-performance vector database written in Rust
+  # Features: filtering, clustering, sharding, snapshots, API key auth
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: shipflow-qdrant
     environment:
-      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/chroma/chroma.htpasswd
-      - CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER=chromadb.auth.basic.BasicAuthCredentialsProvider
-      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.basic.BasicAuthServerProvider
-      - ANONYMIZED_TELEMETRY=FALSE
-      - ALLOW_RESET=TRUE
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma/data
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-shipflow_qdrant_key}
+      - QDRANT__SERVICE__ENABLE_TLS=false
+      - QDRANT__LOG_LEVEL=INFO
     ports:
-      - "8000:8000"
+      - "6333:6333"  # REST API
+      - "6334:6334"  # gRPC API
     volumes:
-      - chromadb_data:/chroma/data
+      - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/readyz"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -98,9 +98,32 @@ services:
       - shipflow-network
     restart: unless-stopped
 
+  # ChromaDB (Alternative - uncomment if preferred over Qdrant)
+  # chromadb:
+  #   image: chromadb/chroma:latest
+  #   container_name: shipflow-chromadb
+  #   environment:
+  #     - ANONYMIZED_TELEMETRY=FALSE
+  #     - ALLOW_RESET=TRUE
+  #     - IS_PERSISTENT=TRUE
+  #     - PERSIST_DIRECTORY=/chroma/data
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - chromadb_data:/chroma/data
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - shipflow-network
+  #   restart: unless-stopped
+
 volumes:
   postgres_data:
-  chromadb_data:
+  qdrant_data:
+  # chromadb_data:  # Uncomment if using ChromaDB
 
 networks:
   shipflow-network:
