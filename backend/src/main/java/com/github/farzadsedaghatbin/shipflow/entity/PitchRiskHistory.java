@@ -46,7 +46,6 @@ public class PitchRiskHistory {
      * Stores RiskFactor[] from RiskAnalysisService.
      */
     @Lob
-    @Column(columnDefinition = "TEXT")
     private String riskFactorsJson;
 
     @Column(nullable = false)
