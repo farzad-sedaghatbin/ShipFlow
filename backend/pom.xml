@@ -142,11 +142,48 @@
             <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
             <version>0.35.0</version>
         </dependency>
+        
+        <!-- Vector Store Providers (Pluggable) -->
+        <!-- Qdrant - Production recommended -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-qdrant</artifactId>
+            <version>0.35.0</version>
+        </dependency>
+        <!-- ChromaDB - Alternative option -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-chroma</artifactId>
             <version>0.35.0</version>
+            <optional>true</optional>
         </dependency>
+        <!-- Milvus - For large-scale deployments (optional) -->
+        <!--
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-milvus</artifactId>
+            <version>0.35.0</version>
+            <optional>true</optional>
+        </dependency>
+        -->
+        <!-- Pinecone - Managed cloud (optional) -->
+        <!--
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-pinecone</artifactId>
+            <version>0.35.0</version>
+            <optional>true</optional>
+        </dependency>
+        -->
+        <!-- Weaviate - Alternative (optional) -->
+        <!--
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-weaviate</artifactId>
+            <version>0.35.0</version>
+            <optional>true</optional>
+        </dependency>
+        -->
 
         <!-- iText PDF for PDF generation -->
         <dependency>

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Pluggable Vector Store Architecture**: Complete refactoring to pluggable vector database system
+  - **Core Architecture**:
+    - Created `VectorStoreProvider` interface for all provider implementations
+    - Implemented `VectorStoreProviderFactory` with Spring auto-discovery for automatic provider registration
+    - Added `VectorStoreProviderType` enum supporting: in-memory, qdrant, chroma, milvus (future), pinecone (future), weaviate (future)
+    - Created `VectorStoreProviderConfig` builder pattern for flexible, provider-agnostic configuration
+    - Default vector dimension: 384 (matches all-MiniLM-L6-v2 embedding model)
+  - **Provider Implementations**:
+    - **InMemoryVectorStoreProvider**: Development/testing (non-persistent, no dependencies)
+    - **QdrantVectorStoreProvider**: Production recommended - high-performance Rust-based vector DB with API key auth
+    - **ChromaVectorStoreProvider**: Alternative option for simpler deployments
+  - **Configuration System**:
+    - Updated `application.properties` with `app.qa.vectorstore.*` configuration section
+    - Dev profile defaults to `in-memory` (no external dependencies)
+    - Prod profile defaults to `qdrant` with API key authentication
+    - Docker Compose updated with Qdrant service (replaces ChromaDB)
+  - **Testing**:
+    - Created 6 new test classes covering the vector store plugin system:
+      - `VectorStoreProviderTypeTest`: Enum validation and config parsing (10 tests)
+      - `VectorStoreProviderConfigTest`: Configuration builder, defaults, and extra params (16 tests)
+      - `VectorStoreProviderFactoryTest`: Factory auto-discovery and store creation (13 tests)
+      - `InMemoryVectorStoreProviderTest`: In-memory provider tests (9 tests)
+      - `QdrantVectorStoreProviderTest`: Qdrant provider validation tests (11 tests)
+      - `ChromaVectorStoreProviderTest`: ChromaDB provider tests (8 tests)
+    - Total: 67 new unit tests for vector store architecture, 100% pass rate
+  - **Documentation**:
+    - Updated `RAG_ARCHITECTURE.md` with pluggable vector store section
+    - Updated `ENVIRONMENT_SETUP.md` with vector store configuration guide
+    - Updated `README.md` to highlight Qdrant as production recommendation
+
 - **LLM Plugin Architecture**: Complete refactoring to pluggable AI provider system
   - **Core Architecture**:
     - Created `LLMProvider` interface for all provider implementations

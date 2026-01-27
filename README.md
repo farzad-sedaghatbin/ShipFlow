@@ -119,12 +119,16 @@ A modern project management application implementing the [Shape Up](https://base
   - Automated status detection without manual assignment
   - All thresholds and weights customizable per organization with sensible defaults
 - **AI-Powered Q&A**: Enhanced RAG-based knowledge retrieval from project documents
+  - **Pluggable Vector Store Architecture**: Choose your vector database via configuration
+    - **Qdrant** (production recommended): High-performance vector DB with filtering & clustering
+    - **In-Memory**: For development/testing (no external dependencies)
+    - **ChromaDB**: Alternative option for simpler deployments
   - **Pluggable LLM Architecture**: Choose your AI provider via simple configuration
     - **Ollama** (local/self-hosted): Privacy-first, no API costs, runs on your hardware
     - **OpenAI ChatGPT**: Production-grade GPT-4o/GPT-4o-mini for high-quality responses
     - **RunPod** (cloud GPU): Scalable serverless GPU compute with pay-per-use pricing
   - Easy provider switching via environment variables (no code changes required)
-  - Extensible plugin system - add new providers by implementing `LLMProvider` interface
+  - Extensible plugin system - add new providers by implementing `VectorStoreProvider` or `LLMProvider` interfaces
   - Smart relevance filtering (0.70 threshold)
   - Source citation tracking
   - RAG evaluation metrics (faithfulness, relevance)

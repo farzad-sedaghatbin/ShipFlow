@@ -16,6 +16,58 @@ ShipFlow uses a pluggable LLM provider system that supports multiple AI backends
 | Anthropic | `anthropic` | Coming soon | Yes |
 | Google | `google` | Coming soon | Yes |
 
+## Vector Store Configuration
+
+ShipFlow uses a pluggable vector store system for RAG (Retrieval-Augmented Generation). Configure your preferred provider using the `QA_VECTORSTORE_PROVIDER` environment variable.
+
+### Supported Vector Stores
+
+| Provider | Config Value | Best For | API Key Required |
+|----------|-------------|----------|------------------|
+| **Qdrant** | `qdrant` | **Production (recommended)** | Yes (recommended) |
+| In-Memory | `in-memory` | Development/Testing | No |
+| ChromaDB | `chroma` | Small deployments | No |
+| Milvus | `milvus` | Large-scale (coming soon) | Yes |
+| Pinecone | `pinecone` | Managed cloud (coming soon) | Yes |
+
+### Qdrant Configuration (Production Recommended)
+
+Qdrant is the recommended vector database for production deployments due to its high performance, advanced filtering, and enterprise features.
+
+```bash
+# Vector store provider
+QA_VECTORSTORE_PROVIDER=qdrant
+
+# Qdrant connection settings
+QDRANT_HOST=localhost          # or qdrant for Docker
+QDRANT_PORT=6334               # gRPC port (default)
+QDRANT_API_KEY=your-secure-api-key  # Strongly recommended for production
+
+# Collection settings
+QA_VECTORSTORE_COLLECTION=shipflow_knowledge
+QA_VECTORSTORE_DIMENSION=384   # Matches all-MiniLM-L6-v2 embedding model
+```
+
+### In-Memory Configuration (Development)
+
+For local development, the in-memory store requires no external dependencies:
+
+```bash
+QA_VECTORSTORE_PROVIDER=in-memory
+# No additional configuration needed
+# Note: Data is NOT persistent - lost on restart
+```
+
+### ChromaDB Configuration (Alternative)
+
+For users who prefer ChromaDB:
+
+```bash
+QA_VECTORSTORE_PROVIDER=chroma
+CHROMADB_URL=http://localhost:8000
+QA_VECTORSTORE_COLLECTION=shipflow_knowledge
+```
+
 ## Local Development
 
 ### Option 1: Ollama (Recommended for Development)
@@ -166,3 +218,14 @@ To add support for a new LLM provider:
 4. Register the provider with Spring `@Component` annotation
 
 See the [LLM Plugin Architecture](backend/src/main/java/com/github/farzadsedaghatbin/shipflow/config/llm/README.md) for details.
+
+## Adding New Vector Store Providers
+
+To add support for a new vector store provider:
+
+1. Add the provider type to `VectorStoreProviderType` enum
+2. Create a new class implementing `VectorStoreProvider` interface
+3. Add the LangChain4j dependency to `pom.xml`
+4. Register the provider with Spring `@Component` annotation
+
+See the [RAG Architecture](RAG_ARCHITECTURE.md) for details on the vector store plugin system.

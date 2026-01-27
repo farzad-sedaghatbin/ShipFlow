@@ -573,7 +573,7 @@ public class QAService {
         return QAStatusDTO.builder()
                 .qaEnabled(isQAEnabled())
                 .aiAvailable(chatLanguageModel != null)
-                .vectorStoreType(qaConfig != null ? qaConfig.getVectorStoreType() : "none")
+                .vectorStoreType(qaConfig != null ? qaConfig.getVectorStoreProvider() : "none")
                 .totalKnowledgeItems(knowledgeItemRepository.count())
                 .embeddedKnowledgeItems(knowledgeItemRepository.countEmbedded())
                 .totalInteractions(qaInteractionRepository.count())
