@@ -33,4 +33,11 @@ public class ProjectDTO {
     private LocalDateTime updatedAt;
     private Integer cycleCount;
     private Integer activeCycleCount;
+    
+    /**
+     * The current user's role within this project.
+     * VIEWER, CONTRIBUTOR, or MANAGER.
+     * Null if user has access via ADMIN role or team membership only.
+     */
+    private String userProjectRole;
 }

@@ -64,7 +64,7 @@ class DashboardNotificationControllerIntegrationTest {
         testUser = User.builder()
                 .username("testuser")
                 .password("password")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .build();

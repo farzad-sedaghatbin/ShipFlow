@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.health.PitchHealthDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
@@ -168,9 +169,9 @@ class PitchHealthServiceConfigurableThresholdsTest {
         // Then: Should reflect elevated risk due to 2 critical bugs
         assertThat(result).isNotNull();
         assertThat(result.getRiskLevel()).isIn(
-                PitchRiskDTO.RiskLevel.MEDIUM,
-                PitchRiskDTO.RiskLevel.HIGH,
-                PitchRiskDTO.RiskLevel.CRITICAL
+                RiskLevel.MEDIUM,
+                RiskLevel.HIGH,
+                RiskLevel.CRITICAL
         );
     }
 

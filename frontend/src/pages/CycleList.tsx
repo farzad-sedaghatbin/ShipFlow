@@ -68,7 +68,7 @@ export default function CycleList() {
       setLoading(true);
       let response;
       if (isAllProjectsSelected) {
-        response = await cycleService.getAll();
+        response = await cycleService.getMyCycles();
       } else if (currentProject) {
         response = await cycleService.getByProject(currentProject.id);
       } else {

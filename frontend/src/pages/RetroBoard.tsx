@@ -18,7 +18,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
-import { useAuth } from '../contexts';
+
+import { usePermission } from '../hooks/usePermission';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
 import { cn } from '../lib/utils';
 
@@ -60,7 +61,6 @@ export default function RetroBoard() {
   const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
-  const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [retro, setRetro] = useState<Retrospective | null>(null);
   const [items, setItems] = useState<RetroItem[]>([]);
@@ -84,7 +84,8 @@ export default function RetroBoard() {
     columnType: null,
   });
 
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+  const { hasPermissionSync } = usePermission();
+  const canManageRetro = hasPermissionSync('RETROSPECTIVE', 'MANAGE');
   const isReadOnly = retro?.status === 'CLOSED';
 
   const getColumnTitle = (type: RetroColumnType) => {
@@ -309,7 +310,7 @@ export default function RetroBoard() {
                 {t('retroBoardPage.openRetro')}
               </Button>
             )}
-            {retro.status === 'OPEN' && isAdmin && (
+            {retro.status === 'OPEN' && canManageRetro && (
               <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleCloseRetro}>
                 <Square className="mr-2 h-4 w-4" />
                 {t('retroBoardPage.closeRetro')}
@@ -437,7 +438,7 @@ export default function RetroBoard() {
                             {!isReadOnly && (
                               <div className="flex items-center">
                                 {/* Merge button (admin only) */}
-                                {isAdmin && retro?.status === 'OPEN' && (
+                                {canManageRetro && retro?.status === 'OPEN' && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button

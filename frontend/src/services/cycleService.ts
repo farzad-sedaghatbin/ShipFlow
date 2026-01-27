@@ -3,6 +3,8 @@ import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus } from '../type
 
 export const cycleService = {
   getAll: () => api.get<Cycle[]>('/cycles'),
+  getMyCycles: () => api.get<Cycle[]>('/cycles/my-cycles'),
+  getMyActiveCycles: () => api.get<Cycle[]>('/cycles/my-cycles/active'),
   getActive: () => api.get<Cycle[]>('/cycles/active'),
   getById: (id: number) => api.get<Cycle>(`/cycles/${id}`),
   getByProject: (projectId: number) => api.get<Cycle[]>(`/cycles/project/${projectId}`),

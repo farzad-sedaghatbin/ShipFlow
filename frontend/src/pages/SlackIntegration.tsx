@@ -372,7 +372,7 @@ export default function SlackIntegrationPage() {
 
       {/* Configuration Dialog */}
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('slackIntegration.workspace')}</DialogTitle>
           </DialogHeader>
@@ -423,7 +423,7 @@ export default function SlackIntegrationPage() {
 
       {/* Channel Configuration Dialog */}
       <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{t('slackIntegration.notificationSettings')}</DialogTitle>
           </DialogHeader>
@@ -546,7 +546,7 @@ export default function SlackIntegrationPage() {
 
       {/* Test Notification Dialog */}
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('slackIntegration.testNotification')}</DialogTitle>
           </DialogHeader>

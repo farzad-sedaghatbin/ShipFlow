@@ -1,12 +1,28 @@
 import api from './api';
-import { Project, CreateProjectRequest } from '../types';
+import { Project, CreateProjectRequest, ProjectRole, ProjectMember } from '../types';
 
 export const projectService = {
+  /**
+   * Get all projects (Admin only)
+   * @deprecated Use getMyProjects() for scoped access
+   */
   getAll: async (): Promise<Project[]> => {
     const response = await api.get<Project[]>('/projects');
     return response.data;
   },
 
+  /**
+   * Get projects accessible to the current user.
+   * This is the primary method for listing projects.
+   */
+  getMyProjects: async (): Promise<Project[]> => {
+    const response = await api.get<Project[]>('/projects/my-projects');
+    return response.data;
+  },
+
+  /**
+   * Get active projects accessible to the current user.
+   */
   getActive: async (): Promise<Project[]> => {
     const response = await api.get<Project[]>('/projects/active');
     return response.data;
@@ -20,6 +36,38 @@ export const projectService = {
   getByKey: async (key: string): Promise<Project> => {
     const response = await api.get<Project>(`/projects/key/${key}`);
     return response.data;
+  },
+
+  /**
+   * Check if current user has access to a project
+   */
+  hasAccess: async (id: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/projects/${id}/has-access`);
+    return response.data;
+  },
+
+  /**
+   * Get users with access to a project
+   */
+  getMembers: async (projectId: number): Promise<ProjectMember[]> => {
+    const response = await api.get<ProjectMember[]>(`/projects/${projectId}/members`);
+    return response.data;
+  },
+
+  /**
+   * Grant project access to a user
+   */
+  grantAccess: async (projectId: number, userId: number, role: ProjectRole = 'VIEWER'): Promise<void> => {
+    await api.post(`/projects/${projectId}/members/${userId}`, null, {
+      params: { role }
+    });
+  },
+
+  /**
+   * Revoke project access from a user
+   */
+  revokeAccess: async (projectId: number, userId: number): Promise<void> => {
+    await api.delete(`/projects/${projectId}/members/${userId}`);
   },
 
   create: async (request: CreateProjectRequest): Promise<Project> => {

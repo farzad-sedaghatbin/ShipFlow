@@ -6,7 +6,7 @@ import { cycleService } from '../services/cycleService';
 import projectService from '../services/projectService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
 import { CreateCycleRequest, CyclePhase, Project } from '../types';
-import { useProject, useToast, useAuth } from '../contexts';
+import { useProject, useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
@@ -17,6 +17,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Skeleton } from '../components/ui/skeleton';
+import { usePermission } from '../hooks/usePermission';
 import {
   Select,
   SelectContent,
@@ -33,7 +34,6 @@ export default function CycleForm() {
   const isEdit = !!id;
   const { currentProject } = useProject();
   const { showSuccess } = useToast();
-  const { user } = useAuth();
 
   const [formData, setFormData] = useState<CreateCycleRequest>({
     projectId: currentProject?.id || 0,
@@ -54,7 +54,8 @@ export default function CycleForm() {
   const [projectsLoading, setProjectsLoading] = useState(true);
 
   // Check if user can override cycle dates
-  const canOverrideDates = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+  const { hasPermissionSync } = usePermission();
+  const canOverrideDates = hasPermissionSync('CYCLE', 'MANAGE');
 
   useEffect(() => {
     loadProjects();

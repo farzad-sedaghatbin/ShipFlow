@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TeamMemberRole;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
@@ -187,9 +188,9 @@ class ReportServiceTest {
             when(taskRepository.getTotalActualHoursByCycleId(1L)).thenReturn(45.0);
             
             // Mock risk analysis
-            PitchRiskDTO lowRisk = createPitchRisk(1L, PitchRiskDTO.RiskLevel.LOW, 20);
-            PitchRiskDTO highRisk = createPitchRisk(2L, PitchRiskDTO.RiskLevel.HIGH, 65);
-            PitchRiskDTO mediumRisk = createPitchRisk(3L, PitchRiskDTO.RiskLevel.MEDIUM, 40);
+            PitchRiskDTO lowRisk = createPitchRisk(1L, RiskLevel.LOW, 20);
+            PitchRiskDTO highRisk = createPitchRisk(2L, RiskLevel.HIGH, 65);
+            PitchRiskDTO mediumRisk = createPitchRisk(3L, RiskLevel.MEDIUM, 40);
             
             when(riskAnalysisService.analyzePitchRisk(pitch1, false)).thenReturn(lowRisk);
             when(riskAnalysisService.analyzePitchRisk(pitch2, false)).thenReturn(highRisk);
@@ -253,11 +254,11 @@ class ReportServiceTest {
             
             // Mock risk analysis with specific levels
             when(riskAnalysisService.analyzePitchRisk(pitch1, false))
-                    .thenReturn(createPitchRisk(1L, PitchRiskDTO.RiskLevel.LOW, 15));
+                    .thenReturn(createPitchRisk(1L, RiskLevel.LOW, 15));
             when(riskAnalysisService.analyzePitchRisk(pitch2, false))
-                    .thenReturn(createPitchRisk(2L, PitchRiskDTO.RiskLevel.HIGH, 70));
+                    .thenReturn(createPitchRisk(2L, RiskLevel.HIGH, 70));
             when(riskAnalysisService.analyzePitchRisk(pitch3, false))
-                    .thenReturn(createPitchRisk(3L, PitchRiskDTO.RiskLevel.MEDIUM, 45));
+                    .thenReturn(createPitchRisk(3L, RiskLevel.MEDIUM, 45));
 
             // When
             EnhancedCycleReportDTO report = reportService.getEnhancedCycleReport(1L);
@@ -330,7 +331,7 @@ class ReportServiceTest {
             when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
             when(taskRepository.countByCycleIdAndStatus(anyLong(), any())).thenReturn(0);
             when(riskAnalysisService.analyzePitchRisk(any(Pitch.class), anyBoolean()))
-                    .thenReturn(createPitchRisk(1L, PitchRiskDTO.RiskLevel.LOW, 20));
+                    .thenReturn(createPitchRisk(1L, RiskLevel.LOW, 20));
 
             // When
             EnhancedCycleReportDTO report = reportService.getEnhancedCycleReport(1L);
@@ -370,13 +371,13 @@ class ReportServiceTest {
             
             // Mock all risk levels
             when(riskAnalysisService.analyzePitchRisk(pitch1, false))
-                    .thenReturn(createPitchRisk(1L, PitchRiskDTO.RiskLevel.LOW, 10));
+                    .thenReturn(createPitchRisk(1L, RiskLevel.LOW, 10));
             when(riskAnalysisService.analyzePitchRisk(pitch2, false))
-                    .thenReturn(createPitchRisk(2L, PitchRiskDTO.RiskLevel.MEDIUM, 40));
+                    .thenReturn(createPitchRisk(2L, RiskLevel.MEDIUM, 40));
             when(riskAnalysisService.analyzePitchRisk(pitch3, false))
-                    .thenReturn(createPitchRisk(3L, PitchRiskDTO.RiskLevel.HIGH, 70));
+                    .thenReturn(createPitchRisk(3L, RiskLevel.HIGH, 70));
             when(riskAnalysisService.analyzePitchRisk(pitch4, false))
-                    .thenReturn(createPitchRisk(4L, PitchRiskDTO.RiskLevel.CRITICAL, 90));
+                    .thenReturn(createPitchRisk(4L, RiskLevel.CRITICAL, 90));
 
             // When
             EnhancedCycleReportDTO report = reportService.getEnhancedCycleReport(1L);
@@ -415,7 +416,7 @@ class ReportServiceTest {
             when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
             when(taskRepository.countByCycleIdAndStatus(anyLong(), any())).thenReturn(0);
             when(riskAnalysisService.analyzePitchRisk(any(Pitch.class), anyBoolean()))
-                    .thenReturn(createPitchRisk(2L, PitchRiskDTO.RiskLevel.HIGH, 65));
+                    .thenReturn(createPitchRisk(2L, RiskLevel.HIGH, 65));
 
             // When
             EnhancedCycleReportDTO report = reportService.getEnhancedCycleReport(1L);
@@ -446,7 +447,7 @@ class ReportServiceTest {
             when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
             when(taskRepository.countByCycleIdAndStatus(anyLong(), any())).thenReturn(0);
             when(riskAnalysisService.analyzePitchRisk(any(Pitch.class), anyBoolean()))
-                    .thenReturn(createPitchRisk(1L, PitchRiskDTO.RiskLevel.LOW, 15));
+                    .thenReturn(createPitchRisk(1L, RiskLevel.LOW, 15));
 
             // When
             EnhancedCycleReportDTO report = reportService.getEnhancedCycleReport(1L);
@@ -461,7 +462,7 @@ class ReportServiceTest {
     }
 
     // Helper method
-    private PitchRiskDTO createPitchRisk(Long pitchId, PitchRiskDTO.RiskLevel level, int score) {
+    private PitchRiskDTO createPitchRisk(Long pitchId, RiskLevel level, int score) {
         return PitchRiskDTO.builder()
                 .pitchId(pitchId)
                 .pitchTitle("Pitch " + pitchId)

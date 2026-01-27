@@ -48,6 +48,14 @@ export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
  */
 export type ProjectType = 'SHAPE_UP' | 'KANBAN';
 
+/**
+ * Role a user can have within a specific project.
+ * VIEWER: Read-only access
+ * CONTRIBUTOR: Can create/edit items
+ * MANAGER: Full project access including team management
+ */
+export type ProjectRole = 'VIEWER' | 'CONTRIBUTOR' | 'MANAGER';
+
 // Project DTOs
 export interface Project {
   id: number;
@@ -68,6 +76,23 @@ export interface Project {
   updatedAt?: string;
   cycleCount?: number;
   activeCycleCount?: number;
+  /**
+   * Current user's role within this project.
+   * Null if user has access via ADMIN role or team membership only.
+   */
+  userProjectRole?: ProjectRole;
+}
+
+/**
+ * A user's direct assignment to a project
+ */
+export interface ProjectMember {
+  userId: number;
+  username: string;
+  email?: string;
+  projectRole: ProjectRole;
+  grantedAt: string;
+  grantedByUsername?: string;
 }
 
 export interface CreateProjectRequest {
@@ -435,7 +460,12 @@ export interface PitchWorkSummary {
 }
 
 // User/Auth Types
-export type UserRole = 'ADMIN' | 'PROJECT_MANAGER' | 'PRODUCT' | 'DEVELOPER' | 'QA';
+// 4-tier role model:
+// ADMIN: Full system access - can manage users, settings, permissions
+// MANAGER: Can manage cycles, pitches, teams, approve bets
+// MEMBER: Can create/update own work, contribute to pitches/tasks
+// READONLY: Read-only access across all resources
+export type UserRole = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'READONLY';
 
 export interface User {
   id: number;

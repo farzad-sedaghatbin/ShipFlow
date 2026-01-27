@@ -72,7 +72,7 @@ class CycleControllerIntegrationTest {
                 .username("developer")
                 .email("developer@test.com")
                 .password("password")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .isActive(true)
                 .build();
         userRepository.save(developer);
@@ -81,7 +81,7 @@ class CycleControllerIntegrationTest {
                 .username("pm")
                 .email("pm@test.com")
                 .password("password")
-                .role(UserRole.PROJECT_MANAGER)
+                .role(UserRole.MANAGER)
                 .isActive(true)
                 .build();
         userRepository.save(pm);

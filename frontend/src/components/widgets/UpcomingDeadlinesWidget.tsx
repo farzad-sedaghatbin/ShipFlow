@@ -21,7 +21,7 @@ export function UpcomingDeadlinesWidget() {
   const loadUpcomingDeadlines = async () => {
     try {
       setLoading(true);
-      const response = await cycleService.getActive();
+      const response = await cycleService.getMyActiveCycles();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       

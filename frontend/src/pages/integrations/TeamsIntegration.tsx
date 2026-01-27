@@ -412,7 +412,7 @@ export default function TeamsIntegration() {
 
       {/* Help Dialog */}
       <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.setupGuideTitle')}</DialogTitle>
             <DialogDescription>
@@ -478,7 +478,7 @@ export default function TeamsIntegration() {
 
       {/* Configuration Dialog */}
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.configureTenantTitle')}</DialogTitle>
             <DialogDescription>
@@ -536,7 +536,7 @@ export default function TeamsIntegration() {
 
       {/* Channel Configuration Dialog */}
       <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.configureChannelTitle')}</DialogTitle>
             <DialogDescription>
@@ -662,7 +662,7 @@ export default function TeamsIntegration() {
 
       {/* Test Notification Dialog */}
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.sendTestTitle')}</DialogTitle>
             <DialogDescription>

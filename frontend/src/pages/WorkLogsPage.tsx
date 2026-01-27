@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import { usePermission } from '../hooks/usePermission';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
@@ -126,7 +127,7 @@ export default function WorkLogsPage() {
   const loadInitialData = async () => {
     try {
       const [cyclesRes, personsRes] = await Promise.all([
-        cycleService.getActive(),
+        cycleService.getMyActiveCycles(),
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
@@ -199,7 +200,7 @@ export default function WorkLogsPage() {
 
   const loadAllPitches = async () => {
     try {
-      const response = await pitchService.getAll();
+      const response = await pitchService.getMyPitches();
       let allPitches = response.data;
       // Filter by current project if one is selected
       if (!isAllProjectsSelected && currentProject) {
@@ -376,7 +377,8 @@ export default function WorkLogsPage() {
     }
   };
 
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+  const { hasPermissionSync } = usePermission();
+  const canManageLogs = hasPermissionSync('PITCH', 'DELETE');
   const canLogForSelf = !!user?.personId;
 
   if (loading) {
@@ -457,7 +459,7 @@ export default function WorkLogsPage() {
             <User className="h-4 w-4" />
             {t('workLogs.myLogs')}
           </TabsTrigger>
-          {isAdmin && (
+          {canManageLogs && (
             <TabsTrigger value="team" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               {t('workLogs.teamLogs')}
@@ -592,11 +594,9 @@ export default function WorkLogsPage() {
           )}
         </TabsContent>
 
-        {/* Team Logs Tab (Admin) */}
-        {isAdmin && (
-          <TabsContent value="team" className="space-y-4">
-            {/* Add for Team Form */}
-            <Card>
+        {/* Team Logs Tab (Managers) */}
+        {canManageLogs && (
+          <TabsContent value="team" className="space-y-4">\n            {/* Add for Team Form */}\n            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
               </CardHeader>

@@ -27,4 +27,57 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
 
     @Query("SELECT c FROM Cycle c LEFT JOIN FETCH c.project WHERE c.id = :id")
     java.util.Optional<Cycle> findByIdWithProject(@Param("id") Long id);
+
+    /**
+     * Find all cycles for projects accessible to a user.
+     * Access is granted through:
+     * 1. Project ownership
+     * 2. Direct project assignment (user_projects)
+     * 3. Team membership
+     */
+    @Query("""
+        SELECT DISTINCT c FROM Cycle c 
+        JOIN FETCH c.project p
+        WHERE p.id IN (
+            SELECT DISTINCT proj.id FROM Project proj
+            WHERE proj.owner.id = :userId
+            OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
+            OR proj.id IN (
+                SELECT DISTINCT cyc.project.id 
+                FROM Cycle cyc 
+                JOIN cyc.teams t 
+                JOIN TeamAssignment ta ON ta.team.id = t.id 
+                JOIN ta.person per 
+                JOIN User u ON u.person.id = per.id 
+                WHERE u.id = :userId
+            )
+        )
+        ORDER BY c.startDate DESC
+        """)
+    List<Cycle> findAccessibleCyclesByUserId(@Param("userId") Long userId);
+
+    /**
+     * Find active cycles for accessible projects
+     */
+    @Query("""
+        SELECT DISTINCT c FROM Cycle c 
+        JOIN FETCH c.project p
+        WHERE c.isActive = true
+        AND p.id IN (
+            SELECT DISTINCT proj.id FROM Project proj
+            WHERE proj.owner.id = :userId
+            OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
+            OR proj.id IN (
+                SELECT DISTINCT cyc.project.id 
+                FROM Cycle cyc 
+                JOIN cyc.teams t 
+                JOIN TeamAssignment ta ON ta.team.id = t.id 
+                JOIN ta.person per 
+                JOIN User u ON u.person.id = per.id 
+                WHERE u.id = :userId
+            )
+        )
+        ORDER BY c.startDate DESC
+        """)
+    List<Cycle> findAccessibleActiveCyclesByUserId(@Param("userId") Long userId);
 }

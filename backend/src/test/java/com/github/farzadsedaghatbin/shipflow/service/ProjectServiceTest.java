@@ -8,16 +8,22 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +43,9 @@ class ProjectServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private UserProjectRepository userProjectRepository;
+
+    @Mock
     private CycleRepository cycleRepository;
 
     @Mock
@@ -51,6 +60,12 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Set up security context with authenticated user
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+            "owner", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_MANAGER"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        
         lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
             String key = i.getArgument(0);
             if (key.contains("project.key.exists")) return "Project key already exists";
@@ -69,7 +84,7 @@ class ProjectServiceTest {
         testOwner = User.builder()
                 .id(1L)
                 .username("owner")
-                .role(UserRole.PROJECT_MANAGER)
+                .role(UserRole.MANAGER)
                 .build();
 
         testProject = Project.builder()
@@ -89,6 +104,16 @@ class ProjectServiceTest {
         testRequest.setDescription("Test Description");
         testRequest.setColor("#FF0000");
         testRequest.setOwnerId(1L);
+        
+        // Mock user lookup for access control
+        lenient().when(userRepository.findByUsername("owner")).thenReturn(Optional.of(testOwner));
+        // Mock project access check - owner has access
+        lenient().when(userProjectRepository.hasProjectAccess(1L, 1L)).thenReturn(true);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -133,12 +158,12 @@ class ProjectServiceTest {
     }
 
     @Test
-    void findById_WhenNotExists_ShouldThrowException() {
-        when(projectRepository.findByIdWithOwner(999L)).thenReturn(Optional.empty());
+    void findById_WhenNotExists_ShouldThrowAccessDeniedException() {
+        // With access control, when project doesn't exist, the access check fails first
+        when(userProjectRepository.hasProjectAccess(1L, 999L)).thenReturn(false);
 
         assertThatThrownBy(() -> projectService.findById(999L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Project not found");
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
     }
 
     @Test

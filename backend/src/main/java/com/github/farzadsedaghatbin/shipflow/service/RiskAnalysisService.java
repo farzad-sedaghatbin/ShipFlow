@@ -1,19 +1,26 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
+import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.*;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.PitchRiskHistory;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRiskHistoryRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +51,9 @@ public class RiskAnalysisService {
     private final CycleRepository cycleRepository;
     private final WorkLogRepository workLogRepository;
     private final AICacheService cacheService;
+    private final PitchRiskHistoryRepository riskHistoryRepository;
+    private final OrganizationSettingsService organizationSettingsService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public RiskAnalysisService(
@@ -52,13 +62,18 @@ public class RiskAnalysisService {
             PitchRepository pitchRepository,
             CycleRepository cycleRepository,
             WorkLogRepository workLogRepository,
-            AICacheService cacheService) {
+            AICacheService cacheService,
+            PitchRiskHistoryRepository riskHistoryRepository,
+            OrganizationSettingsService organizationSettingsService) {
         this.aiConfig = aiConfig;
         this.chatLanguageModel = chatLanguageModel;
         this.pitchRepository = pitchRepository;
         this.cycleRepository = cycleRepository;
         this.workLogRepository = workLogRepository;
         this.cacheService = cacheService;
+        this.riskHistoryRepository = riskHistoryRepository;
+        this.organizationSettingsService = organizationSettingsService;
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -164,7 +179,7 @@ public class RiskAnalysisService {
 
             // Ensure risk score is within bounds
             int finalRiskScore = Math.max(0, Math.min(100, baseRiskScore));
-            PitchRiskDTO.RiskLevel riskLevel = determineRiskLevel(finalRiskScore);
+            RiskLevel riskLevel = determineRiskLevel(finalRiskScore);
 
             PitchRiskDTO result = PitchRiskDTO.builder()
                     .pitchId(pitch.getId())
@@ -182,6 +197,11 @@ public class RiskAnalysisService {
             // Cache the result
             cacheService.cachePitchRisk(pitch.getId(), useAI, result, dataHash);
             
+            // Save to risk history (only for AI-enabled or manual analyses, not fast mode)
+            if (useAI) {
+                saveRiskHistory(pitch, result, PitchRiskHistory.TriggerType.MANUAL);
+            }
+            
             return result;
 
         } catch (Exception e) {
@@ -190,7 +210,7 @@ public class RiskAnalysisService {
                     .pitchId(pitch.getId())
                     .pitchTitle(pitch.getTitle())
                     .riskScore(50)
-                    .riskLevel(PitchRiskDTO.RiskLevel.MEDIUM)
+                    .riskLevel(RiskLevel.MEDIUM)
                     .riskFactors(Collections.emptyList())
                     .insights(Collections.emptyList())
                     .recommendations(Collections.emptyList())
@@ -236,19 +256,19 @@ public class RiskAnalysisService {
         // Calculate statistics
         int totalPitches = pitchRisks.size();
         int highRiskCount = (int) pitchRisks.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH || 
-                            r.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .filter(r -> r.getRiskLevel() == RiskLevel.HIGH || 
+                            r.getRiskLevel() == RiskLevel.CRITICAL)
                 .count();
         int mediumRiskCount = (int) pitchRisks.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.MEDIUM)
+                .filter(r -> r.getRiskLevel() == RiskLevel.MEDIUM)
                 .count();
         int lowRiskCount = (int) pitchRisks.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.LOW)
+                .filter(r -> r.getRiskLevel() == RiskLevel.LOW)
                 .count();
 
         // Calculate overall risk score (weighted average with higher weight for high-risk items)
         int overallRiskScore = calculateOverallRiskScore(pitchRisks);
-        PitchRiskDTO.RiskLevel overallRiskLevel = determineRiskLevel(overallRiskScore);
+        RiskLevel overallRiskLevel = determineRiskLevel(overallRiskScore);
 
         // Create pitch risk summaries
         List<PitchRiskSummary> pitchSummaries = pitchRisks.stream()
@@ -747,11 +767,27 @@ public class RiskAnalysisService {
         return recommendations.stream().distinct().limit(5).collect(Collectors.toList());
     }
 
-    private PitchRiskDTO.RiskLevel determineRiskLevel(int score) {
-        if (score >= 80) return PitchRiskDTO.RiskLevel.CRITICAL;
-        if (score >= 60) return PitchRiskDTO.RiskLevel.HIGH;
-        if (score >= 30) return PitchRiskDTO.RiskLevel.MEDIUM;
-        return PitchRiskDTO.RiskLevel.LOW;
+    /**
+     * Determine risk level from score using configurable thresholds.
+     * Falls back to defaults if organization settings are unavailable.
+     */
+    private RiskLevel determineRiskLevel(int score) {
+        try {
+            OrganizationSettingsDTO settings = organizationSettingsService.getSettings();
+            OrganizationSettingsDTO.RiskThresholds thresholds = settings.getRiskThresholds();
+            
+            if (score > thresholds.getHighMax()) return RiskLevel.CRITICAL;
+            if (score > thresholds.getMediumMax()) return RiskLevel.HIGH;
+            if (score > thresholds.getLowMax()) return RiskLevel.MEDIUM;
+            return RiskLevel.LOW;
+        } catch (Exception e) {
+            log.warn("Failed to fetch risk thresholds, using defaults: {}", e.getMessage());
+            // Default thresholds: LOW<=30, MEDIUM=31-60, HIGH=61-85, CRITICAL>85
+            if (score > 85) return RiskLevel.CRITICAL;
+            if (score > 60) return RiskLevel.HIGH;
+            if (score > 30) return RiskLevel.MEDIUM;
+            return RiskLevel.LOW;
+        }
     }
 
     private int calculateOverallRiskScore(List<PitchRiskDTO> pitchRisks) {
@@ -863,8 +899,8 @@ public class RiskAnalysisService {
         
         prompt.append("High-risk pitches:\n");
         pitchRisks.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH || 
-                            r.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .filter(r -> r.getRiskLevel() == RiskLevel.HIGH || 
+                            r.getRiskLevel() == RiskLevel.CRITICAL)
                 .forEach(r -> prompt.append("- ").append(r.getPitchTitle())
                         .append(" (Risk: ").append(r.getRiskScore()).append(")\n"));
 
@@ -990,6 +1026,107 @@ public class RiskAnalysisService {
      */
     public void invalidateCycleCache(Long cycleId) {
         cacheService.invalidateCycleRiskCache(cycleId);
+    }
+
+    /**
+     * Save risk analysis result to history for trend tracking.
+     * 
+     * @param pitch The pitch being analyzed
+     * @param riskDTO The risk analysis result
+     * @param triggerType What triggered this snapshot
+     */
+    @Transactional
+    public void saveRiskHistory(Pitch pitch, PitchRiskDTO riskDTO, PitchRiskHistory.TriggerType triggerType) {
+        try {
+            // Serialize risk factors to JSON
+            String riskFactorsJson = objectMapper.writeValueAsString(riskDTO.getRiskFactors());
+            
+            PitchRiskHistory history = PitchRiskHistory.builder()
+                    .pitch(pitch)
+                    .riskScore(riskDTO.getRiskScore())
+                    .riskLevel(riskDTO.getRiskLevel())
+                    .riskFactorsJson(riskFactorsJson)
+                    .recordedAt(LocalDateTime.now())
+                    .triggerType(triggerType)
+                    .build();
+            
+            riskHistoryRepository.save(history);
+            log.debug("Saved risk history for pitch {} with score {} (trigger: {})", 
+                     pitch.getId(), riskDTO.getRiskScore(), triggerType);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize risk factors for pitch {}: {}", pitch.getId(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to save risk history for pitch {}: {}", pitch.getId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Get risk history for a pitch within a date range.
+     * 
+     * @param pitchId The pitch ID
+     * @param days Number of days to look back (default: 30)
+     * @return List of risk history entries
+     */
+    public List<PitchRiskHistory> getRiskHistory(Long pitchId, Integer days) {
+        if (days == null || days <= 0) {
+            days = 30; // Default to last 30 days
+        }
+        
+        LocalDateTime startDate = LocalDateTime.now().minusDays(days);
+        LocalDateTime endDate = LocalDateTime.now();
+        
+        return riskHistoryRepository.findByPitchIdAndDateRange(pitchId, startDate, endDate);
+    }
+
+    /**
+     * Scheduled job to take daily risk snapshots of all active pitches.
+     * Runs at 2 AM daily.
+     */
+    @Scheduled(cron = "0 0 2 * * *") // 2 AM every day
+    @Transactional
+    public void takeScheduledRiskSnapshots() {
+        log.info("Starting scheduled risk snapshot job");
+        
+        try {
+            // Find all active pitches from active cycles
+            List<Pitch> activePitches = pitchRepository.findAll().stream()
+                    .filter(p -> p.getCycle() != null && p.getCycle().getIsActive())
+                    .filter(p -> p.getStatus() != PitchStatus.DONE && p.getStatus() != PitchStatus.CANCELLED)
+                    .collect(Collectors.toList());
+            
+            log.info("Found {} active pitches for risk snapshot", activePitches.size());
+            
+            // Get pitches that already have a snapshot today to avoid duplicates
+            LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+            List<Long> pitchesWithTodaySnapshot = riskHistoryRepository.findPitchIdsWithHistoryToday(startOfDay, endOfDay);
+            
+            int snapshotCount = 0;
+            for (Pitch pitch : activePitches) {
+                // Skip if already snapshotted today
+                if (pitchesWithTodaySnapshot.contains(pitch.getId())) {
+                    log.debug("Skipping pitch {} - already snapshotted today", pitch.getId());
+                    continue;
+                }
+                
+                try {
+                    // Analyze risk (without AI for scheduled job to keep it fast)
+                    PitchRiskDTO riskDTO = analyzePitchRisk(pitch, false);
+                    
+                    // Save to history with SCHEDULED trigger
+                    saveRiskHistory(pitch, riskDTO, PitchRiskHistory.TriggerType.SCHEDULED);
+                    snapshotCount++;
+                    
+                } catch (Exception e) {
+                    log.error("Failed to snapshot risk for pitch {}: {}", pitch.getId(), e.getMessage());
+                }
+            }
+            
+            log.info("Completed scheduled risk snapshot job. Processed {} pitches", snapshotCount);
+            
+        } catch (Exception e) {
+            log.error("Scheduled risk snapshot job failed: {}", e.getMessage(), e);
+        }
     }
 
     // Inner classes for AI results

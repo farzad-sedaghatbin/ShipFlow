@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto.health;
 
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -24,7 +25,7 @@ public class CycleHealthSummaryDTO {
     /**
      * Overall cycle health status
      */
-    private PitchRiskDTO.RiskLevel overallHealth;
+    private RiskLevel overallHealth;
     private String healthColor;
     
     /**

@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.service.AICacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,7 +57,7 @@ class AICacheControllerIntegrationTest {
         // Given - Add some cached data
         PitchRiskDTO riskData = new PitchRiskDTO();
         riskData.setPitchId(1L);
-        riskData.setRiskLevel(PitchRiskDTO.RiskLevel.MEDIUM);
+        riskData.setRiskLevel(RiskLevel.MEDIUM);
         cacheService.cachePitchRisk(1L, true, riskData, "hash1");
         
         // When & Then

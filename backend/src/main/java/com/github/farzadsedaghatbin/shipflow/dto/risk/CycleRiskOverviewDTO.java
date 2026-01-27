@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.risk;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ public class CycleRiskOverviewDTO {
     /**
      * Overall risk level for the cycle.
      */
-    private PitchRiskDTO.RiskLevel overallRiskLevel;
+    private RiskLevel overallRiskLevel;
     
     /**
      * Total number of pitches in the cycle.
@@ -103,7 +104,7 @@ public class CycleRiskOverviewDTO {
         private Long pitchId;
         private String pitchTitle;
         private Integer riskScore;
-        private PitchRiskDTO.RiskLevel riskLevel;
+        private RiskLevel riskLevel;
         private String topRisk;
         private Double progressPercentage;
     }

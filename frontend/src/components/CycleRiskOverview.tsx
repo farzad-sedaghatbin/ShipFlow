@@ -24,6 +24,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/ui/markdown';
+import PitchRiskTrendSparkline from './PitchRiskTrendSparkline';
+import RiskFactorTooltip from './RiskFactorTooltip';
 
 interface CycleRiskOverviewProps {
   cycleId: number;
@@ -341,35 +343,48 @@ export default function CycleRiskOverview({
             </h3>
             <div className="space-y-1">
               {riskData.pitchRisks.slice(0, 5).map((pitch) => (
-                <Link
+                <RiskFactorTooltip
                   key={pitch.pitchId}
-                  to={`/pitches/${pitch.pitchId}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  pitchId={pitch.pitchId}
+                  pitchTitle={pitch.pitchTitle}
+                  topRiskPreview={pitch.topRisk}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {pitch.pitchTitle}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {pitch.topRisk}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span
-                      className={cn(
-                        'text-sm font-bold',
-                        pitch.riskScore <= 3 ? 'text-emerald-500' :
-                        pitch.riskScore <= 5 ? 'text-amber-500' :
-                        pitch.riskScore <= 7 ? 'text-orange-500' : 'text-destructive'
-                      )}
-                    >
-                      {pitch.riskScore}
-                    </span>
-                    <Badge variant="outline" className={cn('text-xs', riskLevelColors[pitch.riskLevel])}>
-                      {getRiskLevelLabel(pitch.riskLevel)}
-                    </Badge>
-                  </div>
-                </Link>
+                  <Link
+                    to={`/pitches/${pitch.pitchId}`}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {pitch.pitchTitle}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {pitch.topRisk}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {/* Risk trend sparkline */}
+                      <PitchRiskTrendSparkline
+                        pitchId={pitch.pitchId}
+                        currentScore={pitch.riskScore}
+                        days={30}
+                        compact
+                      />
+                      <span
+                        className={cn(
+                          'text-sm font-bold',
+                          pitch.riskScore <= 3 ? 'text-emerald-500' :
+                          pitch.riskScore <= 5 ? 'text-amber-500' :
+                          pitch.riskScore <= 7 ? 'text-orange-500' : 'text-destructive'
+                        )}
+                      >
+                        {pitch.riskScore}
+                      </span>
+                      <Badge variant="outline" className={cn('text-xs', riskLevelColors[pitch.riskLevel])}>
+                        {getRiskLevelLabel(pitch.riskLevel)}
+                      </Badge>
+                    </div>
+                  </Link>
+                </RiskFactorTooltip>
               ))}
             </div>
           </div>

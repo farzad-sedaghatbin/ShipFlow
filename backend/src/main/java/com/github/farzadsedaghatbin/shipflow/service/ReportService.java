@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.report.MemberWorkReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.PitchReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
@@ -544,16 +545,16 @@ public class ReportService {
                 .collect(Collectors.toList());
 
         int lowRiskCount = (int) riskAnalyses.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.LOW)
+                .filter(r -> r.getRiskLevel() == RiskLevel.LOW)
                 .count();
         int mediumRiskCount = (int) riskAnalyses.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.MEDIUM)
+                .filter(r -> r.getRiskLevel() == RiskLevel.MEDIUM)
                 .count();
         int highRiskCount = (int) riskAnalyses.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.HIGH)
+                .filter(r -> r.getRiskLevel() == RiskLevel.HIGH)
                 .count();
         int criticalRiskCount = (int) riskAnalyses.stream()
-                .filter(r -> r.getRiskLevel() == PitchRiskDTO.RiskLevel.CRITICAL)
+                .filter(r -> r.getRiskLevel() == RiskLevel.CRITICAL)
                 .count();
 
         double averageRiskScore = riskAnalyses.stream()

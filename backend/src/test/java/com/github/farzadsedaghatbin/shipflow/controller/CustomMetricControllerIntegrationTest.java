@@ -80,7 +80,7 @@ class CustomMetricControllerIntegrationTest {
         testUser = User.builder()
                 .username("testuser")
                 .password("password")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .build();
@@ -321,7 +321,7 @@ class CustomMetricControllerIntegrationTest {
         User otherUser = User.builder()
                 .username("otheruser")
                 .password("password")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(otherPerson)
                 .isActive(true)
                 .build();

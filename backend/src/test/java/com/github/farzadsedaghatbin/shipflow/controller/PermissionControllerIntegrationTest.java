@@ -105,7 +105,7 @@ class PermissionControllerIntegrationTest {
         qaUser = User.builder()
                 .username("qa")
                 .password(passwordEncoder.encode("qa123"))
-                .role(UserRole.QA)
+                .role(UserRole.MEMBER)
                 .person(qaPerson)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
@@ -114,7 +114,7 @@ class PermissionControllerIntegrationTest {
 
         // Create test permission
         testPermission = Permission.builder()
-                .role(UserRole.QA)
+                .role(UserRole.MEMBER)
                 .resourceType(ResourceType.BUG)
                 .permissionType(PermissionType.CREATE)
                 .description("QA can create bugs")
@@ -130,13 +130,13 @@ class PermissionControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$[0].role", is("QA")))
+                .andExpect(jsonPath("$[0].role", is("MEMBER")))
                 .andExpect(jsonPath("$[0].resourceType", is("BUG")))
                 .andExpect(jsonPath("$[0].permissionType", is("CREATE")));
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void getAllPermissions_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(get("/api/permissions"))
                 .andExpect(status().isForbidden());
@@ -145,21 +145,21 @@ class PermissionControllerIntegrationTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void getPermissionsByRole_AsAdmin_ShouldReturnRolePermissions() throws Exception {
-        mockMvc.perform(get("/api/permissions/role/QA"))
+        mockMvc.perform(get("/api/permissions/role/MEMBER"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$[0].role", is("QA")));
+                .andExpect(jsonPath("$[0].role", is("MEMBER")));
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void getCurrentUserPermissions_AsQA_ShouldReturnOwnPermissions() throws Exception {
         mockMvc.perform(get("/api/permissions/my-permissions"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.username", is("qa")))
-                .andExpect(jsonPath("$.role", is("QA")))
+                .andExpect(jsonPath("$.role", is("MEMBER")))
                 .andExpect(jsonPath("$.permissions", hasSize(greaterThanOrEqualTo(1))));
     }
 
@@ -167,7 +167,7 @@ class PermissionControllerIntegrationTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void createPermission_AsAdmin_ShouldCreateNewPermission() throws Exception {
         CreatePermissionRequest request = new CreatePermissionRequest();
-        request.setRole(UserRole.DEVELOPER);
+        request.setRole(UserRole.MEMBER);
         request.setResourceType(ResourceType.PITCH);
         request.setPermissionType(PermissionType.APPROVE);
         request.setDescription("Developer can approve pitches");
@@ -176,13 +176,13 @@ class PermissionControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role", is("DEVELOPER")))
+                .andExpect(jsonPath("$.role", is("MEMBER")))
                 .andExpect(jsonPath("$.resourceType", is("PITCH")))
                 .andExpect(jsonPath("$.permissionType", is("APPROVE")))
                 .andExpect(jsonPath("$.description", is("Developer can approve pitches")));
 
         // Verify in database
-        List<Permission> permissions = permissionRepository.findByRole(UserRole.DEVELOPER);
+        List<Permission> permissions = permissionRepository.findByRole(UserRole.MEMBER);
         assertThat(permissions).anyMatch(p ->
                 p.getResourceType() == ResourceType.PITCH &&
                         p.getPermissionType() == PermissionType.APPROVE
@@ -190,10 +190,10 @@ class PermissionControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void createPermission_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         CreatePermissionRequest request = new CreatePermissionRequest();
-        request.setRole(UserRole.QA);
+        request.setRole(UserRole.MEMBER);
         request.setResourceType(ResourceType.PITCH);
         request.setPermissionType(PermissionType.CREATE);
 
@@ -207,7 +207,7 @@ class PermissionControllerIntegrationTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void createPermission_WithDuplicate_ShouldReturnBadRequest() throws Exception {
         CreatePermissionRequest request = new CreatePermissionRequest();
-        request.setRole(UserRole.QA);
+        request.setRole(UserRole.MEMBER);
         request.setResourceType(ResourceType.BUG);
         request.setPermissionType(PermissionType.CREATE);
         request.setDescription("Duplicate permission");
@@ -237,7 +237,7 @@ class PermissionControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void updatePermission_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         UpdatePermissionRequest request = new UpdatePermissionRequest();
         request.setDescription("Should fail");
@@ -273,7 +273,7 @@ class PermissionControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void deletePermission_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(delete("/api/permissions/" + testPermission.getId()))
                 .andExpect(status().isForbidden());
@@ -290,13 +290,13 @@ class PermissionControllerIntegrationTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void createBulkPermissions_AsAdmin_ShouldCreateMultiplePermissions() throws Exception {
         CreatePermissionRequest req1 = new CreatePermissionRequest();
-        req1.setRole(UserRole.DEVELOPER);
+        req1.setRole(UserRole.MEMBER);
         req1.setResourceType(ResourceType.CYCLE);
         req1.setPermissionType(PermissionType.READ);
         req1.setDescription("Dev can read cycles");
 
         CreatePermissionRequest req2 = new CreatePermissionRequest();
-        req2.setRole(UserRole.DEVELOPER);
+        req2.setRole(UserRole.MEMBER);
         req2.setResourceType(ResourceType.CYCLE);
         req2.setPermissionType(PermissionType.CREATE);
         req2.setDescription("Dev can create cycles");
@@ -309,16 +309,16 @@ class PermissionControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$", hasSize(2)));
 
-        // Verify in database
-        List<Permission> permissions = permissionRepository.findByRole(UserRole.DEVELOPER);
-        assertThat(permissions).hasSize(2);
+        // Verify in database - should have at least 2 new permissions created
+        List<Permission> permissions = permissionRepository.findByRole(UserRole.MEMBER);
+        assertThat(permissions.size()).isGreaterThanOrEqualTo(2);
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void createBulkPermissions_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         CreatePermissionRequest request = new CreatePermissionRequest();
-        request.setRole(UserRole.QA);
+        request.setRole(UserRole.MEMBER);
         request.setResourceType(ResourceType.BUG);
         request.setPermissionType(PermissionType.READ);
 
@@ -333,7 +333,7 @@ class PermissionControllerIntegrationTest {
     void deleteBulkPermissions_AsAdmin_ShouldDeleteMultiplePermissions() throws Exception {
         // Create additional permission
         Permission permission2 = Permission.builder()
-                .role(UserRole.QA)
+                .role(UserRole.MEMBER)
                 .resourceType(ResourceType.BUG)
                 .permissionType(PermissionType.UPDATE)
                 .description("QA can update bugs")
@@ -353,7 +353,7 @@ class PermissionControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "qa", roles = {"QA"})
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
     void deleteBulkPermissions_AsNonAdmin_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(delete("/api/permissions/bulk")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -109,7 +109,7 @@ export default function PitchBoard() {
     try {
       let cyclesPromise;
       if (isAllProjectsSelected) {
-        cyclesPromise = cycleService.getActive();
+        cyclesPromise = cycleService.getMyActiveCycles();
       } else if (currentProject) {
         cyclesPromise = cycleService.getActiveByProject(currentProject.id);
       } else {
@@ -513,7 +513,7 @@ export default function PitchBoard() {
 
       {/* Create Pitch Dialog */}
       <Dialog open={createDialog} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('pitchBoard.createNewPitch')}</DialogTitle>
             <DialogDescription>
@@ -575,7 +575,8 @@ export default function PitchBoard() {
                     type="number"
                     value={newPitch.appetiteDays}
                     onChange={(e) => {
-                      setNewPitch({ ...newPitch, appetiteDays: parseInt(e.target.value) || 0 });
+                      const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                      setNewPitch({ ...newPitch, appetiteDays: value });
                       setFieldErrors((prev) => ({ ...prev, appetiteDays: '' }));
                     }}
                     min={1}

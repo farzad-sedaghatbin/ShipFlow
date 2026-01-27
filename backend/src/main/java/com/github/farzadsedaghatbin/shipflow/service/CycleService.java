@@ -46,6 +46,47 @@ public class CycleService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Get cycles that the current user has access to.
+     * ADMINs can see all cycles, other users see only cycles from accessible projects.
+     */
+    public List<CycleDTO> getAccessibleCycles() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException(messageService.getMessage("error.user.not.authenticated"));
+        }
+        
+        // ADMINs can see all cycles
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            return getAllCycles();
+        }
+        
+        return cycleRepository.findAccessibleCyclesByUserId(currentUser.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get active cycles that the current user has access to.
+     */
+    public List<CycleDTO> getAccessibleActiveCycles() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException(messageService.getMessage("error.user.not.authenticated"));
+        }
+        
+        // ADMINs can see all active cycles
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            return getActiveCycles();
+        }
+        
+        return cycleRepository.findAccessibleActiveCyclesByUserId(currentUser.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<CycleDTO> getCyclesByProject(Long projectId) {
         return cycleRepository.findByProjectIdOrderByStartDateDesc(projectId)
                 .stream()
@@ -285,11 +326,24 @@ public class CycleService {
             }
             
             UserRole role = user.getRole();
-            return role == UserRole.ADMIN || role == UserRole.PROJECT_MANAGER;
+            return role == UserRole.ADMIN || role == UserRole.MANAGER;
         } catch (Exception e) {
             // Throw exception to surface authentication/authorization issues
             log.error("Failed to determine current user's role when checking cycle date override privileges", e);
             throw new RuntimeException(messageService.getMessage("error.cycle.permissions.verification.failed"), e);
+        }
+    }
+
+    /**
+     * Get the currently authenticated user.
+     */
+    private User getCurrentUser() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            return userRepository.findByUsername(username).orElse(null);
+        } catch (Exception e) {
+            log.warn("Failed to get current user: {}", e.getMessage());
+            return null;
         }
     }
 }

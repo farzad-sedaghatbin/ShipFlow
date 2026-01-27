@@ -69,6 +69,7 @@
     "addSubtask": "افزودن زیرتسک",
     "addTask": "افزودن تسک",
     "allCycles": "همه چرخه‌ها",
+    "otherProjects": "پروژه‌های دیگر",
     "allTasks": "همه تسک‌ها",
     "andMore": "... و {{count}} مورد دیگر",
     "assignee": "مسئول",
@@ -2442,6 +2443,7 @@
   "metricBuilder": {
     "aggregationType": "نوع تجمیع",
     "allCycles": "همه سیکل‌ها",
+    "otherProjects": "پروژه‌های دیگر",
     "allPitches": "همه پیچ‌ها",
     "allTeams": "همه تیم‌ها",
     "average": "میانگین",

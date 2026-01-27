@@ -28,9 +28,22 @@ public class CycleController {
     private final CycleService cycleService;
 
     @GetMapping
-    @Operation(summary = "Get all cycles")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all cycles (Admin only)")
     public ResponseEntity<List<CycleDTO>> getAllCycles() {
         return ResponseEntity.ok(cycleService.getAllCycles());
+    }
+
+    @GetMapping("/my-cycles")
+    @Operation(summary = "Get cycles accessible to current user")
+    public ResponseEntity<List<CycleDTO>> getMyCycles() {
+        return ResponseEntity.ok(cycleService.getAccessibleCycles());
+    }
+
+    @GetMapping("/my-cycles/active")
+    @Operation(summary = "Get active cycles accessible to current user")
+    public ResponseEntity<List<CycleDTO>> getMyActiveCycles() {
+        return ResponseEntity.ok(cycleService.getAccessibleActiveCycles());
     }
 
     @GetMapping("/project/{projectId}")

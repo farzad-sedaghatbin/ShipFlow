@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.health.CycleHealthSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.health.PitchHealthDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
@@ -156,7 +157,7 @@ class PitchHealthServiceTest {
 
         // Then - Should show elevated risk due to multiple critical bugs
         assertThat(result.getRiskLevel())
-                .isIn(PitchRiskDTO.RiskLevel.CRITICAL, PitchRiskDTO.RiskLevel.HIGH, PitchRiskDTO.RiskLevel.MEDIUM);
+                .isIn(RiskLevel.CRITICAL, RiskLevel.HIGH, RiskLevel.MEDIUM);
     }
 
     @Test
@@ -174,7 +175,7 @@ class PitchHealthServiceTest {
 
         // Then - Should be at least MEDIUM risk due to budget overrun
         assertThat(result.getRiskLevel())
-                .isIn(PitchRiskDTO.RiskLevel.MEDIUM, PitchRiskDTO.RiskLevel.HIGH, PitchRiskDTO.RiskLevel.CRITICAL);
+                .isIn(RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL);
         assertThat(result.getAppetiteUsedPercent()).isGreaterThan(120.0);
     }
 
@@ -203,7 +204,7 @@ class PitchHealthServiceTest {
 
         // Then - Should show increased risk due to stagnant scopes
         assertThat(result.getRiskLevel())
-                .isIn(PitchRiskDTO.RiskLevel.MEDIUM, PitchRiskDTO.RiskLevel.HIGH, PitchRiskDTO.RiskLevel.CRITICAL);
+                .isIn(RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL);
     }
 
     @Test
@@ -229,7 +230,7 @@ class PitchHealthServiceTest {
         PitchHealthDTO result = pitchHealthService.getPitchHealth(1L);
 
         // Then
-        assertThat(result.getRiskLevel()).isEqualTo(PitchRiskDTO.RiskLevel.LOW);
+        assertThat(result.getRiskLevel()).isEqualTo(RiskLevel.LOW);
     }
 
     @Test

@@ -87,8 +87,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "NODE_OPTIONS='--max-old-space-size=8192' vitest",
+    "test:coverage": "NODE_OPTIONS='--max-old-space-size=8192' vitest run --coverage",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "validate:i18n": "node ../scripts/validate-i18n.js"

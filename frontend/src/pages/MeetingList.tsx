@@ -127,8 +127,8 @@ export default function MeetingList() {
     try {
       setLoading(true);
       const [pitchesRes, cyclesRes, retrospectivesRes, personsRes] = await Promise.all([
-        pitchService.getAll(),
-        cycleService.getAll(),
+        pitchService.getMyPitches(),
+        cycleService.getMyCycles(),
         currentProject 
           ? retroService.getByProject(currentProject.id).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),

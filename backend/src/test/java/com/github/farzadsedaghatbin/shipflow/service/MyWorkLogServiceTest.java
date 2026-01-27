@@ -118,7 +118,7 @@ class MyWorkLogServiceTest {
                 .id(1L)
                 .username("testuser")
                 .email("testuser@example.com")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .build();
@@ -212,7 +212,7 @@ class MyWorkLogServiceTest {
                 .id(3L)
                 .username("testuser")
                 .email("nolink@example.com")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(null)
                 .isActive(true)
                 .build();

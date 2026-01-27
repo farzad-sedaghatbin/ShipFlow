@@ -5,29 +5,43 @@ import com.github.farzadsedaghatbin.shipflow.dto.ProjectDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final UserProjectRepository userProjectRepository;
     private final CycleRepository cycleRepository;
     private final LocalizationService localizationService;
 
+    /**
+     * Find all projects - ADMIN only, returns all projects
+     */
     @Transactional(readOnly = true)
     public List<ProjectDTO> findAll() {
         return projectRepository.findAll().stream()
@@ -35,6 +49,9 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Find all active projects - ADMIN only, returns all active projects
+     */
     @Transactional(readOnly = true)
     public List<ProjectDTO> findAllActive() {
         return projectRepository.findAllActiveOrderByName().stream()
@@ -42,8 +59,100 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Find projects accessible to the current user.
+     * ADMINs see all projects, others see only projects they have access to.
+     */
+    @Transactional(readOnly = true)
+    public List<ProjectDTO> findAccessibleProjects() {
+        User currentUser = getCurrentUser();
+        
+        // ADMINs see all projects
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            log.debug("ADMIN user {} - returning all projects", currentUser.getUsername());
+            return findAll();
+        }
+        
+        // Others see only accessible projects
+        return userProjectRepository.findAccessibleProjectsByUserId(currentUser.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Find active projects accessible to the current user.
+     * ADMINs see all active projects, others see only active projects they have access to.
+     */
+    @Transactional(readOnly = true)
+    public List<ProjectDTO> findAccessibleActiveProjects() {
+        User currentUser = getCurrentUser();
+        
+        // ADMINs see all active projects
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            log.debug("ADMIN user {} - returning all active projects", currentUser.getUsername());
+            return findAllActive();
+        }
+        
+        // Others see only accessible active projects
+        return userProjectRepository.findActiveAccessibleProjectsByUserId(currentUser.getId())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Check if current user has access to a specific project
+     */
+    @Transactional(readOnly = true)
+    public boolean hasProjectAccess(Long projectId) {
+        User currentUser = getCurrentUser();
+        
+        // ADMINs have access to all projects
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            return true;
+        }
+        
+        return userProjectRepository.hasProjectAccess(currentUser.getId(), projectId);
+    }
+
+    /**
+     * Require project access or throw AccessDeniedException
+     */
+    @Transactional(readOnly = true)
+    public void requireProjectAccess(Long projectId) {
+        if (!hasProjectAccess(projectId)) {
+            throw new AccessDeniedException(
+                localizationService.getMessage("project.access.denied", projectId)
+            );
+        }
+    }
+
+    /**
+     * Get the user's effective role in a project
+     */
+    @Transactional(readOnly = true)
+    public Optional<ProjectRole> getUserProjectRole(Long projectId) {
+        User currentUser = getCurrentUser();
+        
+        // Check if user is project owner
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if (project != null && project.getOwner() != null 
+            && project.getOwner().getId().equals(currentUser.getId())) {
+            return Optional.of(ProjectRole.MANAGER);
+        }
+        
+        // Check direct assignment
+        return userProjectRepository.findProjectRoleByUserIdAndProjectId(
+            currentUser.getId(), projectId
+        );
+    }
+
     @Transactional(readOnly = true)
     public ProjectDTO findById(Long id) {
+        // Check access first
+        requireProjectAccess(id);
+        
         Project project = projectRepository.findByIdWithOwner(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         return toDTO(project);
@@ -53,6 +162,10 @@ public class ProjectService {
     public ProjectDTO findByKey(String projectKey) {
         Project project = projectRepository.findByProjectKey(projectKey.toUpperCase())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with key: " + projectKey));
+        
+        // Check access
+        requireProjectAccess(project.getId());
+        
         return toDTO(project);
     }
 
@@ -174,6 +287,14 @@ public class ProjectService {
     private ProjectDTO toDTO(Project project) {
         long cycleCount = cycleRepository.countByProjectId(project.getId());
         long activeCycleCount = cycleRepository.countActiveByProjectId(project.getId());
+        
+        // Get current user's role in this project if available
+        ProjectRole userProjectRole = null;
+        try {
+            userProjectRole = getUserProjectRole(project.getId()).orElse(null);
+        } catch (Exception e) {
+            // Ignore - may not have auth context
+        }
 
         return ProjectDTO.builder()
                 .id(project.getId())
@@ -190,6 +311,99 @@ public class ProjectService {
                 .updatedAt(project.getUpdatedAt())
                 .cycleCount((int) cycleCount)
                 .activeCycleCount((int) activeCycleCount)
+                .userProjectRole(userProjectRole != null ? userProjectRole.name() : null)
                 .build();
+    }
+
+    /**
+     * Get the currently authenticated user
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
+
+    /**
+     * Grant project access to a user.
+     * Only project MANAGERs, owners, or ADMINs can grant access.
+     */
+    @Transactional
+    public void grantProjectAccess(Long projectId, Long userId, ProjectRole role) {
+        User currentUser = getCurrentUser();
+        
+        // Check if current user can grant access
+        if (currentUser.getRole() != UserRole.ADMIN) {
+            requireProjectAccess(projectId);
+            ProjectRole currentRole = getUserProjectRole(projectId).orElse(null);
+            if (currentRole != ProjectRole.MANAGER) {
+                throw new AccessDeniedException("Only project managers can grant access");
+            }
+        }
+        
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+        
+        // Check if assignment already exists
+        Optional<UserProject> existing = userProjectRepository.findByUserIdAndProjectId(userId, projectId);
+        if (existing.isPresent()) {
+            // Update existing role
+            UserProject up = existing.get();
+            up.setProjectRole(role);
+            userProjectRepository.save(up);
+            log.info("Updated project access: user={}, project={}, role={}", userId, projectId, role);
+        } else {
+            // Create new assignment
+            UserProject userProject = UserProject.builder()
+                    .user(targetUser)
+                    .project(project)
+                    .projectRole(role)
+                    .grantedBy(currentUser)
+                    .build();
+            userProjectRepository.save(userProject);
+            log.info("Granted project access: user={}, project={}, role={}", userId, projectId, role);
+        }
+    }
+
+    /**
+     * Revoke project access from a user.
+     * Only project MANAGERs, owners, or ADMINs can revoke access.
+     */
+    @Transactional
+    public void revokeProjectAccess(Long projectId, Long userId) {
+        User currentUser = getCurrentUser();
+        
+        // Check if current user can revoke access
+        if (currentUser.getRole() != UserRole.ADMIN) {
+            requireProjectAccess(projectId);
+            ProjectRole currentRole = getUserProjectRole(projectId).orElse(null);
+            if (currentRole != ProjectRole.MANAGER) {
+                throw new AccessDeniedException("Only project managers can revoke access");
+            }
+        }
+        
+        // Cannot revoke own access
+        if (currentUser.getId().equals(userId)) {
+            throw new IllegalArgumentException("Cannot revoke your own project access");
+        }
+        
+        userProjectRepository.deleteByUserIdAndProjectId(userId, projectId);
+        log.info("Revoked project access: user={}, project={}", userId, projectId);
+    }
+
+    /**
+     * Get all users with access to a project
+     */
+    @Transactional(readOnly = true)
+    public List<UserProject> getProjectMembers(Long projectId) {
+        requireProjectAccess(projectId);
+        return userProjectRepository.findByProjectId(projectId);
     }
 }

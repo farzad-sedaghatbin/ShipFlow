@@ -149,7 +149,7 @@ const TestCaseFormPage: React.FC = () => {
 
   const loadPitches = async () => {
     try {
-      const response = await pitchService.getAll();
+      const response = await pitchService.getMyPitches();
       setPitches(response.data);
     } catch (err) {
       console.error('Failed to load pitches', err);

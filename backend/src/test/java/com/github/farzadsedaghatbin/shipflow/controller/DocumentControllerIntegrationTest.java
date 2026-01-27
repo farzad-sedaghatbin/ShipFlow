@@ -2,11 +2,14 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Permission;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +63,9 @@ class DocumentControllerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     @TempDir
     Path tempDir;
 
@@ -70,6 +76,7 @@ class DocumentControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         // Clean up
+        permissionRepository.deleteAll();
         documentRepository.deleteAll();
         pitchRepository.deleteAll();
         cycleRepository.deleteAll();
@@ -81,11 +88,18 @@ class DocumentControllerIntegrationTest {
                     .username("testuser")
                     .email("test@example.com")
                     .password("password")
-                    .role(UserRole.DEVELOPER)
+                    .role(UserRole.MEMBER)
                     .isActive(true)
                     .build();
             testUser = userRepository.save(testUser);
         }
+
+        // Add permissions for AI_FEATURES
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.AI_FEATURES)
+                .permissionType(PermissionType.UPDATE)
+                .build());
 
         // Create test data
         Team team = teamRepository.findAll().stream().findFirst().orElse(null);

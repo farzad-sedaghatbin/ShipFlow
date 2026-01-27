@@ -104,7 +104,7 @@ class CycleServiceTest {
         developerUser = User.builder()
                 .id(2L)
                 .username("developer")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .build();
 
         // Setup organization settings
@@ -286,7 +286,7 @@ class CycleServiceTest {
         User pmUser = User.builder()
                 .id(3L)
                 .username("pm")
-                .role(UserRole.PROJECT_MANAGER)
+                .role(UserRole.MANAGER)
                 .build();
         setupSecurityContext("pm", pmUser);
         LocalDate customEndDate = testRequest.getStartDate().plusWeeks(8);
@@ -389,14 +389,14 @@ class CycleServiceTest {
         // Arrange
         setupSecurityContext("qa", User.builder()
                 .username("qa")
-                .role(UserRole.QA)
+                .role(UserRole.MEMBER)
                 .build());
         LocalDate customEndDate = testRequest.getStartDate().plusWeeks(10);
         testRequest.setEndDate(customEndDate);
         
         when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
         when(userRepository.findByUsername("qa")).thenReturn(Optional.of(
-                User.builder().username("qa").role(UserRole.QA).build()
+                User.builder().username("qa").role(UserRole.MEMBER).build()
         ));
 
         // Act & Assert

@@ -70,7 +70,7 @@ export default function Dashboard() {
 
       let cyclesPromise;
       if (isAllProjectsSelected) {
-        cyclesPromise = cycleService.getActive();
+        cyclesPromise = cycleService.getMyActiveCycles();
       } else if (currentProject) {
         cyclesPromise = cycleService.getActiveByProject(currentProject.id);
       } else {
@@ -79,7 +79,7 @@ export default function Dashboard() {
 
       const [cyclesRes, pitchesRes, teamsRes, widgetsData] = await Promise.all([
         cyclesPromise,
-        pitchService.getAll(),
+        pitchService.getMyPitches(),
         teamService.getAll(),
         dashboardWidgetApi.getAllWidgets().catch((error) => {
           console.error('Failed to load dashboard widgets:', error);
