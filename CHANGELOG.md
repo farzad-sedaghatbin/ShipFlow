@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-01-28
+
+### Fixed
+- **Production Flyway Validation Fix**
+  - Added `spring.flyway.ignore-missing-migrations=true` to production configuration
+  - Prevents Flyway validation errors for seed migrations that were moved to `db/seed`
+  - Fixes: `FlywayValidateException: Detected applied migration not resolved locally: 10`
+  - Required for production deployments that have seed migrations in `flyway_schema_history`
+
+## [0.3.3] - 2026-01-28
+
 ### Fixed
 - **CRITICAL: Separate Seed Data from Production** (Breaking Change)
   - **Problem**: Seed/demo data was being inserted into production databases via Flyway migrations

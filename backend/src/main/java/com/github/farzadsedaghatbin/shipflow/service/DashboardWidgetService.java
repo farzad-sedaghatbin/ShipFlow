@@ -42,7 +42,7 @@ public class DashboardWidgetService {
     /**
      * Get all widgets for a user. Create defaults if none exist.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<DashboardWidgetDTO> getUserWidgets(Long userId) {
         List<DashboardWidget> widgets = dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(userId);
         
