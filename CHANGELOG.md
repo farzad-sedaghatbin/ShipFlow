@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-01-28
+
 ### Fixed
 - **CRITICAL: Separate Seed Data from Production** (Breaking Change)
   - **Problem**: Seed/demo data was being inserted into production databases via Flyway migrations
