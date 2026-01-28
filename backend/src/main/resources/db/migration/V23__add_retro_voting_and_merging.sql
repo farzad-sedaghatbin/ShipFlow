@@ -7,7 +7,7 @@ ALTER TABLE retro_items ADD CONSTRAINT fk_retro_items_merged_into FOREIGN KEY (m
 
 -- Create retro_item_votes table to track who voted
 CREATE TABLE retro_item_votes (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     retro_item_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -2,9 +2,14 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateProjectRequest;
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,12 +43,39 @@ class ProjectControllerIntegrationTest {
     @Autowired
     private CycleRepository cycleRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PersonRepository personRepository;
+
     private Project testProject;
 
     @BeforeEach
     void setUp() {
         cycleRepository.deleteAll();
         projectRepository.deleteAll();
+        userRepository.deleteAll();
+        personRepository.deleteAll();
+        projectRepository.flush();
+
+        // Create admin user to match @WithMockUser
+        Person adminPerson = Person.builder()
+                .name("Admin User")
+                .email("admin@example.com")
+                .isActive(true)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        adminPerson = personRepository.save(adminPerson);
+
+        User adminUser = User.builder()
+                .username("user")
+                .password("password")
+                .role(UserRole.ADMIN)
+                .person(adminPerson)
+                .isActive(true)
+                .build();
+        userRepository.save(adminUser);
 
         testProject = Project.builder()
                 .name("Test Project")
@@ -53,10 +85,11 @@ class ProjectControllerIntegrationTest {
                 .isActive(true)
                 .build();
         testProject = projectRepository.save(testProject);
+        projectRepository.flush();
     }
 
     @Test
-    @WithMockUser(roles = "DEVELOPER")
+    @WithMockUser(roles = "ADMIN")
     void getAllProjects_ShouldReturnProjects() throws Exception {
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isOk())
@@ -66,7 +99,7 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "DEVELOPER")
+    @WithMockUser(roles = "ADMIN")
     void getActiveProjects_ShouldReturnActiveProjects() throws Exception {
         mockMvc.perform(get("/api/projects/active"))
                 .andExpect(status().isOk())
@@ -75,7 +108,7 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "QA")
+    @WithMockUser(roles = "ADMIN")
     void getProjectById_WhenExists_ShouldReturnProject() throws Exception {
         mockMvc.perform(get("/api/projects/{id}", testProject.getId()))
                 .andExpect(status().isOk())
@@ -166,7 +199,7 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "PROJECT_MANAGER")
+    @WithMockUser(roles = "MANAGER")
     void updateProject_WithProjectManager_ShouldUpdateProject() throws Exception {
         CreateProjectRequest request = CreateProjectRequest.builder()
                 .name("PM Updated Project")
@@ -211,7 +244,7 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "PROJECT_MANAGER")
+    @WithMockUser(roles = "MANAGER")
     void deleteProject_WithInsufficientPermissions_ShouldReturn403() throws Exception {
         mockMvc.perform(delete("/api/projects/{id}", testProject.getId()))
                 .andExpect(status().isForbidden());

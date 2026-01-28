@@ -30,7 +30,7 @@ export const QAFloatingButton: React.FC<QAFloatingButtonProps> = (props) => {
             aria-haspopup="dialog"
             aria-expanded={open}
             className={cn(
-              "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg",
+              "fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full shadow-lg",
               "bg-primary hover:bg-primary/90",
               "transition-transform hover:scale-105",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -42,7 +42,7 @@ export const QAFloatingButton: React.FC<QAFloatingButtonProps> = (props) => {
             <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-chart-2 border-2 border-background" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left">
+        <TooltipContent side="right">
           Ask a Question (Press ? for keyboard shortcuts)
         </TooltipContent>
       </Tooltip>

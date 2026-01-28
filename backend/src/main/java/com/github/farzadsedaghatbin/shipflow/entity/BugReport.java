@@ -102,6 +102,22 @@ public class BugReport {
     private TestRun testRun;
 
     /**
+     * The scope (hill chart point) this bug is related to (optional).
+     * Links the bug to a specific scope for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scope_id")
+    private HillChartPoint scope;
+
+    /**
+     * The task this bug is related to (optional).
+     * Links the bug to a specific task for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id")
+    private Task task;
+
+    /**
      * Severity of the bug.
      */
     @Enumerated(EnumType.STRING)

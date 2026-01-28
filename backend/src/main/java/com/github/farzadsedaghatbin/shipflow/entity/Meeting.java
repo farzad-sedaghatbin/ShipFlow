@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "meetings")
@@ -38,4 +40,19 @@ public class Meeting {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    // Link to retrospective for RETROSPECTIVE meetings
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "retrospective_id")
+    private Retrospective retrospective;
+
+    @Column(columnDefinition = "TEXT")
+    private String decisions;
+
+    @Column(columnDefinition = "TEXT")
+    private String attendees;
+
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<MeetingAction> actions = new ArrayList<>();
 }

@@ -30,6 +30,25 @@ public class Pitch {
     @Column(nullable = false)
     private Integer appetiteDays;
 
+    // Shape Up Methodology Fields
+    @Column(columnDefinition = "TEXT")
+    private String problemStatement;
+
+    @Column(columnDefinition = "TEXT")
+    private String solution;
+
+    @Column(columnDefinition = "TEXT")
+    private String rabbitHoles;
+
+    @Column(columnDefinition = "TEXT")
+    private String risks;
+
+    @Column(columnDefinition = "TEXT")
+    private String noGos;
+
+    @Column(columnDefinition = "TEXT")
+    private String wireframeLinks;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cycle_id", nullable = false)
     private Cycle cycle;
@@ -41,6 +60,17 @@ public class Pitch {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PitchStatus status;
+
+    // Circuit Breaker - Shape Up safety valve for overflow
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isCircuitBreakerTriggered = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String circuitBreakerReason;
+
+    @Column
+    private LocalDateTime circuitBreakerDate;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

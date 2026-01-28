@@ -28,6 +28,7 @@ public class TestRunService {
     private final CycleRepository cycleRepository;
     private final UserRepository userRepository;
     private final BugReportRepository bugReportRepository;
+    private final LocalizationService localizationService;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -217,7 +218,7 @@ public class TestRunService {
 
     private void checkFeatureEnabled() {
         if (!testManagementEnabled) {
-            throw new RuntimeException("QA Test Management feature is not enabled");
+            throw new RuntimeException(localizationService.getMessage("qa.feature.disabled"));
         }
     }
 

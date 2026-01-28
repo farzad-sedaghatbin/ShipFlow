@@ -1,5 +1,5 @@
 /**
- * Shape Up Tracker Theme
+ * ShipFlow Theme
  * 
  * A warm, analog aesthetic inspired by sketching and tactile design.
  * Colors evoke paper, ink, pencil marks, and sticky notes.
@@ -58,7 +58,7 @@ export const palette = {
   },
 };
 
-// Alpha utility function (similar to MUI's alpha)
+// Alpha utility function for color transparency
 export function alpha(color: string, opacity: number): string {
   // Handle hex colors
   if (color.startsWith('#')) {

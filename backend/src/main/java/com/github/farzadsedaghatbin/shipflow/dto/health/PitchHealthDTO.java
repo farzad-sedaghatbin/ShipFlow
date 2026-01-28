@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto.health;
 
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -24,8 +25,14 @@ public class PitchHealthDTO {
     /**
      * Risk level with color indicator (LOW=green, MEDIUM=yellow, HIGH=red)
      */
-    private PitchRiskDTO.RiskLevel riskLevel;
+    private RiskLevel riskLevel;
     private String riskColor;
+    
+    /**
+     * Risk trend indicator: IMPROVING, STABLE, WORSENING
+     * Based on recent changes in risk factors
+     */
+    private String riskTrend;
     
     /**
      * Percentage of appetite hours used (0-100+)

@@ -4,6 +4,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -23,4 +25,11 @@ public class MeetingDTO {
     private Boolean dorReady;
     private Boolean dodReady;
     private String notes;
+    private Long retrospectiveId;
+    private String retrospectiveTitle;
+    private String decisions;
+    private String attendees;
+    
+    @Builder.Default
+    private List<MeetingActionDTO> actions = new ArrayList<>();
 }

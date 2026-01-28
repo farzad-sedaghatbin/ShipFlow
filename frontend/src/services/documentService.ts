@@ -1,4 +1,5 @@
 import api from './api';
+import { ExtractedPitchData } from '../types';
 
 export interface DocumentUploadResponse {
   id?: number;
@@ -26,6 +27,11 @@ export interface UploadedDocument {
   uploaderUsername?: string;
   createdAt: string;
   indexedForQA: boolean;
+}
+
+export interface ExtractionStatus {
+  available: boolean;
+  message: string;
 }
 
 export const documentService = {
@@ -86,4 +92,42 @@ export const documentService = {
   // Index pending documents
   indexPending: () =>
     api.post<{ message: string; indexedCount: number }>('/documents/index-pending'),
+
+  // Extract pitch data from a document using AI
+  // Optionally adds the document to the knowledge base for Q&A
+  extractPitchData: (file: File, pitchId?: number, addToKnowledgeBase: boolean = true) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (pitchId !== undefined) {
+      formData.append('pitchId', pitchId.toString());
+    }
+    formData.append('addToKnowledgeBase', addToKnowledgeBase.toString());
+    // Don't set Content-Type - let axios/browser set it automatically with boundary
+    return api.post<ExtractedPitchData>('/documents/extract-pitch-data', formData);
+  },
+
+  // Check if AI extraction is available
+  getExtractionStatus: () =>
+    api.get<ExtractionStatus>('/documents/extract-pitch-data/status'),
+
+  // Download document
+  downloadDocument: async (id: number, fileName: string) => {
+    const response = await api.get(`/documents/${id}/download`, {
+      responseType: 'blob',
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  // Link existing document to pitch
+  linkDocumentToPitch: (documentId: number, pitchId: number) =>
+    api.put(`/documents/${documentId}/link-to-pitch/${pitchId}`),
 };

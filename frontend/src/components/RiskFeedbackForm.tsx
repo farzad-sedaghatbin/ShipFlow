@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { 
   riskFeedbackService, 
@@ -47,6 +48,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
   currentRiskScore,
   onFeedbackSubmitted,
 }) => {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState<FeedbackRating>('ACCURATE');
@@ -87,7 +89,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
       setAlreadySubmitted(true);
       onFeedbackSubmitted?.();
     } catch (err) {
-      showToast('Failed to submit feedback', 'error');
+      showToast(t('errors.submitFeedbackFailed'), 'error');
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -119,6 +121,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
                     setRating('ACCURATE');
                     setOpen(true);
                   }}
+                  aria-label="Mark as accurate"
                 >
                   <ThumbsUp className="h-4 w-4" />
                 </Button>
@@ -136,6 +139,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
                     setRating('INACCURATE');
                     setOpen(true);
                   }}
+                  aria-label="Mark as inaccurate"
                 >
                   <ThumbsDown className="h-4 w-4" />
                 </Button>
@@ -150,6 +154,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
                   size="icon"
                   className="h-8 w-8 text-primary hover:text-primary/80 hover:bg-primary/10"
                   onClick={() => setOpen(true)}
+                  aria-label="Provide detailed feedback"
                 >
                   <MessageSquare className="h-4 w-4" />
                 </Button>

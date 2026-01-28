@@ -36,8 +36,25 @@ export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO'
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type TaskCategory = 'PITCH_SCOPE' | 'DEBT_IMPROVEMENT';
+export type DependencyType = 'BLOCKS' | 'DEPENDS_ON' | 'RELATED_TO';
 export type RetroStatus = 'DRAFT' | 'OPEN' | 'CLOSED';
 export type RetroColumnType = 'WENT_WELL' | 'DID_NOT_GO_WELL' | 'TRY_NEXT' | 'ACTIONS';
+export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+/**
+ * Project methodology type.
+ * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
+ * KANBAN: Continuous flow with visual board, no cycles
+ */
+export type ProjectType = 'SHAPE_UP' | 'KANBAN';
+
+/**
+ * Role a user can have within a specific project.
+ * VIEWER: Read-only access
+ * CONTRIBUTOR: Can create/edit items
+ * MANAGER: Full project access including team management
+ */
+export type ProjectRole = 'VIEWER' | 'CONTRIBUTOR' | 'MANAGER';
 
 // Project DTOs
 export interface Project {
@@ -51,10 +68,31 @@ export interface Project {
   ownerName?: string;
   isActive: boolean;
   enableRetrospectives?: boolean;
+  /**
+   * Project methodology type - determines available features and navigation.
+   */
+  projectType: ProjectType;
   createdAt: string;
   updatedAt?: string;
   cycleCount?: number;
   activeCycleCount?: number;
+  /**
+   * Current user's role within this project.
+   * Null if user has access via ADMIN role or team membership only.
+   */
+  userProjectRole?: ProjectRole;
+}
+
+/**
+ * A user's direct assignment to a project
+ */
+export interface ProjectMember {
+  userId: number;
+  username: string;
+  email?: string;
+  projectRole: ProjectRole;
+  grantedAt: string;
+  grantedByUsername?: string;
 }
 
 export interface CreateProjectRequest {
@@ -64,6 +102,10 @@ export interface CreateProjectRequest {
   color?: string;
   logoUrl?: string;
   ownerId?: number;
+  /**
+   * Project methodology type. Defaults to SHAPE_UP if not provided.
+   */
+  projectType?: ProjectType;
 }
 
 // Cycle DTOs
@@ -85,7 +127,7 @@ export interface CreateCycleRequest {
   projectId: number;
   name: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;  // Optional - auto-calculated from OrganizationSettings if not provided
   phase?: CyclePhase;
 }
 
@@ -168,6 +210,13 @@ export interface Pitch {
   totalHoursSpent?: number;
   appetiteHours?: number;
   progressPercentage?: number;
+  // Shape Up Methodology Fields
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  wireframeLinks?: string;
 }
 
 export interface CreatePitchRequest {
@@ -177,14 +226,38 @@ export interface CreatePitchRequest {
   cycleId: number;
   teamId?: number;
   status?: PitchStatus;
+  // Shape Up Methodology Fields
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  wireframeLinks?: string;
+}
+
+// Response from AI pitch data extraction
+export interface ExtractedPitchData {
+  title?: string;
+  problemStatement?: string;
+  solution?: string;
+  rabbitHoles?: string;
+  risks?: string;
+  noGos?: string;
+  appetiteDays?: number;
+  wireframeLinks?: string;
+  extractionSuccessful: boolean;
+  errorMessage?: string;
+  documentId?: number; // ID of saved document
 }
 
 export interface WorkLog {
   id: number;
   personId: number;
   personName?: string;
-  pitchId: number;
+  pitchId?: number;
   pitchTitle?: string;
+  taskId?: number;
+  taskTitle?: string;
   cycleId?: number;
   cycleName?: string;
   projectId?: number;
@@ -197,7 +270,8 @@ export interface WorkLog {
 
 export interface CreateWorkLogRequest {
   personId: number;
-  pitchId: number;
+  pitchId?: number;
+  taskId?: number;
   date: string;
   hoursSpent: number;
   note?: string;
@@ -205,10 +279,21 @@ export interface CreateWorkLogRequest {
 
 // For users creating work logs for themselves (no personId required)
 export interface CreateWorkLogForSelfRequest {
-  pitchId: number;
+  pitchId?: number;
+  taskId?: number;
   date: string;
   hoursSpent: number;
   note?: string;
+}
+
+export interface MeetingAction {
+  id?: number;
+  description: string;
+  assignedToId?: number;
+  assignedToName?: string;
+  status: ActionStatus;
+  dueDate?: string;
+  notes?: string;
 }
 
 export interface Meeting {
@@ -225,6 +310,11 @@ export interface Meeting {
   dorReady: boolean;
   dodReady: boolean;
   notes?: string;
+  retrospectiveId?: number;
+  retrospectiveTitle?: string;
+  decisions?: string;
+  attendees?: string;
+  actions?: MeetingAction[];
 }
 
 export interface CreateMeetingRequest {
@@ -234,6 +324,10 @@ export interface CreateMeetingRequest {
   dorReady?: boolean;
   dodReady?: boolean;
   notes?: string;
+  retrospectiveId?: number;
+  decisions?: string;
+  attendees?: string;
+  actions?: MeetingAction[];
 }
 
 export interface Evidence {
@@ -261,6 +355,60 @@ export interface CreateEvidenceRequest {
 }
 
 // Report DTOs
+export interface RiskDistribution {
+  lowRiskCount: number;
+  mediumRiskCount: number;
+  highRiskCount: number;
+  criticalRiskCount: number;
+  averageRiskScore: number;
+  maxRiskScore: number;
+  minRiskScore: number;
+}
+
+export interface EnhancedCycleReport {
+  cycleId: number;
+  cycleName: string;
+  projectName?: string;
+  startDate: string;
+  endDate: string;
+  
+  // Pitch metrics
+  totalPitches: number;
+  completedPitches: number;
+  inProgressPitches: number;
+  notStartedPitches: number;
+  
+  // Hours and efficiency
+  totalAppetiteHours: number;
+  totalActualHours: number;
+  varianceHours: number;
+  variancePercentage: number;
+  efficiencyPercentage: number;
+  
+  // Out-of-scope work (Tasks)
+  totalTasks: number;
+  completedTasks: number;
+  totalTaskEstimateHours: number;
+  totalTaskActualHours: number;
+  
+  // Risk distribution
+  riskDistribution: RiskDistribution;
+  
+  // Team member statistics
+  totalTeamMembers: number;
+  averageHoursPerMember: number;
+  maxHoursPerMember: number;
+  minHoursPerMember: number;
+  
+  // Detailed breakdowns
+  pitchReports: PitchReport[];
+  memberReports: MemberWorkReport[];
+  
+  // Top performers and risks
+  topPerformers: string[];
+  overBudgetPitches: string[];
+}
+
 export interface CycleReport {
   cycleId: number;
   cycleName: string;
@@ -312,7 +460,12 @@ export interface PitchWorkSummary {
 }
 
 // User/Auth Types
-export type UserRole = 'ADMIN' | 'PROJECT_MANAGER' | 'PRODUCT' | 'DEVELOPER' | 'QA';
+// 4-tier role model:
+// ADMIN: Full system access - can manage users, settings, permissions
+// MANAGER: Can manage cycles, pitches, teams, approve bets
+// MEMBER: Can create/update own work, contribute to pitches/tasks
+// READONLY: Read-only access across all resources
+export type UserRole = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'READONLY';
 
 export interface User {
   id: number;
@@ -407,6 +560,13 @@ export interface Task {
   projectId?: number;
   projectName?: string;
   projectKey?: string;
+  
+  // Pitch and Scope relationships
+  pitchId?: number;
+  pitchTitle?: string;
+  scopeId?: number;
+  scopeName?: string;
+  
   assigneeId?: number;
   assigneeName?: string;
   assigneeAvatarUrl?: string;
@@ -415,17 +575,28 @@ export interface Task {
   pairAssigneeAvatarUrl?: string;
   createdById?: number;
   createdByName?: string;
+  parentTaskId?: number;
+  parentTaskTitle?: string;
+  children?: Task[];
   dueDate?: string;
   completedAt?: string;
   createdAt: string;
   updatedAt: string;
   tags?: string;
+  
+  // Dependency information
+  blockingTasks?: TaskDependency[];
+  blockedByTasks?: TaskDependency[];
+  blockedByCount?: number;
+  isBlocked?: boolean;
 }
 
 export interface CreateTaskRequest {
   title: string;
   description?: string;
   cycleId: number;
+  pitchId?: number;
+  scopeId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;
   category?: TaskCategory;
@@ -433,8 +604,30 @@ export interface CreateTaskRequest {
   actualHours?: number;
   assigneeId?: number;
   pairAssigneeId?: number;
+  parentTaskId?: number;
   dueDate?: string;
   tags?: string;
+}
+
+// Task Dependency Types
+export interface TaskDependency {
+  id: number;
+  sourceTaskId: number;
+  sourceTaskTitle: string;
+  targetTaskId: number;
+  targetTaskTitle: string;
+  dependencyType: DependencyType;
+  createdAt: string;
+}
+
+export interface CreateTaskDependencyRequest {
+  targetTaskId: number;
+  dependencyType?: DependencyType;
+}
+
+export interface TaskDependencies {
+  blocking: TaskDependency[];
+  blockedBy: TaskDependency[];
 }
 
 export interface TaskStatistics {
@@ -475,6 +668,13 @@ export interface TestCase {
   cycleName?: string;
   teamId?: number;
   teamName?: string;
+  
+  // Scope and Task relationships
+  scopeId?: number;
+  scopeName?: string;
+  taskId?: number;
+  taskTitle?: string;
+  
   type: TestCaseType;
   priority: TestCasePriority;
   status: TestCaseStatus;
@@ -503,6 +703,8 @@ export interface CreateTestCaseRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   type: TestCaseType;
   priority: TestCasePriority;
   status?: TestCaseStatus;
@@ -520,6 +722,8 @@ export interface UpdateTestCaseRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   type?: TestCaseType;
   priority?: TestCasePriority;
   status?: TestCaseStatus;
@@ -543,6 +747,13 @@ export interface BugReport {
   teamId?: number;
   teamName?: string;
   testRunId?: number;
+  
+  // Scope and Task relationships
+  scopeId?: number;
+  scopeName?: string;
+  taskId?: number;
+  taskTitle?: string;
+  
   severity: BugSeverity;
   status: BugStatus;
   tags?: string;
@@ -569,6 +780,8 @@ export interface CreateBugReportRequest {
   cycleId?: number;
   teamId?: number;
   testRunId?: number;
+  scopeId?: number;
+  taskId?: number;
   severity: BugSeverity;
   status?: BugStatus;
   tags?: string[];
@@ -586,6 +799,8 @@ export interface UpdateBugReportRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
+  scopeId?: number;
+  taskId?: number;
   severity?: BugSeverity;
   status?: BugStatus;
   tags?: string[];
@@ -809,6 +1024,7 @@ export interface RetroItem {
   retrospectiveId: number;
   authorId?: number;
   authorName?: string;
+  isAnonymous?: boolean;
   voteCount: number;
   hasVoted: boolean;
   mergedIntoId?: number;
@@ -828,6 +1044,7 @@ export interface CreateRetroItemRequest {
   content: string;
   columnType: RetroColumnType;
   retrospectiveId: number;
+  isAnonymous?: boolean;
 }
 
 export interface UpdateRetroRequest {
@@ -843,3 +1060,5 @@ export interface CycleRetroStatus {
   canCloseCycle: boolean;
   message: string;
 }
+export * from './betting-analytics';
+export * from './circuit-breaker';

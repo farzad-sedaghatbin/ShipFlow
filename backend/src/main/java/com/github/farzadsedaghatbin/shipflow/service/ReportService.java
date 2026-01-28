@@ -10,8 +10,12 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.github.farzadsedaghatbin.shipflow.dto.report.CycleReportDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.MemberWorkReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.PitchReportDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
@@ -21,6 +25,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TeamMemberRole;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.RiskAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +47,8 @@ public class ReportService {
     private final PersonRepository personRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
     private final TaskRepository taskRepository;
+    private final RiskAnalysisService riskAnalysisService;
+    private final LocalizationService localizationService;
 
     @SuppressWarnings("null")
     public CycleReportDTO getCycleReport(Long cycleId) {
@@ -294,7 +301,7 @@ public class ReportService {
 
             document.close();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF report", e);
+            throw new RuntimeException(localizationService.getMessage("report.pdf.failed"), e);
         }
 
         return baos.toByteArray();
@@ -394,5 +401,183 @@ public class ReportService {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    /**
+     * Get enhanced cycle report with comprehensive metrics including risk distribution.
+     */
+    @SuppressWarnings("null")
+    public EnhancedCycleReportDTO getEnhancedCycleReport(Long cycleId) {
+        Cycle cycle = cycleRepository.findById(cycleId)
+                .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
+
+        List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+        List<WorkLog> workLogs = workLogRepository.findByCycleId(cycleId);
+
+        // Calculate pitch reports
+        List<PitchReportDTO> pitchReports = pitches.stream()
+                .map(p -> buildPitchReport(p, workLogs))
+                .collect(Collectors.toList());
+
+        // Calculate member reports
+        Map<Long, List<WorkLog>> personWorkLogs = workLogs.stream()
+                .collect(Collectors.groupingBy(wl -> wl.getPerson().getId()));
+
+        List<MemberWorkReportDTO> memberReports = personWorkLogs.entrySet().stream()
+                .map(entry -> buildMemberReport(entry.getKey(), entry.getValue(), cycleId))
+                .collect(Collectors.toList());
+
+        // Calculate pitch status counts
+        int completedPitches = (int) pitches.stream()
+                .filter(p -> p.getStatus() == PitchStatus.DONE)
+                .count();
+        int inProgressPitches = (int) pitches.stream()
+                .filter(p -> p.getStatus() == PitchStatus.IN_PROGRESS || p.getStatus() == PitchStatus.STARTED)
+                .count();
+        int notStartedPitches = (int) pitches.stream()
+                .filter(p -> p.getStatus() == PitchStatus.PENDING || p.getStatus() == PitchStatus.SHAPED)
+                .count();
+
+        // Calculate hours and efficiency
+        double totalAppetiteHours = pitches.stream()
+                .mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY)
+                .sum();
+
+        double totalActualHours = workLogs.stream()
+                .mapToDouble(wl -> wl.getHoursSpent().doubleValue())
+                .sum();
+
+        double varianceHours = totalActualHours - totalAppetiteHours;
+        double variancePercentage = totalAppetiteHours > 0 
+                ? (varianceHours / totalAppetiteHours) * 100 
+                : 0;
+        double efficiency = totalAppetiteHours > 0
+                ? (totalActualHours / totalAppetiteHours) * 100
+                : 0;
+
+        // Calculate task statistics (out-of-scope work)
+        int totalTasks = taskRepository.countByCycleId(cycleId);
+        int completedTasks = taskRepository.countByCycleIdAndStatus(cycleId, TaskStatus.DONE);
+        Double totalTaskEstimateHours = taskRepository.getTotalEstimateHoursByCycleId(cycleId);
+        Double totalTaskActualHours = taskRepository.getTotalActualHoursByCycleId(cycleId);
+
+        // Calculate risk distribution using RiskAnalysisService
+        RiskDistributionDTO riskDistribution = calculateRiskDistribution(pitches);
+
+        // Calculate member statistics
+        int totalTeamMembers = memberReports.size();
+        double averageHoursPerMember = totalTeamMembers > 0 
+                ? totalActualHours / totalTeamMembers 
+                : 0;
+        double maxHoursPerMember = memberReports.stream()
+                .mapToDouble(MemberWorkReportDTO::getTotalHours)
+                .max()
+                .orElse(0);
+        double minHoursPerMember = memberReports.stream()
+                .mapToDouble(MemberWorkReportDTO::getTotalHours)
+                .min()
+                .orElse(0);
+
+        // Identify top performers (members with above-average hours and efficiency)
+        List<String> topPerformers = memberReports.stream()
+                .filter(m -> m.getTotalHours() >= averageHoursPerMember && m.getAvgHoursPerDay() >= 6.0)
+                .sorted(Comparator.comparing(MemberWorkReportDTO::getTotalHours).reversed())
+                .limit(5)
+                .map(MemberWorkReportDTO::getMemberName)
+                .collect(Collectors.toList());
+
+        // Identify over-budget pitches
+        List<String> overBudgetPitches = pitchReports.stream()
+                .filter(PitchReportDTO::getIsOverBudget)
+                .map(PitchReportDTO::getPitchTitle)
+                .collect(Collectors.toList());
+
+        return EnhancedCycleReportDTO.builder()
+                .cycleId(cycle.getId())
+                .cycleName(cycle.getName())
+                .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
+                .startDate(cycle.getStartDate())
+                .endDate(cycle.getEndDate())
+                .totalPitches(pitches.size())
+                .completedPitches(completedPitches)
+                .inProgressPitches(inProgressPitches)
+                .notStartedPitches(notStartedPitches)
+                .totalAppetiteHours(totalAppetiteHours)
+                .totalActualHours(totalActualHours)
+                .varianceHours(varianceHours)
+                .variancePercentage(variancePercentage)
+                .efficiencyPercentage(efficiency)
+                .totalTasks(totalTasks)
+                .completedTasks(completedTasks)
+                .totalTaskEstimateHours(totalTaskEstimateHours != null ? totalTaskEstimateHours : 0.0)
+                .totalTaskActualHours(totalTaskActualHours != null ? totalTaskActualHours : 0.0)
+                .riskDistribution(riskDistribution)
+                .totalTeamMembers(totalTeamMembers)
+                .averageHoursPerMember(averageHoursPerMember)
+                .maxHoursPerMember(maxHoursPerMember)
+                .minHoursPerMember(minHoursPerMember)
+                .pitchReports(pitchReports)
+                .memberReports(memberReports)
+                .topPerformers(topPerformers)
+                .overBudgetPitches(overBudgetPitches)
+                .build();
+    }
+
+    /**
+     * Calculate risk distribution for pitches in a cycle.
+     */
+    private RiskDistributionDTO calculateRiskDistribution(List<Pitch> pitches) {
+        if (pitches.isEmpty()) {
+            return RiskDistributionDTO.builder()
+                    .lowRiskCount(0)
+                    .mediumRiskCount(0)
+                    .highRiskCount(0)
+                    .criticalRiskCount(0)
+                    .averageRiskScore(0.0)
+                    .maxRiskScore(0.0)
+                    .minRiskScore(0.0)
+                    .build();
+        }
+
+        // Use fast mode (rule-based) for risk analysis in reports
+        List<PitchRiskDTO> riskAnalyses = pitches.stream()
+                .map(p -> riskAnalysisService.analyzePitchRisk(p, false))
+                .collect(Collectors.toList());
+
+        int lowRiskCount = (int) riskAnalyses.stream()
+                .filter(r -> r.getRiskLevel() == RiskLevel.LOW)
+                .count();
+        int mediumRiskCount = (int) riskAnalyses.stream()
+                .filter(r -> r.getRiskLevel() == RiskLevel.MEDIUM)
+                .count();
+        int highRiskCount = (int) riskAnalyses.stream()
+                .filter(r -> r.getRiskLevel() == RiskLevel.HIGH)
+                .count();
+        int criticalRiskCount = (int) riskAnalyses.stream()
+                .filter(r -> r.getRiskLevel() == RiskLevel.CRITICAL)
+                .count();
+
+        double averageRiskScore = riskAnalyses.stream()
+                .mapToDouble(PitchRiskDTO::getRiskScore)
+                .average()
+                .orElse(0);
+        double maxRiskScore = riskAnalyses.stream()
+                .mapToDouble(PitchRiskDTO::getRiskScore)
+                .max()
+                .orElse(0);
+        double minRiskScore = riskAnalyses.stream()
+                .mapToDouble(PitchRiskDTO::getRiskScore)
+                .min()
+                .orElse(0);
+
+        return RiskDistributionDTO.builder()
+                .lowRiskCount(lowRiskCount)
+                .mediumRiskCount(mediumRiskCount)
+                .highRiskCount(highRiskCount)
+                .criticalRiskCount(criticalRiskCount)
+                .averageRiskScore(averageRiskScore)
+                .maxRiskScore(maxRiskScore)
+                .minRiskScore(minRiskScore)
+                .build();
     }
 }

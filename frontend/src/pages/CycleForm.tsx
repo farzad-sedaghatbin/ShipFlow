@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { safeParseId } from '../utils/validation';
 import { cycleService } from '../services/cycleService';
 import projectService from '../services/projectService';
+import { organizationSettingsService } from '../services/organizationSettingsService';
 import { CreateCycleRequest, CyclePhase, Project } from '../types';
 import { useProject, useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import LoadingButton from '../components/LoadingButton';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -14,6 +17,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Skeleton } from '../components/ui/skeleton';
+import { usePermission } from '../hooks/usePermission';
 import {
   Select,
   SelectContent,
@@ -23,6 +27,7 @@ import {
 } from '../components/ui/select';
 
 export default function CycleForm() {
+  const { t } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const navigate = useNavigate();
@@ -39,6 +44,8 @@ export default function CycleForm() {
   });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [useAutoEndDate, setUseAutoEndDate] = useState<boolean>(true);
+  const [defaultCycleLengthWeeks, setDefaultCycleLengthWeeks] = useState<number>(6);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -46,8 +53,13 @@ export default function CycleForm() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
+  // Check if user can override cycle dates
+  const { hasPermissionSync } = usePermission();
+  const canOverrideDates = hasPermissionSync('CYCLE', 'MANAGE');
+
   useEffect(() => {
     loadProjects();
+    loadOrganizationSettings();
   }, []);
 
   useEffect(() => {
@@ -61,6 +73,31 @@ export default function CycleForm() {
       loadCycle(id);
     }
   }, [id, isEdit]);
+
+  // Helper function to calculate end date from start date
+  const calculateEndDate = (startDateStr: string): string => {
+    const start = new Date(startDateStr);
+    const calculatedEnd = new Date(start);
+    calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
+    return calculatedEnd.toISOString().split('T')[0];
+  };
+
+  // Auto-calculate end date when start date changes and auto mode is enabled
+  useEffect(() => {
+    if (useAutoEndDate && startDate && !isEdit) {
+      setEndDate(calculateEndDate(startDate));
+    }
+  }, [startDate, useAutoEndDate, defaultCycleLengthWeeks, isEdit]);
+
+  const loadOrganizationSettings = async () => {
+    try {
+      const response = await organizationSettingsService.getSettings();
+      setDefaultCycleLengthWeeks(response.data.defaultCycleLengthWeeks || 6);
+    } catch (err) {
+      // Fallback to default if settings can't be loaded
+      setDefaultCycleLengthWeeks(6);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -95,6 +132,7 @@ export default function CycleForm() {
       });
       setStartDate(cycle.startDate);
       setEndDate(cycle.endDate);
+      setUseAutoEndDate(false); // Editing always uses manual mode
     } catch (err) {
       setError('Unable to load cycle details. The cycle may have been deleted.');
     } finally {
@@ -120,9 +158,10 @@ export default function CycleForm() {
       errors.startDate = 'Start date is required';
     }
 
-    if (!endDate) {
-      errors.endDate = 'End date is required';
-    } else if (startDate && endDate < startDate) {
+    // End date is only required if not using auto-calculation or if user can override
+    if (!useAutoEndDate && !endDate) {
+      errors.endDate = 'End date is required when not using auto-calculation';
+    } else if (endDate && startDate && endDate < startDate) {
       errors.endDate = 'End date must be after start date';
     }
 
@@ -143,7 +182,8 @@ export default function CycleForm() {
     const data: CreateCycleRequest = {
       ...formData,
       startDate,
-      endDate,
+      // Only send endDate if not using auto-calculation or if editing
+      endDate: useAutoEndDate && !isEdit ? undefined : endDate,
     };
 
     try {
@@ -167,7 +207,7 @@ export default function CycleForm() {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-          <span className="text-sm">Invalid cycle ID</span>
+          <span className="text-sm">{t('cycleForm.invalidCycleId')}</span>
         </div>
       </div>
     );
@@ -196,7 +236,7 @@ export default function CycleForm() {
     <div className="flex justify-center">
       <div className="w-full max-w-xl space-y-6">
         <h1 className="text-2xl font-bold text-foreground">
-          {isEdit ? 'Edit Cycle' : 'Create New Cycle'}
+          {isEdit ? t('cycleForm.editCycle') : t('cycleForm.createNewCycle')}
         </h1>
 
         <Card>
@@ -210,7 +250,7 @@ export default function CycleForm() {
 
             {/* Project */}
             <div className="space-y-2">
-              <Label htmlFor="project">Project *</Label>
+              <Label htmlFor="project">{t('cycleForm.projectRequired')}</Label>
               <Select
                 value={formData.projectId?.toString() || ''}
                 onValueChange={(value) => {
@@ -220,11 +260,11 @@ export default function CycleForm() {
                 disabled={projectsLoading}
               >
                 <SelectTrigger className={fieldErrors.projectId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder={projectsLoading ? 'Loading projects...' : 'Select project'} />
+                  <SelectValue placeholder={projectsLoading ? t('cycleForm.loadingProjects') : t('cycleForm.selectProject')} />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.length === 0 ? (
-                    <SelectItem value="none" disabled>No projects available</SelectItem>
+                    <SelectItem value="none" disabled>{t('cycleForm.noProjectsAvailable')}</SelectItem>
                   ) : (
                     projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
@@ -241,7 +281,7 @@ export default function CycleForm() {
 
             {/* Cycle Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Cycle Name *</Label>
+              <Label htmlFor="name">{t('cycleForm.cycleNameRequired')}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -249,56 +289,103 @@ export default function CycleForm() {
                   setFormData({ ...formData, name: e.target.value });
                   setFieldErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder="e.g., Q1 2025 - Feature Sprint"
+                placeholder={t('cycleForm.cycleNamePlaceholder')}
                 className={fieldErrors.name ? 'border-destructive' : ''}
               />
               {fieldErrors.name ? (
                 <p className="text-xs text-destructive">{fieldErrors.name}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Give your cycle a descriptive name</p>
+                <p className="text-xs text-muted-foreground">{t('cycleForm.cycleNameDesc')}</p>
               )}
             </div>
 
             {/* Date Range */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, startDate: '' }));
-                  }}
-                  className={fieldErrors.startDate ? 'border-destructive' : ''}
-                />
-                {fieldErrors.startDate && (
-                  <p className="text-xs text-destructive">{fieldErrors.startDate}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date *</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, endDate: '' }));
-                  }}
-                  min={startDate || undefined}
-                  className={fieldErrors.endDate ? 'border-destructive' : ''}
-                />
-                {fieldErrors.endDate && (
-                  <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
-                )}
+            <div className="space-y-4">
+              {/* Auto-calculation toggle (only for create mode and if user has permission) */}
+              {!isEdit && canOverrideDates && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                  <input
+                    type="checkbox"
+                    id="useAutoEndDate"
+                    checked={useAutoEndDate}
+                    onChange={(e) => {
+                      setUseAutoEndDate(e.target.checked);
+                      if (e.target.checked && startDate) {
+                        // Recalculate end date
+                        setEndDate(calculateEndDate(startDate));
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="useAutoEndDate" className="cursor-pointer text-sm font-normal">
+                    {t('cycleForm.autoCalculateEndDate', { weeks: defaultCycleLengthWeeks })}
+                  </Label>
+                </div>
+              )}
+
+              {/* Info for users who can't override */}
+              {!isEdit && !canOverrideDates && (
+                <Alert>
+                  <AlertDescription className="text-sm">
+                    {t('cycleForm.autoEndDateInfo', { weeks: defaultCycleLengthWeeks })}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">{t('cycleForm.startDateRequired')}</Label>
+                  <LocalizedDateInput
+                    id="startDate"
+                    value={startDate}
+                    onChange={(value) => {
+                      setStartDate(value);
+                      setFieldErrors((prev) => ({ ...prev, startDate: '' }));
+                    }}
+                    className={fieldErrors.startDate ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors.startDate && (
+                    <p className="text-xs text-destructive">{fieldErrors.startDate}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">
+                    {useAutoEndDate && !isEdit ? t('cycleForm.endDateAuto') : t('cycleForm.endDateRequired')}
+                  </Label>
+                  <LocalizedDateInput
+                    id="endDate"
+                    value={endDate}
+                    onChange={(value) => {
+                      setEndDate(value);
+                      setFieldErrors((prev) => ({ ...prev, endDate: '' }));
+                    }}
+                    min={startDate || undefined}
+                    disabled={useAutoEndDate && !isEdit}
+                    aria-label={
+                      useAutoEndDate && !isEdit
+                        ? t('cycleForm.endDateAutoAriaLabel')
+                        : t('cycleForm.endDateAriaLabel')
+                    }
+                    aria-describedby={
+                      useAutoEndDate && !isEdit ? 'endDate-auto-hint' : undefined
+                    }
+                    className={fieldErrors.endDate ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors.endDate && (
+                    <p className="text-xs text-destructive">{fieldErrors.endDate}</p>
+                  )}
+                  {useAutoEndDate && !isEdit && (
+                    <p id="endDate-auto-hint" className="text-xs text-muted-foreground">
+                      {t('cycleForm.automaticallyCalculated')}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Phase */}
             <div className="space-y-2">
-              <Label>Phase</Label>
+              <Label>{t('cycleForm.phase')}</Label>
               <Select
                 value={formData.phase}
                 onValueChange={(value) => setFormData({ ...formData, phase: value as CyclePhase })}
@@ -307,10 +394,10 @@ export default function CycleForm() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SHAPING">Shaping</SelectItem>
-                  <SelectItem value="BETTING">Betting</SelectItem>
-                  <SelectItem value="BUILD">Build</SelectItem>
-                  <SelectItem value="COOLDOWN">Cooldown</SelectItem>
+                  <SelectItem value="SHAPING">{t('cycleForm.shaping')}</SelectItem>
+                  <SelectItem value="BETTING">{t('cycleForm.betting')}</SelectItem>
+                  <SelectItem value="BUILD">{t('cycleForm.build')}</SelectItem>
+                  <SelectItem value="COOLDOWN">{t('cycleForm.cooldown')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -323,14 +410,14 @@ export default function CycleForm() {
                 onClick={() => navigate('/cycles')} 
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <LoadingButton
                 type="submit"
                 loading={loading}
-                loadingText="Saving..."
+                loadingText={t('cycleForm.saving')}
               >
-                {isEdit ? 'Update Cycle' : 'Create Cycle'}
+                {isEdit ? t('cycleForm.updateCycle') : t('cycleForm.createCycle')}
               </LoadingButton>
             </div>
           </form>

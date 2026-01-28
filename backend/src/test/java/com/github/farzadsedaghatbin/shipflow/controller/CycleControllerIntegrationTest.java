@@ -4,9 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +46,9 @@ class CycleControllerIntegrationTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private Cycle testCycle;
     private Project testProject;
 
@@ -50,6 +56,35 @@ class CycleControllerIntegrationTest {
     void setUp() {
         cycleRepository.deleteAll();
         projectRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Create test users matching @WithMockUser annotations
+        User admin = User.builder()
+                .username("admin")
+                .email("admin@test.com")
+                .password("password")
+                .role(UserRole.ADMIN)
+                .isActive(true)
+                .build();
+        userRepository.save(admin);
+
+        User developer = User.builder()
+                .username("developer")
+                .email("developer@test.com")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .isActive(true)
+                .build();
+        userRepository.save(developer);
+
+        User pm = User.builder()
+                .username("pm")
+                .email("pm@test.com")
+                .password("password")
+                .role(UserRole.MANAGER)
+                .isActive(true)
+                .build();
+        userRepository.save(pm);
 
         testProject = Project.builder()
                 .name("Test Project")
@@ -109,7 +144,7 @@ class CycleControllerIntegrationTest {
                 .name("New Cycle")
                 .phase(CyclePhase.BUILD)
                 .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(2))
+                // Don't set endDate - will be auto-calculated
                 .build();
 
         mockMvc.perform(post("/api/cycles")
@@ -128,7 +163,7 @@ class CycleControllerIntegrationTest {
                 .name("Updated Cycle")
                 .phase(CyclePhase.COOLDOWN)
                 .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusWeeks(2))
+                // Don't set endDate - will be auto-calculated
                 .build();
 
         mockMvc.perform(put("/api/cycles/{id}", testCycle.getId())
@@ -163,5 +198,83 @@ class CycleControllerIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].projectId", is(testProject.getId().intValue())));
+    }
+
+    // ========== Auto-Calculation Feature Integration Tests ==========
+
+    @Test
+    @WithMockUser(username = "developer", roles = {"DEVELOPER"})
+    void createCycle_WithoutEndDate_AsDeveloper_ShouldAutoCalculate() throws Exception {
+        CreateCycleRequest request = CreateCycleRequest.builder()
+                .projectId(testProject.getId())
+                .name("Auto-Calculated Cycle")
+                .phase(CyclePhase.BUILD)
+                .startDate(LocalDate.of(2026, 2, 1))
+                // Don't call .endDate() at all - let it be null by default
+                .build();
+
+        mockMvc.perform(post("/api/cycles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Auto-Calculated Cycle")))
+                .andExpect(jsonPath("$.startDate", is("2026-02-01")))
+                .andExpect(jsonPath("$.endDate", notNullValue())); // End date should be calculated
+    }
+
+    @Test
+    @WithMockUser(username = "developer", roles = {"DEVELOPER"})
+    void createCycle_WithCustomEndDate_AsDeveloper_ShouldReturn403() throws Exception {
+        CreateCycleRequest request = CreateCycleRequest.builder()
+                .projectId(testProject.getId())
+                .name("Custom Length Cycle")
+                .phase(CyclePhase.BUILD)
+                .startDate(LocalDate.of(2026, 2, 1))
+                .endDate(LocalDate.of(2026, 2, 15)) // Only 2 weeks - should be rejected
+                .build();
+
+        mockMvc.perform(post("/api/cycles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void createCycle_WithCustomEndDate_AsAdmin_ShouldSucceed() throws Exception {
+        CreateCycleRequest request = CreateCycleRequest.builder()
+                .projectId(testProject.getId())
+                .name("Custom 4-Week Cycle")
+                .phase(CyclePhase.BUILD)
+                .startDate(LocalDate.of(2026, 2, 1))
+                .endDate(LocalDate.of(2026, 3, 1)) // Custom 4-week cycle
+                .build();
+
+        mockMvc.perform(post("/api/cycles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Custom 4-Week Cycle")))
+                .andExpect(jsonPath("$.startDate", is("2026-02-01")))
+                .andExpect(jsonPath("$.endDate", is("2026-03-01")));
+    }
+
+    @Test
+    @WithMockUser(username = "pm", roles = {"PROJECT_MANAGER"})
+    void createCycle_WithCustomEndDate_AsProjectManager_ShouldSucceed() throws Exception {
+        CreateCycleRequest request = CreateCycleRequest.builder()
+                .projectId(testProject.getId())
+                .name("PM Custom Cycle")
+                .phase(CyclePhase.BUILD)
+                .startDate(LocalDate.of(2026, 3, 1))
+                .endDate(LocalDate.of(2026, 4, 26)) // 8-week cycle
+                .build();
+
+        mockMvc.perform(post("/api/cycles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("PM Custom Cycle")))
+                .andExpect(jsonPath("$.endDate", is("2026-04-26")));
     }
 }

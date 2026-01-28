@@ -4,8 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEvidenceRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "admin", roles = {"ADMIN"})
 class EvidenceControllerIntegrationTest {
 
     @Autowired
@@ -52,6 +56,12 @@ class EvidenceControllerIntegrationTest {
     @Autowired
     private CycleRepository cycleRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     private Cycle testCycle;
     private Team testTeam;
     private Person testPerson;
@@ -64,6 +74,7 @@ class EvidenceControllerIntegrationTest {
         pitchRepository.deleteAll();
         teamRepository.deleteAll();
         cycleRepository.deleteAll();
+        userRepository.deleteAll();
         personRepository.deleteAll();
         
         testCycle = Cycle.builder()
@@ -89,6 +100,37 @@ class EvidenceControllerIntegrationTest {
                 .build();
         testPerson = personRepository.save(testPerson);
 
+        User testUser = User.builder()
+                .username("evidence-test-user")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .person(testPerson)
+                .isActive(true)
+                .build();
+        testUser = userRepository.save(testUser);
+
+        // Grant PITCH permissions for MEMBER role
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.READ)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.CREATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.UPDATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.DELETE)
+                .build());
+
         testPitch = Pitch.builder()
                 .title("Test Pitch")
                 .description("Test Description")
@@ -110,6 +152,7 @@ class EvidenceControllerIntegrationTest {
         testEvidence = evidenceRepository.save(testEvidence);
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getAllEvidence_ShouldReturnEvidence() throws Exception {
         mockMvc.perform(get("/api/evidences"))
@@ -119,6 +162,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].description", is("Test Evidence Description")));
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceById_WhenExists_ShouldReturnEvidence() throws Exception {
         mockMvc.perform(get("/api/evidences/{id}", testEvidence.getId()))
@@ -128,12 +172,14 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("Test Evidence Description")));
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceById_WhenNotExists_ShouldReturn404() throws Exception {
         mockMvc.perform(get("/api/evidences/{id}", 9999L))
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void createEvidence_WithValidData_ShouldCreateEvidence() throws Exception {
         CreateEvidenceRequest request = CreateEvidenceRequest.builder()
@@ -151,6 +197,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("New Evidence Description")));
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void updateEvidence_WhenExists_ShouldUpdateEvidence() throws Exception {
         CreateEvidenceRequest request = CreateEvidenceRequest.builder()
@@ -168,6 +215,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(jsonPath("$.description", is("Updated Evidence Description")));
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void deleteEvidence_WhenExists_ShouldDeleteEvidence() throws Exception {
         mockMvc.perform(delete("/api/evidences/{id}", testEvidence.getId()))
@@ -177,6 +225,7 @@ class EvidenceControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "evidence-test-user", roles = "MEMBER")
     @Test
     void getEvidenceByPitch_ShouldReturnEvidenceForPitch() throws Exception {
         mockMvc.perform(get("/api/evidences/pitch/{pitchId}", testPitch.getId()))

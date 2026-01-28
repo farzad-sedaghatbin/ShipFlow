@@ -1,4 +1,5 @@
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LogIn,
   TrendingUp,
@@ -8,9 +9,9 @@ import {
   Target,
   CheckCircle,
   Github,
-  BookOpen,
   Accessibility,
   RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -19,61 +20,90 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 
-const features = [
-  {
-    icon: <TrendingUp className="h-10 w-10" />,
-    title: 'Cycle Management',
-    description: 'Create and manage 6-week development cycles with betting and building phases following Shape Up methodology.',
-  },
-  {
-    icon: <BarChart3 className="h-10 w-10" />,
-    title: 'Hill Charts',
-    description: 'Visual progress tracking showing work moving from "figuring it out" to "making it happen" with drag-and-drop.',
-  },
-  {
-    icon: <Brain className="h-10 w-10" />,
-    title: 'AI Risk Analysis',
-    description: 'Get AI-powered risk assessments with actionable insights and smart recommendations for your pitches.',
-  },
-  {
-    icon: <Target className="h-10 w-10" />,
-    title: 'Pitch Health Summary',
-    description: 'Lightweight dashboard with risk-colored cards, budget progress, and QA status at a glance.',
-  },
-  {
-    icon: <Users className="h-10 w-10" />,
-    title: 'Team Management',
-    description: 'Organize teams, assign tasks, track time, and collaborate with pair programming support.',
-  },
-  {
-    icon: <RotateCcw className="h-10 w-10" />,
-    title: 'Retrospectives',
-    description: "Run team retros with voting and merging. Cycles can't close until retrospectives are complete.",
-  },
-  {
-    icon: <CheckCircle className="h-10 w-10" />,
-    title: 'AI-Powered Test & QA',
-    description: 'Generate test cases with AI, execute test suites, track coverage, and maintain quality with integrated bug reporting.',
-  },
-  {
-    icon: <Accessibility className="h-10 w-10" />,
-    title: 'WCAG 2.1 AA Accessible',
-    description: 'Full keyboard navigation, screen reader support, high contrast, and focus indicators for all users.',
-  },
-];
-
-const techStack = [
-  { name: 'React 18', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
-  { name: 'TypeScript', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  { name: 'Spring Boot 3', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
-  { name: 'Java 17+', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
-  { name: 'shadcn/ui', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-  { name: 'LangChain4j', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
-];
-
 export default function Landing() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
+
+  const techStack = [
+    { name: 'React 18', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+    { name: 'TypeScript', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+    { name: 'Spring Boot 3', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
+    { name: 'Java 17+', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
+    { name: 'shadcn/ui', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+    { name: 'LangChain4j', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+  ];
+
+  const features = [
+    {
+      icon: <TrendingUp className="h-10 w-10" />,
+      title: t('landing.dualProjectModes'),
+      description: t('landing.dualProjectModesDesc'),
+    },
+    {
+      icon: <TrendingUp className="h-10 w-10" />,
+      title: t('landing.cycleManagement'),
+      description: t('landing.cycleManagementDesc'),
+    },
+    {
+      icon: <BarChart3 className="h-10 w-10" />,
+      title: t('landing.hillCharts'),
+      description: t('landing.hillChartsDesc'),
+    },
+    {
+      icon: <Brain className="h-10 w-10" />,
+      title: t('landing.aiRiskAnalysis'),
+      description: t('landing.aiRiskAnalysisDesc'),
+    },
+    {
+      icon: <Target className="h-10 w-10" />,
+      title: t('landing.pitchHealthSummary'),
+      description: t('landing.pitchHealthSummaryDesc'),
+    },
+    {
+      icon: <Users className="h-10 w-10" />,
+      title: t('landing.teamManagement'),
+      description: t('landing.teamManagementDesc'),
+    },
+    {
+      icon: <RotateCcw className="h-10 w-10" />,
+      title: t('landing.retrospectives'),
+      description: t('landing.retrospectivesDesc'),
+    },
+    {
+      icon: <CheckCircle className="h-10 w-10" />,
+      title: t('landing.aiPoweredQA'),
+      description: t('landing.aiPoweredQADesc'),
+    },
+    {
+      icon: <Accessibility className="h-10 w-10" />,
+      title: t('landing.wcagAccessible'),
+      description: t('landing.wcagAccessibleDesc'),
+    },
+  ];
+
+  const steps = [
+    {
+      step: '1',
+      title: t('landing.shapeStep'),
+      description: t('landing.shapeStepDesc'),
+    },
+    {
+      step: '2',
+      title: t('landing.betStep'),
+      description: t('landing.betStepDesc'),
+    },
+    {
+      step: '3',
+      title: t('landing.buildStep'),
+      description: t('landing.buildStepDesc'),
+    },
+    {
+      step: '4',
+      title: t('landing.cooldownStep'),
+      description: t('landing.cooldownStepDesc'),
+    },
+  ];
 
   // Redirect authenticated users to dashboard
   if (!isLoading && isAuthenticated) {
@@ -89,28 +119,23 @@ export default function Landing() {
             <div>
               {/* Logo & Title */}
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                  SU
-                </div>
+                <img src="/icon.png" alt="ShipFlow" className="w-14 h-14 rounded-xl" />
                 <h1 className="text-3xl font-bold text-primary">ShipFlow</h1>
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Shape Up Your Software Development
+                {t('landing.heroTitle')}
               </h2>
               
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                A full-stack application for tracking development cycles using the{' '}
-                <strong className="text-foreground">Shape Up methodology</strong> by Basecamp.
-                Features AI-powered risk analysis, interactive hill charts, and comprehensive
-                team collaboration tools.
+                {t('landing.heroDescription')}
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-3 mb-8">
                 <Button size="lg" onClick={() => navigate('/login')}>
                   <LogIn className="h-5 w-5 mr-2" />
-                  Get Started
+                  {t('landing.getStarted')}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -123,22 +148,16 @@ export default function Landing() {
                     rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5 mr-2" />
-                    View on GitHub
+                    {t('landing.viewOnGitHub')}
                   </a>
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="lg"
-                  asChild
+                  onClick={() => navigate('/compare')}
                 >
-                  <a 
-                    href="https://basecamp.com/shapeup" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <BookOpen className="h-5 w-5 mr-2" />
-                    Learn Shape Up
-                  </a>
+                  <ArrowRight className="h-5 w-5 mr-2" />
+                  {t('landing.compareToCompetitors')}
                 </Button>
               </div>
 
@@ -160,7 +179,7 @@ export default function Landing() {
             <div className="hidden md:block">
               <Card className="shadow-2xl">
                 <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground mb-4">Hill Chart Preview</p>
+                  <p className="text-sm text-muted-foreground mb-4">{t('landing.hillChartPreview')}</p>
                   <svg viewBox="0 0 400 150" className="w-full">
                     {/* Hill curve */}
                     <path
@@ -187,10 +206,10 @@ export default function Landing() {
                     <circle cx="350" cy="130" r="10" className="fill-green-500" />
                     {/* Labels */}
                     <text x="60" y="145" fontSize="10" className="fill-muted-foreground">
-                      Figuring it out
+                      {t('landing.figuringOut')}
                     </text>
                     <text x="280" y="145" fontSize="10" className="fill-muted-foreground">
-                      Making it happen
+                      {t('landing.makingHappen')}
                     </text>
                   </svg>
                   
@@ -199,15 +218,15 @@ export default function Landing() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                      <span className="text-sm">2 tasks completed</span>
+                      <span className="text-sm">2 {t('landing.tasksCompleted')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                      <span className="text-sm">1 task in progress</span>
+                      <span className="text-sm">1 {t('landing.taskInProgress')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                      <span className="text-sm">1 task in discovery</span>
+                      <span className="text-sm">1 {t('landing.taskInDiscovery')}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -222,11 +241,10 @@ export default function Landing() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Everything You Need for Shape Up
+              {t('landing.featuresTitle')}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              From cycle planning to risk analysis, ShipFlow provides all the tools
-              your team needs to implement Shape Up successfully.
+              {t('landing.featuresDesc')}
             </p>
           </div>
 
@@ -252,37 +270,15 @@ export default function Landing() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              How Shape Up Works
+              {t('landing.howItWorksTitle')}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Shape Up is a product development methodology created by Basecamp that gives teams
-              more autonomy and focuses on shipping meaningful work.
+              {t('landing.howItWorksDesc')}
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                step: '1',
-                title: 'Shape',
-                description: 'Senior people work on shaping pitches - defining the problem, setting boundaries, and outlining a solution.',
-              },
-              {
-                step: '2',
-                title: 'Bet',
-                description: 'Leadership reviews shaped pitches at the betting table and decides which ones to commit to.',
-              },
-              {
-                step: '3',
-                title: 'Build',
-                description: 'Small teams work autonomously to build and ship within the fixed time appetite.',
-              },
-              {
-                step: '4',
-                title: 'Cooldown',
-                description: 'Two weeks for bug fixes, technical debt, and exploring new ideas before the next cycle.',
-              },
-            ].map((item) => (
+            {steps.map((item) => (
               <div key={item.step} className="text-center">
                 <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
                   {item.step}
@@ -303,14 +299,13 @@ export default function Landing() {
               <div className="grid md:grid-cols-3 gap-8 items-center">
                 <div className="md:col-span-2">
                   <h2 className="text-3xl font-bold text-foreground mb-4">
-                    Open Source & Self-Hosted
+                    {t('landing.openSourceTitle')}
                   </h2>
                   <p className="text-muted-foreground mb-6">
-                    ShipFlow is completely open source under the MIT license. Deploy it on your
-                    own infrastructure and maintain full control over your data. Contributions welcome!
+                    {t('landing.openSourceDesc')}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {['MIT License', 'Self-Hosted', 'Docker Ready', 'WCAG 2.1 AA', 'Active Development'].map((label) => (
+                    {['MIT License', 'Self-Hosted', 'Docker Ready', 'WCAG 2.1 AA', 'RTL Support', 'Active Development'].map((label) => (
                       <Badge key={label} variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         {label}
@@ -326,7 +321,7 @@ export default function Landing() {
                       rel="noopener noreferrer"
                     >
                       <Github className="h-5 w-5 mr-2" />
-                      Star on GitHub
+                      {t('common.github')}
                     </a>
                   </Button>
                 </div>
@@ -340,17 +335,17 @@ export default function Landing() {
       <section className="py-16 md:py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 max-w-3xl text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Ready to Shape Up Your Projects?
+            {t('landing.getStarted')}
           </h2>
           <p className="text-lg opacity-90 mb-8">
-            Start tracking your development cycles with AI-powered insights today.
+            {t('landing.heroDescription')}
           </p>
           <Button 
             size="lg" 
             variant="secondary"
             onClick={() => navigate('/login')}
           >
-            Get Started - It's Free
+            {t('landing.getStarted')}
           </Button>
           <p className="text-sm mt-4 opacity-70">
             Demo: admin / admin123

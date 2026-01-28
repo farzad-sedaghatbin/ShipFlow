@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.QAInteraction;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
+import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.NoteService;
 import com.github.farzadsedaghatbin.shipflow.service.QAService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +37,7 @@ public class QAController {
     private final QAService qaService;
     private final NoteService noteService;
     private final UserRepository userRepository;
+    private final MessageService messageService;
 
     @Autowired(required = false)
     private KnowledgeIngestionService knowledgeIngestionService;
@@ -55,6 +58,7 @@ public class QAController {
      * Ask a question.
      */
     @PostMapping("/ask")
+    @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'READ')")
     @Operation(summary = "Ask a question", description = "Submit a question and receive an AI-generated answer based on stored knowledge")
     public ResponseEntity<QAResponse> askQuestion(
             @Valid @RequestBody AskQuestionRequest request,
@@ -90,7 +94,7 @@ public class QAController {
 
         Long userId = getUserId(userDetails);
         qaService.submitFeedback(request, userId);
-        return ResponseEntity.ok(Map.of("message", "Feedback submitted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.feedback.submitted")));
     }
     
     /**
@@ -170,7 +174,7 @@ public class QAController {
         
         Long userId = getUserId(userDetails);
         noteService.deleteNote(id, userId);
-        return ResponseEntity.ok(Map.of("message", "Note deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.note.deleted")));
     }
 
     /**

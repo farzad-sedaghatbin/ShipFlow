@@ -15,8 +15,10 @@ public class CreateWorkLogRequest {
     @NotNull(message = "Person ID is required")
     private Long personId;
     
-    @NotNull(message = "Pitch ID is required")
+    // Either pitchId or taskId must be provided
     private Long pitchId;
+    
+    private Long taskId;
     
     @NotNull(message = "Date is required")
     private LocalDate date;

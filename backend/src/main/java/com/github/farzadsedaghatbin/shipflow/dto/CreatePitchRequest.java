@@ -26,4 +26,12 @@ public class CreatePitchRequest {
     private Long teamId;
     
     private PitchStatus status = PitchStatus.PENDING;
+    
+    // Shape Up Methodology Fields
+    private String problemStatement;
+    private String solution;
+    private String rabbitHoles;
+    private String risks;
+    private String noGos;
+    private String wireframeLinks;
 }

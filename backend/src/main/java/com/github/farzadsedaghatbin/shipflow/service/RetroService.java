@@ -25,6 +25,8 @@ public class RetroService {
     private final CycleRepository cycleRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final LocalizationService localizationService;
+    private final MessageService messageService;
 
     // ==================== RETRO CRUD ====================
 
@@ -105,7 +107,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot update a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.update.closed"));
         }
         
         if (request.getTitle() != null) {
@@ -128,7 +130,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot open a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.open.closed"));
         }
         
         retro.setStatus(RetroStatus.OPEN);
@@ -182,16 +184,18 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot add items to a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.add.items.closed"));
         }
         
         User currentUser = getCurrentUser();
+        Boolean isAnonymous = request.getIsAnonymous() != null ? request.getIsAnonymous() : false;
         
         RetroItem item = RetroItem.builder()
                 .content(request.getContent())
                 .columnType(request.getColumnType())
                 .retrospective(retro)
-                .author(currentUser)
+                .author(isAnonymous ? null : currentUser)
+                .isAnonymous(isAnonymous)
                 .build();
         
         RetroItem saved = retroItemRepository.save(item);
@@ -208,7 +212,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot update items in a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.update.items.closed"));
         }
         
         item.setContent(content);
@@ -226,7 +230,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot delete items from a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.delete.items.closed"));
         }
         
         retroItemRepository.deleteById(itemId);
@@ -244,17 +248,17 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot vote on items in a closed retrospective");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.closed"));
         }
         
         // Cannot vote on merged items
         if (item.getMergedInto() != null) {
-            throw new IllegalStateException("Cannot vote on a merged item");
+            throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.merged"));
         }
         
         User currentUser = getCurrentUser();
         if (currentUser == null) {
-            throw new IllegalStateException("User not found");
+            throw new IllegalStateException(localizationService.getMessage("retro.user.not.found"));
         }
         
         boolean hasVoted = retroItemVoteRepository.existsByRetroItemIdAndUserId(itemId, currentUser.getId());
@@ -288,12 +292,12 @@ public class RetroService {
         
         // Validate same retrospective
         if (!targetItem.getRetrospective().getId().equals(sourceItem.getRetrospective().getId())) {
-            throw new IllegalStateException("Cannot merge items from different retrospectives");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.different.retros"));
         }
         
         // Validate same column
         if (targetItem.getColumnType() != sourceItem.getColumnType()) {
-            throw new IllegalStateException("Cannot merge items from different columns");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.different.columns"));
         }
         
         Retrospective retro = targetItem.getRetrospective();
@@ -302,17 +306,17 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot merge items in a closed retrospective");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.closed"));
         }
         
         // Cannot merge into an already merged item
         if (targetItem.getMergedInto() != null) {
-            throw new IllegalStateException("Cannot merge into an already merged item");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.into.merged"));
         }
         
         // Cannot merge an item that is already merged
         if (sourceItem.getMergedInto() != null) {
-            throw new IllegalStateException("Source item is already merged");
+            throw new IllegalStateException(messageService.getMessage("error.retro.merge.already.merged"));
         }
         
         // Transfer votes from source to target
@@ -344,7 +348,7 @@ public class RetroService {
                 .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
         
         if (item.getMergedInto() == null) {
-            throw new IllegalStateException("Item is not merged");
+            throw new IllegalStateException(messageService.getMessage("error.retro.item.not.merged"));
         }
         
         Retrospective retro = item.getRetrospective();
@@ -353,7 +357,7 @@ public class RetroService {
         }
         
         if (retro.getStatus() == RetroStatus.CLOSED) {
-            throw new IllegalStateException("Cannot unmerge items in a closed retrospective");
+            throw new IllegalStateException(messageService.getMessage("error.retro.unmerge.closed"));
         }
         
         item.setMergedInto(null);
@@ -422,7 +426,7 @@ public class RetroService {
 
     private void validateRetrospectivesEnabled(Long projectId) {
         if (!isRetrospectivesEnabled(projectId)) {
-            throw new IllegalStateException("Retrospectives feature is disabled for this project");
+            throw new IllegalStateException(messageService.getMessage("error.retro.feature.disabled"));
         }
     }
 
@@ -478,18 +482,26 @@ public class RetroService {
     private RetroItemDTO toItemDTO(RetroItem item) {
         User currentUser = getCurrentUser();
         
+        Boolean isAnonymous = item.getIsAnonymous() != null ? item.getIsAnonymous() : false;
+        
         RetroItemDTO.RetroItemDTOBuilder builder = RetroItemDTO.builder()
                 .id(item.getId())
                 .content(item.getContent())
                 .columnType(item.getColumnType())
                 .retrospectiveId(item.getRetrospective().getId())
+                .isAnonymous(isAnonymous)
                 .voteCount(item.getVoteCount() != null ? item.getVoteCount() : 0)
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt());
         
-        if (item.getAuthor() != null) {
+        // Always include author fields (null for anonymous items)
+        if (!isAnonymous && item.getAuthor() != null) {
             builder.authorId(item.getAuthor().getId())
                    .authorName(item.getAuthor().getUsername());
+        } else {
+            // Explicitly set to null for anonymous items or missing author
+            builder.authorId(null)
+                   .authorName(null);
         }
         
         // Check if current user has voted

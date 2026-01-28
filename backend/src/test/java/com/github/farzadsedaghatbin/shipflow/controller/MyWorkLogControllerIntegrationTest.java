@@ -100,7 +100,7 @@ class MyWorkLogControllerIntegrationTest {
                 .username("testuser")
                 .password(passwordEncoder.encode("password"))
                 .email("testuser@example.com")
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())

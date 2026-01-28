@@ -12,6 +12,11 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,12 +25,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,7 +44,20 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DocumentService {
 
+    /**
+     * Mapping of file extensions to MIME content types.
+     * Centralized to maintain consistency across the codebase.
+     */
+    private static final Map<String, String> CONTENT_TYPE_MAP = Map.of(
+        "pdf", "application/pdf",
+        "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "doc", "application/msword",
+        "txt", "text/plain",
+        "md", "text/markdown"
+    );
+
     private final UploadedDocumentRepository documentRepository;
+    private final LocalizationService localizationService;
 
     @Autowired(required = false)
     private KnowledgeIngestionService knowledgeIngestionService;
@@ -83,13 +103,22 @@ public class DocumentService {
                         .build();
             }
 
+            // Sanitize original filename to prevent path traversal
+            String sanitizedFileName = sanitizeFileName(originalFileName);
+            
             // Generate unique file name
-            String uniqueFileName = UUID.randomUUID().toString() + "_" + originalFileName;
+            String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedFileName;
 
             // Save file to disk
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
             Path filePath = uploadPath.resolve(uniqueFileName);
+            
+            // Verify the resolved path is still within the upload directory (additional security check)
+            if (!filePath.normalize().startsWith(uploadPath)) {
+                throw new SecurityException("Invalid file path detected");
+            }
+            
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Extract text from document
@@ -168,6 +197,31 @@ public class DocumentService {
             }
         } catch (Exception e) {
             log.error("Error extracting text from {} file: {}", fileType, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Extract text from a MultipartFile without saving it.
+     * Useful for extracting pitch data before creating a pitch.
+     */
+    public String extractTextFromFile(MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return null;
+            }
+            
+            String originalFileName = file.getOriginalFilename();
+            String fileType = getFileType(originalFileName);
+            
+            if (!isAllowedFileType(fileType)) {
+                log.warn("Unsupported file type: {}", fileType);
+                return null;
+            }
+            
+            return extractText(file.getInputStream(), fileType);
+        } catch (Exception e) {
+            log.error("Error extracting text from file: {}", e.getMessage());
             return null;
         }
     }
@@ -252,6 +306,54 @@ public class DocumentService {
     }
 
     /**
+     * Download a document.
+     */
+    public ResponseEntity<Resource> downloadDocument(Long id) {
+        UploadedDocument document = getDocumentById(id);
+        
+        try {
+            Path filePath = Paths.get(document.getStoragePath());
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new RuntimeException(localizationService.getMessage("document.not.found", document.getOriginalFileName()));
+            }
+            
+            // Determine content type
+            String contentType = determineContentType(document.getFileType());
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, 
+                            "attachment; filename=\"" + document.getOriginalFileName() + "\"")
+                    .body(resource);
+                    
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(localizationService.getMessage("document.read.error", e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Determines the MIME content type based on file extension.
+     * @param fileType The file extension (e.g., "pdf", "docx")
+     * @return The MIME content type, or "application/octet-stream" if unknown
+     */
+    private String determineContentType(String fileType) {
+        return CONTENT_TYPE_MAP.getOrDefault(fileType.toLowerCase(), "application/octet-stream");
+    }
+
+    /**
+     * Link an existing document to an entity.
+     */
+    @Transactional
+    public void linkDocumentToEntity(Long documentId, String entityType, Long entityId) {
+        UploadedDocument document = getDocumentById(documentId);
+        document.setEntityType(entityType);
+        document.setEntityId(entityId);
+        documentRepository.save(document);
+    }
+
+    /**
      * Get documents that haven't been indexed for Q&A.
      */
     public List<UploadedDocument> getPendingDocuments() {
@@ -284,5 +386,31 @@ public class DocumentService {
         }
 
         return indexed;
+    }
+
+    /**
+     * Sanitizes a filename to prevent path traversal attacks.
+     * Removes all path separators and only keeps the filename portion.
+     */
+    private String sanitizeFileName(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return "unnamed";
+        }
+        
+        // Get just the filename, removing any path components
+        String name = Paths.get(filename).getFileName().toString();
+        
+        // Remove any remaining path traversal sequences and null bytes
+        name = name.replaceAll("\\.\\.", "")
+                   .replaceAll("[\\/\\\\]", "")
+                   .replaceAll("\\x00", "")
+                   .trim();
+        
+        // If nothing is left after sanitization, use a default name
+        if (name.isEmpty()) {
+            return "unnamed";
+        }
+        
+        return name;
     }
 }

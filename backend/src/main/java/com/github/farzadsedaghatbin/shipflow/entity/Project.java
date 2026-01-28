@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,16 @@ public class Project {
     @Column(nullable = false)
     private Boolean isActive;
 
+    /**
+     * Project methodology type - determines available features and navigation.
+     * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
+     * KANBAN: Continuous flow with visual board, no cycles
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ProjectType projectType = ProjectType.SHAPE_UP;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean enableRetrospectives = true; // Default ON for all teams/projects
@@ -68,6 +79,9 @@ public class Project {
         }
         if (enableRetrospectives == null) {
             enableRetrospectives = true;
+        }
+        if (projectType == null) {
+            projectType = ProjectType.SHAPE_UP;
         }
     }
 

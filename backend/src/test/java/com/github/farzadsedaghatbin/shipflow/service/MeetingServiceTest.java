@@ -1,12 +1,12 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
-import com.github.farzadsedaghatbin.shipflow.entity.Meeting;
-import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
-import com.github.farzadsedaghatbin.shipflow.repository.MeetingRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,8 +14,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +36,12 @@ class MeetingServiceTest {
 
     @Mock
     private PitchRepository pitchRepository;
+
+    @Mock
+    private RetrospectiveRepository retrospectiveRepository;
+
+    @Mock
+    private PersonRepository personRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -148,5 +157,154 @@ class MeetingServiceTest {
 
         assertThat(result).hasSize(1);
         verify(meetingRepository).findByType(MeetingType.KICKOFF);
+    }
+    
+    @Test
+    void getAllMeetingsPaginated_ShouldReturnPagedMeetings() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "dateHeld"));
+        Page<Meeting> page = new PageImpl<>(Arrays.asList(testMeeting), pageable, 1);
+        
+        when(meetingRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        Page<MeetingDTO> result = meetingService.getAllMeetingsPaginated(pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(meetingRepository).findAll(pageable);
+    }
+    
+    @Test
+    void getMeetingsWithFilters_ShouldApplyFiltersAndReturnResults() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "dateHeld"));
+        Page<Meeting> page = new PageImpl<>(Arrays.asList(testMeeting), pageable, 1);
+        
+        when(meetingRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+
+        Page<MeetingDTO> result = meetingService.getMeetingsWithFilters(
+                null, null, 1L, Arrays.asList(MeetingType.KICKOFF), 
+                null, null, null, null, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(meetingRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+    
+    @Test
+    void createMeeting_WithActionItems_ShouldSaveMeetingWithActions() {
+        Person testPerson = Person.builder().id(1L).name("Test Person").build();
+        List<MeetingActionDTO> actions = new ArrayList<>();
+        actions.add(MeetingActionDTO.builder()
+                .description("Test action")
+                .assignedToId(1L)
+                .status(ActionStatus.OPEN)
+                .dueDate(LocalDate.now().plusDays(7))
+                .build());
+        
+        testRequest.setActions(actions);
+        testRequest.setDecisions("Test decisions");
+        testRequest.setAttendees("Test attendees");
+        
+        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+        when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+        when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+        MeetingDTO result = meetingService.createMeeting(testRequest);
+
+        assertThat(result).isNotNull();
+        verify(meetingRepository, times(2)).save(any(Meeting.class));
+        verify(personRepository).findById(1L);
+    }
+    
+    @Test
+    void createMeeting_WithRetrospective_ShouldLinkRetrospective() {
+        Retrospective retro = Retrospective.builder()
+                .id(1L)
+                .title("Test Retro")
+                .build();
+        
+        testRequest.setRetrospectiveId(1L);
+        
+        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+        when(retrospectiveRepository.findById(1L)).thenReturn(Optional.of(retro));
+        when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+        MeetingDTO result = meetingService.createMeeting(testRequest);
+
+        assertThat(result).isNotNull();
+        verify(retrospectiveRepository).findById(1L);
+    }
+    
+    @Test
+    void updateMeeting_WithActionItems_ShouldReplaceActions() {
+        Meeting meetingWithActions = Meeting.builder()
+                .id(1L)
+                .pitch(testPitch)
+                .type(MeetingType.KICKOFF)
+                .dateHeld(LocalDate.now())
+                .dorReady(true)
+                .dodReady(false)
+                .notes("Test notes")
+                .actions(new ArrayList<>())
+                .build();
+        
+        Person testPerson = Person.builder().id(1L).name("Test Person").build();
+        List<MeetingActionDTO> newActions = new ArrayList<>();
+        newActions.add(MeetingActionDTO.builder()
+                .description("Updated action")
+                .assignedToId(1L)
+                .status(ActionStatus.IN_PROGRESS)
+                .build());
+        
+        testRequest.setActions(newActions);
+        testRequest.setDecisions("Updated decisions");
+        
+        when(meetingRepository.findById(1L)).thenReturn(Optional.of(meetingWithActions));
+        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+        when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+        when(meetingRepository.save(any(Meeting.class))).thenReturn(meetingWithActions);
+
+        MeetingDTO result = meetingService.updateMeeting(1L, testRequest);
+
+        assertThat(result).isNotNull();
+        verify(meetingRepository).save(any(Meeting.class));
+    }
+    
+    @Test
+    void createMeeting_WithInvalidPitch_ShouldThrowException() {
+        testRequest.setPitchId(999L);
+        when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Pitch not found");
+    }
+    
+    @Test
+    void createMeeting_WithInvalidRetrospective_ShouldThrowException() {
+        testRequest.setRetrospectiveId(999L);
+        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+        when(retrospectiveRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Retrospective not found");
+    }
+    
+    @Test
+    void createMeeting_WithInvalidAssignee_ShouldThrowException() {
+        List<MeetingActionDTO> actions = new ArrayList<>();
+        actions.add(MeetingActionDTO.builder()
+                .description("Test action")
+                .assignedToId(999L)
+                .status(ActionStatus.OPEN)
+                .build());
+        
+        testRequest.setActions(actions);
+        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+        when(personRepository.findById(999L)).thenReturn(Optional.empty());
+        when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+        assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Person not found");
     }
 }

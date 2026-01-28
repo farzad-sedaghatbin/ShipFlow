@@ -15,6 +15,8 @@ public class WorkLogDTO {
     private String personName;
     private Long pitchId;
     private String pitchTitle;
+    private Long taskId;
+    private String taskTitle;
     private Long cycleId;
     private String cycleName;
     private Long projectId;

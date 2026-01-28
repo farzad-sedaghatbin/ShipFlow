@@ -49,6 +49,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
     List<Task> findByPersonId(@Param("personId") Long personId);
     
+    @Query("SELECT t FROM Task t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Task> searchTasks(@Param("query") String query, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
+    Page<Task> findByPersonId(@Param("personId") Long personId, Pageable pageable);
+    
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId")
     int countByCycleId(@Param("cycleId") Long cycleId);
     
@@ -69,6 +75,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
     List<Task> findByProjectId(@Param("projectId") Long projectId);
+    
+    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
+    Page<Task> findByProjectIdPaged(@Param("projectId") Long projectId, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId AND t.category = :category")
+    Page<Task> findByProjectIdAndCategory(@Param("projectId") Long projectId, @Param("category") TaskCategory category, Pageable pageable);
     
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId ORDER BY " +
            "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'MEDIUM' THEN 3 WHEN 'LOW' THEN 4 END, " +
@@ -99,4 +111,25 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("priorities") List<TaskPriority> priorities,
         @Param("assigneeIds") List<Long> assigneeIds,
         Pageable pageable);
+    
+    // Hierarchy queries
+    List<Task> findByParentTaskId(Long parentTaskId);
+    
+    List<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId);
+    
+    Page<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.parentTask IS NULL")
+    List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
+    
+    // Pitch and scope queries for traceability
+    List<Task> findByPitchId(Long pitchId);
+    
+    List<Task> findByScopeId(Long scopeId);
+    
+    @Query("SELECT t FROM Task t WHERE t.pitch.id = :pitchId AND t.status = :status")
+    List<Task> findByPitchIdAndStatus(@Param("pitchId") Long pitchId, @Param("status") TaskStatus status);
+    
+    @Query("SELECT t FROM Task t WHERE t.scope.id = :scopeId AND t.status = :status")
+    List<Task> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") TaskStatus status);
 }

@@ -51,6 +51,22 @@ public class Task {
     @JoinColumn(name = "cycle_id", nullable = false)
     private Cycle cycle;
 
+    /**
+     * The pitch this task is associated with (optional).
+     * Links the task to a specific pitch for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pitch_id")
+    private Pitch pitch;
+
+    /**
+     * The scope (hill chart point) this task is associated with (optional).
+     * Links the task to a specific scope for better traceability.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scope_id")
+    private HillChartPoint scope;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
     private Person assignee;
@@ -62,6 +78,25 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
     private Person createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_task_id")
+    private Task parentTask;
+
+    @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
+    private java.util.List<Task> children = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "sourceTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
+    private java.util.List<TaskDependency> outgoingDependencies = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "targetTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 25)
+    private java.util.List<TaskDependency> incomingDependencies = new java.util.ArrayList<>();
 
     @Column
     private LocalDate dueDate;

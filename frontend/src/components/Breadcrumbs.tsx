@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Home,
   Folder,
@@ -16,6 +17,8 @@ import {
   User,
   Shield,
   ChevronRight,
+  Settings,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,48 +28,72 @@ interface BreadcrumbItem {
   icon?: React.ReactNode;
 }
 
-// Map routes to breadcrumb labels and icons
-const routeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
-  '/dashboard': { label: 'Dashboard', icon: <Home className="h-4 w-4" /> },
-  '/projects': { label: 'Projects', icon: <Folder className="h-4 w-4" /> },
-  '/cycles': { label: 'Cycles', icon: <Repeat className="h-4 w-4" /> },
-  '/cycles/new': { label: 'New Cycle', icon: <Repeat className="h-4 w-4" /> },
-  '/pitches': { label: 'Pitch Board', icon: <FileText className="h-4 w-4" /> },
-  '/tasks': { label: 'Tasks', icon: <CheckSquare className="h-4 w-4" /> },
-  '/health': { label: 'Health Overview', icon: <Activity className="h-4 w-4" /> },
-  '/worklogs': { label: 'Work Logs', icon: <Clock className="h-4 w-4" /> },
-  '/my-worklogs': { label: 'My Work Logs', icon: <History className="h-4 w-4" /> },
-  '/teams': { label: 'Teams', icon: <Users className="h-4 w-4" /> },
-  '/people': { label: 'People', icon: <Users2 className="h-4 w-4" /> },
-  '/meetings': { label: 'Meetings', icon: <Calendar className="h-4 w-4" /> },
-  '/reports': { label: 'Reports', icon: <BarChart3 className="h-4 w-4" /> },
-  '/profile': { label: 'Profile', icon: <User className="h-4 w-4" /> },
-  '/users': { label: 'User Management', icon: <Shield className="h-4 w-4" /> },
+// Map routes to breadcrumb translation keys and icons
+const routeConfig: Record<string, { key: string; icon: React.ReactNode }> = {
+  '/dashboard': { key: 'breadcrumbs.dashboard', icon: <Home className="h-4 w-4" /> },
+  '/projects': { key: 'breadcrumbs.projects', icon: <Folder className="h-4 w-4" /> },
+  '/cycles': { key: 'breadcrumbs.cycles', icon: <Repeat className="h-4 w-4" /> },
+  '/cycles/new': { key: 'breadcrumbs.newCycle', icon: <Repeat className="h-4 w-4" /> },
+  '/pitches': { key: 'breadcrumbs.pitchBoard', icon: <FileText className="h-4 w-4" /> },
+  '/tasks': { key: 'breadcrumbs.tasks', icon: <CheckSquare className="h-4 w-4" /> },
+  '/health': { key: 'breadcrumbs.healthOverview', icon: <Activity className="h-4 w-4" /> },
+  '/worklogs': { key: 'breadcrumbs.workLogs', icon: <Clock className="h-4 w-4" /> },
+  '/my-worklogs': { key: 'breadcrumbs.myWorkLogs', icon: <History className="h-4 w-4" /> },
+  '/teams': { key: 'breadcrumbs.teams', icon: <Users className="h-4 w-4" /> },
+  '/people': { key: 'breadcrumbs.people', icon: <Users2 className="h-4 w-4" /> },
+  '/meetings': { key: 'breadcrumbs.meetings', icon: <Calendar className="h-4 w-4" /> },
+  '/reports': { key: 'breadcrumbs.reports', icon: <BarChart3 className="h-4 w-4" /> },
+  '/profile': { key: 'breadcrumbs.profile', icon: <User className="h-4 w-4" /> },
+  '/users': { key: 'breadcrumbs.userManagement', icon: <Shield className="h-4 w-4" /> },
+  '/settings': { key: 'breadcrumbs.organizationSettings', icon: <Settings className="h-4 w-4" /> },
+  '/slack': { key: 'breadcrumbs.slackIntegration', icon: <MessageSquare className="h-4 w-4" /> },
+  '/permissions': { key: 'breadcrumbs.permissions', icon: <Shield className="h-4 w-4" /> },
+  '/qa': { key: 'breadcrumbs.qa', icon: <CheckSquare className="h-4 w-4" /> },
+  '/qa/test-cases': { key: 'breadcrumbs.testCases', icon: <CheckSquare className="h-4 w-4" /> },
+  '/qa/bug-reports': { key: 'breadcrumbs.bugReports', icon: <CheckSquare className="h-4 w-4" /> },
+  '/integrations': { key: 'breadcrumbs.integrations', icon: <Settings className="h-4 w-4" /> },
+  '/integrations/github': { key: 'breadcrumbs.githubIntegration', icon: <Settings className="h-4 w-4" /> },
+  '/integrations/teams': { key: 'breadcrumbs.teamsIntegration', icon: <Settings className="h-4 w-4" /> },
+  '/time': { key: 'breadcrumbs.time', icon: <Clock className="h-4 w-4" /> },
+  '/time/logs': { key: 'breadcrumbs.timeLogs', icon: <Clock className="h-4 w-4" /> },
+  '/backlog': { key: 'breadcrumbs.backlog', icon: <FileText className="h-4 w-4" /> },
 };
 
 // Parse dynamic route segments
-const parseDynamicSegment = (segment: string, fullPath: string): { label: string; icon?: React.ReactNode } => {
+const parseDynamicSegment = (t: (key: string, options?: any) => string, segment: string, fullPath: string): { label: string; icon?: React.ReactNode } => {
   // Check if this looks like an ID (numeric)
   if (/^\d+$/.test(segment)) {
     // Check the previous segment to determine context
     if (fullPath.includes('/cycles/')) {
-      return { label: `Cycle #${segment}`, icon: <Repeat className="h-4 w-4" /> };
+      return { label: t('breadcrumbs.cycleNumber', { number: segment }), icon: <Repeat className="h-4 w-4" /> };
     }
     if (fullPath.includes('/pitches/')) {
-      return { label: `Pitch #${segment}`, icon: <FileText className="h-4 w-4" /> };
+      return { label: t('breadcrumbs.pitchNumber', { number: segment }), icon: <FileText className="h-4 w-4" /> };
+    }
+    if (fullPath.includes('/projects/')) {
+      return { label: t('breadcrumbs.projectNumber', { number: segment }), icon: <Folder className="h-4 w-4" /> };
+    }
+    if (fullPath.includes('/backlog/')) {
+      return { label: t('breadcrumbs.backlogNumber', { number: segment }), icon: <FileText className="h-4 w-4" /> };
     }
     return { label: `#${segment}` };
   }
   
   // Handle known dynamic segments
   if (segment === 'edit') {
-    return { label: 'Edit' };
+    return { label: t('breadcrumbs.edit') };
   }
   if (segment === 'new') {
-    return { label: 'New' };
+    return { label: t('breadcrumbs.new') };
   }
   if (segment === 'hill-chart') {
-    return { label: 'Hill Chart' };
+    return { label: t('breadcrumbs.hillChart') };
+  }
+  if (segment === 'generate') {
+    return { label: t('breadcrumbs.generate') };
+  }
+  if (segment === 'run') {
+    return { label: t('breadcrumbs.run') };
   }
   
   // Return capitalized segment as fallback
@@ -74,6 +101,7 @@ const parseDynamicSegment = (segment: string, fullPath: string): { label: string
 };
 
 export default function Breadcrumbs() {
+  const { t } = useTranslation();
   const location = useLocation();
   
   // Don't show breadcrumbs on dashboard
@@ -85,7 +113,7 @@ export default function Breadcrumbs() {
   
   // Build breadcrumb items
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: 'Dashboard', path: '/dashboard', icon: <Home className="h-4 w-4" /> },
+    { label: t('breadcrumbs.dashboard'), path: '/dashboard', icon: <Home className="h-4 w-4" /> },
   ];
 
   let currentPath = '';
@@ -98,13 +126,13 @@ export default function Breadcrumbs() {
     
     if (config) {
       breadcrumbs.push({
-        label: config.label,
+        label: t(config.key),
         path: isLast ? undefined : currentPath,
         icon: config.icon,
       });
     } else {
       // Parse dynamic segment
-      const dynamicConfig = parseDynamicSegment(segment, currentPath);
+      const dynamicConfig = parseDynamicSegment(t, segment, currentPath);
       breadcrumbs.push({
         label: dynamicConfig.label,
         path: isLast ? undefined : currentPath,

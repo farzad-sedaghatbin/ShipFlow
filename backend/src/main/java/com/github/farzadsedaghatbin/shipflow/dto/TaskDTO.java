@@ -32,6 +32,14 @@ public class TaskDTO {
     private String projectName;
     private String projectKey;
     
+    // Pitch relationship
+    private Long pitchId;
+    private String pitchTitle;
+    
+    // Scope relationship
+    private Long scopeId;
+    private String scopeName;
+    
     private Long assigneeId;
     private String assigneeName;
     private String assigneeAvatarUrl;
@@ -43,10 +51,20 @@ public class TaskDTO {
     private Long createdById;
     private String createdByName;
     
+    private Long parentTaskId;
+    private String parentTaskTitle;
+    private java.util.List<TaskDTO> children;
+    
     private LocalDate dueDate;
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
     private String tags;
+    
+    // Dependency information
+    private java.util.List<TaskDependencyDTO> blockingTasks;     // Tasks this task blocks
+    private java.util.List<TaskDependencyDTO> blockedByTasks;    // Tasks blocking this task
+    private Integer blockedByCount;                               // Count of blocking tasks
+    private Boolean isBlocked;                                    // Quick check if task is blocked
 }

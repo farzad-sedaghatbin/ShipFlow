@@ -30,6 +30,15 @@ public class BugReportDTO {
     private Long teamId;
     private String teamName;
     private Long testRunId;
+    
+    // Scope relationship
+    private Long scopeId;
+    private String scopeName;
+    
+    // Task relationship
+    private Long taskId;
+    private String taskTitle;
+    
     private BugSeverity severity;
     private BugStatus status;
     private String tags;

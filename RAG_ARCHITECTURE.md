@@ -6,6 +6,7 @@ This document describes the improvements made to ShipFlow's RAG (Retrieval-Augme
 
 ## Architecture 
 
+- ✅ **Pluggable Vector Store** system with multiple provider support
 - ✅ Document re-ranking for optimal ordering
 - ✅ Context window management with token budgeting
 - ✅ Conversation memory for multi-turn dialogues
@@ -17,6 +18,127 @@ This document describes the improvements made to ShipFlow's RAG (Retrieval-Augme
 - ✅ LLM response caching for cost optimization (40-60% reduction)
 - ✅ Prompt compression for token efficiency
 - ✅ Content guardrails for production safety
+
+---
+
+## 0. Pluggable Vector Store Architecture
+
+ShipFlow uses a pluggable vector store system that supports multiple backends. This allows teams to choose the best vector database for their needs.
+
+### Supported Providers
+
+| Provider | Config Value | Best For | Production Ready |
+|----------|-------------|----------|------------------|
+| **Qdrant** | `qdrant` | Production (recommended) | ✅ Yes |
+| In-Memory | `in-memory` | Development/Testing | ❌ No (non-persistent) |
+| ChromaDB | `chroma` | Small deployments | ⚠️ Limited |
+| Milvus | `milvus` | Large-scale (future) | 🔜 Coming soon |
+| Pinecone | `pinecone` | Managed cloud (future) | 🔜 Coming soon |
+| Weaviate | `weaviate` | Alternative (future) | 🔜 Coming soon |
+
+### Why Qdrant for Production?
+
+Qdrant is the recommended vector store for production deployments:
+
+- **High Performance**: Written in Rust for maximum speed and efficiency
+- **Advanced Filtering**: Excellent support for metadata filtering during search
+- **Horizontal Scaling**: Built-in clustering and sharding
+- **Enterprise Features**: Snapshots, backups, API key authentication
+- **Dual API**: Both REST and gRPC interfaces
+
+### Configuration
+
+**Environment Variables:**
+```bash
+# Select provider (default: in-memory for dev, qdrant for prod)
+QA_VECTORSTORE_PROVIDER=qdrant
+
+# Qdrant settings
+QDRANT_HOST=localhost
+QDRANT_PORT=6334
+QDRANT_API_KEY=your-secure-api-key
+
+# Common settings
+QA_VECTORSTORE_COLLECTION=shipflow_knowledge
+QA_VECTORSTORE_DIMENSION=384
+```
+
+**Application Properties:**
+```properties
+# Vector store provider selection
+app.qa.vectorstore.provider=${QA_VECTORSTORE_PROVIDER:in-memory}
+
+# Qdrant configuration
+app.qa.vectorstore.qdrant.host=${QDRANT_HOST:localhost}
+app.qa.vectorstore.qdrant.port=${QDRANT_PORT:6334}
+app.qa.vectorstore.qdrant.api-key=${QDRANT_API_KEY:}
+
+# Common settings
+app.qa.vectorstore.collection=${QA_VECTORSTORE_COLLECTION:shipflow_knowledge}
+app.qa.vectorstore.dimension=${QA_VECTORSTORE_DIMENSION:384}
+```
+
+### Adding a New Vector Store Provider
+
+The system follows the same plugin pattern as the LLM providers:
+
+1. **Add provider type** to `VectorStoreProviderType` enum
+2. **Create provider class** implementing `VectorStoreProvider` interface
+3. **Add dependency** to `pom.xml`
+4. **Annotate with `@Component`** for Spring auto-discovery
+
+**Example Implementation:**
+```java
+@Component
+@Slf4j
+public class MyVectorStoreProvider implements VectorStoreProvider {
+
+    @Override
+    public VectorStoreProviderType getProviderType() {
+        return VectorStoreProviderType.MY_STORE;
+    }
+
+    @Override
+    public EmbeddingStore<TextSegment> createStore(VectorStoreProviderConfig config) {
+        validateConfig(config);
+        return MyEmbeddingStore.builder()
+                .host(config.getHost())
+                .collectionName(config.getCollectionName())
+                .build();
+    }
+
+    @Override
+    public void validateConfig(VectorStoreProviderConfig config) {
+        // Validate required configuration
+    }
+
+    @Override
+    public boolean requiresApiKey() {
+        return true;
+    }
+}
+```
+
+### Docker Compose (Qdrant)
+
+```yaml
+# Qdrant Vector Database
+qdrant:
+  image: qdrant/qdrant:latest
+  container_name: shipflow-qdrant
+  environment:
+    - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-your-secure-key}
+  ports:
+    - "6333:6333"  # REST API
+    - "6334:6334"  # gRPC API
+  volumes:
+    - qdrant_data:/qdrant/storage
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://localhost:6333/readyz"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+```
 
 ---
 

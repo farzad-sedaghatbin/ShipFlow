@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Lightbulb,
@@ -22,6 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Markdown } from '@/components/ui/markdown';
+import PitchRiskTrendSparkline from './PitchRiskTrendSparkline';
+import RiskFactorTooltip from './RiskFactorTooltip';
 
 interface CycleRiskOverviewProps {
   cycleId: number;
@@ -57,6 +61,7 @@ export default function CycleRiskOverview({
   compact = false,
   onError,
 }: CycleRiskOverviewProps) {
+  const { t } = useTranslation();
   const [riskData, setRiskData] = useState<CycleRiskOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -84,7 +89,7 @@ export default function CycleRiskOverview({
       }
     } catch (error: any) {
       console.error('Failed to load cycle risk overview:', error);
-      onError?.('Failed to load risk overview');
+      onError?.(t('errors.loadRiskOverviewFailed'));
       setLoading(false);
     }
   };
@@ -96,7 +101,7 @@ export default function CycleRiskOverview({
       setRiskData(response.data);
     } catch (error: any) {
       console.error('Failed to refresh cycle risk:', error);
-      onError?.('Failed to refresh risk overview');
+      onError?.(t('errors.refreshRiskOverviewFailed'));
     } finally {
       setRefreshing(false);
     }
@@ -338,35 +343,48 @@ export default function CycleRiskOverview({
             </h3>
             <div className="space-y-1">
               {riskData.pitchRisks.slice(0, 5).map((pitch) => (
-                <Link
+                <RiskFactorTooltip
                   key={pitch.pitchId}
-                  to={`/pitches/${pitch.pitchId}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  pitchId={pitch.pitchId}
+                  pitchTitle={pitch.pitchTitle}
+                  topRiskPreview={pitch.topRisk}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {pitch.pitchTitle}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {pitch.topRisk}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span
-                      className={cn(
-                        'text-sm font-bold',
-                        pitch.riskScore <= 3 ? 'text-emerald-500' :
-                        pitch.riskScore <= 5 ? 'text-amber-500' :
-                        pitch.riskScore <= 7 ? 'text-orange-500' : 'text-destructive'
-                      )}
-                    >
-                      {pitch.riskScore}
-                    </span>
-                    <Badge variant="outline" className={cn('text-xs', riskLevelColors[pitch.riskLevel])}>
-                      {getRiskLevelLabel(pitch.riskLevel)}
-                    </Badge>
-                  </div>
-                </Link>
+                  <Link
+                    to={`/pitches/${pitch.pitchId}`}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {pitch.pitchTitle}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {pitch.topRisk}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {/* Risk trend sparkline */}
+                      <PitchRiskTrendSparkline
+                        pitchId={pitch.pitchId}
+                        currentScore={pitch.riskScore}
+                        days={30}
+                        compact
+                      />
+                      <span
+                        className={cn(
+                          'text-sm font-bold',
+                          pitch.riskScore <= 3 ? 'text-emerald-500' :
+                          pitch.riskScore <= 5 ? 'text-amber-500' :
+                          pitch.riskScore <= 7 ? 'text-orange-500' : 'text-destructive'
+                        )}
+                      >
+                        {pitch.riskScore}
+                      </span>
+                      <Badge variant="outline" className={cn('text-xs', riskLevelColors[pitch.riskLevel])}>
+                        {getRiskLevelLabel(pitch.riskLevel)}
+                      </Badge>
+                    </div>
+                  </Link>
+                </RiskFactorTooltip>
               ))}
             </div>
           </div>
@@ -405,13 +423,13 @@ export default function CycleRiskOverview({
             {aiLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </div>
           {riskData.cycleInsights.length > 0 ? (
-            <ul className="space-y-1">
+            <div className="space-y-2">
               {riskData.cycleInsights.map((insight, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
-                  • {insight}
-                </li>
+                <div key={index} className="text-sm text-muted-foreground">
+                  <Markdown content={insight} />
+                </div>
               ))}
-            </ul>
+            </div>
           ) : aiLoading ? (
             <div className="space-y-1">
               <Skeleton className="w-[90%] h-4" />
@@ -431,13 +449,13 @@ export default function CycleRiskOverview({
             {aiLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </div>
           {riskData.cycleRecommendations.length > 0 ? (
-            <ol className="space-y-1">
+            <div className="space-y-2">
               {riskData.cycleRecommendations.map((rec, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
-                  {index + 1}. {rec}
-                </li>
+                <div key={index} className="text-sm text-muted-foreground">
+                  <Markdown content={rec} />
+                </div>
               ))}
-            </ol>
+            </div>
           ) : aiLoading ? (
             <div className="space-y-1">
               <Skeleton className="w-[95%] h-4" />

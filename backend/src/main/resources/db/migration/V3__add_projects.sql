@@ -1,6 +1,6 @@
 -- Projects table
 CREATE TABLE projects (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     project_key VARCHAR(10) NOT NULL UNIQUE,
     description TEXT,

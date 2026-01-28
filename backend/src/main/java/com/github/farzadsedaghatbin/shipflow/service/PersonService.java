@@ -25,10 +25,11 @@ public class PersonService {
     private final PersonRepository personRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
     private final TeamRepository teamRepository;
+    private final MessageService messageService;
     
     public PersonDTO createPerson(CreatePersonRequest request) {
         if (personRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Person with email " + request.getEmail() + " already exists");
+            throw new IllegalArgumentException(messageService.getMessage("error.person.email.exists", request.getEmail()));
         }
         
         Person person = Person.builder()
@@ -99,7 +100,7 @@ public class PersonService {
         
         // Check if email is being changed and if new email already exists
         if (!person.getEmail().equals(request.getEmail()) && personRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Person with email " + request.getEmail() + " already exists");
+            throw new IllegalArgumentException(messageService.getMessage("error.person.email.exists", request.getEmail()));
         }
         
         person.setName(request.getName());
@@ -156,7 +157,7 @@ public class PersonService {
         
         // Check if already assigned to this team
         if (teamAssignmentRepository.existsActiveAssignment(request.getPersonId(), request.getTeamId())) {
-            throw new IllegalArgumentException("Person is already assigned to this team");
+            throw new IllegalArgumentException(messageService.getMessage("error.person.already.assigned"));
         }
         
         TeamAssignment assignment = TeamAssignment.builder()

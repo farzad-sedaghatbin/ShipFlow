@@ -8,5 +8,6 @@ public enum PitchStatus {
     TESTING,
     DONE,
     COOLDOWN,
-    CANCELLED
+    CANCELLED,
+    CIRCUIT_BREAKER  // Flagged for exceeding time budget - Shape Up safety valve
 }

@@ -17,6 +17,7 @@ public class RetroItemDTO {
     private Long retrospectiveId;
     private Long authorId;
     private String authorName;
+    private Boolean isAnonymous;
     private Integer voteCount;
     private Boolean hasVoted; // Whether current user has voted
     private Long mergedIntoId;

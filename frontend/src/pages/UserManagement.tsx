@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   UserPlus,
   Pencil,
@@ -11,9 +13,9 @@ import {
   KeyRound,
   Loader2,
   ShieldAlert,
-  Database,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
+import { usePermission } from '../hooks/usePermission';
 import api from '../services/api';
 import { User as UserType, UserRole, CreateUserRequest, Person } from '../types';
 import { cn } from '../lib/utils';
@@ -54,11 +56,13 @@ import {
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
-const USER_ROLES: UserRole[] = ['ADMIN', 'PROJECT_MANAGER', 'PRODUCT', 'DEVELOPER', 'QA'];
+const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
 
 export default function UserManagement() {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
+  const { hasPermissionSync } = usePermission();
   const [users, setUsers] = useState<UserType[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,34 +74,46 @@ export default function UserManagement() {
     username: '',
     password: '',
     email: '',
-    role: 'DEVELOPER',
+    role: 'MEMBER',
   });
   const [saving, setSaving] = useState(false);
 
   // Role change dialog
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>('DEVELOPER');
-  const [seeding, setSeeding] = useState(false);
+  const [newRole, setNewRole] = useState<UserRole>('MEMBER');
 
-  // Check if current user is admin
-  const isAdmin = currentUser?.role === 'ADMIN';
+  // Check if current user has user management permission
+  const canManageUsers = hasPermissionSync('USER', 'MANAGE');
+
+  // Only admins can manage users
+  if (!canManageUsers) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {t('common.accessDenied')}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (isAdmin) {
+    if (canManageUsers) {
       fetchUsers();
       fetchPeople();
     }
     return () => abortController.abort();
-  }, [isAdmin]);
+  }, [canManageUsers]);
 
   const fetchUsers = async () => {
     try {
       const response = await api.get<UserType[]>('/users');
       setUsers(response.data);
     } catch (error) {
-      showToast('Failed to load users', 'error');
+      showToast(t('userManagement.loadFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -117,30 +133,30 @@ export default function UserManagement() {
       username: '',
       password: '',
       email: '',
-      role: 'DEVELOPER',
+      role: 'MEMBER',
     });
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setFormData({ username: '', password: '', email: '', role: 'DEVELOPER' });
+    setFormData({ username: '', password: '', email: '', role: 'MEMBER' });
   };
 
   const handleSave = async () => {
     if (!formData.username.trim()) {
-      showToast('Username is required', 'error');
+      showToast(t('userManagement.usernameRequired'), 'error');
       return;
     }
     if (!formData.password.trim() || formData.password.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+      showToast(t('userManagement.passwordMinLength'), 'error');
       return;
     }
 
     setSaving(true);
     try {
       await api.post('/auth/register', formData);
-      showToast('User created successfully', 'success');
+      showToast(t('userManagement.userCreated'), 'success');
       fetchUsers();
       handleCloseDialog();
     } catch (error) {
@@ -152,13 +168,13 @@ export default function UserManagement() {
 
   const handleToggleActive = async (user: UserType) => {
     const action = user.isActive ? 'deactivate' : 'activate';
-    if (!confirm(`Are you sure you want to ${action} ${user.username}?`)) {
+    if (!confirm(t(`userManagement.confirm${action.charAt(0).toUpperCase() + action.slice(1)}`, { username: user.username }))) {
       return;
     }
 
     try {
       await api.put(`/users/${user.id}/${action}`);
-      showToast(`User ${action}d successfully`, 'success');
+      showToast(t('userManagement.userActivated', { action }), 'success');
       fetchUsers();
     } catch (error) {
       // Error handled by interceptor
@@ -176,7 +192,7 @@ export default function UserManagement() {
 
     try {
       await api.put(`/users/${selectedUser.id}/role?role=${newRole}`);
-      showToast('Role updated successfully', 'success');
+      showToast(t('userManagement.roleUpdated'), 'success');
       fetchUsers();
       setRoleDialogOpen(false);
     } catch (error) {
@@ -185,10 +201,10 @@ export default function UserManagement() {
   };
 
   const handleResetPassword = async (user: UserType) => {
-    const newPassword = prompt(`Enter new password for ${user.username} (min 6 characters):`);
+    const newPassword = prompt(t('userManagement.newPasswordFor', { username: user.username }));
     if (!newPassword) return;
     if (newPassword.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+      showToast(t('userManagement.passwordMinLength'), 'error');
       return;
     }
 
@@ -197,35 +213,18 @@ export default function UserManagement() {
         currentPassword: 'admin-override', // Admin can reset without knowing current
         newPassword,
       });
-      showToast('Password reset successfully', 'success');
+      showToast(t('userManagement.passwordReset'), 'success');
     } catch (error) {
       // Error handled by interceptor
-    }
-  };
-
-  const handleSeedHillChartData = async () => {
-    if (!confirm("This will add sample hill chart data to all pitches that don't have any. Continue?")) {
-      return;
-    }
-
-    setSeeding(true);
-    try {
-      const response = await api.post('/admin/seed-hill-chart-data');
-      showToast(response.data || 'Sample data added successfully', 'success');
-    } catch (error: any) {
-      showToast(error.response?.data || 'Failed to seed data', 'error');
-    } finally {
-      setSeeding(false);
     }
   };
 
   const getRoleClassName = (role: UserRole): string => {
     const classNames: Record<UserRole, string> = {
       ADMIN: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-      PROJECT_MANAGER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-      PRODUCT: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-      DEVELOPER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      QA: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      MANAGER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      MEMBER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      READONLY: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
     };
     return classNames[role];
   };
@@ -237,13 +236,13 @@ export default function UserManagement() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isAdmin) {
+  if (!canManageUsers) {
     return (
       <div className="p-4">
         <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription>
-            You do not have permission to access this page. Admin role required.
+            {t('userManagement.permissionDenied')}
           </AlertDescription>
         </Alert>
       </div>
@@ -262,31 +261,11 @@ export default function UserManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            onClick={handleSeedHillChartData}
-            disabled={seeding}
-            size="sm"
-          >
-            {seeding ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Seeding...
-              </>
-            ) : (
-              <>
-                <Database className="mr-2 h-4 w-4" />
-                Seed Hill Chart Data
-              </>
-            )}
-          </Button>
-          <Button onClick={handleOpenDialog} size="sm">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">{t('userManagement.title')}</h1>
+        <Button onClick={handleOpenDialog} size="sm">
+          <UserPlus className="mr-2 h-4 w-4" />
+          {t('userManagement.addUser')}
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -294,7 +273,7 @@ export default function UserManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Users
+              {t('userManagement.totalUsers')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -304,7 +283,7 @@ export default function UserManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active
+              {t('userManagement.active')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -316,7 +295,7 @@ export default function UserManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Admins
+              {t('userManagement.admins')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -328,12 +307,12 @@ export default function UserManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Developers
+              {t('userManagement.members')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {users.filter((u) => u.role === 'DEVELOPER').length}
+              {users.filter((u) => u.role === 'MEMBER').length}
             </div>
           </CardContent>
         </Card>
@@ -343,16 +322,16 @@ export default function UserManagement() {
       <Card>
         <CardContent className="p-4">
           <div className="relative">
-            <Label htmlFor="users-search" className="sr-only">Search users</Label>
+            <Label htmlFor="users-search" className="sr-only">{t('userManagement.searchUsers')}</Label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="users-search"
               type="search"
-              placeholder="Search by username, name, or role..."
+              placeholder={t('userManagement.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
-              aria-label="Search users"
+              aria-label={t('userManagement.searchUsers')}
             />
           </div>
         </CardContent>
@@ -364,12 +343,12 @@ export default function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Linked Person</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('userManagement.user')}</TableHead>
+                <TableHead>{t('userManagement.role')}</TableHead>
+                <TableHead>{t('userManagement.linkedPerson')}</TableHead>
+                <TableHead>{t('userManagement.status')}</TableHead>
+                <TableHead>{t('userManagement.created')}</TableHead>
+                <TableHead className="text-right">{t('userManagement.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -403,7 +382,7 @@ export default function UserManagement() {
                   </TableCell>
                   <TableCell>
                     {user.personName || (
-                      <span className="text-muted-foreground text-sm">Not linked</span>
+                      <span className="text-muted-foreground text-sm">{t('userManagement.notLinked')}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -415,11 +394,11 @@ export default function UserManagement() {
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                       )}
                     >
-                      {user.isActive ? 'Active' : 'Inactive'}
+                      {user.isActive ? t('userManagement.active') : t('userManagement.inactive')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {formatLocalizedDate(new Date(user.createdAt), i18n.language)}
                   </TableCell>
                   <TableCell className="text-right">
                     <TooltipProvider>
@@ -435,7 +414,7 @@ export default function UserManagement() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Change Role</TooltipContent>
+                          <TooltipContent>{t('userManagement.changeRole')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -448,7 +427,7 @@ export default function UserManagement() {
                               <KeyRound className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Reset Password</TooltipContent>
+                          <TooltipContent>{t('userManagement.resetPassword')}</TooltipContent>
                         </Tooltip>
                         {user.id !== currentUser?.userId && (
                           <Tooltip>
@@ -472,7 +451,7 @@ export default function UserManagement() {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {user.isActive ? 'Deactivate' : 'Activate'}
+                              {user.isActive ? t('userManagement.deactivate') : t('userManagement.activate')}
                             </TooltipContent>
                           </Tooltip>
                         )}
@@ -485,7 +464,7 @@ export default function UserManagement() {
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     <p className="text-muted-foreground">
-                      {searchTerm ? 'No users found matching your search' : 'No users found'}
+                      {searchTerm ? t('userManagement.noUsersFoundSearch') : t('userManagement.noUsersFound')}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -499,19 +478,19 @@ export default function UserManagement() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
+            <DialogTitle>{t('userManagement.addNewUser')}</DialogTitle>
             <DialogDescription>
-              Create a new user account with the specified role and permissions.
+              {t('userManagement.createNewUser')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
+              <Label htmlFor="username">{t('userManagement.username')} *</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="username"
-                  placeholder="Enter username"
+                  placeholder={t('userManagement.enterUsername')}
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="pl-10"
@@ -519,28 +498,28 @@ export default function UserManagement() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
+              <Label htmlFor="password">{t('userManagement.password')} *</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter password"
+                  placeholder={t('userManagement.enterPassword')}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+              <p className="text-xs text-muted-foreground">{t('userManagement.minCharacters')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('userManagement.email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter email"
+                  placeholder={t('userManagement.enterEmail')}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10"
@@ -548,13 +527,13 @@ export default function UserManagement() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('userManagement.role')}</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('userManagement.selectRole')} />
                 </SelectTrigger>
                 <SelectContent>
                   {USER_ROLES.map((role) => (
@@ -566,7 +545,7 @@ export default function UserManagement() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="person">Link to Person (Optional)</Label>
+              <Label htmlFor="person">{t('userManagement.linkToPerson')}</Label>
               <Select
                 value={formData.personId?.toString() || 'none'}
                 onValueChange={(value) =>
@@ -574,10 +553,10 @@ export default function UserManagement() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a person" />
+                  <SelectValue placeholder={t('userManagement.selectPerson')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('userManagement.none')}</SelectItem>
                   {people.map((person) => (
                     <SelectItem key={person.id} value={person.id.toString()}>
                       {person.name} ({person.email})
@@ -589,16 +568,16 @@ export default function UserManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
+              {t('userManagement.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {t('userManagement.creating')}
                 </>
               ) : (
-                'Create User'
+                t('userManagement.createUser')
               )}
             </Button>
           </DialogFooter>
@@ -609,17 +588,17 @@ export default function UserManagement() {
       <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Change Role</DialogTitle>
+            <DialogTitle>{t('userManagement.changeRole')}</DialogTitle>
             <DialogDescription>
-              Change role for <strong>{selectedUser?.username}</strong>
+              {t('userManagement.changeRoleFor')} <strong>{selectedUser?.username}</strong>
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">
-              <Label htmlFor="newRole">New Role</Label>
+              <Label htmlFor="newRole">{t('userManagement.newRole')}</Label>
               <Select value={newRole} onValueChange={(value) => setNewRole(value as UserRole)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('userManagement.selectRole')} />
                 </SelectTrigger>
                 <SelectContent>
                   {USER_ROLES.map((role) => (
@@ -633,9 +612,9 @@ export default function UserManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
-              Cancel
+              {t('userManagement.cancel')}
             </Button>
-            <Button onClick={handleChangeRole}>Update Role</Button>
+            <Button onClick={handleChangeRole}>{t('userManagement.updateRole')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

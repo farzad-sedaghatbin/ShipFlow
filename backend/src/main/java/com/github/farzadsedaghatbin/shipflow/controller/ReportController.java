@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.report.CycleReportDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.MemberWorkReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.PitchReportDTO;
 import com.github.farzadsedaghatbin.shipflow.service.ReportService;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,24 +26,35 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/cycle/{cycleId}")
+    @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
     @Operation(summary = "Get full cycle report")
     public ResponseEntity<CycleReportDTO> getCycleReport(@PathVariable Long cycleId) {
         return ResponseEntity.ok(reportService.getCycleReport(cycleId));
     }
 
+    @GetMapping("/cycle/{cycleId}/enhanced")
+    @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
+    @Operation(summary = "Get enhanced cycle report with comprehensive metrics including risk distribution")
+    public ResponseEntity<EnhancedCycleReportDTO> getEnhancedCycleReport(@PathVariable Long cycleId) {
+        return ResponseEntity.ok(reportService.getEnhancedCycleReport(cycleId));
+    }
+
     @GetMapping("/cycle/{cycleId}/pitches")
+    @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
     @Operation(summary = "Get pitch reports for a cycle")
     public ResponseEntity<List<PitchReportDTO>> getPitchReports(@PathVariable Long cycleId) {
         return ResponseEntity.ok(reportService.getPitchReports(cycleId));
     }
 
     @GetMapping("/cycle/{cycleId}/members")
+    @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
     @Operation(summary = "Get member work reports for a cycle")
     public ResponseEntity<List<MemberWorkReportDTO>> getMemberReports(@PathVariable Long cycleId) {
         return ResponseEntity.ok(reportService.getMemberReports(cycleId));
     }
 
     @GetMapping("/cycle/{cycleId}/export")
+    @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
     @Operation(summary = "Export cycle report as CSV")
     public ResponseEntity<String> exportCycleReportCsv(@PathVariable Long cycleId) {
         String csv = reportService.exportCycleReportCsv(cycleId);

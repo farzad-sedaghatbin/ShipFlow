@@ -37,6 +37,7 @@ public class HillChartService {
     private final PitchRepository pitchRepository;
     private final UserRepository userRepository;
     private final WorkLogRepository workLogRepository;
+    private final MessageService messageService;
 
     public List<HillChartPointDTO> getAllHillChartPoints() {
         return hillChartPointRepository.findAll().stream()
@@ -46,6 +47,19 @@ public class HillChartService {
 
     public List<HillChartPointDTO> getHillChartPointsByPitch(Long pitchId) {
         return hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(pitchId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Search hill chart points (scopes) by name or description.
+     * Minimum 3 characters required to prevent performance issues with large datasets.
+     */
+    public List<HillChartPointDTO> searchHillChartPoints(String query) {
+        if (query == null || query.trim().length() < 3) {
+            return List.of();
+        }
+        return hillChartPointRepository.searchHillChartPoints(query.trim()).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -91,7 +105,7 @@ public class HillChartService {
 
     public void deleteHillChartPoint(Long id) {
         if (!hillChartPointRepository.existsById(id)) {
-            throw new RuntimeException("Hill chart point not found with id: " + id);
+            throw new RuntimeException(messageService.getMessage("error.hill.chart.point.not.found", id));
         }
         hillChartPointRepository.deleteById(id);
     }

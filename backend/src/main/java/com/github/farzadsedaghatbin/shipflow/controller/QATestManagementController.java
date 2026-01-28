@@ -46,6 +46,7 @@ public class QATestManagementController {
     private final QADashboardService qaDashboardService;
     private final QATestGenerationService qaTestGenerationService;
     private final UserRepository userRepository;
+    private final MessageService messageService;
 
     @Value("${app.qa.test-management.enabled:true}")
     private boolean testManagementEnabled;
@@ -144,7 +145,7 @@ public class QATestManagementController {
     public ResponseEntity<Map<String, String>> deleteTestCase(@PathVariable Long id) {
         checkFeatureEnabled();
         testCaseService.deleteTestCase(id);
-        return ResponseEntity.ok(Map.of("message", "Test case deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.test.case.deleted")));
     }
 
     // ========== Bug Reports ==========
@@ -278,7 +279,7 @@ public class QATestManagementController {
     public ResponseEntity<Map<String, String>> deleteBugReport(@PathVariable Long id) {
         checkFeatureEnabled();
         bugReportService.deleteBugReport(id);
-        return ResponseEntity.ok(Map.of("message", "Bug report deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.bug.deleted")));
     }
 
     // ========== Test Runs ==========
@@ -354,7 +355,7 @@ public class QATestManagementController {
     public ResponseEntity<Map<String, String>> deleteTestRun(@PathVariable Long id) {
         checkFeatureEnabled();
         testRunService.deleteTestRun(id);
-        return ResponseEntity.ok(Map.of("message", "Test run deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", messageService.getMessage("qa.test.run.deleted")));
     }
 
     // ========== Coverage & Dashboard ==========

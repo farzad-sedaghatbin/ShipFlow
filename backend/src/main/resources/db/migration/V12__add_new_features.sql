@@ -5,7 +5,7 @@
 
 -- Risk Feedback Table
 CREATE TABLE risk_feedback (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pitch_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     original_risk_score INT NOT NULL,
@@ -25,7 +25,7 @@ CREATE INDEX idx_risk_feedback_created ON risk_feedback(created_at);
 
 -- Hill Chart History Table
 CREATE TABLE hill_chart_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     hill_chart_point_id BIGINT NOT NULL,
     pitch_id BIGINT NOT NULL,
     user_id BIGINT,
@@ -48,7 +48,7 @@ CREATE INDEX idx_hill_history_created ON hill_chart_history(created_at);
 
 -- User Preferences Table
 CREATE TABLE user_preferences (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
     theme_mode VARCHAR(20) NOT NULL DEFAULT 'SYSTEM',
     primary_color VARCHAR(20),
@@ -56,7 +56,7 @@ CREATE TABLE user_preferences (
     compact_view BOOLEAN DEFAULT FALSE,
     enable_animations BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

@@ -47,6 +47,13 @@ export const hillChartApi = {
     return response.data;
   },
 
+  searchHillChartPoints: async (query: string): Promise<HillChartPoint[]> => {
+    const response = await api.get<HillChartPoint[]>('/hill-chart/search', {
+      params: { q: query },
+    });
+    return response.data;
+  },
+
   getHillChartPointById: async (id: number): Promise<HillChartPoint> => {
     const response = await api.get<HillChartPoint>(`/hill-chart/${id}`);
     return response.data;

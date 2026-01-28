@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
   Bug,
   Plus,
@@ -53,6 +55,7 @@ import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
+import { useProject } from '../contexts';
 import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
 
@@ -76,6 +79,8 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 };
 
 const BugReportsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
+  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -99,9 +104,22 @@ const BugReportsPage: React.FC = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
 
+  // Filter cycles by current project
+  const filteredCycles = useMemo(() => {
+    if (isAllProjectsSelected) return cycles;
+    return cycles.filter(c => c.projectId === currentProject?.id);
+  }, [cycles, currentProject, isAllProjectsSelected]);
+
+  // Filter pitches by current project's cycles
+  const filteredPitches = useMemo(() => {
+    if (isAllProjectsSelected) return pitches;
+    const projectCycleIds = new Set(filteredCycles.map(c => c.id));
+    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+  }, [pitches, filteredCycles, isAllProjectsSelected]);
+
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -110,8 +128,8 @@ const BugReportsPage: React.FC = () => {
   const loadCyclesAndPitches = async () => {
     try {
       const [cyclesRes, pitchesRes] = await Promise.all([
-        cycleService.getAll(),
-        pitchService.getAll(),
+        cycleService.getMyCycles(),
+        pitchService.getMyPitches(),
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);
@@ -141,10 +159,19 @@ const BugReportsPage: React.FC = () => {
       } else {
         response = await qaTestManagementService.getAllBugReports(page, rowsPerPage, sortBy, sortOrder);
       }
-      setBugReports(response.data.content);
+      
+      let bugs = response.data.content;
+      // Filter by current project if one is selected
+      if (!isAllProjectsSelected && currentProject) {
+        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
+        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
+        bugs = bugs.filter(bug => bug.pitchId && projectPitchIds.has(bug.pitchId));
+      }
+      
+      setBugReports(bugs);
       setTotalElements(response.data.totalElements);
     } catch (err) {
-      setError('Failed to load bug reports');
+      setError(t('bugReports.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -152,12 +179,12 @@ const BugReportsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this bug report?')) return;
+    if (!window.confirm(t('bugReports.confirmDelete'))) return;
     try {
       await qaTestManagementService.deleteBugReport(id);
       setBugReports(bugReports.filter((b) => b.id !== id));
     } catch (err) {
-      setError('Failed to delete bug report');
+      setError(t('bugReports.deleteFailed'));
     }
   };
 
@@ -173,7 +200,7 @@ const BugReportsPage: React.FC = () => {
       setModalOpen(false);
       setSelectedBug(null);
     } catch (err) {
-      setError('Failed to save bug report');
+      setError(t('bugReports.saveFailed'));
     }
   };
 
@@ -246,10 +273,10 @@ const BugReportsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Bug Reports</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
         <Button onClick={openCreateModal} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Report Bug
+          {t('bugReports.reportBug')}
         </Button>
       </div>
 
@@ -270,31 +297,31 @@ const BugReportsPage: React.FC = () => {
         <Card>
           <CardContent className="text-center py-4">
             <p className="text-2xl font-bold">{stats.total}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-xs text-muted-foreground">{t('bugReports.stats.total')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="text-center py-4">
             <p className="text-2xl font-bold text-destructive">{stats.open}</p>
-            <p className="text-xs text-muted-foreground">Open</p>
+            <p className="text-xs text-muted-foreground">{t('bugReports.stats.open')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="text-center py-4">
             <p className="text-2xl font-bold text-primary">{stats.inProgress}</p>
-            <p className="text-xs text-muted-foreground">In Progress</p>
+            <p className="text-xs text-muted-foreground">{t('bugReports.stats.inProgress')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="text-center py-4">
             <p className="text-2xl font-bold text-success">{stats.resolved}</p>
-            <p className="text-xs text-muted-foreground">Resolved</p>
+            <p className="text-xs text-muted-foreground">{t('bugReports.stats.resolved')}</p>
           </CardContent>
         </Card>
         <Card className="col-span-2 sm:col-span-1">
           <CardContent className="text-center py-4">
             <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
-            <p className="text-xs text-muted-foreground">Critical/Blocker</p>
+            <p className="text-xs text-muted-foreground">{t('bugReports.stats.criticalBlocker')}</p>
           </CardContent>
         </Card>
       </div>
@@ -304,28 +331,28 @@ const BugReportsPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           {/* Search */}
           <div className="relative lg:col-span-2">
-            <Label htmlFor="bugs-search" className="sr-only">Search bugs</Label>
+            <Label htmlFor="bugs-search" className="sr-only">{t('bugReports.filters.searchLabel')}</Label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="bugs-search"
               type="search"
-              placeholder="Search bugs..."
+              placeholder={t('bugReports.filters.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
-              aria-label="Search bugs"
+              aria-label={t('bugReports.filters.searchAriaLabel')}
             />
           </div>
 
           {/* Status Filter */}
           <div className="relative">
-            <Label className="text-xs mb-1 block">Status</Label>
+            <Label className="text-xs mb-1 block">{t('bugReports.filters.status')}</Label>
             <Button
               variant="outline"
               className="w-full justify-between"
               onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
             >
-              {statusFilter.length > 0 ? `${statusFilter.length} selected` : 'All Status'}
+              {statusFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: statusFilter.length }) : t('bugReports.filters.allStatus')}
             </Button>
             {statusDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
@@ -345,13 +372,13 @@ const BugReportsPage: React.FC = () => {
 
           {/* Severity Filter */}
           <div className="relative">
-            <Label className="text-xs mb-1 block">Severity</Label>
+            <Label className="text-xs mb-1 block">{t('bugReports.filters.severity')}</Label>
             <Button
               variant="outline"
               className="w-full justify-between"
               onClick={() => setSeverityDropdownOpen(!severityDropdownOpen)}
             >
-              {severityFilter.length > 0 ? `${severityFilter.length} selected` : 'All Severity'}
+              {severityFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: severityFilter.length }) : t('bugReports.filters.allSeverity')}
             </Button>
             {severityDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
@@ -377,7 +404,7 @@ const BugReportsPage: React.FC = () => {
                 checked={excludeMode}
                 onCheckedChange={setExcludeMode}
               />
-              <Label htmlFor="exclude-mode" className="text-sm">Exclude</Label>
+              <Label htmlFor="exclude-mode" className="text-sm">{t('bugReports.filters.exclude')}</Label>
             </div>
             <Button
               variant="outline"
@@ -391,23 +418,23 @@ const BugReportsPage: React.FC = () => {
                 setExcludeMode(false);
               }}
             >
-              Clear
+              {t('bugReports.filters.clear')}
             </Button>
           </div>
 
           {/* Sort */}
           <div className="flex gap-2">
             <div className="flex-1">
-              <Label className="text-xs mb-1 block">Sort By</Label>
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="createdAt">Created Date</SelectItem>
-                  <SelectItem value="severity">Severity</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="createdAt">{t('bugReports.sort.createdDate')}</SelectItem>
+                  <SelectItem value="severity">{t('bugReports.sort.severity')}</SelectItem>
+                  <SelectItem value="status">{t('bugReports.sort.status')}</SelectItem>
+                  <SelectItem value="title">{t('bugReports.sort.title')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -423,48 +450,50 @@ const BugReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Cycle and Pitch Filters Row */}
-        <div className="flex flex-wrap gap-4">
-          <div className="min-w-[180px]">
-            <Label className="text-xs mb-1 block">Cycle</Label>
-            <Select
-              value={cycleFilter?.toString() ?? 'all'}
-              onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Cycles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cycles</SelectItem>
-                {cycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                    {cycle.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Cycle and Pitch Filters Row - Hidden for Kanban projects (Shape Up concepts) */}
+        {!isKanbanProject && (
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-[180px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
+              <Select
+                value={cycleFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('bugReports.filters.allCycles')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('bugReports.filters.allCycles')}</SelectItem>
+                  {filteredCycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                      {cycle.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="min-w-[180px]">
-            <Label className="text-xs mb-1 block">Pitch</Label>
-            <Select
-              value={pitchFilter?.toString() ?? 'all'}
-              onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Pitches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Pitches</SelectItem>
-                {pitches.map((pitch) => (
-                  <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                    {pitch.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="min-w-[180px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
+              <Select
+                value={pitchFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('bugReports.filters.allPitches')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('bugReports.filters.allPitches')}</SelectItem>
+                  {filteredPitches.map((pitch) => (
+                    <SelectItem key={pitch.id} value={pitch.id.toString()}>
+                      {pitch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Bug Reports Table */}
@@ -473,13 +502,13 @@ const BugReportsPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Key</TableHead>
+                <TableHead>{t('bugReports.table.key')}</TableHead>
                 <TableHead
                   className="cursor-pointer select-none"
                   onClick={() => handleSort('title')}
                 >
                   <div className="flex items-center gap-1">
-                    Title
+                    {t('bugReports.table.title')}
                     {sortBy === 'title' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
@@ -490,7 +519,7 @@ const BugReportsPage: React.FC = () => {
                   onClick={() => handleSort('severity')}
                 >
                   <div className="flex items-center gap-1">
-                    Severity
+                    {t('bugReports.table.severity')}
                     {sortBy === 'severity' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
@@ -501,27 +530,27 @@ const BugReportsPage: React.FC = () => {
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center gap-1">
-                    Status
+                    {t('bugReports.table.status')}
                     {sortBy === 'status' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
                   </div>
                 </TableHead>
-                <TableHead>Pitch</TableHead>
-                <TableHead>Assignee</TableHead>
-                <TableHead>Reporter</TableHead>
+                <TableHead>{t('bugReports.table.pitch')}</TableHead>
+                <TableHead>{t('bugReports.table.assignee')}</TableHead>
+                <TableHead>{t('bugReports.table.reporter')}</TableHead>
                 <TableHead
                   className="cursor-pointer select-none"
                   onClick={() => handleSort('createdAt')}
                 >
                   <div className="flex items-center gap-1">
-                    Created
+                    {t('bugReports.table.created')}
                     {sortBy === 'createdAt' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">{t('bugReports.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -577,7 +606,7 @@ const BugReportsPage: React.FC = () => {
                         <span className="text-sm">{bug.assigneeName}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
+                      <span className="text-muted-foreground">{t('bugReports.unassigned')}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -585,7 +614,7 @@ const BugReportsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">
-                      {new Date(bug.createdAt).toLocaleDateString()}
+                      {formatLocalizedDate(new Date(bug.createdAt), i18n.language)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -602,7 +631,7 @@ const BugReportsPage: React.FC = () => {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>View Details</TooltipContent>
+                          <TooltipContent>{t('bugReports.actions.viewDetails')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -617,7 +646,7 @@ const BugReportsPage: React.FC = () => {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Edit</TooltipContent>
+                          <TooltipContent>{t('bugReports.actions.edit')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -632,7 +661,7 @@ const BugReportsPage: React.FC = () => {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
+                          <TooltipContent>{t('bugReports.actions.delete')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
@@ -644,8 +673,8 @@ const BugReportsPage: React.FC = () => {
                   <TableCell colSpan={9} className="text-center py-8">
                     <span className="text-muted-foreground">
                       {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
-                        ? 'No bugs match the filters'
-                        : 'No bugs reported yet. Report one if you find an issue!'}
+                        ? t('bugReports.emptyState.noMatches')
+                        : t('bugReports.emptyState.noBugs')}
                     </span>
                   </TableCell>
                 </TableRow>
@@ -657,7 +686,7 @@ const BugReportsPage: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <span className="text-sm text-muted-foreground">{t('bugReports.pagination.rowsPerPage')}</span>
             <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
               <SelectTrigger className="w-[70px] h-8">
                 <SelectValue />
@@ -672,7 +701,11 @@ const BugReportsPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
-              {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, totalElements)} of {totalElements}
+              {t('bugReports.pagination.rangeText', { 
+                start: page * rowsPerPage + 1, 
+                end: Math.min((page + 1) * rowsPerPage, totalElements), 
+                total: totalElements 
+              })}
             </span>
             <div className="flex gap-1">
               <Button
@@ -735,20 +768,20 @@ const BugReportsPage: React.FC = () => {
 
               {/* Description */}
               <div>
-                <h4 className="text-sm font-semibold mb-2">Description</h4>
+                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.description')}</h4>
                 <div className="border rounded-md p-3 bg-muted/30">
                   <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.description || 'No description provided'}
+                    {selectedBug.description || t('bugReports.detail.noDescription')}
                   </p>
                 </div>
               </div>
 
               {/* Steps to Reproduce */}
               <div>
-                <h4 className="text-sm font-semibold mb-2">Steps to Reproduce</h4>
+                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.stepsToReproduce')}</h4>
                 <div className="border rounded-md p-3 bg-muted/30">
                   <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.stepsToReproduce || 'Not provided'}
+                    {selectedBug.stepsToReproduce || t('bugReports.detail.notProvided')}
                   </p>
                 </div>
               </div>
@@ -756,28 +789,28 @@ const BugReportsPage: React.FC = () => {
               {/* Expected / Actual Behavior */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Expected Behavior</h4>
+                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.expectedBehavior')}</h4>
                   <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.expectedBehavior || 'Not provided'}</p>
+                    <p className="text-sm">{selectedBug.expectedBehavior || t('bugReports.detail.notProvided')}</p>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Actual Behavior</h4>
+                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.actualBehavior')}</h4>
                   <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.actualBehavior || 'Not provided'}</p>
+                    <p className="text-sm">{selectedBug.actualBehavior || t('bugReports.detail.notProvided')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Environment */}
               <div className="text-sm text-muted-foreground">
-                <strong>Environment:</strong> {selectedBug.environment || '-'}
+                <strong>{t('bugReports.detail.environment')}</strong> {selectedBug.environment || '-'}
               </div>
 
               {/* Tags */}
               {selectedBug.tags && (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Tags</h4>
+                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.tags')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedBug.tags.split(',').map((tag: string) => (
                       <Badge key={tag} variant="secondary">{tag.trim()}</Badge>
@@ -789,20 +822,20 @@ const BugReportsPage: React.FC = () => {
               {/* Metadata */}
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
                 <div>
-                  <strong>Reporter:</strong> {selectedBug.reporterName || '-'}
+                  <strong>{t('bugReports.detail.reporter')}</strong> {selectedBug.reporterName || '-'}
                 </div>
                 <div>
-                  <strong>Assignee:</strong> {selectedBug.assigneeName || 'Unassigned'}
+                  <strong>{t('bugReports.detail.assignee')}</strong> {selectedBug.assigneeName || t('bugReports.unassigned')}
                 </div>
                 <div>
-                  <strong>Created:</strong> {new Date(selectedBug.createdAt).toLocaleString()}
+                  <strong>{t('bugReports.detail.created')}</strong> {formatLocalizedDateTime(new Date(selectedBug.createdAt), i18n.language)}
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailModalOpen(false)}>
-              Close
+              {t('bugReports.actions.close')}
             </Button>
             <Button
               onClick={() => {
@@ -810,7 +843,7 @@ const BugReportsPage: React.FC = () => {
                 if (selectedBug) openEditModal(selectedBug);
               }}
             >
-              Edit Bug
+              {t('bugReports.actions.editBug')}
             </Button>
           </DialogFooter>
         </DialogContent>

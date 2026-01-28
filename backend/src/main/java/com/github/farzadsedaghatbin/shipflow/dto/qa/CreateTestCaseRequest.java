@@ -37,6 +37,10 @@ public class CreateTestCaseRequest {
     
     private Long teamId;
     
+    private Long scopeId;
+    
+    private Long taskId;
+    
     @NotNull(message = "Test case type is required")
     private TestCaseType type;
     

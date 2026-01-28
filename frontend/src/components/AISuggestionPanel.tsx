@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Sparkles,
   ChevronDown,
@@ -48,6 +49,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
   onAcceptSuggestion,
   onAcceptAll,
 }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<GenerateTestCasesResponse | null>(null);
@@ -83,7 +85,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate test cases');
+      setError(err instanceof Error ? err.message : t('errors.generateTestCasesFailed'));
     } finally {
       setLoading(false);
     }
@@ -101,7 +103,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
         setSelectedSuggestions(new Set(selectedSuggestions));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to accept suggestion');
+      setError(err instanceof Error ? err.message : t('errors.acceptSuggestionFailed'));
     } finally {
       setAcceptingIndex(null);
     }
@@ -120,7 +122,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
       setResponse({ ...response, suggestions: remainingSuggestions });
       setSelectedSuggestions(new Set());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to accept suggestions');
+      setError(err instanceof Error ? err.message : t('errors.acceptSuggestionFailed'));
     } finally {
       setLoading(false);
     }

@@ -4,8 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "admin", roles = {"ADMIN"})
 class WorkLogControllerIntegrationTest {
 
     @Autowired
@@ -53,6 +57,12 @@ class WorkLogControllerIntegrationTest {
     @Autowired
     private CycleRepository cycleRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     private Cycle testCycle;
     private Team testTeam;
     private Person testPerson;
@@ -65,6 +75,7 @@ class WorkLogControllerIntegrationTest {
         pitchRepository.deleteAll();
         teamRepository.deleteAll();
         cycleRepository.deleteAll();
+        userRepository.deleteAll();
         personRepository.deleteAll();
         
         testCycle = Cycle.builder()
@@ -90,6 +101,37 @@ class WorkLogControllerIntegrationTest {
                 .build();
         testPerson = personRepository.save(testPerson);
 
+        User testUser = User.builder()
+                .username("testuser")
+                .password("password")
+                .role(UserRole.MEMBER)
+                .person(testPerson)
+                .isActive(true)
+                .build();
+        testUser = userRepository.save(testUser);
+
+        // Grant PITCH permissions for MEMBER role
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.READ)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.CREATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.UPDATE)
+                .build());
+        permissionRepository.save(Permission.builder()
+                .role(UserRole.MEMBER)
+                .resourceType(ResourceType.PITCH)
+                .permissionType(PermissionType.DELETE)
+                .build());
+
         testPitch = Pitch.builder()
                 .title("Test Pitch")
                 .description("Test Description")
@@ -111,6 +153,7 @@ class WorkLogControllerIntegrationTest {
         testWorkLog = workLogRepository.save(testWorkLog);
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void getAllWorkLogs_ShouldReturnWorkLogs() throws Exception {
         mockMvc.perform(get("/api/worklogs"))
@@ -120,6 +163,7 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].note", is("Test Work")));
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void getWorkLogById_WhenExists_ShouldReturnWorkLog() throws Exception {
         mockMvc.perform(get("/api/worklogs/{id}", testWorkLog.getId()))
@@ -129,12 +173,14 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(jsonPath("$.note", is("Test Work")));
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void getWorkLogById_WhenNotExists_ShouldReturn404() throws Exception {
         mockMvc.perform(get("/api/worklogs/{id}", 9999L))
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void createWorkLog_WithValidData_ShouldCreateWorkLog() throws Exception {
         CreateWorkLogRequest request = CreateWorkLogRequest.builder()
@@ -152,6 +198,7 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(jsonPath("$.note", is("New Work")));
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void updateWorkLog_WhenExists_ShouldUpdateWorkLog() throws Exception {
         CreateWorkLogRequest request = CreateWorkLogRequest.builder()
@@ -169,6 +216,7 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(jsonPath("$.note", is("Updated Work")));
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void deleteWorkLog_WhenExists_ShouldDeleteWorkLog() throws Exception {
         mockMvc.perform(delete("/api/worklogs/{id}", testWorkLog.getId()))
@@ -178,6 +226,7 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void getWorkLogsByPerson_ShouldReturnWorkLogsForPerson() throws Exception {
         mockMvc.perform(get("/api/worklogs/person/{personId}", testPerson.getId()))
@@ -187,6 +236,7 @@ class WorkLogControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].note", is("Test Work")));
     }
 
+    @WithMockUser(username = "testuser", roles = "MEMBER")
     @Test
     void getWorkLogsByPitch_ShouldReturnWorkLogsForPitch() throws Exception {
         mockMvc.perform(get("/api/worklogs/pitch/{pitchId}", testPitch.getId()))

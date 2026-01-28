@@ -140,6 +140,22 @@ export const riskService = {
    */
   askQuestion: (pitchId: number, question: string) => 
     api.post<RiskQuestionResponse>(`/risk/pitch/${pitchId}/ask`, { question }),
+
+  /**
+   * Get risk history for a pitch
+   */
+  getRiskHistory: async (pitchId: number, days: number = 30): Promise<PitchRiskHistory[]> => {
+    const response = await api.get<PitchRiskHistory[]>(`/risk/pitch/${pitchId}/history?days=${days}`);
+    return response.data;
+  },
+
+  /**
+   * Analyze pitch risk (returns full PitchRiskDTO with factors)
+   */
+  analyzePitchRisk: async (pitchId: number): Promise<PitchRiskDTO> => {
+    const response = await api.get<PitchRiskDTO>(`/risk/pitch/${pitchId}`);
+    return response.data;
+  },
 };
 
 // Helper functions for risk display
@@ -180,5 +196,16 @@ export const formatRiskCategory = (category: RiskFactor['category']): string => 
   };
   return labels[category] || category;
 };
+
+// Risk History Types
+export interface PitchRiskHistory {
+  id: number;
+  pitchId: number;
+  riskScore: number;
+  riskLevel: RiskLevel;
+  riskFactorsJson: string;
+  recordedAt: string;
+  triggerType: 'MANUAL' | 'SCHEDULED' | 'STATUS_CHANGE' | 'WORK_LOG_ADDED' | 'CIRCUIT_BREAKER';
+}
 
 export default riskService;

@@ -253,6 +253,76 @@ public class KnowledgeIngestionService {
     }
 
     /**
+     * Ingest a reference document (like Shape Up methodology book) into the knowledge base.
+     * Reference documents are external materials that provide context for the Q&A system.
+     * 
+     * @param sourceId Unique identifier for the reference (e.g., "shape-up-methodology")
+     * @param title Display title for the reference
+     * @param content The full text content of the document
+     * @return The number of chunks created
+     */
+    @Transactional
+    public int ingestReferenceDocument(String sourceId, String title, String content) {
+        if (!isQAEnabled()) {
+            log.warn("Q&A feature is disabled, cannot ingest reference document");
+            return 0;
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            log.warn("Reference document has no content, skipping: {}", sourceId);
+            return 0;
+        }
+
+        // Use a hash of the sourceId as a pseudo entity ID for consistency
+        Long entityId = (long) sourceId.hashCode();
+
+        String formattedContent = buildReferenceDocumentContent(sourceId, title, content);
+
+        ingestEntity(
+                KnowledgeEntityType.REFERENCE_DOCUMENT,
+                entityId,
+                title,
+                formattedContent,
+                null, // No cycle association
+                null, // No team association
+                null, // No pitch association
+                null  // No author
+        );
+
+        // Count how many chunks were created
+        int chunkCount = knowledgeItemRepository
+                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+                .size();
+
+        log.info("Ingested reference document: {} ({} chunks)", title, chunkCount);
+        return chunkCount;
+    }
+
+    /**
+     * Build content for a reference document with metadata.
+     */
+    private String buildReferenceDocumentContent(String sourceId, String title, String content) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Reference Document ===\n");
+        sb.append("Source: ").append(sourceId).append("\n");
+        sb.append("Title: ").append(title).append("\n");
+        sb.append("Type: Shape Up Methodology Reference\n\n");
+        sb.append("=== Content ===\n");
+        sb.append(content);
+        return sb.toString();
+    }
+
+    /**
+     * Check if a reference document is already ingested.
+     */
+    public boolean isReferenceDocumentIngested(String sourceId) {
+        Long entityId = (long) sourceId.hashCode();
+        return !knowledgeItemRepository
+                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+                .isEmpty();
+    }
+
+    /**
      * Ingest an uploaded document into the knowledge base.
      */
     @Transactional
@@ -307,6 +377,63 @@ public class KnowledgeIngestionService {
         );
 
         log.info("Ingested document: {} (ID: {})", document.getOriginalFileName(), document.getId());
+    }
+
+    /**
+     * Ingest a pitch document directly into the knowledge base.
+     * Used when extracting pitch data from uploaded documents.
+     * This makes pitch documents searchable via Q&A.
+     */
+    @Transactional
+    public void ingestPitchDocument(String fileName, String extractedText, Long pitchId, 
+                                     String pitchTitle, Long uploaderId, String uploaderUsername) {
+        if (!isQAEnabled()) return;
+
+        if (extractedText == null || extractedText.trim().isEmpty()) {
+            log.warn("Pitch document has no extracted text, skipping: {}", fileName);
+            return;
+        }
+
+        Long cycleId = null;
+        Long teamId = null;
+
+        // Resolve pitch associations
+        if (pitchId != null) {
+            Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
+            if (pitchOpt.isPresent()) {
+                Pitch pitch = pitchOpt.get();
+                cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+                teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
+            }
+        }
+
+        String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
+
+        ingestEntity(
+                KnowledgeEntityType.DOCUMENT,
+                null, // No document ID yet as it's directly uploaded for extraction
+                "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName),
+                content,
+                cycleId,
+                teamId,
+                pitchId,
+                uploaderId
+        );
+
+        log.info("Ingested pitch document to knowledge base: {} (Pitch: {})", fileName, pitchTitle);
+    }
+
+    private String buildPitchDocumentContent(String fileName, String pitchTitle, String extractedText) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pitch Document: ").append(fileName).append("\n");
+        if (pitchTitle != null) {
+            sb.append("Pitch Title: ").append(pitchTitle).append("\n");
+        }
+        sb.append("Type: PITCH_DOCUMENT\n");
+        sb.append("\n--- Pitch Content ---\n");
+        sb.append(extractedText);
+        
+        return sb.toString();
     }
 
     private String buildDocumentContent(UploadedDocument document) {

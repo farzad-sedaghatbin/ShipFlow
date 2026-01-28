@@ -21,7 +21,10 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class BettingTableServiceTest {
@@ -41,6 +44,9 @@ class BettingTableServiceTest {
     @Mock
     private WorkLogRepository workLogRepository;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private BettingTableService bettingTableService;
 
@@ -52,6 +58,22 @@ class BettingTableServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Setup messageService with lenient stubs to handle various error messages
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            if (key.contains("no.teams")) return "No teams found";
+            if (key.contains("already.assigned")) return "Pitch is already assigned";
+            return key.replace("error.", "").replace(".", " ");
+        });
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            if (key.contains("position.exists")) return "Slot already exists";
+            if (key.contains("dates.invalid")) return "Slot dates must be within cycle dates";
+            if (key.contains("resize.invalid")) return "Cannot resize slot: assigned pitch requires more space";
+            if (key.contains("doesnt.fit")) return "Pitch requires 14 days but slot only has fewer days";
+            return key.replace("error.", "").replace(".", " ");
+        });
+
         testCycle = Cycle.builder()
                 .id(1L)
                 .name("Q1 2024")

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Info, AlertCircle } from 'lucide-react';
 import { useProject } from '../contexts';
 import { CycleHealthSummary } from '../components/CycleHealthSummary';
@@ -21,6 +22,7 @@ import {
 import { Label } from '../components/ui/label';
 
 export const HealthOverview: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -36,7 +38,7 @@ export const HealthOverview: React.FC = () => {
     const loadCycles = async () => {
       try {
         setLoading(true);
-        const response = await cycleService.getAll();
+        const response = await cycleService.getMyCycles();
         const projectCycles = currentProject
           ? response.data.filter((c: Cycle) => c.projectId === currentProject.id)
           : response.data;
@@ -50,7 +52,7 @@ export const HealthOverview: React.FC = () => {
           setSelectedCycleId(String(projectCycles[0].id));
         }
       } catch (err) {
-        setError('Failed to load cycles');
+        setError(t('healthOverview.loadFailed'));
         console.error(err);
       } finally {
         setLoading(false);
@@ -96,9 +98,9 @@ export const HealthOverview: React.FC = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Pitch Health Overview</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('healthOverview.title')}</h1>
         <p className="text-muted-foreground">
-          A simplified view for stakeholders showing pitch status, risk levels, and progress at a glance.
+          {t('healthOverview.subtitle')}
         </p>
       </div>
 
@@ -111,8 +113,8 @@ export const HealthOverview: React.FC = () => {
 
       <Tabs value={tabValue} onValueChange={setTabValue} className="mb-6">
         <TabsList>
-          <TabsTrigger value="all">All Active Cycles</TabsTrigger>
-          <TabsTrigger value="specific">Specific Cycle</TabsTrigger>
+          <TabsTrigger value="all">{t('healthOverview.allActiveCycles')}</TabsTrigger>
+          <TabsTrigger value="specific">{t('healthOverview.specificCycle')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
@@ -124,7 +126,7 @@ export const HealthOverview: React.FC = () => {
             ) : allCycleHealth.length === 0 ? (
               <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500">
                 <Info className="h-4 w-4" />
-                <span className="text-sm">No active cycles found</span>
+                <span className="text-sm">{t('healthOverview.noActiveCycles')}</span>
               </div>
             ) : (
               <div className="space-y-6">
@@ -142,18 +144,18 @@ export const HealthOverview: React.FC = () => {
 
         <TabsContent value="specific" className="mt-4">
           <div className="mb-6">
-            <Label className="mb-2 block">Select Cycle</Label>
+            <Label className="mb-2 block">{t('healthOverview.selectCycle')}</Label>
             <Select
               value={selectedCycleId}
               onValueChange={setSelectedCycleId}
             >
               <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="Select a cycle" />
+                <SelectValue placeholder={t('healthOverview.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={String(cycle.id)}>
-                    {cycle.name} {cycle.isActive && '(Active)'}
+                    {cycle.name} {cycle.isActive && `(${t('healthOverview.active')})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,7 +170,7 @@ export const HealthOverview: React.FC = () => {
           ) : (
             <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500">
               <Info className="h-4 w-4" />
-              <span className="text-sm">Select a cycle to view health summary</span>
+              <span className="text-sm">{t('healthOverview.selectCyclePrompt')}</span>
             </div>
           )}
         </TabsContent>
@@ -179,23 +181,23 @@ export const HealthOverview: React.FC = () => {
       {/* Legend */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Understanding Health Indicators</h3>
+          <h3 className="text-sm font-semibold mb-3">{t('healthOverview.legend')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-green-500" />
-              <span className="text-sm"><strong>Healthy (Low Risk)</strong> - On track</span>
+              <span className="text-sm"><strong>{t('healthOverview.healthyLowRisk')}</strong> - {t('healthOverview.onTrack')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-amber-500" />
-              <span className="text-sm"><strong>At Risk (Medium)</strong> - Monitor closely</span>
+              <span className="text-sm"><strong>{t('healthOverview.atRiskMedium')}</strong> - {t('healthOverview.monitorClosely')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-red-500" />
-              <span className="text-sm"><strong>High Risk</strong> - Needs attention</span>
+              <span className="text-sm"><strong>{t('healthOverview.highRisk')}</strong> - {t('healthOverview.needsAttention')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-red-700" />
-              <span className="text-sm"><strong>Critical</strong> - Immediate action needed</span>
+              <span className="text-sm"><strong>{t('healthOverview.criticalRisk')}</strong> - {t('healthOverview.immediateAction')}</span>
             </div>
           </div>
         </CardContent>

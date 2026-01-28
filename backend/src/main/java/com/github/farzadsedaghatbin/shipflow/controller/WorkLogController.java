@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/worklogs")
 @RequiredArgsConstructor
-@Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches")
+@Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches and tasks")
 public class WorkLogController {
 
     private final WorkLogService workLogService;
@@ -96,6 +97,7 @@ public class WorkLogController {
     // ========== Admin/Manager Work Log Management ==========
 
     @GetMapping
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get all work logs",
                description = "Returns all work logs in the system (admin/manager use)")
     public ResponseEntity<List<WorkLogDTO>> getAllWorkLogs() {
@@ -103,18 +105,28 @@ public class WorkLogController {
     }
 
     @GetMapping("/pitch/{pitchId}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get work logs by pitch ID")
     public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPitchId(@PathVariable Long pitchId) {
         return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId));
     }
+    
+    @GetMapping("/task/{taskId}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
+    @Operation(summary = "Get work logs by task ID")
+    public ResponseEntity<List<WorkLogDTO>> getWorkLogsByTaskId(@PathVariable Long taskId) {
+        return ResponseEntity.ok(workLogService.getWorkLogsByTaskId(taskId));
+    }
 
     @GetMapping("/person/{personId}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get work logs by person ID")
     public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonId(@PathVariable Long personId) {
         return ResponseEntity.ok(workLogService.getWorkLogsByPersonId(personId));
     }
 
     @GetMapping("/person/{personId}/date/{date}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get work logs by person and date")
     public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonAndDate(
             @PathVariable Long personId,
@@ -123,30 +135,35 @@ public class WorkLogController {
     }
 
     @GetMapping("/cycle/{cycleId}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get work logs by cycle ID")
     public ResponseEntity<List<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId) {
         return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
     @Operation(summary = "Get work log by ID")
     public ResponseEntity<WorkLogDTO> getWorkLogById(@PathVariable Long id) {
         return ResponseEntity.ok(workLogService.getWorkLogById(id));
     }
 
     @PostMapping
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
     @Operation(summary = "Create a new work log")
     public ResponseEntity<WorkLogDTO> createWorkLog(@Valid @RequestBody CreateWorkLogRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(workLogService.createWorkLog(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
     @Operation(summary = "Update a work log")
     public ResponseEntity<WorkLogDTO> updateWorkLog(@PathVariable Long id, @Valid @RequestBody CreateWorkLogRequest request) {
         return ResponseEntity.ok(workLogService.updateWorkLog(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission('PITCH', 'DELETE')")
     @Operation(summary = "Delete a work log")
     public ResponseEntity<Void> deleteWorkLog(@PathVariable Long id) {
         workLogService.deleteWorkLog(id);

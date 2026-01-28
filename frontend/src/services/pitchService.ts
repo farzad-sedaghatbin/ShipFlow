@@ -3,6 +3,7 @@ import { Pitch, CreatePitchRequest, PitchStatus } from '../types';
 
 export const pitchService = {
   getAll: () => api.get<Pitch[]>('/pitches'),
+  getMyPitches: () => api.get<Pitch[]>('/pitches/my-pitches'),
   getByCycleId: (cycleId: number) => api.get<Pitch[]>(`/pitches/cycle/${cycleId}`),
   getByTeamId: (teamId: number) => api.get<Pitch[]>(`/pitches/team/${teamId}`),
   getById: (id: number) => api.get<Pitch>(`/pitches/${id}`),

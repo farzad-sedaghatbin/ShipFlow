@@ -4,9 +4,11 @@ import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,9 @@ class WorkLogServiceTest {
 
     @Mock
     private PitchRepository pitchRepository;
+    
+    @Mock
+    private TaskRepository taskRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -46,12 +51,16 @@ class WorkLogServiceTest {
     @Mock
     private AICacheService cacheService;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private WorkLogService workLogService;
 
     private WorkLog testWorkLog;
     private Person testPerson;
     private Pitch testPitch;
+    private Task testTask;
     private CreateWorkLogRequest testRequest;
 
     @BeforeEach
@@ -67,6 +76,11 @@ class WorkLogServiceTest {
         testPitch = Pitch.builder()
                 .id(1L)
                 .title("Test Pitch")
+                .build();
+        
+        testTask = Task.builder()
+                .id(1L)
+                .title("Test Task")
                 .build();
 
         testWorkLog = WorkLog.builder()
@@ -164,5 +178,86 @@ class WorkLogServiceTest {
 
         assertThat(result).hasSize(1);
         verify(workLogRepository).findByPersonId(1L);
+    }
+    
+    // ========== Task-based Work Log Tests ==========
+    
+    @Test
+    void createWorkLog_WithTask_ShouldSaveWorkLog() {
+        CreateWorkLogRequest taskRequest = new CreateWorkLogRequest();
+        taskRequest.setPersonId(1L);
+        taskRequest.setTaskId(1L);
+        taskRequest.setDate(LocalDate.now());
+        taskRequest.setHoursSpent(BigDecimal.valueOf(4.0));
+        taskRequest.setNote("Working on task");
+        
+        WorkLog taskWorkLog = WorkLog.builder()
+                .id(2L)
+                .person(testPerson)
+                .task(testTask)
+                .date(LocalDate.now())
+                .hoursSpent(BigDecimal.valueOf(4.0))
+                .note("Working on task")
+                .build();
+        
+        when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+        when(workLogRepository.save(any(WorkLog.class))).thenReturn(taskWorkLog);
+
+        WorkLogDTO result = workLogService.createWorkLog(taskRequest);
+
+        assertThat(result).isNotNull();
+        verify(workLogRepository).save(any(WorkLog.class));
+        verify(taskRepository).findById(1L);
+    }
+    
+    @Test
+    void createWorkLog_WithoutPitchOrTask_ShouldThrowException() {
+        CreateWorkLogRequest invalidRequest = new CreateWorkLogRequest();
+        invalidRequest.setPersonId(1L);
+        invalidRequest.setDate(LocalDate.now());
+        invalidRequest.setHoursSpent(BigDecimal.valueOf(4.0));
+
+        when(messageService.getMessage("error.worklog.pitch.or.task.required"))
+                .thenReturn("Either pitchId or taskId must be provided");
+
+        assertThatThrownBy(() -> workLogService.createWorkLog(invalidRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Either pitchId or taskId must be provided");
+    }
+    
+    @Test
+    void createWorkLog_WithBothPitchAndTask_ShouldThrowException() {
+        CreateWorkLogRequest invalidRequest = new CreateWorkLogRequest();
+        invalidRequest.setPersonId(1L);
+        invalidRequest.setPitchId(1L);
+        invalidRequest.setTaskId(1L);
+        invalidRequest.setDate(LocalDate.now());
+        invalidRequest.setHoursSpent(BigDecimal.valueOf(4.0));
+
+        when(messageService.getMessage("error.worklog.pitch.or.task.required"))
+                .thenReturn("Either pitchId or taskId must be provided, but not both");
+
+        assertThatThrownBy(() -> workLogService.createWorkLog(invalidRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Either pitchId or taskId must be provided, but not both");
+    }
+    
+    @Test
+    void getWorkLogsByTaskId_ShouldReturnWorkLogs() {
+        WorkLog taskWorkLog = WorkLog.builder()
+                .id(2L)
+                .person(testPerson)
+                .task(testTask)
+                .date(LocalDate.now())
+                .hoursSpent(BigDecimal.valueOf(4.0))
+                .build();
+        
+        when(workLogRepository.findByTaskId(1L)).thenReturn(Arrays.asList(taskWorkLog));
+
+        List<WorkLogDTO> result = workLogService.getWorkLogsByTaskId(1L);
+
+        assertThat(result).hasSize(1);
+        verify(workLogRepository).findByTaskId(1L);
     }
 }

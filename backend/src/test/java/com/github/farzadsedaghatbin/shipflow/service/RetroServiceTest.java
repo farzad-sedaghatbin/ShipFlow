@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -52,6 +53,12 @@ class RetroServiceTest {
     @Mock
     private RetroItemVoteRepository retroItemVoteRepository;
 
+    @Mock
+    private MessageService messageService;
+    
+    @Mock
+    private LocalizationService localizationService;
+
     @InjectMocks
     private RetroService retroService;
 
@@ -63,6 +70,42 @@ class RetroServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("retro.feature.disabled")) return "Retrospectives feature is disabled";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("retro.feature.disabled")) return "Retrospectives feature is disabled";
+            return key;
+        });
+        
+        lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("retro.closed")) return "Retrospective is closed";
+            if (key.contains("retro.not.found")) return "Retrospective not found";
+            if (key.contains("retro.item.not.found")) return "Retrospective item not found";
+            if (key.contains("retro.cannot.update.closed")) return "Cannot update a closed retrospective";
+            if (key.contains("retro.cannot.open.closed")) return "Cannot open a closed retrospective";
+            if (key.contains("retro.cannot.add.items.closed")) return "Cannot add items to a closed retrospective";
+            if (key.contains("retro.cannot.update.items.closed")) return "Cannot update items in a closed retrospective";
+            if (key.contains("retro.cannot.delete.items.closed")) return "Cannot delete items from a closed retrospective";
+            return key;
+        });
+        lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("retro.closed")) return "Retrospective is closed";
+            if (key.contains("retro.not.found")) return "Retrospective not found";
+            if (key.contains("retro.item.not.found")) return "Retrospective item not found";
+            if (key.contains("retro.cannot.update.closed")) return "Cannot update a closed retrospective";
+            if (key.contains("retro.cannot.open.closed")) return "Cannot open a closed retrospective";
+            if (key.contains("retro.cannot.add.items.closed")) return "Cannot add items to a closed retrospective";
+            if (key.contains("retro.cannot.update.items.closed")) return "Cannot update items in a closed retrospective";
+            if (key.contains("retro.cannot.delete.items.closed")) return "Cannot delete items from a closed retrospective";
+            return key;
+        });
+        
         testProject = Project.builder()
                 .id(1L)
                 .name("Test Project")

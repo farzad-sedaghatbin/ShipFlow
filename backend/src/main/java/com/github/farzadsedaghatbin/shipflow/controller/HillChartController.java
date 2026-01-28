@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hill-chart")
@@ -37,6 +38,17 @@ public class HillChartController {
     @Operation(summary = "Get all hill chart points")
     public ResponseEntity<List<HillChartPointDTO>> getAllHillChartPoints() {
         return ResponseEntity.ok(hillChartService.getAllHillChartPoints());
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Search hill chart points (scopes)",
+               description = "Search scopes by name or description. Minimum 3 characters required.")
+    public ResponseEntity<?> searchHillChartPoints(@RequestParam String q) {
+        if (q == null || q.trim().length() < 3) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
+        }
+        return ResponseEntity.ok(hillChartService.searchHillChartPoints(q));
     }
 
     @GetMapping("/pitch/{pitchId}")

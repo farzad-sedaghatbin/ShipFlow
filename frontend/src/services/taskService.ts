@@ -1,9 +1,18 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest } from '../types';
 
 export const taskService = {
   // Current user's tasks
-  getMy: () => api.get<Task[]>('/tasks/my'),
+  getMy: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks/my', {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   getMyByCycle: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     if (page !== undefined) {
       return api.get<Page<Task>>(`/tasks/my/cycle/${cycleId}`, {
@@ -19,7 +28,16 @@ export const taskService = {
   },
   
   // General task management
-  getAll: () => api.get<Task[]>('/tasks'),
+  getAll: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks', {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   getById: (id: number) => api.get<Task>(`/tasks/${id}`),
   getByCycleId: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     if (page !== undefined) {
@@ -60,6 +78,38 @@ export const taskService = {
   getByAssigneeId: (assigneeId: number) => api.get<Task[]>(`/tasks/assignee/${assigneeId}`),
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
+  getByProjectIdPaged: (projectId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/paged`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
+  getByProjectIdAndCategory: (projectId: number, category: TaskCategory, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/category/${category}`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
+  getStatisticsByProjectId: (projectId: number) => api.get<TaskStatistics>(`/tasks/project/${projectId}/statistics`),
+  search: (query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    return api.get<Page<Task>>('/tasks/search', {
+      params: {
+        q: query,
+        page: page ?? 0,
+        size: size ?? 50,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   
   // Multi-filter endpoint
   getWithFilters: (
@@ -97,5 +147,24 @@ export const taskService = {
   update: (id: number, data: CreateTaskRequest) => api.put<Task>(`/tasks/${id}`, data),
   updateStatus: (id: number, status: TaskStatus) => 
     api.patch<Task>(`/tasks/${id}/status`, { status }),
+  updatePriority: (id: number, priority: TaskPriority) => 
+    api.patch<Task>(`/tasks/${id}/priority`, { priority }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
+  
+  // Sub-task hierarchy
+  getSubTasks: (parentTaskId: number) => api.get<Task[]>(`/tasks/${parentTaskId}/subtasks`),
+  getRootTasks: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/roots`),
+  getTaskTree: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/tree`),
+  
+  // Task Dependencies
+  addDependency: (taskId: number, data: CreateTaskDependencyRequest) => 
+    api.post<TaskDependency>(`/tasks/${taskId}/dependencies`, data),
+  getDependencies: (taskId: number) => 
+    api.get<TaskDependencies>(`/tasks/${taskId}/dependencies`),
+  getBlockingDependencies: (taskId: number) => 
+    api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocking`),
+  getBlockedByDependencies: (taskId: number) => 
+    api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocked-by`),
+  removeDependency: (taskId: number, dependencyId: number) => 
+    api.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
 };

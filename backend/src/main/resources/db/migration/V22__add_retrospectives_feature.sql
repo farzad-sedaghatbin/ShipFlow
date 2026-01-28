@@ -3,7 +3,7 @@ ALTER TABLE projects ADD COLUMN enable_retrospectives BOOLEAN NOT NULL DEFAULT T
 
 -- Retrospectives table
 CREATE TABLE retrospectives (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     notes TEXT,
     status VARCHAR(50) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE retrospectives (
 
 -- Retro items table
 CREATE TABLE retro_items (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     content TEXT NOT NULL,
     column_type VARCHAR(50) NOT NULL,
     retrospective_id BIGINT NOT NULL,

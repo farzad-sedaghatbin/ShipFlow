@@ -73,16 +73,16 @@ class UserControllerIntegrationTest {
         adminPerson = personRepository.save(adminPerson);
 
         testUser = User.builder()
-                .username("testuser")
+                .username("user-ctrl-test-user")
                 .password(passwordEncoder.encode("password123"))
-                .role(UserRole.DEVELOPER)
+                .role(UserRole.MEMBER)
                 .person(testPerson)
                 .isActive(true)
                 .build();
         testUser = userRepository.save(testUser);
 
         adminUser = User.builder()
-                .username("admin")
+                .username("user-ctrl-admin")
                 .password(passwordEncoder.encode("admin123"))
                 .role(UserRole.ADMIN)
                 .person(adminPerson)
@@ -92,7 +92,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
     void getAllUsers_AsAdmin_ShouldReturnAllUsers() throws Exception {
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -101,32 +101,32 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = {"DEVELOPER"})
+    @WithMockUser(username = "user-ctrl-test-user", roles = {"MEMBER"})
     void getAllUsers_AsNonAdmin_ShouldReturn403() throws Exception {
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
     void getUserById_AsAdmin_ShouldReturnUser() throws Exception {
         mockMvc.perform(get("/api/users/{id}", testUser.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username", is("testuser")))
-                .andExpect(jsonPath("$.role", is("DEVELOPER")));
+                .andExpect(jsonPath("$.username", is("user-ctrl-test-user")))
+                .andExpect(jsonPath("$.role", is("MEMBER")));
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
     void updateUserRole_AsAdmin_ShouldUpdateRole() throws Exception {
         mockMvc.perform(put("/api/users/{id}/role", testUser.getId())
-                        .param("role", "PROJECT_MANAGER"))
+                        .param("role", "MANAGER"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role", is("PROJECT_MANAGER")));
+                .andExpect(jsonPath("$.role", is("MANAGER")));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = {"DEVELOPER"})
+    @WithMockUser(username = "user-ctrl-test-user", roles = {"MEMBER"})
     void updateUserRole_AsNonAdmin_ShouldReturn403() throws Exception {
         mockMvc.perform(put("/api/users/{id}/role", testUser.getId())
                         .param("role", "ADMIN"))
@@ -134,7 +134,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
     void deactivateUser_AsAdmin_ShouldDeactivate() throws Exception {
         mockMvc.perform(put("/api/users/{id}/deactivate", testUser.getId()))
                 .andExpect(status().isOk())
@@ -142,7 +142,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
     void activateUser_AsAdmin_ShouldActivate() throws Exception {
         // First deactivate
         testUser.setIsActive(false);

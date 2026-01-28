@@ -56,6 +56,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // CSRF protection is safely disabled because:
+                // 1. This is a stateless REST API using JWT tokens (not cookies)
+                // 2. SessionCreationPolicy.STATELESS means no server-side sessions
+                // 3. JWT tokens are sent via Authorization header, not vulnerable to CSRF
+                // See: https://security.stackexchange.com/questions/170388/do-i-need-csrf-token-if-im-using-bearer-jwt
                 .csrf(AbstractHttpConfigurer::disable)
                 // Disable ForwardedHeaderFilter to prevent malicious header exploitation
                 .headers(headers -> headers

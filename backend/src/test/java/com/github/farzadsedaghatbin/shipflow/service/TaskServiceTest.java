@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +44,9 @@ class TaskServiceTest {
     @Mock
     private PersonRepository personRepository;
 
+    @Mock
+    private MessageService messageService;
+
     @InjectMocks
     private TaskService taskService;
 
@@ -54,6 +58,17 @@ class TaskServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+        lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+            String key = i.getArgument(0);
+            if (key.contains("task.not.found")) return "Task not found";
+            return key;
+        });
+
         testCycle = Cycle.builder()
                 .id(1L)
                 .name("Test Cycle")

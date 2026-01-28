@@ -5,6 +5,7 @@ export const workLogService = {
   // Admin/Manager endpoints
   getAll: () => api.get<WorkLog[]>('/worklogs'),
   getByPitchId: (pitchId: number) => api.get<WorkLog[]>(`/worklogs/pitch/${pitchId}`),
+  getByTaskId: (taskId: number) => api.get<WorkLog[]>(`/worklogs/task/${taskId}`),
   getByPersonId: (personId: number) => api.get<WorkLog[]>(`/worklogs/person/${personId}`),
   getByPersonAndDate: (personId: number, date: string) => api.get<WorkLog[]>(`/worklogs/person/${personId}/date/${date}`),
   getByCycleId: (cycleId: number) => api.get<WorkLog[]>(`/worklogs/cycle/${cycleId}`),

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   Plus,
   Trash2,
@@ -8,10 +10,13 @@ import {
   Eye,
   Loader2,
   Brain,
+  Search,
+  ArrowUpDown,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { cycleService } from '../services/cycleService';
-import { useProject, useAuth, useToast } from '../contexts';
+import { useProject, useToast } from '../contexts';
+import { usePermission } from '../hooks/usePermission';
 import { Retrospective, Cycle, RetroStatus } from '../types';
 import EmptyState from '../components/EmptyState';
 
@@ -59,14 +64,16 @@ const statusLabels: Record<RetroStatus, string> = {
 };
 
 export default function RetroList() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected } = useProject();
-  const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [retros, setRetros] = useState<Retrospective[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [retroEnabled, setRetroEnabled] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'title' | 'status' | 'cycle' | 'recent'>('recent');
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; retro: Retrospective | null }>({
     open: false,
@@ -74,7 +81,8 @@ export default function RetroList() {
   });
   const [newRetro, setNewRetro] = useState({ title: '', notes: '', cycleId: '' });
 
-  const isAdmin = user?.role === 'ADMIN';
+  const { hasPermissionSync } = usePermission();
+  const canCreateRetro = hasPermissionSync('RETROSPECTIVE', 'CREATE');
 
   useEffect(() => {
     if (currentProject && !isAllProjectsSelected) {
@@ -172,10 +180,10 @@ export default function RetroList() {
   if (isAllProjectsSelected || !currentProject) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Retrospectives</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('retroListPage.title')}</h1>
         <Alert variant="info">
           <AlertDescription>
-            Please select a specific project to view retrospectives.
+            {t('retroListPage.selectProject')}
           </AlertDescription>
         </Alert>
       </div>
@@ -193,47 +201,108 @@ export default function RetroList() {
   if (!retroEnabled) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Retrospectives</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('retroListPage.title')}</h1>
         <Alert variant="warning" className="mb-4">
           <AlertDescription>
-            Retrospectives feature is disabled for this project.
-            {isAdmin && ' You can enable it in project settings.'}
+            {t('retroListPage.retrosDisabled')}
+            {canCreateRetro && ` ${t('pitchDetailPage.youCanEnable')}`}
           </AlertDescription>
         </Alert>
       </div>
     );
   }
 
+  // Filter and sort retrospectives
+  const filteredAndSortedRetros = retros
+    .filter(retro => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        retro.title.toLowerCase().includes(search) ||
+        retro.notes?.toLowerCase().includes(search) ||
+        retro.cycleName?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'cycle':
+          return (a.cycleName || '').localeCompare(b.cycleName || '');
+        case 'recent':
+          return (b.id || 0) - (a.id || 0);
+        default:
+          return 0;
+      }
+    });
+
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">Retrospectives</h1>
-          <p className="text-muted-foreground">
-            Reflect on cycles, capture learnings, and plan improvements
-          </p>
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">{t('retroListPage.title')}</h1>
+            <p className="text-muted-foreground">
+              {t('retroListPage.noRetrosDesc').replace('Create your first retrospective', 'Reflect on cycles, capture learnings, and plan improvements')}
+            </p>
+          </div>
+          <Button onClick={() => setOpenDialog(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            {t('retroListPage.createRetro')}
+          </Button>
         </div>
-        <Button onClick={() => setOpenDialog(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Retro
-        </Button>
+
+        {/* Search and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('retroListPage.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue placeholder={t('retroListPage.sortBy')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">{t('retroListPage.sortRecent')}</SelectItem>
+              <SelectItem value="title">{t('retroListPage.sortTitle')}</SelectItem>
+              <SelectItem value="status">{t('retroListPage.sortStatus')}</SelectItem>
+              <SelectItem value="cycle">{t('retroListPage.sortCycle')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Content */}
-      {retros.length === 0 ? (
+      {filteredAndSortedRetros.length === 0 ? (
         <EmptyState
-          title="No retrospectives yet"
-          description="Create your first retrospective to reflect on a cycle"
-          action={{
-            label: 'Create Retro',
-            onClick: () => setOpenDialog(true),
-          }}
+          title={searchTerm ? t('retroListPage.noRetros') : t('retroListPage.noRetros')}
+          description={
+            searchTerm
+              ? `${t('retroListPage.noRetros')} "${searchTerm}". ${t('common.tryDifferentSearch')}`
+              : t('retroListPage.noRetrosDesc')
+          }
+          action={
+            !searchTerm
+              ? {
+                  label: t('retroListPage.createRetro'),
+                  onClick: () => setOpenDialog(true),
+                }
+              : undefined
+          }
           icon={Brain}
         />
       ) : (
         <div className="space-y-4">
-          {retros.map((retro) => (
+          {filteredAndSortedRetros.map((retro) => (
             <Card key={retro.id}>
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
@@ -245,14 +314,14 @@ export default function RetroList() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Cycle: {retro.cycleName} • Created: {new Date(retro.createdAt).toLocaleDateString()}
-                      {retro.closedAt && ` • Closed: ${new Date(retro.closedAt).toLocaleDateString()}`}
+                      {t('retroListPage.cycle')}: {retro.cycleName} • {t('backlogPage.created')}: {formatLocalizedDate(new Date(retro.createdAt), i18n.language)}
+                      {retro.closedAt && ` • ${t('backlogPage.closed')}: ${formatLocalizedDate(new Date(retro.closedAt), i18n.language)}`}
                     </p>
                     {retro.notes && (
                       <p className="text-sm mt-2">{retro.notes}</p>
                     )}
                     <p className="text-sm text-muted-foreground mt-2">
-                      {retro.itemCount || 0} items
+                      {retro.itemCount || 0} {t('retroBoardPage.items')}
                     </p>
                   </div>
                   <div className="flex gap-1 ml-4 flex-shrink-0">
@@ -290,7 +359,7 @@ export default function RetroList() {
                       </TooltipProvider>
                     )}
 
-                    {retro.status === 'OPEN' && isAdmin && (
+                    {retro.status === 'OPEN' && canCreateRetro && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -308,7 +377,7 @@ export default function RetroList() {
                       </TooltipProvider>
                     )}
 
-                    {isAdmin && (
+                    {canCreateRetro && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -337,14 +406,14 @@ export default function RetroList() {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Retrospective</DialogTitle>
+            <DialogTitle>{t('retroListPage.createRetro')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cycle">Cycle *</Label>
+              <Label htmlFor="cycle">{t('retroListPage.cycle')} *</Label>
               <Select value={newRetro.cycleId} onValueChange={handleCycleChange}>
                 <SelectTrigger id="cycle">
-                  <SelectValue placeholder="Select a cycle" />
+                  <SelectValue placeholder={t('retroListPage.selectCycle')} />
                 </SelectTrigger>
                 <SelectContent>
                   {cycles.map((cycle) => (
@@ -356,34 +425,34 @@ export default function RetroList() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('retroListPage.retroTitle')} *</Label>
               <Input
                 id="title"
                 value={newRetro.title}
                 onChange={(e) => setNewRetro({ ...newRetro, title: e.target.value })}
-                placeholder="e.g., Cycle 5 Retro"
+                placeholder={t('retroListPage.enterTitle')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes / Introduction</Label>
+              <Label htmlFor="notes">{t('retroListPage.notes')}</Label>
               <Textarea
                 id="notes"
                 value={newRetro.notes}
                 onChange={(e) => setNewRetro({ ...newRetro, notes: e.target.value })}
                 rows={3}
-                placeholder="Optional context or goals for this retrospective..."
+                placeholder={t('retroListPage.optionalNotes')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleCreateRetro}
               disabled={!newRetro.title || !newRetro.cycleId}
             >
-              Create
+              {t('retroListPage.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -393,17 +462,17 @@ export default function RetroList() {
       <Dialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, retro: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Retrospective?</DialogTitle>
+            <DialogTitle>{t('retroListPage.deleteRetro')}?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.retro?.title}"? This action cannot be undone.
+              {t('retroListPage.confirmDelete')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, retro: null })}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteRetro}>
-              Delete
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

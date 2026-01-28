@@ -75,4 +75,21 @@ public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
         @Param("statuses") List<TestCaseStatus> statuses,
         @Param("types") List<TestCaseType> types,
         @Param("priorities") List<TestCasePriority> priorities);
+    
+    // Scope and task queries for traceability
+    List<TestCase> findByScopeId(Long scopeId);
+    
+    List<TestCase> findByTaskId(Long taskId);
+    
+    @Query("SELECT tc FROM TestCase tc WHERE tc.scope.id = :scopeId AND tc.status = :status")
+    List<TestCase> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") TestCaseStatus status);
+    
+    @Query("SELECT tc FROM TestCase tc WHERE tc.task.id = :taskId AND tc.status = :status")
+    List<TestCase> findByTaskIdAndStatus(@Param("taskId") Long taskId, @Param("status") TestCaseStatus status);
+    
+    @Query("SELECT COUNT(tc) FROM TestCase tc WHERE tc.scope.id = :scopeId")
+    long countByScopeId(@Param("scopeId") Long scopeId);
+    
+    @Query("SELECT COUNT(tc) FROM TestCase tc WHERE tc.task.id = :taskId")
+    long countByTaskId(@Param("taskId") Long taskId);
 }
