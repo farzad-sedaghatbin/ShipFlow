@@ -28,8 +28,7 @@ public class SlackNotificationHistory {
     @Column(name = "notification_type", nullable = false, length = 100)
     private String notificationType;
 
-    @Lob
-    @Column(name = "message_text")
+    @Column(name = "message_text", columnDefinition = "TEXT")
     private String messageText;
 
     @Column(name = "entity_type", length = 50)
@@ -44,8 +43,7 @@ public class SlackNotificationHistory {
     @Column(name = "success", nullable = false)
     private Boolean success;
 
-    @Lob
-    @Column(name = "error_message")
+    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
     @PrePersist

@@ -29,8 +29,7 @@ public class GitHubPullRequest {
     @Column(nullable = false, length = 500)
     private String title;
 
-    @Lob
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)

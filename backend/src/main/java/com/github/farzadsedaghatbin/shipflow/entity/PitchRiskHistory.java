@@ -45,7 +45,7 @@ public class PitchRiskHistory {
      * Serialized JSON of risk factors for this snapshot.
      * Stores RiskFactor[] from RiskAnalysisService.
      */
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String riskFactorsJson;
 
     @Column(nullable = false)

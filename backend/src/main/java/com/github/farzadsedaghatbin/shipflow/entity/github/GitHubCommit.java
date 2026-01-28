@@ -25,8 +25,7 @@ public class GitHubCommit {
     @Column(nullable = false, unique = true, length = 40)
     private String sha;
 
-    @Lob
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String message;
 
     @Column(name = "author_name")
