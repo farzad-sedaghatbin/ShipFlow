@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **CRITICAL: Separate Seed Data from Production** (Breaking Change)
+  - **Problem**: Seed/demo data was being inserted into production databases via Flyway migrations
+  - **Solution**: Moved 11 seed data migrations from `db/migration` to `db/seed` folder
+  - **Dev**: Loads both `db/migration` (schema) + `db/seed` (data) via Flyway
+  - **Prod**: Loads ONLY `db/migration` (schema) - no seed data
+  - **Cleanup**: Added `scripts/cleanup-production-seed-data.sql` to remove existing seed data from production
+  - **Breaking**: Production Flyway history will show "missing" migrations (V10, V11, V17, V18, V20, V21, V25, V27, V30, V47, V56)
+  
+- **Seed Data PostgreSQL Compatibility**
+  - Added `OVERRIDING SYSTEM VALUE` clause to all INSERT statements with explicit IDs
+  - Fixed V11, V20, V21, V25 seed data migrations for PostgreSQL compatibility
+  - Fixes: `ERROR: cannot insert a non-DEFAULT value into column "id"` when inserting seed data
+
 ## [0.3.2] - 2026-01-28
 
 ### Fixed

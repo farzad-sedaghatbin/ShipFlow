@@ -5,14 +5,14 @@
 -- Cycle 6 - Completed Cycle in COOLDOWN (closed)
 -- ===========================================
 
-INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) VALUES
+INSERT INTO cycles OVERRIDING SYSTEM VALUE (id, name, start_date, end_date, phase, project_id, is_active) VALUES
 (6, 'Cycle 6 - Completed Sprint', '2025-10-01', '2025-11-15', 'COOLDOWN', 1, false);
 
 -- ===========================================
 -- Teams for Cycle 6
 -- ===========================================
 
-INSERT INTO teams (id, name, cycle_id) VALUES
+INSERT INTO teams OVERRIDING SYSTEM VALUE (id, name, cycle_id) VALUES
 (6, 'Omega Team', 6),
 (7, 'Sigma Team', 6);
 
@@ -28,7 +28,7 @@ INSERT INTO team_assignments (person_id, team_id, role, start_date, end_date, is
 -- Completed Pitches for Cycle 6 (all DONE)
 -- ===========================================
 
-INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) VALUES
+INSERT INTO pitches OVERRIDING SYSTEM VALUE (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) VALUES
 (15, 'Email Notification System', 'Comprehensive email notification system with templates and scheduling', 14, 6, 6, 'DONE', '2025-10-01 09:00:00', '2025-11-10 17:00:00'),
 (16, 'User Dashboard Redesign', 'Complete redesign of the main user dashboard with improved UX', 10, 6, 6, 'DONE', '2025-10-01 09:00:00', '2025-11-08 16:00:00'),
 (17, 'API Rate Limiting', 'Implement API rate limiting to protect against abuse', 7, 6, 7, 'DONE', '2025-10-01 09:00:00', '2025-10-20 14:00:00'),
@@ -151,7 +151,7 @@ INSERT INTO tasks (title, description, status, priority, estimate_hours, actual_
 -- Completed Retrospective for Cycle 6
 -- ===========================================
 
-INSERT INTO retrospectives (id, title, notes, status, cycle_id, project_id, created_by_id, created_at, updated_at, closed_at) VALUES
+INSERT INTO retrospectives OVERRIDING SYSTEM VALUE (id, title, notes, status, cycle_id, project_id, created_by_id, created_at, updated_at, closed_at) VALUES
 (1, 'Cycle 6 Retrospective', 'End of cycle retrospective to discuss what went well and areas for improvement in our completed sprint.', 'CLOSED', 6, 1, 2, '2025-11-13 10:00:00', '2025-11-14 16:00:00', '2025-11-14 16:00:00');
 
 -- ===========================================
@@ -159,7 +159,7 @@ INSERT INTO retrospectives (id, title, notes, status, cycle_id, project_id, crea
 -- ===========================================
 
 -- WENT_WELL items
-INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
+INSERT INTO retro_items OVERRIDING SYSTEM VALUE (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
 (1, 'Great team collaboration - everyone helped each other when stuck', 'WENT_WELL', 1, 2, 5, '2025-11-13 10:15:00', '2025-11-14 15:00:00'),
 (2, 'Email notification system shipped ahead of schedule', 'WENT_WELL', 1, 3, 4, '2025-11-13 10:18:00', '2025-11-14 15:00:00'),
 (3, 'Daily standups were efficient and focused', 'WENT_WELL', 1, 4, 3, '2025-11-13 10:22:00', '2025-11-14 15:00:00'),
@@ -167,21 +167,21 @@ INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, 
 (5, 'QA caught critical bugs early in the process', 'WENT_WELL', 1, 6, 3, '2025-11-13 10:30:00', '2025-11-14 15:00:00');
 
 -- DID_NOT_GO_WELL items
-INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
+INSERT INTO retro_items OVERRIDING SYSTEM VALUE (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
 (6, 'Audit logging feature scope creep - took longer than expected', 'DID_NOT_GO_WELL', 1, 5, 4, '2025-11-13 10:35:00', '2025-11-14 15:00:00'),
 (7, 'Lack of documentation slowed down onboarding new team member', 'DID_NOT_GO_WELL', 1, 3, 3, '2025-11-13 10:40:00', '2025-11-14 15:00:00'),
 (8, 'Dashboard performance issues discovered late in the cycle', 'DID_NOT_GO_WELL', 1, 2, 2, '2025-11-13 10:45:00', '2025-11-14 15:00:00'),
 (9, 'Too many meetings interrupted deep work sessions', 'DID_NOT_GO_WELL', 1, 4, 5, '2025-11-13 10:50:00', '2025-11-14 15:00:00');
 
 -- TRY_NEXT items
-INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
+INSERT INTO retro_items OVERRIDING SYSTEM VALUE (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
 (10, 'Implement feature flags for safer deployments', 'TRY_NEXT', 1, 3, 4, '2025-11-13 11:00:00', '2025-11-14 15:00:00'),
 (11, 'Schedule focus blocks - no meetings during morning hours', 'TRY_NEXT', 1, 4, 5, '2025-11-13 11:05:00', '2025-11-14 15:00:00'),
 (12, 'Add performance testing earlier in the cycle', 'TRY_NEXT', 1, 6, 3, '2025-11-13 11:10:00', '2025-11-14 15:00:00'),
 (13, 'Create technical design docs before implementation', 'TRY_NEXT', 1, 5, 4, '2025-11-13 11:15:00', '2025-11-14 15:00:00');
 
 -- ACTIONS items
-INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
+INSERT INTO retro_items OVERRIDING SYSTEM VALUE (id, content, column_type, retrospective_id, author_id, vote_count, created_at, updated_at) VALUES
 (14, 'ACTION: Bob to set up feature flag infrastructure by next cycle', 'ACTIONS', 1, 3, 0, '2025-11-13 11:30:00', '2025-11-14 15:00:00'),
 (15, 'ACTION: Carol to propose no-meeting mornings policy to management', 'ACTIONS', 1, 4, 0, '2025-11-13 11:35:00', '2025-11-14 15:00:00'),
 (16, 'ACTION: Emma to integrate performance tests into CI pipeline', 'ACTIONS', 1, 6, 0, '2025-11-13 11:40:00', '2025-11-14 15:00:00'),
