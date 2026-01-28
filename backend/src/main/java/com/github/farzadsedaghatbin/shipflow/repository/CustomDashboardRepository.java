@@ -51,9 +51,14 @@ public interface CustomDashboardRepository extends JpaRepository<CustomDashboard
            "LEFT JOIN FETCH d.cycle " +
            "LEFT JOIN FETCH d.pitch " +
            "LEFT JOIN FETCH d.team " +
-           "WHERE d.isTemplate = true " +
+           "WHERE d.isTemplate = :isTemplate " +
            "ORDER BY d.templateCategory ASC")
-    List<CustomDashboard> findByIsTemplateTrueOrderByTemplateCategoryAsc();
+    List<CustomDashboard> findByIsTemplateTrueOrderByTemplateCategoryAsc(@Param("isTemplate") Boolean isTemplate);
+    
+    /**
+     * Alternative method using method query instead of JPQL
+     */
+    List<CustomDashboard> findByIsTemplateOrderByTemplateCategoryAsc(Boolean isTemplate);
 
     /**
      * Find templates by category with scope relationships eagerly loaded
