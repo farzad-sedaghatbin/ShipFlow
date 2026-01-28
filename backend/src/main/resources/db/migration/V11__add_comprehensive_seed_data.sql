@@ -1,7 +1,7 @@
 -- Comprehensive seed data for ShipFlow
 
 -- Insert sample persons
-INSERT INTO persons (id, name, email, skills, department, bio, is_active, created_at, updated_at) VALUES
+INSERT INTO persons OVERRIDING SYSTEM VALUE (id, name, email, skills, department, bio, is_active, created_at, updated_at) VALUES
 (1, 'Admin User', 'admin@shipflow.com', 'Management, Leadership', 'Management', 'System administrator', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, 'Alice Johnson', 'alice@shipflow.com', 'React, TypeScript, UI/UX', 'Engineering', 'Frontend developer with 5 years experience', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, 'Bob Smith', 'bob@shipflow.com', 'Java, Spring Boot, PostgreSQL', 'Engineering', 'Backend developer specializing in microservices', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -10,7 +10,7 @@ INSERT INTO persons (id, name, email, skills, department, bio, is_active, create
 (6, 'Emma Martinez', 'emma@shipflow.com', 'QA, Automation Testing', 'Engineering', 'QA engineer ensuring product quality', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert users (password is 'admin123' for all users)
-INSERT INTO users (id, username, password, role, person_id, is_active, created_at, updated_at) VALUES
+INSERT INTO users OVERRIDING SYSTEM VALUE (id, username, password, role, person_id, is_active, created_at, updated_at) VALUES
 (1, 'admin', '$2b$10$PqtDfiyP6quVQxbCkK3nteOstcMovdxxpjjcsDcibStNUv2rPjlKq', 'ADMIN', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, 'alice', '$2b$10$PqtDfiyP6quVQxbCkK3nteOstcMovdxxpjjcsDcibStNUv2rPjlKq', 'PROJECT_MANAGER', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, 'bob', '$2b$10$PqtDfiyP6quVQxbCkK3nteOstcMovdxxpjjcsDcibStNUv2rPjlKq', 'DEVELOPER', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -19,7 +19,7 @@ INSERT INTO users (id, username, password, role, person_id, is_active, created_a
 (6, 'emma', '$2b$10$PqtDfiyP6quVQxbCkK3nteOstcMovdxxpjjcsDcibStNUv2rPjlKq', 'DEVELOPER', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample projects
-INSERT INTO projects (id, name, project_key, description, color, owner_id, is_active, created_at, updated_at) VALUES
+INSERT INTO projects OVERRIDING SYSTEM VALUE (id, name, project_key, description, color, owner_id, is_active, created_at, updated_at) VALUES
 (1, 'Customer Portal', 'CP', 'Building a new customer-facing portal for self-service', '#3498db', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, 'Mobile App', 'MA', 'Native mobile application for iOS and Android', '#e74c3c', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, 'Internal Tools', 'IT', 'Suite of internal tools for team productivity', '#2ecc71', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
