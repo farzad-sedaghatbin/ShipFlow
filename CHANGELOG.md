@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-01-28
+
+### Fixed
+- **PostgreSQL Migration Compatibility** (Production Critical)
+  - Converted all MySQL-specific `AUTO_INCREMENT` syntax to SQL standard `GENERATED ALWAYS AS IDENTITY`
+  - Removed MySQL-specific `ON UPDATE CURRENT_TIMESTAMP` clauses (not supported in PostgreSQL/H2)
+  - Replaced `CLOB` data type with `TEXT` for PostgreSQL compatibility
+  - Updated 14 migration files: V1, V3, V9, V12, V14, V15, V22, V23, V43, V44, V45, V54, V59, V60
+  - **Impact**: Migrations now fully support both H2 (development) and PostgreSQL (production)
+  - Fixes: `ERROR: syntax error at or near "AUTO_INCREMENT"` in production deployments
+
 ## [0.3.1] - 2026-01-27
 
 ### Fixed
