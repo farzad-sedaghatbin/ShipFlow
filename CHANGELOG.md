@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Seed Data PostgreSQL Compatibility** (Production Blocking)
+  - Added `OVERRIDING SYSTEM VALUE` clause to all INSERT statements with explicit IDs
+  - Fixed V11, V20, V21, V25 seed data migrations for PostgreSQL compatibility
+  - Fixes: `ERROR: cannot insert a non-DEFAULT value into column "id"` when inserting seed data
+  - **Note**: Seed data currently runs in production via Flyway migrations (not ideal)
+
 ## [0.3.2] - 2026-01-28
 
 ### Fixed
