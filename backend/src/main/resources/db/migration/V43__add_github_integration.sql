@@ -2,7 +2,7 @@
 
 -- GitHub repositories table
 CREATE TABLE github_repositories (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     owner VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     full_name VARCHAR(511) NOT NULL,
@@ -16,10 +16,10 @@ CREATE TABLE github_repositories (
 
 -- GitHub commits table
 CREATE TABLE github_commits (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     repository_id BIGINT NOT NULL,
     sha VARCHAR(40) NOT NULL UNIQUE,
-    message CLOB,
+    message TEXT,
     author_name VARCHAR(255),
     author_email VARCHAR(255),
     author_username VARCHAR(255),
@@ -32,11 +32,11 @@ CREATE TABLE github_commits (
 
 -- GitHub pull requests table
 CREATE TABLE github_pull_requests (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     repository_id BIGINT NOT NULL,
     pr_number INT NOT NULL,
     title VARCHAR(500) NOT NULL,
-    description CLOB,
+    description TEXT,
     state VARCHAR(50) NOT NULL,
     head_branch VARCHAR(255) NOT NULL,
     base_branch VARCHAR(255) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE github_pull_requests (
 
 -- GitHub branches table
 CREATE TABLE github_branches (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     repository_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
     head_sha VARCHAR(40),
@@ -67,7 +67,7 @@ CREATE TABLE github_branches (
 
 -- Pitch-GitHub links table (many-to-many relationship)
 CREATE TABLE pitch_github_links (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pitch_id BIGINT NOT NULL,
     link_type VARCHAR(50) NOT NULL, -- COMMIT, PULL_REQUEST, BRANCH
     commit_id BIGINT,
@@ -89,7 +89,7 @@ CREATE TABLE pitch_github_links (
 
 -- Task-GitHub links table (many-to-many relationship)
 CREATE TABLE task_github_links (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     task_id BIGINT NOT NULL,
     link_type VARCHAR(50) NOT NULL, -- COMMIT, PULL_REQUEST, BRANCH
     commit_id BIGINT,
@@ -112,19 +112,19 @@ CREATE TABLE task_github_links (
 
 -- GitHub webhook events log (for audit and debugging)
 CREATE TABLE github_webhook_events (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     event_type VARCHAR(100) NOT NULL,
-    payload CLOB NOT NULL,
+    payload TEXT NOT NULL,
     repository_full_name VARCHAR(511),
     processed BOOLEAN NOT NULL DEFAULT FALSE,
     processed_at TIMESTAMP,
-    error_message CLOB,
+    error_message TEXT,
     created_at TIMESTAMP NOT NULL
 );
 
 -- GitHub configuration table (stores webhook secrets, tokens, etc.)
 CREATE TABLE github_configuration (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     repository_id BIGINT NOT NULL,
     webhook_secret VARCHAR(500),
     access_token VARCHAR(500),
