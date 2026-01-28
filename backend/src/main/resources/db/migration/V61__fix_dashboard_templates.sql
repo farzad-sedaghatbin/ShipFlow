@@ -2,90 +2,93 @@
 -- Fix dashboard templates that may not have been created due to admin user dependency
 -- This ensures templates exist regardless of when admin user was created
 
--- First, check if templates already exist and create them if missing
--- Use a system user (user_id = 0) or the first admin user that exists
+-- Only create templates if at least one admin user exists
+-- This prevents foreign key constraint violations
 
--- Create templates using the first admin user if one exists, otherwise use system placeholder
-WITH first_admin AS (
-    SELECT COALESCE(MIN(id), 0) as admin_id 
-    FROM users 
-    WHERE role = 'ADMIN' 
-    LIMIT 1
-)
+-- Create Executive Summary template using the first admin user
 INSERT INTO custom_dashboards (user_id, name, description, is_template, template_category, layout_config, created_by)
 SELECT 
-    admin_id,
+    admin_user.id,
     'Executive Summary',
     'High-level overview with key metrics, cycle progress, and risk distribution',
     true,
     'EXECUTIVE',
     '{"columns": 12, "rowHeight": 60, "breakpoints": {"lg": 1200, "md": 996, "sm": 768}}',
-    admin_id
-FROM first_admin
-WHERE NOT EXISTS (
+    admin_user.id
+FROM (
+    SELECT MIN(id) as id 
+    FROM users 
+    WHERE role = 'ADMIN'
+    LIMIT 1
+) admin_user
+WHERE admin_user.id IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM custom_dashboards 
     WHERE name = 'Executive Summary' AND is_template = true
 );
 
-WITH first_admin AS (
-    SELECT COALESCE(MIN(id), 0) as admin_id 
-    FROM users 
-    WHERE role = 'ADMIN' 
-    LIMIT 1
-)
+-- Create Developer Dashboard template using the first admin user
 INSERT INTO custom_dashboards (user_id, name, description, is_template, template_category, layout_config, created_by)
 SELECT 
-    admin_id,
+    admin_user.id,
     'Developer Dashboard',
     'Task-focused view with my tasks, team workload, and recent activity',
     true,
     'DEVELOPER',
     '{"columns": 12, "rowHeight": 60, "breakpoints": {"lg": 1200, "md": 996, "sm": 768}}',
-    admin_id
-FROM first_admin
-WHERE NOT EXISTS (
+    admin_user.id
+FROM (
+    SELECT MIN(id) as id 
+    FROM users 
+    WHERE role = 'ADMIN'
+    LIMIT 1
+) admin_user
+WHERE admin_user.id IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM custom_dashboards 
     WHERE name = 'Developer Dashboard' AND is_template = true
 );
 
-WITH first_admin AS (
-    SELECT COALESCE(MIN(id), 0) as admin_id 
-    FROM users 
-    WHERE role = 'ADMIN' 
-    LIMIT 1
-)
+-- Create Manager Overview template using the first admin user
 INSERT INTO custom_dashboards (user_id, name, description, is_template, template_category, layout_config, created_by)
 SELECT 
-    admin_id,
+    admin_user.id,
     'Manager Overview',
     'Team performance, cycle health, budget tracking, and delivery metrics',
     true,
     'MANAGER',
     '{"columns": 12, "rowHeight": 60, "breakpoints": {"lg": 1200, "md": 996, "sm": 768}}',
-    admin_id
-FROM first_admin
-WHERE NOT EXISTS (
+    admin_user.id
+FROM (
+    SELECT MIN(id) as id 
+    FROM users 
+    WHERE role = 'ADMIN'
+    LIMIT 1
+) admin_user
+WHERE admin_user.id IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM custom_dashboards 
     WHERE name = 'Manager Overview' AND is_template = true
 );
 
-WITH first_admin AS (
-    SELECT COALESCE(MIN(id), 0) as admin_id 
-    FROM users 
-    WHERE role = 'ADMIN' 
-    LIMIT 1
-)
+-- Create QA Dashboard template using the first admin user
 INSERT INTO custom_dashboards (user_id, name, description, is_template, template_category, layout_config, created_by)
 SELECT 
-    admin_id,
+    admin_user.id,
     'QA Dashboard',
     'Bug tracking, test coverage, and quality metrics',
     true,
     'QA',
     '{"columns": 12, "rowHeight": 60, "breakpoints": {"lg": 1200, "md": 996, "sm": 768}}',
-    admin_id
-FROM first_admin
-WHERE NOT EXISTS (
+    admin_user.id
+FROM (
+    SELECT MIN(id) as id 
+    FROM users 
+    WHERE role = 'ADMIN'
+    LIMIT 1
+) admin_user
+WHERE admin_user.id IS NOT NULL
+AND NOT EXISTS (
     SELECT 1 FROM custom_dashboards 
     WHERE name = 'QA Dashboard' AND is_template = true
 );
