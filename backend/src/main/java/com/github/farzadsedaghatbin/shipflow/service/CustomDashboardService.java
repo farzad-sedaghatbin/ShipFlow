@@ -259,7 +259,7 @@ public class CustomDashboardService {
      * Get all available templates
      */
     public List<CustomDashboardDTO> getTemplates() {
-        return customDashboardRepository.findByIsTemplateTrueOrderByTemplateCategoryAsc(true).stream()
+        return customDashboardRepository.findByIsTemplateOrderByTemplateCategoryAsc(true).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
