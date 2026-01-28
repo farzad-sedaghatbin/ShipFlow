@@ -2,7 +2,7 @@
 
 -- Teams workspace configuration table
 CREATE TABLE teams_configuration (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_name VARCHAR(255) NOT NULL,
     webhook_url VARCHAR(1000) NOT NULL,
     default_channel VARCHAR(255),
@@ -14,7 +14,7 @@ CREATE TABLE teams_configuration (
 
 -- Teams channel notification configuration
 CREATE TABLE teams_channel_config (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     teams_config_id BIGINT NOT NULL,
     channel_name VARCHAR(255) NOT NULL,
     channel_webhook_url VARCHAR(1000),
@@ -34,16 +34,16 @@ CREATE TABLE teams_channel_config (
 
 -- Teams notification history (for audit and troubleshooting)
 CREATE TABLE teams_notification_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     teams_config_id BIGINT NOT NULL,
     channel_name VARCHAR(255),
     notification_type VARCHAR(100) NOT NULL,
-    message_text CLOB,
+    message_text TEXT,
     entity_type VARCHAR(50),
     entity_id BIGINT,
     sent_at TIMESTAMP NOT NULL,
     success BOOLEAN NOT NULL DEFAULT TRUE,
-    error_message CLOB,
+    error_message TEXT,
     CONSTRAINT fk_teams_history_config FOREIGN KEY (teams_config_id) REFERENCES teams_configuration(id) ON DELETE CASCADE
 );
 

@@ -1,7 +1,7 @@
 -- V14: Add uploaded_documents table for document storage and text extraction
 
 CREATE TABLE uploaded_documents (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     file_name VARCHAR(500) NOT NULL,
     original_file_name VARCHAR(500) NOT NULL,
     file_type VARCHAR(50) NOT NULL,

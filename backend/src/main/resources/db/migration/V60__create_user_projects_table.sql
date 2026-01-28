@@ -6,7 +6,7 @@
 -- 4. Global ADMIN role (bypasses all checks)
 
 CREATE TABLE user_projects (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     project_id BIGINT NOT NULL,
     project_role VARCHAR(50) NOT NULL DEFAULT 'VIEWER',

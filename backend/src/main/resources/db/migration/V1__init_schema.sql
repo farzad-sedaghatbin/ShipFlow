@@ -1,6 +1,6 @@
 -- Cycles table
 CREATE TABLE cycles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE cycles (
 
 -- Teams table
 CREATE TABLE teams (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     cycle_id BIGINT,
     CONSTRAINT fk_teams_cycle FOREIGN KEY (cycle_id) REFERENCES cycles(id)
@@ -18,7 +18,7 @@ CREATE TABLE teams (
 
 -- Persons table (independent from teams)
 CREATE TABLE persons (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE,
     skills TEXT,
@@ -32,7 +32,7 @@ CREATE TABLE persons (
 
 -- Users table (authentication)
 CREATE TABLE users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE users (
 
 -- Team Assignments table (links persons to teams with roles)
 CREATE TABLE team_assignments (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     person_id BIGINT NOT NULL,
     team_id BIGINT NOT NULL,
     role VARCHAR(50) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE team_assignments (
 
 -- Pitches table
 CREATE TABLE pitches (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     appetite_days INT NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE pitches (
 
 -- Work Logs table
 CREATE TABLE work_logs (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     person_id BIGINT NOT NULL,
     pitch_id BIGINT NOT NULL,
     date DATE NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE work_logs (
 
 -- Meetings table
 CREATE TABLE meetings (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pitch_id BIGINT,
     type VARCHAR(50) NOT NULL,
     date_held DATE NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE meetings (
 
 -- Evidences table
 CREATE TABLE evidences (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pitch_id BIGINT NOT NULL,
     person_id BIGINT NOT NULL,
     date DATE NOT NULL,

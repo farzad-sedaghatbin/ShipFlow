@@ -2,11 +2,11 @@
 -- Add pitch risk history tracking for trend analysis
 
 CREATE TABLE pitch_risk_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     pitch_id BIGINT NOT NULL,
     risk_score INT NOT NULL,
     risk_level VARCHAR(20) NOT NULL,
-    risk_factors_json CLOB,
+    risk_factors_json TEXT,
     recorded_at TIMESTAMP NOT NULL,
     trigger_type VARCHAR(20) NOT NULL,
     

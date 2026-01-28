@@ -2,7 +2,7 @@
 
 -- Slack workspace configuration table
 CREATE TABLE slack_configuration (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     workspace_name VARCHAR(255) NOT NULL,
     webhook_url VARCHAR(1000) NOT NULL,
     default_channel VARCHAR(255),
@@ -14,7 +14,7 @@ CREATE TABLE slack_configuration (
 
 -- Slack channel notification configuration
 CREATE TABLE slack_channel_config (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     slack_config_id BIGINT NOT NULL,
     channel_name VARCHAR(255) NOT NULL,
     channel_webhook_url VARCHAR(1000),
@@ -34,16 +34,16 @@ CREATE TABLE slack_channel_config (
 
 -- Slack notification history (for audit and troubleshooting)
 CREATE TABLE slack_notification_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     slack_config_id BIGINT NOT NULL,
     channel_name VARCHAR(255),
     notification_type VARCHAR(100) NOT NULL,
-    message_text CLOB,
+    message_text TEXT,
     entity_type VARCHAR(50),
     entity_id BIGINT,
     sent_at TIMESTAMP NOT NULL,
     success BOOLEAN NOT NULL DEFAULT TRUE,
-    error_message CLOB,
+    error_message TEXT,
     CONSTRAINT fk_slack_history_config FOREIGN KEY (slack_config_id) REFERENCES slack_configuration(id) ON DELETE CASCADE
 );
 

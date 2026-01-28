@@ -3,7 +3,7 @@
 
 -- Create permissions table
 CREATE TABLE permissions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     role VARCHAR(50) NOT NULL,
     resource_type VARCHAR(50) NOT NULL,
     permission_type VARCHAR(50) NOT NULL,
