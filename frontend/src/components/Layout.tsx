@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -222,8 +222,16 @@ function SectionHeader({ textKey }: { textKey: string }) {
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
   const { isKanbanProject, isAllProjectsSelected } = useProject();
-  const { hasPermissionSync } = usePermission();
+  const { hasPermissionSync, hasPermission } = usePermission();
   const currentPath = location.pathname;
+
+  // Preload essential admin permissions for menu visibility
+  useEffect(() => {
+    // Preload SYSTEM MANAGE permission to ensure admin menus show immediately
+    hasPermission('SYSTEM', 'MANAGE').catch(() => {
+      // Ignore errors, permission will be cached as false
+    });
+  }, []); // Only run once on mount
 
   // Check if we're in a cycle context (viewing pitches, betting, health, retros, reports)
   const isCycleContext = ['/pitches', '/betting', '/health', '/retros', '/reports'].some(
