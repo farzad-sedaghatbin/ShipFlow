@@ -150,6 +150,12 @@
             <artifactId>langchain4j-qdrant</artifactId>
             <version>0.35.0</version>
         </dependency>
+        <!-- Qdrant Java Client - For collection management -->
+        <dependency>
+            <groupId>io.qdrant</groupId>
+            <artifactId>client</artifactId>
+            <version>1.9.1</version>
+        </dependency>
         <!-- ChromaDB - Alternative option -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

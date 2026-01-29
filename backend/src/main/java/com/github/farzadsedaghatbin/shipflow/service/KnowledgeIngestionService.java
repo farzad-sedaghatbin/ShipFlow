@@ -324,8 +324,9 @@ public class KnowledgeIngestionService {
 
     /**
      * Ingest an uploaded document into the knowledge base.
+     * Uses REQUIRES_NEW propagation to prevent rollback of parent transaction if embedding fails.
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void ingestDocument(UploadedDocument document) {
         if (!isQAEnabled()) return;
 
