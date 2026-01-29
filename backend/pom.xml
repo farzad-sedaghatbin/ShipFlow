@@ -154,7 +154,23 @@
         <dependency>
             <groupId>io.qdrant</groupId>
             <artifactId>client</artifactId>
-            <version>1.9.1</version>
+            <version>1.7.0</version>
+        </dependency>
+        <!-- gRPC dependencies for Qdrant client compatibility -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.59.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>1.59.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>1.59.0</version>
         </dependency>
         <!-- ChromaDB - Alternative option -->
         <dependency>
