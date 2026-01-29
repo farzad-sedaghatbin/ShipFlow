@@ -100,12 +100,7 @@ public class VectorStoreInitializer implements CommandLineRunner {
                         .setDistance(Collections.Distance.Cosine)
                         .build();
                 
-                client.createCollectionAsync(
-                        collectionName,
-                        Collections.VectorsConfig.newBuilder()
-                                .setParams(vectorParams)
-                                .build()
-                ).get();
+                client.createCollectionAsync(collectionName, vectorParams).get();
                 
                 log.info("Successfully created Qdrant collection '{}'", collectionName);
             }
