@@ -73,6 +73,15 @@ public class PermissionController {
                 .collect(Collectors.toList()));
     }
 
+    @GetMapping("/has-permission")
+    @Operation(summary = "Check if current user has a specific permission")
+    public ResponseEntity<Boolean> hasPermission(
+            @RequestParam ResourceType resourceType,
+            @RequestParam PermissionType permissionType) {
+        boolean hasPermission = permissionService.hasPermission(resourceType, permissionType);
+        return ResponseEntity.ok(hasPermission);
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all permissions (admin only)")
