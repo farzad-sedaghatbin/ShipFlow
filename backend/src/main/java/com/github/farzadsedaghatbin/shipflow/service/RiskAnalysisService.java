@@ -1035,7 +1035,7 @@ public class RiskAnalysisService {
      * @param riskDTO The risk analysis result
      * @param triggerType What triggered this snapshot
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void saveRiskHistory(Pitch pitch, PitchRiskDTO riskDTO, PitchRiskHistory.TriggerType triggerType) {
         try {
             // Serialize risk factors to JSON

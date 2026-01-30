@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity.slack;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,7 @@ public class SlackNotificationHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "slack_config_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private SlackConfiguration slackConfiguration;
 
     @Column(name = "channel_name")

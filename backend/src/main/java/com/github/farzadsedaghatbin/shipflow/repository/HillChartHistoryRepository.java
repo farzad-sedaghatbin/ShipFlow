@@ -15,20 +15,22 @@ import java.util.List;
 @Repository
 public interface HillChartHistoryRepository extends JpaRepository<HillChartHistory, Long> {
 
-    List<HillChartHistory> findByHillChartPointIdOrderByCreatedAtDesc(Long hillChartPointId);
+    @Query("SELECT h FROM HillChartHistory h LEFT JOIN FETCH h.hillChartPoint LEFT JOIN FETCH h.pitch LEFT JOIN FETCH h.movedBy WHERE h.hillChartPoint.id = :hillChartPointId ORDER BY h.createdAt DESC")
+    List<HillChartHistory> findByHillChartPointIdOrderByCreatedAtDesc(@Param("hillChartPointId") Long hillChartPointId);
 
-    List<HillChartHistory> findByPitchIdOrderByCreatedAtDesc(Long pitchId);
+    @Query("SELECT h FROM HillChartHistory h LEFT JOIN FETCH h.hillChartPoint LEFT JOIN FETCH h.pitch LEFT JOIN FETCH h.movedBy WHERE h.pitch.id = :pitchId ORDER BY h.createdAt DESC")
+    List<HillChartHistory> findByPitchIdOrderByCreatedAtDesc(@Param("pitchId") Long pitchId);
 
-    @Query("SELECT h FROM HillChartHistory h WHERE h.pitch.cycle.id = :cycleId ORDER BY h.createdAt DESC")
+    @Query("SELECT h FROM HillChartHistory h LEFT JOIN FETCH h.hillChartPoint LEFT JOIN FETCH h.pitch LEFT JOIN FETCH h.movedBy WHERE h.pitch.cycle.id = :cycleId ORDER BY h.createdAt DESC")
     List<HillChartHistory> findByCycleId(@Param("cycleId") Long cycleId);
 
-    @Query("SELECT h FROM HillChartHistory h WHERE h.createdAt >= :startDate ORDER BY h.createdAt DESC")
+    @Query("SELECT h FROM HillChartHistory h LEFT JOIN FETCH h.hillChartPoint LEFT JOIN FETCH h.pitch LEFT JOIN FETCH h.movedBy WHERE h.createdAt >= :startDate ORDER BY h.createdAt DESC")
     List<HillChartHistory> findRecentHistory(@Param("startDate") LocalDateTime startDate);
 
     @Query("SELECT AVG(h.confidenceLevel) FROM HillChartHistory h WHERE h.pitch.id = :pitchId AND h.confidenceLevel IS NOT NULL")
     Double getAverageConfidenceByPitch(@Param("pitchId") Long pitchId);
 
-    @Query("SELECT h FROM HillChartHistory h WHERE h.movedBy.id = :userId ORDER BY h.createdAt DESC")
+    @Query("SELECT h FROM HillChartHistory h LEFT JOIN FETCH h.hillChartPoint LEFT JOIN FETCH h.pitch LEFT JOIN FETCH h.movedBy WHERE h.movedBy.id = :userId ORDER BY h.createdAt DESC")
     List<HillChartHistory> findByUserId(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(h) FROM HillChartHistory h WHERE h.hillChartPoint.id = :pointId")

@@ -15,13 +15,16 @@ public interface PitchRiskHistoryRepository extends JpaRepository<PitchRiskHisto
 
     /**
      * Find all risk history for a specific pitch, ordered by date descending.
+     * Eagerly fetches the pitch to avoid lazy initialization issues.
      */
-    List<PitchRiskHistory> findByPitchIdOrderByRecordedAtDesc(Long pitchId);
+    @Query("SELECT h FROM PitchRiskHistory h LEFT JOIN FETCH h.pitch WHERE h.pitch.id = :pitchId ORDER BY h.recordedAt DESC")
+    List<PitchRiskHistory> findByPitchIdOrderByRecordedAtDesc(@Param("pitchId") Long pitchId);
 
     /**
      * Find risk history for a pitch within a date range.
+     * Eagerly fetches the pitch to avoid lazy initialization issues.
      */
-    @Query("SELECT h FROM PitchRiskHistory h WHERE h.pitch.id = :pitchId " +
+    @Query("SELECT h FROM PitchRiskHistory h LEFT JOIN FETCH h.pitch WHERE h.pitch.id = :pitchId " +
            "AND h.recordedAt >= :startDate AND h.recordedAt <= :endDate " +
            "ORDER BY h.recordedAt ASC")
     List<PitchRiskHistory> findByPitchIdAndDateRange(
@@ -32,8 +35,10 @@ public interface PitchRiskHistoryRepository extends JpaRepository<PitchRiskHisto
 
     /**
      * Find the most recent risk history entry for a pitch.
+     * Eagerly fetches the pitch to avoid lazy initialization issues.
      */
-    Optional<PitchRiskHistory> findFirstByPitchIdOrderByRecordedAtDesc(Long pitchId);
+    @Query("SELECT h FROM PitchRiskHistory h LEFT JOIN FETCH h.pitch WHERE h.pitch.id = :pitchId ORDER BY h.recordedAt DESC LIMIT 1")
+    Optional<PitchRiskHistory> findFirstByPitchIdOrderByRecordedAtDesc(@Param("pitchId") Long pitchId);
 
     /**
      * Find all pitches with risk history recorded today.
