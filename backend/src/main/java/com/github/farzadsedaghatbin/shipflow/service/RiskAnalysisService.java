@@ -114,6 +114,7 @@ public class RiskAnalysisService {
      * @param pitch The pitch entity
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional(readOnly = false)
     public PitchRiskDTO analyzePitchRisk(Pitch pitch, boolean useAI) {
         // Check cache first (for entity-based calls)
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitch.getId(), useAI);
