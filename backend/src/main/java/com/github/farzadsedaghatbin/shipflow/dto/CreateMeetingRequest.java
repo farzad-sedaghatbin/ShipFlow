@@ -21,7 +21,9 @@ public class CreateMeetingRequest {
     @NotNull(message = "Date held is required")
     private LocalDate dateHeld;
     
+    @Builder.Default
     private Boolean dorReady = false;
+    @Builder.Default
     private Boolean dodReady = false;
     private String notes;
     private Long retrospectiveId;
