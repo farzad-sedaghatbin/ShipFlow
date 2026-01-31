@@ -87,6 +87,7 @@ public class RiskAnalysisService {
      * @param pitchId The pitch ID
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional
     public PitchRiskDTO analyzePitchRisk(Long pitchId, boolean useAI) {
         // Check cache first
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitchId, useAI);
@@ -234,6 +235,7 @@ public class RiskAnalysisService {
      * @param cycleId The cycle ID
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional
     public CycleRiskOverviewDTO getCycleRiskOverview(Long cycleId, boolean useAI) {
         // Check cache first
         Optional<CycleRiskOverviewDTO> cachedResult = cacheService.getCachedCycleRisk(cycleId, useAI);
