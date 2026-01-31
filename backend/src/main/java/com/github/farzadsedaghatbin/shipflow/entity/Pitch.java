@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -51,10 +52,12 @@ public class Pitch {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cycle_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pitches", "teams", "retrospectives", "project"})
     private Cycle cycle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "cycle", "members", "pitches"})
     private Team team;
 
     @Enumerated(EnumType.STRING)

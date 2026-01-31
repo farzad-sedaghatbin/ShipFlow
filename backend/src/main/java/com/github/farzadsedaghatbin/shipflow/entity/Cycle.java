@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,6 +24,7 @@ public class Cycle {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "cycles", "users"})
     private Project project;
 
     @Column(nullable = false)

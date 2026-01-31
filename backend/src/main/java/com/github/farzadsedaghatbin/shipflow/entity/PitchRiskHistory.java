@@ -33,7 +33,7 @@ public class PitchRiskHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pitch_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "cycle", "team", "workLogs", "meetings", "evidences"})
     private Pitch pitch;
 
     @Column(nullable = false)
