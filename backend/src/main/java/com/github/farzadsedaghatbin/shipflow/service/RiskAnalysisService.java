@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-@Transactional(readOnly = true)
 @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 public class RiskAnalysisService {
 
@@ -1036,7 +1035,7 @@ public class RiskAnalysisService {
      * @param riskDTO The risk analysis result
      * @param triggerType What triggered this snapshot
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @Transactional
     public void saveRiskHistory(Pitch pitch, PitchRiskDTO riskDTO, PitchRiskHistory.TriggerType triggerType) {
         try {
             // Serialize risk factors to JSON
