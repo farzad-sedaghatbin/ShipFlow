@@ -434,59 +434,26 @@ public class TeamsIntegrationService {
     };
   }
 
-  /** Build payload for Power Automate flows - Adaptive Card format */
+  /** Build payload for Power Automate flows - Simple JSON format */
   private Map<String, Object> buildPowerAutomatePayload(
       String message, String notificationType, String entityType, Long entityId) {
-    // Build Adaptive Card directly (Power Automate expects this format)
-    Map<String, Object> adaptiveCard = new LinkedHashMap<>();
-    adaptiveCard.put("type", "AdaptiveCard");
-    adaptiveCard.put("version", "1.3");
-
-    // Create card body
-    List<Map<String, Object>> body = new ArrayList<>();
-
-    // Title block
-    Map<String, Object> titleBlock = new LinkedHashMap<>();
-    titleBlock.put("type", "TextBlock");
-    titleBlock.put("text", getNotificationTitle(notificationType));
-    titleBlock.put("weight", "Bolder");
-    titleBlock.put("size", "Medium");
-    titleBlock.put("color", "Accent");
-    body.add(titleBlock);
-
-    // Message block
-    Map<String, Object> messageBlock = new LinkedHashMap<>();
-    messageBlock.put("type", "TextBlock");
-    messageBlock.put("text", message);
-    messageBlock.put("wrap", true);
-    messageBlock.put("spacing", "Medium");
-    body.add(messageBlock);
-
+    // Use simple JSON format that matches successful curl test
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("title", getNotificationTitle(notificationType));
+    payload.put("message", message);
+    payload.put("text", message);
+    payload.put("notificationType", notificationType);
+    payload.put("timestamp", LocalDateTime.now().toString());
+    payload.put("source", "ShipFlow");
+    payload.put("themeColor", getThemeColor(notificationType).replace("#", ""));
+    
     // Add entity information if available
     if (entityType != null && entityId != null) {
-      Map<String, Object> entityBlock = new LinkedHashMap<>();
-      entityBlock.put("type", "TextBlock");
-      entityBlock.put("text", String.format("**Entity:** %s #%d", entityType, entityId));
-      entityBlock.put("size", "Small");
-      entityBlock.put("color", "Attention");
-      entityBlock.put("spacing", "Small");
-      body.add(entityBlock);
+      payload.put("entityType", entityType);
+      payload.put("entityId", entityId);
     }
-
-    // Timestamp block
-    Map<String, Object> timestampBlock = new LinkedHashMap<>();
-    timestampBlock.put("type", "TextBlock");
-    timestampBlock.put(
-        "text", String.format("🕐 %s • 🚀 ShipFlow", LocalDateTime.now().toString()));
-    timestampBlock.put("size", "Small");
-    timestampBlock.put("color", "Dark");
-    timestampBlock.put("isSubtle", true);
-    timestampBlock.put("spacing", "Small");
-    body.add(timestampBlock);
-
-    adaptiveCard.put("body", body);
-
-    return adaptiveCard;
+    
+    return payload;
   }
 
   /**
