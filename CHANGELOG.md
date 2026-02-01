@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-02-01
+
+### Fixed
+- **Power Automate Teams Integration - URL Double-Encoding Issue**
+  - Fixed `401 AuthorizationFailed` error when sending notifications via Power Automate
+  - Root cause: RestTemplate was double-encoding URL query parameters (`sp=%2F` became `sp=%252F`)
+  - Solution: Use `URI.create()` instead of String URL to prevent double-encoding
+  - Restored Adaptive Card format required by Power Automate Teams flows
+  - Updated unit tests for URI-based API
+
+### Added
+- **GitHub App OAuth UI for Organization-Wide Integration**
+  - Updated GitHubRepositoryManager to show both OAuth and Manual options
+  - Added GitHub App status check and conditional UI rendering
+  - Added organization connection, sync, and removal functionality
+  - Updated githubService with OAuth methods (getAppStatus, initiateOAuth, etc.)
+  - Added English and Persian translations for GitHub App UI
+  - GitHub App section only shows when backend is configured
+
+- **GitHub App i18n Messages**
+  - Moved GitHub App OAuth messages from SQL to properties files
+  - Added messages to `messages.properties` (English)
+  - Added messages to `messages_fa.properties` (Persian)
+
 ## [0.3.8] - 2026-02-01
 
 ### Added
