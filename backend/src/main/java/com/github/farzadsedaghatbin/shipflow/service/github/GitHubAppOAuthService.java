@@ -18,11 +18,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -283,8 +286,10 @@ public class GitHubAppOAuthService {
             JsonNode tokenNode = objectMapper.readTree(response.getBody());
             installation.setAccessToken(tokenNode.path("token").asText());
             
+            // Parse GitHub API ISO 8601 UTC timestamp (e.g., "2026-02-01T16:45:00Z")
             String expiresAt = tokenNode.path("expires_at").asText();
-            installation.setTokenExpiresAt(LocalDateTime.parse(expiresAt.replace("Z", "")));
+            Instant expiresAtInstant = Instant.parse(expiresAt);
+            installation.setTokenExpiresAt(LocalDateTime.ofInstant(expiresAtInstant, ZoneOffset.UTC));
             
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse GitHub token response", e);
@@ -376,7 +381,8 @@ public class GitHubAppOAuthService {
     }
 
     /**
-     * Get next page URL from GitHub API pagination headers
+     * Get next page URL from GitHub API pagination headers.
+     * Validates the URL to prevent SSRF attacks by ensuring it points to the legitimate GitHub API.
      */
     private String getNextPageUrl(HttpHeaders headers) {
         List<String> linkHeaders = headers.get("Link");
@@ -392,12 +398,57 @@ public class GitHubAppOAuthService {
                 int start = link.indexOf('<') + 1;
                 int end = link.indexOf('>');
                 if (start > 0 && end > start) {
-                    return link.substring(start, end);
+                    String urlString = link.substring(start, end);
+                    
+                    // Validate URL to prevent SSRF attacks
+                    if (isValidGitHubApiUrl(urlString)) {
+                        return urlString;
+                    } else {
+                        log.warn("Pagination URL validation failed, stopping pagination: {}", urlString);
+                        return null;
+                    }
                 }
             }
         }
         
         return null;
+    }
+    
+    /**
+     * Validate that a URL points to the legitimate GitHub API to prevent SSRF attacks.
+     * Only allows HTTPS URLs pointing to api.github.com with paths starting with expected prefixes.
+     */
+    private boolean isValidGitHubApiUrl(String urlString) {
+        try {
+            URI uri = new URI(urlString);
+            
+            // Must use HTTPS
+            if (!"https".equalsIgnoreCase(uri.getScheme())) {
+                log.warn("URL validation failed: scheme is not HTTPS: {}", urlString);
+                return false;
+            }
+            
+            // Must point to api.github.com
+            if (!"api.github.com".equalsIgnoreCase(uri.getHost())) {
+                log.warn("URL validation failed: host is not api.github.com: {}", urlString);
+                return false;
+            }
+            
+            // Path must start with expected GitHub API prefixes
+            String path = uri.getPath();
+            if (path == null || (!path.startsWith("/installation/") && 
+                                 !path.startsWith("/app/") && 
+                                 !path.startsWith("/repos/"))) {
+                log.warn("URL validation failed: path does not start with expected prefix: {}", urlString);
+                return false;
+            }
+            
+            return true;
+            
+        } catch (Exception e) {
+            log.error("URL validation failed: invalid URI: {}", urlString, e);
+            return false;
+        }
     }
 
     /**
