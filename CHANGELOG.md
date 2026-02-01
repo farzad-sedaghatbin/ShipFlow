@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-02-01
+
+### Fixed
+- **Critical: Read-Only Transaction Error in Risk History**
+  - Fixed `ERROR: cannot execute INSERT in a read-only transaction` when saving pitch risk history
+  - Added explicit `readOnly=false` to `@Transactional` annotations in `RiskAnalysisService`
+  - Refactored `RiskHistoryService` to use `EntityManager` directly with `REQUIRES_NEW` propagation
+  - Re-fetch Pitch entity within new transaction to avoid detached entity issues
+  - Added HikariCP `connection-init-sql` to ensure connections default to read-write mode
+  - Fixes risk analysis history tracking in production environments
+
 ## [0.3.4] - 2026-01-28
 
 ### Fixed
