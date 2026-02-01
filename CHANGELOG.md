@@ -4,6 +4,62 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-02-01
+
+### Added
+- **GitHub App OAuth Integration (Organization-Wide Access)**
+  - **Two Integration Methods**: Users can now choose between GitHub App or Manual registration
+    - **GitHub App** (Recommended): Single OAuth consent grants access to all organization repositories
+    - **Manual Registration**: Per-repository setup for smaller projects or specific repos
+  - **GitHub App Benefits**:
+    - Sync 50+ repositories with a single authorization
+    - Automatic webhook configuration for ALL repositories (no manual setup per repo)
+    - New repositories automatically tracked when "All repositories" is selected
+    - Short-lived tokens with automatic refresh for better security
+  - **New Endpoints**:
+    - `GET /api/github/app/status` - Check GitHub App configuration status
+    - `POST /api/github/app/authorize` - Initiate OAuth consent flow
+    - `GET /api/github/app/callback` - Handle OAuth callback from GitHub
+    - `GET /api/github/app/installations` - List all GitHub App installations
+    - `POST /api/github/app/sync-all` - Bulk sync repositories from all installations
+    - `DELETE /api/github/app/installations/{id}` - Remove an installation
+  - **Database Migration**: V62 adds `github_app_installations` table
+  - **Configuration Variables**:
+    - `GITHUB_APP_ID` - App ID from GitHub App settings
+    - `GITHUB_APP_NAME` - App slug from URL
+    - `GITHUB_APP_PRIVATE_KEY` - PEM private key for JWT authentication
+    - `GITHUB_APP_CLIENT_ID` - OAuth Client ID
+    - `GITHUB_APP_CLIENT_SECRET` - OAuth Client Secret
+    - `GITHUB_APP_WEBHOOK_SECRET` - Webhook verification secret
+  - **Documentation**: Comprehensive setup guide in `GITHUB_INTEGRATION_GUIDE.md`
+    - Step-by-step instructions for creating GitHub App
+    - Self-hosted deployment guide (each company creates their own GitHub App)
+    - Troubleshooting section for common issues
+  - **Testing**: Unit tests for `GitHubAppOAuthService`
+
+- **Microsoft Teams Integration: Flow Type Support**
+  - **Multiple Integration Methods**: Support for 3 flow types
+    - `WEBHOOK`: Traditional Teams incoming webhooks
+    - `POWER_AUTOMATE_POST`: Power Automate flows that post to channel
+    - `POWER_AUTOMATE_THREAD`: Power Automate flows that create conversation threads
+  - **Smart Flow Detection**: Automatic URL-based flow type detection for optimal payload formatting
+  - **Enhanced Database Schema**: Added `flow_type` column to `teams_channel_config` with migration V20241217001
+  - **Backend Enhancements**:
+    - Created `FlowType` enum for type safety
+    - Updated `TeamsIntegrationService` with flow-type-aware payload building
+    - Enhanced error handling with flow-type-specific guidance
+    - Updated DTOs and request classes to support flow type selection
+  - **Frontend Improvements**:
+    - Flow type dropdown selector in channel configuration UI
+    - Enhanced setup guide with dual-path instructions (webhook vs Power Automate)
+    - Updated channel table to display flow type with color-coded badges
+    - Complete Farsi translations for all new features
+  - **Documentation**:
+    - Updated `TEAMS_INTEGRATION_GUIDE.md` with flow type explanations and upgrade guide
+    - Added security considerations and FAQ section
+    - Database migration notes for existing installations
+  - **Testing**: Comprehensive test coverage including flow type validation and payload formatting tests
+
 ## [0.3.7] - 2026-02-01
 
 ### Fixed

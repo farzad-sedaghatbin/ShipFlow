@@ -1,16 +1,20 @@
 package com.github.farzadsedaghatbin.shipflow.service.teams;
 
 import com.github.farzadsedaghatbin.shipflow.dto.teams.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import com.github.farzadsedaghatbin.shipflow.entity.teams.*;
 import com.github.farzadsedaghatbin.shipflow.repository.teams.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +34,8 @@ public class TeamsIntegrationService {
     private final TeamsChannelConfigRepository channelConfigRepository;
     private final TeamsNotificationHistoryRepository historyRepository;
     private final RestTemplate restTemplate;
+    @Qualifier("webhookRestTemplate")
+    private final RestTemplate webhookRestTemplate;
 
     /**
      * Create or update Teams tenant configuration
@@ -159,6 +165,7 @@ public class TeamsIntegrationService {
         // Determine which webhook URL to use
         String webhookUrl = config.getWebhookUrl();
         String targetChannel = channel != null ? channel : config.getDefaultChannel();
+        FlowType flowType = FlowType.WEBHOOK; // Default to traditional webhook
         
         // Check if there's a channel-specific configuration
         if (targetChannel != null) {
@@ -172,9 +179,12 @@ public class TeamsIntegrationService {
                     return;
                 }
                 
-                // Use channel-specific webhook if available
+                // Use channel-specific webhook and flow type if available
                 if (channelConfig.get().getChannelWebhookUrl() != null) {
                     webhookUrl = channelConfig.get().getChannelWebhookUrl();
+                }
+                if (channelConfig.get().getFlowType() != null) {
+                    flowType = channelConfig.get().getFlowType();
                 }
             }
         }
@@ -183,15 +193,19 @@ public class TeamsIntegrationService {
         String errorMessage = null;
         
         try {
-            // Build Teams Adaptive Card payload
-            Map<String, Object> payload = buildTeamsAdaptiveCard(message, notificationType, entityType, entityId);
+            // Build appropriate payload based on flow type
+            Map<String, Object> payload = buildWebhookPayload(webhookUrl, message, notificationType, entityType, entityId, flowType);
             
             // Send to Teams
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "ShipFlow-Teams-Integration/1.0");
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             
-            restTemplate.postForEntity(webhookUrl, request, String.class);
+            // Use dedicated webhook RestTemplate with longer timeouts
+            var response = webhookRestTemplate.postForEntity(webhookUrl, request, String.class);
+            log.info("✅ Sent {} notification to Teams: {} (HTTP {})", notificationType, 
+                    targetChannel != null ? targetChannel : "default", response.getStatusCode());
             success = true;
             log.info("Sent Teams notification: {} to channel: {}", notificationType, targetChannel);
             
@@ -221,21 +235,65 @@ public class TeamsIntegrationService {
     public void sendTestNotification(Long configId, TestTeamsNotificationRequest request) {
         TeamsConfiguration config = teamsConfigRepository.findById(configId)
                 .orElseThrow(() -> new IllegalArgumentException("Teams configuration not found with id: " + configId));
+        
         String webhookUrl = config.getWebhookUrl();
-        String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShipFlow";
+        
+        // Validate webhook URL (this will throw exception if invalid)
+        validateWebhookUrl(webhookUrl);
+        
+        String message = request.getMessage() != null ? request.getMessage() : "🚀 Test notification from ShipFlow - Your Teams integration is working!";
 
         try {
-            Map<String, Object> payload = buildTeamsAdaptiveCard(message, "TEST", null, null);
+            // Default to Power Automate for URLs that look like Power Automate, otherwise webhook
+            FlowType flowType = FlowType.WEBHOOK;
+            if (webhookUrl.contains("powerplatform.com") || 
+                webhookUrl.contains("powerautomate") || 
+                webhookUrl.contains("logic.azure.com")) {
+                flowType = FlowType.POWER_AUTOMATE_POST;
+            }
+            
+            Map<String, Object> payload = buildWebhookPayload(webhookUrl, message, "TEST", null, null, flowType);
+            
+            log.debug("Sending Teams webhook payload: {}", payload);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "ShipFlow-Teams-Integration/1.0");
             HttpEntity<Map<String, Object>> httpRequest = new HttpEntity<>(payload, headers);
 
-            restTemplate.postForEntity(webhookUrl, httpRequest, String.class);
-            log.info("Sent test notification to Teams tenant: {}", config.getTenantName());
+            // Use dedicated webhook RestTemplate with longer timeouts
+            var response = webhookRestTemplate.postForEntity(webhookUrl, httpRequest, String.class);
+            
+            log.info("✅ Test notification sent successfully to Teams tenant: {} (HTTP {})", 
+                    config.getTenantName(), response.getStatusCode());
+                    
+        } catch (ResourceAccessException e) {
+            // Network/timeout issues
+            log.error("❌ Network error sending Teams notification - this usually indicates connection timeout, DNS issues, or Teams service unavailability: {}", e.getMessage());
+            throw new RuntimeException("Connection failed to Teams webhook. Please check: 1) Internet connectivity, 2) Webhook URL is correct, 3) Teams service is available. Error: " + e.getMessage());
+        } catch (RestClientException e) {
+            // HTTP errors (4xx, 5xx)
+            log.error("❌ Teams webhook request failed: {}", e.getMessage(), e);
+            
+            String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            
+            // Check for Logic App URL mistakenly used instead of Teams webhook
+            if (errorMsg.contains("triggers/manual/paths") || errorMsg.contains("authorizationfailed")) {
+                throw new RuntimeException("❌ WRONG URL TYPE: You're using an Azure Logic App URL instead of a Microsoft Teams incoming webhook URL. " +
+                        "Please create a proper Teams incoming webhook: 1) Go to your Teams channel → More options (...) → Connectors → Incoming Webhook → Configure → Create. " +
+                        "Teams webhook URLs look like 'https://outlook.office.com/webhook/...' not Logic App URLs.");
+            } else if (errorMsg.contains("400")) {
+                throw new RuntimeException("Teams rejected the webhook payload (400 Bad Request). The webhook URL might be expired or the message format is invalid.");
+            } else if (errorMsg.contains("404")) {
+                throw new RuntimeException("Teams webhook not found (404). Please check if the webhook URL is correct and still active.");
+            } else if (errorMsg.contains("401")) {
+                throw new RuntimeException("Authentication failed (401). The webhook URL might be expired or invalid. Please recreate your Teams incoming webhook.");
+            } else {
+                throw new RuntimeException("Teams webhook failed: " + e.getMessage());
+            }
         } catch (Exception e) {
-            log.error("Failed to send test notification: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to send test notification: " + e.getMessage());
+            log.error("❌ Unexpected error sending Teams notification: {}", e.getMessage(), e);
+            throw new RuntimeException("Unexpected error sending Teams notification: " + e.getMessage());
         }
     }
 
@@ -279,6 +337,9 @@ public class TeamsIntegrationService {
         if (request.getNotifySprintStarted() != null) {
             config.setNotifySprintStarted(request.getNotifySprintStarted());
         }
+        if (request.getFlowType() != null) {
+            config.setFlowType(request.getFlowType());
+        }
     }
 
     private boolean isNotificationEnabled(TeamsChannelConfig channelConfig, String notificationType) {
@@ -293,6 +354,77 @@ public class TeamsIntegrationService {
             case "SPRINT_STARTED" -> channelConfig.getNotifySprintStarted();
             default -> true;
         };
+    }
+
+    /**
+     * Build appropriate webhook payload based on the flow type
+     */
+    private Map<String, Object> buildWebhookPayload(String webhookUrl, String message, String notificationType, String entityType, Long entityId, FlowType flowType) {
+        return switch (flowType) {
+            case POWER_AUTOMATE_POST, POWER_AUTOMATE_THREAD -> {
+                // Power Automate flows expect Adaptive Card format
+                yield buildPowerAutomatePayload(message, notificationType, entityType, entityId);
+            }
+            case WEBHOOK -> {
+                // Traditional Teams webhook - let's also use Adaptive Card format for consistency
+                yield buildTeamsAdaptiveCard(message, notificationType, entityType, entityId);
+            }
+        };
+    }
+    
+    /**
+     * Build payload for Power Automate flows - Adaptive Card format
+     */
+    private Map<String, Object> buildPowerAutomatePayload(String message, String notificationType, String entityType, Long entityId) {
+        // Build Adaptive Card directly (Power Automate expects this format)
+        Map<String, Object> adaptiveCard = new LinkedHashMap<>();
+        adaptiveCard.put("type", "AdaptiveCard");
+        adaptiveCard.put("version", "1.3");
+        
+        // Create card body
+        List<Map<String, Object>> body = new ArrayList<>();
+        
+        // Title block
+        Map<String, Object> titleBlock = new LinkedHashMap<>();
+        titleBlock.put("type", "TextBlock");
+        titleBlock.put("text", getNotificationTitle(notificationType));
+        titleBlock.put("weight", "Bolder");
+        titleBlock.put("size", "Medium");
+        titleBlock.put("color", "Accent");
+        body.add(titleBlock);
+        
+        // Message block
+        Map<String, Object> messageBlock = new LinkedHashMap<>();
+        messageBlock.put("type", "TextBlock");
+        messageBlock.put("text", message);
+        messageBlock.put("wrap", true);
+        messageBlock.put("spacing", "Medium");
+        body.add(messageBlock);
+        
+        // Add entity information if available
+        if (entityType != null && entityId != null) {
+            Map<String, Object> entityBlock = new LinkedHashMap<>();
+            entityBlock.put("type", "TextBlock");
+            entityBlock.put("text", String.format("**Entity:** %s #%d", entityType, entityId));
+            entityBlock.put("size", "Small");
+            entityBlock.put("color", "Attention");
+            entityBlock.put("spacing", "Small");
+            body.add(entityBlock);
+        }
+        
+        // Timestamp block
+        Map<String, Object> timestampBlock = new LinkedHashMap<>();
+        timestampBlock.put("type", "TextBlock");
+        timestampBlock.put("text", String.format("🕐 %s • 🚀 ShipFlow", LocalDateTime.now().toString()));
+        timestampBlock.put("size", "Small");
+        timestampBlock.put("color", "Dark");
+        timestampBlock.put("isSubtle", true);
+        timestampBlock.put("spacing", "Small");
+        body.add(timestampBlock);
+        
+        adaptiveCard.put("body", body);
+        
+        return adaptiveCard;
     }
 
     /**
@@ -386,6 +518,7 @@ public class TeamsIntegrationService {
                 .notifyCycleCooldown(config.getNotifyCycleCooldown())
                 .notifyBettingCompleted(config.getNotifyBettingCompleted())
                 .notifySprintStarted(config.getNotifySprintStarted())
+                .flowType(config.getFlowType())
                 .createdAt(config.getCreatedAt())
                 .updatedAt(config.getUpdatedAt())
                 .build();
@@ -404,5 +537,39 @@ public class TeamsIntegrationService {
                 .success(history.getSuccess())
                 .errorMessage(history.getErrorMessage())
                 .build();
+    }
+    
+    /**
+     * Validate Teams webhook URL format and provide helpful error messages
+     */
+    private void validateWebhookUrl(String webhookUrl) {
+        if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("Webhook URL cannot be empty");
+        }
+        
+        if (!webhookUrl.startsWith("https://")) {
+            throw new IllegalArgumentException("Teams webhook URL must use HTTPS protocol");
+        }
+        
+        // Check if this is a Power Automate URL
+        boolean isPowerAutomateUrl = webhookUrl.contains("powerplatform.com") ||
+                                     webhookUrl.contains("powerautomate/automations") ||
+                                     webhookUrl.contains("logic.azure.com") ||
+                                     webhookUrl.contains("/triggers/manual/paths/");
+        
+        // Check for traditional Teams webhook URL patterns  
+        boolean isTraditionalTeamsUrl = webhookUrl.contains("outlook.office.com/webhook") ||
+                                        webhookUrl.contains("outlook.office365.com/webhook") ||
+                                        webhookUrl.contains(".webhook.office.com");
+        
+        if (!isPowerAutomateUrl && !isTraditionalTeamsUrl) {
+            log.warn("⚠️  Webhook URL does not match expected Teams webhook or Power Automate patterns. Please verify it's correct: {}", 
+                    webhookUrl.substring(0, Math.min(60, webhookUrl.length())) + "...");
+            log.info("💡 Supported URLs: Teams webhooks (https://outlook.office.com/webhook/...) or Power Automate flows (https://...powerplatform.com/...)");
+        }
+        
+        if (isPowerAutomateUrl) {
+            log.info("🔄 Detected Power Automate URL - make sure your flow is configured to 'Accept from anyone' for anonymous access");
+        }
     }
 }

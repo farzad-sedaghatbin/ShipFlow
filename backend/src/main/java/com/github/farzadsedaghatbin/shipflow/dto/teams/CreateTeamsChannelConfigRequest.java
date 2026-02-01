@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.teams;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -13,6 +14,7 @@ public class CreateTeamsChannelConfigRequest {
     private String channelName;
 
     private String channelWebhookUrl;
+    private FlowType flowType;
     private Boolean notifyTaskAssigned;
     private Boolean notifyTaskCompleted;
     private Boolean notifyTaskBlocked;
