@@ -4851,8 +4851,25 @@
     "title": "GitHub Integration",
     "description": "Manage GitHub repository integrations and webhook configurations"
   },
+  "githubApp": {
+    "title": "GitHub App Integration",
+    "description": "Connect your GitHub organization for automatic repository discovery and webhook setup",
+    "connectOrganization": "Connect Organization",
+    "connecting": "Connecting...",
+    "connectError": "Failed to initiate GitHub connection",
+    "syncAll": "Sync All",
+    "sync": "Sync",
+    "syncError": "Failed to sync repositories",
+    "connected": "Connected",
+    "allRepositories": "All repositories",
+    "selectedRepositories": "{{count}} repositories selected",
+    "noInstallations": "No organizations connected. Click \"Connect Organization\" to get started with automatic repository sync.",
+    "confirmRemove": "Are you sure you want to disconnect this organization?",
+    "removeError": "Failed to remove installation"
+  },
   "githubRepositoryManager": {
-    "title": "GitHub Integration",
+    "title": "Manual Repository Setup",
+    "manualDescription": "Or add repositories manually if you prefer individual control",
     "addRepository": "Add Repository",
     "setupInstructions": "Setup Instructions:",
     "setupStep1": "Add your repository below",

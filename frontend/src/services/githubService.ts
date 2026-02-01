@@ -16,6 +16,45 @@ githubApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Types for GitHub App OAuth
+export interface GitHubAppStatus {
+  configured: boolean;
+  appName?: string;
+  appSlug?: string;
+  permissions?: {
+    contents?: string;
+    pullRequests?: string;
+    issues?: string;
+    metadata?: string;
+  };
+}
+
+export interface GitHubOAuthUrlResponse {
+  authorizationUrl: string;
+  state: string;
+  callbackUrl: string;
+  instructions?: string[];
+}
+
+export interface GitHubAppInstallation {
+  id: number;
+  installationId: number;
+  accountLogin: string;
+  accountType: string;
+  repositorySelection: string;
+  repositoriesCount?: number;
+  tokenValid: boolean;
+  installedAt: string;
+}
+
+export interface GitHubBulkSyncResult {
+  success: boolean;
+  totalInstallations: number;
+  totalRepositoriesSynced: number;
+  syncedInstallations: string[];
+  errors: string[];
+}
+
 export const githubService = {
   // Repository management
   registerRepository: async (request: CreateGitHubRepositoryRequest): Promise<void> => {
@@ -37,5 +76,40 @@ export const githubService = {
   getPitchGitHubLinks: async (pitchId: number): Promise<GitHubLink[]> => {
     const response = await githubApi.get(`/pitches/${pitchId}/links`);
     return response.data;
+  },
+
+  // GitHub App OAuth methods
+  getAppStatus: async (): Promise<GitHubAppStatus> => {
+    const response = await githubApi.get('/app/status');
+    return response.data;
+  },
+
+  initiateOAuth: async (suggestedOrganization?: string): Promise<GitHubOAuthUrlResponse> => {
+    const baseUrl = window.location.origin;
+    const response = await githubApi.post('/app/authorize', {
+      baseUrl,
+      suggestedOrganization,
+      redirectUrl: `${baseUrl}/settings/integrations/github`,
+    });
+    return response.data;
+  },
+
+  getInstallations: async (): Promise<GitHubAppInstallation[]> => {
+    const response = await githubApi.get('/app/installations');
+    return response.data;
+  },
+
+  syncInstallation: async (installationId: number): Promise<{ repositoriesSynced: number }> => {
+    const response = await githubApi.post(`/app/installations/${installationId}/sync`);
+    return response.data;
+  },
+
+  syncAllRepositories: async (): Promise<GitHubBulkSyncResult> => {
+    const response = await githubApi.post('/app/sync-all');
+    return response.data;
+  },
+
+  removeInstallation: async (installationId: number): Promise<void> => {
+    await githubApi.delete(`/app/installations/${installationId}`);
   },
 };
