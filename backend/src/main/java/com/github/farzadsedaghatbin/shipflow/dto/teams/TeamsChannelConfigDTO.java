@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.teams;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public class TeamsChannelConfigDTO {
     private Boolean notifyCycleCooldown;
     private Boolean notifyBettingCompleted;
     private Boolean notifySprintStarted;
+    private FlowType flowType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

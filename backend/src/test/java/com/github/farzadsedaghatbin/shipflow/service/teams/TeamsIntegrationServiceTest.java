@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service.teams;
 
 import com.github.farzadsedaghatbin.shipflow.dto.teams.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import com.github.farzadsedaghatbin.shipflow.entity.teams.*;
 import com.github.farzadsedaghatbin.shipflow.repository.teams.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +63,7 @@ class TeamsIntegrationServiceTest {
                 .id(1L)
                 .teamsConfiguration(testConfig)
                 .channelName("dev-team")
+                .flowType(FlowType.WEBHOOK)
                 .notifyTaskAssigned(true)
                 .notifyTaskCompleted(true)
                 .notifyTaskBlocked(false)
@@ -169,6 +171,7 @@ class TeamsIntegrationServiceTest {
         // Given
         CreateTeamsChannelConfigRequest request = CreateTeamsChannelConfigRequest.builder()
                 .channelName("new-channel")
+                .flowType(FlowType.POWER_AUTOMATE_POST)
                 .notifyTaskAssigned(true)
                 .build();
 
@@ -343,5 +346,45 @@ class TeamsIntegrationServiceTest {
         // Then
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getNotificationType()).isEqualTo("TASK_ASSIGNED");
+    }
+
+    @Test
+    void createChannelConfig_WithFlowType_ShouldSetCorrectFlowType() {
+        // Given
+        CreateTeamsChannelConfigRequest request = CreateTeamsChannelConfigRequest.builder()
+                .channelName("power-automate-channel")
+                .flowType(FlowType.POWER_AUTOMATE_THREAD)
+                .notifyTaskAssigned(true)
+                .build();
+
+        TeamsChannelConfig savedConfig = TeamsChannelConfig.builder()
+                .id(2L)
+                .teamsConfiguration(testConfig)
+                .channelName("power-automate-channel")
+                .flowType(FlowType.POWER_AUTOMATE_THREAD)
+                .notifyTaskAssigned(true)
+                .notifyTaskCompleted(false)
+                .notifyTaskBlocked(false)
+                .notifyPitchShaped(false)
+                .notifyCycleStarted(false)
+                .notifyCycleCooldown(false)
+                .notifyBettingCompleted(false)
+                .notifySprintStarted(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
+        when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(1L, "power-automate-channel"))
+                .thenReturn(Optional.empty());
+        when(channelConfigRepository.save(any(TeamsChannelConfig.class))).thenReturn(savedConfig);
+
+        // When
+        TeamsChannelConfigDTO result = teamsService.createOrUpdateChannelConfig(1L, request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getFlowType()).isEqualTo(FlowType.POWER_AUTOMATE_THREAD);
+        verify(channelConfigRepository).save(any(TeamsChannelConfig.class));
     }
 }

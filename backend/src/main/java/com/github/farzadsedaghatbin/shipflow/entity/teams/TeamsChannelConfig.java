@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity.teams;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -52,6 +53,10 @@ public class TeamsChannelConfig {
     @Column(name = "notify_sprint_started", nullable = false)
     private Boolean notifySprintStarted;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "flow_type", nullable = false)
+    private FlowType flowType;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -70,6 +75,7 @@ public class TeamsChannelConfig {
         if (notifyCycleCooldown == null) notifyCycleCooldown = true;
         if (notifyBettingCompleted == null) notifyBettingCompleted = false;
         if (notifySprintStarted == null) notifySprintStarted = false;
+        if (flowType == null) flowType = FlowType.WEBHOOK;
     }
 
     @PreUpdate

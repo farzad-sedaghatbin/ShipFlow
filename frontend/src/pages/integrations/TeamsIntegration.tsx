@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
@@ -60,6 +61,7 @@ export default function TeamsIntegration() {
   const [channelForm, setChannelForm] = useState<CreateTeamsChannelConfigRequest>({
     channelName: '',
     channelWebhookUrl: '',
+    flowType: 'WEBHOOK',
     notifyTaskAssigned: true,
     notifyTaskCompleted: true,
     notifyTaskBlocked: false,
@@ -161,6 +163,7 @@ export default function TeamsIntegration() {
       setChannelForm({
         channelName: '',
         channelWebhookUrl: '',
+        flowType: 'WEBHOOK',
         notifyTaskAssigned: true,
         notifyTaskCompleted: true,
         notifyTaskBlocked: false,
@@ -353,6 +356,7 @@ export default function TeamsIntegration() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('teamsIntegration.channelName')}</TableHead>
+                        <TableHead>{t('teamsIntegration.flowType')}</TableHead>
                         <TableHead>{t('teamsIntegration.taskAssigned')}</TableHead>
                         <TableHead>{t('teamsIntegration.taskCompleted')}</TableHead>
                         <TableHead>{t('teamsIntegration.taskBlocked')}</TableHead>
@@ -364,6 +368,13 @@ export default function TeamsIntegration() {
                       {channelConfigs.map((channel) => (
                         <TableRow key={channel.id}>
                           <TableCell className="font-medium">{channel.channelName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {channel.flowType === 'WEBHOOK' ? t('teamsIntegration.webhookType') :
+                               channel.flowType === 'POWER_AUTOMATE_POST' ? t('teamsIntegration.powerAutomatePost') :
+                               t('teamsIntegration.powerAutomateThread')}
+                            </Badge>
+                          </TableCell>
                           <TableCell>
                             <Badge variant={channel.notifyTaskAssigned ? 'default' : 'secondary'}>
                               {channel.notifyTaskAssigned ? t('common.yes') : t('common.no')}
@@ -420,17 +431,32 @@ export default function TeamsIntegration() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold">{t('teamsIntegration.step1Title')}</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-2">
-                <li>{t('teamsIntegration.step1_1')}</li>
-                <li>{t('teamsIntegration.step1_2')}</li>
-                <li>{t('teamsIntegration.step1_3')}</li>
-                <li>{t('teamsIntegration.step1_4')}</li>
-                <li dangerouslySetInnerHTML={{ __html: t('teamsIntegration.webhookNameExample') }} />
-                <li>{t('teamsIntegration.step1_6')}</li>
-                <li>{t('teamsIntegration.step1_7')}</li>
-              </ol>
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                  {t('teamsIntegration.traditionalWebhookSetup')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-blue-600 dark:text-blue-300 ml-2">
+                  <li>{t('teamsIntegration.step1_1')}</li>
+                  <li>{t('teamsIntegration.step1_2_webhook')}</li>
+                  <li>{t('teamsIntegration.step1_3_webhook')}</li>
+                  <li>{t('teamsIntegration.step1_4_webhook')}</li>
+                  <li>{t('teamsIntegration.step1_5_webhook')}</li>
+                </ol>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                <h4 className="font-semibold text-green-700 dark:text-green-400 mb-2">
+                  {t('teamsIntegration.powerAutomateSetup')}
+                </h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-green-600 dark:text-green-300 ml-2">
+                  <li>{t('teamsIntegration.step1_1')}</li>
+                  <li>{t('teamsIntegration.step1_2_powerautomate')}</li>
+                  <li>{t('teamsIntegration.step1_3_powerautomate')}</li>
+                  <li>{t('teamsIntegration.step1_4_powerautomate')}</li>
+                  <li>{t('teamsIntegration.step1_5_powerautomate')}</li>
+                </ol>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -563,6 +589,28 @@ export default function TeamsIntegration() {
                 }
                 placeholder={t('teamsIntegration.webhookPlaceholder')}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="flowType">{t('teamsIntegration.flowType')}</Label>
+              <Select
+                value={channelForm.flowType}
+                onValueChange={(value) =>
+                  setChannelForm({ ...channelForm, flowType: value as 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD' })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('teamsIntegration.flowTypeDescription')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WEBHOOK">{t('teamsIntegration.webhookType')}</SelectItem>
+                  <SelectItem value="POWER_AUTOMATE_POST">{t('teamsIntegration.powerAutomatePost')}</SelectItem>
+                  <SelectItem value="POWER_AUTOMATE_THREAD">{t('teamsIntegration.powerAutomateThread')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t('teamsIntegration.flowTypeHelpText')}
+              </p>
             </div>
 
             <div>

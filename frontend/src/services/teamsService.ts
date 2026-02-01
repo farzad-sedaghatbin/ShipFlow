@@ -45,6 +45,7 @@ export interface TeamsChannelConfig {
   notifyCycleCooldown: boolean;
   notifyBettingCompleted: boolean;
   notifySprintStarted: boolean;
+  flowType: 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD';
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +53,7 @@ export interface TeamsChannelConfig {
 export interface CreateTeamsChannelConfigRequest {
   channelName: string;
   channelWebhookUrl?: string;
+  flowType?: 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD';
   notifyTaskAssigned?: boolean;
   notifyTaskCompleted?: boolean;
   notifyTaskBlocked?: boolean;

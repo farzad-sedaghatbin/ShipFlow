@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.io.IOException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -138,6 +141,43 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    /**
+     * Handle client disconnection exceptions (ClientAbortException, IOException: Connection reset by peer, etc.)
+     * These are normal network conditions, not server errors, so we log them at DEBUG level instead of ERROR.
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbortException(ClientAbortException ex) {
+        log.debug("Client disconnected during response: {}", ex.getMessage());
+        // Don't return a response - the client has already disconnected
+    }
+
+    /**
+     * Handle general IO exceptions, particularly connection reset errors.
+     * Log at DEBUG level if it's a connection issue, ERROR level otherwise.
+     */
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<Map<String, Object>> handleIOException(IOException ex) {
+        String message = ex.getMessage();
+        
+        // Check if this is a client disconnection issue
+        if (message != null && (message.contains("Connection reset by peer") || 
+                               message.contains("Broken pipe") ||
+                               message.contains("An established connection was aborted"))) {
+            log.debug("Client connection issue: {}", message);
+            // Return null to indicate no response should be sent (client already disconnected)
+            return null;
+        }
+        
+        // For other IO exceptions, treat as server error
+        log.error("IO Exception: {}", ex.getMessage(), ex);
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("message", getMessage("error.generic"));
+        error.put("messageKey", "error.generic");
+        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         log.error("Unexpected runtime exception: {}", ex.getMessage(), ex);
@@ -151,6 +191,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        // Check if this is a wrapped client disconnection issue
+        if (isClientDisconnectionException(ex)) {
+            log.debug("Client disconnection detected in generic exception: {}", ex.getMessage());
+            return null; // No response - client already disconnected
+        }
+        
         log.error("Unexpected exception: {}", ex.getMessage(), ex);
         Map<String, Object> error = new HashMap<>();
         error.put("timestamp", LocalDateTime.now());
@@ -158,6 +204,49 @@ public class GlobalExceptionHandler {
         error.put("messageKey", "error.generic");
         error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    /**
+     * Check if an exception is related to client disconnection by examining the exception chain
+     * and error messages for common client disconnection indicators.
+     */
+    private boolean isClientDisconnectionException(Exception ex) {
+        // Check the exception chain for client disconnection indicators
+        Throwable cause = ex;
+        while (cause != null) {
+            // Check exception type
+            if (cause instanceof ClientAbortException || 
+                cause instanceof java.net.SocketException ||
+                (cause instanceof IOException && isConnectionResetMessage(cause.getMessage()))) {
+                return true;
+            }
+            
+            // Check for common client disconnection messages
+            String message = cause.getMessage();
+            if (message != null && isConnectionResetMessage(message)) {
+                return true;
+            }
+            
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * Check if a message indicates a client disconnection.
+     */
+    private boolean isConnectionResetMessage(String message) {
+        if (message == null) {
+            return false;
+        }
+        
+        String lowerMessage = message.toLowerCase();
+        return lowerMessage.contains("connection reset by peer") ||
+               lowerMessage.contains("broken pipe") ||
+               lowerMessage.contains("an established connection was aborted") ||
+               lowerMessage.contains("connection was forcibly closed") ||
+               lowerMessage.contains("socket closed") ||
+               lowerMessage.contains("client abort");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
