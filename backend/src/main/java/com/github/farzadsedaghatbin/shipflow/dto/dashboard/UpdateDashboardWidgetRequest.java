@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateDashboardWidgetRequest {
-    private Boolean isVisible;
-    private Integer displayOrder;
-    private String layoutConfig;
-    private String settings;
+  private Boolean isVisible;
+  private Integer displayOrder;
+  private String layoutConfig;
+  private String settings;
 }

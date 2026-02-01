@@ -7,10 +7,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CycleRetroStatusDTO {
-    private Long cycleId;
-    private String cycleName;
-    private Integer totalRetros;
-    private Integer closedRetros;
-    private Boolean canCloseCycle;
-    private String message;
+  private Long cycleId;
+  private String cycleName;
+  private Integer totalRetros;
+  private Integer closedRetros;
+  private Boolean canCloseCycle;
+  private String message;
 }

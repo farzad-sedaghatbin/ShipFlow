@@ -140,11 +140,20 @@ A modern project management application implementing the [Shape Up](https://base
   - Historical test pattern learning
   - Completeness scoring (0-100)
 - **GitHub Integration**: Seamless integration with GitHub repositories
+  - **Two Integration Methods**:
+    - **GitHub App** (Recommended): Organization-wide OAuth consent for bulk access to 50+ repos
+    - **Manual Registration**: Per-repository setup for smaller projects
+  - **GitHub App Benefits**:
+    - Single authorization grants access to ALL organization repositories
+    - Automatic webhook configuration for all repositories
+    - New repositories automatically tracked (if "all" selected)
+    - No per-repository webhook setup required
   - Auto-link commits and pull requests to tasks and pitches
   - Auto-close tasks when PRs are merged with closing keywords
   - Real-time webhook updates
   - Visual GitHub activity timeline on task/pitch pages
   - Support for multiple repositories
+  - See [GitHub Integration Guide](GITHUB_INTEGRATION_GUIDE.md) for setup
 - **Slack Integration**: Real-time team notifications
   - Workspace and channel-specific configuration
   - 8 notification types (tasks, cycles, pitches, betting)
@@ -152,6 +161,15 @@ A modern project management application implementing the [Shape Up](https://base
   - Test notification functionality
   - Complete audit trail of sent notifications
   - Role-based access control (ADMIN/MANAGER only)
+- **Microsoft Teams Integration**: Comprehensive Teams notification support
+  - **Multiple Flow Types**: Traditional webhooks, Power Automate (post to channel), Power Automate (create thread)
+  - **Smart Detection**: Automatic flow type detection based on webhook URL format
+  - **Optimized Payloads**: Different message formats optimized for each integration method
+  - **Channel-Specific Configuration**: Per-channel flow type and notification preferences
+  - **Enhanced Setup Guide**: Dual-path instructions for webhook vs Power Automate setup
+  - **Test Functionality**: Built-in test notifications with detailed error handling
+  - **Adaptive Card Support**: Rich formatting for both traditional and Power Automate flows
+  - **Role-based Access Control**: ADMIN/MANAGER only configuration
 
 ## 🔀 How ShipFlow Compares
 

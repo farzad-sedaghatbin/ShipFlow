@@ -30,6 +30,11 @@ jobs:
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
+    - name: Spotless Check
+      run: |
+        cd backend
+        ./mvnw spotless:check
+
     - name: Backend Tests
       run: |
         cd backend

@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GitHubBranchDTO {
-    private Long id;
-    private String name;
-    private String headSha;
-    private Boolean isDefault;
-    private String repositoryFullName;
+  private Long id;
+  private String name;
+  private String headSha;
+  private Boolean isDefault;
+  private String repositoryFullName;
 }

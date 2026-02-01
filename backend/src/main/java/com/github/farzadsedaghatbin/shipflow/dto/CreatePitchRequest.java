@@ -11,28 +11,27 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreatePitchRequest {
-    @NotBlank(message = "Title is required")
-    private String title;
-    
-    private String description;
-    
-    @NotNull(message = "Appetite days is required")
-    @Min(value = 1, message = "Appetite must be at least 1 day")
-    private Integer appetiteDays;
-    
-    @NotNull(message = "Cycle ID is required")
-    private Long cycleId;
-    
-    private Long teamId;
-    
-    @Builder.Default
-    private PitchStatus status = PitchStatus.PENDING;
-    
-    // Shape Up Methodology Fields
-    private String problemStatement;
-    private String solution;
-    private String rabbitHoles;
-    private String risks;
-    private String noGos;
-    private String wireframeLinks;
+  @NotBlank(message = "Title is required")
+  private String title;
+
+  private String description;
+
+  @NotNull(message = "Appetite days is required")
+  @Min(value = 1, message = "Appetite must be at least 1 day")
+  private Integer appetiteDays;
+
+  @NotNull(message = "Cycle ID is required")
+  private Long cycleId;
+
+  private Long teamId;
+
+  @Builder.Default private PitchStatus status = PitchStatus.PENDING;
+
+  // Shape Up Methodology Fields
+  private String problemStatement;
+  private String solution;
+  private String rabbitHoles;
+  private String risks;
+  private String noGos;
+  private String wireframeLinks;
 }

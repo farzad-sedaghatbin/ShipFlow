@@ -13,16 +13,15 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(
     name = "spring.flyway.repair.enabled",
     havingValue = "true",
-    matchIfMissing = false
-)
+    matchIfMissing = false)
 public class FlywayRepair implements CommandLineRunner {
 
-    private final Flyway flyway;
+  private final Flyway flyway;
 
-    @Override
-    public void run(String... args) throws Exception {
-        log.info("Repairing Flyway schema history...");
-        flyway.repair();
-        log.info("Flyway repair complete.");
-    }
+  @Override
+  public void run(String... args) throws Exception {
+    log.info("Repairing Flyway schema history...");
+    flyway.repair();
+    log.info("Flyway repair complete.");
+  }
 }

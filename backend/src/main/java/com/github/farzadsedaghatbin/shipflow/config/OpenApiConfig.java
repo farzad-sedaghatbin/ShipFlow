@@ -10,18 +10,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI shipFlowOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("ShipFlow API")
-                        .description("REST API for Shape Up methodology analytics and tracking")
-                        .version("1.0.0")
-                        .contact(new Contact()
-                                .name("Farzad Sedaghatbin")
-                                .url("https://github.com/farzad-sedaghatbin/ShipFlow"))
-                        .license(new License()
-                                .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")));
-    }
+  @Bean
+  public OpenAPI shipFlowOpenAPI() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("ShipFlow API")
+                .description("REST API for Shape Up methodology analytics and tracking")
+                .version("1.0.0")
+                .contact(
+                    new Contact()
+                        .name("Farzad Sedaghatbin")
+                        .url("https://github.com/farzad-sedaghatbin/ShipFlow"))
+                .license(
+                    new License().name("MIT License").url("https://opensource.org/licenses/MIT")));
+  }
 }
