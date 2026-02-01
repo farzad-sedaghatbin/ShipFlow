@@ -258,8 +258,19 @@ public class CustomDashboardService {
     /**
      * Get all available templates
      */
+    @Transactional(readOnly = true)
     public List<CustomDashboardDTO> getTemplates() {
-        return customDashboardRepository.findByIsTemplateTrueOrderByTemplateCategoryAsc().stream()
+        // Try multiple approaches to find the issue
+        List<CustomDashboard> allDashboards = customDashboardRepository.findAll();
+        log.info("Total dashboards found: {}", allDashboards.size());
+        
+        List<CustomDashboard> templates = allDashboards.stream()
+                .filter(d -> Boolean.TRUE.equals(d.getIsTemplate()))
+                .collect(Collectors.toList());
+        
+        log.info("Templates found by filtering: {}", templates.size());
+        
+        return templates.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }

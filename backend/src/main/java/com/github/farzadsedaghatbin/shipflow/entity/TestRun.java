@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestRunStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,6 +35,7 @@ public class TestRun {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_case_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private TestCase testCase;
 
     /**
@@ -41,6 +43,7 @@ public class TestRun {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cycle_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Cycle cycle;
 
     /**
@@ -48,6 +51,7 @@ public class TestRun {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pitch_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Pitch pitch;
 
     /**
@@ -62,6 +66,7 @@ public class TestRun {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "executed_by_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User executedBy;
 
     /**
@@ -109,6 +114,7 @@ public class TestRun {
      * Bug report created from this test run (if failed).
      */
     @OneToOne(mappedBy = "testRun", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private BugReport bugReport;
 
     @Column(nullable = false)

@@ -164,6 +164,28 @@ class PermissionControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
+    void hasPermission_WithValidPermission_ShouldReturnTrue() throws Exception {
+        mockMvc.perform(get("/api/permissions/has-permission")
+                        .param("resourceType", "BUG")
+                        .param("permissionType", "CREATE"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", is(true)));
+    }
+
+    @Test
+    @WithMockUser(username = "qa", roles = {"MEMBER"})
+    void hasPermission_WithInvalidPermission_ShouldReturnFalse() throws Exception {
+        mockMvc.perform(get("/api/permissions/has-permission")
+                        .param("resourceType", "SYSTEM")
+                        .param("permissionType", "MANAGE"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", is(false)));
+    }
+
+    @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void createPermission_AsAdmin_ShouldCreateNewPermission() throws Exception {
         CreatePermissionRequest request = new CreatePermissionRequest();

@@ -14,8 +14,6 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRiskHistoryRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +37,6 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-@Transactional(readOnly = true)
 @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 public class RiskAnalysisService {
 
@@ -53,7 +50,7 @@ public class RiskAnalysisService {
     private final AICacheService cacheService;
     private final PitchRiskHistoryRepository riskHistoryRepository;
     private final OrganizationSettingsService organizationSettingsService;
-    private final ObjectMapper objectMapper;
+    private final RiskHistoryService riskHistoryService;
 
     @Autowired
     public RiskAnalysisService(
@@ -64,7 +61,8 @@ public class RiskAnalysisService {
             WorkLogRepository workLogRepository,
             AICacheService cacheService,
             PitchRiskHistoryRepository riskHistoryRepository,
-            OrganizationSettingsService organizationSettingsService) {
+            OrganizationSettingsService organizationSettingsService,
+            RiskHistoryService riskHistoryService) {
         this.aiConfig = aiConfig;
         this.chatLanguageModel = chatLanguageModel;
         this.pitchRepository = pitchRepository;
@@ -73,7 +71,7 @@ public class RiskAnalysisService {
         this.cacheService = cacheService;
         this.riskHistoryRepository = riskHistoryRepository;
         this.organizationSettingsService = organizationSettingsService;
-        this.objectMapper = new ObjectMapper();
+        this.riskHistoryService = riskHistoryService;
     }
 
     /**
@@ -88,6 +86,7 @@ public class RiskAnalysisService {
      * @param pitchId The pitch ID
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional(readOnly = false)
     public PitchRiskDTO analyzePitchRisk(Long pitchId, boolean useAI) {
         // Check cache first
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitchId, useAI);
@@ -114,6 +113,7 @@ public class RiskAnalysisService {
      * @param pitch The pitch entity
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional(readOnly = false)
     public PitchRiskDTO analyzePitchRisk(Pitch pitch, boolean useAI) {
         // Check cache first (for entity-based calls)
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitch.getId(), useAI);
@@ -199,7 +199,7 @@ public class RiskAnalysisService {
             
             // Save to risk history (only for AI-enabled or manual analyses, not fast mode)
             if (useAI) {
-                saveRiskHistory(pitch, result, PitchRiskHistory.TriggerType.MANUAL);
+                riskHistoryService.saveRiskHistory(pitch, result, PitchRiskHistory.TriggerType.MANUAL);
             }
             
             return result;
@@ -234,6 +234,7 @@ public class RiskAnalysisService {
      * @param cycleId The cycle ID
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
+    @Transactional
     public CycleRiskOverviewDTO getCycleRiskOverview(Long cycleId, boolean useAI) {
         // Check cache first
         Optional<CycleRiskOverviewDTO> cachedResult = cacheService.getCachedCycleRisk(cycleId, useAI);
@@ -1029,38 +1030,6 @@ public class RiskAnalysisService {
     }
 
     /**
-     * Save risk analysis result to history for trend tracking.
-     * 
-     * @param pitch The pitch being analyzed
-     * @param riskDTO The risk analysis result
-     * @param triggerType What triggered this snapshot
-     */
-    @Transactional
-    public void saveRiskHistory(Pitch pitch, PitchRiskDTO riskDTO, PitchRiskHistory.TriggerType triggerType) {
-        try {
-            // Serialize risk factors to JSON
-            String riskFactorsJson = objectMapper.writeValueAsString(riskDTO.getRiskFactors());
-            
-            PitchRiskHistory history = PitchRiskHistory.builder()
-                    .pitch(pitch)
-                    .riskScore(riskDTO.getRiskScore())
-                    .riskLevel(riskDTO.getRiskLevel())
-                    .riskFactorsJson(riskFactorsJson)
-                    .recordedAt(LocalDateTime.now())
-                    .triggerType(triggerType)
-                    .build();
-            
-            riskHistoryRepository.save(history);
-            log.debug("Saved risk history for pitch {} with score {} (trigger: {})", 
-                     pitch.getId(), riskDTO.getRiskScore(), triggerType);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize risk factors for pitch {}: {}", pitch.getId(), e.getMessage());
-        } catch (Exception e) {
-            log.error("Failed to save risk history for pitch {}: {}", pitch.getId(), e.getMessage());
-        }
-    }
-
-    /**
      * Get risk history for a pitch within a date range.
      * 
      * @param pitchId The pitch ID
@@ -1083,7 +1052,7 @@ public class RiskAnalysisService {
      * Runs at 2 AM daily.
      */
     @Scheduled(cron = "0 0 2 * * *") // 2 AM every day
-    @Transactional
+    @Transactional(readOnly = false)
     public void takeScheduledRiskSnapshots() {
         log.info("Starting scheduled risk snapshot job");
         
@@ -1114,7 +1083,7 @@ public class RiskAnalysisService {
                     PitchRiskDTO riskDTO = analyzePitchRisk(pitch, false);
                     
                     // Save to history with SCHEDULED trigger
-                    saveRiskHistory(pitch, riskDTO, PitchRiskHistory.TriggerType.SCHEDULED);
+                    riskHistoryService.saveRiskHistory(pitch, riskDTO, PitchRiskHistory.TriggerType.SCHEDULED);
                     snapshotCount++;
                     
                 } catch (Exception e) {

@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
@@ -239,14 +240,17 @@ public class PersonService {
     }
     
     private TeamAssignmentDTO mapToAssignmentDTO(TeamAssignment assignment) {
+        Team team = assignment.getTeam();
+        Cycle cycle = team.getCycle();
+        
         return TeamAssignmentDTO.builder()
                 .id(assignment.getId())
                 .personId(assignment.getPerson().getId())
                 .personName(assignment.getPerson().getName())
-                .teamId(assignment.getTeam().getId())
-                .teamName(assignment.getTeam().getName())
-                .cycleId(assignment.getTeam().getCycle().getId())
-                .cycleName(assignment.getTeam().getCycle().getName())
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .cycleId(cycle != null ? cycle.getId() : null)
+                .cycleName(cycle != null ? cycle.getName() : null)
                 .role(assignment.getRole())
                 .startDate(assignment.getStartDate())
                 .endDate(assignment.getEndDate())
