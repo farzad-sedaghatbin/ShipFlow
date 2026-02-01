@@ -1467,7 +1467,25 @@
     "description": "مدیریت یکپارچه‌سازی مخازن GitHub و پیکربندی وب‌هوک‌ها",
     "title": "یکپارچه‌سازی GitHub"
   },
+  "githubApp": {
+    "title": "یکپارچه‌سازی برنامه GitHub",
+    "description": "سازمان GitHub خود را برای کشف خودکار مخازن و تنظیم وب‌هوک متصل کنید",
+    "connectOrganization": "اتصال سازمان",
+    "connecting": "در حال اتصال...",
+    "connectError": "اتصال به GitHub ناموفق بود",
+    "syncAll": "همگام‌سازی همه",
+    "sync": "همگام‌سازی",
+    "syncError": "همگام‌سازی مخازن ناموفق بود",
+    "connected": "متصل",
+    "allRepositories": "همه مخازن",
+    "selectedRepositories": "{{count}} مخزن انتخاب شده",
+    "noInstallations": "هیچ سازمانی متصل نشده است. برای شروع همگام‌سازی خودکار مخازن روی \"اتصال سازمان\" کلیک کنید.",
+    "confirmRemove": "آیا مطمئن هستید که می‌خواهید این سازمان را قطع کنید؟",
+    "removeError": "حذف نصب ناموفق بود"
+  },
   "githubRepositoryManager": {
+    "title": "تنظیم دستی مخزن",
+    "manualDescription": "یا اگر ترجیح می‌دهید کنترل فردی داشته باشید، مخازن را به صورت دستی اضافه کنید",
     "accessToken": "توکن دسترسی",
     "active": "فعال",
     "addRepository": "افزودن مخزن",
