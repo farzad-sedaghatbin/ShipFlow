@@ -431,7 +431,8 @@ public class GitHubAppOAuthService {
 
       // Disallow embedded credentials (user info) in the URL
       if (uri.getUserInfo() != null) {
-        log.warn("URL validation failed: user info is not allowed in GitHub API URLs: {}", urlString);
+        log.warn(
+            "URL validation failed: user info is not allowed in GitHub API URLs: {}", urlString);
         return false;
       }
 
@@ -449,7 +450,8 @@ public class GitHubAppOAuthService {
 
       // Disallow URL fragments
       if (uri.getFragment() != null) {
-        log.warn("URL validation failed: fragments are not allowed in GitHub API URLs: {}", urlString);
+        log.warn(
+            "URL validation failed: fragments are not allowed in GitHub API URLs: {}", urlString);
         return false;
       }
 
