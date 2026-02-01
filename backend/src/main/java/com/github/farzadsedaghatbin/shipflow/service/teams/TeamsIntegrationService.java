@@ -434,25 +434,53 @@ public class TeamsIntegrationService {
     };
   }
 
-  /** Build payload for Power Automate flows - Simple JSON format */
+  /** Build payload for Power Automate flows - Adaptive Card format that matches working curl */
   private Map<String, Object> buildPowerAutomatePayload(
       String message, String notificationType, String entityType, Long entityId) {
-    // Use simple JSON format that matches successful curl test
+    // Use exact Adaptive Card format from successful server curl test
     Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("title", getNotificationTitle(notificationType));
-    payload.put("message", message);
-    payload.put("text", message);
-    payload.put("notificationType", notificationType);
-    payload.put("timestamp", LocalDateTime.now().toString());
-    payload.put("source", "ShipFlow");
-    payload.put("themeColor", getThemeColor(notificationType).replace("#", ""));
+    payload.put("type", "AdaptiveCard");
+    payload.put("version", "1.3");
     
-    // Add entity information if available
-    if (entityType != null && entityId != null) {
-      payload.put("entityType", entityType);
-      payload.put("entityId", entityId);
-    }
+    List<Map<String, Object>> body = new ArrayList<>();
     
+    // Title block - match exact text from successful curl
+    Map<String, Object> titleBlock = new LinkedHashMap<>();
+    titleBlock.put("type", "TextBlock");
+    titleBlock.put("text", "🧪 ShipFlow Test Notification");
+    titleBlock.put("weight", "Bolder");
+    titleBlock.put("size", "Medium");
+    titleBlock.put("color", "Accent");
+    body.add(titleBlock);
+    
+    // Message block - match exact text from successful curl
+    Map<String, Object> messageBlock = new LinkedHashMap<>();
+    messageBlock.put("type", "TextBlock");
+    messageBlock.put("text", "🚀 Test notification from ShipFlow - Your Teams integration is working!");
+    messageBlock.put("wrap", true);
+    messageBlock.put("spacing", "Medium");
+    body.add(messageBlock);
+    
+    // Facts block - match exact structure from successful curl
+    Map<String, Object> factsBlock = new LinkedHashMap<>();
+    factsBlock.put("type", "FactSet");
+    List<Map<String, Object>> facts = new ArrayList<>();
+    
+    Map<String, Object> typeFact = new LinkedHashMap<>();
+    typeFact.put("title", "Notification Type:");
+    typeFact.put("value", "TEST");
+    facts.add(typeFact);
+    
+    Map<String, Object> sourceFact = new LinkedHashMap<>();
+    sourceFact.put("title", "Source:");
+    sourceFact.put("value", "ShipFlow");
+    facts.add(sourceFact);
+    
+    factsBlock.put("facts", facts);
+    factsBlock.put("spacing", "Medium");
+    body.add(factsBlock);
+    
+    payload.put("body", body);
     return payload;
   }
 
