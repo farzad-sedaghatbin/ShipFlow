@@ -14,7 +14,6 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRiskHistoryRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +51,6 @@ public class RiskAnalysisService {
     private final PitchRiskHistoryRepository riskHistoryRepository;
     private final OrganizationSettingsService organizationSettingsService;
     private final RiskHistoryService riskHistoryService;
-    private final ObjectMapper objectMapper;
 
     @Autowired
     public RiskAnalysisService(
@@ -74,7 +72,6 @@ public class RiskAnalysisService {
         this.riskHistoryRepository = riskHistoryRepository;
         this.organizationSettingsService = organizationSettingsService;
         this.riskHistoryService = riskHistoryService;
-        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -89,7 +86,7 @@ public class RiskAnalysisService {
      * @param pitchId The pitch ID
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
-    @Transactional
+    @Transactional(readOnly = false)
     public PitchRiskDTO analyzePitchRisk(Long pitchId, boolean useAI) {
         // Check cache first
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitchId, useAI);
@@ -116,7 +113,7 @@ public class RiskAnalysisService {
      * @param pitch The pitch entity
      * @param useAI If true and AI is enabled, includes AI-powered analysis
      */
-    @Transactional
+    @Transactional(readOnly = false)
     public PitchRiskDTO analyzePitchRisk(Pitch pitch, boolean useAI) {
         // Check cache first (for entity-based calls)
         Optional<PitchRiskDTO> cachedResult = cacheService.getCachedPitchRisk(pitch.getId(), useAI);
@@ -1055,7 +1052,7 @@ public class RiskAnalysisService {
      * Runs at 2 AM daily.
      */
     @Scheduled(cron = "0 0 2 * * *") // 2 AM every day
-    @Transactional
+    @Transactional(readOnly = false)
     public void takeScheduledRiskSnapshots() {
         log.info("Starting scheduled risk snapshot job");
         
