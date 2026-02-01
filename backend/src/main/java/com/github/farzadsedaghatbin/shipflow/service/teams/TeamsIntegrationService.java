@@ -310,8 +310,25 @@ public class TeamsIntegrationService {
 
       String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
 
-      // Check for Logic App URL mistakenly used instead of Teams webhook
-      if (errorMsg.contains("triggers/manual/paths") || errorMsg.contains("authorizationfailed")) {
+      // Check if this is a Power Automate URL - provide specific guidance
+      if (webhookUrl.contains("powerplatform.com") || webhookUrl.contains("powerautomate")) {
+        if (errorMsg.contains("401") || errorMsg.contains("unauthorized") || errorMsg.contains("authorizationfailed")) {
+          throw new RuntimeException(
+              "❌ POWER AUTOMATE CONFIGURATION: Your Power Automate flow needs to accept anonymous requests. "
+                  + "Please edit your flow and ensure the HTTP trigger is set to 'Accept from anyone' (not 'Accept from specific IPs' or 'Accept from organization members'). "
+                  + "This allows ShipFlow to send notifications without authentication.");
+        } else if (errorMsg.contains("404")) {
+          throw new RuntimeException(
+              "❌ POWER AUTOMATE FLOW: The Power Automate flow URL appears to be invalid or the flow was deleted. "
+                  + "Please check if your flow is still active and the URL is correct.");
+        } else {
+          throw new RuntimeException(
+              "❌ POWER AUTOMATE ERROR: " + e.getMessage() + ". "
+                  + "Please check your Power Automate flow configuration and ensure it's running properly.");
+        }
+      }
+      // Check for traditional Logic App URL mistakenly used instead of Teams webhook
+      else if (errorMsg.contains("triggers/manual/paths") && !webhookUrl.contains("powerplatform.com")) {
         throw new RuntimeException(
             "❌ WRONG URL TYPE: You're using an Azure Logic App URL instead of a Microsoft Teams incoming webhook URL. "
                 + "Please create a proper Teams incoming webhook: 1) Go to your Teams channel → More options (...) → Connectors → Incoming Webhook → Configure → Create. "
