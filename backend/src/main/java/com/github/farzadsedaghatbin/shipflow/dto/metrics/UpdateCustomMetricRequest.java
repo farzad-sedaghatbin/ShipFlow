@@ -12,22 +12,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateCustomMetricRequest {
-    
-    @Size(max = 100, message = "Metric name must not exceed 100 characters")
-    private String name;
-    
-    @Size(max = 500, message = "Description must not exceed 500 characters")
-    private String description;
-    
-    private String formula;
-    
-    private CustomMetric.DataSource dataSource;
-    
-    private CustomMetric.AggregationType aggregationType;
-    
-    private String filters;
-    
-    private CustomMetric.DisplayFormat displayFormat;
-    
-    private Boolean isActive;
+
+  @Size(max = 100, message = "Metric name must not exceed 100 characters")
+  private String name;
+
+  @Size(max = 500, message = "Description must not exceed 500 characters")
+  private String description;
+
+  private String formula;
+
+  private CustomMetric.DataSource dataSource;
+
+  private CustomMetric.AggregationType aggregationType;
+
+  private String filters;
+
+  private CustomMetric.DisplayFormat displayFormat;
+
+  private Boolean isActive;
 }

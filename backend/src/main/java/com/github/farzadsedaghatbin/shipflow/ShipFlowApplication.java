@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class ShipFlowApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(ShipFlowApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(ShipFlowApplication.class, args);
+  }
 }

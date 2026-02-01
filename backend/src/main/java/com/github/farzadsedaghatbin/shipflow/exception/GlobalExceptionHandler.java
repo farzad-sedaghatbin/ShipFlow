@@ -2,6 +2,12 @@ package com.github.farzadsedaghatbin.shipflow.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,297 +27,307 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.io.IOException;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @Autowired
-    private MessageSource messageSource;
+  @Autowired private MessageSource messageSource;
 
-    /**
-     * Get a localized message for the given key.
-     */
-    private String getMessage(String key, Object... args) {
-        Locale locale = LocaleContextHolder.getLocale();
-        return messageSource.getMessage(key, args, key, locale);
-    }
+  /** Get a localized message for the given key. */
+  private String getMessage(String key, Object... args) {
+    Locale locale = LocaleContextHolder.getLocale();
+    return messageSource.getMessage(key, args, key, locale);
+  }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("auth.access.denied"));
-        error.put("messageKey", "auth.access.denied");
-        error.put("status", HttpStatus.FORBIDDEN.value());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
-    }
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("auth.access.denied"));
+    error.put("messageKey", "auth.access.denied");
+    error.put("status", HttpStatus.FORBIDDEN.value());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+  }
 
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("auth.login.failed"));
-        error.put("messageKey", "auth.login.failed");
-        error.put("status", HttpStatus.UNAUTHORIZED.value());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-    }
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<Map<String, Object>> handleAuthenticationException(
+      AuthenticationException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("auth.login.failed"));
+    error.put("messageKey", "auth.login.failed");
+    error.put("status", HttpStatus.UNAUTHORIZED.value());
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+  }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleBadCredentialsException(BadCredentialsException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("auth.login.failed"));
-        error.put("messageKey", "auth.login.failed");
-        error.put("status", HttpStatus.UNAUTHORIZED.value());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-    }
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<Map<String, Object>> handleBadCredentialsException(
+      BadCredentialsException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("auth.login.failed"));
+    error.put("messageKey", "auth.login.failed");
+    error.put("status", HttpStatus.UNAUTHORIZED.value());
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+  }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("error.resource.not.found"));
-        error.put("messageKey", "error.resource.not.found");
-        error.put("detail", ex.getMessage());
-        error.put("status", HttpStatus.NOT_FOUND.value());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(
+      ResourceNotFoundException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("error.resource.not.found"));
+    error.put("messageKey", "error.resource.not.found");
+    error.put("detail", ex.getMessage());
+    error.put("status", HttpStatus.NOT_FOUND.value());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+  }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", ex.getMessage());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        return ResponseEntity.badRequest().body(error);
-    }
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+      IllegalArgumentException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", ex.getMessage());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    return ResponseEntity.badRequest().body(error);
+  }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        log.error("Data integrity violation: {}", ex.getMessage());
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        
-        String message = getMessage("error.data.integrity");
-        String messageKey = "error.data.integrity";
-        String rootCause = ex.getMostSpecificCause().getMessage();
-        
-        if (rootCause != null) {
-            if (rootCause.contains("Unique index or primary key violation") || rootCause.contains("duplicate key")) {
-                if (rootCause.contains("PROJECT_KEY") || rootCause.contains("project_key")) {
-                    message = getMessage("project.key.duplicate");
-                    messageKey = "project.key.duplicate";
-                } else if (rootCause.contains("USERNAME") || rootCause.contains("username")) {
-                    message = getMessage("user.username.duplicate");
-                    messageKey = "user.username.duplicate";
-                } else if (rootCause.contains("EMAIL") || rootCause.contains("email")) {
-                    message = getMessage("user.email.duplicate");
-                    messageKey = "user.email.duplicate";
-                } else {
-                    message = getMessage("error.resource.already.exists");
-                    messageKey = "error.resource.already.exists";
-                }
-            } else if (rootCause.contains("foreign key constraint")) {
-                message = getMessage("error.resource.in.use");
-                messageKey = "error.resource.in.use";
-            }
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(
+      DataIntegrityViolationException ex) {
+    log.error("Data integrity violation: {}", ex.getMessage());
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+
+    String message = getMessage("error.data.integrity");
+    String messageKey = "error.data.integrity";
+    String rootCause = ex.getMostSpecificCause().getMessage();
+
+    if (rootCause != null) {
+      if (rootCause.contains("Unique index or primary key violation")
+          || rootCause.contains("duplicate key")) {
+        if (rootCause.contains("PROJECT_KEY") || rootCause.contains("project_key")) {
+          message = getMessage("project.key.duplicate");
+          messageKey = "project.key.duplicate";
+        } else if (rootCause.contains("USERNAME") || rootCause.contains("username")) {
+          message = getMessage("user.username.duplicate");
+          messageKey = "user.username.duplicate";
+        } else if (rootCause.contains("EMAIL") || rootCause.contains("email")) {
+          message = getMessage("user.email.duplicate");
+          messageKey = "user.email.duplicate";
+        } else {
+          message = getMessage("error.resource.already.exists");
+          messageKey = "error.resource.already.exists";
         }
-        
-        error.put("message", message);
-        error.put("messageKey", messageKey);
-        error.put("status", HttpStatus.CONFLICT.value());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+      } else if (rootCause.contains("foreign key constraint")) {
+        message = getMessage("error.resource.in.use");
+        messageKey = "error.resource.in.use";
+      }
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<Map<String, Object>> handleBadRequestException(BadRequestException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", ex.getMessage());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        return ResponseEntity.badRequest().body(error);
+    error.put("message", message);
+    error.put("messageKey", messageKey);
+    error.put("status", HttpStatus.CONFLICT.value());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  @ExceptionHandler(BadRequestException.class)
+  public ResponseEntity<Map<String, Object>> handleBadRequestException(BadRequestException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", ex.getMessage());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    return ResponseEntity.badRequest().body(error);
+  }
+
+  /**
+   * Handle client disconnection exceptions (ClientAbortException, IOException: Connection reset by
+   * peer, etc.) These are normal network conditions, not server errors, so we log them at DEBUG
+   * level instead of ERROR.
+   */
+  @ExceptionHandler(ClientAbortException.class)
+  public void handleClientAbortException(ClientAbortException ex) {
+    log.debug("Client disconnected during response: {}", ex.getMessage());
+    // Don't return a response - the client has already disconnected
+  }
+
+  /**
+   * Handle general IO exceptions, particularly connection reset errors. Log at DEBUG level if it's
+   * a connection issue, ERROR level otherwise.
+   */
+  @ExceptionHandler(IOException.class)
+  public ResponseEntity<Map<String, Object>> handleIOException(IOException ex) {
+    String message = ex.getMessage();
+
+    // Check if this is a client disconnection issue
+    if (message != null
+        && (message.contains("Connection reset by peer")
+            || message.contains("Broken pipe")
+            || message.contains("An established connection was aborted"))) {
+      log.debug("Client connection issue: {}", message);
+      // Return null to indicate no response should be sent (client already disconnected)
+      return null;
     }
 
-    /**
-     * Handle client disconnection exceptions (ClientAbortException, IOException: Connection reset by peer, etc.)
-     * These are normal network conditions, not server errors, so we log them at DEBUG level instead of ERROR.
-     */
-    @ExceptionHandler(ClientAbortException.class)
-    public void handleClientAbortException(ClientAbortException ex) {
-        log.debug("Client disconnected during response: {}", ex.getMessage());
-        // Don't return a response - the client has already disconnected
+    // For other IO exceptions, treat as server error
+    log.error("IO Exception: {}", ex.getMessage(), ex);
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("error.generic"));
+    error.put("messageKey", "error.generic");
+    error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+    log.error("Unexpected runtime exception: {}", ex.getMessage(), ex);
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("error.generic"));
+    error.put("messageKey", "error.generic");
+    error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+    // Check if this is a wrapped client disconnection issue
+    if (isClientDisconnectionException(ex)) {
+      log.debug("Client disconnection detected in generic exception: {}", ex.getMessage());
+      return null; // No response - client already disconnected
     }
 
-    /**
-     * Handle general IO exceptions, particularly connection reset errors.
-     * Log at DEBUG level if it's a connection issue, ERROR level otherwise.
-     */
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<Map<String, Object>> handleIOException(IOException ex) {
-        String message = ex.getMessage();
-        
-        // Check if this is a client disconnection issue
-        if (message != null && (message.contains("Connection reset by peer") || 
-                               message.contains("Broken pipe") ||
-                               message.contains("An established connection was aborted"))) {
-            log.debug("Client connection issue: {}", message);
-            // Return null to indicate no response should be sent (client already disconnected)
-            return null;
-        }
-        
-        // For other IO exceptions, treat as server error
-        log.error("IO Exception: {}", ex.getMessage(), ex);
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("error.generic"));
-        error.put("messageKey", "error.generic");
-        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    log.error("Unexpected exception: {}", ex.getMessage(), ex);
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("error.generic"));
+    error.put("messageKey", "error.generic");
+    error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+
+  /**
+   * Check if an exception is related to client disconnection by examining the exception chain and
+   * error messages for common client disconnection indicators.
+   */
+  private boolean isClientDisconnectionException(Exception ex) {
+    // Check the exception chain for client disconnection indicators
+    Throwable cause = ex;
+    while (cause != null) {
+      // Check exception type
+      if (cause instanceof ClientAbortException
+          || cause instanceof java.net.SocketException
+          || (cause instanceof IOException && isConnectionResetMessage(cause.getMessage()))) {
+        return true;
+      }
+
+      // Check for common client disconnection messages
+      String message = cause.getMessage();
+      if (message != null && isConnectionResetMessage(message)) {
+        return true;
+      }
+
+      cause = cause.getCause();
+    }
+    return false;
+  }
+
+  /** Check if a message indicates a client disconnection. */
+  private boolean isConnectionResetMessage(String message) {
+    if (message == null) {
+      return false;
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
-        log.error("Unexpected runtime exception: {}", ex.getMessage(), ex);
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("error.generic"));
-        error.put("messageKey", "error.generic");
-        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
+    String lowerMessage = message.toLowerCase();
+    return lowerMessage.contains("connection reset by peer")
+        || lowerMessage.contains("broken pipe")
+        || lowerMessage.contains("an established connection was aborted")
+        || lowerMessage.contains("connection was forcibly closed")
+        || lowerMessage.contains("socket closed")
+        || lowerMessage.contains("client abort");
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        // Check if this is a wrapped client disconnection issue
-        if (isClientDisconnectionException(ex)) {
-            log.debug("Client disconnection detected in generic exception: {}", ex.getMessage());
-            return null; // No response - client already disconnected
-        }
-        
-        log.error("Unexpected exception: {}", ex.getMessage(), ex);
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("message", getMessage("error.generic"));
-        error.put("messageKey", "error.generic");
-        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+      MethodArgumentNotValidException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
 
-    /**
-     * Check if an exception is related to client disconnection by examining the exception chain
-     * and error messages for common client disconnection indicators.
-     */
-    private boolean isClientDisconnectionException(Exception ex) {
-        // Check the exception chain for client disconnection indicators
-        Throwable cause = ex;
-        while (cause != null) {
-            // Check exception type
-            if (cause instanceof ClientAbortException || 
-                cause instanceof java.net.SocketException ||
-                (cause instanceof IOException && isConnectionResetMessage(cause.getMessage()))) {
-                return true;
-            }
-            
-            // Check for common client disconnection messages
-            String message = cause.getMessage();
-            if (message != null && isConnectionResetMessage(message)) {
-                return true;
-            }
-            
-            cause = cause.getCause();
-        }
-        return false;
-    }
+    Map<String, String> fieldErrors = new HashMap<>();
+    ex.getBindingResult()
+        .getAllErrors()
+        .forEach(
+            (err) -> {
+              String fieldName = ((FieldError) err).getField();
+              String errorMessage = err.getDefaultMessage();
+              fieldErrors.put(fieldName, errorMessage);
+            });
+    error.put("errors", fieldErrors);
 
-    /**
-     * Check if a message indicates a client disconnection.
-     */
-    private boolean isConnectionResetMessage(String message) {
-        if (message == null) {
-            return false;
-        }
-        
-        String lowerMessage = message.toLowerCase();
-        return lowerMessage.contains("connection reset by peer") ||
-               lowerMessage.contains("broken pipe") ||
-               lowerMessage.contains("an established connection was aborted") ||
-               lowerMessage.contains("connection was forcibly closed") ||
-               lowerMessage.contains("socket closed") ||
-               lowerMessage.contains("client abort");
-    }
+    return ResponseEntity.badRequest().body(error);
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
+      ConstraintViolationException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
 
-        Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((err) -> {
-            String fieldName = ((FieldError) err).getField();
-            String errorMessage = err.getDefaultMessage();
-            fieldErrors.put(fieldName, errorMessage);
-        });
-        error.put("errors", fieldErrors);
+    String message =
+        ex.getConstraintViolations().stream()
+            .map(ConstraintViolation::getMessage)
+            .collect(Collectors.joining(", "));
 
-        return ResponseEntity.badRequest().body(error);
-    }
+    error.put("message", message);
+    return ResponseEntity.badRequest().body(error);
+  }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(ConstraintViolationException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        
-        String message = ex.getConstraintViolations().stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
-        
-        error.put("message", message);
-        return ResponseEntity.badRequest().body(error);
-    }
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Map<String, Object>> handleTypeMismatchException(
+      MethodArgumentTypeMismatchException ex) {
+    log.warn(
+        "Type mismatch for parameter '{}': received '{}', expected type '{}'",
+        ex.getName(),
+        ex.getValue(),
+        ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
-        log.warn("Type mismatch for parameter '{}': received '{}', expected type '{}'", 
-            ex.getName(), ex.getValue(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
-        
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        
-        String parameterName = ex.getName();
-        String receivedValue = String.valueOf(ex.getValue());
-        String expectedType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
-        
-        error.put("message", String.format("Invalid value '%s' for parameter '%s'. Expected a valid %s.", 
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+
+    String parameterName = ex.getName();
+    String receivedValue = String.valueOf(ex.getValue());
+    String expectedType =
+        ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
+
+    error.put(
+        "message",
+        String.format(
+            "Invalid value '%s' for parameter '%s'. Expected a valid %s.",
             receivedValue, parameterName, expectedType));
-        error.put("parameter", parameterName);
-        error.put("invalidValue", receivedValue);
-        error.put("expectedType", expectedType);
-        
-        return ResponseEntity.badRequest().body(error);
-    }
+    error.put("parameter", parameterName);
+    error.put("invalidValue", receivedValue);
+    error.put("expectedType", expectedType);
 
-    @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<Map<String, Object>> handleMissingRequestHeaderException(MissingRequestHeaderException ex) {
-        log.warn("Missing required header: {}", ex.getHeaderName());
-        
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("message", String.format("Missing required header: %s", ex.getHeaderName()));
-        error.put("header", ex.getHeaderName());
-        
-        return ResponseEntity.badRequest().body(error);
-    }
+    return ResponseEntity.badRequest().body(error);
+  }
+
+  @ExceptionHandler(MissingRequestHeaderException.class)
+  public ResponseEntity<Map<String, Object>> handleMissingRequestHeaderException(
+      MissingRequestHeaderException ex) {
+    log.warn("Missing required header: {}", ex.getHeaderName());
+
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    error.put("message", String.format("Missing required header: %s", ex.getHeaderName()));
+    error.put("header", ex.getHeaderName());
+
+    return ResponseEntity.badRequest().body(error);
+  }
 }

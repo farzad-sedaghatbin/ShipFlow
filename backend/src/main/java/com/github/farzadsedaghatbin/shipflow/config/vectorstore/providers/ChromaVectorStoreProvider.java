@@ -11,93 +11,94 @@ import org.springframework.stereotype.Component;
 
 /**
  * Vector Store Provider implementation for ChromaDB.
- * 
+ *
  * <p>ChromaDB is suitable for:
+ *
  * <ul>
- *   <li>Development and small-scale deployments</li>
- *   <li>Python-centric environments</li>
- *   <li>Simple setup requirements</li>
+ *   <li>Development and small-scale deployments
+ *   <li>Python-centric environments
+ *   <li>Simple setup requirements
  * </ul>
- * 
+ *
  * <p>Configuration:
+ *
  * <ul>
- *   <li>url: ChromaDB server URL (default: http://localhost:8000)</li>
- *   <li>collectionName: Name of the collection (default: shipflow_knowledge)</li>
+ *   <li>url: ChromaDB server URL (default: http://localhost:8000)
+ *   <li>collectionName: Name of the collection (default: shipflow_knowledge)
  * </ul>
- * 
+ *
  * <p><b>Note:</b> For production, consider using Qdrant for better performance and scalability.
  */
 @Component
 @Slf4j
 public class ChromaVectorStoreProvider implements VectorStoreProvider {
 
-    private static final String DEFAULT_URL = "http://localhost:8000";
-    private static final int DEFAULT_PORT = 8000;
+  private static final String DEFAULT_URL = "http://localhost:8000";
+  private static final int DEFAULT_PORT = 8000;
 
-    @Override
-    public VectorStoreProviderType getProviderType() {
-        return VectorStoreProviderType.CHROMA;
+  @Override
+  public VectorStoreProviderType getProviderType() {
+    return VectorStoreProviderType.CHROMA;
+  }
+
+  @Override
+  public EmbeddingStore<TextSegment> createStore(VectorStoreProviderConfig config) {
+    validateConfig(config);
+
+    String url = config.getEffectiveUrl();
+    if (url == null || url.trim().isEmpty()) {
+      url = DEFAULT_URL;
     }
 
-    @Override
-    public EmbeddingStore<TextSegment> createStore(VectorStoreProviderConfig config) {
-        validateConfig(config);
-        
-        String url = config.getEffectiveUrl();
-        if (url == null || url.trim().isEmpty()) {
-            url = DEFAULT_URL;
-        }
-        
-        String collectionName = config.getCollectionName();
-        
-        log.info("Creating ChromaDB embedding store - URL: {}, Collection: {}", url, collectionName);
-        
-        ChromaEmbeddingStore.Builder builder = ChromaEmbeddingStore.builder()
-                .baseUrl(url)
-                .collectionName(collectionName);
-        
-        // Handle timeout if specified
-        Integer timeoutSeconds = config.getExtraParam("timeoutSeconds", null);
-        if (timeoutSeconds != null) {
-            builder.timeout(java.time.Duration.ofSeconds(timeoutSeconds));
-        }
-        
-        // Handle log requests for debugging
-        Boolean logRequests = config.getExtraParam("logRequests", false);
-        if (logRequests) {
-            builder.logRequests(true);
-            builder.logResponses(true);
-        }
-        
-        return builder.build();
+    String collectionName = config.getCollectionName();
+
+    log.info("Creating ChromaDB embedding store - URL: {}, Collection: {}", url, collectionName);
+
+    ChromaEmbeddingStore.Builder builder =
+        ChromaEmbeddingStore.builder().baseUrl(url).collectionName(collectionName);
+
+    // Handle timeout if specified
+    Integer timeoutSeconds = config.getExtraParam("timeoutSeconds", null);
+    if (timeoutSeconds != null) {
+      builder.timeout(java.time.Duration.ofSeconds(timeoutSeconds));
     }
 
-    @Override
-    public void validateConfig(VectorStoreProviderConfig config) {
-        if (config.getCollectionName() == null || config.getCollectionName().trim().isEmpty()) {
-            throw new IllegalArgumentException("ChromaDB collection name is required");
-        }
-        
-        log.debug("Validated ChromaDB configuration: {}", config);
+    // Handle log requests for debugging
+    Boolean logRequests = config.getExtraParam("logRequests", false);
+    if (logRequests) {
+      builder.logRequests(true);
+      builder.logResponses(true);
     }
 
-    @Override
-    public boolean requiresApiKey() {
-        return false; // ChromaDB basic auth is optional
+    return builder.build();
+  }
+
+  @Override
+  public void validateConfig(VectorStoreProviderConfig config) {
+    if (config.getCollectionName() == null || config.getCollectionName().trim().isEmpty()) {
+      throw new IllegalArgumentException("ChromaDB collection name is required");
     }
 
-    @Override
-    public boolean requiresUrl() {
-        return true;
-    }
+    log.debug("Validated ChromaDB configuration: {}", config);
+  }
 
-    @Override
-    public int getDefaultPort() {
-        return DEFAULT_PORT;
-    }
+  @Override
+  public boolean requiresApiKey() {
+    return false; // ChromaDB basic auth is optional
+  }
 
-    @Override
-    public String getDescription() {
-        return "ChromaDB - Simple vector store for development and small-scale deployments";
-    }
+  @Override
+  public boolean requiresUrl() {
+    return true;
+  }
+
+  @Override
+  public int getDefaultPort() {
+    return DEFAULT_PORT;
+  }
+
+  @Override
+  public String getDescription() {
+    return "ChromaDB - Simple vector store for development and small-scale deployments";
+  }
 }

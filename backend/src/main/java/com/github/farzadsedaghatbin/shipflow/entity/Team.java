@@ -1,10 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "teams")
@@ -15,22 +14,22 @@ import java.util.List;
 @Builder
 public class Team {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private String name;
+  @Column(nullable = false)
+  private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cycle_id")
-    private Cycle cycle;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "cycle_id")
+  private Cycle cycle;
 
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<TeamAssignment> assignments = new ArrayList<>();
+  @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  private List<TeamAssignment> assignments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Pitch> pitches = new ArrayList<>();
+  @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  private List<Pitch> pitches = new ArrayList<>();
 }

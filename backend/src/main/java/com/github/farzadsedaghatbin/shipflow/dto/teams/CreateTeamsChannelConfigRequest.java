@@ -10,17 +10,17 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateTeamsChannelConfigRequest {
-    @NotBlank(message = "Channel name is required")
-    private String channelName;
+  @NotBlank(message = "Channel name is required")
+  private String channelName;
 
-    private String channelWebhookUrl;
-    private FlowType flowType;
-    private Boolean notifyTaskAssigned;
-    private Boolean notifyTaskCompleted;
-    private Boolean notifyTaskBlocked;
-    private Boolean notifyPitchShaped;
-    private Boolean notifyCycleStarted;
-    private Boolean notifyCycleCooldown;
-    private Boolean notifyBettingCompleted;
-    private Boolean notifySprintStarted;
+  private String channelWebhookUrl;
+  private FlowType flowType;
+  private Boolean notifyTaskAssigned;
+  private Boolean notifyTaskCompleted;
+  private Boolean notifyTaskBlocked;
+  private Boolean notifyPitchShaped;
+  private Boolean notifyCycleStarted;
+  private Boolean notifyCycleCooldown;
+  private Boolean notifyBettingCompleted;
+  private Boolean notifySprintStarted;
 }

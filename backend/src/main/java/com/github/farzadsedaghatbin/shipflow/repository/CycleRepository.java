@@ -1,66 +1,64 @@
 package com.github.farzadsedaghatbin.shipflow.repository;
 
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface CycleRepository extends JpaRepository<Cycle, Long> {
-    List<Cycle> findByIsActiveTrue();
-    List<Cycle> findByIsActiveFalse();
-    List<Cycle> findAllByOrderByStartDateDesc();
+  List<Cycle> findByIsActiveTrue();
 
-    // Project-specific queries
-    List<Cycle> findByProjectIdOrderByStartDateDesc(Long projectId);
-    
-    List<Cycle> findByProjectIdAndIsActiveTrue(Long projectId);
+  List<Cycle> findByIsActiveFalse();
 
-    @Query("SELECT COUNT(c) FROM Cycle c WHERE c.project.id = :projectId")
-    long countByProjectId(@Param("projectId") Long projectId);
+  List<Cycle> findAllByOrderByStartDateDesc();
 
-    @Query("SELECT COUNT(c) FROM Cycle c WHERE c.project.id = :projectId AND c.isActive = true")
-    long countActiveByProjectId(@Param("projectId") Long projectId);
+  // Project-specific queries
+  List<Cycle> findByProjectIdOrderByStartDateDesc(Long projectId);
 
-    @Query("SELECT c FROM Cycle c LEFT JOIN FETCH c.project WHERE c.id = :id")
-    java.util.Optional<Cycle> findByIdWithProject(@Param("id") Long id);
+  List<Cycle> findByProjectIdAndIsActiveTrue(Long projectId);
 
-    /**
-     * Find all cycles for projects accessible to a user.
-     * Access is granted through:
-     * 1. Project ownership
-     * 2. Direct project assignment (user_projects)
-     * 3. Team membership
-     */
-    @Query("""
-        SELECT DISTINCT c FROM Cycle c 
+  @Query("SELECT COUNT(c) FROM Cycle c WHERE c.project.id = :projectId")
+  long countByProjectId(@Param("projectId") Long projectId);
+
+  @Query("SELECT COUNT(c) FROM Cycle c WHERE c.project.id = :projectId AND c.isActive = true")
+  long countActiveByProjectId(@Param("projectId") Long projectId);
+
+  @Query("SELECT c FROM Cycle c LEFT JOIN FETCH c.project WHERE c.id = :id")
+  java.util.Optional<Cycle> findByIdWithProject(@Param("id") Long id);
+
+  /**
+   * Find all cycles for projects accessible to a user. Access is granted through: 1. Project
+   * ownership 2. Direct project assignment (user_projects) 3. Team membership
+   */
+  @Query(
+      """
+        SELECT DISTINCT c FROM Cycle c
         JOIN FETCH c.project p
         WHERE p.id IN (
             SELECT DISTINCT proj.id FROM Project proj
             WHERE proj.owner.id = :userId
             OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
             OR proj.id IN (
-                SELECT DISTINCT cyc.project.id 
-                FROM Cycle cyc 
-                JOIN cyc.teams t 
-                JOIN TeamAssignment ta ON ta.team.id = t.id 
-                JOIN ta.person per 
-                JOIN User u ON u.person.id = per.id 
+                SELECT DISTINCT cyc.project.id
+                FROM Cycle cyc
+                JOIN cyc.teams t
+                JOIN TeamAssignment ta ON ta.team.id = t.id
+                JOIN ta.person per
+                JOIN User u ON u.person.id = per.id
                 WHERE u.id = :userId
             )
         )
         ORDER BY c.startDate DESC
         """)
-    List<Cycle> findAccessibleCyclesByUserId(@Param("userId") Long userId);
+  List<Cycle> findAccessibleCyclesByUserId(@Param("userId") Long userId);
 
-    /**
-     * Find active cycles for accessible projects
-     */
-    @Query("""
-        SELECT DISTINCT c FROM Cycle c 
+  /** Find active cycles for accessible projects */
+  @Query(
+      """
+        SELECT DISTINCT c FROM Cycle c
         JOIN FETCH c.project p
         WHERE c.isActive = true
         AND p.id IN (
@@ -68,16 +66,16 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
             WHERE proj.owner.id = :userId
             OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
             OR proj.id IN (
-                SELECT DISTINCT cyc.project.id 
-                FROM Cycle cyc 
-                JOIN cyc.teams t 
-                JOIN TeamAssignment ta ON ta.team.id = t.id 
-                JOIN ta.person per 
-                JOIN User u ON u.person.id = per.id 
+                SELECT DISTINCT cyc.project.id
+                FROM Cycle cyc
+                JOIN cyc.teams t
+                JOIN TeamAssignment ta ON ta.team.id = t.id
+                JOIN ta.person per
+                JOIN User u ON u.person.id = per.id
                 WHERE u.id = :userId
             )
         )
         ORDER BY c.startDate DESC
         """)
-    List<Cycle> findAccessibleActiveCyclesByUserId(@Param("userId") Long userId);
+  List<Cycle> findAccessibleActiveCyclesByUserId(@Param("userId") Long userId);
 }

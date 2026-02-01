@@ -14,10 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST controller for organization settings management.
- * Only accessible by ADMIN role.
- */
+/** REST controller for organization settings management. Only accessible by ADMIN role. */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -25,40 +22,40 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Organization Settings", description = "Manage organization-wide settings")
 public class OrganizationSettingsController {
 
-    private final OrganizationSettingsService settingsService;
+  private final OrganizationSettingsService settingsService;
 
-    @GetMapping("/settings")
-    @Operation(summary = "Get organization settings")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<OrganizationSettingsDTO> getSettings() {
-        log.info("Fetching organization settings");
-        return ResponseEntity.ok(settingsService.getSettings());
-    }
+  @GetMapping("/settings")
+  @Operation(summary = "Get organization settings")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<OrganizationSettingsDTO> getSettings() {
+    log.info("Fetching organization settings");
+    return ResponseEntity.ok(settingsService.getSettings());
+  }
 
-    @PutMapping("/settings")
-    @Operation(summary = "Update organization settings")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<OrganizationSettingsDTO> updateSettings(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody UpdateOrganizationSettingsRequest request) {
-        log.info("Updating organization settings by user: {}", userDetails.getUsername());
-        return ResponseEntity.ok(settingsService.updateSettings(request, userDetails.getUsername()));
-    }
+  @PutMapping("/settings")
+  @Operation(summary = "Update organization settings")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<OrganizationSettingsDTO> updateSettings(
+      @AuthenticationPrincipal UserDetails userDetails,
+      @RequestBody UpdateOrganizationSettingsRequest request) {
+    log.info("Updating organization settings by user: {}", userDetails.getUsername());
+    return ResponseEntity.ok(settingsService.updateSettings(request, userDetails.getUsername()));
+  }
 
-    @PostMapping("/settings/reset")
-    @Operation(summary = "Reset organization settings to defaults")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<OrganizationSettingsDTO> resetSettings(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Resetting organization settings to defaults by user: {}", userDetails.getUsername());
-        return ResponseEntity.ok(settingsService.resetToDefaults(userDetails.getUsername()));
-    }
+  @PostMapping("/settings/reset")
+  @Operation(summary = "Reset organization settings to defaults")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<OrganizationSettingsDTO> resetSettings(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    log.info("Resetting organization settings to defaults by user: {}", userDetails.getUsername());
+    return ResponseEntity.ok(settingsService.resetToDefaults(userDetails.getUsername()));
+  }
 
-    @GetMapping("/settings/risk-profiles")
-    @Operation(summary = "Get predefined risk calculation profiles")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RiskProfilesDTO> getRiskProfiles() {
-        log.info("Fetching predefined risk profiles");
-        return ResponseEntity.ok(RiskProfilesDTO.getDefaultProfiles());
-    }
+  @GetMapping("/settings/risk-profiles")
+  @Operation(summary = "Get predefined risk calculation profiles")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<RiskProfilesDTO> getRiskProfiles() {
+    log.info("Fetching predefined risk profiles");
+    return ResponseEntity.ok(RiskProfilesDTO.getDefaultProfiles());
+  }
 }

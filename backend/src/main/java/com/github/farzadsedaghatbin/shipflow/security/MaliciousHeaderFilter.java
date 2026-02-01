@@ -3,185 +3,188 @@ package com.github.farzadsedaghatbin.shipflow.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
- * Security filter to detect and block malicious requests containing exploit patterns
- * such as Log4Shell (CVE-2021-44228), JNDI injection, and other common attack vectors.
+ * Security filter to detect and block malicious requests containing exploit patterns such as
+ * Log4Shell (CVE-2021-44228), JNDI injection, and other common attack vectors.
  */
 @Slf4j
 @Component
 public class MaliciousHeaderFilter implements Filter {
 
-    // Patterns for detecting common exploit attempts
-    private static final Pattern JNDI_PATTERN = Pattern.compile(
-            ".*\\$\\{.*jndi:.*}.*|.*\\$\\{.*env:.*}.*|.*\\$\\{.*lower:.*}.*|.*\\$\\{.*upper:.*}.*",
-            Pattern.CASE_INSENSITIVE
-    );
+  // Patterns for detecting common exploit attempts
+  private static final Pattern JNDI_PATTERN =
+      Pattern.compile(
+          ".*\\$\\{.*jndi:.*}.*|.*\\$\\{.*env:.*}.*|.*\\$\\{.*lower:.*}.*|.*\\$\\{.*upper:.*}.*",
+          Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern SCRIPT_INJECTION_PATTERN = Pattern.compile(
-            ".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*",
-            Pattern.CASE_INSENSITIVE
-    );
+  private static final Pattern SCRIPT_INJECTION_PATTERN =
+      Pattern.compile(
+          ".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*",
+          Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(
-            ".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*",
-            Pattern.CASE_INSENSITIVE
-    );
+  private static final Pattern SQL_INJECTION_PATTERN =
+      Pattern.compile(".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern PATH_TRAVERSAL_PATTERN = Pattern.compile(
-            ".*(\\.\\./)|(\\.\\.\\\\).*",
-            Pattern.CASE_INSENSITIVE
-    );
+  private static final Pattern PATH_TRAVERSAL_PATTERN =
+      Pattern.compile(".*(\\.\\./)|(\\.\\.\\\\).*", Pattern.CASE_INSENSITIVE);
 
-    // Headers that commonly contain malicious payloads
-    private static final String[] SENSITIVE_HEADERS = {
-            "X-Forwarded-Host", "X-Forwarded-For", "X-Forwarded-Proto",
-            "Forwarded", "Host", "X-Real-IP", "User-Agent", "Referer"
-    };
+  // Headers that commonly contain malicious payloads
+  private static final String[] SENSITIVE_HEADERS = {
+    "X-Forwarded-Host",
+    "X-Forwarded-For",
+    "X-Forwarded-Proto",
+    "Forwarded",
+    "Host",
+    "X-Real-IP",
+    "User-Agent",
+    "Referer"
+  };
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Check all headers for malicious patterns
-        Enumeration<String> headerNames = httpRequest.getHeaderNames();
-        while (headerNames != null && headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            String headerValue = httpRequest.getHeader(headerName);
+    // Check all headers for malicious patterns
+    Enumeration<String> headerNames = httpRequest.getHeaderNames();
+    while (headerNames != null && headerNames.hasMoreElements()) {
+      String headerName = headerNames.nextElement();
+      String headerValue = httpRequest.getHeader(headerName);
 
-            if (headerValue != null && isMalicious(headerName, headerValue)) {
-                logSecurityEvent(httpRequest, headerName, headerValue);
-                httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                httpResponse.setContentType("application/json");
-                httpResponse.getWriter().write("{\"error\":\"Malicious request detected and blocked\"}");
-                return;
-            }
-        }
-
-        // Check request URI and query string
-        String requestURI = httpRequest.getRequestURI();
-        String queryString = httpRequest.getQueryString();
-
-        if (isMalicious("RequestURI", requestURI) || 
-            (queryString != null && isMalicious("QueryString", queryString))) {
-            logSecurityEvent(httpRequest, "URI/Query", requestURI + "?" + queryString);
-            httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            httpResponse.setContentType("application/json");
-            httpResponse.getWriter().write("{\"error\":\"Malicious request detected and blocked\"}");
-            return;
-        }
-
-        chain.doFilter(request, response);
+      if (headerValue != null && isMalicious(headerName, headerValue)) {
+        logSecurityEvent(httpRequest, headerName, headerValue);
+        httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        httpResponse.setContentType("application/json");
+        httpResponse.getWriter().write("{\"error\":\"Malicious request detected and blocked\"}");
+        return;
+      }
     }
 
-    private boolean isMalicious(String headerName, String value) {
-        if (value == null || value.isEmpty()) {
-            return false;
-        }
+    // Check request URI and query string
+    String requestURI = httpRequest.getRequestURI();
+    String queryString = httpRequest.getQueryString();
 
-        // Check for JNDI injection (Log4Shell)
-        if (JNDI_PATTERN.matcher(value).matches()) {
-            return true;
-        }
-
-        // Check for XSS attempts in headers
-        if (SCRIPT_INJECTION_PATTERN.matcher(value).matches()) {
-            return true;
-        }
-
-        // Check for path traversal
-        if (PATH_TRAVERSAL_PATTERN.matcher(value).matches()) {
-            return true;
-        }
-
-        // More strict validation for forwarded headers (common attack vector)
-        if (isSensitiveHeader(headerName)) {
-            // Check for SQL injection patterns
-            if (containsSuspiciousPatterns(value)) {
-                return true;
-            }
-        }
-
-        return false;
+    if (isMalicious("RequestURI", requestURI)
+        || (queryString != null && isMalicious("QueryString", queryString))) {
+      logSecurityEvent(httpRequest, "URI/Query", requestURI + "?" + queryString);
+      httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      httpResponse.setContentType("application/json");
+      httpResponse.getWriter().write("{\"error\":\"Malicious request detected and blocked\"}");
+      return;
     }
 
-    private boolean isSensitiveHeader(String headerName) {
-        if (headerName == null) {
-            return false;
-        }
-        for (String sensitiveHeader : SENSITIVE_HEADERS) {
-            if (sensitiveHeader.equalsIgnoreCase(headerName)) {
-                return true;
-            }
-        }
-        return false;
+    chain.doFilter(request, response);
+  }
+
+  private boolean isMalicious(String headerName, String value) {
+    if (value == null || value.isEmpty()) {
+      return false;
     }
 
-    private boolean containsSuspiciousPatterns(String value) {
-        // Check for base64 encoded commands (common in exploit attempts)
-        if (value.length() > 1000) {
-            return true; // Abnormally long header
-        }
-
-        // Check for encoded characters that might hide exploits
-        if (value.contains("%00") || value.contains("\0")) {
-            return true; // Null byte injection
-        }
-
-        // Check for LDAP injection patterns
-        if (value.contains("ldap://") || value.contains("ldaps://") || 
-            value.contains("rmi://") || value.contains("dns://")) {
-            return true;
-        }
-
-        return false;
+    // Check for JNDI injection (Log4Shell)
+    if (JNDI_PATTERN.matcher(value).matches()) {
+      return true;
     }
 
-    private void logSecurityEvent(HttpServletRequest request, String headerName, String value) {
-        String clientIp = getClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-        
-        log.warn("🚨 SECURITY ALERT: Malicious request blocked");
-        log.warn("Source IP: {}", clientIp);
-        log.warn("Request URI: {}", request.getRequestURI());
-        log.warn("Method: {}", request.getMethod());
-        log.warn("Malicious Header/Field: {}", headerName);
-        log.warn("Payload: {}", sanitizeForLogging(value));
-        log.warn("User-Agent: {}", userAgent);
-        
-        // TODO: Consider integrating with security monitoring tools or sending alerts
-        // For production: Send to SIEM, Datadog, or other monitoring systems
+    // Check for XSS attempts in headers
+    if (SCRIPT_INJECTION_PATTERN.matcher(value).matches()) {
+      return true;
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
+    // Check for path traversal
+    if (PATH_TRAVERSAL_PATTERN.matcher(value).matches()) {
+      return true;
     }
 
-    private String sanitizeForLogging(String value) {
-        if (value == null) {
-            return "null";
-        }
-        // Truncate very long values and remove newlines for clean logging
-        String sanitized = value.replaceAll("[\\r\\n]+", " ");
-        if (sanitized.length() > 200) {
-            return sanitized.substring(0, 200) + "... [truncated]";
-        }
-        return sanitized;
+    // More strict validation for forwarded headers (common attack vector)
+    if (isSensitiveHeader(headerName)) {
+      // Check for SQL injection patterns
+      if (containsSuspiciousPatterns(value)) {
+        return true;
+      }
     }
+
+    return false;
+  }
+
+  private boolean isSensitiveHeader(String headerName) {
+    if (headerName == null) {
+      return false;
+    }
+    for (String sensitiveHeader : SENSITIVE_HEADERS) {
+      if (sensitiveHeader.equalsIgnoreCase(headerName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsSuspiciousPatterns(String value) {
+    // Check for base64 encoded commands (common in exploit attempts)
+    if (value.length() > 1000) {
+      return true; // Abnormally long header
+    }
+
+    // Check for encoded characters that might hide exploits
+    if (value.contains("%00") || value.contains("\0")) {
+      return true; // Null byte injection
+    }
+
+    // Check for LDAP injection patterns
+    if (value.contains("ldap://")
+        || value.contains("ldaps://")
+        || value.contains("rmi://")
+        || value.contains("dns://")) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private void logSecurityEvent(HttpServletRequest request, String headerName, String value) {
+    String clientIp = getClientIp(request);
+    String userAgent = request.getHeader("User-Agent");
+
+    log.warn("🚨 SECURITY ALERT: Malicious request blocked");
+    log.warn("Source IP: {}", clientIp);
+    log.warn("Request URI: {}", request.getRequestURI());
+    log.warn("Method: {}", request.getMethod());
+    log.warn("Malicious Header/Field: {}", headerName);
+    log.warn("Payload: {}", sanitizeForLogging(value));
+    log.warn("User-Agent: {}", userAgent);
+
+    // TODO: Consider integrating with security monitoring tools or sending alerts
+    // For production: Send to SIEM, Datadog, or other monitoring systems
+  }
+
+  private String getClientIp(HttpServletRequest request) {
+    String ip = request.getHeader("X-Forwarded-For");
+    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+      ip = request.getHeader("X-Real-IP");
+    }
+    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+      ip = request.getRemoteAddr();
+    }
+    return ip;
+  }
+
+  private String sanitizeForLogging(String value) {
+    if (value == null) {
+      return "null";
+    }
+    // Truncate very long values and remove newlines for clean logging
+    String sanitized = value.replaceAll("[\\r\\n]+", " ");
+    if (sanitized.length() > 200) {
+      return sanitized.substring(0, 200) + "... [truncated]";
+    }
+    return sanitized;
+  }
 }

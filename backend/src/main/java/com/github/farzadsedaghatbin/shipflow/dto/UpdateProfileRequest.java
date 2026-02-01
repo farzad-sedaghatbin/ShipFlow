@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateProfileRequest {
 
-    @Email(message = "Invalid email format")
-    private String email;
-    
-    private String avatarUrl;
-    private String bio;
-    private String skills;
-    private String department;
+  @Email(message = "Invalid email format")
+  private String email;
+
+  private String avatarUrl;
+  private String bio;
+  private String skills;
+  private String department;
 }
