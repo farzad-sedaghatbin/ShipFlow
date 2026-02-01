@@ -218,8 +218,11 @@ public class TeamsIntegrationService {
       headers.set("User-Agent", "ShipFlow-Teams-Integration/1.0");
       HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
+      // Use URI object to prevent double-encoding of already-encoded URL parameters
+      java.net.URI uri = java.net.URI.create(webhookUrl);
+
       // Use dedicated webhook RestTemplate with longer timeouts
-      var response = webhookRestTemplate.postForEntity(webhookUrl, request, String.class);
+      var response = webhookRestTemplate.postForEntity(uri, request, String.class);
       log.info(
           "✅ Sent {} notification to Teams: {} (HTTP {})",
           notificationType,
@@ -288,8 +291,12 @@ public class TeamsIntegrationService {
       headers.set("User-Agent", "ShipFlow-Teams-Integration/1.0");
       HttpEntity<Map<String, Object>> httpRequest = new HttpEntity<>(payload, headers);
 
+      // Use URI object to prevent double-encoding of already-encoded URL parameters
+      // The webhook URL contains pre-encoded values like %2F that should NOT be re-encoded
+      java.net.URI uri = java.net.URI.create(webhookUrl);
+
       // Use dedicated webhook RestTemplate with longer timeouts
-      var response = webhookRestTemplate.postForEntity(webhookUrl, httpRequest, String.class);
+      var response = webhookRestTemplate.postForEntity(uri, httpRequest, String.class);
 
       log.info(
           "✅ Test notification sent successfully to Teams tenant: {} (HTTP {})",
@@ -312,7 +319,9 @@ public class TeamsIntegrationService {
 
       // Check if this is a Power Automate URL - provide specific guidance
       if (webhookUrl.contains("powerplatform.com") || webhookUrl.contains("powerautomate")) {
-        if (errorMsg.contains("401") || errorMsg.contains("unauthorized") || errorMsg.contains("authorizationfailed")) {
+        if (errorMsg.contains("401")
+            || errorMsg.contains("unauthorized")
+            || errorMsg.contains("authorizationfailed")) {
           throw new RuntimeException(
               "❌ POWER AUTOMATE SECURITY: Your flow is rejecting anonymous requests (401 Unauthorized). "
                   + "This is likely because your Power Automate trigger security is set to 'Organization only' or has IP restrictions. "
@@ -330,12 +339,15 @@ public class TeamsIntegrationService {
                   + "Please check if your flow is still active and the URL is correct.");
         } else {
           throw new RuntimeException(
-              "❌ POWER AUTOMATE ERROR: " + e.getMessage() + ". "
+              "❌ POWER AUTOMATE ERROR: "
+                  + e.getMessage()
+                  + ". "
                   + "Please check your Power Automate flow configuration and ensure it's running properly.");
         }
       }
       // Check for traditional Logic App URL mistakenly used instead of Teams webhook
-      else if (errorMsg.contains("triggers/manual/paths") && !webhookUrl.contains("powerplatform.com")) {
+      else if (errorMsg.contains("triggers/manual/paths")
+          && !webhookUrl.contains("powerplatform.com")) {
         throw new RuntimeException(
             "❌ WRONG URL TYPE: You're using an Azure Logic App URL instead of a Microsoft Teams incoming webhook URL. "
                 + "Please create a proper Teams incoming webhook: 1) Go to your Teams channel → More options (...) → Connectors → Incoming Webhook → Configure → Create. "
@@ -436,33 +448,72 @@ public class TeamsIntegrationService {
     };
   }
 
-  /** Build payload for Power Automate flows - Simple JSON format that matches working curl */
+  /** Build payload for Power Automate flows - Adaptive Card format required by Teams */
   private Map<String, Object> buildPowerAutomatePayload(
       String message, String notificationType, String entityType, Long entityId) {
-    // Power Automate expects simple JSON, NOT Adaptive Card format
-    // This matches the successful curl command format
+    // Power Automate Teams flows REQUIRE Adaptive Card format
+    // Error if not: "Property 'type' must be 'AdaptiveCard'"
     Map<String, Object> payload = new LinkedHashMap<>();
-    
+    payload.put("type", "AdaptiveCard");
+    payload.put("version", "1.3");
+    payload.put("$schema", "http://adaptivecards.io/schemas/adaptive-card.json");
+
+    List<Map<String, Object>> body = new ArrayList<>();
+
+    // Title block
     String title = "🧪 ShipFlow Test Notification";
     if (notificationType != null && !notificationType.equals("TEST")) {
       title = "🔔 ShipFlow " + notificationType.replace("_", " ");
     }
-    
-    payload.put("title", title);
-    payload.put("message", message);
-    payload.put("text", message);
-    payload.put("notificationType", notificationType != null ? notificationType : "GENERAL");
-    payload.put("timestamp", java.time.Instant.now().toString());
-    payload.put("source", "ShipFlow");
-    payload.put("themeColor", getThemeColor(notificationType));
-    
+
+    Map<String, Object> titleBlock = new LinkedHashMap<>();
+    titleBlock.put("type", "TextBlock");
+    titleBlock.put("text", title);
+    titleBlock.put("weight", "Bolder");
+    titleBlock.put("size", "Medium");
+    titleBlock.put("color", "Accent");
+    body.add(titleBlock);
+
+    // Message block
+    Map<String, Object> messageBlock = new LinkedHashMap<>();
+    messageBlock.put("type", "TextBlock");
+    messageBlock.put("text", message);
+    messageBlock.put("wrap", true);
+    messageBlock.put("spacing", "Medium");
+    body.add(messageBlock);
+
+    // Facts block with notification details
+    Map<String, Object> factsBlock = new LinkedHashMap<>();
+    factsBlock.put("type", "FactSet");
+    List<Map<String, Object>> facts = new ArrayList<>();
+
+    Map<String, Object> typeFact = new LinkedHashMap<>();
+    typeFact.put("title", "Type:");
+    typeFact.put("value", notificationType != null ? notificationType : "GENERAL");
+    facts.add(typeFact);
+
+    Map<String, Object> sourceFact = new LinkedHashMap<>();
+    sourceFact.put("title", "Source:");
+    sourceFact.put("value", "ShipFlow");
+    facts.add(sourceFact);
+
+    Map<String, Object> timeFact = new LinkedHashMap<>();
+    timeFact.put("title", "Time:");
+    timeFact.put("value", java.time.Instant.now().toString());
+    facts.add(timeFact);
+
     if (entityType != null) {
-      payload.put("entityType", entityType);
+      Map<String, Object> entityFact = new LinkedHashMap<>();
+      entityFact.put("title", "Entity:");
+      entityFact.put("value", entityType + (entityId != null ? " #" + entityId : ""));
+      facts.add(entityFact);
     }
-    if (entityId != null) {
-      payload.put("entityId", entityId);
-    }
-    
+
+    factsBlock.put("facts", facts);
+    factsBlock.put("spacing", "Medium");
+    body.add(factsBlock);
+
+    payload.put("body", body);
     return payload;
   }
 

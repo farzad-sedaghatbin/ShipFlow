@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
@@ -243,7 +242,8 @@ class TeamsIntegrationServiceTest {
     when(teamsConfigRepository.findFirstByIsEnabledTrue()).thenReturn(Optional.of(testConfig));
     when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(1L, "General"))
         .thenReturn(Optional.of(testChannelConfig));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
     when(historyRepository.save(any(TeamsNotificationHistory.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -252,7 +252,8 @@ class TeamsIntegrationServiceTest {
     teamsService.sendNotification("TASK_ASSIGNED", "Test message", "General", "TASK", 123L);
 
     // Then
-    verify(webhookRestTemplate).postForEntity(anyString(), any(HttpEntity.class), eq(String.class));
+    verify(webhookRestTemplate)
+        .postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
     verify(historyRepository).save(any(TeamsNotificationHistory.class));
   }
 
@@ -265,7 +266,7 @@ class TeamsIntegrationServiceTest {
     teamsService.sendNotification("TASK_ASSIGNED", "Test message", null, null, null);
 
     // Then
-    verify(webhookRestTemplate, never()).postForEntity(anyString(), any(), any());
+    verify(webhookRestTemplate, never()).postForEntity(any(java.net.URI.class), any(), any());
     verify(historyRepository, never()).save(any());
   }
 
@@ -281,14 +282,15 @@ class TeamsIntegrationServiceTest {
     teamsService.sendNotification("TASK_BLOCKED", "Test message", "General", null, null);
 
     // Then
-    verify(webhookRestTemplate, never()).postForEntity(anyString(), any(), any());
+    verify(webhookRestTemplate, never()).postForEntity(any(java.net.URI.class), any(), any());
   }
 
   @Test
   void sendNotification_RestTemplateFails_ShouldRecordFailure() {
     // Given
     when(teamsConfigRepository.findFirstByIsEnabledTrue()).thenReturn(Optional.of(testConfig));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenThrow(new RuntimeException("Network error"));
     when(historyRepository.save(any(TeamsNotificationHistory.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -308,14 +310,16 @@ class TeamsIntegrationServiceTest {
         TestTeamsNotificationRequest.builder().message("Test notification").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
 
     // When
     teamsService.sendTestNotification(1L, request);
 
     // Then
-    verify(webhookRestTemplate).postForEntity(anyString(), any(HttpEntity.class), eq(String.class));
+    verify(webhookRestTemplate)
+        .postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
   }
 
   @Test
@@ -401,7 +405,7 @@ class TeamsIntegrationServiceTest {
   }
 
   @Test
-  void sendTestNotification_PowerAutomate_ShouldSendSimpleJSON() {
+  void sendTestNotification_PowerAutomate_ShouldSendAdaptiveCard() {
     // Given - Power Automate URL
     String powerAutomateUrl =
         "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/7c0029b148734b5981552a0d53a30348/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qsqEJmEOgq_ELpcPu3sPxVnhO0aAASIQbYi4s2tgb6A";
@@ -421,7 +425,8 @@ class TeamsIntegrationServiceTest {
             .build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(powerAutomateConfig));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
 
     // When
@@ -429,27 +434,23 @@ class TeamsIntegrationServiceTest {
 
     // Then - Verify the request was sent with correct payload
     ArgumentCaptor<HttpEntity> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
-    ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<java.net.URI> uriCaptor = ArgumentCaptor.forClass(java.net.URI.class);
 
     verify(webhookRestTemplate)
-        .postForEntity(urlCaptor.capture(), entityCaptor.capture(), eq(String.class));
+        .postForEntity(uriCaptor.capture(), entityCaptor.capture(), eq(String.class));
 
-    // Verify URL
-    assertThat(urlCaptor.getValue()).isEqualTo(powerAutomateUrl);
+    // Verify URL (URI now, not String)
+    assertThat(uriCaptor.getValue().toString()).isEqualTo(powerAutomateUrl);
 
-    // Verify payload structure - Power Automate now uses simple JSON format
+    // Verify payload structure - Power Automate requires Adaptive Card format
     HttpEntity<Map<String, Object>> capturedEntity =
         (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
     Map<String, Object> payload = capturedEntity.getBody();
 
     assertThat(payload).isNotNull();
-    assertThat(payload.get("title")).isEqualTo("🧪 ShipFlow Test Notification");
-    assertThat(payload.get("message")).isEqualTo("🚀 Test notification from ShipFlow - Your Teams integration is working!");
-    assertThat(payload.get("text")).isEqualTo("🚀 Test notification from ShipFlow - Your Teams integration is working!");
-    assertThat(payload.get("notificationType")).isEqualTo("TEST");
-    assertThat(payload.get("source")).isEqualTo("ShipFlow");
-    assertThat(payload.get("themeColor")).isEqualTo("9B59B6");
-    assertThat(payload.get("timestamp")).isNotNull();
+    assertThat(payload.get("type")).isEqualTo("AdaptiveCard");
+    assertThat(payload.get("version")).isEqualTo("1.3");
+    assertThat(payload.get("body")).isInstanceOf(java.util.List.class);
 
     // Verify headers
     assertThat(capturedEntity.getHeaders().getContentType().toString())
@@ -480,7 +481,8 @@ class TeamsIntegrationServiceTest {
     // Simulate 401 Unauthorized with AuthorizationFailed error
     String errorBody =
         "{\"error\":{\"code\":\"AuthorizationFailed\",\"message\":\"You do not have permissions to perform action 'run' on scope '/triggers/manual/paths/'\"}}";
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenThrow(
             HttpClientErrorException.create(
                 HttpStatus.UNAUTHORIZED,
@@ -515,7 +517,8 @@ class TeamsIntegrationServiceTest {
         TestTeamsNotificationRequest.builder().message("Test").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenThrow(
             HttpClientErrorException.create(
                 HttpStatus.NOT_FOUND,
@@ -548,7 +551,8 @@ class TeamsIntegrationServiceTest {
         TestTeamsNotificationRequest.builder().message("Test notification").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
-    when(webhookRestTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(
+            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("1"));
 
     // When
@@ -557,7 +561,7 @@ class TeamsIntegrationServiceTest {
     // Then
     ArgumentCaptor<HttpEntity> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
     verify(webhookRestTemplate)
-        .postForEntity(eq(webhookUrl), entityCaptor.capture(), eq(String.class));
+        .postForEntity(any(java.net.URI.class), entityCaptor.capture(), eq(String.class));
 
     HttpEntity<Map<String, Object>> capturedEntity =
         (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
