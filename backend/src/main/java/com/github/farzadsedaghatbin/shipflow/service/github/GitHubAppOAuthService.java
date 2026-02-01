@@ -319,8 +319,14 @@ public class GitHubAppOAuthService {
         List<GitHubRepository> syncedRepos = new ArrayList<>();
         String url = GITHUB_API_URL + "/installation/repositories?per_page=100";
         
-        // Handle pagination
+        // Handle pagination with SSRF protection - validate all URLs
         while (url != null) {
+            // Validate URL before making request to prevent SSRF attacks
+            if (!isValidGitHubApiUrl(url)) {
+                log.error("Invalid URL detected, stopping repository sync: {}", url);
+                throw new SecurityException("Invalid GitHub API URL detected: " + url);
+            }
+            
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
@@ -337,7 +343,7 @@ public class GitHubAppOAuthService {
                     syncedRepos.add(repo);
                 }
                 
-                // Check for next page
+                // Check for next page (returns null or validated URL)
                 url = getNextPageUrl(response.getHeaders());
                 
             } catch (JsonProcessingException e) {
