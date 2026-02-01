@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-02-01
+
+### Fixed
+- **Frontend API Configuration**
+  - Fixed hardcoded localhost URLs in GitHub, Teams, and Slack service clients
+  - Services now properly use environment variables or relative URLs for API base URL
+  - Ensures correct API routing in both development and production environments
+  - Fixes potential deployment issues where API calls would fail in production
+
 ## [0.3.6] - 2026-02-01
 
 ### Fixed
