@@ -454,9 +454,9 @@ public class GitHubAppOAuthService {
   }
 
   /**
-   * Sanitize and validate GitHub API URL to prevent SSRF attacks.
-   * This method validates the URL and returns it if valid, or throws SecurityException if invalid.
-   * The explicit return value helps static analysis tools track the sanitized data flow.
+   * Sanitize and validate GitHub API URL to prevent SSRF attacks. This method validates the URL and
+   * returns it if valid, or throws SecurityException if invalid. The explicit return value helps
+   * static analysis tools track the sanitized data flow.
    *
    * @param url URL to validate
    * @return The same URL if valid
