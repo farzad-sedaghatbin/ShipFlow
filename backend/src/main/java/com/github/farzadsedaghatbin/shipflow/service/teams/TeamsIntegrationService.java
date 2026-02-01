@@ -288,6 +288,11 @@ public class TeamsIntegrationService {
       headers.set("User-Agent", "ShipFlow-Teams-Integration/1.0");
       HttpEntity<Map<String, Object>> httpRequest = new HttpEntity<>(payload, headers);
 
+      // Debug logging to compare with successful curl
+      log.info("🔍 DEBUG - Sending request to URL: {}", webhookUrl);
+      log.info("🔍 DEBUG - Headers: {}", headers);  
+      log.info("🔍 DEBUG - Payload: {}", payload);
+
       // Use dedicated webhook RestTemplate with longer timeouts
       var response = webhookRestTemplate.postForEntity(webhookUrl, httpRequest, String.class);
 
