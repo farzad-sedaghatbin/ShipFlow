@@ -429,9 +429,27 @@ public class GitHubAppOAuthService {
         return false;
       }
 
-      // Must point to api.github.com
-      if (!"api.github.com".equalsIgnoreCase(uri.getHost())) {
+      // Disallow embedded credentials (user info) in the URL
+      if (uri.getUserInfo() != null) {
+        log.warn("URL validation failed: user info is not allowed in GitHub API URLs: {}", urlString);
+        return false;
+      }
+
+      // Must point to api.github.com (no alternate ports other than default HTTPS)
+      String host = uri.getHost();
+      if (host == null || !"api.github.com".equalsIgnoreCase(host)) {
         log.warn("URL validation failed: host is not api.github.com: {}", urlString);
+        return false;
+      }
+      int port = uri.getPort();
+      if (port != -1 && port != 443) {
+        log.warn("URL validation failed: unexpected port for GitHub API URL: {}", urlString);
+        return false;
+      }
+
+      // Disallow URL fragments
+      if (uri.getFragment() != null) {
+        log.warn("URL validation failed: fragments are not allowed in GitHub API URLs: {}", urlString);
         return false;
       }
 
