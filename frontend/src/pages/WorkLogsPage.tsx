@@ -382,7 +382,7 @@ export default function WorkLogsPage() {
     }
   };
 
-  const { hasPermissionSync, hasPermission } = usePermission();
+  const { hasPermission } = usePermission();
   const [canManageLogs, setCanManageLogs] = useState(false);
   const canLogForSelf = !!user?.personId;
 
