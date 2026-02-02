@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
@@ -89,9 +89,9 @@ export default function OrganizationSettingsPage() {
     if (canManageSettings) {
       fetchSettings();
     }
-  }, [canManageSettings]);
+  }, [canManageSettings, fetchSettings]);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const response = await organizationSettingsService.getSettings();
       setSettings(response.data);
@@ -140,7 +140,7 @@ export default function OrganizationSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   const handleSave = async () => {
     setSaving(true);
