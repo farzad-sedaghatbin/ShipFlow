@@ -236,8 +236,13 @@ public class ProjectService {
     project.setColor(request.getColor());
     project.setLogoUrl(request.getLogoUrl());
 
+    // Check if project type is being changed to Kanban
+    ProjectType oldProjectType = project.getProjectType();
+    boolean isConvertingToKanban = false;
+    
     // Update project type if provided
     if (request.getProjectType() != null) {
+      isConvertingToKanban = (oldProjectType != ProjectType.KANBAN && request.getProjectType() == ProjectType.KANBAN);
       project.setProjectType(request.getProjectType());
     }
 
@@ -255,6 +260,15 @@ public class ProjectService {
     }
 
     project = projectRepository.save(project);
+    
+    // If project was converted to Kanban and doesn't have any active cycles, create a default one
+    if (isConvertingToKanban) {
+      long activeCycleCount = cycleRepository.countActiveByProjectId(project.getId());
+      if (activeCycleCount == 0) {
+        createDefaultKanbanCycle(project);
+      }
+    }
+    
     return toDTO(project);
   }
 

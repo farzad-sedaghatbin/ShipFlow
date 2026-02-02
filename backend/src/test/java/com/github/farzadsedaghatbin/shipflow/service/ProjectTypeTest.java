@@ -268,4 +268,106 @@ class ProjectTypeTest {
     verify(projectRepository).save(projectCaptor.capture());
     assertThat(projectCaptor.getValue().getProjectType()).isEqualTo(ProjectType.KANBAN);
   }
+
+  @Test
+  void update_ConvertShapeUpToKanban_ShouldCreateDefaultCycle() {
+    // Arrange - Existing Shape Up project
+    Project existingProject =
+        Project.builder()
+            .id(1L)
+            .name("Existing Project")
+            .projectKey("TST")
+            .projectType(ProjectType.SHAPE_UP) // Currently Shape Up
+            .owner(testOwner)
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    CreateProjectRequest updateRequest = new CreateProjectRequest();
+    updateRequest.setName("Converted to Kanban");
+    updateRequest.setProjectKey("TST");
+    updateRequest.setOwnerId(1L);
+    updateRequest.setProjectType(ProjectType.KANBAN); // Converting to Kanban
+
+    Project updatedProject =
+        Project.builder()
+            .id(1L)
+            .name("Converted to Kanban")
+            .projectKey("TST")
+            .projectType(ProjectType.KANBAN)
+            .owner(testOwner)
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(existingProject));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
+    when(projectRepository.save(any(Project.class))).thenReturn(updatedProject);
+    when(cycleRepository.countActiveByProjectId(1L)).thenReturn(0L); // No active cycles exist
+
+    // Act
+    ProjectDTO result = projectService.update(1L, updateRequest);
+
+    // Assert
+    assertThat(result.getProjectType()).isEqualTo(ProjectType.KANBAN);
+    assertThat(result.getName()).isEqualTo("Converted to Kanban");
+
+    // Verify a default cycle was created for the converted Kanban project
+    ArgumentCaptor<Cycle> cycleCaptor = ArgumentCaptor.forClass(Cycle.class);
+    verify(cycleRepository).save(cycleCaptor.capture());
+
+    Cycle createdCycle = cycleCaptor.getValue();
+    assertThat(createdCycle.getName()).isEqualTo("Continuous Flow");
+    assertThat(createdCycle.getProject()).isEqualTo(updatedProject);
+    assertThat(createdCycle.getStartDate()).isEqualTo(LocalDate.now());
+    assertThat(createdCycle.getEndDate()).isEqualTo(LocalDate.of(2099, 12, 31));
+    assertThat(createdCycle.getPhase()).isEqualTo(CyclePhase.BUILD);
+    assertThat(createdCycle.getIsActive()).isTrue();
+  }
+
+  @Test
+  void update_ConvertShapeUpToKanban_WithExistingActiveCycle_ShouldNotCreateDefaultCycle() {
+    // Arrange - Existing Shape Up project with active cycles
+    Project existingProject =
+        Project.builder()
+            .id(1L)
+            .name("Existing Project")
+            .projectKey("TST")
+            .projectType(ProjectType.SHAPE_UP)
+            .owner(testOwner)
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    CreateProjectRequest updateRequest = new CreateProjectRequest();
+    updateRequest.setName("Converted to Kanban");
+    updateRequest.setProjectKey("TST");
+    updateRequest.setOwnerId(1L);
+    updateRequest.setProjectType(ProjectType.KANBAN);
+
+    Project updatedProject =
+        Project.builder()
+            .id(1L)
+            .name("Converted to Kanban")
+            .projectKey("TST")
+            .projectType(ProjectType.KANBAN)
+            .owner(testOwner)
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(existingProject));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
+    when(projectRepository.save(any(Project.class))).thenReturn(updatedProject);
+    when(cycleRepository.countActiveByProjectId(1L)).thenReturn(1L); // Active cycle exists
+
+    // Act
+    ProjectDTO result = projectService.update(1L, updateRequest);
+
+    // Assert
+    assertThat(result.getProjectType()).isEqualTo(ProjectType.KANBAN);
+
+    // Verify no default cycle was created since active cycles already exist
+    verify(cycleRepository, never()).save(any(Cycle.class));
+  }
 }

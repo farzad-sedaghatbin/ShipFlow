@@ -11,6 +11,7 @@ import {
   HillChartPoint,
   Task,
   User,
+  Person,
 } from '../types';
 import { hillChartApi } from '../services/hillChartApi';
 import { taskService } from '../services/taskService';
@@ -102,14 +103,14 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [scopeSearch, setScopeSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
-  const [userSearch, setUserSearch] = useState('');
+  const [personSearch, setPersonSearch] = useState('');
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [searchingScopes, setSearchingScopes] = useState(false);
   const [searchingTasks, setSearchingTasks] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingPeople, setLoadingPeople] = useState(false);
   
   // Debounce search queries to avoid excessive API calls (uses useDebounce default delay of 300ms defined in the hook)
   const debouncedScopeSearch = useDebounce(scopeSearch);
@@ -136,27 +137,27 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         cycleId: bugReport?.cycleId || cycleId,
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
-        assigneeId: bugReport?.assigneeId,
+        assigneePersonId: bugReport?.assigneePersonId,
         scopeId: bugReport?.scopeId,
         taskId: bugReport?.taskId,
       });
       setTagInput('');
       setError(null);
-      loadUsers();
+      loadPeople();
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
-  // Load users for assignee selection
-  const loadUsers = async () => {
-    if (loadingUsers) return;
-    setLoadingUsers(true);
+  // Load people for assignee selection
+  const loadPeople = async () => {
+    if (loadingPeople) return;
+    setLoadingPeople(true);
     try {
-      const response = await api.get<User[]>('/users');
-      setUsers(response.data.filter(user => user.isActive));
+      const response = await api.get<Person[]>('/persons');
+      setPeople(response.data.filter(person => person.isActive));
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error('Failed to load people:', err);
     } finally {
-      setLoadingUsers(false);
+      setLoadingPeople(false);
     }
   };
 
@@ -404,8 +405,8 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                   aria-expanded={assigneePopoverOpen}
                   className="w-full justify-between"
                 >
-                  {formData.assigneeId 
-                    ? users.find(user => user.id === formData.assigneeId)?.personName || users.find(user => user.id === formData.assigneeId)?.username
+                  {formData.assigneePersonId 
+                    ? people.find(person => person.id === formData.assigneePersonId)?.name
                     : "Select assignee (optional)"}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -413,41 +414,40 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
               <PopoverContent className="w-full p-0" align="start">
                 <Command>
                   <CommandInput 
-                    placeholder="Search users..." 
-                    value={userSearch}
-                    onValueChange={setUserSearch}
+                    placeholder="Search people..." 
+                    value={personSearch}
+                    onValueChange={setPersonSearch}
                   />
                   <CommandList>
-                    <CommandEmpty>No users found.</CommandEmpty>
+                    <CommandEmpty>No people found.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         value="none"
                         onSelect={() => {
-                          handleChange('assigneeId', undefined);
+                          handleChange('assigneePersonId', undefined);
                           setAssigneePopoverOpen(false);
                         }}
                       >
                         Unassigned
                       </CommandItem>
-                      {users
-                        .filter(user => 
-                          !userSearch || 
-                          (user.personName?.toLowerCase().includes(userSearch.toLowerCase())) ||
-                          (user.username?.toLowerCase().includes(userSearch.toLowerCase())) ||
-                          (user.email?.toLowerCase().includes(userSearch.toLowerCase()))
+                      {people
+                        .filter(person => 
+                          !personSearch || 
+                          person.name.toLowerCase().includes(personSearch.toLowerCase()) ||
+                          person.email.toLowerCase().includes(personSearch.toLowerCase())
                         )
-                        .map((user) => (
+                        .map((person) => (
                         <CommandItem
-                          key={user.id}
-                          value={`${user.id}-${user.personName || user.username}`}
+                          key={person.id}
+                          value={`${person.id}-${person.name}`}
                           onSelect={() => {
-                            handleChange('assigneeId', user.id);
+                            handleChange('assigneePersonId', person.id);
                             setAssigneePopoverOpen(false);
                           }}
                         >
-                          {user.personName || user.username}
-                          {user.email && (
-                            <span className="ml-2 text-xs text-muted-foreground">({user.email})</span>
+                          {person.name}
+                          {person.email && (
+                            <span className="ml-2 text-xs text-muted-foreground">({person.email})</span>
                           )}
                         </CommandItem>
                       ))}
