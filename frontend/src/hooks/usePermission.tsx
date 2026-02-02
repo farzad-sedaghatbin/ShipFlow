@@ -176,7 +176,7 @@ export function PermissionGate({
     return () => {
       mounted = false;
     };
-  }, [resource, permission, hasPermission]);
+  }, [resource, permission]); // Removed hasPermission to prevent infinite loops
 
   // Loading state
   if (hasAccess === null) {
