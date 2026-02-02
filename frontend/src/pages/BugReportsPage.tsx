@@ -334,58 +334,61 @@ const BugReportsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button 
-                  onClick={openCreateModal} 
-                  className="w-full sm:w-auto"
-                  disabled={isAllProjectsSelected}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('bugReports.reportBug')}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {isAllProjectsSelected && (
-              <TooltipContent>
-                {t('bugReports.selectProjectToCreate')}
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
         
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 border rounded-md p-1">
+        <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 border rounded-md p-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.viewMode.list')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('kanban')}
+                  >
+                    <Kanban className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.viewMode.kanban')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {/* Add New Bug Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setViewMode('list')}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
+                <span>
+                  <Button 
+                    onClick={openCreateModal} 
+                    disabled={isAllProjectsSelected}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('bugReports.reportBug')}
+                  </Button>
+                </span>
               </TooltipTrigger>
-              <TooltipContent>{t('bugReports.viewMode.list')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setViewMode('kanban')}
-                >
-                  <Kanban className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('bugReports.viewMode.kanban')}</TooltipContent>
+              {isAllProjectsSelected && (
+                <TooltipContent>
+                  {t('bugReports.selectProjectToCreate')}
+                </TooltipContent>
+              )}
             </Tooltip>
           </TooltipProvider>
         </div>
