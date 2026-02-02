@@ -188,8 +188,12 @@
     "kanban": {
       "blockedBy": "مسدود توسط",
       "blocking": "مسدودکننده",
-      "dragToMove": "[TODO: Persian translation] Drag to move between columns",
-      "noTasks": "هیچ تسکی در این ستون نیست"
+      "dragToMove": "برای انتقال بین ستون‌ها بکشید",
+      "noTasks": "هیچ تسکی در این ستون نیست",
+      "manageColumns": "مدیریت ستون‌ها",
+      "columnVisibility": "نمایش ستون‌ها",
+      "showAll": "نمایش همه",
+      "hideOptional": "مخفی کردن اختیاری"
     },
     "loadingCycles": "در حال بارگذاری چرخه‌ها...",
     "loadingPeople": "در حال بارگذاری افراد...",
@@ -482,6 +486,7 @@
       "viewDetails": "مشاهده جزئیات"
     },
     "assignee": "مسئول",
+    "selectAssignee": "انتخاب مسئول",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این گزارش باگ را حذف کنید؟",
     "createBug": "گزارش باگ",
     "createSuccess": "باگ با موفقیت گزارش شد",

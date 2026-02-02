@@ -18,6 +18,7 @@ import {
   MessageSquare,
   LayoutList,
   Kanban,
+  Check,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -45,6 +46,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import { Checkbox } from '../components/ui/checkbox';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -707,46 +714,54 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={bug.severity}
-                      onValueChange={(value) => handleInlineUpdate(bug.id, 'severity', value)}
-                      disabled={updatingBugId === bug.id}
-                    >
-                      <SelectTrigger className="h-7 w-[110px] border-0 bg-transparent hover:bg-muted/50 focus:ring-0 p-1">
-                        <Badge variant={severityBadgeVariants[bug.severity]} className="cursor-pointer">
-                          {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                          {bug.severity}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-0" disabled={updatingBugId === bug.id}>
+                          <Badge variant={severityBadgeVariants[bug.severity]} className="cursor-pointer">
+                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                            {bug.severity}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
                         {(['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'] as BugSeverity[]).map((severity) => (
-                          <SelectItem key={severity} value={severity}>
-                            <Badge variant={severityBadgeVariants[severity]}>{severity}</Badge>
-                          </SelectItem>
+                          <DropdownMenuItem
+                            key={severity}
+                            onClick={() => handleInlineUpdate(bug.id, 'severity', severity)}
+                          >
+                            <Badge variant={severityBadgeVariants[severity]} className="mr-2">
+                              {severity}
+                            </Badge>
+                            {bug.severity === severity && <Check className="ml-auto h-4 w-4" />}
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={bug.status}
-                      onValueChange={(value) => handleInlineUpdate(bug.id, 'status', value)}
-                      disabled={updatingBugId === bug.id}
-                    >
-                      <SelectTrigger className="h-7 w-[130px] border-0 bg-transparent hover:bg-muted/50 focus:ring-0 p-1">
-                        <Badge variant={statusBadgeVariants[bug.status]} className="cursor-pointer">
-                          {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                          {bug.status.replace('_', ' ')}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-0" disabled={updatingBugId === bug.id}>
+                          <Badge variant={statusBadgeVariants[bug.status]} className="cursor-pointer">
+                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                            {bug.status.replace('_', ' ')}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
                         {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REOPENED', 'WONT_FIX', 'DUPLICATE'] as BugStatus[]).map((status) => (
-                          <SelectItem key={status} value={status}>
-                            <Badge variant={statusBadgeVariants[status]}>{status.replace('_', ' ')}</Badge>
-                          </SelectItem>
+                          <DropdownMenuItem
+                            key={status}
+                            onClick={() => handleInlineUpdate(bug.id, 'status', status)}
+                          >
+                            <Badge variant={statusBadgeVariants[status]} className="mr-2">
+                              {status.replace('_', ' ')}
+                            </Badge>
+                            {bug.status === status && <Check className="ml-auto h-4 w-4" />}
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
@@ -974,25 +989,36 @@ const BugReportsPage: React.FC = () => {
                         </div>
                       )}
                       {/* Quick status change */}
-                      <Select
-                        value={bug.status}
-                        onValueChange={(value) => handleInlineUpdate(bug.id, 'status', value)}
-                        disabled={updatingBugId === bug.id}
-                      >
-                        <SelectTrigger 
-                          className="h-6 text-xs border-dashed"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="text-muted-foreground">{t('bugReports.kanban.moveTo')}</span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'] as BugStatus[]).filter(s => s !== bug.status).map((s) => (
-                            <SelectItem key={s} value={s}>
-                              <Badge variant={statusBadgeVariants[s]} className="text-[0.65rem]">{s.replace('_', ' ')}</Badge>
-                            </SelectItem>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-6 text-xs border-dashed"
+                            disabled={updatingBugId === bug.id}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                            <span className="text-muted-foreground">{t('bugReports.kanban.moveTo')}</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'] as BugStatus[]).map((s) => (
+                            <DropdownMenuItem
+                              key={s}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleInlineUpdate(bug.id, 'status', s);
+                              }}
+                            >
+                              <Badge variant={statusBadgeVariants[s]} className="mr-2 text-[0.65rem]">
+                                {s.replace('_', ' ')}
+                              </Badge>
+                              {bug.status === s && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
                           ))}
-                        </SelectContent>
-                      </Select>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </CardContent>
                   </Card>
                 ))}
