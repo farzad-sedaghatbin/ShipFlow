@@ -35,7 +35,7 @@ import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
-import { getUserFriendlyError } from '../utils/errorMessages';\nimport { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },

@@ -32,21 +32,14 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { cn } from '../lib/utils';
-import qaTestManagementService from '../services/qaTestManagementService';\nimport { SoftDeleteButton } from '../components/SoftDeleteButton';
+import qaTestManagementService from '../services/qaTestManagementService';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';

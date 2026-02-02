@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Loader2 } from 'lucide-react';
@@ -13,7 +13,7 @@ import {
 } from '../components/ui/dialog';
 import { pitchService } from '../services/pitchService';
 import { taskService } from '../services/taskService';
-import { qaTestManagementService } from '../services/qaTestManagementService';
+import qaTestManagementService from '../services/qaTestManagementService';
 import { useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
@@ -44,38 +44,22 @@ export function SoftDeleteButton({
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const getService = () => {
-    switch (entityType) {
-      case 'pitch':
-        return pitchService;
-      case 'task':
-        return taskService;
-      case 'testCase':
-        return qaTestManagementService;
-      default:
-        throw new Error(`Unknown entity type: ${entityType}`);
-    }
-  };
-
-  const getDeleteMethod = () => {
-    const service = getService();
-    switch (entityType) {
-      case 'pitch':
-        return service.delete;
-      case 'task':
-        return service.delete;
-      case 'testCase':
-        return (service as any).deleteTestCase;
-      default:
-        throw new Error(`Unknown entity type: ${entityType}`);
-    }
-  };
-
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const deleteMethod = getDeleteMethod();
-      await deleteMethod(entityId);
+      switch (entityType) {
+        case 'pitch':
+          await pitchService.delete(entityId);
+          break;
+        case 'task':
+          await taskService.delete(entityId);
+          break;
+        case 'testCase':
+          await qaTestManagementService.deleteTestCase(entityId);
+          break;
+        default:
+          throw new Error(`Unknown entity type: ${entityType}`);
+      }
       
       showSuccess(t(`softDelete.${entityType}Deleted`));
       
