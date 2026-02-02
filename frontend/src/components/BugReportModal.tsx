@@ -122,7 +122,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         cycleId: bugReport?.cycleId || cycleId,
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
-        assigneePersonId: bugReport?.assigneePersonId,
+        assigneeId: bugReport?.assigneeId,
         scopeId: bugReport?.scopeId,
         taskId: bugReport?.taskId,
       });
@@ -379,27 +379,26 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             )}
           </div>
 
-          {/* Assignee Selection */}
           <div className="space-y-2">
             <Label>{t('bugReports.assignee')}</Label>
             <Select
-              value={formData.assigneePersonId?.toString() || 'unassigned'}
-              onValueChange={(value) => handleChange('assigneePersonId', value === 'unassigned' ? undefined : Number(value))}
+              value={formData.assigneeId?.toString() || 'unassigned'}
+              onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('bugReports.selectAssignee')}>
-                  {formData.assigneePersonId ? (
+                  {formData.assigneeId ? (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        {people.find(p => p.id === formData.assigneePersonId)?.avatarUrl ? (
-                          <AvatarImage src={people.find(p => p.id === formData.assigneePersonId)?.avatarUrl} />
+                        {people.find(p => p.id === formData.assigneeId)?.avatarUrl ? (
+                          <AvatarImage src={people.find(p => p.id === formData.assigneeId)?.avatarUrl} />
                         ) : (
                           <AvatarFallback className="text-[10px]">
-                            {people.find(p => p.id === formData.assigneePersonId)?.name?.charAt(0) || '?'}
+                            {people.find(p => p.id === formData.assigneeId)?.name?.charAt(0) || '?'}
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      <span>{people.find(p => p.id === formData.assigneePersonId)?.name}</span>
+                      <span>{people.find(p => p.id === formData.assigneeId)?.name}</span>
                     </div>
                   ) : (
                     t('bugReports.unassigned')

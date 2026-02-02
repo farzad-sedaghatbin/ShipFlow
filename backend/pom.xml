@@ -58,6 +58,12 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- Hibernate Envers for Entity Auditing -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-envers</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -773,9 +773,6 @@ export interface BugReport {
   attachments?: string;
   reporterId?: number;
   reporterName?: string;
-  assigneePersonId?: number;
-  assigneePersonName?: string;
-  // Deprecated - kept for backward compatibility
   assigneeId?: number;
   assigneeName?: string;
   resolution?: string;
@@ -803,8 +800,6 @@ export interface CreateBugReportRequest {
   status?: BugStatus;
   tags?: string[];
   attachments?: string;
-  assigneePersonId?: number;
-  // Deprecated - kept for backward compatibility
   assigneeId?: number;
 }
 
@@ -825,8 +820,6 @@ export interface UpdateBugReportRequest {
   status?: BugStatus;
   tags?: string[];
   attachments?: string;
-  assigneePersonId?: number;
-  // Deprecated - kept for backward compatibility
   assigneeId?: number;
   resolution?: string;
 }
