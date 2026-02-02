@@ -116,7 +116,7 @@ public class ReportService {
   }
 
   public List<PitchReportDTO> getPitchReports(Long cycleId) {
-    List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
     List<WorkLog> workLogs = workLogRepository.findByCycleId(cycleId);
 
     return pitches.stream().map(p -> buildPitchReport(p, workLogs)).collect(Collectors.toList());
@@ -469,7 +469,7 @@ public class ReportService {
             .findById(cycleId)
             .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
     List<WorkLog> workLogs = workLogRepository.findByCycleId(cycleId);
 
     // Calculate pitch reports

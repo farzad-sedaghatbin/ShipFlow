@@ -36,7 +36,7 @@ public class CircuitBreakerService {
    */
   public List<CircuitBreakerDTO> detectOverflowPitches(Long cycleId, double thresholdPercentage) {
     List<Pitch> activePitches =
-        pitchRepository.findByCycleId(cycleId).stream()
+        pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
             .filter(
                 p ->
                     p.getStatus() == PitchStatus.IN_PROGRESS
@@ -75,7 +75,7 @@ public class CircuitBreakerService {
   /** Get all pitches with active circuit breakers */
   public List<CircuitBreakerDTO> getTriggeredCircuitBreakers(Long cycleId) {
     List<Pitch> pitches =
-        pitchRepository.findByCycleId(cycleId).stream()
+        pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
             .filter(Pitch::getIsCircuitBreakerTriggered)
             .toList();
 

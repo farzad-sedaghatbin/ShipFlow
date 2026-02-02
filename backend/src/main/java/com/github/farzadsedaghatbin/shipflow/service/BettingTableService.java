@@ -39,7 +39,7 @@ public class BettingTableService {
             .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
 
     // Get shaped pitches not yet assigned to any slot
-    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatus(cycleId, PitchStatus.SHAPED);
+    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatusNotDeleted(cycleId, PitchStatus.SHAPED);
     List<BettingSlot> allSlots = bettingSlotRepository.findByCycleId(cycleId);
 
     // Filter out pitches that are already assigned to a slot
@@ -610,7 +610,7 @@ public class BettingTableService {
             .findById(cycleId)
             .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatus(cycleId, PitchStatus.SHAPED);
+    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatusNotDeleted(cycleId, PitchStatus.SHAPED);
     List<Team> teams = teamRepository.findByCycleId(cycleId);
 
     return shapedPitches.stream()

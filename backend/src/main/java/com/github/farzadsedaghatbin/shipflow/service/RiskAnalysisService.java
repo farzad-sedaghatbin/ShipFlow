@@ -251,7 +251,7 @@ public class RiskAnalysisService {
             .findById(cycleId)
             .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
     boolean aiEnabled = useAI && aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
 
     // Analyze each pitch (using fast mode if AI is disabled)

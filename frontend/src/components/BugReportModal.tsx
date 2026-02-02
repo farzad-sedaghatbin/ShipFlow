@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { useProject } from '../contexts';
 import {
   BugReport,
@@ -10,9 +10,11 @@ import {
   BugStatus,
   HillChartPoint,
   Task,
+  User,
 } from '../types';
 import { hillChartApi } from '../services/hillChartApi';
 import { taskService } from '../services/taskService';
+import api from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
 import {
   Dialog,
@@ -32,6 +34,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from './ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { cn } from '../lib/utils';
@@ -87,32 +102,61 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [scopeSearch, setScopeSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [searchingScopes, setSearchingScopes] = useState(false);
   const [searchingTasks, setSearchingTasks] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
   // Debounce search queries to avoid excessive API calls (uses useDebounce default delay of 300ms defined in the hook)
   const debouncedScopeSearch = useDebounce(scopeSearch);
   const debouncedTaskSearch = useDebounce(taskSearch);
 
-  const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({
-    title: bugReport?.title || '',
-    description: bugReport?.description || '',
-    stepsToReproduce: bugReport?.stepsToReproduce || '',
-    expectedBehavior: bugReport?.expectedBehavior || '',
-    actualBehavior: bugReport?.actualBehavior || '',
-    environment: bugReport?.environment || '',
-    severity: bugReport?.severity || 'MAJOR',
-    status: bugReport?.status || 'OPEN',
-    tags: bugReport?.tagList || [],
-    pitchId: bugReport?.pitchId || pitchId,
-    cycleId: bugReport?.cycleId || cycleId,
-    teamId: bugReport?.teamId || teamId,
-    testRunId: bugReport?.testRunId || testRunId,
-    scopeId: bugReport?.scopeId,
-    taskId: bugReport?.taskId,
-  });
+  const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({});
+
+  // Reset form data when modal opens or bug report changes
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        title: bugReport?.title || '',
+        description: bugReport?.description || '',
+        stepsToReproduce: bugReport?.stepsToReproduce || '',
+        expectedBehavior: bugReport?.expectedBehavior || '',
+        actualBehavior: bugReport?.actualBehavior || '',
+        environment: bugReport?.environment || '',
+        severity: bugReport?.severity || 'MAJOR',
+        status: bugReport?.status || 'OPEN',
+        tags: bugReport?.tagList || [],
+        pitchId: bugReport?.pitchId || pitchId,
+        cycleId: bugReport?.cycleId || cycleId,
+        teamId: bugReport?.teamId || teamId,
+        testRunId: bugReport?.testRunId || testRunId,
+        assigneeId: bugReport?.assigneeId,
+        scopeId: bugReport?.scopeId,
+        taskId: bugReport?.taskId,
+      });
+      setTagInput('');
+      setError(null);
+      loadUsers();
+    }
+  }, [open, bugReport, pitchId, cycleId, teamId, testRunId]);
+
+  // Load users for assignee selection
+  const loadUsers = async () => {
+    if (loadingUsers) return;
+    setLoadingUsers(true);
+    try {
+      const response = await api.get<User[]>('/users');
+      setUsers(response.data.filter(user => user.isActive));
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   // Load initial scopes based on pitch context
   useEffect(() => {
@@ -246,7 +290,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     setError(null);
 
     try {
-      await onSubmit(formData as CreateBugReportRequest);
+      if (isEdit) {
+        await onSubmit(formData as UpdateBugReportRequest);
+      } else {
+        await onSubmit(formData as CreateBugReportRequest);
+      }
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.saveBugReportFailed'));
@@ -341,6 +389,71 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                 </Select>
               </div>
             )}
+          </div>
+
+          {/* Assignee Selection */}
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={assigneePopoverOpen}
+                  className="w-full justify-between"
+                >
+                  {formData.assigneeId 
+                    ? users.find(user => user.id === formData.assigneeId)?.personName || users.find(user => user.id === formData.assigneeId)?.username
+                    : "Select assignee (optional)"}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search users..." 
+                    value={userSearch}
+                    onValueChange={setUserSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No users found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="none"
+                        onSelect={() => {
+                          handleChange('assigneeId', undefined);
+                          setAssigneePopoverOpen(false);
+                        }}
+                      >
+                        Unassigned
+                      </CommandItem>
+                      {users
+                        .filter(user => 
+                          !userSearch || 
+                          (user.personName?.toLowerCase().includes(userSearch.toLowerCase())) ||
+                          (user.username?.toLowerCase().includes(userSearch.toLowerCase())) ||
+                          (user.email?.toLowerCase().includes(userSearch.toLowerCase()))
+                        )
+                        .map((user) => (
+                        <CommandItem
+                          key={user.id}
+                          value={`${user.id}-${user.personName || user.username}`}
+                          onSelect={() => {
+                            handleChange('assigneeId', user.id);
+                            setAssigneePopoverOpen(false);
+                          }}
+                        >
+                          {user.personName || user.username}
+                          {user.email && (
+                            <span className="ml-2 text-xs text-muted-foreground">({user.email})</span>
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Scope & Task Traceability */}

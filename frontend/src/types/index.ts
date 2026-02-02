@@ -583,6 +583,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags?: string;
+  commentCount?: number;
   
   // Dependency information
   blockingTasks?: TaskDependency[];
@@ -767,6 +768,7 @@ export interface BugReport {
   resolvedAt?: string;
   createdAt: string;
   updatedAt: string;
+  commentCount?: number;
 }
 
 export interface CreateBugReportRequest {

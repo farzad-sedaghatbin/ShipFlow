@@ -488,6 +488,7 @@
     "cycle": "چرخه",
     "deleteFailed": "حذف گزارش باگ ناموفق بود",
     "deleteSuccess": "باگ با موفقیت حذف شد",
+    "selectProjectToCreate": "لطفاً یک پروژه خاص انتخاب کنید تا بتوانید گزارش باگ ایجاد کنید",
     "detail": {
       "actualBehavior": "رفتار واقعی",
       "assignee": "مسئول:",
@@ -538,6 +539,14 @@
       "rangeText": "{{start}}-{{end}} از {{total}}",
       "rowsPerPage": "ردیف در هر صفحه:",
       "showing": "[TODO: Persian translation] Showing {{start}}-{{end}} of {{total}}"
+    },
+    "viewMode": {
+      "list": "نمای لیست",
+      "kanban": "نمای کانبان"
+    },
+    "kanban": {
+      "moveTo": "انتقال به...",
+      "empty": "بدون باگ"
     },
     "pitch": "پیچ",
     "reportBug": "گزارش باگ",
@@ -4929,5 +4938,19 @@
     "deleteTestCaseConfirmation": "آیا از حذف تست کیس '{{title}}' اطمینان دارید؟",
     "testCaseDeleted": "تست کیس با موفقیت حذف شد",
     "testCaseDeleteFailed": "خطا در حذف تست کیس"
+  },
+  "comments": {
+    "title": "نظرات",
+    "placeholder": "یک نظر درباره این {{entityType}} اضافه کنید...",
+    "post": "ارسال نظر",
+    "posting": "در حال ارسال...",
+    "edited": "ویرایش شده",
+    "noCommentsYet": "هنوز نظری ثبت نشده. اولین نفری باشید که نظر می‌دهید!",
+    "noCommentsReadonly": "نظری موجود نیست.",
+    "futureFeature": "امکان ثبت نظرات به زودی اضافه می‌شود!",
+    "deleteTitle": "حذف نظر",
+    "deleteConfirmation": "آیا از حذف این نظر اطمینان دارید؟ این عمل قابل بازگشت نیست.",
+    "addReaction": "افزودن واکنش",
+    "removeReaction": "حذف واکنش"
   }
 }

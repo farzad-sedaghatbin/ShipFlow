@@ -81,7 +81,7 @@ public class KnowledgeIngestionService {
   public void ingestPitch(Long pitchId) {
     if (!isQAEnabled()) return;
 
-    Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
+    Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(pitchId);
     if (pitchOpt.isEmpty()) {
       log.warn("Pitch not found for ingestion: {}", pitchId);
       return;
@@ -330,7 +330,7 @@ public class KnowledgeIngestionService {
               pitch -> {
                 // Can't set outer variables, using ingestEntity directly below
               });
-      Optional<Pitch> pitchOpt = pitchRepository.findById(document.getEntityId());
+      Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(document.getEntityId());
       if (pitchOpt.isPresent()) {
         Pitch pitch = pitchOpt.get();
         cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
@@ -390,7 +390,7 @@ public class KnowledgeIngestionService {
 
     // Resolve pitch associations
     if (pitchId != null) {
-      Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
+      Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(pitchId);
       if (pitchOpt.isPresent()) {
         Pitch pitch = pitchOpt.get();
         cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;

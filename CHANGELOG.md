@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Commenting System with Reactions**
+  - **Full-Stack Implementation**: Complete backend and frontend commenting system for tasks and bug reports
+  - **Emoji Reactions**: Support for 8 emoji reactions (👍, 👎, ❤️, 😄, 😮, 😢, 🚀, 👀)
+  - **Toggle Reactions**: Click to add/remove your reaction; see aggregated counts per emoji
+  - **CRUD Operations**: Create, read, update, and delete comments with permission checks
+  - **Edit Tracking**: Comments show "edited" badge when modified
+  - **Author Controls**: Only comment authors can edit; authors and admins can delete
+  - **Comment Counts**: Display comment count in task/bug report lists
+  - **Database Design**: New `comments` and `comment_reactions` tables with triggers for auto-counting
+  - **Comprehensive Tests**: Full unit test coverage for CommentService
+
+- **RTL (Right-to-Left) Text Detection**
+  - **Automatic Detection**: Detects Arabic, Farsi, Hebrew, and other RTL scripts
+  - **Dynamic Styling**: Bug titles automatically switch to RTL when content is in RTL languages
+  - **Unicode Support**: Full support for RTL Unicode ranges
+
+- **Bug Report Project Context Requirement**
+  - **Context Enforcement**: Disabled bug creation when "All Projects" is selected
+  - **User Guidance**: Tooltip explains users must select a specific project
+  - **UX Improvement**: Prevents bugs without proper project context
+
 - **Soft Delete Functionality**
   - **Safe Deletion**: Records are marked as deleted rather than permanently removed
   - **Audit Trail**: Complete tracking with deletion timestamp and user information

@@ -107,12 +107,14 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   // Multi-filter queries with pagination
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
+          + "AND (:projectId IS NULL OR br.cycle.project.id = :projectId) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status IN :statuses) "
           + "AND (:severities IS NULL OR br.severity IN :severities) "
           + "AND (:assigneeIds IS NULL OR br.assignee.id IN :assigneeIds)")
   Page<BugReport> findWithFilters(
+      @Param("projectId") Long projectId,
       @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId,
       @Param("statuses") List<BugStatus> statuses,
@@ -122,12 +124,14 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
+          + "AND (:projectId IS NULL OR br.cycle.project.id = :projectId) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
           + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
           + "AND (:assigneeIds IS NULL OR br.assignee.id NOT IN :assigneeIds)")
   Page<BugReport> findWithExclusionFilters(
+      @Param("projectId") Long projectId,
       @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId,
       @Param("statuses") List<BugStatus> statuses,
