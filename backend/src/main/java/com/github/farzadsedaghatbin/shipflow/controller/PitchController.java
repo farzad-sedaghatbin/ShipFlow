@@ -65,13 +65,6 @@ public class PitchController {
   }
 
   @GetMapping("/{id}/history")
-  @Operation(
-      summary = "Get pitch change history",
-      description = "Returns the audit history of changes made to this pitch, including status, team, and circuit breaker changes")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "History retrieved successfully"),
-    @ApiResponse(responseCode = "404", description = "Pitch not found")
-  })
   public ResponseEntity<Page<EntityHistoryDTO>> getPitchHistory(
       @PathVariable Long id,
       @RequestParam(defaultValue = "0") int page,

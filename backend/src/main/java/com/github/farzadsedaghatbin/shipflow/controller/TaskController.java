@@ -119,13 +119,6 @@ public class TaskController {
   }
 
   @GetMapping("/{id}/history")
-  @Operation(
-      summary = "Get task change history",
-      description = "Returns the audit history of changes made to this task, including status, priority, category, and assignee changes")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "History retrieved successfully"),
-    @ApiResponse(responseCode = "404", description = "Task not found")
-  })
   public ResponseEntity<Page<EntityHistoryDTO>> getTaskHistory(
       @PathVariable Long id,
       @RequestParam(defaultValue = "0") int page,

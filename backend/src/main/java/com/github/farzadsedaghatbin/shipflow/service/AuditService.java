@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
-import org.hibernate.envers.RevisionType as EnversRevisionType;
 import org.hibernate.envers.query.AuditEntity;
 import org.hibernate.envers.query.AuditQuery;
 import org.springframework.data.domain.Page;
@@ -102,7 +101,7 @@ public class AuditService {
             @SuppressWarnings("unchecked")
             T entity = (T) revisionData[0];
             AuditRevisionEntity revisionEntity = (AuditRevisionEntity) revisionData[1];
-            EnversRevisionType enversRevisionType = (EnversRevisionType) revisionData[2];
+            org.hibernate.envers.RevisionType enversRevisionType = (org.hibernate.envers.RevisionType) revisionData[2];
 
             EntityHistoryDTO historyDTO = EntityHistoryDTO.builder()
                     .revisionNumber((long) revisionEntity.getId())
@@ -138,11 +137,11 @@ public class AuditService {
             T previousEntity, 
             T currentEntity,
             FieldValueExtractor<T> fieldExtractor,
-            EnversRevisionType revisionType) {
+            org.hibernate.envers.RevisionType revisionType) {
         
         List<FieldChangeDTO> changes = new ArrayList<>();
 
-        if (revisionType == EnversRevisionType.DEL) {
+        if (revisionType == org.hibernate.envers.RevisionType.DEL) {
             // For deletions, no field changes to show
             return changes;
         }
@@ -255,7 +254,7 @@ public class AuditService {
     /**
      * Convert Envers revision type to our DTO revision type.
      */
-    private RevisionType convertRevisionType(EnversRevisionType enversType) {
+    private RevisionType convertRevisionType(org.hibernate.envers.RevisionType enversType) {
         return switch (enversType) {
             case ADD -> RevisionType.CREATED;
             case MOD -> RevisionType.MODIFIED;

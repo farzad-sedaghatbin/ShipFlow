@@ -1075,5 +1075,37 @@ export interface CycleRetroStatus {
   canCloseCycle: boolean;
   message: string;
 }
+
+// Audit History Types
+export type RevisionType = 'CREATED' | 'MODIFIED' | 'DELETED';
+
+/**
+ * Represents a single field change in an entity revision.
+ */
+export interface FieldChange {
+  /** The name of the field that was changed (e.g., "status", "priority", "assignee") */
+  fieldName: string;
+  /** The previous value of the field before the change (null for creation) */
+  oldValue: string | null;
+  /** The new value of the field after the change */
+  newValue: string | null;
+}
+
+/**
+ * Represents a single revision entry in the entity's change history.
+ */
+export interface EntityHistory {
+  /** The revision number (sequential identifier) */
+  revisionNumber: number;
+  /** The timestamp when this revision was created */
+  revisionDate: string;
+  /** The username of the user who made this change ("system" for automated changes) */
+  modifiedBy: string;
+  /** The type of revision: CREATED, MODIFIED, or DELETED */
+  revisionType: RevisionType;
+  /** The list of individual field changes in this revision */
+  changes: FieldChange[];
+}
+
 export * from './betting-analytics';
 export * from './circuit-breaker';

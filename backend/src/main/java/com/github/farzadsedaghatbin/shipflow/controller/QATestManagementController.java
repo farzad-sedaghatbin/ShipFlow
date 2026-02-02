@@ -83,13 +83,6 @@ public class QATestManagementController {
   }
 
   @GetMapping("/test-cases/{id}/history")
-  @Operation(
-      summary = "Get test case change history",
-      description = "Returns the audit history of changes made to this test case, including status, priority, and type changes")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "History retrieved successfully"),
-    @ApiResponse(responseCode = "404", description = "Test case not found")
-  })
   public ResponseEntity<Page<EntityHistoryDTO>> getTestCaseHistory(
       @PathVariable Long id,
       @RequestParam(defaultValue = "0") int page,
@@ -235,13 +228,6 @@ public class QATestManagementController {
   }
 
   @GetMapping("/bug-reports/{id}/history")
-  @Operation(
-      summary = "Get bug report change history",
-      description = "Returns the audit history of changes made to this bug report, including status, severity, assignee, and resolution changes")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "History retrieved successfully"),
-    @ApiResponse(responseCode = "404", description = "Bug report not found")
-  })
   public ResponseEntity<Page<EntityHistoryDTO>> getBugReportHistory(
       @PathVariable Long id,
       @RequestParam(defaultValue = "0") int page,

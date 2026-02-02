@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Bug, 
@@ -8,7 +9,8 @@ import {
   Monitor,
   Tag,
   CheckCircle,
-  Clock
+  Clock,
+  History
 } from 'lucide-react';
 import {
   Dialog,
@@ -17,8 +19,11 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { Label } from './ui/label';
 import Comments from './Comments';
+import { EntityHistoryDialog } from './EntityHistoryDialog';
+import qaTestManagementService from '../services/qaTestManagementService';
 import { BugReport, BugStatus, BugSeverity } from '../types';
 
 interface BugViewDialogProps {
@@ -48,6 +53,7 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
 
 export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
   if (!bug) return null;
 
@@ -62,9 +68,8 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     });
   };
 
-  if (!bug) return null;
-
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -84,6 +89,14 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
             <Badge variant={severityConfig[bug.severity]?.variant || 'default'}>
               {t(severityConfig[bug.severity]?.labelKey || bug.severity)}
             </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryDialogOpen(true)}
+            >
+              <History className="h-4 w-4 mr-2" />
+              {t('history.viewHistory')}
+            </Button>
           </div>
 
           {/* Metadata Grid */}
@@ -252,6 +265,19 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* History Dialog */}
+    <EntityHistoryDialog
+      open={historyDialogOpen}
+      onOpenChange={setHistoryDialogOpen}
+      entityName={t('bugReports.bugReport')}
+      entityId={String(bug.id)}
+      fetchHistory={async (page, size) => {
+        const response = await qaTestManagementService.getBugReportHistory(bug.id, page, size);
+        return response.data;
+      }}
+    />
+    </>
   );
 }
 

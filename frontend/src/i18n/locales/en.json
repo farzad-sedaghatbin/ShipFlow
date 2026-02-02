@@ -231,6 +231,44 @@
     "accessDenied": "You don't have permission to access this resource.",
     "username": "Username"
   },
+  "history": {
+    "title": "{{entity}} History",
+    "viewHistory": "View History",
+    "noHistory": "No history available for this item.",
+    "loadError": "Failed to load history. Please try again.",
+    "created": "Created",
+    "modified": "Modified",
+    "deleted": "Deleted",
+    "changes": "Changes",
+    "changesCount": "{{count}} change(s)",
+    "changesCount_one": "1 change",
+    "changesCount_other": "{{count}} changes",
+    "emptyValue": "(empty)",
+    "showing": "Showing {{start}}-{{end}} of {{total}}",
+    "field": {
+      "status": "Status",
+      "priority": "Priority",
+      "severity": "Severity",
+      "assignee": "Assignee",
+      "title": "Title",
+      "description": "Description",
+      "appetite": "Appetite",
+      "phase": "Phase",
+      "hillPosition": "Hill Position",
+      "progress": "Progress",
+      "estimatedHours": "Estimated Hours",
+      "actualHours": "Actual Hours",
+      "environment": "Environment",
+      "actualBehavior": "Actual Behavior",
+      "expectedBehavior": "Expected Behavior",
+      "stepsToReproduce": "Steps to Reproduce",
+      "executionStatus": "Execution Status",
+      "preconditions": "Preconditions",
+      "testSteps": "Test Steps",
+      "expectedResult": "Expected Result",
+      "automationStatus": "Automation Status"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "welcome": {
@@ -500,6 +538,7 @@
   },
   "tasks": {
     "title": "Tasks",
+    "task": "Task",
     "newTask": "New Task",
     "editTask": "Edit Task",
     "deleteTask": "Delete Task",
@@ -1836,6 +1875,7 @@
   },
   "bugReports": {
     "title": "Bug Reports",
+    "bugReport": "Bug Report",
     "reportBug": "Report Bug",
     "unassigned": "Unassigned",
     "loadFailed": "Failed to load bug reports",
@@ -3195,6 +3235,7 @@
   },
   "pitchDetailPage": {
     "title": "Pitch Details",
+    "pitch": "Pitch",
     "overview": "Overview",
     "shapeUpDetails": "Shape Up Details",
     "workLogs": "Work Logs",
@@ -3900,6 +3941,7 @@
   },
   "testCaseDetail": {
     "title": "Test Case #{id}",
+    "testCase": "Test Case",
     "invalidId": "Invalid test case ID",
     "loadFailed": "Failed to load test case",
     "notFound": "Test case not found",

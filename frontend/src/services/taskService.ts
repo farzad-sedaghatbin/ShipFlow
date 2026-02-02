@@ -1,5 +1,5 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory } from '../types';
 
 export const taskService = {
   // Current user's tasks
@@ -167,4 +167,13 @@ export const taskService = {
     api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocked-by`),
   removeDependency: (taskId: number, dependencyId: number) => 
     api.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
+  
+  // Task History (Audit Trail)
+  getHistory: (taskId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/tasks/${taskId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
 };
