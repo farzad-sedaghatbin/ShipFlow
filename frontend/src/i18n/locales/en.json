@@ -2448,7 +2448,11 @@
       "noTasks": "No tasks in this column",
       "dragToMove": "Drag to move between columns",
       "blockedBy": "Blocked By",
-      "blocking": "Blocking"
+      "blocking": "Blocking",
+      "manageColumns": "Manage Columns",
+      "columnVisibility": "Column Visibility",
+      "showAll": "Show All",
+      "hideOptional": "Hide Optional"
     },
     "blockedBy": "Blocked ({{count}})",
     "blocking": "Blocking ({{count}})",
