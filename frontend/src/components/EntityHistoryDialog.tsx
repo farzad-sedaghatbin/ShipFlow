@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   History, 
@@ -100,13 +100,7 @@ export function EntityHistoryDialog({
 
   const pageSize = 10;
 
-  useEffect(() => {
-    if (open && entityId) {
-      loadHistory();
-    }
-  }, [open, entityId, page]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -120,7 +114,13 @@ export function EntityHistoryDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchHistory, page, t]);
+
+  useEffect(() => {
+    if (open && entityId) {
+      loadHistory();
+    }
+  }, [open, entityId, loadHistory]);
 
   const formatDateTime = (dateTime: string) => {
     const d = new Date(dateTime);

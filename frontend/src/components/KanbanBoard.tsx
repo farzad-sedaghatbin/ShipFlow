@@ -56,6 +56,9 @@ const priorityColors: Record<TaskPriority, string> = {
   URGENT: 'bg-red-600',
 };
 
+// Essential columns that should always remain visible when using "hide optional"
+const ESSENTIAL_COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
+
 interface KanbanBoardProps {
   tasks: Task[];
   onStatusChange: (taskId: number, newStatus: TaskStatus) => Promise<void>;
@@ -410,9 +413,8 @@ export default function KanbanBoard({
                       className="flex-1"
                       onClick={() => {
                         // Keep at least TODO, IN_PROGRESS, and DONE visible
-                        const essentialColumns: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
                         KANBAN_COLUMNS.forEach(col => {
-                          if (visibleColumnsSet.has(col.status) && !essentialColumns.includes(col.status)) {
+                          if (visibleColumnsSet.has(col.status) && !ESSENTIAL_COLUMNS.includes(col.status)) {
                             onToggleColumn(col.status);
                           }
                         });
