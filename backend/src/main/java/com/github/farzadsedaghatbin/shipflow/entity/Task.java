@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(name = "tasks")
@@ -74,10 +75,12 @@ public class Task {
   @JoinColumn(name = "scope_id")
   private HillChartPoint scope;
 
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "assignee_id")
   private Person assignee;
 
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "pair_assignee_id")
   private Person pairAssignee;
