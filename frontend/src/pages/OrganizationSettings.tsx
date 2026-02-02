@@ -80,17 +80,6 @@ export default function OrganizationSettingsPage() {
   const { hasPermission } = usePermission();
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
 
-  // Check permission on mount
-  useEffect(() => {
-    hasPermission('SYSTEM', 'MANAGE').then(setCanManageSettings).catch(() => setCanManageSettings(false));
-  }, [hasPermission]);
-
-  useEffect(() => {
-    if (canManageSettings) {
-      fetchSettings();
-    }
-  }, [canManageSettings, fetchSettings]);
-
   const fetchSettings = useCallback(async () => {
     try {
       const response = await organizationSettingsService.getSettings();
@@ -140,7 +129,18 @@ export default function OrganizationSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, showToast, setLoading, setSettings, setFormData]);
+
+  // Check permission on mount
+  useEffect(() => {
+    hasPermission('SYSTEM', 'MANAGE').then(setCanManageSettings).catch(() => setCanManageSettings(false));
+  }, [hasPermission]);
+
+  useEffect(() => {
+    if (canManageSettings) {
+      fetchSettings();
+    }
+  }, [canManageSettings, fetchSettings]);
 
   const handleSave = async () => {
     setSaving(true);
