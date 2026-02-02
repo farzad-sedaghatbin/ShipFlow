@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-02-02
+
 ### Added
 - **Commenting System with Reactions**
   - **Full-Stack Implementation**: Complete backend and frontend commenting system for tasks and bug reports
@@ -26,7 +28,7 @@ All notable changes to this project will be documented in this file.
   - **User Guidance**: Tooltip explains users must select a specific project
   - **UX Improvement**: Prevents bugs without proper project context
 
-- **Soft Delete Functionality**
+- **Comprehensive Soft Delete Functionality**
   - **Safe Deletion**: Records are marked as deleted rather than permanently removed
   - **Audit Trail**: Complete tracking with deletion timestamp and user information
   - **Data Recovery**: Deleted items can be restored if needed
@@ -35,6 +37,50 @@ All notable changes to this project will be documented in this file.
   - **Frontend Integration**: User-friendly delete buttons with confirmation dialogs
   - **API Compatibility**: Existing endpoints work unchanged, deleted items automatically excluded
   - **Performance Optimized**: Dedicated database indexes for efficient soft delete queries
+
+- **Discover GitHub App Installations**
+  - Added `syncedInstallations` field to `GitHubBulkSyncResultDTO` for tracking synced installations
+  - Enables syncing GitHub Apps installed directly on GitHub (outside ShipFlow UI)
+
+### Fixed
+- **GitHub App PKCS#1 Private Key Support**
+  - Handle PKCS#1 format (`-----BEGIN RSA PRIVATE KEY-----`) for GitHub App private keys
+  - Automatic conversion from PKCS#1 to PKCS#8 format for Java compatibility
+  - Fixes authentication failures when using GitHub-generated private keys
+
+- **Flyway Out-of-Order Migrations**
+  - Enable `spring.flyway.out-of-order=true` for hotfix branch compatibility
+  - Allows migration scripts with older version numbers from hotfix branches
+  - Prevents `FlywayValidateException` during version merges
+
+- **TypeScript Build Errors**
+  - Fixed frontend TypeScript compilation errors
+  - Ensures clean builds in CI/CD pipelines
+
+- **Soft Delete Lazy Initialization Issues**
+  - Fixed `LazyInitializationException` in PitchRiskHistory queries
+  - Eagerly fetch `deletedBy` relationship in all risk history repository queries
+  - Added `deletedBy` to `@JsonIgnoreProperties` to prevent serialization issues
+
+- **Soft Delete Service Consistency**
+  - Unified soft delete behavior across all services
+  - Fixed edge cases where deleted items might appear in results
+
+- **AI Test Generation Enhancement**
+  - Include all Shape Up methodology fields in test generation context
+  - Problem Statement, Solution, Rabbit Holes, Risks, No-Gos, Wireframe Links
+  - More comprehensive test cases based on complete pitch information
+
+- **AI Risk Analysis Enhancement**
+  - Include all Shape Up methodology fields in risk analysis context
+  - Better risk factor identification based on Problem Statement and Solution
+  - Improved "unclear requirements" detection considering all pitch fields
+  - More accurate AI insights with complete project context
+
+- **Document Knowledge Ingestion**
+  - Simplified document ingestion to use existing `ingestDocument` method
+  - Generate synthetic document IDs for pitch documents without database records
+  - Deterministic ID generation using pitch ID and content hash
 
 ## [0.3.9] - 2026-02-01
 

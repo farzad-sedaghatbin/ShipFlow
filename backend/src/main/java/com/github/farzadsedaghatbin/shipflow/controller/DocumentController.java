@@ -312,16 +312,8 @@ public class DocumentController {
         try {
           UploadedDocument doc = documentService.getDocumentById(documentId);
           if (doc != null && doc.getExtractedText() != null) {
-            UserInfo userInfo = getUserInfo(userDetails);
-
-            knowledgeIngestionService.ingestPitchDocument(
-                doc.getOriginalFileName(),
-                doc.getExtractedText(),
-                pitchId,
-                doc.getOriginalFileName(),
-                userInfo.userId,
-                userInfo.username);
-
+            // Use the regular ingestDocument method with the actual document ID
+            knowledgeIngestionService.ingestDocument(doc);
             log.info("Added linked document to knowledge base: {}", doc.getOriginalFileName());
           }
         } catch (Exception e) {

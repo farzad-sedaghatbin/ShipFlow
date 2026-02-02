@@ -400,9 +400,14 @@ public class KnowledgeIngestionService {
 
     String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
 
+    // Generate a synthetic entity ID for pitch documents that don't have a database record
+    // Use a combination of pitch ID and content hash to create a unique identifier
+    String contentHash = computeHash(extractedText);
+    Long syntheticEntityId = generateSyntheticDocumentId(pitchId, contentHash);
+
     ingestEntity(
         KnowledgeEntityType.DOCUMENT,
-        null, // No document ID yet as it's directly uploaded for extraction
+        syntheticEntityId,
         "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName),
         content,
         cycleId,
@@ -729,6 +734,26 @@ public class KnowledgeIngestionService {
     } catch (NoSuchAlgorithmException e) {
       log.warn("SHA-256 not available, using content length as hash");
       return String.valueOf(content.length());
+    }
+  }
+
+  /**
+   * Generate a synthetic document ID for pitch documents that don't have a database record.
+   * Uses the pitch ID and content hash to create a unique identifier.
+   */
+  private Long generateSyntheticDocumentId(Long pitchId, String contentHash) {
+    // Create a deterministic ID based on pitch ID and content hash
+    // Use the first 8 characters of the hash to avoid collisions
+    String hashPrefix = contentHash.substring(0, Math.min(8, contentHash.length()));
+    
+    // Combine pitch ID and hash prefix to create a synthetic ID
+    // Use negative values to distinguish from real document IDs
+    try {
+      long hashValue = Long.parseUnsignedLong(hashPrefix, 16);
+      return -(pitchId * 1000000 + (hashValue % 1000000));
+    } catch (NumberFormatException e) {
+      // Fallback if hash parsing fails
+      return -(pitchId * 1000000 + Math.abs(contentHash.hashCode() % 1000000));
     }
   }
 
