@@ -1942,6 +1942,7 @@
       "notProvided": "Not provided"
     },
     "assignee": "Assignee",
+    "selectAssignee": "Select assignee",
     "createBug": "Bug Report",
     "createSuccess": "Bug reported successfully",
     "cycle": "Cycle",

@@ -486,6 +486,7 @@
       "viewDetails": "مشاهده جزئیات"
     },
     "assignee": "مسئول",
+    "selectAssignee": "انتخاب مسئول",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این گزارش باگ را حذف کنید؟",
     "createBug": "گزارش باگ",
     "createSuccess": "باگ با موفقیت گزارش شد",
