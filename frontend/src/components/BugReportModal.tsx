@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useProject } from '../contexts';
 import {
   BugReport,
@@ -10,7 +10,6 @@ import {
   BugStatus,
   HillChartPoint,
   Task,
-  User,
   Person,
 } from '../types';
 import { hillChartApi } from '../services/hillChartApi';
@@ -35,21 +34,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from './ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from './ui/popover';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { cn } from '../lib/utils';
 
 interface BugReportModalProps {
@@ -106,8 +93,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [people, setPeople] = useState<Person[]>([]);
   const [scopeSearch, setScopeSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
-  const [personSearch, setPersonSearch] = useState('');
-  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [searchingScopes, setSearchingScopes] = useState(false);
   const [searchingTasks, setSearchingTasks] = useState(false);
   const [loadingPeople, setLoadingPeople] = useState(false);
@@ -396,66 +381,54 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
           {/* Assignee Selection */}
           <div className="space-y-2">
-            <Label>Assignee</Label>
-            <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={assigneePopoverOpen}
-                  className="w-full justify-between"
-                >
-                  {formData.assigneePersonId 
-                    ? people.find(person => person.id === formData.assigneePersonId)?.name
-                    : "Select assignee (optional)"}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput 
-                    placeholder="Search people..." 
-                    value={personSearch}
-                    onValueChange={setPersonSearch}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No people found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="none"
-                        onSelect={() => {
-                          handleChange('assigneePersonId', undefined);
-                          setAssigneePopoverOpen(false);
-                        }}
-                      >
-                        Unassigned
-                      </CommandItem>
-                      {people
-                        .filter(person => 
-                          !personSearch || 
-                          person.name.toLowerCase().includes(personSearch.toLowerCase()) ||
-                          person.email.toLowerCase().includes(personSearch.toLowerCase())
-                        )
-                        .map((person) => (
-                        <CommandItem
-                          key={person.id}
-                          value={`${person.id}-${person.name}`}
-                          onSelect={() => {
-                            handleChange('assigneePersonId', person.id);
-                            setAssigneePopoverOpen(false);
-                          }}
-                        >
-                          {person.name}
-                          {person.email && (
-                            <span className="ml-2 text-xs text-muted-foreground">({person.email})</span>
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Label>{t('bugReports.assignee')}</Label>
+            <Select
+              value={formData.assigneePersonId?.toString() || 'unassigned'}
+              onValueChange={(value) => handleChange('assigneePersonId', value === 'unassigned' ? undefined : Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('bugReports.selectAssignee')}>
+                  {formData.assigneePersonId ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        {people.find(p => p.id === formData.assigneePersonId)?.avatarUrl ? (
+                          <AvatarImage src={people.find(p => p.id === formData.assigneePersonId)?.avatarUrl} />
+                        ) : (
+                          <AvatarFallback className="text-[10px]">
+                            {people.find(p => p.id === formData.assigneePersonId)?.name?.charAt(0) || '?'}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{people.find(p => p.id === formData.assigneePersonId)?.name}</span>
+                    </div>
+                  ) : (
+                    t('bugReports.unassigned')
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">{t('bugReports.unassigned')}</SelectItem>
+                {people.map((person) => (
+                  <SelectItem key={person.id} value={person.id.toString()}>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        {person.avatarUrl ? (
+                          <AvatarImage src={person.avatarUrl} />
+                        ) : (
+                          <AvatarFallback className="text-[10px]">
+                            {person.name.charAt(0)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{person.name}</span>
+                      {person.email && (
+                        <span className="text-xs text-muted-foreground">({person.email})</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Scope & Task Traceability */}
