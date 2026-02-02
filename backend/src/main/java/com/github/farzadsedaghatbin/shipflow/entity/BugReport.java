@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 /**
  * Entity representing a bug report in the QA system. Bug reports can be linked to pitches, cycles,
@@ -147,10 +148,11 @@ public class BugReport {
   @JoinColumn(name = "reporter_id", nullable = false)
   private User reporter;
 
-  /** User assigned to fix this bug. */
+  /** Person assigned to fix this bug. */
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "assignee_id")
-  private User assignee;
+  private Person assignee;
 
   /** Resolution notes. */
   @Column(columnDefinition = "TEXT")

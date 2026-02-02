@@ -64,6 +64,7 @@ import {
 import { ScrollArea } from '../components/ui/scroll-area';
 
 const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function People() {
   const { t, i18n } = useTranslation();
@@ -183,7 +184,7 @@ export default function People() {
 
     // Validate user creation fields if creating user
     if (formData.createUser && !editingPerson) {
-      if (!formData.password || !formData.password.trim() || formData.password.length < 6) {
+      if (!formData.password || !formData.password.trim() || formData.password.length < MIN_PASSWORD_LENGTH) {
         showToast(t('userManagement.passwordMinLength'), 'error');
         return;
       }
@@ -614,10 +615,11 @@ export default function People() {
                             value={formData.username}
                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                             placeholder={t('userManagement.enterUsername')}
+                            aria-describedby="username-help"
                             disabled
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p id="username-help" className="text-xs text-muted-foreground">
                           {t('peopleManagement.usernameAutoSet')}
                         </p>
                       </div>

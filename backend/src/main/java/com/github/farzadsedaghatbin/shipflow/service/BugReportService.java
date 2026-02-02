@@ -29,6 +29,7 @@ public class BugReportService {
   private final CycleRepository cycleRepository;
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
+  private final PersonRepository personRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
@@ -141,8 +142,8 @@ public class BugReportService {
     }
 
     if (request.getAssigneeId() != null) {
-      User assignee =
-          userRepository
+      Person assignee =
+          personRepository
               .findById(request.getAssigneeId())
               .orElseThrow(
                   () ->
@@ -249,8 +250,8 @@ public class BugReportService {
     }
 
     if (request.getAssigneeId() != null) {
-      User assignee =
-          userRepository
+      Person assignee =
+          personRepository
               .findById(request.getAssigneeId())
               .orElseThrow(
                   () ->
@@ -499,7 +500,7 @@ public class BugReportService {
             bugReport.getReporter() != null ? bugReport.getReporter().getUsername() : null)
         .assigneeId(bugReport.getAssignee() != null ? bugReport.getAssignee().getId() : null)
         .assigneeName(
-            bugReport.getAssignee() != null ? bugReport.getAssignee().getUsername() : null)
+            bugReport.getAssignee() != null ? bugReport.getAssignee().getName() : null)
         .resolution(bugReport.getResolution())
         .resolvedAt(bugReport.getResolvedAt())
         .createdAt(bugReport.getCreatedAt())

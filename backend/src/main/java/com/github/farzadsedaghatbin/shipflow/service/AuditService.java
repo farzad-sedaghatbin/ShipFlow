@@ -211,7 +211,7 @@ public class AuditService {
             case "description" -> bugReport.getDescription();
             case "status" -> bugReport.getStatus() != null ? bugReport.getStatus().name() : null;
             case "severity" -> bugReport.getSeverity() != null ? bugReport.getSeverity().name() : null;
-            case "assignee" -> bugReport.getAssignee() != null ? bugReport.getAssignee().getUsername() : null;
+            case "assignee" -> bugReport.getAssignee() != null ? bugReport.getAssignee().getName() : null;
             case "resolution" -> bugReport.getResolution();
             default -> null;
         };
