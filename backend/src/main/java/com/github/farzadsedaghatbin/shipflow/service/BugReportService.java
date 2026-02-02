@@ -394,22 +394,52 @@ public class BugReportService {
       Pageable pageable) {
     checkFeatureEnabled();
 
+    log.info("getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, page: {}, size: {}",
+        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, 
+        pageable.getPageNumber(), pageable.getPageSize());
+
     // Convert empty lists to null for the query
     List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
     List<BugSeverity> severityList =
         (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
 
+    log.debug("Converted filters - statusList: {}, severityList: {}, assigneeList: {}", 
+        statusList, severityList, assigneeList);
+
+    Page<BugReport> result;
     if (exclude != null && exclude) {
-      return bugReportRepository
+      log.debug("Using exclusion filters query");
+      result = bugReportRepository
           .findWithExclusionFilters(
-              projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable)
-          .map(this::toDTO);
+              projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable);
     } else {
-      return bugReportRepository
-          .findWithFilters(projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable)
-          .map(this::toDTO);
+      log.debug("Using inclusion filters query");
+      result = bugReportRepository
+          .findWithFilters(projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable);
     }
+
+    log.info("getBugReportsWithFilters result - totalElements: {}, totalPages: {}, numberOfElements: {}, content size: {}",
+        result.getTotalElements(), result.getTotalPages(), result.getNumberOfElements(), result.getContent().size());
+    
+    if (result.getContent().isEmpty()) {
+      log.warn("No bug reports found with filters - projectId: {}, cycleId: {}, pitchId: {}", projectId, cycleId, pitchId);
+      // Log total count in database for debugging
+      long totalCount = bugReportRepository.count();
+      log.warn("Total bug reports in database: {}", totalCount);
+      if (projectId != null) {
+        long projectCount = bugReportRepository.countByProjectId(projectId);
+        log.warn("Bug reports with direct project_id={}: {}", projectId, projectCount);
+      }
+    } else {
+      log.debug("First bug report in result - id: {}, bugKey: {}, projectId: {}, cycleId: {}", 
+          result.getContent().get(0).getId(),
+          result.getContent().get(0).getBugKey(),
+          result.getContent().get(0).getProject() != null ? result.getContent().get(0).getProject().getId() : null,
+          result.getContent().get(0).getCycle() != null ? result.getContent().get(0).getCycle().getId() : null);
+    }
+
+    return result.map(this::toDTO);
   }
 
   /** Generate unique bug key. */
