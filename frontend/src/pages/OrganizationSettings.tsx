@@ -134,7 +134,7 @@ export default function OrganizationSettingsPage() {
   // Check permission on mount
   useEffect(() => {
     hasPermission('SYSTEM', 'MANAGE').then(setCanManageSettings).catch(() => setCanManageSettings(false));
-  }, [hasPermission]);
+  }, []); // Empty dependency array - run once on mount
 
   useEffect(() => {
     if (canManageSettings) {
@@ -1101,12 +1101,11 @@ export default function OrganizationSettingsPage() {
 
           {settings && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">{t('organizationSettings.lastUpdated')}</CardTitle>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground">
-                  {formatLocalizedDateTime(new Date(settings.updatedAt), i18n.language)} by {settings.updatedBy}
+                  {t('organizationSettings.lastUpdated', { 
+                    date: formatLocalizedDateTime(new Date(settings.updatedAt), i18n.language) 
+                  })} by {settings.updatedBy}
                 </p>
               </CardContent>
             </Card>

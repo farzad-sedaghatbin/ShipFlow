@@ -390,7 +390,7 @@ export default function WorkLogsPage() {
   // Using TEAM:MANAGE permission as logging time for team members is part of team management
   useEffect(() => {
     hasPermission('TEAM', 'MANAGE').then(setCanManageLogs).catch(() => setCanManageLogs(false));
-  }, [hasPermission]);
+  }, []); // Empty dependency array - run once on mount
 
   if (loading) {
     return (
