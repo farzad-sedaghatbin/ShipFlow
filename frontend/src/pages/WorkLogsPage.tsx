@@ -382,9 +382,15 @@ export default function WorkLogsPage() {
     }
   };
 
-  const { hasPermissionSync } = usePermission();
-  const canManageLogs = hasPermissionSync('PITCH', 'DELETE');
+  const { hasPermissionSync, hasPermission } = usePermission();
+  const [canManageLogs, setCanManageLogs] = useState(false);
   const canLogForSelf = !!user?.personId;
+
+  // Preload permission for team logs tab visibility
+  // Using TEAM:MANAGE permission as logging time for team members is part of team management
+  useEffect(() => {
+    hasPermission('TEAM', 'MANAGE').then(setCanManageLogs).catch(() => setCanManageLogs(false));
+  }, [hasPermission]);
 
   if (loading) {
     return (
