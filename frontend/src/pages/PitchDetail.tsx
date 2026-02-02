@@ -33,6 +33,7 @@ import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { DocumentDropZone } from '../components/DocumentDropZone';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
@@ -357,6 +358,17 @@ export default function PitchDetail() {
           <Button variant="outline" size="sm" asChild>
             <Link to={`/pitches/${pitch.id}/hill-chart`}>{t('pitchDetailPage.hillChart')}</Link>
           </Button>
+          <SoftDeleteButton
+            entityType="pitch"
+            entityId={pitch.id}
+            entityTitle={pitch.title}
+            onSuccess={() => {
+              // Navigate back to pitches list after successful deletion
+              window.location.href = '/pitches';
+            }}
+            variant="outline"
+            size="sm"
+          />
           <StatusChip status={pitch.status} size="medium" />
           <Select
             value={pitch.status}
