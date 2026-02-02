@@ -184,8 +184,9 @@ public class QATestManagementController {
   @Operation(
       summary = "Get bug reports with multi-selection filters",
       description =
-          "Filter bug reports by cycle, pitch, multiple statuses, severities, and assignees with optional exclusion")
+          "Filter bug reports by project, cycle, pitch, multiple statuses, severities, and assignees with optional exclusion")
   public ResponseEntity<Page<BugReportDTO>> getBugReportsWithFilters(
+      @RequestParam(required = false) Long projectId,
       @RequestParam(required = false) Long cycleId,
       @RequestParam(required = false) Long pitchId,
       @RequestParam(required = false) List<BugStatus> statuses,
@@ -202,7 +203,7 @@ public class QATestManagementController {
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(
         bugReportService.getBugReportsWithFilters(
-            cycleId, pitchId, statuses, severities, assigneeIds, exclude, pageable));
+            projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, pageable));
   }
 
   @GetMapping("/bug-reports/{id}")

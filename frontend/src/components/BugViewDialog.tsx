@@ -18,6 +18,7 @@ import {
 } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { Label } from './ui/label';
+import Comments from './Comments';
 import { BugReport, BugStatus, BugSeverity } from '../types';
 
 interface BugViewDialogProps {
@@ -242,6 +243,12 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
               )}
             </div>
           )}
+
+          {/* Comments */}
+          <Comments 
+            entityType="bug" 
+            entityId={bug.id}
+          />
         </div>
       </DialogContent>
     </Dialog>

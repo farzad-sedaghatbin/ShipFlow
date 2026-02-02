@@ -35,6 +35,7 @@ import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
+import Comments from '../components/Comments';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
@@ -467,6 +468,12 @@ export default function TaskDetailPage() {
         taskId={task.id} 
         cycleId={task.cycleId}
         onDependenciesChange={() => loadTask(task.id)}
+      />
+
+      {/* Comments */}
+      <Comments 
+        entityType="task" 
+        entityId={task.id}
       />
 
       {/* Subtasks */}

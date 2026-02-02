@@ -82,6 +82,7 @@ export const qaTestManagementService = {
     }),
 
   getBugReportsWithFilters: (
+    projectId?: number,
     cycleId?: number,
     pitchId?: number,
     statuses?: BugStatus[],
@@ -92,21 +93,18 @@ export const qaTestManagementService = {
     size: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: string = 'desc'
-  ) => 
-    api.get<Page<BugReport>>('/qa/bug-reports/filter', {
-      params: {
-        cycleId,
-        pitchId,
-        statuses: statuses?.join(','),
-        severities: severities?.join(','),
-        assigneeIds: assigneeIds?.join(','),
-        exclude: exclude ?? false,
-        page,
-        size,
-        sortBy,
-        sortOrder,
-      },
-    }),
+  ) => {
+    const params: any = { page, size, sortBy, sortOrder };
+    if (projectId !== undefined) params.projectId = projectId;
+    if (cycleId !== undefined) params.cycleId = cycleId;
+    if (pitchId !== undefined) params.pitchId = pitchId;
+    if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
+    if (severities && severities.length > 0) params.severities = severities.join(',');
+    if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (exclude !== undefined) params.exclude = exclude;
+    
+    return api.get<Page<BugReport>>('/qa/bug-reports/filter', { params });
+  },
 
   getBugReportById: (id: number) => 
     api.get<BugReport>(`/qa/bug-reports/${id}`),

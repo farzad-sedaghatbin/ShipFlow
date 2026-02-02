@@ -39,7 +39,8 @@ public class PitchRiskHistory {
     "team",
     "workLogs",
     "meetings",
-    "evidences"
+    "evidences",
+    "deletedBy"
   })
   private Pitch pitch;
 

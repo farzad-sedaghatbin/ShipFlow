@@ -251,7 +251,7 @@ public class RiskAnalysisService {
             .findById(cycleId)
             .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
     boolean aiEnabled = useAI && aiConfig.isAiRiskAnalysisEnabled() && chatLanguageModel != null;
 
     // Analyze each pitch (using fast mode if AI is disabled)
@@ -399,16 +399,41 @@ public class RiskAnalysisService {
       LocalDate today = LocalDate.now();
       long daysRemaining = ChronoUnit.DAYS.between(today, cycle.getEndDate());
 
-      // Build context for AI
+      // Build context for AI - include all Shape Up methodology fields
+      StringBuilder pitchDetails = new StringBuilder();
+      if (pitch.getDescription() != null && !pitch.getDescription().isBlank()) {
+        pitchDetails.append("Description: ").append(pitch.getDescription()).append("\n");
+      }
+      if (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank()) {
+        pitchDetails.append("Problem Statement: ").append(pitch.getProblemStatement()).append("\n");
+      }
+      if (pitch.getSolution() != null && !pitch.getSolution().isBlank()) {
+        pitchDetails.append("Proposed Solution: ").append(pitch.getSolution()).append("\n");
+      }
+      if (pitch.getRabbitHoles() != null && !pitch.getRabbitHoles().isBlank()) {
+        pitchDetails.append("Rabbit Holes: ").append(pitch.getRabbitHoles()).append("\n");
+      }
+      if (pitch.getRisks() != null && !pitch.getRisks().isBlank()) {
+        pitchDetails.append("Known Risks: ").append(pitch.getRisks()).append("\n");
+      }
+      if (pitch.getNoGos() != null && !pitch.getNoGos().isBlank()) {
+        pitchDetails.append("No-Gos (out of scope): ").append(pitch.getNoGos()).append("\n");
+      }
+      if (pitchDetails.isEmpty()) {
+        pitchDetails.append("No detailed pitch information available.");
+      }
+      
       String context =
           String.format(
               """
                 Pitch: %s
-                Description: %s
                 Status: %s
                 Team: %s
                 Cycle: %s (ends in %d days)
-
+                
+                === PITCH DETAILS ===
+                %s
+                
                 Budget: %.1f hours used of %.1f hours appetite (%.1f%% used)
 
                 Current Risk Analysis:
@@ -426,11 +451,11 @@ public class RiskAnalysisService {
                 %s
                 """,
               pitch.getTitle(),
-              pitch.getDescription() != null ? pitch.getDescription() : "No description",
               pitch.getStatus(),
               pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned",
               cycle.getName(),
               daysRemaining,
+              pitchDetails.toString(),
               totalHours,
               appetiteHours,
               riskAnalysis.getRiskScore() > 0 ? (totalHours / appetiteHours * 100) : 0,
@@ -569,12 +594,20 @@ public class RiskAnalysisService {
               .build());
     }
 
-    // Check for unclear requirements (no description or very short)
-    if (pitch.getDescription() == null || pitch.getDescription().length() < 50) {
+    // Check for unclear requirements - consider ALL Shape Up methodology fields
+    // A pitch has sufficient context if it has either:
+    // 1. A detailed description (>= 50 chars), OR
+    // 2. A meaningful problemStatement + solution combination
+    boolean hasDescription = pitch.getDescription() != null && pitch.getDescription().length() >= 50;
+    boolean hasProblemStatement = pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank();
+    boolean hasSolution = pitch.getSolution() != null && !pitch.getSolution().isBlank();
+    boolean hasShapeUpContext = hasProblemStatement && hasSolution;
+    
+    if (!hasDescription && !hasShapeUpContext) {
       factors.add(
           RiskFactor.builder()
               .category(RiskFactor.RiskCategory.UNCLEAR_REQUIREMENTS)
-              .description("Pitch description is missing or too brief")
+              .description("Pitch is missing key context: needs either a detailed description or problem statement with solution")
               .impactLevel(5)
               .probability(6)
               .build());
@@ -669,9 +702,6 @@ public class RiskAnalysisService {
         "You are a project risk advisor for a software development team using the Shape Up methodology.\n\n");
     sb.append("Analyze the following pitch and provide risk insights:\n\n");
     sb.append("Pitch Title: ").append(pitch.getTitle()).append("\n");
-    sb.append("Description: ")
-        .append(pitch.getDescription() != null ? pitch.getDescription() : "Not provided")
-        .append("\n");
     sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
     sb.append("Status: ").append(pitch.getStatus()).append("\n");
     sb.append("Progress: ").append(String.format("%.1f", progress)).append("%\n");
@@ -679,6 +709,30 @@ public class RiskAnalysisService {
     sb.append("Team: ")
         .append(pitch.getTeam() != null ? pitch.getTeam().getName() : "Not assigned")
         .append("\n\n");
+    
+    // Include all Shape Up methodology fields for comprehensive analysis
+    sb.append("=== PITCH DETAILS ===\n");
+    if (pitch.getDescription() != null && !pitch.getDescription().isBlank()) {
+      sb.append("Description: ").append(pitch.getDescription()).append("\n\n");
+    }
+    if (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank()) {
+      sb.append("Problem Statement: ").append(pitch.getProblemStatement()).append("\n\n");
+    }
+    if (pitch.getSolution() != null && !pitch.getSolution().isBlank()) {
+      sb.append("Proposed Solution: ").append(pitch.getSolution()).append("\n\n");
+    }
+    if (pitch.getRabbitHoles() != null && !pitch.getRabbitHoles().isBlank()) {
+      sb.append("Rabbit Holes (areas to avoid): ").append(pitch.getRabbitHoles()).append("\n\n");
+    }
+    if (pitch.getRisks() != null && !pitch.getRisks().isBlank()) {
+      sb.append("Known Risks: ").append(pitch.getRisks()).append("\n\n");
+    }
+    if (pitch.getNoGos() != null && !pitch.getNoGos().isBlank()) {
+      sb.append("No-Gos (out of scope): ").append(pitch.getNoGos()).append("\n\n");
+    }
+    if (pitch.getWireframeLinks() != null && !pitch.getWireframeLinks().isBlank()) {
+      sb.append("Wireframe/Design Links: ").append(pitch.getWireframeLinks()).append("\n\n");
+    }
 
     if (!factors.isEmpty()) {
       sb.append("Identified Risk Factors:\n");
@@ -1129,6 +1183,7 @@ public class RiskAnalysisService {
    * @param days Number of days to look back (default: 30)
    * @return List of risk history entries
    */
+  @Transactional(readOnly = true)
   public List<PitchRiskHistory> getRiskHistory(Long pitchId, Integer days) {
     if (days == null || days <= 0) {
       days = 30; // Default to last 30 days

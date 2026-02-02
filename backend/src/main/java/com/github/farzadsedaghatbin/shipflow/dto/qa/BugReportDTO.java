@@ -49,4 +49,7 @@ public class BugReportDTO {
   private LocalDateTime resolvedAt;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  
+  // Comment count
+  private Integer commentCount;
 }

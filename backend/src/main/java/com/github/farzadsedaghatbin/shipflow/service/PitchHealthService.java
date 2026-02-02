@@ -169,7 +169,7 @@ public class PitchHealthService {
   public PitchHealthDTO getPitchHealth(Long pitchId, boolean includeAI) {
     Pitch pitch =
         pitchRepository
-            .findById(pitchId)
+            .findByIdNotDeleted(pitchId)
             .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
     return buildPitchHealth(pitch, includeAI, null);
   }
@@ -191,7 +191,7 @@ public class PitchHealthService {
             .findById(cycleId)
             .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> pitches = pitchRepository.findByCycleId(cycleId);
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
 
     // Batch load all work hours for the cycle to avoid N+1 queries
     Map<Long, Double> hoursMap = batchLoadWorkHoursForCycle(cycleId);

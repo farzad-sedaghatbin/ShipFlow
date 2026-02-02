@@ -355,6 +355,7 @@ public class BugReportService {
   /** Get bug reports with multi-selection filters. */
   @Transactional(readOnly = true)
   public Page<BugReportDTO> getBugReportsWithFilters(
+      Long projectId,
       Long cycleId,
       Long pitchId,
       List<BugStatus> statuses,
@@ -373,11 +374,11 @@ public class BugReportService {
     if (exclude != null && exclude) {
       return bugReportRepository
           .findWithExclusionFilters(
-              cycleId, pitchId, statusList, severityList, assigneeList, pageable)
+              projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable)
           .map(this::toDTO);
     } else {
       return bugReportRepository
-          .findWithFilters(cycleId, pitchId, statusList, severityList, assigneeList, pageable)
+          .findWithFilters(projectId, cycleId, pitchId, statusList, severityList, assigneeList, pageable)
           .map(this::toDTO);
     }
   }

@@ -1842,6 +1842,7 @@
     "confirmDelete": "Are you sure you want to delete this bug report?",
     "deleteFailed": "Failed to delete bug report",
     "saveFailed": "Failed to save bug report",
+    "selectProjectToCreate": "Please select a specific project to create a bug report",
     "stats": {
       "total": "Total",
       "open": "Open",
@@ -1906,6 +1907,14 @@
       "noMatches": "No matching bug reports found",
       "noBugsTitle": "No bug reports yet",
       "noBugsMessage": "Start tracking bugs to improve your product quality"
+    },
+    "viewMode": {
+      "list": "List View",
+      "kanban": "Kanban View"
+    },
+    "kanban": {
+      "moveTo": "Move to...",
+      "empty": "No bugs"
     },
     "pagination": {
       "rowsPerPage": "Rows per page",
@@ -4927,5 +4936,19 @@
     "deleteTestCaseConfirmation": "Are you sure you want to delete the test case '{{title}}'?",
     "testCaseDeleted": "Test case deleted successfully",
     "testCaseDeleteFailed": "Failed to delete test case"
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Add a comment about this {{entityType}}...",
+    "post": "Post Comment",
+    "posting": "Posting...",
+    "edited": "edited",
+    "noCommentsYet": "No comments yet. Be the first to comment!",
+    "noCommentsReadonly": "No comments available.",
+    "futureFeature": "Comments are coming soon! This UI is ready for when the backend support is implemented.",
+    "deleteTitle": "Delete Comment",
+    "deleteConfirmation": "Are you sure you want to delete this comment? This action cannot be undone.",
+    "addReaction": "Add reaction",
+    "removeReaction": "Remove reaction"
   }
 }

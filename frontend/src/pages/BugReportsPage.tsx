@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
+import { detectTextDirection } from '../utils/rtlDetection';
 import {
   Bug,
   Plus,
@@ -14,6 +15,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
+  LayoutList,
+  Kanban,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -103,6 +107,8 @@ const BugReportsPage: React.FC = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -119,7 +125,7 @@ const BugReportsPage: React.FC = () => {
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -143,32 +149,24 @@ const BugReportsPage: React.FC = () => {
     setError(null);
     try {
       let response;
-      if (statusFilter.length > 0 || severityFilter.length > 0 || assigneeFilter.length > 0 || cycleFilter || pitchFilter) {
-        response = await qaTestManagementService.getBugReportsWithFilters(
-          cycleFilter,
-          pitchFilter,
-          statusFilter.length > 0 ? statusFilter : undefined,
-          severityFilter.length > 0 ? severityFilter : undefined,
-          assigneeFilter.length > 0 ? assigneeFilter : undefined,
-          excludeMode,
-          page,
-          rowsPerPage,
-          sortBy,
-          sortOrder
-        );
-      } else {
-        response = await qaTestManagementService.getAllBugReports(page, rowsPerPage, sortBy, sortOrder);
-      }
+      // Always use the filter endpoint for consistent server-side filtering
+      const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
       
-      let bugs = response.data.content;
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
-        bugs = bugs.filter(bug => bug.pitchId && projectPitchIds.has(bug.pitchId));
-      }
+      response = await qaTestManagementService.getBugReportsWithFilters(
+        projectId,
+        cycleFilter,
+        pitchFilter,
+        statusFilter.length > 0 ? statusFilter : undefined,
+        severityFilter.length > 0 ? severityFilter : undefined,
+        assigneeFilter.length > 0 ? assigneeFilter : undefined,
+        excludeMode,
+        page,
+        rowsPerPage,
+        sortBy,
+        sortOrder
+      );
       
-      setBugReports(bugs);
+      setBugReports(response.data.content);
       setTotalElements(response.data.totalElements);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
@@ -191,16 +189,22 @@ const BugReportsPage: React.FC = () => {
   const handleCreateOrUpdate = async (data: any) => {
     try {
       if (selectedBug) {
+        console.log('Updating bug:', selectedBug.id, 'with data:', data);
         const response = await qaTestManagementService.updateBugReport(selectedBug.id, data);
+        console.log('Update response:', response.data);
         setBugReports(bugReports.map((b) => (b.id === selectedBug.id ? response.data : b)));
       } else {
+        console.log('Creating bug with data:', data);
         const response = await qaTestManagementService.createBugReport(data);
+        console.log('Create response:', response.data);
         setBugReports([response.data, ...bugReports]);
       }
       setModalOpen(false);
       setSelectedBug(null);
     } catch (err) {
+      console.error('Error in handleCreateOrUpdate:', err);
       setError(t('bugReports.saveFailed'));
+      throw err; // Re-throw so the modal knows there was an error
     }
   };
 
@@ -212,6 +216,11 @@ const BugReportsPage: React.FC = () => {
   const openCreateModal = () => {
     setSelectedBug(null);
     setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedBug(null);
   };
 
   const openDetailModal = (bug: BugReport) => {
@@ -250,6 +259,50 @@ const BugReportsPage: React.FC = () => {
     );
   };
 
+  // Inline update for status/severity
+  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity', value: string) => {
+    setUpdatingBugId(bugId);
+    try {
+      const bug = bugReports.find(b => b.id === bugId);
+      if (!bug) return;
+      
+      const updateData = {
+        title: bug.title,
+        description: bug.description,
+        severity: field === 'severity' ? value as BugSeverity : bug.severity,
+        status: field === 'status' ? value as BugStatus : bug.status,
+      };
+      
+      const response = await qaTestManagementService.updateBugReport(bugId, updateData);
+      setBugReports(bugReports.map(b => b.id === bugId ? response.data : b));
+    } catch (err) {
+      setError(t('bugReports.saveFailed'));
+      console.error('Failed to update bug:', err);
+    } finally {
+      setUpdatingBugId(null);
+    }
+  };
+
+  // Kanban columns by status
+  const kanbanColumns: BugStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'];
+  
+  const bugsByStatus = useMemo(() => {
+    const grouped: Record<BugStatus, BugReport[]> = {
+      OPEN: [],
+      IN_PROGRESS: [],
+      RESOLVED: [],
+      VERIFIED: [],
+      CLOSED: [],
+      REOPENED: [],
+      WONT_FIX: [],
+      DUPLICATE: [],
+    };
+    bugReports.forEach(bug => {
+      grouped[bug.status].push(bug);
+    });
+    return grouped;
+  }, [bugReports]);
+
   const getStatCounts = () => ({
     total: totalElements,
     open: bugReports.filter((b) => b.status === 'OPEN').length,
@@ -274,10 +327,61 @@ const BugReportsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
-        <Button onClick={openCreateModal} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          {t('bugReports.reportBug')}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button 
+                  onClick={openCreateModal} 
+                  className="w-full sm:w-auto"
+                  disabled={isAllProjectsSelected}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('bugReports.reportBug')}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {isAllProjectsSelected && (
+              <TooltipContent>
+                {t('bugReports.selectProjectToCreate')}
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+        
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 border rounded-md p-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setViewMode('list')}
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('bugReports.viewMode.list')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Kanban className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('bugReports.viewMode.kanban')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -496,19 +600,20 @@ const BugReportsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Bug Reports Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('bugReports.table.key')}</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => handleSort('title')}
-                >
-                  <div className="flex items-center gap-1">
-                    {t('bugReports.table.title')}
+      {/* Bug Reports - List View */}
+      {viewMode === 'list' && (
+        <Card>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('bugReports.table.key')}</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => handleSort('title')}
+                  >
+                    <div className="flex items-center gap-1">
+                      {t('bugReports.table.title')}
                     {sortBy === 'title' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
@@ -550,6 +655,11 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </div>
                 </TableHead>
+                <TableHead className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <MessageSquare className="h-3 w-3" />
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">{t('bugReports.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -566,6 +676,8 @@ const BugReportsPage: React.FC = () => {
                     <div
                       className="max-w-[280px] truncate cursor-pointer hover:text-primary"
                       onClick={() => openDetailModal(bug)}
+                      dir={detectTextDirection(bug.title)}
+                      style={{ textAlign: detectTextDirection(bug.title) === 'rtl' ? 'right' : 'left' }}
                     >
                       {bug.title}
                     </div>
@@ -585,12 +697,46 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={severityBadgeVariants[bug.severity]}>{bug.severity}</Badge>
+                    <Select
+                      value={bug.severity}
+                      onValueChange={(value) => handleInlineUpdate(bug.id, 'severity', value)}
+                      disabled={updatingBugId === bug.id}
+                    >
+                      <SelectTrigger className="h-7 w-[110px] border-0 bg-transparent hover:bg-muted/50 focus:ring-0 p-1">
+                        <Badge variant={severityBadgeVariants[bug.severity]} className="cursor-pointer">
+                          {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                          {bug.severity}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'] as BugSeverity[]).map((severity) => (
+                          <SelectItem key={severity} value={severity}>
+                            <Badge variant={severityBadgeVariants[severity]}>{severity}</Badge>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusBadgeVariants[bug.status]}>
-                      {bug.status.replace('_', ' ')}
-                    </Badge>
+                    <Select
+                      value={bug.status}
+                      onValueChange={(value) => handleInlineUpdate(bug.id, 'status', value)}
+                      disabled={updatingBugId === bug.id}
+                    >
+                      <SelectTrigger className="h-7 w-[130px] border-0 bg-transparent hover:bg-muted/50 focus:ring-0 p-1">
+                        <Badge variant={statusBadgeVariants[bug.status]} className="cursor-pointer">
+                          {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                          {bug.status.replace('_', ' ')}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REOPENED', 'WONT_FIX', 'DUPLICATE'] as BugStatus[]).map((status) => (
+                          <SelectItem key={status} value={status}>
+                            <Badge variant={statusBadgeVariants[status]}>{status.replace('_', ' ')}</Badge>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
@@ -616,6 +762,16 @@ const BugReportsPage: React.FC = () => {
                     <span className="text-muted-foreground">
                       {formatLocalizedDate(new Date(bug.createdAt), i18n.language)}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {(bug.commentCount ?? 0) > 0 ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {bug.commentCount}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
@@ -730,16 +886,125 @@ const BugReportsPage: React.FC = () => {
           </div>
         </div>
       </Card>
+      )}
+
+      {/* Bug Reports - Kanban View */}
+      {viewMode === 'kanban' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {kanbanColumns.map((status) => (
+            <div key={status} className="bg-muted/30 rounded-lg p-3 min-h-[400px]">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Badge variant={statusBadgeVariants[status]}>{status.replace('_', ' ')}</Badge>
+                  <span className="text-muted-foreground text-sm">({bugsByStatus[status].length})</span>
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {bugsByStatus[status].map((bug) => (
+                  <Card
+                    key={bug.id}
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => openDetailModal(bug)}
+                  >
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Bug className="h-3 w-3 text-destructive shrink-0" />
+                        <span className="text-xs text-muted-foreground font-mono">{bug.bugKey}</span>
+                      </div>
+                      <p 
+                        className="text-sm font-medium line-clamp-2"
+                        dir={detectTextDirection(bug.title)}
+                      >
+                        {bug.title}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <Select
+                          value={bug.severity}
+                          onValueChange={(value) => {
+                            handleInlineUpdate(bug.id, 'severity', value);
+                          }}
+                          disabled={updatingBugId === bug.id}
+                        >
+                          <SelectTrigger 
+                            className="h-6 w-auto border-0 bg-transparent p-0 focus:ring-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Badge variant={severityBadgeVariants[bug.severity]} className="text-[0.65rem]">
+                              {updatingBugId === bug.id ? <Loader2 className="h-2 w-2 animate-spin mr-1" /> : null}
+                              {bug.severity}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'] as BugSeverity[]).map((sev) => (
+                              <SelectItem key={sev} value={sev}>
+                                <Badge variant={severityBadgeVariants[sev]} className="text-[0.65rem]">{sev}</Badge>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {bug.assigneeName && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Avatar className="h-5 w-5">
+                                  <AvatarFallback className="text-[0.6rem]">
+                                    {bug.assigneeName.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </TooltipTrigger>
+                              <TooltipContent>{bug.assigneeName}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                      {(bug.commentCount ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>{bug.commentCount}</span>
+                        </div>
+                      )}
+                      {/* Quick status change */}
+                      <Select
+                        value={bug.status}
+                        onValueChange={(value) => handleInlineUpdate(bug.id, 'status', value)}
+                        disabled={updatingBugId === bug.id}
+                      >
+                        <SelectTrigger 
+                          className="h-6 text-xs border-dashed"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-muted-foreground">{t('bugReports.kanban.moveTo')}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'] as BugStatus[]).filter(s => s !== bug.status).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              <Badge variant={statusBadgeVariants[s]} className="text-[0.65rem]">{s.replace('_', ' ')}</Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </CardContent>
+                  </Card>
+                ))}
+                {bugsByStatus[status].length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    {t('bugReports.kanban.empty')}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       <BugReportModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedBug(null);
-        }}
+        onClose={handleModalClose}
         onSubmit={handleCreateOrUpdate}
         bugReport={selectedBug || undefined}
+        cycleId={!isAllProjectsSelected && currentProject ? filteredCycles[0]?.id : undefined}
+        pitchId={!isAllProjectsSelected && currentProject ? filteredPitches[0]?.id : undefined}
       />
 
       {/* Bug Detail Dialog */}

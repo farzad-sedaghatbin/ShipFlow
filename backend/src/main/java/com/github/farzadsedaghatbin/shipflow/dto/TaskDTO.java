@@ -66,4 +66,7 @@ public class TaskDTO {
   private java.util.List<TaskDependencyDTO> blockedByTasks; // Tasks blocking this task
   private Integer blockedByCount; // Count of blocking tasks
   private Boolean isBlocked; // Quick check if task is blocked
+
+  // Comment count
+  private Integer commentCount;
 }

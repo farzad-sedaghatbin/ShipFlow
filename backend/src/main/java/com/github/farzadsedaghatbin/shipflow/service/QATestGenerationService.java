@@ -173,11 +173,32 @@ public class QATestGenerationService {
 
     // Add pitch information
     context.append("Pitch: ").append(pitch.getTitle()).append("\n");
-    if (pitch.getDescription() != null && !pitch.getDescription().isEmpty()) {
-      context.append("Description: ").append(pitch.getDescription()).append("\n");
-    }
     context.append("Status: ").append(pitch.getStatus()).append("\n");
-    context.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
+    context.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n\n");
+    
+    // Add all Shape Up methodology fields for comprehensive test generation
+    context.append("=== PITCH DETAILS ===\n");
+    if (pitch.getDescription() != null && !pitch.getDescription().isEmpty()) {
+      context.append("Description: ").append(pitch.getDescription()).append("\n\n");
+    }
+    if (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank()) {
+      context.append("Problem Statement: ").append(pitch.getProblemStatement()).append("\n\n");
+    }
+    if (pitch.getSolution() != null && !pitch.getSolution().isBlank()) {
+      context.append("Proposed Solution: ").append(pitch.getSolution()).append("\n\n");
+    }
+    if (pitch.getRabbitHoles() != null && !pitch.getRabbitHoles().isBlank()) {
+      context.append("Rabbit Holes (areas to avoid): ").append(pitch.getRabbitHoles()).append("\n\n");
+    }
+    if (pitch.getRisks() != null && !pitch.getRisks().isBlank()) {
+      context.append("Known Risks: ").append(pitch.getRisks()).append("\n\n");
+    }
+    if (pitch.getNoGos() != null && !pitch.getNoGos().isBlank()) {
+      context.append("No-Gos (out of scope): ").append(pitch.getNoGos()).append("\n\n");
+    }
+    if (pitch.getWireframeLinks() != null && !pitch.getWireframeLinks().isBlank()) {
+      context.append("Wireframe/Design Links: ").append(pitch.getWireframeLinks()).append("\n\n");
+    }
 
     // Add meeting notes
     List<Meeting> meetings = meetingRepository.findByPitchId(pitch.getId());
