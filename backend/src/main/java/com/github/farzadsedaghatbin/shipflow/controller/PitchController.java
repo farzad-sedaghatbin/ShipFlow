@@ -2,16 +2,23 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.security.RequirePermission;
+import com.github.farzadsedaghatbin.shipflow.service.AuditService;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class PitchController {
 
   private final PitchService pitchService;
+  private final AuditService auditService;
 
   @GetMapping
   @PreAuthorize("hasRole('ADMIN')")
@@ -54,6 +62,15 @@ public class PitchController {
   @Operation(summary = "Get pitch by ID")
   public ResponseEntity<PitchDTO> getPitchById(@PathVariable Long id) {
     return ResponseEntity.ok(pitchService.getPitchById(id));
+  }
+
+  @GetMapping("/{id}/history")
+  public ResponseEntity<Page<EntityHistoryDTO>> getPitchHistory(
+      @PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    return ResponseEntity.ok(auditService.getPitchHistory(id, pageable));
   }
 
   @PostMapping

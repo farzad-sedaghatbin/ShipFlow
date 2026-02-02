@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.*;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
@@ -11,6 +12,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TestRunStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -48,6 +51,7 @@ public class QATestManagementController {
   private final QATestGenerationService qaTestGenerationService;
   private final UserRepository userRepository;
   private final MessageService messageService;
+  private final AuditService auditService;
 
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
@@ -76,6 +80,16 @@ public class QATestManagementController {
   public ResponseEntity<TestCaseDTO> getTestCaseById(@PathVariable Long id) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testCaseService.getTestCaseById(id));
+  }
+
+  @GetMapping("/test-cases/{id}/history")
+  public ResponseEntity<Page<EntityHistoryDTO>> getTestCaseHistory(
+      @PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    checkFeatureEnabled();
+    Pageable pageable = PageRequest.of(page, size);
+    return ResponseEntity.ok(auditService.getTestCaseHistory(id, pageable));
   }
 
   @GetMapping("/test-cases/key/{key}")
@@ -211,6 +225,16 @@ public class QATestManagementController {
   public ResponseEntity<BugReportDTO> getBugReportById(@PathVariable Long id) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportById(id));
+  }
+
+  @GetMapping("/bug-reports/{id}/history")
+  public ResponseEntity<Page<EntityHistoryDTO>> getBugReportHistory(
+      @PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    checkFeatureEnabled();
+    Pageable pageable = PageRequest.of(page, size);
+    return ResponseEntity.ok(auditService.getBugReportHistory(id, pageable));
   }
 
   @GetMapping("/bug-reports/key/{key}")

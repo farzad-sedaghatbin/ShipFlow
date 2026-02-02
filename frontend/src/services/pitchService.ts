@@ -1,5 +1,5 @@
 import api from './api';
-import { Pitch, CreatePitchRequest, PitchStatus } from '../types';
+import { Pitch, CreatePitchRequest, PitchStatus, Page, EntityHistory } from '../types';
 
 export const pitchService = {
   getAll: () => api.get<Pitch[]>('/pitches'),
@@ -12,4 +12,13 @@ export const pitchService = {
   updateStatus: (id: number, status: PitchStatus) => api.patch<Pitch>(`/pitches/${id}/status?status=${status}`),
   assignTeam: (id: number, teamId: number) => api.patch<Pitch>(`/pitches/${id}/assign-team/${teamId}`),
   delete: (id: number) => api.delete(`/pitches/${id}`),
+  
+  // Pitch History (Audit Trail)
+  getHistory: (pitchId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/pitches/${pitchId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
 };

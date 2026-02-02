@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 @Entity
 @Table(name = "tasks")
@@ -16,6 +18,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Audited
 public class Task {
 
   @Id
@@ -40,12 +43,15 @@ public class Task {
   @Column(nullable = false)
   private TaskCategory category;
 
+  @NotAudited
   @Column(precision = 5, scale = 2)
   private BigDecimal estimateHours;
 
+  @NotAudited
   @Column(precision = 5, scale = 2)
   private BigDecimal actualHours;
 
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cycle_id", nullable = false)
   private Cycle cycle;
@@ -54,6 +60,7 @@ public class Task {
    * The pitch this task is associated with (optional). Links the task to a specific pitch for
    * better traceability.
    */
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "pitch_id")
   private Pitch pitch;
@@ -62,6 +69,7 @@ public class Task {
    * The scope (hill chart point) this task is associated with (optional). Links the task to a
    * specific scope for better traceability.
    */
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "scope_id")
   private HillChartPoint scope;
@@ -74,46 +82,58 @@ public class Task {
   @JoinColumn(name = "pair_assignee_id")
   private Person pairAssignee;
 
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by_id")
   private Person createdBy;
 
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "parent_task_id")
   private Task parentTask;
 
+  @NotAudited
   @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   @org.hibernate.annotations.BatchSize(size = 25)
   private java.util.List<Task> children = new java.util.ArrayList<>();
 
+  @NotAudited
   @OneToMany(mappedBy = "sourceTask", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   @org.hibernate.annotations.BatchSize(size = 25)
   private java.util.List<TaskDependency> outgoingDependencies = new java.util.ArrayList<>();
 
+  @NotAudited
   @OneToMany(mappedBy = "targetTask", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   @org.hibernate.annotations.BatchSize(size = 25)
   private java.util.List<TaskDependency> incomingDependencies = new java.util.ArrayList<>();
 
+  @NotAudited
   @Column private LocalDate dueDate;
 
+  @NotAudited
   @Column private LocalDateTime completedAt;
 
+  @NotAudited
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
+  @NotAudited
   @Column(nullable = false)
   private LocalDateTime updatedAt;
 
+  @NotAudited
   @Column(columnDefinition = "TEXT")
   private String tags;
 
   // Soft delete fields
+  @NotAudited
   @Column
   private LocalDateTime deletedAt;
 
+  @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "deleted_by_id")
   private User deletedBy;
