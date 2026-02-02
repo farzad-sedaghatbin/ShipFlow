@@ -593,6 +593,103 @@ public class GitHubAppOAuthService {
         .build();
   }
 
+  /**
+   * Discover and sync all existing GitHub App installations. This is useful when the app was
+   * installed directly on GitHub (not through ShipFlow OAuth flow), allowing ShipFlow to detect and
+   * register existing installations.
+   *
+   * @return Result containing discovered installations and synced repositories
+   */
+  public GitHubBulkSyncResultDTO discoverInstallations() {
+    if (!isAppConfigured()) {
+      return GitHubBulkSyncResultDTO.builder()
+          .success(false)
+          .message("GitHub App is not configured")
+          .errors(List.of("Missing GitHub App configuration (app ID, private key, or app name)"))
+          .build();
+    }
+
+    log.info("Discovering existing GitHub App installations...");
+
+    List<String> errors = new ArrayList<>();
+    List<String> syncedInstallations = new ArrayList<>();
+    int totalReposSynced = 0;
+
+    try {
+      // Generate JWT for authenticating as the GitHub App
+      String jwt = generateJwt();
+
+      // Fetch all installations from GitHub API
+      HttpHeaders headers = new HttpHeaders();
+      headers.setBearerAuth(jwt);
+      headers.set("Accept", "application/vnd.github+json");
+      headers.set("X-GitHub-Api-Version", "2022-11-28");
+
+      HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+      String url = GITHUB_API_URL + "/app/installations?per_page=100";
+
+      while (url != null) {
+        String validatedUrl = sanitizeGitHubApiUrl(url);
+
+        ResponseEntity<String> response =
+            restTemplate.exchange(validatedUrl, HttpMethod.GET, entity, String.class);
+
+        JsonNode installationsNode = objectMapper.readTree(response.getBody());
+
+        for (JsonNode installationNode : installationsNode) {
+          try {
+            Long installationId = installationNode.path("id").asLong();
+            String accountLogin = installationNode.path("account").path("login").asText();
+
+            log.info("Discovered installation: {} (ID: {})", accountLogin, installationId);
+
+            // Fetch full installation details and save
+            GitHubAppInstallation installation = fetchAndSaveInstallation(installationId, jwt);
+
+            // Sync repositories for this installation
+            List<GitHubRepository> repos = syncRepositoriesForInstallation(installation);
+            totalReposSynced += repos.size();
+            syncedInstallations.add(accountLogin + " (" + repos.size() + " repos)");
+
+          } catch (Exception e) {
+            String accountLogin = installationNode.path("account").path("login").asText("unknown");
+            log.error("Failed to process installation for {}", accountLogin, e);
+            errors.add("Failed to process " + accountLogin + ": " + e.getMessage());
+          }
+        }
+
+        // Check for next page
+        url = getNextPageUrl(response.getHeaders());
+      }
+
+      String message =
+          String.format(
+              "Discovered %d installations with %d total repositories",
+              syncedInstallations.size(), totalReposSynced);
+
+      log.info(message);
+
+      return GitHubBulkSyncResultDTO.builder()
+          .success(errors.isEmpty())
+          .installationsProcessed(syncedInstallations.size())
+          .repositoriesDiscovered(totalReposSynced)
+          .repositoriesAdded(totalReposSynced)
+          .syncedInstallations(syncedInstallations)
+          .errors(errors)
+          .message(message)
+          .build();
+
+    } catch (Exception e) {
+      log.error("Failed to discover GitHub App installations", e);
+      return GitHubBulkSyncResultDTO.builder()
+          .success(false)
+          .message("Failed to discover installations: " + e.getMessage())
+          .errors(List.of(e.getMessage()))
+          .build();
+    }
+  }
+
   /** Check if GitHub App is properly configured */
   public boolean isAppConfigured() {
     return appId != null

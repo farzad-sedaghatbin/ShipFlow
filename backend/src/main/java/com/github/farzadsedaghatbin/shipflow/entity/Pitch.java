@@ -86,6 +86,14 @@ public class Pitch {
   @Column(nullable = false)
   private LocalDateTime updatedAt;
 
+  // Soft delete fields
+  @Column
+  private LocalDateTime deletedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "deleted_by_id")
+  private User deletedBy;
+
   @OneToMany(mappedBy = "pitch", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<WorkLog> workLogs = new ArrayList<>();

@@ -15,6 +15,35 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
 
+  // Soft delete-aware methods
+  @Query("SELECT tc FROM TestCase tc WHERE tc.deletedAt IS NULL")
+  List<TestCase> findAllNotDeleted();
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.id = :id AND tc.deletedAt IS NULL")
+  Optional<TestCase> findByIdNotDeleted(@Param("id") Long id);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.testCaseKey = :testCaseKey AND tc.deletedAt IS NULL")
+  Optional<TestCase> findByTestCaseKeyNotDeleted(@Param("testCaseKey") String testCaseKey);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.pitch.id = :pitchId AND tc.deletedAt IS NULL")
+  List<TestCase> findByPitchIdNotDeleted(@Param("pitchId") Long pitchId);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.cycle.id = :cycleId AND tc.deletedAt IS NULL")
+  List<TestCase> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.team.id = :teamId AND tc.deletedAt IS NULL")
+  List<TestCase> findByTeamIdNotDeleted(@Param("teamId") Long teamId);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.status = :status AND tc.deletedAt IS NULL")
+  List<TestCase> findByStatusNotDeleted(@Param("status") TestCaseStatus status);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.type = :type AND tc.deletedAt IS NULL")
+  List<TestCase> findByTypeNotDeleted(@Param("type") TestCaseType type);
+  
+  @Query("SELECT tc FROM TestCase tc WHERE tc.createdBy.id = :userId AND tc.deletedAt IS NULL")
+  List<TestCase> findByCreatedByIdNotDeleted(@Param("userId") Long userId);
+  
+  // Standard methods (include deleted entities for backward compatibility)
   Optional<TestCase> findByTestCaseKey(String testCaseKey);
 
   List<TestCase> findByPitchId(Long pitchId);

@@ -4863,9 +4863,11 @@
     "connected": "Connected",
     "allRepositories": "All repositories",
     "selectedRepositories": "{{count}} repositories selected",
-    "noInstallations": "No organizations connected. Click \"Connect Organization\" to get started with automatic repository sync.",
+    "noInstallations": "No organizations connected. Click \"Discover Installations\" if you already installed the app on GitHub, or \"Connect Organization\" to set up a new connection.",
     "confirmRemove": "Are you sure you want to disconnect this organization?",
-    "removeError": "Failed to remove installation"
+    "removeError": "Failed to remove installation",
+    "discoverInstallations": "Discover Installations",
+    "discoverError": "Failed to discover installations"
   },
   "githubRepositoryManager": {
     "title": "Manual Repository Setup",
@@ -4910,5 +4912,20 @@
     "copyright": "© 2024 ShipFlow. Open Source & Free.",
     "home": "Home"
   },
-  "cycleId": "Cycle ID"
+  "cycleId": "Cycle ID",
+  "softDelete": {
+    "softDeleteNote": "Note: This will not permanently delete the item. It can be restored if needed.",
+    "deletePitch": "Delete Pitch",
+    "deletePitchConfirmation": "Are you sure you want to delete the pitch '{{title}}'?",
+    "pitchDeleted": "Pitch deleted successfully",
+    "pitchDeleteFailed": "Failed to delete pitch",
+    "deleteTask": "Delete Task",
+    "deleteTaskConfirmation": "Are you sure you want to delete the task '{{title}}'?",
+    "taskDeleted": "Task deleted successfully",
+    "taskDeleteFailed": "Failed to delete task",
+    "deleteTestCase": "Delete Test Case",
+    "deleteTestCaseConfirmation": "Are you sure you want to delete the test case '{{title}}'?",
+    "testCaseDeleted": "Test case deleted successfully",
+    "testCaseDeleteFailed": "Failed to delete test case"
+  }
 }
