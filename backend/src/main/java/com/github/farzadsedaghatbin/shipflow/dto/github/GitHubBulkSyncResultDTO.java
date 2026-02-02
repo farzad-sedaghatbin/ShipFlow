@@ -28,6 +28,9 @@ public class GitHubBulkSyncResultDTO {
   /** Number of repositories that failed to sync */
   private int repositoriesFailed;
 
+  /** List of successfully synced installations (account names) */
+  private List<String> syncedInstallations;
+
   /** List of errors encountered during sync */
   private List<String> errors;
 
