@@ -229,8 +229,8 @@
         <!-- iText PDF for PDF generation -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
-            <version>7.2.5</version>
+            <artifactId>itext-core</artifactId>
+            <version>9.5.0</version>
             <type>pom</type>
         </dependency>
 
