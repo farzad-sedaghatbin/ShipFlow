@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Entity Change History with Hibernate Envers**
+  - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
+  - **Selective Field Auditing**: Only audit important fields (status, priority, severity, assignee, title, description, etc.)
+  - **User Attribution**: Every change records who made it and when
+  - **Computed Diffs**: Server-side computation of field changes between revisions
+  - **History API**: RESTful endpoints (`GET /api/tasks/{id}/history`, etc.) with pagination
+  - **Timeline UI**: Interactive dialog showing change history with expandable revision details
+  - **Field Change Display**: Visual old → new value display with color-coded badges
+  - **Internationalization**: Full i18n support (English/Persian) for history labels and field names
+  - **Database**: Automatic audit table creation via Hibernate Envers (`*_AUD` tables)
+  - **Unit Tests**: Comprehensive tests for AuditService with mocked AuditReader
+
 ## [0.3.10] - 2026-02-02
 
 ### Added

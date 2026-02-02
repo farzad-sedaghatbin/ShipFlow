@@ -89,6 +89,13 @@ A modern project management application implementing the [Shape Up](https://base
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+- **Entity Change History (Audit Trail)**: Complete change tracking with Hibernate Envers
+  - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
+  - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more
+  - **User Attribution**: Every change records who made it and when
+  - **Visual Timeline**: Interactive dialog showing revision history with expandable details
+  - **Field Change Display**: Color-coded old → new value comparisons
+  - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
   - **Color-Coded Severity**: Visual indicators (blue/yellow/orange/red) based on appetite utilization

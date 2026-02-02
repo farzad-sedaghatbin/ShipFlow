@@ -20,6 +20,7 @@ import {
   BugStatus,
   BugSeverity,
   Page,
+  EntityHistory,
 } from '../types';
 
 /**
@@ -176,6 +177,23 @@ export const qaTestManagementService = {
   // ========== AI Test Generation ==========
   generateTestCases: (request: GenerateTestCasesRequest) => 
     api.post<GenerateTestCasesResponse>('/qa/generate-test-cases', request),
+
+  // ========== History (Audit Trail) ==========
+  getBugReportHistory: (bugId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/qa/bug-reports/${bugId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
+
+  getTestCaseHistory: (testCaseId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/qa/test-cases/${testCaseId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
 };
 
 export default qaTestManagementService;

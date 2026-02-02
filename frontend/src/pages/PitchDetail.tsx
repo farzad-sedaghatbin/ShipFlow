@@ -19,6 +19,7 @@ import {
   Edit2,
   Save,
   Loader2,
+  History,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
@@ -34,6 +35,7 @@ import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { DocumentDropZone } from '../components/DocumentDropZone';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
 import { useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
@@ -86,6 +88,7 @@ export default function PitchDetail() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   
   // Shape Up editing state
   const [editingShapeUp, setEditingShapeUp] = useState(false);
@@ -357,6 +360,14 @@ export default function PitchDetail() {
         <div className="flex gap-2 items-center flex-wrap">
           <Button variant="outline" size="sm" asChild>
             <Link to={`/pitches/${pitch.id}/hill-chart`}>{t('pitchDetailPage.hillChart')}</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setHistoryDialogOpen(true)}
+          >
+            <History className="h-4 w-4 mr-2" />
+            {t('history.viewHistory')}
           </Button>
           <SoftDeleteButton
             entityType="pitch"
@@ -1035,6 +1046,18 @@ export default function PitchDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* History Dialog */}
+      <EntityHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        entityName={t('pitchDetailPage.pitch')}
+        entityId={String(pitch.id)}
+        fetchHistory={async (page, size) => {
+          const response = await pitchService.getHistory(pitch.id, page, size);
+          return response.data;
+        }}
+      />
 
       {/* Q&A Floating Button */}
       <QAFloatingButton
