@@ -26,6 +26,9 @@ public class UpdateBugReportRequest {
 
   private String environment;
 
+  /** Direct project association - can be updated if bug needs to be moved to another project. */
+  private Long projectId;
+
   private Long pitchId;
 
   private Long cycleId;

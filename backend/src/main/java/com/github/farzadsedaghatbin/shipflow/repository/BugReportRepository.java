@@ -104,10 +104,10 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   boolean existsByBugKey(String bugKey);
 
-  // Multi-filter queries with pagination
+  // Multi-filter queries with pagination - supports direct project association
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.cycle.project.id = :projectId) "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR br.cycle.project.id = :projectId) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status IN :statuses) "
@@ -124,7 +124,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.cycle.project.id = :projectId) "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR br.cycle.project.id = :projectId) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
@@ -138,4 +138,16 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       @Param("severities") List<BugSeverity> severities,
       @Param("assigneeIds") List<Long> assigneeIds,
       Pageable pageable);
+
+  // Direct project queries
+  List<BugReport> findByProjectId(Long projectId);
+
+  Page<BugReport> findByProjectId(Long projectId, Pageable pageable);
+
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId")
+  long countByProjectId(@Param("projectId") Long projectId);
+
+  @Query(
+      "SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  long countOpenByProjectId(@Param("projectId") Long projectId);
 }

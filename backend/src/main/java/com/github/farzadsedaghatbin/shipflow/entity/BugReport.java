@@ -14,6 +14,7 @@ import lombok.*;
 @Table(
     name = "bug_reports",
     indexes = {
+      @Index(name = "idx_bug_report_project", columnList = "project_id"),
       @Index(name = "idx_bug_report_pitch", columnList = "pitch_id"),
       @Index(name = "idx_bug_report_cycle", columnList = "cycle_id"),
       @Index(name = "idx_bug_report_status", columnList = "status"),
@@ -60,7 +61,16 @@ public class BugReport {
   @Column(columnDefinition = "TEXT")
   private String environment;
 
-  /** The pitch this bug is associated with. */
+  /**
+   * The project this bug belongs to. Direct project association allows bugs to exist
+   * without requiring a cycle, pitch, or task - useful for Kanban projects and
+   * general/smoke testing.
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id")
+  private Project project;
+
+  /** The pitch this bug is associated with (optional, Shape Up specific). */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "pitch_id")
   private Pitch pitch;

@@ -31,6 +31,7 @@ public class BugReportService {
   private final UserRepository userRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final TaskRepository taskRepository;
+  private final ProjectRepository projectRepository;
 
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
@@ -61,7 +62,17 @@ public class BugReportService {
             .reporter(reporter)
             .build();
 
-    // Set relationships
+    // Set direct project relationship first (required for Kanban, optional for Shape Up)
+    if (request.getProjectId() != null) {
+      Project project =
+          projectRepository
+              .findById(request.getProjectId())
+              .orElseThrow(
+                  () -> new IllegalArgumentException("Project not found: " + request.getProjectId()));
+      bugReport.setProject(project);
+    }
+
+    // Set relationships - these are all optional now
     if (request.getPitchId() != null) {
       Pitch pitch =
           pitchRepository
@@ -71,6 +82,10 @@ public class BugReportService {
       bugReport.setPitch(pitch);
       bugReport.setCycle(pitch.getCycle());
       bugReport.setTeam(pitch.getTeam());
+      // Derive project from pitch's cycle if not explicitly set
+      if (bugReport.getProject() == null && pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+        bugReport.setProject(pitch.getCycle().getProject());
+      }
     } else {
       if (request.getCycleId() != null) {
         Cycle cycle =
@@ -79,6 +94,10 @@ public class BugReportService {
                 .orElseThrow(
                     () -> new IllegalArgumentException("Cycle not found: " + request.getCycleId()));
         bugReport.setCycle(cycle);
+        // Derive project from cycle if not explicitly set
+        if (bugReport.getProject() == null && cycle.getProject() != null) {
+          bugReport.setProject(cycle.getProject());
+        }
       }
       if (request.getTeamId() != null) {
         Team team =
@@ -171,6 +190,16 @@ public class BugReportService {
       if (isResolvedStatus(request.getStatus()) && !isResolvedStatus(oldStatus)) {
         bugReport.setResolvedAt(LocalDateTime.now());
       }
+    }
+
+    // Update project relationship
+    if (request.getProjectId() != null) {
+      Project project =
+          projectRepository
+              .findById(request.getProjectId())
+              .orElseThrow(
+                  () -> new IllegalArgumentException("Project not found: " + request.getProjectId()));
+      bugReport.setProject(project);
     }
 
     // Update relationships
@@ -416,6 +445,9 @@ public class BugReportService {
         .expectedBehavior(bugReport.getExpectedBehavior())
         .actualBehavior(bugReport.getActualBehavior())
         .environment(bugReport.getEnvironment())
+        .projectId(bugReport.getProject() != null ? bugReport.getProject().getId() : null)
+        .projectName(bugReport.getProject() != null ? bugReport.getProject().getName() : null)
+        .projectKey(bugReport.getProject() != null ? bugReport.getProject().getProjectKey() : null)
         .pitchId(bugReport.getPitch() != null ? bugReport.getPitch().getId() : null)
         .pitchTitle(bugReport.getPitch() != null ? bugReport.getPitch().getTitle() : null)
         .cycleId(bugReport.getCycle() != null ? bugReport.getCycle().getId() : null)

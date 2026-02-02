@@ -95,7 +95,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   testRunId,
 }) => {
   const { t } = useTranslation();
-  const { isKanbanProject } = useProject();
+  const { isKanbanProject, currentProject } = useProject();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +130,8 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         severity: bugReport?.severity || 'MAJOR',
         status: bugReport?.status || 'OPEN',
         tags: bugReport?.tagList || [],
+        // Auto-set projectId from current project context
+        projectId: bugReport?.projectId || currentProject?.id,
         pitchId: bugReport?.pitchId || pitchId,
         cycleId: bugReport?.cycleId || cycleId,
         teamId: bugReport?.teamId || teamId,
@@ -142,7 +144,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       setError(null);
       loadUsers();
     }
-  }, [open, bugReport, pitchId, cycleId, teamId, testRunId]);
+  }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
   // Load users for assignee selection
   const loadUsers = async () => {
