@@ -15,6 +15,7 @@ import { TestCase, TestRun } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cn } from '../lib/utils';
 
 const getPriorityStyle = (priority: string): string => {
@@ -138,6 +139,17 @@ const TestCaseDetailPage: React.FC = () => {
             <Pencil className="h-4 w-4" />
             {t('testCaseDetail.edit')}
           </Button>
+          <SoftDeleteButton
+            entityType="testCase"
+            entityId={testCase.id}
+            entityTitle={testCase.title}
+            onSuccess={() => {
+              // Navigate back to test cases list after successful deletion
+              navigate('/qa/test-cases');
+            }}
+            variant="outline"
+            size="sm"
+          />
           <Button
             onClick={() => navigate(`/qa/test-cases/${id}/run`)}
             className="gap-2"

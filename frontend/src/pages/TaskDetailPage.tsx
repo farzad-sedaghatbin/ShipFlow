@@ -35,6 +35,7 @@ import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
@@ -340,6 +341,17 @@ export default function TaskDetailPage() {
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </Button>
+              <SoftDeleteButton
+                entityType="task"
+                entityId={task.id}
+                entityTitle={task.title}
+                onSuccess={() => {
+                  // Navigate back to backlog after successful deletion
+                  navigate('/backlog');
+                }}
+                variant="outline"
+                size="sm"
+              />
             </div>
           </div>
         </CardHeader>
