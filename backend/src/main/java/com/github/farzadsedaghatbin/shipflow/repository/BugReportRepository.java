@@ -105,14 +105,19 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   boolean existsByBugKey(String bugKey);
 
   // Multi-filter queries with pagination - supports direct project association
+  // Use LEFT JOIN FETCH to avoid implicit inner joins on nullable relationships
   @Query(
-      "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (br.cycle IS NOT NULL AND br.cycle.project.id = :projectId)) "
-          + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
-          + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
+      "SELECT br FROM BugReport br "
+          + "LEFT JOIN br.cycle c "
+          + "LEFT JOIN br.pitch p "
+          + "LEFT JOIN br.assignee a "
+          + "WHERE 1=1 "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
+          + "AND (:cycleId IS NULL OR c.id = :cycleId) "
+          + "AND (:pitchId IS NULL OR p.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status IN :statuses) "
           + "AND (:severities IS NULL OR br.severity IN :severities) "
-          + "AND (:assigneeIds IS NULL OR br.assignee.id IN :assigneeIds)")
+          + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds)")
   Page<BugReport> findWithFilters(
       @Param("projectId") Long projectId,
       @Param("cycleId") Long cycleId,
@@ -123,13 +128,17 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       Pageable pageable);
 
   @Query(
-      "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (br.cycle IS NOT NULL AND br.cycle.project.id = :projectId)) "
-          + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
-          + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
+      "SELECT br FROM BugReport br "
+          + "LEFT JOIN br.cycle c "
+          + "LEFT JOIN br.pitch p "
+          + "LEFT JOIN br.assignee a "
+          + "WHERE 1=1 "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
+          + "AND (:cycleId IS NULL OR c.id = :cycleId) "
+          + "AND (:pitchId IS NULL OR p.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
           + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
-          + "AND (:assigneeIds IS NULL OR br.assignee.id NOT IN :assigneeIds)")
+          + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds)")
   Page<BugReport> findWithExclusionFilters(
       @Param("projectId") Long projectId,
       @Param("cycleId") Long cycleId,
