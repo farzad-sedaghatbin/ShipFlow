@@ -741,6 +741,12 @@ export interface BugReport {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  
+  // Direct project association
+  projectId?: number;
+  projectName?: string;
+  projectKey?: string;
+  
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -778,6 +784,7 @@ export interface CreateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
@@ -798,6 +805,7 @@ export interface UpdateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;

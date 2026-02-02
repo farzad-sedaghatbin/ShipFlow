@@ -123,6 +123,13 @@ const BugReportsPage: React.FC = () => {
     return pitches.filter(p => projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
+  // Reset cycle and pitch filters when project changes to ensure clean filtering
+  useEffect(() => {
+    setCycleFilter(undefined);
+    setPitchFilter(undefined);
+    setPage(0); // Reset to first page when project changes
+  }, [currentProject?.id, isAllProjectsSelected]);
+
   useEffect(() => {
     loadBugReports();
   }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id, isAllProjectsSelected]);

@@ -20,6 +20,12 @@ public class BugReportDTO {
   private String expectedBehavior;
   private String actualBehavior;
   private String environment;
+  
+  // Direct project association
+  private Long projectId;
+  private String projectName;
+  private String projectKey;
+  
   private Long pitchId;
   private String pitchTitle;
   private Long cycleId;

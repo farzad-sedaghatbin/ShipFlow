@@ -103,6 +103,11 @@ export default function WorkLogsPage() {
     return cycles.filter(c => c.projectId === currentProject?.id);
   }, [cycles, currentProject, isAllProjectsSelected]);
 
+  // Reset cycle filter when project changes
+  useEffect(() => {
+    setSelectedCycle('all');
+  }, [currentProject?.id, isAllProjectsSelected]);
+
   useEffect(() => {
     loadInitialData();
   }, []);

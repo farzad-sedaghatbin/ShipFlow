@@ -75,7 +75,9 @@ A modern project management application implementing the [Shape Up](https://base
   - PDF and CSV export functionality
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
-    - Optional traceability to scopes and related tasks
+    - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)
+    - Optional traceability to cycles, pitches, scopes, and related tasks
+    - Auto-derives project from cycle/pitch when not explicitly set
     - Server-side search for finding related scopes/tasks (min 3 chars, 300ms debounce)
     - Context-aware dropdowns (pitch → scopes, cycle → tasks)
   - **Test Cases**: Structured test case management
