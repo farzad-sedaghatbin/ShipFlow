@@ -309,22 +309,6 @@ export default function PitchDetail() {
     setMeetingPendingDocs(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDeletePitch = async () => {
-    if (!pitch) return;
-    
-    setDeleting(true);
-    try {
-      await pitchService.delete(pitch.id);
-      showSuccess(t('pitchDetailPage.pitchDeleted'));
-      navigate('/pitches');
-    } catch (error) {
-      showError(getUserFriendlyError(error, t('pitchDetailPage.pitchDeleteFailed')));
-    } finally {
-      setDeleting(false);
-      setDeleteDialog(false);
-    }
-  };
-
   if (id === null) {
     return (
       <div className="p-6">
