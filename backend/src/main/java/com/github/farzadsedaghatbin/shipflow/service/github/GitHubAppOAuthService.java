@@ -14,6 +14,8 @@ import java.net.URI;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -497,19 +499,24 @@ public class GitHubAppOAuthService {
     }
 
     try {
-      // Parse the private key
-      String pkcs8Key =
-          privateKey
-              .replace("-----BEGIN RSA PRIVATE KEY-----", "")
-              .replace("-----END RSA PRIVATE KEY-----", "")
-              .replace("-----BEGIN PRIVATE KEY-----", "")
-              .replace("-----END PRIVATE KEY-----", "")
-              .replaceAll("\\s", "");
-
-      byte[] keyBytes = Base64.getDecoder().decode(pkcs8Key);
-      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-      PrivateKey privateKeyObj = keyFactory.generatePrivate(keySpec);
+      PrivateKey privateKeyObj;
+      
+      // Check if it's PKCS#1 format (BEGIN RSA PRIVATE KEY) or PKCS#8 format (BEGIN PRIVATE KEY)
+      if (privateKey.contains("BEGIN RSA PRIVATE KEY")) {
+        // PKCS#1 format - GitHub generates keys in this format
+        privateKeyObj = parsePkcs1PrivateKey(privateKey);
+      } else {
+        // PKCS#8 format
+        String pkcs8Key = privateKey
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replaceAll("\\s", "");
+        
+        byte[] keyBytes = Base64.getDecoder().decode(pkcs8Key);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        privateKeyObj = keyFactory.generatePrivate(keySpec);
+      }
 
       // Generate JWT
       long nowSeconds = System.currentTimeMillis() / 1000;
@@ -524,6 +531,101 @@ public class GitHubAppOAuthService {
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate GitHub App JWT", e);
     }
+  }
+
+  /**
+   * Parse a PKCS#1 formatted RSA private key.
+   * GitHub App private keys are in PKCS#1 format (BEGIN RSA PRIVATE KEY).
+   */
+  private PrivateKey parsePkcs1PrivateKey(String pem) throws Exception {
+    String base64Key = pem
+        .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+        .replace("-----END RSA PRIVATE KEY-----", "")
+        .replaceAll("\\s", "");
+    
+    byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+    
+    // Parse the ASN.1 DER encoded PKCS#1 RSAPrivateKey structure
+    // RSAPrivateKey ::= SEQUENCE {
+    //   version           Version,
+    //   modulus           INTEGER,  -- n
+    //   publicExponent    INTEGER,  -- e
+    //   privateExponent   INTEGER,  -- d
+    //   prime1            INTEGER,  -- p
+    //   prime2            INTEGER,  -- q
+    //   exponent1         INTEGER,  -- d mod (p-1)
+    //   exponent2         INTEGER,  -- d mod (q-1)
+    //   coefficient       INTEGER,  -- (inverse of q) mod p
+    // }
+    
+    int[] pos = {0};
+    
+    // Read SEQUENCE
+    readTag(keyBytes, pos, 0x30);
+    readLength(keyBytes, pos);
+    
+    // Read version (should be 0)
+    readTag(keyBytes, pos, 0x02);
+    int versionLength = readLength(keyBytes, pos);
+    pos[0] += versionLength;
+    
+    // Read modulus (n)
+    BigInteger modulus = readBigInteger(keyBytes, pos);
+    
+    // Read public exponent (e)
+    BigInteger publicExponent = readBigInteger(keyBytes, pos);
+    
+    // Read private exponent (d)
+    BigInteger privateExponent = readBigInteger(keyBytes, pos);
+    
+    // Read prime1 (p)
+    BigInteger primeP = readBigInteger(keyBytes, pos);
+    
+    // Read prime2 (q)
+    BigInteger primeQ = readBigInteger(keyBytes, pos);
+    
+    // Read exponent1 (dP = d mod p-1)
+    BigInteger primeExponentP = readBigInteger(keyBytes, pos);
+    
+    // Read exponent2 (dQ = d mod q-1)
+    BigInteger primeExponentQ = readBigInteger(keyBytes, pos);
+    
+    // Read coefficient (qInv = q^-1 mod p)
+    BigInteger crtCoefficient = readBigInteger(keyBytes, pos);
+    
+    RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(
+        modulus, publicExponent, privateExponent,
+        primeP, primeQ, primeExponentP, primeExponentQ, crtCoefficient);
+    
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    return keyFactory.generatePrivate(keySpec);
+  }
+
+  private void readTag(byte[] data, int[] pos, int expectedTag) {
+    if (data[pos[0]++] != expectedTag) {
+      throw new IllegalArgumentException("Invalid ASN.1 tag");
+    }
+  }
+
+  private int readLength(byte[] data, int[] pos) {
+    int length = data[pos[0]++] & 0xFF;
+    if ((length & 0x80) != 0) {
+      int numBytes = length & 0x7F;
+      length = 0;
+      for (int i = 0; i < numBytes; i++) {
+        length = (length << 8) | (data[pos[0]++] & 0xFF);
+      }
+    }
+    return length;
+  }
+
+  private BigInteger readBigInteger(byte[] data, int[] pos) {
+    readTag(data, pos, 0x02); // INTEGER tag
+    int length = readLength(data, pos);
+    byte[] bytes = new byte[length];
+    System.arraycopy(data, pos[0], bytes, 0, length);
+    pos[0] += length;
+    return new BigInteger(bytes);
   }
 
   /** Get all active installations */
