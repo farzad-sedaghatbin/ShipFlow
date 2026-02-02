@@ -183,7 +183,7 @@ export default function People() {
 
     // Validate user creation fields if creating user
     if (formData.createUser && !editingPerson) {
-      if (!formData.password.trim() || formData.password.length < 6) {
+      if (!formData.password || !formData.password.trim() || formData.password.length < 6) {
         showToast(t('userManagement.passwordMinLength'), 'error');
         return;
       }
