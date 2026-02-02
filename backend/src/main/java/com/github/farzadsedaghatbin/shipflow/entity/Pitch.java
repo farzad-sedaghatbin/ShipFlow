@@ -9,6 +9,7 @@ import java.util.List;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(name = "pitches")
@@ -72,6 +73,7 @@ public class Pitch {
   })
   private Cycle cycle;
 
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "team_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "cycle", "members", "pitches"})
