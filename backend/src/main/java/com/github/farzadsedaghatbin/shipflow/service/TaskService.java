@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
@@ -49,17 +50,17 @@ public class TaskService {
   private final MessageService messageService;
 
   public List<TaskDTO> getAllTasks() {
-    return taskRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public Page<TaskDTO> getAllTasks(Pageable pageable) {
-    return taskRepository.findAll(pageable).map(this::toDTO);
+    return taskRepository.findAllNotDeleted(pageable).map(this::toDTO);
   }
 
   public TaskDTO getTaskById(Long id) {
     Task task =
         taskRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
     return toDTO(task);
   }
@@ -272,7 +273,7 @@ public class TaskService {
   public TaskDTO updateTask(Long id, CreateTaskRequest request) {
     Task task =
         taskRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     // Track old values for notification purposes
@@ -439,7 +440,7 @@ public class TaskService {
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
     Task task =
         taskRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     TaskStatus oldStatus = task.getStatus();
@@ -458,7 +459,7 @@ public class TaskService {
   public TaskDTO updateTaskPriority(Long id, TaskPriority priority) {
     Task task =
         taskRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     task.setPriority(priority);
@@ -467,10 +468,20 @@ public class TaskService {
   }
 
   public void deleteTask(Long id) {
-    if (!taskRepository.existsById(id)) {
-      throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", id));
+    Task task = taskRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+    
+    // Check if already deleted
+    if (task.getDeletedAt() != null) {
+      throw new IllegalStateException("Task is already deleted");
     }
-    taskRepository.deleteById(id);
+    
+    User currentUser = getCurrentUser();
+    
+    // Perform soft delete
+    task.setDeletedAt(LocalDateTime.now());
+    task.setDeletedBy(currentUser);
+    taskRepository.save(task);
   }
 
   public TaskStatisticsDTO getTaskStatisticsByCycleId(Long cycleId) {
@@ -529,6 +540,13 @@ public class TaskService {
     }
 
     return user.getPerson();
+  }
+
+  private User getCurrentUser() {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    return userRepository
+        .findByUsername(username)
+        .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
   }
 
   public List<TaskDTO> getMyTasks() {

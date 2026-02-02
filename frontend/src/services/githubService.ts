@@ -49,10 +49,14 @@ export interface GitHubAppInstallation {
 
 export interface GitHubBulkSyncResult {
   success: boolean;
-  totalInstallations: number;
-  totalRepositoriesSynced: number;
-  syncedInstallations: string[];
-  errors: string[];
+  totalInstallations?: number;
+  totalRepositoriesSynced?: number;
+  installationsProcessed?: number;
+  repositoriesDiscovered?: number;
+  repositoriesAdded?: number;
+  syncedInstallations?: string[];
+  errors?: string[];
+  message?: string;
 }
 
 export const githubService = {
@@ -106,6 +110,11 @@ export const githubService = {
 
   syncAllRepositories: async (): Promise<GitHubBulkSyncResult> => {
     const response = await githubApi.post('/app/sync-all');
+    return response.data;
+  },
+
+  discoverInstallations: async (): Promise<GitHubBulkSyncResult> => {
+    const response = await githubApi.post('/app/discover');
     return response.data;
   },
 

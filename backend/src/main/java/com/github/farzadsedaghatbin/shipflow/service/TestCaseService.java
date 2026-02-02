@@ -4,12 +4,14 @@ import com.github.farzadsedaghatbin.shipflow.dto.qa.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -199,8 +201,19 @@ public class TestCaseService {
             .findById(id)
             .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
 
-    testCaseRepository.delete(testCase);
-    log.info("Deleted test case: {}", testCase.getTestCaseKey());
+    // Check if already deleted
+    if (testCase.getDeletedAt() != null) {
+      throw new IllegalStateException("Test case is already deleted");
+    }
+    
+    User currentUser = getCurrentUser();
+    
+    // Perform soft delete
+    testCase.setDeletedAt(LocalDateTime.now());
+    testCase.setDeletedBy(currentUser);
+    testCaseRepository.save(testCase);
+    
+    log.info("Soft deleted test case: {} by user: {}", testCase.getTestCaseKey(), currentUser.getUsername());
   }
 
   /** Get a test case by ID. */
@@ -210,7 +223,7 @@ public class TestCaseService {
 
     TestCase testCase =
         testCaseRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
 
     return toDTO(testCase);
@@ -234,7 +247,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getAllTestCases() {
     checkFeatureEnabled();
 
-    return testCaseRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    return testCaseRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get test cases by pitch. */
@@ -242,7 +255,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByPitch(Long pitchId) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByPitchId(pitchId).stream()
+    return testCaseRepository.findByPitchIdNotDeleted(pitchId).stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
   }
@@ -252,7 +265,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByCycle(Long cycleId) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByCycleId(cycleId).stream()
+    return testCaseRepository.findByCycleIdNotDeleted(cycleId).stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
   }
@@ -262,7 +275,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByStatus(TestCaseStatus status) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByStatus(status).stream()
+    return testCaseRepository.findByStatusNotDeleted(status).stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
   }
@@ -361,5 +374,12 @@ public class TestCaseService {
         .failedRuns(failedRuns)
         .passRate(totalRuns > 0 ? (double) passedRuns / totalRuns * 100 : null)
         .build();
+  }
+  
+  private User getCurrentUser() {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    return userRepository
+        .findByUsername(username)
+        .orElseThrow(() -> new RuntimeException("User not found: " + username));
   }
 }

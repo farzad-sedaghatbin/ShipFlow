@@ -1479,9 +1479,11 @@
     "connected": "متصل",
     "allRepositories": "همه مخازن",
     "selectedRepositories": "{{count}} مخزن انتخاب شده",
-    "noInstallations": "هیچ سازمانی متصل نشده است. برای شروع همگام‌سازی خودکار مخازن روی \"اتصال سازمان\" کلیک کنید.",
+    "noInstallations": "هیچ سازمانی متصل نشده است. اگر قبلاً برنامه را روی GitHub نصب کرده‌اید روی \"کشف نصب‌ها\" کلیک کنید، یا برای راه‌اندازی اتصال جدید روی \"اتصال سازمان\" کلیک کنید.",
     "confirmRemove": "آیا مطمئن هستید که می‌خواهید این سازمان را قطع کنید؟",
-    "removeError": "حذف نصب ناموفق بود"
+    "removeError": "حذف نصب ناموفق بود",
+    "discoverInstallations": "کشف نصب‌ها",
+    "discoverError": "کشف نصب‌ها ناموفق بود"
   },
   "githubRepositoryManager": {
     "title": "تنظیم دستی مخزن",
@@ -4912,5 +4914,20 @@
     "copyright": "© 2024 ShipFlow. متن‌باز و رایگان.",
     "home": "خانه"
   },
-  "cycleId": "شناسه چرخه"
+  "cycleId": "شناسه چرخه",
+  "softDelete": {
+    "softDeleteNote": "توجه: این عمل به صورت دائمی آیتم را حذف نمی‌کند. در صورت نیاز قابل بازگردانی است.",
+    "deletePitch": "حذف پیچ",
+    "deletePitchConfirmation": "آیا از حذف پیچ '{{title}}' اطمینان دارید؟",
+    "pitchDeleted": "پیچ با موفقیت حذف شد",
+    "pitchDeleteFailed": "خطا در حذف پیچ",
+    "deleteTask": "حذف وظیفه",
+    "deleteTaskConfirmation": "آیا از حذف وظیفه '{{title}}' اطمینان دارید؟",
+    "taskDeleted": "وظیفه با موفقیت حذف شد",
+    "taskDeleteFailed": "خطا در حذف وظیفه",
+    "deleteTestCase": "حذف تست کیس",
+    "deleteTestCaseConfirmation": "آیا از حذف تست کیس '{{title}}' اطمینان دارید؟",
+    "testCaseDeleted": "تست کیس با موفقیت حذف شد",
+    "testCaseDeleteFailed": "خطا در حذف تست کیس"
+  }
 }

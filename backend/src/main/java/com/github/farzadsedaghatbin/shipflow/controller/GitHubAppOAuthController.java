@@ -199,4 +199,26 @@ public class GitHubAppOAuthController {
     GitHubBulkSyncResultDTO result = oauthService.syncAllRepositories();
     return ResponseEntity.ok(result);
   }
+
+  @PostMapping("/discover")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(
+      summary = "Discover existing GitHub App installations",
+      description =
+          "Fetch all existing GitHub App installations from GitHub API. "
+              + "Use this when the app was installed directly on GitHub (not through ShipFlow OAuth flow). "
+              + "This will find all organizations/users where the app is installed and sync their repositories.")
+  public ResponseEntity<GitHubBulkSyncResultDTO> discoverInstallations() {
+    if (!oauthService.isAppConfigured()) {
+      return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+          .body(
+              GitHubBulkSyncResultDTO.builder()
+                  .success(false)
+                  .message("GitHub App is not configured")
+                  .build());
+    }
+
+    GitHubBulkSyncResultDTO result = oauthService.discoverInstallations();
+    return ResponseEntity.ok(result);
+  }
 }

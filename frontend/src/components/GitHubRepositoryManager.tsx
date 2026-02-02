@@ -32,7 +32,7 @@ export default function GitHubRepositoryManager() {
   const [appStatus, setAppStatus] = useState<GitHubAppStatus | null>(null);
   const [installations, setInstallations] = useState<GitHubAppInstallation[]>([]);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState<number | 'all' | null>(null);
+  const [syncLoading, setSyncLoading] = useState<number | 'all' | 'discover' | null>(null);
   
   const [formData, setFormData] = useState<CreateGitHubRepositoryRequest>({
     owner: '',
@@ -119,6 +119,24 @@ export default function GitHubRepositoryManager() {
     }
   };
 
+  const handleDiscoverInstallations = async () => {
+    setSyncLoading('discover');
+    setError(null);
+    try {
+      const result = await githubService.discoverInstallations();
+      if (result.success) {
+        await loadRepositories();
+        await loadInstallations();
+      } else {
+        setError(result.message || t('githubApp.discoverError'));
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.discoverError'));
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
   const handleRemoveInstallation = async (installationId: number) => {
     if (!confirm(t('githubApp.confirmRemove'))) return;
     try {
@@ -191,7 +209,7 @@ export default function GitHubRepositoryManager() {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                {installations.length > 0 && (
+                {installations.length > 0 ? (
                   <Button
                     variant="outline"
                     onClick={handleSyncAll}
@@ -199,6 +217,15 @@ export default function GitHubRepositoryManager() {
                   >
                     <RefreshCw className={`mr-2 h-4 w-4 ${syncLoading === 'all' ? 'animate-spin' : ''}`} />
                     {t('githubApp.syncAll')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handleDiscoverInstallations}
+                    disabled={syncLoading === 'discover'}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${syncLoading === 'discover' ? 'animate-spin' : ''}`} />
+                    {t('githubApp.discoverInstallations')}
                   </Button>
                 )}
                 <Button onClick={handleConnectOrganization} disabled={oauthLoading}>

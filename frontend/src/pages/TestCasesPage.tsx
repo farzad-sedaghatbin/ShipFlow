@@ -5,7 +5,6 @@ import {
   Plus,
   Search,
   Pencil,
-  Trash2,
   Play,
   Eye,
   Sparkles,
@@ -47,7 +46,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { cn } from '../lib/utils';
-import qaTestManagementService from '../services/qaTestManagementService';
+import qaTestManagementService from '../services/qaTestManagementService';\nimport { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
@@ -90,10 +89,6 @@ const TestCasesPage: React.FC = () => {
   const [pitchFilter, setPitchFilter] = useState<number | 'all'>('all');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; testCase: TestCase | null }>({
-    open: false,
-    testCase: null,
-  });
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -167,17 +162,6 @@ const TestCasesPage: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteDialog.testCase) return;
-    try {
-      await qaTestManagementService.deleteTestCase(deleteDialog.testCase.id);
-      setTestCases(testCases.filter((tc) => tc.id !== deleteDialog.testCase!.id));
-      setDeleteDialog({ open: false, testCase: null });
-    } catch (err) {
-      setError(t('testCases.deleteFailed'));
     }
   };
 
@@ -480,21 +464,16 @@ const TestCasesPage: React.FC = () => {
                         <TooltipContent>{t('testCases.runTest')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteDialog({ open: true, testCase: tc })}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('testCases.delete')}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <SoftDeleteButton
+                      entityType="testCase"
+                      entityId={tc.id}
+                      entityTitle={tc.title}
+                      onSuccess={() => {
+                        setTestCases(testCases.filter((testCase) => testCase.id !== tc.id));
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    />
                   </div>
                 </TableCell>
               </TableRow>
@@ -513,32 +492,6 @@ const TestCasesPage: React.FC = () => {
           </TableBody>
         </Table>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => !open && setDeleteDialog({ open: false, testCase: null })}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('testCases.deleteTestCase')}</DialogTitle>
-            <DialogDescription>
-              {t('testCases.deleteConfirm', { title: deleteDialog.testCase?.title })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialog({ open: false, testCase: null })}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              {t('common.delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

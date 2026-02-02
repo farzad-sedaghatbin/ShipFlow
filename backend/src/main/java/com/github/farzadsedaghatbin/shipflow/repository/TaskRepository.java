@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,40 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
+
+  // Soft delete-aware methods
+  @Query("SELECT t FROM Task t WHERE t.deletedAt IS NULL")
+  List<Task> findAllNotDeleted();
+  
+  @Query("SELECT t FROM Task t WHERE t.deletedAt IS NULL")
+  Page<Task> findAllNotDeleted(Pageable pageable);
+  
+  @Query("SELECT t FROM Task t WHERE t.id = :id AND t.deletedAt IS NULL")
+  Optional<Task> findByIdNotDeleted(@Param("id") Long id);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+  Page<Task> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId, Pageable pageable);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+  List<Task> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.status = :status AND t.deletedAt IS NULL")
+  Page<Task> findByCycleIdAndStatusNotDeleted(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status, Pageable pageable);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.status = :status AND t.deletedAt IS NULL")
+  List<Task> findByCycleIdAndStatusNotDeleted(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status);
+  
+  @Query("SELECT t FROM Task t WHERE t.assignee.id = :assigneeId AND t.deletedAt IS NULL")
+  List<Task> findByAssigneeIdNotDeleted(@Param("assigneeId") Long assigneeId);
+  
+  @Query("SELECT t FROM Task t WHERE t.assignee.id = :assigneeId AND t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+  List<Task> findByAssigneeIdAndCycleIdNotDeleted(@Param("assigneeId") Long assigneeId, @Param("cycleId") Long cycleId);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) AND t.deletedAt IS NULL")
+  Page<Task> findByCycleIdAndPersonIdNotDeleted(@Param("cycleId") Long cycleId, @Param("personId") Long personId, Pageable pageable);
+  
+  @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) AND t.deletedAt IS NULL")
+  List<Task> findByCycleIdAndPersonIdNotDeleted(@Param("cycleId") Long cycleId, @Param("personId") Long personId);
 
   // Pageable queries
   Page<Task> findAll(Pageable pageable);

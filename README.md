@@ -49,6 +49,11 @@ A modern project management application implementing the [Shape Up](https://base
     - Same-cycle validation for dependency relationships
     - Clean UI for adding/removing dependencies
     - See [Task Dependencies Guide](TASK_DEPENDENCIES.md) for details
+  - **Soft Delete**: Safe deletion with recovery options
+    - Records are marked as deleted, not permanently removed
+    - Complete audit trail with deletion timestamp and user tracking
+    - Data can be restored if needed while maintaining referential integrity
+    - Available for pitches, tasks, and test cases with role-based permissions
 - **Document Management**: Upload, preview, and download project documents
   - Support for PDF, DOCX, DOC, TXT, and MD files
   - Text extraction from uploaded documents

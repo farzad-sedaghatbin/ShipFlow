@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Soft Delete Functionality**
+  - **Safe Deletion**: Records are marked as deleted rather than permanently removed
+  - **Audit Trail**: Complete tracking with deletion timestamp and user information
+  - **Data Recovery**: Deleted items can be restored if needed
+  - **Entity Support**: Available for pitches, tasks, and test cases
+  - **Role-Based Permissions**: Deletion permissions based on user roles (ADMIN, MANAGER, MEMBER)
+  - **Frontend Integration**: User-friendly delete buttons with confirmation dialogs
+  - **API Compatibility**: Existing endpoints work unchanged, deleted items automatically excluded
+  - **Performance Optimized**: Dedicated database indexes for efficient soft delete queries
+
 ## [0.3.9] - 2026-02-01
 
 ### Fixed

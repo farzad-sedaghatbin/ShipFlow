@@ -8,11 +8,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +42,7 @@ public class PitchService {
   private final AICacheService cacheService;
 
   public List<PitchDTO> getAllPitches() {
-    return pitchRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    return pitchRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
@@ -75,13 +77,13 @@ public class PitchService {
   }
 
   public List<PitchDTO> getPitchesByCycleId(Long cycleId) {
-    return pitchRepository.findByCycleId(cycleId).stream()
+    return pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public List<PitchDTO> getPitchesByTeamId(Long teamId) {
-    return pitchRepository.findByTeamId(teamId).stream()
+    return pitchRepository.findByTeamIdNotDeleted(teamId).stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
   }
@@ -89,7 +91,7 @@ public class PitchService {
   public PitchDTO getPitchById(Long id) {
     Pitch pitch =
         pitchRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
     return toDTO(pitch);
   }
@@ -141,7 +143,7 @@ public class PitchService {
   public PitchDTO updatePitch(Long id, CreatePitchRequest request) {
     Pitch pitch =
         pitchRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
     pitch.setTitle(request.getTitle());
@@ -182,7 +184,7 @@ public class PitchService {
   public PitchDTO updateStatus(Long id, PitchStatus status) {
     Pitch pitch =
         pitchRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
     pitch.setStatus(status);
@@ -197,7 +199,7 @@ public class PitchService {
   public PitchDTO assignTeam(Long id, Long teamId) {
     Pitch pitch =
         pitchRepository
-            .findById(id)
+            .findByIdNotDeleted(id)
             .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
     Team team =
@@ -215,10 +217,21 @@ public class PitchService {
   }
 
   public void deletePitch(Long id) {
-    Pitch pitch = pitchRepository.findById(id).orElse(null);
-    Long cycleId = pitch != null && pitch.getCycle() != null ? pitch.getCycle().getId() : null;
-
-    pitchRepository.deleteById(id);
+    Pitch pitch = pitchRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + id));
+    
+    // Check if already deleted
+    if (pitch.getDeletedAt() != null) {
+      throw new IllegalStateException("Pitch is already deleted");
+    }
+    
+    Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    User currentUser = getCurrentUser();
+    
+    // Perform soft delete
+    pitch.setDeletedAt(LocalDateTime.now());
+    pitch.setDeletedBy(currentUser);
+    pitchRepository.save(pitch);
 
     // Invalidate cycle cache since pitch was removed
     if (cycleId != null) {

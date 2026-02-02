@@ -110,6 +110,14 @@ public class Task {
   @Column(columnDefinition = "TEXT")
   private String tags;
 
+  // Soft delete fields
+  @Column
+  private LocalDateTime deletedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "deleted_by_id")
+  private User deletedBy;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
