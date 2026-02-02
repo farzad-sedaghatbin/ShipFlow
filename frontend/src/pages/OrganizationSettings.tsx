@@ -77,8 +77,13 @@ export default function OrganizationSettingsPage() {
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [formData, setFormData] = useState<Partial<OrganizationSettings>>({});
 
-  const { hasPermissionSync } = usePermission();
-  const canManageSettings = hasPermissionSync('SYSTEM', 'MANAGE');
+  const { hasPermission } = usePermission();
+  const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
+
+  // Check permission on mount
+  useEffect(() => {
+    hasPermission('SYSTEM', 'MANAGE').then(setCanManageSettings).catch(() => setCanManageSettings(false));
+  }, [hasPermission]);
 
   useEffect(() => {
     if (canManageSettings) {
@@ -234,6 +239,15 @@ export default function OrganizationSettingsPage() {
   const isRiskWeightsValid = () => {
     return getRiskWeightsSum() === 100;
   };
+
+  // Show loading while checking permission
+  if (canManageSettings === null) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!canManageSettings) {
     return (

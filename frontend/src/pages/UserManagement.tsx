@@ -62,11 +62,12 @@ export default function UserManagement() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
-  const { hasPermissionSync } = usePermission();
+  const { hasPermission } = usePermission();
   const [users, setUsers] = useState<UserType[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [canManageUsers, setCanManageUsers] = useState<boolean | null>(null);
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -84,15 +85,29 @@ export default function UserManagement() {
   const [newRole, setNewRole] = useState<UserRole>('MEMBER');
 
   // Check if current user has user management permission
-  const canManageUsers = hasPermissionSync('USER', 'MANAGE');
+  useEffect(() => {
+    hasPermission('USER', 'MANAGE').then(setCanManageUsers).catch(() => setCanManageUsers(false));
+  }, [hasPermission]);
+
+  // Show loading while checking permission
+  if (canManageUsers === null) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   // Only admins can manage users
   if (!canManageUsers) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
           <AlertDescription>
-            {t('common.accessDenied')}
+            {t('auth.accessDenied')}
           </AlertDescription>
         </Alert>
       </div>
