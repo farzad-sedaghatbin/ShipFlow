@@ -107,7 +107,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   // Multi-filter queries with pagination - supports direct project association
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR br.cycle.project.id = :projectId) "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (br.cycle IS NOT NULL AND br.cycle.project.id = :projectId)) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status IN :statuses) "
@@ -124,7 +124,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   @Query(
       "SELECT br FROM BugReport br WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR br.cycle.project.id = :projectId) "
+          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (br.cycle IS NOT NULL AND br.cycle.project.id = :projectId)) "
           + "AND (:cycleId IS NULL OR br.cycle.id = :cycleId) "
           + "AND (:pitchId IS NULL OR br.pitch.id = :pitchId) "
           + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
