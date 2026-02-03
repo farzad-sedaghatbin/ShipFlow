@@ -607,7 +607,9 @@ export default function WorkLogsPage() {
 
         {/* Team Logs Tab (Managers) */}
         {canManageLogs && (
-          <TabsContent value="team" className="space-y-4">\n            {/* Add for Team Form */}\n            <Card>
+          <TabsContent value="team" className="space-y-4">
+            {/* Add for Team Form */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
               </CardHeader>

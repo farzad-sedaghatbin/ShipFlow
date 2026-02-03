@@ -54,6 +54,15 @@ export interface ReactionInfo {
   emoji: string;
 }
 
+/**
+ * User info for @mention suggestions
+ */
+export interface MentionUser {
+  id: number;
+  username: string;
+  displayName: string;
+}
+
 // Emoji mapping for reactions
 export const REACTION_EMOJIS: Record<CommentReaction, string> = {
   THUMBS_UP: '👍',
@@ -131,6 +140,12 @@ export const commentService = {
    */
   getAvailableReactions: () =>
     api.get<ReactionInfo[]>('/comments/reactions/available'),
+
+  /**
+   * Search users for @mention autocomplete
+   */
+  searchUsersForMention: (query: string) =>
+    api.get<MentionUser[]>('/comments/users/search', { params: { query } }),
 };
 
 export default commentService;

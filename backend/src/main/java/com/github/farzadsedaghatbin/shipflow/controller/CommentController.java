@@ -132,6 +132,15 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getAvailableReactions());
     }
 
+    @GetMapping("/users/search")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Search users for @mention", 
+               description = "Returns users matching the search query for @mention autocomplete")
+    public ResponseEntity<List<MentionUserDTO>> searchUsersForMention(
+            @RequestParam(defaultValue = "") String query) {
+        return ResponseEntity.ok(commentService.searchUsersForMention(query));
+    }
+
     private Long getUserId(UserDetails userDetails) {
         return userService.findByUsername(userDetails.getUsername()).getId();
     }

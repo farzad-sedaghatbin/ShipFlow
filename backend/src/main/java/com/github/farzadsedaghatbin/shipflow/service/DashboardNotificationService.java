@@ -123,6 +123,57 @@ public class DashboardNotificationService {
         task.getId());
   }
 
+  /** Create notification when a user is mentioned in a comment */
+  public void notifyCommentMention(User mentionedUser, User author, String entityType, Long entityId, String commentPreview) {
+    if (mentionedUser == null || author == null) {
+      return;
+    }
+    
+    // Don't notify if user mentioned themselves
+    if (mentionedUser.getId().equals(author.getId())) {
+      return;
+    }
+
+    String authorName = author.getPerson() != null 
+        ? author.getPerson().getName() 
+        : author.getUsername();
+
+    String actionUrl = entityType.equals("TASK") 
+        ? "/tasks/" + entityId 
+        : "/bugs/" + entityId;
+
+    createNotification(
+        mentionedUser,
+        "COMMENT_MENTION",
+        "You were mentioned in a comment",
+        String.format("%s mentioned you: \"%s\"", authorName, 
+            commentPreview.length() > 100 ? commentPreview.substring(0, 100) + "..." : commentPreview),
+        "INFO",
+        actionUrl,
+        entityType,
+        entityId);
+
+    // Send Slack notification
+    slackService.sendNotification(
+        "COMMENT_MENTION",
+        String.format(
+            "💬 *Comment Mention*\n*%s* mentioned *%s* in a %s comment:\n\"%s\"",
+            authorName,
+            mentionedUser.getUsername(),
+            entityType.toLowerCase(),
+            commentPreview.length() > 100 ? commentPreview.substring(0, 100) + "..." : commentPreview),
+        null,
+        entityType,
+        entityId);
+
+    log.info(
+        "Created comment mention notification for user {} from author {} on {} {}",
+        mentionedUser.getId(),
+        author.getId(),
+        entityType,
+        entityId);
+  }
+
   /** Create notification when a task is reassigned from one person to another */
   public void notifyTaskReassignment(Task task, User oldAssignee, User newAssignee) {
     // Notify the old assignee that the task was removed from them

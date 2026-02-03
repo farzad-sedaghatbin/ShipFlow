@@ -5013,6 +5013,8 @@
     "deleteTitle": "حذف نظر",
     "deleteConfirmation": "آیا از حذف این نظر اطمینان دارید؟ این عمل قابل بازگشت نیست.",
     "addReaction": "افزودن واکنش",
-    "removeReaction": "حذف واکنش"
+    "removeReaction": "حذف واکنش",
+    "mentionSuggestions": "منشن کردن کسی",
+    "mentionHint": "@ را تایپ کنید تا کسی را منشن کنید"
   }
 }

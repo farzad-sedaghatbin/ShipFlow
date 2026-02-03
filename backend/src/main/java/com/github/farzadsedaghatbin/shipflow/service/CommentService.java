@@ -15,6 +15,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.CommentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,10 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final BugReportRepository bugReportRepository;
     private final MessageService messageService;
+    private final DashboardNotificationService notificationService;
+
+    // Pattern to match @username mentions (alphanumeric and underscores)
+    private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-zA-Z0-9_]+)");
 
     /**
      * Create a new comment.
@@ -60,6 +66,9 @@ public class CommentService {
         comment = commentRepository.save(comment);
         log.info("Created comment {} on {} {} by user {}", 
                 comment.getId(), request.getEntityType(), request.getEntityId(), userId);
+
+        // Process mentions and send notifications
+        processMentions(request.getContent(), author, request.getEntityType(), request.getEntityId());
 
         return toDTO(comment, userId);
     }
@@ -280,6 +289,81 @@ public class CommentService {
                 .reactionCounts(reactionCounts)
                 .userReactions(userReactions)
                 .totalReactions(totalReactions)
+                .build();
+    }
+
+    /**
+     * Search for users to mention in comments.
+     */
+    @Transactional(readOnly = true)
+    public List<MentionUserDTO> searchUsersForMention(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            // Return first 10 active users if no query
+            return userRepository.findByIsActiveTrue().stream()
+                    .limit(10)
+                    .map(this::toMentionUserDTO)
+                    .collect(Collectors.toList());
+        }
+
+        return userRepository.searchByUsernameForMention(query.trim()).stream()
+                .limit(10)
+                .map(this::toMentionUserDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Extract @mentions from content and send notifications.
+     */
+    private void processMentions(String content, User author, CommentEntityType entityType, Long entityId) {
+        Set<String> mentionedUsernames = extractMentions(content);
+        
+        if (mentionedUsernames.isEmpty()) {
+            return;
+        }
+
+        List<User> mentionedUsers = userRepository.findByUsernameIn(new ArrayList<>(mentionedUsernames));
+        
+        for (User mentionedUser : mentionedUsers) {
+            try {
+                notificationService.notifyCommentMention(
+                        mentionedUser, 
+                        author, 
+                        entityType.name(), 
+                        entityId, 
+                        content);
+            } catch (Exception e) {
+                log.error("Failed to send mention notification to user {}: {}", 
+                        mentionedUser.getUsername(), e.getMessage());
+            }
+        }
+
+        log.info("Processed {} mentions in comment on {} {}", 
+                mentionedUsers.size(), entityType, entityId);
+    }
+
+    /**
+     * Extract usernames from @mentions in content.
+     */
+    private Set<String> extractMentions(String content) {
+        Set<String> mentions = new HashSet<>();
+        Matcher matcher = MENTION_PATTERN.matcher(content);
+        
+        while (matcher.find()) {
+            mentions.add(matcher.group(1));
+        }
+        
+        return mentions;
+    }
+
+    private MentionUserDTO toMentionUserDTO(User user) {
+        String displayName = user.getPerson() != null 
+                ? user.getPerson().getName() 
+                : user.getUsername();
+        
+        return MentionUserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .displayName(displayName)
                 .build();
     }
 }

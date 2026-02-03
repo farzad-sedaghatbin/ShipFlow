@@ -84,6 +84,13 @@ A modern project management application implementing the [Shape Up](https://base
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
+- **Comments & Collaboration**: Full commenting system for tasks and bug reports
+  - **@Mentions**: Type `@` to mention users with autocomplete suggestions
+  - **Mention Notifications**: Mentioned users receive in-app and Slack notifications
+  - **Emoji Reactions**: 8 emoji reactions (👍, 👎, ❤️, 😄, 😮, 😢, 🚀, 👀) with toggle behavior
+  - **CRUD Operations**: Create, edit, delete comments with permission checks
+  - **Edit Tracking**: Comments show "edited" badge when modified
+  - **Author Controls**: Only authors can edit; authors and admins can delete
 - **Retrospectives**: Team retros with voting and merging
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
   - Checkbox option to hide author attribution on sensitive items

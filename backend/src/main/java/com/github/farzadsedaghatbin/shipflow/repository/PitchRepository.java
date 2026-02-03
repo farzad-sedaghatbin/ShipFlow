@@ -29,6 +29,9 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
   List<Pitch> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
   
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
+  long countByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
+  
   @Query("SELECT p FROM Pitch p WHERE p.team.id = :teamId AND p.deletedAt IS NULL")
   List<Pitch> findByTeamIdNotDeleted(@Param("teamId") Long teamId);
   

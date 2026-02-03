@@ -3,8 +3,10 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.comment.*;
@@ -47,6 +49,9 @@ class CommentServiceTest {
 
     @Mock
     private MessageService messageService;
+
+    @Mock
+    private DashboardNotificationService notificationService;
 
     @InjectMocks
     private CommentService commentService;
@@ -428,6 +433,175 @@ class CommentServiceTest {
             assertThat(reactions).anyMatch(r -> r.get("type").equals("THUMBS_UP") && r.get("emoji").equals("👍"));
             assertThat(reactions).anyMatch(r -> r.get("type").equals("HEART") && r.get("emoji").equals("❤️"));
             assertThat(reactions).anyMatch(r -> r.get("type").equals("ROCKET") && r.get("emoji").equals("🚀"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Mention Tests")
+    class MentionTests {
+
+        @Test
+        @DisplayName("Should search users for mention")
+        void shouldSearchUsersForMention() {
+            // Arrange
+            User user1 = User.builder()
+                    .id(1L)
+                    .username("john_doe")
+                    .isActive(true)
+                    .build();
+            User user2 = User.builder()
+                    .id(2L)
+                    .username("jane_doe")
+                    .isActive(true)
+                    .build();
+            
+            when(userRepository.searchByUsernameForMention("doe"))
+                    .thenReturn(Arrays.asList(user1, user2));
+
+            // Act
+            List<MentionUserDTO> result = commentService.searchUsersForMention("doe");
+
+            // Assert
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).getUsername()).isEqualTo("john_doe");
+            assertThat(result.get(1).getUsername()).isEqualTo("jane_doe");
+        }
+
+        @Test
+        @DisplayName("Should return default users when search query is empty")
+        void shouldReturnDefaultUsersWhenQueryEmpty() {
+            // Arrange
+            when(userRepository.findByIsActiveTrue())
+                    .thenReturn(Arrays.asList(testUser, adminUser));
+
+            // Act
+            List<MentionUserDTO> result = commentService.searchUsersForMention("");
+
+            // Assert
+            assertThat(result).hasSize(2);
+            verify(userRepository).findByIsActiveTrue();
+            verify(userRepository, never()).searchByUsernameForMention(anyString());
+        }
+
+        @Test
+        @DisplayName("Should process mentions and send notifications")
+        void shouldProcessMentionsAndSendNotifications() {
+            // Arrange
+            User mentionedUser = User.builder()
+                    .id(3L)
+                    .username("mentioned_user")
+                    .isActive(true)
+                    .build();
+
+            CreateCommentRequest request = CreateCommentRequest.builder()
+                    .content("Hey @mentioned_user check this out!")
+                    .entityType(CommentEntityType.TASK)
+                    .entityId(1L)
+                    .build();
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(taskRepository.existsById(1L)).thenReturn(true);
+            when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+                Comment c = inv.getArgument(0);
+                c.setId(1L);
+                c.setCreatedAt(LocalDateTime.now());
+                return c;
+            });
+            when(userRepository.findByUsernameIn(Arrays.asList("mentioned_user")))
+                    .thenReturn(Arrays.asList(mentionedUser));
+            when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
+            when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
+                    .thenReturn(Collections.emptyList());
+
+            // Act
+            CommentDTO result = commentService.createComment(request, 1L);
+
+            // Assert
+            assertThat(result).isNotNull();
+            verify(notificationService).notifyCommentMention(
+                    eq(mentionedUser),
+                    eq(testUser),
+                    eq("TASK"),
+                    eq(1L),
+                    anyString()
+            );
+        }
+
+        @Test
+        @DisplayName("Should handle multiple mentions")
+        void shouldHandleMultipleMentions() {
+            // Arrange
+            User user1 = User.builder().id(3L).username("user1").isActive(true).build();
+            User user2 = User.builder().id(4L).username("user2").isActive(true).build();
+
+            CreateCommentRequest request = CreateCommentRequest.builder()
+                    .content("@user1 and @user2 please review")
+                    .entityType(CommentEntityType.TASK)
+                    .entityId(1L)
+                    .build();
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(taskRepository.existsById(1L)).thenReturn(true);
+            when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+                Comment c = inv.getArgument(0);
+                c.setId(1L);
+                c.setCreatedAt(LocalDateTime.now());
+                return c;
+            });
+            when(userRepository.findByUsernameIn(anyList()))
+                    .thenReturn(Arrays.asList(user1, user2));
+            when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
+            when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
+                    .thenReturn(Collections.emptyList());
+
+            // Act
+            CommentDTO result = commentService.createComment(request, 1L);
+
+            // Assert
+            assertThat(result).isNotNull();
+            verify(notificationService, times(2)).notifyCommentMention(
+                    any(User.class),
+                    eq(testUser),
+                    eq("TASK"),
+                    eq(1L),
+                    anyString()
+            );
+        }
+
+        @Test
+        @DisplayName("Should not send notification when no mentions")
+        void shouldNotSendNotificationWhenNoMentions() {
+            // Arrange
+            CreateCommentRequest request = CreateCommentRequest.builder()
+                    .content("Just a regular comment without mentions")
+                    .entityType(CommentEntityType.TASK)
+                    .entityId(1L)
+                    .build();
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(taskRepository.existsById(1L)).thenReturn(true);
+            when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+                Comment c = inv.getArgument(0);
+                c.setId(1L);
+                c.setCreatedAt(LocalDateTime.now());
+                return c;
+            });
+            when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
+            when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
+                    .thenReturn(Collections.emptyList());
+
+            // Act
+            CommentDTO result = commentService.createComment(request, 1L);
+
+            // Assert
+            assertThat(result).isNotNull();
+            verify(notificationService, never()).notifyCommentMention(
+                    any(User.class),
+                    any(User.class),
+                    anyString(),
+                    anyLong(),
+                    anyString()
+            );
         }
     }
 }

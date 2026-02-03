@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -32,6 +33,7 @@ public class CycleService {
 
   private final CycleRepository cycleRepository;
   private final ProjectRepository projectRepository;
+  private final PitchRepository pitchRepository;
   private final RetroRepository retroRepository;
   private final DashboardNotificationService notificationService;
   private final UserRepository userRepository;
@@ -271,7 +273,7 @@ public class CycleService {
             .endDate(cycle.getEndDate())
             .phase(cycle.getPhase())
             .isActive(cycle.getIsActive())
-            .pitchCount(cycle.getPitches() != null ? cycle.getPitches().size() : 0)
+            .pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
             .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
 
     if (cycle.getProject() != null) {

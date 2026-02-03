@@ -14,9 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@Transactional
 class PitchRepositoryTest {
 
   @Autowired private PitchRepository pitchRepository;
@@ -159,5 +161,134 @@ class PitchRepositoryTest {
 
     // Assert
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void countByCycleIdNotDeleted_ShouldExcludeDeletedPitches() {
+    // Arrange - Create multiple pitches, some deleted
+    Pitch activePitch1 = Pitch.builder()
+        .title("Active Pitch 1")
+        .description("Description 1")
+        .appetiteDays(6)
+        .cycle(testCycle)
+        .status(PitchStatus.PENDING)
+        .build();
+    
+    Pitch activePitch2 = Pitch.builder()
+        .title("Active Pitch 2")
+        .description("Description 2")
+        .appetiteDays(8)
+        .cycle(testCycle)
+        .status(PitchStatus.IN_PROGRESS)
+        .build();
+    
+    Pitch deletedPitch = Pitch.builder()
+        .title("Deleted Pitch")
+        .description("Description 3")
+        .appetiteDays(4)
+        .cycle(testCycle)
+        .status(PitchStatus.DONE)
+        .build();
+    
+    // Save all pitches
+    pitchRepository.save(activePitch1);
+    pitchRepository.save(activePitch2);
+    pitchRepository.save(deletedPitch);
+    
+    // Soft delete one pitch
+    deletedPitch.setDeletedAt(java.time.LocalDateTime.now());
+    pitchRepository.save(deletedPitch);
+
+    // Act
+    long count = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
+
+    // Assert - Should only count the 2 non-deleted pitches
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  void countByCycleIdNotDeleted_ShouldReturnZero_WhenNoPitchesExist() {
+    // Act
+    long count = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
+
+    // Assert
+    assertThat(count).isEqualTo(0);
+  }
+
+  @Test
+  void countByCycleIdNotDeleted_ShouldReturnZero_WhenAllPitchesAreDeleted() {
+    // Arrange - Create and delete all pitches
+    Pitch pitch1 = Pitch.builder()
+        .title("Pitch 1")
+        .description("Description 1")
+        .appetiteDays(6)
+        .cycle(testCycle)
+        .status(PitchStatus.PENDING)
+        .build();
+    
+    Pitch pitch2 = Pitch.builder()
+        .title("Pitch 2")
+        .description("Description 2")
+        .appetiteDays(8)
+        .cycle(testCycle)
+        .status(PitchStatus.IN_PROGRESS)
+        .build();
+    
+    pitchRepository.save(pitch1);
+    pitchRepository.save(pitch2);
+    
+    // Soft delete both pitches
+    pitch1.setDeletedAt(java.time.LocalDateTime.now());
+    pitch2.setDeletedAt(java.time.LocalDateTime.now());
+    pitchRepository.save(pitch1);
+    pitchRepository.save(pitch2);
+
+    // Act
+    long count = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
+
+    // Assert
+    assertThat(count).isEqualTo(0);
+  }
+
+  @Test
+  void countByCycleIdNotDeleted_ShouldCountOnlyForSpecificCycle() {
+    // Arrange - Create another cycle with pitches
+    Cycle anotherCycle = Cycle.builder()
+        .name("Another Cycle")
+        .startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.BUILD)
+        .isActive(true)
+        .build();
+    anotherCycle = cycleRepository.save(anotherCycle);
+    
+    // Create pitches for original cycle
+    Pitch pitch1 = Pitch.builder()
+        .title("Pitch 1")
+        .description("Description 1")
+        .appetiteDays(6)
+        .cycle(testCycle)
+        .status(PitchStatus.PENDING)
+        .build();
+    
+    // Create pitches for another cycle
+    Pitch pitch2 = Pitch.builder()
+        .title("Pitch 2")
+        .description("Description 2")
+        .appetiteDays(8)
+        .cycle(anotherCycle)
+        .status(PitchStatus.IN_PROGRESS)
+        .build();
+    
+    pitchRepository.save(pitch1);
+    pitchRepository.save(pitch2);
+
+    // Act
+    long countForTestCycle = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
+    long countForAnotherCycle = pitchRepository.countByCycleIdNotDeleted(anotherCycle.getId());
+
+    // Assert
+    assertThat(countForTestCycle).isEqualTo(1);
+    assertThat(countForAnotherCycle).isEqualTo(1);
   }
 }
