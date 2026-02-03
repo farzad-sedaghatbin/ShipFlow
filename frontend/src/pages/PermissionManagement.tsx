@@ -82,7 +82,7 @@ export default function PermissionManagement() {
   const [selectedPermIds, setSelectedPermIds] = useState<Set<number>>(new Set());
   const [groupBy, setGroupBy] = useState<'none' | 'role' | 'resource'>('role');
   
-  const { hasPermissionSync, hasPermission } = usePermission();
+  const { hasPermission } = usePermission();
   const [canManagePermissions, setCanManagePermissions] = useState(false);
   const roles = permissionService.getUserRoles();
   const resources = permissionService.getResourceTypes();

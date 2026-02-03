@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-02-03
+
 ### Added
 - **Entity Change History with Hibernate Envers**
   - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
@@ -17,6 +19,71 @@ All notable changes to this project will be documented in this file.
   - **Database**: Automatic audit table creation via Hibernate Envers (`*_AUD` tables)
   - **Unit Tests**: Comprehensive tests for AuditService with mocked AuditReader
 
+<<<<<<< HEAD
+=======
+- **Direct Project Association for Bug Reports**
+  - **Kanban Support**: Bug reports can now be directly associated with projects
+  - **Flexible Workflow**: Support both Shape Up (cycle-based) and Kanban (project-only) methodologies
+  - **Database Migration**: Automatic migration to handle nullable cycle field in bug reports
+  - **UI Enhancement**: Add Bug button relocated to the right side with view toggle
+
+- **Enhanced Task Management**
+  - **Task Assignee Fields**: Added assignee and pair assignee fields to Task entity with full auditing
+  - **Improved UI**: Better assignee selector with clean dropdown and avatars for bug reports
+  - **Inline Status Changes**: Enhanced bug report inline status/severity changes to match task patterns
+
+- **Kanban Board Improvements**
+  - **Column Visibility Control**: Show/hide individual columns to reduce scrolling
+  - **Quick Actions**: Show/hide all columns and hide optional columns functionality
+  - **Session Storage**: Column visibility state persists per session
+  - **Visual Indicators**: Display count of hidden columns
+  - **Essential Columns**: Preserve TODO, IN_PROGRESS, DONE columns in hide optional action
+  - **Internationalization**: Full i18n support for English and Persian languages
+
+- **Modern Password Reset Modal**
+  - **Enhanced UX**: Replaced HTTP basic auth prompt with modern modal interface
+  - **Better Security**: Improved password validation for user creation
+  - **Bug Kanban Board**: New specialized Kanban board component for bug management
+
+- **Enhanced Comments System**
+  - **Bug Reports Integration**: Added Comments section to BugReportsPage for enhanced user feedback
+  - **Comprehensive UI**: Full commenting functionality integrated across entity detail pages
+
+### Fixed
+- **Permission System Stability**
+  - **Infinite Loop Prevention**: Fixed infinite loops in usePermission hook and PermissionGate
+  - **React Error #310**: Resolved hook count changes between renders
+  - **Stable Dependencies**: Proper useEffect dependency management for permission checks
+  - **Request Deduplication**: Prevent race conditions in permission loading
+  - **ADMIN Permission**: Fixed SYSTEM:MANAGE permission check issue for admin users
+
+- **Database Query Improvements**
+  - **Null Cycle Handling**: Fixed JPQL query for direct project association in bug reports
+  - **LEFT JOIN Optimization**: Use LEFT JOIN for nullable relationships in bug report filters
+  - **Lazy Loading**: Resolved LazyInitializationException in audit queries
+  - **Comprehensive Logging**: Added detailed logging to bug report filter API for debugging
+
+- **Bug Report Enhancement**
+  - **Assignee Field Alignment**: Fixed frontend assigneeId to match backend field naming
+  - **User to Person Migration**: Changed bug report assignee from User to Person entity
+  - **Optimistic Updates**: Restored optimistic updates for better UX after fixing underlying issues
+
+- **Project Type Conversion**
+  - **Auto Cycle Creation**: Automatically create default cycle when converting from Shape Up to Kanban
+  - **Smooth Migration**: Seamless project methodology transitions with proper data setup
+
+- **Audit System Enhancements**
+  - **Serializable Entity**: Updated AuditRevisionEntity to implement Serializable
+  - **Custom Fields**: Define custom revision fields for better audit tracking
+  - **Team Association**: Added proper auditing for team association in Pitch entity
+
+### Technical Improvements
+- **Code Quality**: Improved permission hook architecture with better state management
+- **Database Consistency**: Enhanced soft delete behavior across all services
+- **Frontend Stability**: Resolved React hooks violations and rendering issues
+- **API Robustness**: Better error handling and logging throughout the application
+
+>>>>>>> release/v0.3.11
 ## [0.3.10] - 2026-02-02
 
 ### Added
