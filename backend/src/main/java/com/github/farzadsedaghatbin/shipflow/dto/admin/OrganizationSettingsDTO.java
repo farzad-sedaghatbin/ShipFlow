@@ -309,5 +309,7 @@ public class OrganizationSettingsDTO {
     private String description;
     private Boolean isRequired;
     private Integer order;
+    @Builder.Default
+    private Boolean isDeleted = false;
   }
 }
