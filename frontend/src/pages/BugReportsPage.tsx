@@ -69,6 +69,7 @@ import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
 import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
+import BugKanbanBoard from '../components/BugKanbanBoard';
 import Comments from '../components/Comments';
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
@@ -297,26 +298,6 @@ const BugReportsPage: React.FC = () => {
       setUpdatingBugId(null);
     }
   };
-
-  // Kanban columns by status
-  const kanbanColumns: BugStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'];
-  
-  const bugsByStatus = useMemo(() => {
-    const grouped: Record<BugStatus, BugReport[]> = {
-      OPEN: [],
-      IN_PROGRESS: [],
-      RESOLVED: [],
-      VERIFIED: [],
-      CLOSED: [],
-      REOPENED: [],
-      WONT_FIX: [],
-      DUPLICATE: [],
-    };
-    bugReports.forEach(bug => {
-      grouped[bug.status].push(bug);
-    });
-    return grouped;
-  }, [bugReports]);
 
   const getStatCounts = () => ({
     total: totalElements,
@@ -916,122 +897,18 @@ const BugReportsPage: React.FC = () => {
 
       {/* Bug Reports - Kanban View */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {kanbanColumns.map((status) => (
-            <div key={status} className="bg-muted/30 rounded-lg p-3 min-h-[400px]">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Badge variant={statusBadgeVariants[status]}>{status.replace('_', ' ')}</Badge>
-                  <span className="text-muted-foreground text-sm">({bugsByStatus[status].length})</span>
-                </h3>
-              </div>
-              <div className="space-y-2">
-                {bugsByStatus[status].map((bug) => (
-                  <Card
-                    key={bug.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => openDetailModal(bug)}
-                  >
-                    <CardContent className="p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Bug className="h-3 w-3 text-destructive shrink-0" />
-                        <span className="text-xs text-muted-foreground font-mono">{bug.bugKey}</span>
-                      </div>
-                      <p 
-                        className="text-sm font-medium line-clamp-2"
-                        dir={detectTextDirection(bug.title)}
-                      >
-                        {bug.title}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Select
-                          value={bug.severity}
-                          onValueChange={(value) => {
-                            handleInlineUpdate(bug.id, 'severity', value);
-                          }}
-                          disabled={updatingBugId === bug.id}
-                        >
-                          <SelectTrigger 
-                            className="h-6 w-auto border-0 bg-transparent p-0 focus:ring-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Badge variant={severityBadgeVariants[bug.severity]} className="text-[0.65rem]">
-                              {updatingBugId === bug.id ? <Loader2 className="h-2 w-2 animate-spin mr-1" /> : null}
-                              {bug.severity}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'] as BugSeverity[]).map((sev) => (
-                              <SelectItem key={sev} value={sev}>
-                                <Badge variant={severityBadgeVariants[sev]} className="text-[0.65rem]">{sev}</Badge>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {bug.assigneeName && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Avatar className="h-5 w-5">
-                                  <AvatarFallback className="text-[0.6rem]">
-                                    {bug.assigneeName.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </TooltipTrigger>
-                              <TooltipContent>{bug.assigneeName}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                      {(bug.commentCount ?? 0) > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MessageSquare className="h-3 w-3" />
-                          <span>{bug.commentCount}</span>
-                        </div>
-                      )}
-                      {/* Quick status change */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-6 text-xs border-dashed"
-                            disabled={updatingBugId === bug.id}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                            <span className="text-muted-foreground">{t('bugReports.kanban.moveTo')}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'] as BugStatus[]).map((s) => (
-                            <DropdownMenuItem
-                              key={s}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleInlineUpdate(bug.id, 'status', s);
-                              }}
-                            >
-                              <Badge variant={statusBadgeVariants[s]} className="mr-2 text-[0.65rem]">
-                                {s.replace('_', ' ')}
-                              </Badge>
-                              {bug.status === s && <Check className="ml-auto h-4 w-4" />}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </CardContent>
-                  </Card>
-                ))}
-                {bugsByStatus[status].length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    {t('bugReports.kanban.empty')}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <BugKanbanBoard
+          bugs={bugReports}
+          onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
+          onViewBug={openDetailModal}
+          onEditBug={(bug) => {
+            setSelectedBug(bug);
+            setModalOpen(true);
+          }}
+          onDeleteBug={handleDelete}
+          loading={loading}
+          updatingBugId={updatingBugId}
+        />
       )}
 
       {/* Create/Edit Modal */}
