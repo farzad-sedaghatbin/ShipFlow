@@ -4,16 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Configuration container for vector store providers. Supports common settings and
- * provider-specific extra parameters.
+ * Configuration container for vector store providers. Supports common settings
+ * and provider-specific extra parameters.
  *
- * <p>Common settings:
+ * <p>
+ * Common settings:
  *
  * <ul>
- *   <li>url: Base URL for the vector store service
- *   <li>apiKey: API key for authentication (if required)
- *   <li>collectionName: Name of the collection/index to use
- *   <li>dimension: Vector dimension (default: 384 for all-MiniLM-L6-v2)
+ * <li>url: Base URL for the vector store service
+ * <li>apiKey: API key for authentication (if required)
+ * <li>collectionName: Name of the collection/index to use
+ * <li>dimension: Vector dimension (default: 384 for all-MiniLM-L6-v2)
  * </ul>
  */
 public class VectorStoreProviderConfig {
@@ -86,7 +87,9 @@ public class VectorStoreProviderConfig {
     return apiKey != null && !apiKey.trim().isEmpty();
   }
 
-  /** Get the effective URL, either from url field or constructed from host:port. */
+  /**
+   * Get the effective URL, either from url field or constructed from host:port.
+   */
   public String getEffectiveUrl() {
     if (url != null && !url.trim().isEmpty()) {
       return url;
@@ -99,24 +102,9 @@ public class VectorStoreProviderConfig {
 
   @Override
   public String toString() {
-    return "VectorStoreProviderConfig{"
-        + "url='"
-        + url
-        + '\''
-        + ", host='"
-        + host
-        + '\''
-        + ", port="
-        + port
-        + ", apiKey='"
-        + (apiKey != null ? "****" : "null")
-        + '\''
-        + ", collectionName='"
-        + collectionName
-        + '\''
-        + ", dimension="
-        + dimension
-        + '}';
+    return "VectorStoreProviderConfig{" + "url='" + url + '\'' + ", host='" + host + '\'' + ", port=" + port
+        + ", apiKey='" + (apiKey != null ? "****" : "null") + '\'' + ", collectionName='" + collectionName
+        + '\'' + ", dimension=" + dimension + '}';
   }
 
   public static class Builder {

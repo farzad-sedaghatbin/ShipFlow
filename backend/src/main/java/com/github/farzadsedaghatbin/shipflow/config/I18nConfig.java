@@ -15,27 +15,25 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 /**
- * Configuration for internationalization (i18n) support. Supports English (default), Persian
- * (Farsi), and Spanish.
+ * Configuration for internationalization (i18n) support. Supports English
+ * (default), Persian (Farsi), and Spanish.
  */
 @Configuration
 public class I18nConfig implements WebMvcConfigurer {
 
   /** Supported locales for the application. */
-  public static final List<Locale> SUPPORTED_LOCALES =
-      List.of(
-          Locale.ENGLISH, // en
-          Locale.forLanguageTag("fa"), // Persian/Farsi
-          Locale.forLanguageTag("es") // Spanish
-          );
+  public static final List<Locale> SUPPORTED_LOCALES = List.of(Locale.ENGLISH, // en
+      Locale.forLanguageTag("fa"), // Persian/Farsi
+      Locale.forLanguageTag("es") // Spanish
+  );
 
-  /** Configure the MessageSource for loading i18n messages from property files. */
+  /**
+   * Configure the MessageSource for loading i18n messages from property files.
+   */
   @Bean
   public MessageSource messageSource() {
-    ReloadableResourceBundleMessageSource messageSource =
-        new ReloadableResourceBundleMessageSource();
-    messageSource.setBasenames(
-        "classpath:i18n/messages", "classpath:i18n/errors", "classpath:i18n/validation");
+    ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+    messageSource.setBasenames("classpath:i18n/messages", "classpath:i18n/errors", "classpath:i18n/validation");
     messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
     messageSource.setDefaultLocale(Locale.ENGLISH);
     messageSource.setCacheSeconds(3600); // Reload every hour in production
@@ -45,7 +43,8 @@ public class I18nConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Configure the LocaleResolver to determine the user's locale from the Accept-Language header.
+   * Configure the LocaleResolver to determine the user's locale from the
+   * Accept-Language header.
    */
   @Bean
   public LocaleResolver localeResolver() {
@@ -56,8 +55,8 @@ public class I18nConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Configure the LocaleChangeInterceptor to allow changing locale via query parameter. Example:
-   * ?lang=fa or ?lang=es
+   * Configure the LocaleChangeInterceptor to allow changing locale via query
+   * parameter. Example: ?lang=fa or ?lang=es
    */
   @Bean
   public LocaleChangeInterceptor localeChangeInterceptor() {
@@ -71,7 +70,10 @@ public class I18nConfig implements WebMvcConfigurer {
     registry.addInterceptor(localeChangeInterceptor());
   }
 
-  /** Configure the LocalValidatorFactoryBean to use our MessageSource for validation messages. */
+  /**
+   * Configure the LocalValidatorFactoryBean to use our MessageSource for
+   * validation messages.
+   */
   @Bean
   public LocalValidatorFactoryBean getValidator() {
     LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();

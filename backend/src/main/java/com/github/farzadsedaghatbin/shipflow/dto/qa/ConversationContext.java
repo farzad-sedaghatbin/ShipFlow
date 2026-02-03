@@ -19,7 +19,8 @@ public class ConversationContext {
   private Long userId;
 
   /** Conversation history (question-answer pairs). */
-  @Builder.Default private List<Turn> history = new ArrayList<>();
+  @Builder.Default
+  private List<Turn> history = new ArrayList<>();
 
   /** Context type (pitch, meeting, cycle, etc.). */
   private String contextType;
@@ -34,7 +35,8 @@ public class ConversationContext {
   private LocalDateTime lastInteractionAt;
 
   /** Whether conversation is still active. */
-  @Builder.Default private Boolean isActive = true;
+  @Builder.Default
+  private Boolean isActive = true;
 
   /** Add a new turn to the conversation. */
   public void addTurn(String question, String answer) {

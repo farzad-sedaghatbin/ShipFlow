@@ -58,10 +58,8 @@ public class TaskService {
   }
 
   public TaskDTO getTaskById(Long id) {
-    Task task =
-        taskRepository
-            .findByIdNotDeleted(id)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    Task task = taskRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
     return toDTO(task);
   }
 
@@ -70,37 +68,30 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByCycleId(Long cycleId) {
-    return taskRepository.findByCycleIdOrderByPriority(cycleId).stream()
-        .map(this::toDTO)
+    return taskRepository.findByCycleIdOrderByPriority(cycleId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
-  public Page<TaskDTO> getTasksByCycleIdAndStatus(
-      Long cycleId, TaskStatus status, Pageable pageable) {
+  public Page<TaskDTO> getTasksByCycleIdAndStatus(Long cycleId, TaskStatus status, Pageable pageable) {
     return taskRepository.findByCycleIdAndStatus(cycleId, status, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getTasksByCycleIdAndStatus(Long cycleId, TaskStatus status) {
-    return taskRepository.findByCycleIdAndStatus(cycleId, status).stream()
-        .map(this::toDTO)
+    return taskRepository.findByCycleIdAndStatus(cycleId, status).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public List<TaskDTO> getTasksByAssigneeId(Long assigneeId) {
-    return taskRepository.findByAssigneeId(assigneeId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByAssigneeId(assigneeId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public List<TaskDTO> getTasksByPersonId(Long personId) {
-    return taskRepository.findByPersonId(personId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByPersonId(personId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
-   * Search tasks by title or description. Minimum 3 characters required to prevent performance
-   * issues with large datasets.
+   * Search tasks by title or description. Minimum 3 characters required to
+   * prevent performance issues with large datasets.
    */
   public Page<TaskDTO> searchTasks(String query, Pageable pageable) {
     if (query == null || query.trim().length() < 3) {
@@ -110,20 +101,15 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
-    return taskRepository.findByProjectId(projectId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public Page<TaskDTO> getTasksByProjectIdPaged(Long projectId, Pageable pageable) {
     return taskRepository.findByProjectIdPaged(projectId, pageable).map(this::toDTO);
   }
 
-  public Page<TaskDTO> getTasksByProjectIdAndCategory(
-      Long projectId, TaskCategory category, Pageable pageable) {
-    return taskRepository
-        .findByProjectIdAndCategory(projectId, category, pageable)
-        .map(this::toDTO);
+  public Page<TaskDTO> getTasksByProjectIdAndCategory(Long projectId, TaskCategory category, Pageable pageable) {
+    return taskRepository.findByProjectIdAndCategory(projectId, category, pageable).map(this::toDTO);
   }
 
   public TaskStatisticsDTO getTaskStatisticsByProjectId(Long projectId) {
@@ -132,8 +118,7 @@ public class TaskService {
     long totalTasks = tasks.size();
     long backlogTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BACKLOG).count();
     long todoTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count();
-    long inProgressTasks =
-        tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count();
+    long inProgressTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count();
     long blockedTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BLOCKED).count();
     long inReviewTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_REVIEW).count();
     long doneTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
@@ -141,106 +126,60 @@ public class TaskService {
 
     double completionPercentage = totalTasks > 0 ? (doneTasks * 100.0 / totalTasks) : 0;
 
-    return TaskStatisticsDTO.builder()
-        .totalTasks((int) totalTasks)
-        .backlogTasks((int) backlogTasks)
-        .todoTasks((int) todoTasks)
-        .inProgressTasks((int) inProgressTasks)
-        .blockedTasks((int) blockedTasks)
-        .inReviewTasks((int) inReviewTasks)
-        .doneTasks((int) doneTasks)
-        .cancelledTasks((int) cancelledTasks)
-        .completionPercentage(Math.round(completionPercentage * 100.0) / 100.0)
-        .build();
+    return TaskStatisticsDTO.builder().totalTasks((int) totalTasks).backlogTasks((int) backlogTasks)
+        .todoTasks((int) todoTasks).inProgressTasks((int) inProgressTasks).blockedTasks((int) blockedTasks)
+        .inReviewTasks((int) inReviewTasks).doneTasks((int) doneTasks).cancelledTasks((int) cancelledTasks)
+        .completionPercentage(Math.round(completionPercentage * 100.0) / 100.0).build();
   }
 
   public TaskDTO createTask(CreateTaskRequest request) {
-    Cycle cycle =
-        cycleRepository
-            .findById(request.getCycleId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Cycle not found with id: " + request.getCycleId()));
+    Cycle cycle = cycleRepository.findById(request.getCycleId())
+        .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
 
     // Validate parent task if provided
     Task parentTask = null;
     if (request.getParentTaskId() != null) {
-      parentTask =
-          taskRepository
-              .findById(request.getParentTaskId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Parent task not found with id: " + request.getParentTaskId()));
+      parentTask = taskRepository.findById(request.getParentTaskId()).orElseThrow(
+          () -> new IllegalArgumentException("Parent task not found with id: " + request.getParentTaskId()));
 
       // Ensure parent task belongs to the same cycle
       if (!parentTask.getCycle().getId().equals(request.getCycleId())) {
-        throw new IllegalArgumentException(
-            messageService.getMessage("error.task.parent.different.cycle"));
+        throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
       }
     }
 
-    Task task =
-        Task.builder()
-            .title(request.getTitle())
-            .description(request.getDescription())
-            .cycle(cycle)
-            .parentTask(parentTask)
-            .status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
-            .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
-            .category(
-                request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
-            .estimateHours(request.getEstimateHours())
-            .actualHours(request.getActualHours())
-            .dueDate(request.getDueDate())
-            .tags(request.getTags())
-            .build();
+    Task task = Task.builder().title(request.getTitle()).description(request.getDescription()).cycle(cycle)
+        .parentTask(parentTask).status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
+        .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
+        .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
+        .estimateHours(request.getEstimateHours()).actualHours(request.getActualHours())
+        .dueDate(request.getDueDate()).tags(request.getTags()).build();
 
     Person assignee = null;
     if (request.getAssigneeId() != null) {
-      assignee =
-          personRepository
-              .findById(request.getAssigneeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Assignee not found with id: " + request.getAssigneeId()));
+      assignee = personRepository.findById(request.getAssigneeId()).orElseThrow(
+          () -> new IllegalArgumentException("Assignee not found with id: " + request.getAssigneeId()));
       task.setAssignee(assignee);
     }
 
     if (request.getPairAssigneeId() != null) {
-      Person pairAssignee =
-          personRepository
-              .findById(request.getPairAssigneeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Pair assignee not found with id: " + request.getPairAssigneeId()));
+      Person pairAssignee = personRepository.findById(request.getPairAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Pair assignee not found with id: " + request.getPairAssigneeId()));
       task.setPairAssignee(pairAssignee);
     }
 
     // Set pitch if provided
     if (request.getPitchId() != null) {
-      Pitch pitch =
-          pitchRepository
-              .findById(request.getPitchId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Pitch not found with id: " + request.getPitchId()));
+      Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
+          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       task.setPitch(pitch);
     }
 
     // Set scope if provided
     if (request.getScopeId() != null) {
-      HillChartPoint scope =
-          hillChartPointRepository
-              .findById(request.getScopeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Scope not found with id: " + request.getScopeId()));
+      HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId()).orElseThrow(
+          () -> new IllegalArgumentException("Scope not found with id: " + request.getScopeId()));
       task.setScope(scope);
     }
 
@@ -259,11 +198,8 @@ public class TaskService {
       try {
         notificationService.notifyTaskAssignment(saved, assignee.getUser());
       } catch (Exception e) {
-        log.error(
-            "Failed to send task assignment notification for task {} to user {}",
-            saved.getId(),
-            assignee.getUser().getUsername(),
-            e);
+        log.error("Failed to send task assignment notification for task {} to user {}", saved.getId(),
+            assignee.getUser().getUsername(), e);
       }
     }
 
@@ -271,10 +207,8 @@ public class TaskService {
   }
 
   public TaskDTO updateTask(Long id, CreateTaskRequest request) {
-    Task task =
-        taskRepository
-            .findByIdNotDeleted(id)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    Task task = taskRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     // Track old values for notification purposes
     Person oldAssignee = task.getAssignee();
@@ -283,27 +217,19 @@ public class TaskService {
 
     // Validate and update parent task if changed
     if (request.getParentTaskId() != null) {
-      if (!request
-          .getParentTaskId()
-          .equals(task.getParentTask() != null ? task.getParentTask().getId() : null)) {
-        Task parentTask =
-            taskRepository
-                .findById(request.getParentTaskId())
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Parent task not found with id: " + request.getParentTaskId()));
+      if (!request.getParentTaskId().equals(task.getParentTask() != null ? task.getParentTask().getId() : null)) {
+        Task parentTask = taskRepository.findById(request.getParentTaskId())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "Parent task not found with id: " + request.getParentTaskId()));
 
         // Prevent circular references
         if (isCircularReference(task, parentTask)) {
-          throw new IllegalArgumentException(
-              messageService.getMessage("error.task.circular.reference"));
+          throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
         }
 
         // Ensure parent task belongs to the same cycle
         if (!parentTask.getCycle().getId().equals(task.getCycle().getId())) {
-          throw new IllegalArgumentException(
-              messageService.getMessage("error.task.parent.different.cycle"));
+          throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
         }
 
         task.setParentTask(parentTask);
@@ -342,13 +268,8 @@ public class TaskService {
     // Handle assignee changes
     Person newAssignee = null;
     if (request.getAssigneeId() != null) {
-      newAssignee =
-          personRepository
-              .findById(request.getAssigneeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Assignee not found with id: " + request.getAssigneeId()));
+      newAssignee = personRepository.findById(request.getAssigneeId()).orElseThrow(
+          () -> new IllegalArgumentException("Assignee not found with id: " + request.getAssigneeId()));
       task.setAssignee(newAssignee);
     } else {
       task.setAssignee(null);
@@ -356,13 +277,8 @@ public class TaskService {
 
     // Handle pitch changes
     if (request.getPitchId() != null) {
-      Pitch pitch =
-          pitchRepository
-              .findById(request.getPitchId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Pitch not found with id: " + request.getPitchId()));
+      Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
+          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       task.setPitch(pitch);
     } else {
       task.setPitch(null);
@@ -370,26 +286,17 @@ public class TaskService {
 
     // Handle scope changes
     if (request.getScopeId() != null) {
-      HillChartPoint scope =
-          hillChartPointRepository
-              .findById(request.getScopeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Scope not found with id: " + request.getScopeId()));
+      HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId()).orElseThrow(
+          () -> new IllegalArgumentException("Scope not found with id: " + request.getScopeId()));
       task.setScope(scope);
     } else {
       task.setScope(null);
     }
 
     if (request.getPairAssigneeId() != null) {
-      Person pairAssignee =
-          personRepository
-              .findById(request.getPairAssigneeId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Pair assignee not found with id: " + request.getPairAssigneeId()));
+      Person pairAssignee = personRepository.findById(request.getPairAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Pair assignee not found with id: " + request.getPairAssigneeId()));
       task.setPairAssignee(pairAssignee);
     } else {
       task.setPairAssignee(null);
@@ -403,8 +310,7 @@ public class TaskService {
       if (hasAssigneeChanged(oldAssignee, newAssignee)) {
         if (oldAssignee != null && newAssignee != null) {
           // Reassignment
-          notificationService.notifyTaskReassignment(
-              saved, oldAssignee.getUser(), newAssignee.getUser());
+          notificationService.notifyTaskReassignment(saved, oldAssignee.getUser(), newAssignee.getUser());
         } else if (newAssignee != null) {
           // New assignment
           notificationService.notifyTaskAssignment(saved, newAssignee.getUser());
@@ -438,10 +344,8 @@ public class TaskService {
   }
 
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
-    Task task =
-        taskRepository
-            .findByIdNotDeleted(id)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    Task task = taskRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     TaskStatus oldStatus = task.getStatus();
     task.setStatus(status);
@@ -457,10 +361,8 @@ public class TaskService {
   }
 
   public TaskDTO updateTaskPriority(Long id, TaskPriority priority) {
-    Task task =
-        taskRepository
-            .findByIdNotDeleted(id)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    Task task = taskRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
     task.setPriority(priority);
     Task saved = taskRepository.save(task);
@@ -470,14 +372,14 @@ public class TaskService {
   public void deleteTask(Long id) {
     Task task = taskRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-    
+
     // Check if already deleted
     if (task.getDeletedAt() != null) {
       throw new IllegalStateException("Task is already deleted");
     }
-    
+
     User currentUser = getCurrentUser();
-    
+
     // Perform soft delete
     task.setDeletedAt(LocalDateTime.now());
     task.setDeletedBy(currentUser);
@@ -485,10 +387,8 @@ public class TaskService {
   }
 
   public TaskStatisticsDTO getTaskStatisticsByCycleId(Long cycleId) {
-    Cycle cycle =
-        cycleRepository
-            .findById(cycleId)
-            .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
 
     int totalTasks = taskRepository.countByCycleId(cycleId);
     int backlogTasks = taskRepository.countByCycleIdAndStatus(cycleId, TaskStatus.BACKLOG);
@@ -505,35 +405,23 @@ public class TaskService {
 
     double completionPercentage = totalTasks > 0 ? (double) doneTasks / totalTasks * 100 : 0.0;
 
-    double avgTasksPerPerson =
-        distinctAssignees > 0 ? (double) totalTasks / distinctAssignees : 0.0;
+    double avgTasksPerPerson = distinctAssignees > 0 ? (double) totalTasks / distinctAssignees : 0.0;
 
-    return TaskStatisticsDTO.builder()
-        .cycleId(cycleId)
-        .cycleName(cycle.getName())
-        .totalTasks(totalTasks)
-        .backlogTasks(backlogTasks)
-        .todoTasks(todoTasks)
-        .inProgressTasks(inProgressTasks)
-        .blockedTasks(blockedTasks)
-        .inReviewTasks(inReviewTasks)
-        .doneTasks(doneTasks)
-        .cancelledTasks(cancelledTasks)
-        .completionPercentage(Math.round(completionPercentage * 100.0) / 100.0)
+    return TaskStatisticsDTO.builder().cycleId(cycleId).cycleName(cycle.getName()).totalTasks(totalTasks)
+        .backlogTasks(backlogTasks).todoTasks(todoTasks).inProgressTasks(inProgressTasks)
+        .blockedTasks(blockedTasks).inReviewTasks(inReviewTasks).doneTasks(doneTasks)
+        .cancelledTasks(cancelledTasks).completionPercentage(Math.round(completionPercentage * 100.0) / 100.0)
         .totalEstimateHours(totalEstimateHours != null ? totalEstimateHours : 0.0)
         .totalActualHours(totalActualHours != null ? totalActualHours : 0.0)
-        .avgTasksPerPerson(Math.round(avgTasksPerPerson * 100.0) / 100.0)
-        .build();
+        .avgTasksPerPerson(Math.round(avgTasksPerPerson * 100.0) / 100.0).build();
   }
 
   // ========== Methods for current user's tasks ==========
 
   private Person getCurrentUserPerson() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    User user =
-        userRepository
-            .findByUsernameWithPerson(username)
-            .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+    User user = userRepository.findByUsernameWithPerson(username)
+        .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
     if (user.getPerson() == null) {
       throw new IllegalArgumentException(messageService.getMessage("error.user.no.person.profile"));
@@ -544,16 +432,13 @@ public class TaskService {
 
   private User getCurrentUser() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return userRepository
-        .findByUsername(username)
+    return userRepository.findByUsername(username)
         .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
   }
 
   public List<TaskDTO> getMyTasks() {
     Person person = getCurrentUserPerson();
-    return taskRepository.findByPersonId(person.getId()).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByPersonId(person.getId()).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public Page<TaskDTO> getMyTasks(Pageable pageable) {
@@ -564,58 +449,44 @@ public class TaskService {
 
   public Page<TaskDTO> getMyTasksByCycle(Long cycleId, Pageable pageable) {
     Person person = getCurrentUserPerson();
-    return taskRepository
-        .findByCycleIdAndPersonId(cycleId, person.getId(), pageable)
-        .map(this::toDTO);
+    return taskRepository.findByCycleIdAndPersonId(cycleId, person.getId(), pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getMyTasksByCycle(Long cycleId) {
     Person person = getCurrentUserPerson();
-    return taskRepository.findByCycleIdAndPersonId(cycleId, person.getId()).stream()
-        .map(this::toDTO)
+    return taskRepository.findByCycleIdAndPersonId(cycleId, person.getId()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   // ========== Multi-filter methods ==========
 
-  public Page<TaskDTO> getTasksWithFilters(
-      Long cycleId,
-      List<TaskStatus> statuses,
-      List<TaskPriority> priorities,
-      List<Long> assigneeIds,
-      TaskCategory category,
-      Boolean exclude,
-      Pageable pageable) {
+  public Page<TaskDTO> getTasksWithFilters(Long cycleId, List<TaskStatus> statuses, List<TaskPriority> priorities,
+      List<Long> assigneeIds, TaskCategory category, Boolean exclude, Pageable pageable) {
 
     // Convert empty lists to null for the query
     List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
-    List<TaskPriority> priorityList =
-        (priorities != null && !priorities.isEmpty()) ? priorities : null;
+    List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
 
     if (exclude != null && exclude) {
       return taskRepository
-          .findByCycleIdWithExclusionFilters(
-              cycleId, statusList, priorityList, assigneeList, pageable)
+          .findByCycleIdWithExclusionFilters(cycleId, statusList, priorityList, assigneeList, pageable)
           .map(this::toDTO);
     } else {
       return taskRepository
-          .findByCycleIdWithFilters(
-              cycleId, statusList, priorityList, assigneeList, category, pageable)
+          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, category, pageable)
           .map(this::toDTO);
     }
   }
 
   // ========== Category-based methods ==========
 
-  public Page<TaskDTO> getTasksByCycleIdAndCategory(
-      Long cycleId, TaskCategory category, Pageable pageable) {
+  public Page<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category, Pageable pageable) {
     return taskRepository.findByCycleIdAndCategory(cycleId, category, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category).stream()
-        .map(this::toDTO)
+    return taskRepository.findByCycleIdAndCategory(cycleId, category).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -626,15 +497,11 @@ public class TaskService {
   // ========== Sub-task hierarchy methods ==========
 
   public List<TaskDTO> getSubTasks(Long parentTaskId) {
-    return taskRepository.findByParentTaskId(parentTaskId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByParentTaskId(parentTaskId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public List<TaskDTO> getRootTasksByCycleId(Long cycleId) {
-    return taskRepository.findRootTasksByCycleId(cycleId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findRootTasksByCycleId(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public Page<TaskDTO> getRootTasksByCycleId(Long cycleId, Pageable pageable) {
@@ -666,8 +533,8 @@ public class TaskService {
   private TaskDTO toDTOWithChildren(Task task) {
     TaskDTO dto = toDTO(task);
     if (task.getChildren() != null && !task.getChildren().isEmpty()) {
-      List<TaskDTO> childrenDTOs =
-          task.getChildren().stream().map(this::toDTOWithChildren).collect(Collectors.toList());
+      List<TaskDTO> childrenDTOs = task.getChildren().stream().map(this::toDTOWithChildren)
+          .collect(Collectors.toList());
       dto.setChildren(childrenDTOs);
     }
     return dto;
@@ -675,88 +542,42 @@ public class TaskService {
 
   private TaskDTO toDTO(Task task) {
     // Get dependency information with null safety
-    List<TaskDependencyDTO> blocking =
-        task.getOutgoingDependencies() != null
-            ? task.getOutgoingDependencies().stream()
-                .map(
-                    dep ->
-                        TaskDependencyDTO.builder()
-                            .id(dep.getId())
-                            .sourceTaskId(dep.getSourceTask().getId())
-                            .sourceTaskTitle(dep.getSourceTask().getTitle())
-                            .targetTaskId(dep.getTargetTask().getId())
-                            .targetTaskTitle(dep.getTargetTask().getTitle())
-                            .dependencyType(dep.getDependencyType())
-                            .createdAt(dep.getCreatedAt())
-                            .build())
-                .collect(Collectors.toList())
-            : new ArrayList<>();
+    List<TaskDependencyDTO> blocking = task.getOutgoingDependencies() != null
+        ? task.getOutgoingDependencies().stream().map(dep -> TaskDependencyDTO.builder().id(dep.getId())
+            .sourceTaskId(dep.getSourceTask().getId()).sourceTaskTitle(dep.getSourceTask().getTitle())
+            .targetTaskId(dep.getTargetTask().getId()).targetTaskTitle(dep.getTargetTask().getTitle())
+            .dependencyType(dep.getDependencyType()).createdAt(dep.getCreatedAt()).build())
+            .collect(Collectors.toList())
+        : new ArrayList<>();
 
-    List<TaskDependencyDTO> blockedBy =
-        task.getIncomingDependencies() != null
-            ? task.getIncomingDependencies().stream()
-                .map(
-                    dep ->
-                        TaskDependencyDTO.builder()
-                            .id(dep.getId())
-                            .sourceTaskId(dep.getSourceTask().getId())
-                            .sourceTaskTitle(dep.getSourceTask().getTitle())
-                            .targetTaskId(dep.getTargetTask().getId())
-                            .targetTaskTitle(dep.getTargetTask().getTitle())
-                            .dependencyType(dep.getDependencyType())
-                            .createdAt(dep.getCreatedAt())
-                            .build())
-                .collect(Collectors.toList())
-            : new ArrayList<>();
+    List<TaskDependencyDTO> blockedBy = task.getIncomingDependencies() != null
+        ? task.getIncomingDependencies().stream().map(dep -> TaskDependencyDTO.builder().id(dep.getId())
+            .sourceTaskId(dep.getSourceTask().getId()).sourceTaskTitle(dep.getSourceTask().getTitle())
+            .targetTaskId(dep.getTargetTask().getId()).targetTaskTitle(dep.getTargetTask().getTitle())
+            .dependencyType(dep.getDependencyType()).createdAt(dep.getCreatedAt()).build())
+            .collect(Collectors.toList())
+        : new ArrayList<>();
 
     // Map children (subtasks) - only include basic info to avoid deep recursion
-    List<TaskDTO> children =
-        task.getChildren() != null
-            ? task.getChildren().stream()
-                .map(
-                    child ->
-                        TaskDTO.builder()
-                            .id(child.getId())
-                            .title(child.getTitle())
-                            .description(child.getDescription())
-                            .status(child.getStatus())
-                            .priority(child.getPriority())
-                            .category(child.getCategory())
-                            .estimateHours(child.getEstimateHours())
-                            .actualHours(child.getActualHours())
-                            .cycleId(child.getCycle().getId())
-                            .assigneeId(
-                                child.getAssignee() != null ? child.getAssignee().getId() : null)
-                            .assigneeName(
-                                child.getAssignee() != null ? child.getAssignee().getName() : null)
-                            .parentTaskId(child.getParentTask().getId())
-                            .parentTaskTitle(child.getParentTask().getTitle())
-                            .dueDate(child.getDueDate())
-                            .createdAt(child.getCreatedAt())
-                            .updatedAt(child.getUpdatedAt())
-                            .build())
-                .collect(Collectors.toList())
-            : new ArrayList<>();
+    List<TaskDTO> children = task.getChildren() != null
+        ? task.getChildren().stream().map(child -> TaskDTO.builder().id(child.getId()).title(child.getTitle())
+            .description(child.getDescription()).status(child.getStatus()).priority(child.getPriority())
+            .category(child.getCategory()).estimateHours(child.getEstimateHours())
+            .actualHours(child.getActualHours()).cycleId(child.getCycle().getId())
+            .assigneeId(child.getAssignee() != null ? child.getAssignee().getId() : null)
+            .assigneeName(child.getAssignee() != null ? child.getAssignee().getName() : null)
+            .parentTaskId(child.getParentTask().getId()).parentTaskTitle(child.getParentTask().getTitle())
+            .dueDate(child.getDueDate()).createdAt(child.getCreatedAt()).updatedAt(child.getUpdatedAt())
+            .build()).collect(Collectors.toList())
+        : new ArrayList<>();
 
-    return TaskDTO.builder()
-        .id(task.getId())
-        .title(task.getTitle())
-        .description(task.getDescription())
-        .status(task.getStatus())
-        .priority(task.getPriority())
-        .category(task.getCategory())
-        .estimateHours(task.getEstimateHours())
-        .actualHours(task.getActualHours())
-        .cycleId(task.getCycle().getId())
-        .cycleName(task.getCycle().getName())
-        .projectId(
-            task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
-        .projectName(
-            task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)
-        .projectKey(
-            task.getCycle().getProject() != null
-                ? task.getCycle().getProject().getProjectKey()
-                : null)
+    return TaskDTO.builder().id(task.getId()).title(task.getTitle()).description(task.getDescription())
+        .status(task.getStatus()).priority(task.getPriority()).category(task.getCategory())
+        .estimateHours(task.getEstimateHours()).actualHours(task.getActualHours())
+        .cycleId(task.getCycle().getId()).cycleName(task.getCycle().getName())
+        .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
+        .projectName(task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)
+        .projectKey(task.getCycle().getProject() != null ? task.getCycle().getProject().getProjectKey() : null)
         .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
         .scopeId(task.getScope() != null ? task.getScope().getId() : null)
@@ -766,22 +587,13 @@ public class TaskService {
         .assigneeAvatarUrl(task.getAssignee() != null ? task.getAssignee().getAvatarUrl() : null)
         .pairAssigneeId(task.getPairAssignee() != null ? task.getPairAssignee().getId() : null)
         .pairAssigneeName(task.getPairAssignee() != null ? task.getPairAssignee().getName() : null)
-        .pairAssigneeAvatarUrl(
-            task.getPairAssignee() != null ? task.getPairAssignee().getAvatarUrl() : null)
+        .pairAssigneeAvatarUrl(task.getPairAssignee() != null ? task.getPairAssignee().getAvatarUrl() : null)
         .createdById(task.getCreatedBy() != null ? task.getCreatedBy().getId() : null)
         .createdByName(task.getCreatedBy() != null ? task.getCreatedBy().getName() : null)
         .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
         .parentTaskTitle(task.getParentTask() != null ? task.getParentTask().getTitle() : null)
-        .dueDate(task.getDueDate())
-        .completedAt(task.getCompletedAt())
-        .createdAt(task.getCreatedAt())
-        .updatedAt(task.getUpdatedAt())
-        .tags(task.getTags())
-        .children(children)
-        .blockingTasks(blocking)
-        .blockedByTasks(blockedBy)
-        .blockedByCount(blockedBy.size())
-        .isBlocked(!blockedBy.isEmpty())
-        .build();
+        .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
+        .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
+        .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty()).build();
   }
 }

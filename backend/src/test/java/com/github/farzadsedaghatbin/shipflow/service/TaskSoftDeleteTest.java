@@ -32,145 +32,126 @@ import static org.mockito.Mockito.*;
 @DisplayName("Task Soft Delete Tests")
 class TaskSoftDeleteTest {
 
-    @Mock
-    private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-    @Mock
-    private LocalizationService messageService;
+  @Mock
+  private LocalizationService messageService;
 
-    @InjectMocks
-    private TaskService taskService;
+  @InjectMocks
+  private TaskService taskService;
 
-    @Mock
-    private SecurityContext securityContext;
+  @Mock
+  private SecurityContext securityContext;
 
-    @Mock
-    private Authentication authentication;
+  @Mock
+  private Authentication authentication;
 
-    private User testUser;
-    private Task testTask;
-    private Cycle testCycle;
+  private User testUser;
+  private Task testTask;
+  private Cycle testCycle;
 
-    @BeforeEach
-    void setUp() {
-        // Setup test user
-        testUser = User.builder()
-            .id(1L)
-            .username("testuser")
-            .email("test@example.com")
-            .role(UserRole.MANAGER)
-            .isActive(true)
-            .build();
+  @BeforeEach
+  void setUp() {
+    // Setup test user
+    testUser = User.builder().id(1L).username("testuser").email("test@example.com").role(UserRole.MANAGER)
+        .isActive(true).build();
 
-        // Setup test cycle
-        testCycle = Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .build();
+    // Setup test cycle
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").build();
 
-        // Setup test task
-        testTask = Task.builder()
-            .id(1L)
-            .title("Test Task")
-            .description("Test Description")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    // Setup test task
+    testTask = Task.builder().id(1L).title("Test Task").description("Test Description").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).cycle(testCycle)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-        // Mock security context
-        SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    }
+    // Mock security context
+    SecurityContextHolder.setContext(securityContext);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    when(authentication.getName()).thenReturn("testuser");
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+  }
 
-    @Test
-    @DisplayName("Should soft delete task successfully")
-    void shouldSoftDeleteTaskSuccessfully() {
-        // Given
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-        when(taskRepository.save(any(Task.class))).thenReturn(testTask);
+  @Test
+  @DisplayName("Should soft delete task successfully")
+  void shouldSoftDeleteTaskSuccessfully() {
+    // Given
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
 
-        // When
-        taskService.deleteTask(1L);
+    // When
+    taskService.deleteTask(1L);
 
-        // Then
-        verify(taskRepository).save(testTask);
-        assertThat(testTask.getDeletedAt()).isNotNull();
-        assertThat(testTask.getDeletedBy()).isEqualTo(testUser);
-    }
+    // Then
+    verify(taskRepository).save(testTask);
+    assertThat(testTask.getDeletedAt()).isNotNull();
+    assertThat(testTask.getDeletedBy()).isEqualTo(testUser);
+  }
 
-    @Test
-    @DisplayName("Should throw exception when task not found")
-    void shouldThrowExceptionWhenTaskNotFound() {
-        // Given
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  @DisplayName("Should throw exception when task not found")
+  void shouldThrowExceptionWhenTaskNotFound() {
+    // Given
+    when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> taskService.deleteTask(999L))
-            .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessage("Task not found with id: 999");
-    }
+    // When & Then
+    assertThatThrownBy(() -> taskService.deleteTask(999L)).isInstanceOf(ResourceNotFoundException.class)
+        .hasMessage("Task not found with id: 999");
+  }
 
-    @Test
-    @DisplayName("Should throw exception when task already deleted")
-    void shouldThrowExceptionWhenTaskAlreadyDeleted() {
-        // Given
-        testTask.setDeletedAt(LocalDateTime.now());
-        testTask.setDeletedBy(testUser);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+  @Test
+  @DisplayName("Should throw exception when task already deleted")
+  void shouldThrowExceptionWhenTaskAlreadyDeleted() {
+    // Given
+    testTask.setDeletedAt(LocalDateTime.now());
+    testTask.setDeletedBy(testUser);
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
 
-        // When & Then
-        assertThatThrownBy(() -> taskService.deleteTask(1L))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessage("Task is already deleted");
-    }
+    // When & Then
+    assertThatThrownBy(() -> taskService.deleteTask(1L)).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Task is already deleted");
+  }
 
-    @Test
-    @DisplayName("Should not return deleted tasks in getAllTasks")
-    void shouldNotReturnDeletedTasksInGetAllTasks() {
-        // Given
-        when(taskRepository.findAllNotDeleted()).thenReturn(java.util.List.of());
+  @Test
+  @DisplayName("Should not return deleted tasks in getAllTasks")
+  void shouldNotReturnDeletedTasksInGetAllTasks() {
+    // Given
+    when(taskRepository.findAllNotDeleted()).thenReturn(java.util.List.of());
 
-        // When
-        var result = taskService.getAllTasks();
+    // When
+    var result = taskService.getAllTasks();
 
-        // Then
-        assertThat(result).isEmpty();
-        verify(taskRepository).findAllNotDeleted();
-        verify(taskRepository, never()).findAll();
-    }
+    // Then
+    assertThat(result).isEmpty();
+    verify(taskRepository).findAllNotDeleted();
+    verify(taskRepository, never()).findAll();
+  }
 
-    @Test
-    @DisplayName("Should not return deleted task in getTaskById")
-    void shouldNotReturnDeletedTaskInGetTaskById() {
-        // Given
-        when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.empty());
+  @Test
+  @DisplayName("Should not return deleted task in getTaskById")
+  void shouldNotReturnDeletedTaskInGetTaskById() {
+    // Given
+    when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> taskService.getTaskById(1L))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Task not found with id: 1");
-    }
+    // When & Then
+    assertThatThrownBy(() -> taskService.getTaskById(1L)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Task not found with id: 1");
+  }
 
-    @Test
-    @DisplayName("Should exclude deleted tasks from cycle queries")
-    void shouldExcludeDeletedTasksFromCycleQueries() {
-        // Given
-        when(taskRepository.findByCycleIdNotDeleted(1L)).thenReturn(java.util.List.of());
+  @Test
+  @DisplayName("Should exclude deleted tasks from cycle queries")
+  void shouldExcludeDeletedTasksFromCycleQueries() {
+    // Given
+    when(taskRepository.findByCycleIdNotDeleted(1L)).thenReturn(java.util.List.of());
 
-        // When
-        var result = taskService.getTasksByCycleId(1L);
+    // When
+    var result = taskService.getTasksByCycleId(1L);
 
-        // Then
-        assertThat(result).isEmpty();
-        verify(taskRepository).findByCycleIdNotDeleted(1L);
-    }
+    // Then
+    assertThat(result).isEmpty();
+    verify(taskRepository).findByCycleIdNotDeleted(1L);
+  }
 }

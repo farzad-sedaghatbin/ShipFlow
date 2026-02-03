@@ -29,19 +29,26 @@ import org.springframework.context.ApplicationEventPublisher;
 @ExtendWith(MockitoExtension.class)
 class PitchServiceTest {
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private TeamRepository teamRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @Mock private AICacheService cacheService;
+  @Mock
+  private AICacheService cacheService;
 
-  @InjectMocks private PitchService pitchService;
+  @InjectMocks
+  private PitchService pitchService;
 
   private Pitch testPitch;
   private Cycle testCycle;
@@ -54,16 +61,8 @@ class PitchServiceTest {
 
     testTeam = Team.builder().id(1L).name("Test Team").build();
 
-    testPitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Test Pitch")
-            .description("Test Description")
-            .appetiteDays(14)
-            .cycle(testCycle)
-            .team(testTeam)
-            .status(PitchStatus.PENDING)
-            .build();
+    testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.PENDING).build();
 
     testRequest = new CreatePitchRequest();
     testRequest.setTitle("Test Pitch");
@@ -98,8 +97,7 @@ class PitchServiceTest {
   void getPitchById_WhenNotExists_ShouldThrowException() {
     when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> pitchService.getPitchById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> pitchService.getPitchById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Pitch not found");
   }
 

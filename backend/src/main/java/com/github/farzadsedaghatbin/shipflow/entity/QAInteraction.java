@@ -6,17 +6,13 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity for storing Q&A interactions and user feedback. Validated Q&A entries can be re-embedded
- * as additional knowledge.
+ * Entity for storing Q&A interactions and user feedback. Validated Q&A entries
+ * can be re-embedded as additional knowledge.
  */
 @Entity
-@Table(
-    name = "qa_interactions",
-    indexes = {
-      @Index(name = "idx_qa_user", columnList = "userId"),
-      @Index(name = "idx_qa_context", columnList = "contextType, contextId"),
-      @Index(name = "idx_qa_created", columnList = "createdAt")
-    })
+@Table(name = "qa_interactions", indexes = {@Index(name = "idx_qa_user", columnList = "userId"),
+    @Index(name = "idx_qa_context", columnList = "contextType, contextId"),
+    @Index(name = "idx_qa_created", columnList = "createdAt")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,7 +32,10 @@ public class QAInteraction {
   @Column(columnDefinition = "TEXT")
   private String answer;
 
-  /** Context type (pitch, meeting, team, cycle) - where the question was asked from. */
+  /**
+   * Context type (pitch, meeting, team, cycle) - where the question was asked
+   * from.
+   */
   @Column(length = 50)
   private String contextType;
 

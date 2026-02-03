@@ -6,18 +6,15 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing a piece of knowledge that can be embedded and searched. Knowledge is
- * extracted from various sources: pitches, meetings, worklogs, notes, etc.
+ * Entity representing a piece of knowledge that can be embedded and searched.
+ * Knowledge is extracted from various sources: pitches, meetings, worklogs,
+ * notes, etc.
  */
 @Entity
-@Table(
-    name = "knowledge_items",
-    indexes = {
-      @Index(name = "idx_knowledge_entity", columnList = "entityType, entityId"),
-      @Index(name = "idx_knowledge_cycle", columnList = "cycleId"),
-      @Index(name = "idx_knowledge_team", columnList = "teamId"),
-      @Index(name = "idx_knowledge_embedded", columnList = "isEmbedded")
-    })
+@Table(name = "knowledge_items", indexes = {@Index(name = "idx_knowledge_entity", columnList = "entityType, entityId"),
+    @Index(name = "idx_knowledge_cycle", columnList = "cycleId"),
+    @Index(name = "idx_knowledge_team", columnList = "teamId"),
+    @Index(name = "idx_knowledge_embedded", columnList = "isEmbedded")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -59,8 +56,8 @@ public class KnowledgeItem {
   private Long authorId;
 
   /**
-   * Unique identifier for the embedding in the vector store. Used to link this DB record with the
-   * vector store entry.
+   * Unique identifier for the embedding in the vector store. Used to link this DB
+   * record with the vector store entry.
    */
   @Column(length = 100)
   private String embeddingId;
@@ -101,7 +98,9 @@ public class KnowledgeItem {
     updatedAt = LocalDateTime.now();
   }
 
-  /** Build a unique embedding ID based on entity type, entity ID, and chunk index. */
+  /**
+   * Build a unique embedding ID based on entity type, entity ID, and chunk index.
+   */
   public String generateEmbeddingId() {
     return String.format("%s_%d_%d", entityType.name().toLowerCase(), entityId, chunkIndex);
   }

@@ -32,15 +32,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TaskDependencyServiceTest {
 
-  @Mock private TaskDependencyRepository taskDependencyRepository;
+  @Mock
+  private TaskDependencyRepository taskDependencyRepository;
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @InjectMocks private TaskDependencyService taskDependencyService;
+  @InjectMocks
+  private TaskDependencyService taskDependencyService;
 
   private Cycle testCycle;
   private Task sourceTask;
@@ -50,117 +55,83 @@ class TaskDependencyServiceTest {
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(messageService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("task.not.found")) return "Task not found";
-              return key;
-            });
-    lenient()
-        .when(messageService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("task.not.found")) return "Task not found";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("task.different.cycle"))
-                return "Tasks must belong to the same cycle";
-              if (key.contains("task.self.dependency")) return "A task cannot depend on itself";
-              if (key.contains("dependency.circular"))
-                return "Circular dependency detected - would create circular reference";
-              if (key.contains("dependency.self.reference")) return "Task cannot depend on itself";
-              if (key.contains("dependency.same.cycle.required"))
-                return "Tasks must be in the same cycle";
-              if (key.contains("dependency.already.exists")) return "Dependency already exists";
-              if (key.contains("dependency.not.found")) return "Dependency not found between tasks";
-              if (key.contains("task.not.found")) return "Task not found";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("task.different.cycle"))
-                return "Tasks must belong to the same cycle";
-              if (key.contains("task.self.dependency")) return "A task cannot depend on itself";
-              if (key.contains("dependency.circular"))
-                return "Circular dependency detected - would create circular reference";
-              if (key.contains("dependency.self.reference")) return "Task cannot depend on itself";
-              if (key.contains("dependency.same.cycle.required"))
-                return "Tasks must be in the same cycle";
-              if (key.contains("dependency.already.exists")) return "Dependency already exists";
-              if (key.contains("dependency.not.found")) return "Dependency not found between tasks";
-              if (key.contains("task.not.found")) return "Task not found";
-              return key;
-            });
+    lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("task.not.found"))
+        return "Task not found";
+      return key;
+    });
+    lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("task.not.found"))
+        return "Task not found";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("task.different.cycle"))
+        return "Tasks must belong to the same cycle";
+      if (key.contains("task.self.dependency"))
+        return "A task cannot depend on itself";
+      if (key.contains("dependency.circular"))
+        return "Circular dependency detected - would create circular reference";
+      if (key.contains("dependency.self.reference"))
+        return "Task cannot depend on itself";
+      if (key.contains("dependency.same.cycle.required"))
+        return "Tasks must be in the same cycle";
+      if (key.contains("dependency.already.exists"))
+        return "Dependency already exists";
+      if (key.contains("dependency.not.found"))
+        return "Dependency not found between tasks";
+      if (key.contains("task.not.found"))
+        return "Task not found";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("task.different.cycle"))
+        return "Tasks must belong to the same cycle";
+      if (key.contains("task.self.dependency"))
+        return "A task cannot depend on itself";
+      if (key.contains("dependency.circular"))
+        return "Circular dependency detected - would create circular reference";
+      if (key.contains("dependency.self.reference"))
+        return "Task cannot depend on itself";
+      if (key.contains("dependency.same.cycle.required"))
+        return "Tasks must be in the same cycle";
+      if (key.contains("dependency.already.exists"))
+        return "Dependency already exists";
+      if (key.contains("dependency.not.found"))
+        return "Dependency not found between tasks";
+      if (key.contains("task.not.found"))
+        return "Task not found";
+      return key;
+    });
 
     testCycle = Cycle.builder().id(1L).name("Test Cycle").build();
 
-    sourceTask =
-        Task.builder()
-            .id(1L)
-            .title("Source Task")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    sourceTask = Task.builder().id(1L).title("Source Task").status(TaskStatus.TODO).priority(TaskPriority.MEDIUM)
+        .cycle(testCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    targetTask =
-        Task.builder()
-            .id(2L)
-            .title("Target Task")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    targetTask = Task.builder().id(2L).title("Target Task").status(TaskStatus.TODO).priority(TaskPriority.MEDIUM)
+        .cycle(testCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    anotherTask =
-        Task.builder()
-            .id(3L)
-            .title("Another Task")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    anotherTask = Task.builder().id(3L).title("Another Task").status(TaskStatus.TODO).priority(TaskPriority.MEDIUM)
+        .cycle(testCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    testDependency =
-        TaskDependency.builder()
-            .id(1L)
-            .sourceTask(sourceTask)
-            .targetTask(targetTask)
-            .dependencyType(DependencyType.BLOCKS)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testDependency = TaskDependency.builder().id(1L).sourceTask(sourceTask).targetTask(targetTask)
+        .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
   }
 
   @Test
   void addDependency_Success() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L))
-        .thenReturn(Optional.empty());
+    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
     when(taskDependencyRepository.save(any(TaskDependency.class))).thenReturn(testDependency);
 
     // When
@@ -177,36 +148,28 @@ class TaskDependencyServiceTest {
   @Test
   void addDependency_SourceTaskNotFound_ThrowsException() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Source task not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Source task not found");
   }
 
   @Test
   void addDependency_TargetTaskNotFound_ThrowsException() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(999L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(999L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Target task not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Target task not found");
   }
 
   @Test
@@ -215,46 +178,35 @@ class TaskDependencyServiceTest {
     Cycle differentCycle = Cycle.builder().id(2L).name("Different Cycle").build();
     targetTask.setCycle(differentCycle);
 
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("same cycle");
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("same cycle");
   }
 
   @Test
   void addDependency_SelfDependency_ThrowsException() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(1L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(1L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("cannot depend on itself");
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("cannot depend on itself");
   }
 
   @Test
   void addDependency_DuplicateDependency_ThrowsException() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
@@ -263,52 +215,39 @@ class TaskDependencyServiceTest {
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("already exists");
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("already exists");
   }
 
   @Test
   void addDependency_CircularDependency_ThrowsException() {
     // Given - Create a scenario where target already depends on source
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
-    TaskDependency existingDependency =
-        TaskDependency.builder()
-            .id(2L)
-            .sourceTask(targetTask)
-            .targetTask(sourceTask)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    TaskDependency existingDependency = TaskDependency.builder().id(2L).sourceTask(targetTask)
+        .targetTask(sourceTask).dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L))
-        .thenReturn(Optional.empty());
-    when(taskDependencyRepository.findBySourceTaskId(2L))
-        .thenReturn(Arrays.asList(existingDependency));
+    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
+    when(taskDependencyRepository.findBySourceTaskId(2L)).thenReturn(Arrays.asList(existingDependency));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("circular reference");
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("circular reference");
   }
 
   @Test
   void addDependency_DefaultDependencyType() {
     // Given
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(2L)
-            .build(); // No dependency type specified
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L).build(); // No
+    // dependency
+    // type
+    // specified
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L))
-        .thenReturn(Optional.empty());
+    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
     when(taskDependencyRepository.save(any(TaskDependency.class))).thenReturn(testDependency);
 
     // When
@@ -337,30 +276,17 @@ class TaskDependencyServiceTest {
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.removeDependency(999L))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("not found");
   }
 
   @Test
   void getDependenciesForTask_Success() {
     // Given
-    TaskDependency outgoingDep =
-        TaskDependency.builder()
-            .id(1L)
-            .sourceTask(sourceTask)
-            .targetTask(targetTask)
-            .dependencyType(DependencyType.BLOCKS)
-            .createdAt(LocalDateTime.now())
-            .build();
+    TaskDependency outgoingDep = TaskDependency.builder().id(1L).sourceTask(sourceTask).targetTask(targetTask)
+        .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
 
-    TaskDependency incomingDep =
-        TaskDependency.builder()
-            .id(2L)
-            .sourceTask(anotherTask)
-            .targetTask(sourceTask)
-            .dependencyType(DependencyType.BLOCKS)
-            .createdAt(LocalDateTime.now())
-            .build();
+    TaskDependency incomingDep = TaskDependency.builder().id(2L).sourceTask(anotherTask).targetTask(sourceTask)
+        .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
 
     when(taskRepository.existsById(1L)).thenReturn(true);
     when(taskDependencyRepository.findBySourceTaskId(1L)).thenReturn(Arrays.asList(outgoingDep));
@@ -384,16 +310,14 @@ class TaskDependencyServiceTest {
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.getDependenciesForTask(999L))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("not found");
   }
 
   @Test
   void getBlockingDependencies_Success() {
     // Given
     when(taskRepository.existsById(1L)).thenReturn(true);
-    when(taskDependencyRepository.findBlockingDependenciesByTaskId(1L))
-        .thenReturn(Arrays.asList(testDependency));
+    when(taskDependencyRepository.findBlockingDependenciesByTaskId(1L)).thenReturn(Arrays.asList(testDependency));
 
     // When
     List<TaskDependencyDTO> result = taskDependencyService.getBlockingDependencies(1L);
@@ -406,18 +330,11 @@ class TaskDependencyServiceTest {
   @Test
   void getBlockedByDependencies_Success() {
     // Given
-    TaskDependency blockingDep =
-        TaskDependency.builder()
-            .id(2L)
-            .sourceTask(targetTask)
-            .targetTask(sourceTask)
-            .dependencyType(DependencyType.BLOCKS)
-            .createdAt(LocalDateTime.now())
-            .build();
+    TaskDependency blockingDep = TaskDependency.builder().id(2L).sourceTask(targetTask).targetTask(sourceTask)
+        .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
 
     when(taskRepository.existsById(1L)).thenReturn(true);
-    when(taskDependencyRepository.findBlockedByDependenciesByTaskId(1L))
-        .thenReturn(Arrays.asList(blockingDep));
+    when(taskDependencyRepository.findBlockedByDependenciesByTaskId(1L)).thenReturn(Arrays.asList(blockingDep));
 
     // When
     List<TaskDependencyDTO> result = taskDependencyService.getBlockedByDependencies(1L);
@@ -430,37 +347,24 @@ class TaskDependencyServiceTest {
   @Test
   void addDependency_ComplexCircularDependency_ThrowsException() {
     // Given - Task1 -> Task2 -> Task3, trying to add Task3 -> Task1
-    Task task3 =
-        Task.builder()
-            .id(3L)
-            .title("Task 3")
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task task3 = Task.builder().id(3L).title("Task 3").cycle(testCycle).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
-    TaskDependency dep1to2 =
-        TaskDependency.builder().sourceTask(sourceTask).targetTask(targetTask).build();
+    TaskDependency dep1to2 = TaskDependency.builder().sourceTask(sourceTask).targetTask(targetTask).build();
 
-    TaskDependency dep2to3 =
-        TaskDependency.builder().sourceTask(targetTask).targetTask(task3).build();
+    TaskDependency dep2to3 = TaskDependency.builder().sourceTask(targetTask).targetTask(task3).build();
 
-    CreateTaskDependencyRequest request =
-        CreateTaskDependencyRequest.builder()
-            .targetTaskId(1L)
-            .dependencyType(DependencyType.BLOCKS)
-            .build();
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(1L)
+        .dependencyType(DependencyType.BLOCKS).build();
 
     when(taskRepository.findById(3L)).thenReturn(Optional.of(task3));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(3L, 1L))
-        .thenReturn(Optional.empty());
+    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(3L, 1L)).thenReturn(Optional.empty());
     when(taskDependencyRepository.findBySourceTaskId(1L)).thenReturn(Arrays.asList(dep1to2));
     when(taskDependencyRepository.findBySourceTaskId(2L)).thenReturn(Arrays.asList(dep2to3));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(3L, request))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("circular reference");
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("circular reference");
   }
 }

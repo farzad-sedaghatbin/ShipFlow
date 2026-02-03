@@ -5,7 +5,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-/** Request DTO for updating hill chart point position with confidence tracking. */
+/**
+ * Request DTO for updating hill chart point position with confidence tracking.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +19,9 @@ public class UpdateHillChartPositionRequest {
   @Max(value = 100, message = "Position must be between 0 and 100")
   private Integer newPosition;
 
-  /** User's confidence level (0-100) - how confident they are about this position */
+  /**
+   * User's confidence level (0-100) - how confident they are about this position
+   */
   @Min(value = 0, message = "Confidence must be between 0 and 100")
   @Max(value = 100, message = "Confidence must be between 0 and 100")
   private Integer confidenceLevel;

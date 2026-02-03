@@ -27,59 +27,44 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Unit tests for SlackIntegrationController Tests REST API endpoints for Slack integration using
- * MockMvc
+ * Unit tests for SlackIntegrationController Tests REST API endpoints for Slack
+ * integration using MockMvc
  */
 @WebMvcTest(SlackIntegrationController.class)
 @Import(TestAIConfig.class)
-@TestPropertySource(
-    properties = {
-      "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-      "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="
-    })
+@TestPropertySource(properties = {"spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+    "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="})
 class SlackIntegrationControllerTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @MockBean private SlackIntegrationService slackService;
+  @MockBean
+  private SlackIntegrationService slackService;
 
-  @MockBean private MessageService messageService;
+  @MockBean
+  private MessageService messageService;
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void createConfiguration_WithValidRequest_ShouldReturn201() throws Exception {
     // Given
-    CreateSlackConfigurationRequest request =
-        CreateSlackConfigurationRequest.builder()
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .defaultChannel("general")
-            .isEnabled(true)
-            .build();
+    CreateSlackConfigurationRequest request = CreateSlackConfigurationRequest.builder()
+        .workspaceName("test-workspace").webhookUrl("https://hooks.slack.com/services/TEST/URL")
+        .defaultChannel("general").isEnabled(true).build();
 
-    SlackConfigurationDTO response =
-        SlackConfigurationDTO.builder()
-            .id(1L)
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .defaultChannel("general")
-            .isEnabled(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    SlackConfigurationDTO response = SlackConfigurationDTO.builder().id(1L).workspaceName("test-workspace")
+        .webhookUrl("https://hooks.slack.com/services/TEST/URL").defaultChannel("general").isEnabled(true)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(slackService.createOrUpdateConfiguration(any())).thenReturn(response);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/slack/configurations")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/slack/configurations").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.workspaceName").value("test-workspace"))
         .andExpect(jsonPath("$.isEnabled").value(true));
   }
@@ -88,42 +73,26 @@ class SlackIntegrationControllerTest {
   @WithMockUser(roles = "USER")
   void createConfiguration_AsNonAdmin_ShouldReturn403() throws Exception {
     // Given
-    CreateSlackConfigurationRequest request =
-        CreateSlackConfigurationRequest.builder()
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .build();
+    CreateSlackConfigurationRequest request = CreateSlackConfigurationRequest.builder()
+        .workspaceName("test-workspace").webhookUrl("https://hooks.slack.com/services/TEST/URL").build();
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/slack/configurations")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/slack/configurations").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser
   void getAllConfigurations_ShouldReturnList() throws Exception {
     // Given
-    SlackConfigurationDTO config =
-        SlackConfigurationDTO.builder()
-            .id(1L)
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .isEnabled(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    SlackConfigurationDTO config = SlackConfigurationDTO.builder().id(1L).workspaceName("test-workspace")
+        .webhookUrl("https://hooks.slack.com/services/TEST/URL").isEnabled(true).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
     when(slackService.getAllConfigurations()).thenReturn(List.of(config));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/slack/configurations"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/slack/configurations")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].workspaceName").value("test-workspace"));
   }
 
@@ -131,22 +100,14 @@ class SlackIntegrationControllerTest {
   @WithMockUser
   void getActiveConfiguration_WhenExists_ShouldReturnConfig() throws Exception {
     // Given
-    SlackConfigurationDTO config =
-        SlackConfigurationDTO.builder()
-            .id(1L)
-            .workspaceName("active-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .isEnabled(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    SlackConfigurationDTO config = SlackConfigurationDTO.builder().id(1L).workspaceName("active-workspace")
+        .webhookUrl("https://hooks.slack.com/services/TEST/URL").isEnabled(true).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
     when(slackService.getActiveConfiguration()).thenReturn(Optional.of(config));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/slack/configurations/active"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/slack/configurations/active")).andExpect(status().isOk())
         .andExpect(jsonPath("$.workspaceName").value("active-workspace"));
   }
 
@@ -167,9 +128,7 @@ class SlackIntegrationControllerTest {
     doNothing().when(slackService).deleteConfiguration(anyLong());
 
     // When & Then
-    mockMvc
-        .perform(delete("/api/slack/configurations/1").with(csrf()))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/slack/configurations/1").with(csrf())).andExpect(status().isNoContent());
 
     verify(slackService).deleteConfiguration(1L);
   }
@@ -178,57 +137,33 @@ class SlackIntegrationControllerTest {
   @WithMockUser(roles = "MANAGER")
   void createChannelConfig_ShouldReturn201() throws Exception {
     // Given
-    CreateSlackChannelConfigRequest request =
-        CreateSlackChannelConfigRequest.builder()
-            .channelName("engineering")
-            .notifyTaskAssigned(true)
-            .notifyTaskCompleted(true)
-            .build();
+    CreateSlackChannelConfigRequest request = CreateSlackChannelConfigRequest.builder().channelName("engineering")
+        .notifyTaskAssigned(true).notifyTaskCompleted(true).build();
 
-    SlackChannelConfigDTO response =
-        SlackChannelConfigDTO.builder()
-            .id(1L)
-            .slackConfigId(1L)
-            .channelName("engineering")
-            .notifyTaskAssigned(true)
-            .notifyTaskCompleted(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    SlackChannelConfigDTO response = SlackChannelConfigDTO.builder().id(1L).slackConfigId(1L)
+        .channelName("engineering").notifyTaskAssigned(true).notifyTaskCompleted(true)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(slackService.createOrUpdateChannelConfig(anyLong(), any())).thenReturn(response);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/slack/configurations/1/channels")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.channelName").value("engineering"));
+    mockMvc.perform(post("/api/slack/configurations/1/channels").with(csrf())
+        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated()).andExpect(jsonPath("$.channelName").value("engineering"));
   }
 
   @Test
   @WithMockUser
   void getChannelConfigs_ShouldReturnList() throws Exception {
     // Given
-    SlackChannelConfigDTO config =
-        SlackChannelConfigDTO.builder()
-            .id(1L)
-            .slackConfigId(1L)
-            .channelName("engineering")
-            .notifyTaskAssigned(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    SlackChannelConfigDTO config = SlackChannelConfigDTO.builder().id(1L).slackConfigId(1L)
+        .channelName("engineering").notifyTaskAssigned(true).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
     when(slackService.getChannelConfigs(anyLong())).thenReturn(List.of(config));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/slack/configurations/1/channels"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/slack/configurations/1/channels")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].channelName").value("engineering"));
   }
 
@@ -236,21 +171,15 @@ class SlackIntegrationControllerTest {
   @WithMockUser(roles = "ADMIN")
   void sendTestNotification_ShouldReturn200() throws Exception {
     // Given
-    TestSlackNotificationRequest request =
-        TestSlackNotificationRequest.builder().message("Test message").channel("general").build();
+    TestSlackNotificationRequest request = TestSlackNotificationRequest.builder().message("Test message")
+        .channel("general").build();
 
     doNothing().when(slackService).sendTestNotification(anyLong(), any());
-    when(messageService.getMessage("slack.notification.sent"))
-        .thenReturn("Test notification sent successfully");
+    when(messageService.getMessage("slack.notification.sent")).thenReturn("Test notification sent successfully");
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/slack/configurations/1/test")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/slack/configurations/1/test").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
         .andExpect(content().string("Test notification sent successfully"));
   }
 
@@ -258,22 +187,14 @@ class SlackIntegrationControllerTest {
   @WithMockUser(roles = "MANAGER")
   void getNotificationHistory_ShouldReturnList() throws Exception {
     // Given
-    SlackNotificationHistory history =
-        SlackNotificationHistory.builder()
-            .id(1L)
-            .channelName("general")
-            .notificationType("TASK_ASSIGNED")
-            .messageText("Test notification")
-            .success(true)
-            .sentAt(LocalDateTime.now())
-            .build();
+    SlackNotificationHistory history = SlackNotificationHistory.builder().id(1L).channelName("general")
+        .notificationType("TASK_ASSIGNED").messageText("Test notification").success(true)
+        .sentAt(LocalDateTime.now()).build();
 
     when(slackService.getNotificationHistory(anyLong())).thenReturn(List.of(history));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/slack/configurations/1/history"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/slack/configurations/1/history")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].notificationType").value("TASK_ASSIGNED"));
   }
 

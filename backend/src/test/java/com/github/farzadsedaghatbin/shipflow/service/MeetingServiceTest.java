@@ -30,17 +30,23 @@ import org.springframework.data.jpa.domain.Specification;
 @ExtendWith(MockitoExtension.class)
 class MeetingServiceTest {
 
-  @Mock private MeetingRepository meetingRepository;
+  @Mock
+  private MeetingRepository meetingRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private RetrospectiveRepository retrospectiveRepository;
+  @Mock
+  private RetrospectiveRepository retrospectiveRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @InjectMocks private MeetingService meetingService;
+  @InjectMocks
+  private MeetingService meetingService;
 
   private Meeting testMeeting;
   private Pitch testPitch;
@@ -50,16 +56,8 @@ class MeetingServiceTest {
   void setUp() {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
-    testMeeting =
-        Meeting.builder()
-            .id(1L)
-            .pitch(testPitch)
-            .type(MeetingType.KICKOFF)
-            .dateHeld(LocalDate.now())
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Test meeting notes")
-            .build();
+    testMeeting = Meeting.builder().id(1L).pitch(testPitch).type(MeetingType.KICKOFF).dateHeld(LocalDate.now())
+        .dorReady(true).dodReady(false).notes("Test meeting notes").build();
 
     testRequest = new CreateMeetingRequest();
     testRequest.setPitchId(1L);
@@ -92,8 +90,7 @@ class MeetingServiceTest {
   void getMeetingById_WhenNotExists_ShouldThrowException() {
     when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.getMeetingById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> meetingService.getMeetingById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Meeting not found");
   }
 
@@ -171,9 +168,8 @@ class MeetingServiceTest {
 
     when(meetingRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-    Page<MeetingDTO> result =
-        meetingService.getMeetingsWithFilters(
-            null, null, 1L, Arrays.asList(MeetingType.KICKOFF), null, null, null, null, pageable);
+    Page<MeetingDTO> result = meetingService.getMeetingsWithFilters(null, null, 1L,
+        Arrays.asList(MeetingType.KICKOFF), null, null, null, null, pageable);
 
     assertThat(result.getContent()).hasSize(1);
     verify(meetingRepository).findAll(any(Specification.class), any(Pageable.class));
@@ -183,13 +179,8 @@ class MeetingServiceTest {
   void createMeeting_WithActionItems_ShouldSaveMeetingWithActions() {
     Person testPerson = Person.builder().id(1L).name("Test Person").build();
     List<MeetingActionDTO> actions = new ArrayList<>();
-    actions.add(
-        MeetingActionDTO.builder()
-            .description("Test action")
-            .assignedToId(1L)
-            .status(ActionStatus.OPEN)
-            .dueDate(LocalDate.now().plusDays(7))
-            .build());
+    actions.add(MeetingActionDTO.builder().description("Test action").assignedToId(1L).status(ActionStatus.OPEN)
+        .dueDate(LocalDate.now().plusDays(7)).build());
 
     testRequest.setActions(actions);
     testRequest.setDecisions("Test decisions");
@@ -224,26 +215,14 @@ class MeetingServiceTest {
 
   @Test
   void updateMeeting_WithActionItems_ShouldReplaceActions() {
-    Meeting meetingWithActions =
-        Meeting.builder()
-            .id(1L)
-            .pitch(testPitch)
-            .type(MeetingType.KICKOFF)
-            .dateHeld(LocalDate.now())
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Test notes")
-            .actions(new ArrayList<>())
-            .build();
+    Meeting meetingWithActions = Meeting.builder().id(1L).pitch(testPitch).type(MeetingType.KICKOFF)
+        .dateHeld(LocalDate.now()).dorReady(true).dodReady(false).notes("Test notes").actions(new ArrayList<>())
+        .build();
 
     Person testPerson = Person.builder().id(1L).name("Test Person").build();
     List<MeetingActionDTO> newActions = new ArrayList<>();
-    newActions.add(
-        MeetingActionDTO.builder()
-            .description("Updated action")
-            .assignedToId(1L)
-            .status(ActionStatus.IN_PROGRESS)
-            .build());
+    newActions.add(MeetingActionDTO.builder().description("Updated action").assignedToId(1L)
+        .status(ActionStatus.IN_PROGRESS).build());
 
     testRequest.setActions(newActions);
     testRequest.setDecisions("Updated decisions");
@@ -264,8 +243,7 @@ class MeetingServiceTest {
     testRequest.setPitchId(999L);
     when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Pitch not found");
   }
 
@@ -275,28 +253,22 @@ class MeetingServiceTest {
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(retrospectiveRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Retrospective not found");
   }
 
   @Test
   void createMeeting_WithInvalidAssignee_ShouldThrowException() {
     List<MeetingActionDTO> actions = new ArrayList<>();
-    actions.add(
-        MeetingActionDTO.builder()
-            .description("Test action")
-            .assignedToId(999L)
-            .status(ActionStatus.OPEN)
-            .build());
+    actions.add(MeetingActionDTO.builder().description("Test action").assignedToId(999L).status(ActionStatus.OPEN)
+        .build());
 
     testRequest.setActions(actions);
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(personRepository.findById(999L)).thenReturn(Optional.empty());
     when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Person not found");
   }
 }

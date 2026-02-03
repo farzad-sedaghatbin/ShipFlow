@@ -26,21 +26,13 @@ public class DashboardWidgetService {
   private final UserRepository userRepository;
 
   // Default widget types
-  private static final List<String> DEFAULT_WIDGETS =
-      Arrays.asList(
-          "OVERDUE_TASKS",
-          "BLOCKED_TASKS",
-          "UPCOMING_DEADLINES",
-          "MY_TASKS",
-          "TEAM_WORKLOAD",
-          "CYCLE_PROGRESS",
-          "RECENT_ACTIVITY");
+  private static final List<String> DEFAULT_WIDGETS = Arrays.asList("OVERDUE_TASKS", "BLOCKED_TASKS",
+      "UPCOMING_DEADLINES", "MY_TASKS", "TEAM_WORKLOAD", "CYCLE_PROGRESS", "RECENT_ACTIVITY");
 
   /** Get all widgets for a user. Create defaults if none exist. */
   @Transactional
   public List<DashboardWidgetDTO> getUserWidgets(Long userId) {
-    List<DashboardWidget> widgets =
-        dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(userId);
+    List<DashboardWidget> widgets = dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(userId);
 
     // Create default widgets if none exist
     if (widgets.isEmpty()) {
@@ -54,28 +46,20 @@ public class DashboardWidgetService {
   /** Get only visible widgets for a user */
   @Transactional(readOnly = true)
   public List<DashboardWidgetDTO> getVisibleWidgets(Long userId) {
-    List<DashboardWidget> widgets =
-        dashboardWidgetRepository.findByUserIdAndIsVisibleOrderByDisplayOrderAsc(userId, true);
+    List<DashboardWidget> widgets = dashboardWidgetRepository.findByUserIdAndIsVisibleOrderByDisplayOrderAsc(userId,
+        true);
 
     return widgets.stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Create a new widget for a user */
   public DashboardWidgetDTO createWidget(Long userId, CreateDashboardWidgetRequest request) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-    DashboardWidget widget =
-        DashboardWidget.builder()
-            .user(user)
-            .widgetType(request.getWidgetType())
-            .isVisible(request.getIsVisible())
-            .displayOrder(request.getDisplayOrder())
-            .layoutConfig(request.getLayoutConfig())
-            .settings(request.getSettings())
-            .build();
+    DashboardWidget widget = DashboardWidget.builder().user(user).widgetType(request.getWidgetType())
+        .isVisible(request.getIsVisible()).displayOrder(request.getDisplayOrder())
+        .layoutConfig(request.getLayoutConfig()).settings(request.getSettings()).build();
 
     DashboardWidget saved = dashboardWidgetRepository.save(widget);
     log.info("Created widget {} for user {}", saved.getWidgetType(), userId);
@@ -84,10 +68,8 @@ public class DashboardWidgetService {
 
   /** Update a widget */
   public DashboardWidgetDTO updateWidget(Long widgetId, UpdateDashboardWidgetRequest request) {
-    DashboardWidget widget =
-        dashboardWidgetRepository
-            .findById(widgetId)
-            .orElseThrow(() -> new RuntimeException("Widget not found with id: " + widgetId));
+    DashboardWidget widget = dashboardWidgetRepository.findById(widgetId)
+        .orElseThrow(() -> new RuntimeException("Widget not found with id: " + widgetId));
 
     if (request.getIsVisible() != null) {
       widget.setIsVisible(request.getIsVisible());
@@ -109,28 +91,23 @@ public class DashboardWidgetService {
 
   /** Bulk update widget order and visibility */
   public List<DashboardWidgetDTO> bulkUpdateWidgets(Long userId, List<DashboardWidgetDTO> updates) {
-    List<DashboardWidget> widgets =
-        dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(userId);
+    List<DashboardWidget> widgets = dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(userId);
 
     for (DashboardWidgetDTO update : updates) {
-      widgets.stream()
-          .filter(w -> w.getId().equals(update.getId()))
-          .findFirst()
-          .ifPresent(
-              widget -> {
-                if (update.getIsVisible() != null) {
-                  widget.setIsVisible(update.getIsVisible());
-                }
-                if (update.getDisplayOrder() != null) {
-                  widget.setDisplayOrder(update.getDisplayOrder());
-                }
-                if (update.getLayoutConfig() != null) {
-                  widget.setLayoutConfig(update.getLayoutConfig());
-                }
-                if (update.getSettings() != null) {
-                  widget.setSettings(update.getSettings());
-                }
-              });
+      widgets.stream().filter(w -> w.getId().equals(update.getId())).findFirst().ifPresent(widget -> {
+        if (update.getIsVisible() != null) {
+          widget.setIsVisible(update.getIsVisible());
+        }
+        if (update.getDisplayOrder() != null) {
+          widget.setDisplayOrder(update.getDisplayOrder());
+        }
+        if (update.getLayoutConfig() != null) {
+          widget.setLayoutConfig(update.getLayoutConfig());
+        }
+        if (update.getSettings() != null) {
+          widget.setSettings(update.getSettings());
+        }
+      });
     }
 
     List<DashboardWidget> saved = dashboardWidgetRepository.saveAll(widgets);
@@ -153,21 +130,14 @@ public class DashboardWidgetService {
 
   /** Create default widgets for a new user */
   private List<DashboardWidgetDTO> createDefaultWidgets(Long userId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
     List<DashboardWidget> defaultWidgets = new java.util.ArrayList<>();
     for (int i = 0; i < DEFAULT_WIDGETS.size(); i++) {
       String type = DEFAULT_WIDGETS.get(i);
-      DashboardWidget widget =
-          DashboardWidget.builder()
-              .user(user)
-              .widgetType(type)
-              .isVisible(true)
-              .displayOrder(i)
-              .build();
+      DashboardWidget widget = DashboardWidget.builder().user(user).widgetType(type).isVisible(true)
+          .displayOrder(i).build();
       defaultWidgets.add(widget);
     }
 
@@ -176,16 +146,10 @@ public class DashboardWidgetService {
   }
 
   private DashboardWidgetDTO toDTO(DashboardWidget widget) {
-    return DashboardWidgetDTO.builder()
-        .id(widget.getId())
-        .userId(widget.getUser().getId())
-        .widgetType(widget.getWidgetType())
-        .isVisible(widget.getIsVisible())
-        .displayOrder(widget.getDisplayOrder())
-        .layoutConfig(widget.getLayoutConfig())
-        .settings(widget.getSettings())
-        .createdAt(widget.getCreatedAt())
-        .updatedAt(widget.getUpdatedAt())
+    return DashboardWidgetDTO.builder().id(widget.getId()).userId(widget.getUser().getId())
+        .widgetType(widget.getWidgetType()).isVisible(widget.getIsVisible())
+        .displayOrder(widget.getDisplayOrder()).layoutConfig(widget.getLayoutConfig())
+        .settings(widget.getSettings()).createdAt(widget.getCreatedAt()).updatedAt(widget.getUpdatedAt())
         .build();
   }
 }

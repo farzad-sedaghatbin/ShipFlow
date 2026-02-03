@@ -12,8 +12,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TestRunStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.*;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -32,16 +30,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * REST controller for QA Test Management endpoints. Provides CRUD operations for test cases, bug
- * reports, and test runs.
+ * REST controller for QA Test Management endpoints. Provides CRUD operations
+ * for test cases, bug reports, and test runs.
  */
 @RestController
 @RequestMapping("/api/qa")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(
-    name = "QA Test Management",
-    description = "Test case management, bug tracking, and test execution")
+@Tag(name = "QA Test Management", description = "Test case management, bug tracking, and test execution")
 public class QATestManagementController {
 
   private final TestCaseService testCaseService;
@@ -59,9 +55,7 @@ public class QATestManagementController {
   // ========== Status ==========
 
   @GetMapping("/test-management/status")
-  @Operation(
-      summary = "Get QA Test Management status",
-      description = "Returns the status of QA test management features")
+  @Operation(summary = "Get QA Test Management status", description = "Returns the status of QA test management features")
   public ResponseEntity<QATestManagementStatusDTO> getTestManagementStatus() {
     return ResponseEntity.ok(qaDashboardService.getStatus());
   }
@@ -83,72 +77,56 @@ public class QATestManagementController {
   }
 
   @GetMapping("/test-cases/{id}/history")
-  public ResponseEntity<Page<EntityHistoryDTO>> getTestCaseHistory(
-      @PathVariable Long id,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+  public ResponseEntity<Page<EntityHistoryDTO>> getTestCaseHistory(@PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     checkFeatureEnabled();
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(auditService.getTestCaseHistory(id, pageable));
   }
 
   @GetMapping("/test-cases/key/{key}")
-  @Operation(
-      summary = "Get test case by key",
-      description = "Returns a test case by its unique key")
+  @Operation(summary = "Get test case by key", description = "Returns a test case by its unique key")
   public ResponseEntity<TestCaseDTO> getTestCaseByKey(@PathVariable String key) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testCaseService.getTestCaseByKey(key));
   }
 
   @GetMapping("/test-cases/pitch/{pitchId}")
-  @Operation(
-      summary = "Get test cases by pitch",
-      description = "Returns all test cases for a pitch")
+  @Operation(summary = "Get test cases by pitch", description = "Returns all test cases for a pitch")
   public ResponseEntity<List<TestCaseDTO>> getTestCasesByPitch(@PathVariable Long pitchId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testCaseService.getTestCasesByPitch(pitchId));
   }
 
   @GetMapping("/test-cases/cycle/{cycleId}")
-  @Operation(
-      summary = "Get test cases by cycle",
-      description = "Returns all test cases for a cycle")
+  @Operation(summary = "Get test cases by cycle", description = "Returns all test cases for a cycle")
   public ResponseEntity<List<TestCaseDTO>> getTestCasesByCycle(@PathVariable Long cycleId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testCaseService.getTestCasesByCycle(cycleId));
   }
 
   @GetMapping("/test-cases/status/{status}")
-  @Operation(
-      summary = "Get test cases by status",
-      description = "Returns test cases filtered by status")
-  public ResponseEntity<List<TestCaseDTO>> getTestCasesByStatus(
-      @PathVariable TestCaseStatus status) {
+  @Operation(summary = "Get test cases by status", description = "Returns test cases filtered by status")
+  public ResponseEntity<List<TestCaseDTO>> getTestCasesByStatus(@PathVariable TestCaseStatus status) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testCaseService.getTestCasesByStatus(status));
   }
 
   @GetMapping("/test-cases/filter")
-  @Operation(
-      summary = "Get test cases with multi-selection filters",
-      description = "Filter test cases by cycle, pitch, statuses, types, and priorities")
-  public ResponseEntity<List<TestCaseDTO>> getTestCasesWithFilters(
-      @RequestParam(required = false) Long cycleId,
-      @RequestParam(required = false) Long pitchId,
-      @RequestParam(required = false) List<TestCaseStatus> statuses,
+  @Operation(summary = "Get test cases with multi-selection filters", description = "Filter test cases by cycle, pitch, statuses, types, and priorities")
+  public ResponseEntity<List<TestCaseDTO>> getTestCasesWithFilters(@RequestParam(required = false) Long cycleId,
+      @RequestParam(required = false) Long pitchId, @RequestParam(required = false) List<TestCaseStatus> statuses,
       @RequestParam(required = false) List<TestCaseType> types,
       @RequestParam(required = false) List<TestCasePriority> priorities) {
     checkFeatureEnabled();
-    return ResponseEntity.ok(
-        testCaseService.getTestCasesWithFilters(cycleId, pitchId, statuses, types, priorities));
+    return ResponseEntity
+        .ok(testCaseService.getTestCasesWithFilters(cycleId, pitchId, statuses, types, priorities));
   }
 
   @PostMapping("/test-cases")
   @PreAuthorize("hasAnyRole('QA', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Create a test case", description = "Creates a new test case")
-  public ResponseEntity<TestCaseDTO> createTestCase(
-      @Valid @RequestBody CreateTestCaseRequest request,
+  public ResponseEntity<TestCaseDTO> createTestCase(@Valid @RequestBody CreateTestCaseRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
@@ -158,10 +136,8 @@ public class QATestManagementController {
   @PutMapping("/test-cases/{id}")
   @PreAuthorize("hasAnyRole('QA', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Update a test case", description = "Updates an existing test case")
-  public ResponseEntity<TestCaseDTO> updateTestCase(
-      @PathVariable Long id,
-      @Valid @RequestBody UpdateTestCaseRequest request,
-      @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<TestCaseDTO> updateTestCase(@PathVariable Long id,
+      @Valid @RequestBody UpdateTestCaseRequest request, @AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(testCaseService.updateTestCase(id, request, userId));
@@ -179,45 +155,32 @@ public class QATestManagementController {
   // ========== Bug Reports ==========
 
   @GetMapping("/bug-reports")
-  @Operation(
-      summary = "Get all bug reports",
-      description = "Returns all bug reports with pagination")
-  public ResponseEntity<Page<BugReportDTO>> getAllBugReports(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "createdAt") String sortBy,
+  @Operation(summary = "Get all bug reports", description = "Returns all bug reports with pagination")
+  public ResponseEntity<Page<BugReportDTO>> getAllBugReports(@RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
     checkFeatureEnabled();
-    Sort.Direction direction =
-        sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(bugReportService.getAllBugReports(pageable));
   }
 
   @GetMapping("/bug-reports/filter")
-  @Operation(
-      summary = "Get bug reports with multi-selection filters",
-      description =
-          "Filter bug reports by project, cycle, pitch, multiple statuses, severities, and assignees with optional exclusion")
-  public ResponseEntity<Page<BugReportDTO>> getBugReportsWithFilters(
-      @RequestParam(required = false) Long projectId,
-      @RequestParam(required = false) Long cycleId,
-      @RequestParam(required = false) Long pitchId,
+  @Operation(summary = "Get bug reports with multi-selection filters", description = "Filter bug reports by project, cycle, pitch, multiple statuses, severities, and assignees with optional exclusion")
+  public ResponseEntity<Page<BugReportDTO>> getBugReportsWithFilters(@RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long cycleId, @RequestParam(required = false) Long pitchId,
       @RequestParam(required = false) List<BugStatus> statuses,
       @RequestParam(required = false) List<BugSeverity> severities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
     checkFeatureEnabled();
-    Sort.Direction direction =
-        sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-    return ResponseEntity.ok(
-        bugReportService.getBugReportsWithFilters(
-            projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, pageable));
+    return ResponseEntity.ok(bugReportService.getBugReportsWithFilters(projectId, cycleId, pitchId, statuses,
+        severities, assigneeIds, exclude, pageable));
   }
 
   @GetMapping("/bug-reports/{id}")
@@ -228,55 +191,43 @@ public class QATestManagementController {
   }
 
   @GetMapping("/bug-reports/{id}/history")
-  public ResponseEntity<Page<EntityHistoryDTO>> getBugReportHistory(
-      @PathVariable Long id,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+  public ResponseEntity<Page<EntityHistoryDTO>> getBugReportHistory(@PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     checkFeatureEnabled();
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(auditService.getBugReportHistory(id, pageable));
   }
 
   @GetMapping("/bug-reports/key/{key}")
-  @Operation(
-      summary = "Get bug report by key",
-      description = "Returns a bug report by its unique key")
+  @Operation(summary = "Get bug report by key", description = "Returns a bug report by its unique key")
   public ResponseEntity<BugReportDTO> getBugReportByKey(@PathVariable String key) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportByKey(key));
   }
 
   @GetMapping("/bug-reports/pitch/{pitchId}")
-  @Operation(
-      summary = "Get bug reports by pitch",
-      description = "Returns all bug reports for a pitch")
+  @Operation(summary = "Get bug reports by pitch", description = "Returns all bug reports for a pitch")
   public ResponseEntity<List<BugReportDTO>> getBugReportsByPitch(@PathVariable Long pitchId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportsByPitch(pitchId));
   }
 
   @GetMapping("/bugs/pitch/{pitchId}")
-  @Operation(
-      summary = "Get bugs by pitch (alias)",
-      description = "Returns all bug reports for a pitch")
+  @Operation(summary = "Get bugs by pitch (alias)", description = "Returns all bug reports for a pitch")
   public ResponseEntity<List<BugReportDTO>> getBugsByPitch(@PathVariable Long pitchId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportsByPitch(pitchId));
   }
 
   @GetMapping("/bug-reports/cycle/{cycleId}")
-  @Operation(
-      summary = "Get bug reports by cycle",
-      description = "Returns all bug reports for a cycle")
+  @Operation(summary = "Get bug reports by cycle", description = "Returns all bug reports for a cycle")
   public ResponseEntity<List<BugReportDTO>> getBugReportsByCycle(@PathVariable Long cycleId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportsByCycle(cycleId));
   }
 
   @GetMapping("/bugs/cycle/{cycleId}")
-  @Operation(
-      summary = "Get bugs by cycle (alias)",
-      description = "Returns all bug reports for a cycle")
+  @Operation(summary = "Get bugs by cycle (alias)", description = "Returns all bug reports for a cycle")
   public ResponseEntity<List<BugReportDTO>> getBugsByCycle(@PathVariable Long cycleId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(bugReportService.getBugReportsByCycle(cycleId));
@@ -290,22 +241,16 @@ public class QATestManagementController {
   }
 
   @GetMapping("/bug-reports/my-assigned")
-  @Operation(
-      summary = "Get my assigned bugs",
-      description = "Returns bug reports assigned to current user")
-  public ResponseEntity<List<BugReportDTO>> getMyAssignedBugs(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  @Operation(summary = "Get my assigned bugs", description = "Returns bug reports assigned to current user")
+  public ResponseEntity<List<BugReportDTO>> getMyAssignedBugs(@AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(bugReportService.getBugReportsByAssignee(userId));
   }
 
   @GetMapping("/bug-reports/my-reported")
-  @Operation(
-      summary = "Get bugs I reported",
-      description = "Returns bug reports created by current user")
-  public ResponseEntity<List<BugReportDTO>> getMyReportedBugs(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  @Operation(summary = "Get bugs I reported", description = "Returns bug reports created by current user")
+  public ResponseEntity<List<BugReportDTO>> getMyReportedBugs(@AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(bugReportService.getBugReportsByReporter(userId));
@@ -314,8 +259,7 @@ public class QATestManagementController {
   @PostMapping("/bug-reports")
   @PreAuthorize("hasAnyRole('QA', 'DEVELOPER', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Create a bug report", description = "Creates a new bug report")
-  public ResponseEntity<BugReportDTO> createBugReport(
-      @Valid @RequestBody CreateBugReportRequest request,
+  public ResponseEntity<BugReportDTO> createBugReport(@Valid @RequestBody CreateBugReportRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
@@ -325,10 +269,8 @@ public class QATestManagementController {
   @PutMapping("/bug-reports/{id}")
   @PreAuthorize("hasAnyRole('QA', 'DEVELOPER', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Update a bug report", description = "Updates an existing bug report")
-  public ResponseEntity<BugReportDTO> updateBugReport(
-      @PathVariable Long id,
-      @Valid @RequestBody UpdateBugReportRequest request,
-      @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<BugReportDTO> updateBugReport(@PathVariable Long id,
+      @Valid @RequestBody UpdateBugReportRequest request, @AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(bugReportService.updateBugReport(id, request, userId));
@@ -360,9 +302,7 @@ public class QATestManagementController {
   }
 
   @GetMapping("/test-runs/test-case/{testCaseId}")
-  @Operation(
-      summary = "Get test runs by test case",
-      description = "Returns all test runs for a test case")
+  @Operation(summary = "Get test runs by test case", description = "Returns all test runs for a test case")
   public ResponseEntity<List<TestRunDTO>> getTestRunsByTestCase(@PathVariable Long testCaseId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testRunService.getTestRunsByTestCase(testCaseId));
@@ -383,9 +323,7 @@ public class QATestManagementController {
   }
 
   @GetMapping("/test-runs/latest/{testCaseId}")
-  @Operation(
-      summary = "Get latest test run",
-      description = "Returns the most recent test run for a test case")
+  @Operation(summary = "Get latest test run", description = "Returns the most recent test run for a test case")
   public ResponseEntity<TestRunDTO> getLatestTestRun(@PathVariable Long testCaseId) {
     checkFeatureEnabled();
     TestRunDTO testRun = testRunService.getLatestTestRun(testCaseId);
@@ -395,8 +333,7 @@ public class QATestManagementController {
   @PostMapping("/test-runs")
   @PreAuthorize("hasAnyRole('QA', 'DEVELOPER', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Create a test run", description = "Records a new test run execution")
-  public ResponseEntity<TestRunDTO> createTestRun(
-      @Valid @RequestBody CreateTestRunRequest request,
+  public ResponseEntity<TestRunDTO> createTestRun(@Valid @RequestBody CreateTestRunRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
@@ -406,9 +343,7 @@ public class QATestManagementController {
   @PatchMapping("/test-runs/{id}/status")
   @PreAuthorize("hasAnyRole('QA', 'DEVELOPER', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Update test run status", description = "Updates the status of a test run")
-  public ResponseEntity<TestRunDTO> updateTestRunStatus(
-      @PathVariable Long id,
-      @RequestParam TestRunStatus status,
+  public ResponseEntity<TestRunDTO> updateTestRunStatus(@PathVariable Long id, @RequestParam TestRunStatus status,
       @RequestParam(required = false) String notes) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testRunService.updateTestRunStatus(id, status, notes));
@@ -426,18 +361,14 @@ public class QATestManagementController {
   // ========== Coverage & Dashboard ==========
 
   @GetMapping("/coverage/pitch/{pitchId}")
-  @Operation(
-      summary = "Get test coverage for pitch",
-      description = "Returns test coverage statistics for a pitch")
+  @Operation(summary = "Get test coverage for pitch", description = "Returns test coverage statistics for a pitch")
   public ResponseEntity<TestCoverageDTO> getTestCoverageByPitch(@PathVariable Long pitchId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(qaDashboardService.getTestCoverageByPitch(pitchId));
   }
 
   @GetMapping("/dashboard/cycle/{cycleId}")
-  @Operation(
-      summary = "Get QA dashboard for cycle",
-      description = "Returns comprehensive QA dashboard for a cycle")
+  @Operation(summary = "Get QA dashboard for cycle", description = "Returns comprehensive QA dashboard for a cycle")
   public ResponseEntity<QADashboardDTO> getQADashboardByCycle(@PathVariable Long cycleId) {
     checkFeatureEnabled();
     return ResponseEntity.ok(qaDashboardService.getQADashboardByCycle(cycleId));
@@ -447,9 +378,7 @@ public class QATestManagementController {
 
   @PostMapping("/generate-test-cases")
   @PreAuthorize("hasAnyRole('QA', 'TEAM_LEAD', 'ADMIN', 'PROJECT_MANAGER')")
-  @Operation(
-      summary = "Generate test cases with AI",
-      description = "Generates test case suggestions using AI based on pitch context")
+  @Operation(summary = "Generate test cases with AI", description = "Generates test case suggestions using AI based on pitch context")
   public ResponseEntity<GenerateTestCasesResponse> generateTestCases(
       @Valid @RequestBody GenerateTestCasesRequest request) {
     checkFeatureEnabled();
@@ -459,11 +388,8 @@ public class QATestManagementController {
   // ========== Helpers ==========
 
   private Long getUserId(UserDetails userDetails) {
-    User user =
-        userRepository
-            .findByUsername(userDetails.getUsername())
-            .orElseThrow(
-                () -> new RuntimeException("User not found: " + userDetails.getUsername()));
+    User user = userRepository.findByUsername(userDetails.getUsername())
+        .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
     return user.getId();
   }
 

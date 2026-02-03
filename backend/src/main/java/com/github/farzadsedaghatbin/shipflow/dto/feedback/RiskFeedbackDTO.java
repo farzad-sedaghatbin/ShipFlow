@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * DTO for AI risk assessment feedback. Allows team leads to mark AI assessments as
- * accurate/inaccurate.
+ * DTO for AI risk assessment feedback. Allows team leads to mark AI assessments
+ * as accurate/inaccurate.
  */
 @Data
 @NoArgsConstructor

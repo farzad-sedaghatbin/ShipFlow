@@ -24,11 +24,8 @@ public class GitHubWebhookController {
   private String webhookSecret;
 
   @PostMapping
-  @Operation(
-      summary = "Receive GitHub webhook events",
-      description = "Processes GitHub webhook events for push, pull_request, and branch operations")
-  public ResponseEntity<Map<String, String>> handleWebhook(
-      @RequestHeader("X-GitHub-Event") String eventType,
+  @Operation(summary = "Receive GitHub webhook events", description = "Processes GitHub webhook events for push, pull_request, and branch operations")
+  public ResponseEntity<Map<String, String>> handleWebhook(@RequestHeader("X-GitHub-Event") String eventType,
       @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
       @RequestBody String payload) {
 
@@ -39,14 +36,12 @@ public class GitHubWebhookController {
       if (webhookSecret != null && !webhookSecret.isEmpty()) {
         if (signature == null || signature.isEmpty()) {
           log.warn("Missing signature for webhook event");
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-              .body(Map.of("error", "Missing signature"));
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Missing signature"));
         }
 
         if (!webhookService.validateSignature(payload, signature, webhookSecret)) {
           log.warn("Invalid signature for webhook event");
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-              .body(Map.of("error", "Invalid signature"));
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid signature"));
         }
       }
 

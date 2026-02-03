@@ -30,30 +30,36 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Tests for Project Type functionality (Kanban vs Shape Up).
  *
- * <p>This test class verifies: - Default project type is SHAPE_UP for backward compatibility -
- * KANBAN projects automatically create a "Continuous Flow" cycle - SHAPE_UP projects do NOT
- * auto-create cycles - Project type is correctly persisted and returned in DTOs - Cycle creation
- * behavior differs based on project type
+ * <p>
+ * This test class verifies: - Default project type is SHAPE_UP for backward
+ * compatibility - KANBAN projects automatically create a "Continuous Flow"
+ * cycle - SHAPE_UP projects do NOT auto-create cycles - Project type is
+ * correctly persisted and returned in DTOs - Cycle creation behavior differs
+ * based on project type
  */
 @ExtendWith(MockitoExtension.class)
 class ProjectTypeTest {
 
-  @Mock private ProjectRepository projectRepository;
+  @Mock
+  private ProjectRepository projectRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private ProjectService projectService;
+  @InjectMocks
+  private ProjectService projectService;
 
   private User testOwner;
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(i -> i.getArgument(0));
     lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> i.getArgument(0));
 
@@ -69,16 +75,9 @@ class ProjectTypeTest {
     request.setOwnerId(1L);
     // Note: projectType not set, should default to SHAPE_UP
 
-    Project savedProject =
-        Project.builder()
-            .id(1L)
-            .name("Test Project")
-            .projectKey("TST")
-            .projectType(ProjectType.SHAPE_UP)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project savedProject = Project.builder().id(1L).name("Test Project").projectKey("TST")
+        .projectType(ProjectType.SHAPE_UP).owner(testOwner).isActive(true).createdAt(LocalDateTime.now())
+        .build();
 
     when(projectRepository.existsByProjectKey("TST")).thenReturn(false);
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -111,16 +110,9 @@ class ProjectTypeTest {
     request.setOwnerId(1L);
     request.setProjectType(ProjectType.SHAPE_UP);
 
-    Project savedProject =
-        Project.builder()
-            .id(1L)
-            .name("Shape Up Project")
-            .projectKey("SUP")
-            .projectType(ProjectType.SHAPE_UP)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project savedProject = Project.builder().id(1L).name("Shape Up Project").projectKey("SUP")
+        .projectType(ProjectType.SHAPE_UP).owner(testOwner).isActive(true).createdAt(LocalDateTime.now())
+        .build();
 
     when(projectRepository.existsByProjectKey("SUP")).thenReturn(false);
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -148,16 +140,8 @@ class ProjectTypeTest {
     request.setOwnerId(1L);
     request.setProjectType(ProjectType.KANBAN);
 
-    Project savedProject =
-        Project.builder()
-            .id(1L)
-            .name("Kanban Project")
-            .projectKey("KBN")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project savedProject = Project.builder().id(1L).name("Kanban Project").projectKey("KBN")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     when(projectRepository.existsByProjectKey("KBN")).thenReturn(false);
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -194,16 +178,8 @@ class ProjectTypeTest {
     request.setOwnerId(1L);
     request.setProjectType(ProjectType.KANBAN);
 
-    Project savedProject =
-        Project.builder()
-            .id(2L)
-            .name("Kanban Board")
-            .projectKey("KAN")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project savedProject = Project.builder().id(2L).name("Kanban Board").projectKey("KAN")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     when(projectRepository.existsByProjectKey("KAN")).thenReturn(false);
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -222,16 +198,8 @@ class ProjectTypeTest {
   @Test
   void update_ShouldPreserveProjectType() {
     // Arrange - existing Kanban project
-    Project existingProject =
-        Project.builder()
-            .id(1L)
-            .name("Old Name")
-            .projectKey("KBN")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project existingProject = Project.builder().id(1L).name("Old Name").projectKey("KBN")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     CreateProjectRequest updateRequest = new CreateProjectRequest();
     updateRequest.setName("Updated Name");
@@ -239,16 +207,8 @@ class ProjectTypeTest {
     updateRequest.setOwnerId(1L);
     updateRequest.setProjectType(ProjectType.KANBAN);
 
-    Project updatedProject =
-        Project.builder()
-            .id(1L)
-            .name("Updated Name")
-            .projectKey("KBN")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project updatedProject = Project.builder().id(1L).name("Updated Name").projectKey("KBN")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(existingProject));
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -272,16 +232,9 @@ class ProjectTypeTest {
   @Test
   void update_ConvertShapeUpToKanban_ShouldCreateDefaultCycle() {
     // Arrange - Existing Shape Up project
-    Project existingProject =
-        Project.builder()
-            .id(1L)
-            .name("Existing Project")
-            .projectKey("TST")
-            .projectType(ProjectType.SHAPE_UP) // Currently Shape Up
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project existingProject = Project.builder().id(1L).name("Existing Project").projectKey("TST")
+        .projectType(ProjectType.SHAPE_UP) // Currently Shape Up
+        .owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     CreateProjectRequest updateRequest = new CreateProjectRequest();
     updateRequest.setName("Converted to Kanban");
@@ -289,16 +242,8 @@ class ProjectTypeTest {
     updateRequest.setOwnerId(1L);
     updateRequest.setProjectType(ProjectType.KANBAN); // Converting to Kanban
 
-    Project updatedProject =
-        Project.builder()
-            .id(1L)
-            .name("Converted to Kanban")
-            .projectKey("TST")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project updatedProject = Project.builder().id(1L).name("Converted to Kanban").projectKey("TST")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(existingProject));
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
@@ -328,16 +273,9 @@ class ProjectTypeTest {
   @Test
   void update_ConvertShapeUpToKanban_WithExistingActiveCycle_ShouldNotCreateDefaultCycle() {
     // Arrange - Existing Shape Up project with active cycles
-    Project existingProject =
-        Project.builder()
-            .id(1L)
-            .name("Existing Project")
-            .projectKey("TST")
-            .projectType(ProjectType.SHAPE_UP)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project existingProject = Project.builder().id(1L).name("Existing Project").projectKey("TST")
+        .projectType(ProjectType.SHAPE_UP).owner(testOwner).isActive(true).createdAt(LocalDateTime.now())
+        .build();
 
     CreateProjectRequest updateRequest = new CreateProjectRequest();
     updateRequest.setName("Converted to Kanban");
@@ -345,16 +283,8 @@ class ProjectTypeTest {
     updateRequest.setOwnerId(1L);
     updateRequest.setProjectType(ProjectType.KANBAN);
 
-    Project updatedProject =
-        Project.builder()
-            .id(1L)
-            .name("Converted to Kanban")
-            .projectKey("TST")
-            .projectType(ProjectType.KANBAN)
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project updatedProject = Project.builder().id(1L).name("Converted to Kanban").projectKey("TST")
+        .projectType(ProjectType.KANBAN).owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(existingProject));
     when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));

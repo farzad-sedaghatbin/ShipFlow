@@ -25,7 +25,8 @@ public class HillChartPoint {
   @Column(nullable = false)
   private String description;
 
-  // Position on hill: 0-50 is uphill (figuring things out), 50-100 is downhill (executing)
+  // Position on hill: 0-50 is uphill (figuring things out), 50-100 is downhill
+  // (executing)
   @Column(nullable = false)
   private Integer position;
 

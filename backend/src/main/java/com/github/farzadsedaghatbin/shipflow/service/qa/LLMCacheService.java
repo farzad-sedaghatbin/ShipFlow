@@ -15,8 +15,9 @@ import org.springframework.stereotype.Service;
 /**
  * LLM response caching service for cost optimization.
  *
- * <p>Uses Redis when configured via app.ai.cache.provider=redis, otherwise in-memory. Caches LLM
- * responses by prompt hash to avoid duplicate API calls.
+ * <p>
+ * Uses Redis when configured via app.ai.cache.provider=redis, otherwise
+ * in-memory. Caches LLM responses by prompt hash to avoid duplicate API calls.
  */
 @Slf4j
 @Service
@@ -41,9 +42,7 @@ public class LLMCacheService {
   public void init() {
     if (cacheConfig.isRedisProvider()) {
       initializeRedis();
-      log.info(
-          "LLMCacheService initialized with Redis provider ({}:{})",
-          cacheConfig.getRedis().getHost(),
+      log.info("LLMCacheService initialized with Redis provider ({}:{})", cacheConfig.getRedis().getHost(),
           cacheConfig.getRedis().getPort());
     } else {
       log.info("LLMCacheService initialized with in-memory provider");
@@ -51,8 +50,8 @@ public class LLMCacheService {
   }
 
   /**
-   * Initialize Redis connection for distributed LLM cache. In production, this would use Spring
-   * Data Redis or Jedis/Lettuce client.
+   * Initialize Redis connection for distributed LLM cache. In production, this
+   * would use Spring Data Redis or Jedis/Lettuce client.
    */
   private void initializeRedis() {
     try {
@@ -61,8 +60,7 @@ public class LLMCacheService {
       // In production implementation:
       // RedisTemplate<String, CachedResponse> redisTemplate = new RedisTemplate<>();
       // redisTemplate.setConnectionFactory(redisConnectionFactory);
-      log.warn(
-          "Redis provider configured but full Redis integration pending - using in-memory for now");
+      log.warn("Redis provider configured but full Redis integration pending - using in-memory for now");
     } catch (Exception e) {
       log.error("Failed to initialize Redis for LLM cache, using in-memory: {}", e.getMessage());
     }
@@ -115,7 +113,8 @@ public class LLMCacheService {
       StringBuilder hexString = new StringBuilder();
       for (byte b : hashBytes) {
         String hex = Integer.toHexString(0xff & b);
-        if (hex.length() == 1) hexString.append('0');
+        if (hex.length() == 1)
+          hexString.append('0');
         hexString.append(hex);
       }
       return hexString.toString();
@@ -128,7 +127,8 @@ public class LLMCacheService {
   /** Evicts oldest cache entries when size limit reached. */
   private void evictOldestEntries() {
     int currentSize = cache.size();
-    // Evict approximately 27.5% of current size (to leave ~72.5% of maxCacheSize after continued
+    // Evict approximately 27.5% of current size (to leave ~72.5% of maxCacheSize
+    // after continued
     // additions)
     int toRemove = (currentSize * 275 + 999) / 1000; // Approximately 27.5%, rounded
 
@@ -136,14 +136,11 @@ public class LLMCacheService {
       return;
     }
 
-    cache.entrySet().stream()
-        .sorted((e1, e2) -> e1.getValue().getCachedAt().compareTo(e2.getValue().getCachedAt()))
-        .limit(toRemove)
-        .forEach(
-            entry -> {
-              cache.remove(entry.getKey());
-              log.debug("Evicted cache entry: {}", entry.getKey().substring(0, 8));
-            });
+    cache.entrySet().stream().sorted((e1, e2) -> e1.getValue().getCachedAt().compareTo(e2.getValue().getCachedAt()))
+        .limit(toRemove).forEach(entry -> {
+          cache.remove(entry.getKey());
+          log.debug("Evicted cache entry: {}", entry.getKey().substring(0, 8));
+        });
   }
 
   /** Gets cache statistics. */

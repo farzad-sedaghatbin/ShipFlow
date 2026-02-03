@@ -45,16 +45,13 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   List<BugReport> findByCycleIdAndStatus(Long cycleId, BugStatus status);
 
-  @Query(
-      "SELECT br FROM BugReport br WHERE br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT br FROM BugReport br WHERE br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   List<BugReport> findAllOpen();
 
-  @Query(
-      "SELECT br FROM BugReport br WHERE br.pitch.id = :pitchId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT br FROM BugReport br WHERE br.pitch.id = :pitchId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   List<BugReport> findOpenByPitchId(@Param("pitchId") Long pitchId);
 
-  @Query(
-      "SELECT br FROM BugReport br WHERE br.cycle.id = :cycleId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT br FROM BugReport br WHERE br.cycle.id = :cycleId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   List<BugReport> findOpenByCycleId(@Param("cycleId") Long cycleId);
 
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.pitch.id = :pitchId")
@@ -63,24 +60,19 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.cycle.id = :cycleId")
   long countByCycleId(@Param("cycleId") Long cycleId);
 
-  @Query(
-      "SELECT COUNT(br) FROM BugReport br WHERE br.pitch.id = :pitchId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.pitch.id = :pitchId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   long countOpenByPitchId(@Param("pitchId") Long pitchId);
 
-  @Query(
-      "SELECT COUNT(br) FROM BugReport br WHERE br.cycle.id = :cycleId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.cycle.id = :cycleId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   long countOpenByCycleId(@Param("cycleId") Long cycleId);
 
-  @Query(
-      "SELECT COUNT(br) FROM BugReport br WHERE br.pitch.id = :pitchId AND br.severity = :severity")
-  long countByPitchIdAndSeverity(
-      @Param("pitchId") Long pitchId, @Param("severity") BugSeverity severity);
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.pitch.id = :pitchId AND br.severity = :severity")
+  long countByPitchIdAndSeverity(@Param("pitchId") Long pitchId, @Param("severity") BugSeverity severity);
 
   @Query("SELECT br FROM BugReport br WHERE br.tags LIKE %:tag%")
   List<BugReport> findByTag(@Param("tag") String tag);
 
-  @Query(
-      "SELECT MAX(CAST(SUBSTRING(br.bugKey, 5) AS int)) FROM BugReport br WHERE br.bugKey LIKE 'BUG-%'")
+  @Query("SELECT MAX(CAST(SUBSTRING(br.bugKey, 5) AS int)) FROM BugReport br WHERE br.bugKey LIKE 'BUG-%'")
   Integer findMaxBugKeyNumber();
 
   // Scope and task queries for traceability
@@ -89,12 +81,10 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   List<BugReport> findByTaskId(Long taskId);
 
   @Query("SELECT br FROM BugReport br WHERE br.scope.id = :scopeId AND br.status = :status")
-  List<BugReport> findByScopeIdAndStatus(
-      @Param("scopeId") Long scopeId, @Param("status") BugStatus status);
+  List<BugReport> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") BugStatus status);
 
   @Query("SELECT br FROM BugReport br WHERE br.task.id = :taskId AND br.status = :status")
-  List<BugReport> findByTaskIdAndStatus(
-      @Param("taskId") Long taskId, @Param("status") BugStatus status);
+  List<BugReport> findByTaskIdAndStatus(@Param("taskId") Long taskId, @Param("status") BugStatus status);
 
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.scope.id = :scopeId")
   long countByScopeId(@Param("scopeId") Long scopeId);
@@ -106,46 +96,28 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   // Multi-filter queries with pagination - supports direct project association
   // Use LEFT JOIN FETCH to avoid implicit inner joins on nullable relationships
-  @Query(
-      "SELECT br FROM BugReport br "
-          + "LEFT JOIN br.cycle c "
-          + "LEFT JOIN br.pitch p "
-          + "LEFT JOIN br.assignee a "
-          + "WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
-          + "AND (:cycleId IS NULL OR c.id = :cycleId) "
-          + "AND (:pitchId IS NULL OR p.id = :pitchId) "
-          + "AND (:statuses IS NULL OR br.status IN :statuses) "
-          + "AND (:severities IS NULL OR br.severity IN :severities) "
-          + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds)")
-  Page<BugReport> findWithFilters(
-      @Param("projectId") Long projectId,
-      @Param("cycleId") Long cycleId,
-      @Param("pitchId") Long pitchId,
-      @Param("statuses") List<BugStatus> statuses,
-      @Param("severities") List<BugSeverity> severities,
-      @Param("assigneeIds") List<Long> assigneeIds,
+  @Query("SELECT br FROM BugReport br " + "LEFT JOIN br.cycle c " + "LEFT JOIN br.pitch p "
+      + "LEFT JOIN br.assignee a " + "WHERE 1=1 "
+      + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
+      + "AND (:cycleId IS NULL OR c.id = :cycleId) " + "AND (:pitchId IS NULL OR p.id = :pitchId) "
+      + "AND (:statuses IS NULL OR br.status IN :statuses) "
+      + "AND (:severities IS NULL OR br.severity IN :severities) "
+      + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds)")
+  Page<BugReport> findWithFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
+      @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
+      @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
       Pageable pageable);
 
-  @Query(
-      "SELECT br FROM BugReport br "
-          + "LEFT JOIN br.cycle c "
-          + "LEFT JOIN br.pitch p "
-          + "LEFT JOIN br.assignee a "
-          + "WHERE 1=1 "
-          + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
-          + "AND (:cycleId IS NULL OR c.id = :cycleId) "
-          + "AND (:pitchId IS NULL OR p.id = :pitchId) "
-          + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
-          + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
-          + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds)")
-  Page<BugReport> findWithExclusionFilters(
-      @Param("projectId") Long projectId,
-      @Param("cycleId") Long cycleId,
-      @Param("pitchId") Long pitchId,
-      @Param("statuses") List<BugStatus> statuses,
-      @Param("severities") List<BugSeverity> severities,
-      @Param("assigneeIds") List<Long> assigneeIds,
+  @Query("SELECT br FROM BugReport br " + "LEFT JOIN br.cycle c " + "LEFT JOIN br.pitch p "
+      + "LEFT JOIN br.assignee a " + "WHERE 1=1 "
+      + "AND (:projectId IS NULL OR br.project.id = :projectId OR (c IS NOT NULL AND c.project.id = :projectId)) "
+      + "AND (:cycleId IS NULL OR c.id = :cycleId) " + "AND (:pitchId IS NULL OR p.id = :pitchId) "
+      + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
+      + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
+      + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds)")
+  Page<BugReport> findWithExclusionFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
+      @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
+      @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
       Pageable pageable);
 
   // Direct project queries
@@ -156,7 +128,6 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId")
   long countByProjectId(@Param("projectId") Long projectId);
 
-  @Query(
-      "SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   long countOpenByProjectId(@Param("projectId") Long projectId);
 }

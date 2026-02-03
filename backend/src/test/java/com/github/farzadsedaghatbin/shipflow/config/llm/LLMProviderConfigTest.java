@@ -11,15 +11,8 @@ class LLMProviderConfigTest {
 
   @Test
   void builder_shouldCreateConfigWithAllFields() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://localhost:11434")
-            .apiKey("test-key")
-            .modelName("test-model")
-            .timeout(Duration.ofSeconds(120))
-            .temperature(0.7)
-            .maxTokens(1024)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434").apiKey("test-key")
+        .modelName("test-model").timeout(Duration.ofSeconds(120)).temperature(0.7).maxTokens(1024).build();
 
     assertEquals("http://localhost:11434", config.getBaseUrl());
     assertEquals("test-key", config.getApiKey());
@@ -43,12 +36,8 @@ class LLMProviderConfigTest {
 
   @Test
   void extraParams_shouldStoreAndRetrieveValues() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .extraParam("pollInterval", Duration.ofSeconds(2))
-            .extraParam("organizationId", "org-123")
-            .extraParam("numCtx", 4096)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().extraParam("pollInterval", Duration.ofSeconds(2))
+        .extraParam("organizationId", "org-123").extraParam("numCtx", 4096).build();
 
     assertEquals(Duration.ofSeconds(2), config.getExtraParam("pollInterval", null));
     assertEquals("org-123", config.getExtraParam("organizationId", null));
@@ -77,8 +66,7 @@ class LLMProviderConfigTest {
 
   @Test
   void builder_shouldSupportMultipleExtraParams() {
-    Map<String, Object> params =
-        Map.of("param1", "value1", "param2", Integer.valueOf(123), "param3", Boolean.TRUE);
+    Map<String, Object> params = Map.of("param1", "value1", "param2", Integer.valueOf(123), "param3", Boolean.TRUE);
 
     LLMProviderConfig config = LLMProviderConfig.builder().extraParams(params).build();
 
@@ -89,15 +77,8 @@ class LLMProviderConfigTest {
 
   @Test
   void toString_shouldContainKeyInformation() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://test")
-            .modelName("test-model")
-            .timeout(Duration.ofSeconds(60))
-            .temperature(0.5)
-            .maxTokens(512)
-            .extraParam("custom", "value")
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://test").modelName("test-model")
+        .timeout(Duration.ofSeconds(60)).temperature(0.5).maxTokens(512).extraParam("custom", "value").build();
 
     String str = config.toString();
     assertTrue(str.contains("http://test"), "Should contain baseUrl");

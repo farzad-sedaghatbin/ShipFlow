@@ -25,9 +25,7 @@ public class UserPreferenceController {
   private final UserService userService;
 
   @GetMapping
-  @Operation(
-      summary = "Get user preferences",
-      description = "Get current user's preferences including theme settings")
+  @Operation(summary = "Get user preferences", description = "Get current user's preferences including theme settings")
   public ResponseEntity<UserPreferenceDTO> getPreferences() {
     Long userId = getCurrentUserId();
     UserPreferenceDTO preferences = userPreferenceService.getPreferences(userId);
@@ -36,17 +34,14 @@ public class UserPreferenceController {
 
   @PutMapping
   @Operation(summary = "Update preferences", description = "Update user preferences")
-  public ResponseEntity<UserPreferenceDTO> updatePreferences(
-      @RequestBody UpdatePreferenceRequest updateRequest) {
+  public ResponseEntity<UserPreferenceDTO> updatePreferences(@RequestBody UpdatePreferenceRequest updateRequest) {
     Long userId = getCurrentUserId();
     UserPreferenceDTO preferences = userPreferenceService.updatePreferences(userId, updateRequest);
     return ResponseEntity.ok(preferences);
   }
 
   @PutMapping("/theme")
-  @Operation(
-      summary = "Update theme mode",
-      description = "Update just the theme mode (LIGHT, DARK, SYSTEM)")
+  @Operation(summary = "Update theme mode", description = "Update just the theme mode (LIGHT, DARK, SYSTEM)")
   public ResponseEntity<UserPreferenceDTO> updateTheme(@RequestBody Map<String, String> body) {
     Long userId = getCurrentUserId();
     ThemeMode themeMode = ThemeMode.valueOf(body.get("themeMode").toUpperCase());

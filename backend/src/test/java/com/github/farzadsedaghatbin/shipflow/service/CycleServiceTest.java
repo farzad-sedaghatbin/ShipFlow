@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
@@ -39,27 +38,38 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class CycleServiceTest {
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private ProjectRepository projectRepository;
+  @Mock
+  private ProjectRepository projectRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private RetroRepository retroRepository;
+  @Mock
+  private RetroRepository retroRepository;
 
-  @Mock private DashboardNotificationService notificationService;
+  @Mock
+  private DashboardNotificationService notificationService;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private OrganizationSettingsService organizationSettingsService;
+  @Mock
+  private OrganizationSettingsService organizationSettingsService;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @Mock private SecurityContext securityContext;
+  @Mock
+  private SecurityContext securityContext;
 
-  @Mock private Authentication authentication;
+  @Mock
+  private Authentication authentication;
 
-  @InjectMocks private CycleService cycleService;
+  @InjectMocks
+  private CycleService cycleService;
 
   private Cycle testCycle;
   private Project testProject;
@@ -70,19 +80,10 @@ class CycleServiceTest {
 
   @BeforeEach
   void setUp() {
-    testProject =
-        Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true).build();
+    testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true).build();
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .project(testProject)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").project(testProject).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
 
     testRequest = new CreateCycleRequest();
     testRequest.setProjectId(1L);
@@ -98,8 +99,9 @@ class CycleServiceTest {
 
     // Setup organization settings
     orgSettings = OrganizationSettingsDTO.builder().defaultCycleLengthWeeks(6).build();
-    
-    // Setup pitch count mock (default to 0 for most tests) - using lenient to avoid unnecessary stubbing errors
+
+    // Setup pitch count mock (default to 0 for most tests) - using lenient to avoid
+    // unnecessary stubbing errors
     lenient().when(pitchRepository.countByCycleIdNotDeleted(any())).thenReturn(0L);
   }
 
@@ -129,8 +131,7 @@ class CycleServiceTest {
   void getCycleById_WhenNotExists_ShouldThrowException() {
     when(cycleRepository.findByIdWithProject(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> cycleService.getCycleById(999L))
-        .isInstanceOf(ResourceNotFoundException.class)
+    assertThatThrownBy(() -> cycleService.getCycleById(999L)).isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Cycle not found");
   }
 
@@ -189,8 +190,8 @@ class CycleServiceTest {
 
     assertThat(result).isNotNull();
     verify(cycleRepository).save(any(Cycle.class));
-    verify(notificationService)
-        .notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD), eq(CyclePhase.COOLDOWN));
+    verify(notificationService).notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD),
+        eq(CyclePhase.COOLDOWN));
   }
 
   @Test
@@ -218,8 +219,7 @@ class CycleServiceTest {
 
   @Test
   void getCyclesByProject_ShouldReturnCyclesForProject() {
-    when(cycleRepository.findByProjectIdOrderByStartDateDesc(1L))
-        .thenReturn(Arrays.asList(testCycle));
+    when(cycleRepository.findByProjectIdOrderByStartDateDesc(1L)).thenReturn(Arrays.asList(testCycle));
 
     List<CycleDTO> result = cycleService.getCyclesByProject(1L);
 
@@ -301,8 +301,7 @@ class CycleServiceTest {
     when(userRepository.findByUsername("developer")).thenReturn(Optional.of(developerUser));
 
     // Act & Assert
-    assertThatThrownBy(() -> cycleService.createCycle(testRequest))
-        .isInstanceOf(AccessDeniedException.class)
+    assertThatThrownBy(() -> cycleService.createCycle(testRequest)).isInstanceOf(AccessDeniedException.class)
         .hasMessageContaining("Only users with ADMIN or PROJECT_MANAGER role");
 
     verify(userRepository).findByUsername("developer");
@@ -377,8 +376,7 @@ class CycleServiceTest {
         .thenReturn(Optional.of(User.builder().username("qa").role(UserRole.MEMBER).build()));
 
     // Act & Assert
-    assertThatThrownBy(() -> cycleService.updateCycle(1L, testRequest))
-        .isInstanceOf(AccessDeniedException.class)
+    assertThatThrownBy(() -> cycleService.updateCycle(1L, testRequest)).isInstanceOf(AccessDeniedException.class)
         .hasMessageContaining("Only users with ADMIN or PROJECT_MANAGER role");
   }
 
@@ -396,7 +394,7 @@ class CycleServiceTest {
     assertThat(result.getId()).isEqualTo(1L);
     assertThat(result.getName()).isEqualTo("Test Cycle");
     assertThat(result.getPitchCount()).isEqualTo(3); // Should use count from repository, not entity collection
-    
+
     // Verify that the count method was called
     verify(pitchRepository).countByCycleIdNotDeleted(1L);
   }

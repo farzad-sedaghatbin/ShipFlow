@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/github")
 @RequiredArgsConstructor
-@Tag(
-    name = "GitHub Integration",
-    description = "APIs for managing GitHub integration with tasks and pitches")
+@Tag(name = "GitHub Integration", description = "APIs for managing GitHub integration with tasks and pitches")
 public class GitHubIntegrationController {
 
   private final GitHubIntegrationService integrationService;
@@ -26,11 +24,8 @@ public class GitHubIntegrationController {
 
   @PostMapping("/repositories")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Register a GitHub repository",
-      description = "Register a new GitHub repository to enable webhook integration")
-  public ResponseEntity<String> registerRepository(
-      @Valid @RequestBody CreateGitHubRepositoryRequest request) {
+  @Operation(summary = "Register a GitHub repository", description = "Register a new GitHub repository to enable webhook integration")
+  public ResponseEntity<String> registerRepository(@Valid @RequestBody CreateGitHubRepositoryRequest request) {
     integrationService.createOrUpdateRepository(request);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(messageService.getMessage("github.repository.registered"));
@@ -44,17 +39,13 @@ public class GitHubIntegrationController {
   }
 
   @GetMapping("/tasks/{taskId}/links")
-  @Operation(
-      summary = "Get all GitHub links for a task",
-      description = "Returns all commits, PRs, and branches linked to the specified task")
+  @Operation(summary = "Get all GitHub links for a task", description = "Returns all commits, PRs, and branches linked to the specified task")
   public ResponseEntity<List<GitHubLinkDTO>> getTaskGitHubLinks(@PathVariable Long taskId) {
     return ResponseEntity.ok(integrationService.getTaskGitHubLinks(taskId));
   }
 
   @GetMapping("/pitches/{pitchId}/links")
-  @Operation(
-      summary = "Get all GitHub links for a pitch",
-      description = "Returns all commits, PRs, and branches linked to the specified pitch")
+  @Operation(summary = "Get all GitHub links for a pitch", description = "Returns all commits, PRs, and branches linked to the specified pitch")
   public ResponseEntity<List<GitHubLinkDTO>> getPitchGitHubLinks(@PathVariable Long pitchId) {
     return ResponseEntity.ok(integrationService.getPitchGitHubLinks(pitchId));
   }

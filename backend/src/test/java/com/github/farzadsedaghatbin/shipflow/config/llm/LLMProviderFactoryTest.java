@@ -19,8 +19,8 @@ class LLMProviderFactoryTest {
   @BeforeEach
   void setUp() {
     // Create factory with test providers
-    List<LLMProvider> providers =
-        List.of(new OllamaLLMProvider(), new OpenAILLMProvider(), new RunPodLLMProvider());
+    List<LLMProvider> providers = List.of(new OllamaLLMProvider(), new OpenAILLMProvider(),
+        new RunPodLLMProvider());
     factory = new LLMProviderFactory(providers);
   }
 
@@ -66,13 +66,8 @@ class LLMProviderFactoryTest {
 
   @Test
   void createModel_shouldCreateOllamaModel() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mistral:instruct")
-            .timeout(Duration.ofSeconds(180))
-            .temperature(0.3)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").timeout(Duration.ofSeconds(180)).temperature(0.3).build();
 
     ChatLanguageModel model = factory.createModel(LLMProviderType.OLLAMA, config);
     assertNotNull(model);
@@ -80,13 +75,8 @@ class LLMProviderFactoryTest {
 
   @Test
   void createModel_shouldCreateOpenAIModel() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .apiKey("sk-test-key-12345")
-            .modelName("gpt-4o-mini")
-            .timeout(Duration.ofSeconds(120))
-            .temperature(0.3)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().apiKey("sk-test-key-12345").modelName("gpt-4o-mini")
+        .timeout(Duration.ofSeconds(120)).temperature(0.3).build();
 
     ChatLanguageModel model = factory.createModel(LLMProviderType.OPENAI, config);
     assertNotNull(model);
@@ -96,10 +86,8 @@ class LLMProviderFactoryTest {
   void createModel_shouldThrowForUnavailableProvider() {
     LLMProviderConfig config = LLMProviderConfig.builder().build();
 
-    IllegalArgumentException ex =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> factory.createModel(LLMProviderType.ANTHROPIC, config));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> factory.createModel(LLMProviderType.ANTHROPIC, config));
     assertTrue(ex.getMessage().contains("No provider registered"));
   }
 
@@ -108,17 +96,13 @@ class LLMProviderFactoryTest {
     // OpenAI requires API key
     LLMProviderConfig config = LLMProviderConfig.builder().modelName("gpt-4o-mini").build();
 
-    assertThrows(
-        IllegalArgumentException.class, () -> factory.createModel(LLMProviderType.OPENAI, config));
+    assertThrows(IllegalArgumentException.class, () -> factory.createModel(LLMProviderType.OPENAI, config));
   }
 
   @Test
   void createModelByString_shouldWork() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mistral:instruct")
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").build();
 
     ChatLanguageModel model = factory.createModel("ollama", config);
     assertNotNull(model);
@@ -128,8 +112,7 @@ class LLMProviderFactoryTest {
   void createModelByString_shouldThrowForInvalidString() {
     LLMProviderConfig config = LLMProviderConfig.builder().build();
 
-    assertThrows(
-        IllegalArgumentException.class, () -> factory.createModel("invalid-provider", config));
+    assertThrows(IllegalArgumentException.class, () -> factory.createModel("invalid-provider", config));
   }
 
   @Test

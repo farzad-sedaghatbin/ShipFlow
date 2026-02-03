@@ -32,19 +32,26 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TaskHierarchyServiceTest {
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private DashboardNotificationService notificationService;
+  @Mock
+  private DashboardNotificationService notificationService;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @InjectMocks private TaskService taskService;
+  @InjectMocks
+  private TaskService taskService;
 
   private Cycle cycle;
   private Task parentTask;
@@ -53,65 +60,37 @@ class TaskHierarchyServiceTest {
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(messageService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("parent.different.cycle"))
-                return "Parent task must belong to the same cycle";
-              if (key.contains("circular.reference")) return "circular reference";
-              return key;
-            });
-    lenient()
-        .when(messageService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("parent.different.cycle"))
-                return "Parent task must belong to the same cycle";
-              if (key.contains("circular.reference")) return "circular reference";
-              return key;
-            });
+    lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("parent.different.cycle"))
+        return "Parent task must belong to the same cycle";
+      if (key.contains("circular.reference"))
+        return "circular reference";
+      return key;
+    });
+    lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("parent.different.cycle"))
+        return "Parent task must belong to the same cycle";
+      if (key.contains("circular.reference"))
+        return "circular reference";
+      return key;
+    });
 
     Project project = Project.builder().id(1L).name("Test Project").projectKey("TEST").build();
 
     cycle = Cycle.builder().id(1L).name("Sprint 1").project(project).build();
 
-    parentTask =
-        Task.builder()
-            .id(1L)
-            .title("Parent Task")
-            .cycle(cycle)
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.HIGH)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    parentTask = Task.builder().id(1L).title("Parent Task").cycle(cycle).status(TaskStatus.IN_PROGRESS)
+        .priority(TaskPriority.HIGH).category(TaskCategory.PITCH_SCOPE).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
-    childTask =
-        Task.builder()
-            .id(2L)
-            .title("Child Task")
-            .cycle(cycle)
-            .parentTask(parentTask)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    childTask = Task.builder().id(2L).title("Child Task").cycle(cycle).parentTask(parentTask)
+        .status(TaskStatus.BACKLOG).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    createRequest =
-        CreateTaskRequest.builder()
-            .title("New Task")
-            .description("Test task description")
-            .cycleId(1L)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .build();
+    createRequest = CreateTaskRequest.builder().title("New Task").description("Test task description").cycleId(1L)
+        .status(TaskStatus.BACKLOG).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).build();
   }
 
   @Test
@@ -121,18 +100,9 @@ class TaskHierarchyServiceTest {
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentTask));
 
-    Task savedTask =
-        Task.builder()
-            .id(3L)
-            .title("New Task")
-            .cycle(cycle)
-            .parentTask(parentTask)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task savedTask = Task.builder().id(3L).title("New Task").cycle(cycle).parentTask(parentTask)
+        .status(TaskStatus.BACKLOG).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(taskRepository.save(any(Task.class))).thenReturn(savedTask);
 
@@ -154,8 +124,7 @@ class TaskHierarchyServiceTest {
     when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
     // When / Then
-    assertThatThrownBy(() -> taskService.createTask(createRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.createTask(createRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parent task not found");
   }
 
@@ -164,47 +133,27 @@ class TaskHierarchyServiceTest {
     // Given
     Cycle differentCycle = Cycle.builder().id(2L).name("Sprint 2").build();
 
-    Task parentFromDifferentCycle =
-        Task.builder().id(1L).title("Parent Task").cycle(differentCycle).build();
+    Task parentFromDifferentCycle = Task.builder().id(1L).title("Parent Task").cycle(differentCycle).build();
 
     createRequest.setParentTaskId(1L);
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentFromDifferentCycle));
 
     // When / Then
-    assertThatThrownBy(() -> taskService.createTask(createRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.createTask(createRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parent task must belong to the same cycle");
   }
 
   @Test
   void shouldGetSubTasks() {
     // Given
-    Task child1 =
-        Task.builder()
-            .id(2L)
-            .title("Child 1")
-            .cycle(cycle)
-            .parentTask(parentTask)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task child1 = Task.builder().id(2L).title("Child 1").cycle(cycle).parentTask(parentTask)
+        .status(TaskStatus.BACKLOG).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    Task child2 =
-        Task.builder()
-            .id(3L)
-            .title("Child 2")
-            .cycle(cycle)
-            .parentTask(parentTask)
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.HIGH)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task child2 = Task.builder().id(3L).title("Child 2").cycle(cycle).parentTask(parentTask)
+        .status(TaskStatus.IN_PROGRESS).priority(TaskPriority.HIGH).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(taskRepository.findByParentTaskId(1L)).thenReturn(Arrays.asList(child1, child2));
 
@@ -222,31 +171,13 @@ class TaskHierarchyServiceTest {
   @Test
   void shouldGetRootTasks() {
     // Given
-    Task root1 =
-        Task.builder()
-            .id(1L)
-            .title("Root Task 1")
-            .cycle(cycle)
-            .parentTask(null)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.HIGH)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task root1 = Task.builder().id(1L).title("Root Task 1").cycle(cycle).parentTask(null).status(TaskStatus.BACKLOG)
+        .priority(TaskPriority.HIGH).category(TaskCategory.PITCH_SCOPE).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
-    Task root2 =
-        Task.builder()
-            .id(2L)
-            .title("Root Task 2")
-            .cycle(cycle)
-            .parentTask(null)
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task root2 = Task.builder().id(2L).title("Root Task 2").cycle(cycle).parentTask(null)
+        .status(TaskStatus.IN_PROGRESS).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(taskRepository.findRootTasksByCycleId(1L)).thenReturn(Arrays.asList(root1, root2));
 
@@ -264,18 +195,9 @@ class TaskHierarchyServiceTest {
   @Test
   void shouldGetTaskTreeWithNestedChildren() {
     // Given
-    Task grandChild =
-        Task.builder()
-            .id(3L)
-            .title("Grandchild Task")
-            .cycle(cycle)
-            .parentTask(childTask)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.LOW)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task grandChild = Task.builder().id(3L).title("Grandchild Task").cycle(cycle).parentTask(childTask)
+        .status(TaskStatus.BACKLOG).priority(TaskPriority.LOW).category(TaskCategory.PITCH_SCOPE)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     childTask.setChildren(Arrays.asList(grandChild));
     parentTask.setChildren(Arrays.asList(childTask));
@@ -302,30 +224,13 @@ class TaskHierarchyServiceTest {
   @Test
   void shouldPreventCircularReferenceWhenUpdating() {
     // Given
-    Task taskA =
-        Task.builder()
-            .id(1L)
-            .title("Task A")
-            .cycle(cycle)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task taskA = Task.builder().id(1L).title("Task A").cycle(cycle).status(TaskStatus.BACKLOG)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
-    Task taskB =
-        Task.builder()
-            .id(2L)
-            .title("Task B")
-            .cycle(cycle)
-            .parentTask(taskA)
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.MEDIUM)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task taskB = Task.builder().id(2L).title("Task B").cycle(cycle).parentTask(taskA).status(TaskStatus.BACKLOG)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
     // Try to make taskA a child of taskB (would create circular reference)
     createRequest.setParentTaskId(2L);
@@ -334,8 +239,7 @@ class TaskHierarchyServiceTest {
     when(taskRepository.findById(2L)).thenReturn(Optional.of(taskB));
 
     // When / Then
-    assertThatThrownBy(() -> taskService.updateTask(1L, createRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.updateTask(1L, createRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("circular reference");
   }
 
@@ -347,25 +251,16 @@ class TaskHierarchyServiceTest {
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentTask));
 
     // When / Then
-    assertThatThrownBy(() -> taskService.updateTask(1L, createRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.updateTask(1L, createRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("circular reference");
   }
 
   @Test
   void shouldUpdateTaskParent() {
     // Given
-    Task newParent =
-        Task.builder()
-            .id(10L)
-            .title("New Parent Task")
-            .cycle(cycle)
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.HIGH)
-            .category(TaskCategory.PITCH_SCOPE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task newParent = Task.builder().id(10L).title("New Parent Task").cycle(cycle).status(TaskStatus.IN_PROGRESS)
+        .priority(TaskPriority.HIGH).category(TaskCategory.PITCH_SCOPE).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
     createRequest.setParentTaskId(10L);
 
@@ -379,9 +274,7 @@ class TaskHierarchyServiceTest {
     // Then
     assertThat(result).isNotNull();
     verify(taskRepository)
-        .save(
-            argThat(
-                task -> task.getParentTask() != null && task.getParentTask().getId().equals(10L)));
+        .save(argThat(task -> task.getParentTask() != null && task.getParentTask().getId().equals(10L)));
   }
 
   @Test

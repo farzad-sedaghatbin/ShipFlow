@@ -19,14 +19,14 @@ public class AskQuestionRequest {
   private String question;
 
   /**
-   * Type of context (pitch, meeting, team, cycle). Optional - if not provided, searches across all
-   * knowledge.
+   * Type of context (pitch, meeting, team, cycle). Optional - if not provided,
+   * searches across all knowledge.
    */
   private String contextType;
 
   /**
-   * ID of the context entity. Optional - if not provided with contextType, searches across all of
-   * that type.
+   * ID of the context entity. Optional - if not provided with contextType,
+   * searches across all of that type.
    */
   private Long contextId;
 
@@ -37,11 +37,12 @@ public class AskQuestionRequest {
   private Long teamId;
 
   /** Whether to include sources/citations in the response. */
-  @Builder.Default private Boolean includeSources = true;
+  @Builder.Default
+  private Boolean includeSources = true;
 
   /**
-   * Conversation ID for multi-turn conversations. Optional - if not provided, starts a new
-   * conversation.
+   * Conversation ID for multi-turn conversations. Optional - if not provided,
+   * starts a new conversation.
    */
   private String conversationId;
 }

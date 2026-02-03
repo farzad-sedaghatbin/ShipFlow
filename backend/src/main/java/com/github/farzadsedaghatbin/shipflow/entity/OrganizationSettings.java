@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing organization-wide configuration settings. Only one record should exist in
- * this table.
+ * Entity representing organization-wide configuration settings. Only one record
+ * should exist in this table.
  */
 @Entity
 @Table(name = "organization_settings")

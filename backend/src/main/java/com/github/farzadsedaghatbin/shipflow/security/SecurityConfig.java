@@ -35,30 +35,18 @@ public class SecurityConfig {
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final MaliciousHeaderFilter maliciousHeaderFilter;
 
-  @org.springframework.beans.factory.annotation.Value(
-      "${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
+  @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
   private String allowedOrigins;
 
   /**
-   * Bypass Spring Security completely for static resources. This prevents CORS issues with module
-   * scripts.
+   * Bypass Spring Security completely for static resources. This prevents CORS
+   * issues with module scripts.
    */
   @Bean
   public WebSecurityCustomizer webSecurityCustomizer() {
-    return (web) ->
-        web.ignoring()
-            .requestMatchers("/", "/index.html", "/favicon.ico", "/favicon.svg")
-            .requestMatchers("/assets/**")
-            .requestMatchers(
-                "/*.js",
-                "/*.css",
-                "/*.png",
-                "/*.svg",
-                "/*.ico",
-                "/*.json",
-                "/*.woff",
-                "/*.woff2",
-                "/*.ttf");
+    return (web) -> web.ignoring().requestMatchers("/", "/index.html", "/favicon.ico", "/favicon.svg")
+        .requestMatchers("/assets/**").requestMatchers("/*.js", "/*.css", "/*.png", "/*.svg", "/*.ico",
+            "/*.json", "/*.woff", "/*.woff2", "/*.ttf");
   }
 
   @Bean
@@ -73,64 +61,32 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         // Disable ForwardedHeaderFilter to prevent malicious header exploitation
         .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-        .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                    .accessDeniedHandler(jwtAccessDeniedHandler))
-        .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(
-            auth ->
-                auth
-                    // Allow CORS preflight requests
-                    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
-                    .permitAll()
-                    // SPA routes - all frontend routes should be accessible (React handles auth)
-                    .requestMatchers(
-                        "/login",
-                        "/welcome",
-                        "/dashboard",
-                        "/dashboard/**",
-                        "/cycles/**",
-                        "/pitches/**",
-                        "/betting/**",
-                        "/projects/**",
-                        "/health/**",
-                        "/qa/**",
-                        "/reports/**",
-                        "/tests/**",
-                        "/teams/**",
-                        "/people/**",
-                        "/users/**",
-                        "/profile/**",
-                        "/worklogs/**",
-                        "/my-worklogs/**",
-                        "/meetings/**",
-                        "/tasks/**")
-                    .permitAll()
-                    // Public API endpoints
-                    .requestMatchers("/api/auth/**")
-                    .permitAll()
-                    .requestMatchers("/api/public/**")
-                    .permitAll()
-                    // Q&A status endpoint (public to check if feature is enabled)
-                    .requestMatchers("/api/qa/status")
-                    .permitAll()
-                    // Swagger/OpenAPI endpoints
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
-                    .permitAll()
-                    // H2 console (dev only)
-                    .requestMatchers("/h2-console/**")
-                    .permitAll()
-                    // Actuator health endpoint
-                    .requestMatchers("/actuator/health")
-                    .permitAll()
-                    // All API endpoints require authentication
-                    .requestMatchers("/api/**")
-                    .authenticated()
-                    // Allow any other request (frontend will handle auth)
-                    .anyRequest()
-                    .permitAll())
+        .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            .accessDeniedHandler(jwtAccessDeniedHandler))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+            // Allow CORS preflight requests
+            .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+            // SPA routes - all frontend routes should be accessible (React handles auth)
+            .requestMatchers("/login", "/welcome", "/dashboard", "/dashboard/**", "/cycles/**",
+                "/pitches/**", "/betting/**", "/projects/**", "/health/**", "/qa/**", "/reports/**",
+                "/tests/**", "/teams/**", "/people/**", "/users/**", "/profile/**", "/worklogs/**",
+                "/my-worklogs/**", "/meetings/**", "/tasks/**")
+            .permitAll()
+            // Public API endpoints
+            .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/public/**").permitAll()
+            // Q&A status endpoint (public to check if feature is enabled)
+            .requestMatchers("/api/qa/status").permitAll()
+            // Swagger/OpenAPI endpoints
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+            // H2 console (dev only)
+            .requestMatchers("/h2-console/**").permitAll()
+            // Actuator health endpoint
+            .requestMatchers("/actuator/health").permitAll()
+            // All API endpoints require authentication
+            .requestMatchers("/api/**").authenticated()
+            // Allow any other request (frontend will handle auth)
+            .anyRequest().permitAll())
         .authenticationProvider(authenticationProvider())
         // Add malicious header filter before JWT filter
         .addFilterBefore(maliciousHeaderFilter, UsernamePasswordAuthenticationFilter.class)
@@ -148,8 +104,7 @@ public class SecurityConfig {
   }
 
   @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-      throws Exception {
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
   }
 
@@ -164,7 +119,8 @@ public class SecurityConfig {
     config.setAllowCredentials(true);
     // Parse comma-separated origins from config and trim whitespace
     List<String> origins = Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList();
-    // Use both setAllowedOrigins (exact match) and setAllowedOriginPatterns (patterns)
+    // Use both setAllowedOrigins (exact match) and setAllowedOriginPatterns
+    // (patterns)
     config.setAllowedOrigins(origins);
     config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
     config.setAllowedHeaders(List.of("*"));

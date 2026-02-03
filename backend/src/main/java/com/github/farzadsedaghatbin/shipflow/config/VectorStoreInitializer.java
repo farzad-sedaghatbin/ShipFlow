@@ -15,11 +15,13 @@ import org.springframework.stereotype.Component;
 /**
  * Initializes the vector store on application startup.
  *
- * <p>For Qdrant, ensures the collection exists with proper configuration. This is required because
- * Qdrant doesn't auto-create collections.
+ * <p>
+ * For Qdrant, ensures the collection exists with proper configuration. This is
+ * required because Qdrant doesn't auto-create collections.
  *
- * <p>Runs early in the startup sequence (Order 0) to ensure the collection is ready before any
- * knowledge ingestion occurs.
+ * <p>
+ * Runs early in the startup sequence (Order 0) to ensure the collection is
+ * ready before any knowledge ingestion occurs.
  */
 @Component
 @Slf4j
@@ -47,11 +49,9 @@ public class VectorStoreInitializer implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    VectorStoreProviderType providerType =
-        VectorStoreProviderType.fromConfigValue(vectorStoreProvider);
+    VectorStoreProviderType providerType = VectorStoreProviderType.fromConfigValue(vectorStoreProvider);
 
-    log.info(
-        "Initializing vector store - Provider: {}, Collection: {}", providerType, collectionName);
+    log.info("Initializing vector store - Provider: {}, Collection: {}", providerType, collectionName);
 
     if (providerType == VectorStoreProviderType.QDRANT) {
       initializeQdrantCollection();
@@ -67,8 +67,7 @@ public class VectorStoreInitializer implements CommandLineRunner {
       log.info("Connecting to Qdrant at {}:{}", qdrantHost, qdrantPort);
 
       // Build Qdrant client
-      QdrantGrpcClient.Builder grpcBuilder =
-          QdrantGrpcClient.newBuilder(qdrantHost, qdrantPort, false);
+      QdrantGrpcClient.Builder grpcBuilder = QdrantGrpcClient.newBuilder(qdrantHost, qdrantPort, false);
 
       if (qdrantApiKey != null && !qdrantApiKey.trim().isEmpty()) {
         grpcBuilder.withApiKey(qdrantApiKey);
@@ -93,14 +92,10 @@ public class VectorStoreInitializer implements CommandLineRunner {
 
       // Create collection if it doesn't exist
       if (!collectionExists) {
-        log.info(
-            "Creating Qdrant collection '{}' with dimension {}", collectionName, vectorDimension);
+        log.info("Creating Qdrant collection '{}' with dimension {}", collectionName, vectorDimension);
 
-        Collections.VectorParams vectorParams =
-            Collections.VectorParams.newBuilder()
-                .setSize(vectorDimension)
-                .setDistance(Collections.Distance.Cosine)
-                .build();
+        Collections.VectorParams vectorParams = Collections.VectorParams.newBuilder().setSize(vectorDimension)
+            .setDistance(Collections.Distance.Cosine).build();
 
         client.createCollectionAsync(collectionName, vectorParams).get();
 
@@ -108,21 +103,15 @@ public class VectorStoreInitializer implements CommandLineRunner {
       }
 
       // Verify collection info
-      Collections.CollectionInfo collectionInfo =
-          client.getCollectionInfoAsync(collectionName).get();
-      log.info(
-          "Qdrant collection '{}' ready - Status: {}, Vectors count: {}",
-          collectionName,
-          collectionInfo.getStatus(),
-          collectionInfo.getVectorsCount());
+      Collections.CollectionInfo collectionInfo = client.getCollectionInfoAsync(collectionName).get();
+      log.info("Qdrant collection '{}' ready - Status: {}, Vectors count: {}", collectionName,
+          collectionInfo.getStatus(), collectionInfo.getVectorsCount());
 
     } catch (Exception e) {
       log.error("Failed to initialize Qdrant collection '{}': {}", collectionName, e.getMessage());
       log.error("Qdrant vector store will not be available. Stack trace:", e);
       log.warn("Knowledge base features (document Q&A) will be degraded");
-      log.warn(
-          "Please ensure Qdrant is running at {}:{} or switch to in-memory provider",
-          qdrantHost,
+      log.warn("Please ensure Qdrant is running at {}:{} or switch to in-memory provider", qdrantHost,
           qdrantPort);
     } finally {
       if (client != null) {

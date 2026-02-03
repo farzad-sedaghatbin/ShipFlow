@@ -39,72 +39,49 @@ public class TestCaseService {
   public TestCaseDTO createTestCase(CreateTestCaseRequest request, Long userId) {
     checkFeatureEnabled();
 
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-    TestCase testCase =
-        TestCase.builder()
-            .testCaseKey(generateTestCaseKey())
-            .title(request.getTitle())
-            .description(request.getDescription())
-            .preconditions(request.getPreconditions())
-            .steps(request.getSteps())
-            .expectedResult(request.getExpectedResult())
-            .type(request.getType())
-            .priority(request.getPriority())
-            .status(request.getStatus() != null ? request.getStatus() : TestCaseStatus.DRAFT)
-            .aiGenerated(request.getAiGenerated() != null ? request.getAiGenerated() : false)
-            .tags(request.getTags() != null ? String.join(",", request.getTags()) : null)
-            .estimatedMinutes(request.getEstimatedMinutes())
-            .createdBy(user)
-            .build();
+    TestCase testCase = TestCase.builder().testCaseKey(generateTestCaseKey()).title(request.getTitle())
+        .description(request.getDescription()).preconditions(request.getPreconditions())
+        .steps(request.getSteps()).expectedResult(request.getExpectedResult()).type(request.getType())
+        .priority(request.getPriority())
+        .status(request.getStatus() != null ? request.getStatus() : TestCaseStatus.DRAFT)
+        .aiGenerated(request.getAiGenerated() != null ? request.getAiGenerated() : false)
+        .tags(request.getTags() != null ? String.join(",", request.getTags()) : null)
+        .estimatedMinutes(request.getEstimatedMinutes()).createdBy(user).build();
 
     // Set relationships
     if (request.getPitchId() != null) {
-      Pitch pitch =
-          pitchRepository
-              .findById(request.getPitchId())
-              .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
+      Pitch pitch = pitchRepository.findById(request.getPitchId())
+          .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
       testCase.setPitch(pitch);
       testCase.setCycle(pitch.getCycle());
       testCase.setTeam(pitch.getTeam());
     } else {
       if (request.getCycleId() != null) {
-        Cycle cycle =
-            cycleRepository
-                .findById(request.getCycleId())
-                .orElseThrow(
-                    () -> new RuntimeException("Cycle not found: " + request.getCycleId()));
+        Cycle cycle = cycleRepository.findById(request.getCycleId())
+            .orElseThrow(() -> new RuntimeException("Cycle not found: " + request.getCycleId()));
         testCase.setCycle(cycle);
       }
       if (request.getTeamId() != null) {
-        Team team =
-            teamRepository
-                .findById(request.getTeamId())
-                .orElseThrow(() -> new RuntimeException("Team not found: " + request.getTeamId()));
+        Team team = teamRepository.findById(request.getTeamId())
+            .orElseThrow(() -> new RuntimeException("Team not found: " + request.getTeamId()));
         testCase.setTeam(team);
       }
     }
 
     // Set scope if provided
     if (request.getScopeId() != null) {
-      HillChartPoint scope =
-          hillChartPointRepository
-              .findById(request.getScopeId())
-              .orElseThrow(
-                  () -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
+      HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+          .orElseThrow(() -> new IllegalArgumentException("Scope not found: " + request.getScopeId()));
       testCase.setScope(scope);
     }
 
     // Set task if provided
     if (request.getTaskId() != null) {
-      Task task =
-          taskRepository
-              .findById(request.getTaskId())
-              .orElseThrow(
-                  () -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+      Task task = taskRepository.findById(request.getTaskId())
+          .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
       testCase.setTask(task);
     }
 
@@ -119,68 +96,61 @@ public class TestCaseService {
   public TestCaseDTO updateTestCase(Long id, UpdateTestCaseRequest request, Long userId) {
     checkFeatureEnabled();
 
-    TestCase testCase =
-        testCaseRepository
-            .findById(id)
-            .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
+    TestCase testCase = testCaseRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
 
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-    if (request.getTitle() != null) testCase.setTitle(request.getTitle());
-    if (request.getDescription() != null) testCase.setDescription(request.getDescription());
-    if (request.getPreconditions() != null) testCase.setPreconditions(request.getPreconditions());
-    if (request.getSteps() != null) testCase.setSteps(request.getSteps());
+    if (request.getTitle() != null)
+      testCase.setTitle(request.getTitle());
+    if (request.getDescription() != null)
+      testCase.setDescription(request.getDescription());
+    if (request.getPreconditions() != null)
+      testCase.setPreconditions(request.getPreconditions());
+    if (request.getSteps() != null)
+      testCase.setSteps(request.getSteps());
     if (request.getExpectedResult() != null)
       testCase.setExpectedResult(request.getExpectedResult());
-    if (request.getType() != null) testCase.setType(request.getType());
-    if (request.getPriority() != null) testCase.setPriority(request.getPriority());
-    if (request.getStatus() != null) testCase.setStatus(request.getStatus());
-    if (request.getTags() != null) testCase.setTags(String.join(",", request.getTags()));
+    if (request.getType() != null)
+      testCase.setType(request.getType());
+    if (request.getPriority() != null)
+      testCase.setPriority(request.getPriority());
+    if (request.getStatus() != null)
+      testCase.setStatus(request.getStatus());
+    if (request.getTags() != null)
+      testCase.setTags(String.join(",", request.getTags()));
     if (request.getEstimatedMinutes() != null)
       testCase.setEstimatedMinutes(request.getEstimatedMinutes());
 
     // Update relationships
     if (request.getPitchId() != null) {
-      Pitch pitch =
-          pitchRepository
-              .findById(request.getPitchId())
-              .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
+      Pitch pitch = pitchRepository.findById(request.getPitchId())
+          .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
       testCase.setPitch(pitch);
     }
     if (request.getCycleId() != null) {
-      Cycle cycle =
-          cycleRepository
-              .findById(request.getCycleId())
-              .orElseThrow(() -> new RuntimeException("Cycle not found: " + request.getCycleId()));
+      Cycle cycle = cycleRepository.findById(request.getCycleId())
+          .orElseThrow(() -> new RuntimeException("Cycle not found: " + request.getCycleId()));
       testCase.setCycle(cycle);
     }
     if (request.getTeamId() != null) {
-      Team team =
-          teamRepository
-              .findById(request.getTeamId())
-              .orElseThrow(() -> new RuntimeException("Team not found: " + request.getTeamId()));
+      Team team = teamRepository.findById(request.getTeamId())
+          .orElseThrow(() -> new RuntimeException("Team not found: " + request.getTeamId()));
       testCase.setTeam(team);
     }
 
     // Update scope if provided
     if (request.getScopeId() != null) {
-      HillChartPoint scope =
-          hillChartPointRepository
-              .findById(request.getScopeId())
-              .orElseThrow(() -> new RuntimeException("Scope not found: " + request.getScopeId()));
+      HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId())
+          .orElseThrow(() -> new RuntimeException("Scope not found: " + request.getScopeId()));
       testCase.setScope(scope);
     }
 
     // Update task if provided
     if (request.getTaskId() != null) {
-      Task task =
-          taskRepository
-              .findById(request.getTaskId())
-              .orElseThrow(
-                  () -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
+      Task task = taskRepository.findById(request.getTaskId())
+          .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
       testCase.setTask(task);
     }
 
@@ -196,23 +166,21 @@ public class TestCaseService {
   public void deleteTestCase(Long id) {
     checkFeatureEnabled();
 
-    TestCase testCase =
-        testCaseRepository
-            .findById(id)
-            .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
+    TestCase testCase = testCaseRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
 
     // Check if already deleted
     if (testCase.getDeletedAt() != null) {
       throw new IllegalStateException("Test case is already deleted");
     }
-    
+
     User currentUser = getCurrentUser();
-    
+
     // Perform soft delete
     testCase.setDeletedAt(LocalDateTime.now());
     testCase.setDeletedBy(currentUser);
     testCaseRepository.save(testCase);
-    
+
     log.info("Soft deleted test case: {} by user: {}", testCase.getTestCaseKey(), currentUser.getUsername());
   }
 
@@ -221,10 +189,8 @@ public class TestCaseService {
   public TestCaseDTO getTestCaseById(Long id) {
     checkFeatureEnabled();
 
-    TestCase testCase =
-        testCaseRepository
-            .findByIdNotDeleted(id)
-            .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
+    TestCase testCase = testCaseRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new RuntimeException("Test case not found: " + id));
 
     return toDTO(testCase);
   }
@@ -234,10 +200,8 @@ public class TestCaseService {
   public TestCaseDTO getTestCaseByKey(String key) {
     checkFeatureEnabled();
 
-    TestCase testCase =
-        testCaseRepository
-            .findByTestCaseKey(key)
-            .orElseThrow(() -> new RuntimeException("Test case not found: " + key));
+    TestCase testCase = testCaseRepository.findByTestCaseKey(key)
+        .orElseThrow(() -> new RuntimeException("Test case not found: " + key));
 
     return toDTO(testCase);
   }
@@ -255,8 +219,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByPitch(Long pitchId) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByPitchIdNotDeleted(pitchId).stream()
-        .map(this::toDTO)
+    return testCaseRepository.findByPitchIdNotDeleted(pitchId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -265,8 +228,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByCycle(Long cycleId) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByCycleIdNotDeleted(cycleId).stream()
-        .map(this::toDTO)
+    return testCaseRepository.findByCycleIdNotDeleted(cycleId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -275,32 +237,22 @@ public class TestCaseService {
   public List<TestCaseDTO> getTestCasesByStatus(TestCaseStatus status) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findByStatusNotDeleted(status).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return testCaseRepository.findByStatusNotDeleted(status).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get test cases with filters. */
   @Transactional(readOnly = true)
-  public List<TestCaseDTO> getTestCasesWithFilters(
-      Long cycleId,
-      Long pitchId,
-      List<TestCaseStatus> statuses,
-      List<TestCaseType> types,
-      List<TestCasePriority> priorities) {
+  public List<TestCaseDTO> getTestCasesWithFilters(Long cycleId, Long pitchId, List<TestCaseStatus> statuses,
+      List<TestCaseType> types, List<TestCasePriority> priorities) {
     checkFeatureEnabled();
 
     // Convert empty lists to null for the query
     List<TestCaseStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
     List<TestCaseType> typeList = (types != null && !types.isEmpty()) ? types : null;
-    List<TestCasePriority> priorityList =
-        (priorities != null && !priorities.isEmpty()) ? priorities : null;
+    List<TestCasePriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
 
-    return testCaseRepository
-        .findWithFilters(cycleId, pitchId, statusList, typeList, priorityList)
-        .stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return testCaseRepository.findWithFilters(cycleId, pitchId, statusList, typeList, priorityList).stream()
+        .map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get AI-generated test cases for a pitch. */
@@ -308,8 +260,7 @@ public class TestCaseService {
   public List<TestCaseDTO> getAiGeneratedTestCases(Long pitchId) {
     checkFeatureEnabled();
 
-    return testCaseRepository.findAiGeneratedByPitchId(pitchId).stream()
-        .map(this::toDTO)
+    return testCaseRepository.findAiGeneratedByPitchId(pitchId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -329,20 +280,14 @@ public class TestCaseService {
   /** Convert entity to DTO. */
   public TestCaseDTO toDTO(TestCase testCase) {
     long totalRuns = testRunRepository.countByTestCaseId(testCase.getId());
-    long passedRuns =
-        testRunRepository.countByPitchIdAndStatus(
-            testCase.getPitch() != null ? testCase.getPitch().getId() : null, TestRunStatus.PASSED);
-    long failedRuns =
-        testRunRepository.countByPitchIdAndStatus(
-            testCase.getPitch() != null ? testCase.getPitch().getId() : null, TestRunStatus.FAILED);
+    long passedRuns = testRunRepository.countByPitchIdAndStatus(
+        testCase.getPitch() != null ? testCase.getPitch().getId() : null, TestRunStatus.PASSED);
+    long failedRuns = testRunRepository.countByPitchIdAndStatus(
+        testCase.getPitch() != null ? testCase.getPitch().getId() : null, TestRunStatus.FAILED);
 
-    return TestCaseDTO.builder()
-        .id(testCase.getId())
-        .testCaseKey(testCase.getTestCaseKey())
-        .title(testCase.getTitle())
-        .description(testCase.getDescription())
-        .preconditions(testCase.getPreconditions())
-        .steps(testCase.getSteps())
+    return TestCaseDTO.builder().id(testCase.getId()).testCaseKey(testCase.getTestCaseKey())
+        .title(testCase.getTitle()).description(testCase.getDescription())
+        .preconditions(testCase.getPreconditions()).steps(testCase.getSteps())
         .expectedResult(testCase.getExpectedResult())
         .pitchId(testCase.getPitch() != null ? testCase.getPitch().getId() : null)
         .pitchTitle(testCase.getPitch() != null ? testCase.getPitch().getTitle() : null)
@@ -353,33 +298,23 @@ public class TestCaseService {
         .scopeId(testCase.getScope() != null ? testCase.getScope().getId() : null)
         .scopeName(testCase.getScope() != null ? testCase.getScope().getScope() : null)
         .taskId(testCase.getTask() != null ? testCase.getTask().getId() : null)
-        .taskTitle(testCase.getTask() != null ? testCase.getTask().getTitle() : null)
-        .type(testCase.getType())
-        .priority(testCase.getPriority())
-        .status(testCase.getStatus())
-        .aiGenerated(testCase.getAiGenerated())
+        .taskTitle(testCase.getTask() != null ? testCase.getTask().getTitle() : null).type(testCase.getType())
+        .priority(testCase.getPriority()).status(testCase.getStatus()).aiGenerated(testCase.getAiGenerated())
         .tags(testCase.getTags())
         .tagList(testCase.getTags() != null ? Arrays.asList(testCase.getTags().split(",")) : null)
         .estimatedMinutes(testCase.getEstimatedMinutes())
         .createdById(testCase.getCreatedBy() != null ? testCase.getCreatedBy().getId() : null)
-        .createdByName(
-            testCase.getCreatedBy() != null ? testCase.getCreatedBy().getUsername() : null)
+        .createdByName(testCase.getCreatedBy() != null ? testCase.getCreatedBy().getUsername() : null)
         .updatedById(testCase.getUpdatedBy() != null ? testCase.getUpdatedBy().getId() : null)
-        .updatedByName(
-            testCase.getUpdatedBy() != null ? testCase.getUpdatedBy().getUsername() : null)
-        .createdAt(testCase.getCreatedAt())
-        .updatedAt(testCase.getUpdatedAt())
-        .totalRuns(totalRuns)
-        .passedRuns(passedRuns)
-        .failedRuns(failedRuns)
-        .passRate(totalRuns > 0 ? (double) passedRuns / totalRuns * 100 : null)
-        .build();
+        .updatedByName(testCase.getUpdatedBy() != null ? testCase.getUpdatedBy().getUsername() : null)
+        .createdAt(testCase.getCreatedAt()).updatedAt(testCase.getUpdatedAt()).totalRuns(totalRuns)
+        .passedRuns(passedRuns).failedRuns(failedRuns)
+        .passRate(totalRuns > 0 ? (double) passedRuns / totalRuns * 100 : null).build();
   }
-  
+
   private User getCurrentUser() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return userRepository
-        .findByUsername(username)
+    return userRepository.findByUsername(username)
         .orElseThrow(() -> new RuntimeException("User not found: " + username));
   }
 }

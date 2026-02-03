@@ -52,16 +52,15 @@ public class EvidenceController {
   @PostMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Create a new evidence")
-  public ResponseEntity<EvidenceDTO> createEvidence(
-      @Valid @RequestBody CreateEvidenceRequest request) {
+  public ResponseEntity<EvidenceDTO> createEvidence(@Valid @RequestBody CreateEvidenceRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(evidenceService.createEvidence(request));
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Update an evidence")
-  public ResponseEntity<EvidenceDTO> updateEvidence(
-      @PathVariable Long id, @Valid @RequestBody CreateEvidenceRequest request) {
+  public ResponseEntity<EvidenceDTO> updateEvidence(@PathVariable Long id,
+      @Valid @RequestBody CreateEvidenceRequest request) {
     return ResponseEntity.ok(evidenceService.updateEvidence(id, request));
   }
 

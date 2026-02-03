@@ -21,66 +21,49 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Unit tests for SlackIntegrationService Tests Slack configuration, notification sending, and
- * channel management
+ * Unit tests for SlackIntegrationService Tests Slack configuration,
+ * notification sending, and channel management
  */
 @ExtendWith(MockitoExtension.class)
 class SlackIntegrationServiceTest {
 
-  @Mock private SlackConfigurationRepository slackConfigRepository;
+  @Mock
+  private SlackConfigurationRepository slackConfigRepository;
 
-  @Mock private SlackChannelConfigRepository channelConfigRepository;
+  @Mock
+  private SlackChannelConfigRepository channelConfigRepository;
 
-  @Mock private SlackNotificationHistoryRepository historyRepository;
+  @Mock
+  private SlackNotificationHistoryRepository historyRepository;
 
-  @Mock private RestTemplate restTemplate;
+  @Mock
+  private RestTemplate restTemplate;
 
-  @InjectMocks private SlackIntegrationService slackService;
+  @InjectMocks
+  private SlackIntegrationService slackService;
 
   private SlackConfiguration testConfig;
   private SlackChannelConfig testChannelConfig;
 
   @BeforeEach
   void setUp() {
-    testConfig =
-        SlackConfiguration.builder()
-            .id(1L)
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/TEST/URL")
-            .defaultChannel("general")
-            .isEnabled(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testConfig = SlackConfiguration.builder().id(1L).workspaceName("test-workspace")
+        .webhookUrl("https://hooks.slack.com/services/TEST/URL").defaultChannel("general").isEnabled(true)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    testChannelConfig =
-        SlackChannelConfig.builder()
-            .id(1L)
-            .slackConfiguration(testConfig)
-            .channelName("engineering")
-            .notifyTaskAssigned(true)
-            .notifyTaskCompleted(true)
-            .notifyTaskBlocked(false)
-            .notifyPitchShaped(true)
-            .notifyCycleStarted(true)
-            .notifyCycleCooldown(true)
-            .notifyBettingCompleted(false)
-            .notifySprintStarted(false)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testChannelConfig = SlackChannelConfig.builder().id(1L).slackConfiguration(testConfig)
+        .channelName("engineering").notifyTaskAssigned(true).notifyTaskCompleted(true).notifyTaskBlocked(false)
+        .notifyPitchShaped(true).notifyCycleStarted(true).notifyCycleCooldown(true)
+        .notifyBettingCompleted(false).notifySprintStarted(false).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
   }
 
   @Test
   void createOrUpdateConfiguration_NewConfiguration_ShouldCreate() {
     // Given
-    CreateSlackConfigurationRequest request =
-        CreateSlackConfigurationRequest.builder()
-            .workspaceName("new-workspace")
-            .webhookUrl("https://hooks.slack.com/services/NEW/URL")
-            .defaultChannel("general")
-            .isEnabled(true)
-            .build();
+    CreateSlackConfigurationRequest request = CreateSlackConfigurationRequest.builder()
+        .workspaceName("new-workspace").webhookUrl("https://hooks.slack.com/services/NEW/URL")
+        .defaultChannel("general").isEnabled(true).build();
 
     when(slackConfigRepository.findByWorkspaceName("new-workspace")).thenReturn(Optional.empty());
     when(slackConfigRepository.save(any(SlackConfiguration.class))).thenReturn(testConfig);
@@ -97,16 +80,11 @@ class SlackIntegrationServiceTest {
   @Test
   void createOrUpdateConfiguration_ExistingConfiguration_ShouldUpdate() {
     // Given
-    CreateSlackConfigurationRequest request =
-        CreateSlackConfigurationRequest.builder()
-            .workspaceName("test-workspace")
-            .webhookUrl("https://hooks.slack.com/services/UPDATED/URL")
-            .defaultChannel("updates")
-            .isEnabled(false)
-            .build();
+    CreateSlackConfigurationRequest request = CreateSlackConfigurationRequest.builder()
+        .workspaceName("test-workspace").webhookUrl("https://hooks.slack.com/services/UPDATED/URL")
+        .defaultChannel("updates").isEnabled(false).build();
 
-    when(slackConfigRepository.findByWorkspaceName("test-workspace"))
-        .thenReturn(Optional.of(testConfig));
+    when(slackConfigRepository.findByWorkspaceName("test-workspace")).thenReturn(Optional.of(testConfig));
     when(slackConfigRepository.save(any(SlackConfiguration.class))).thenReturn(testConfig);
 
     // When
@@ -170,11 +148,8 @@ class SlackIntegrationServiceTest {
   @Test
   void createOrUpdateChannelConfig_NewChannel_ShouldCreate() {
     // Given
-    CreateSlackChannelConfigRequest request =
-        CreateSlackChannelConfigRequest.builder()
-            .channelName("new-channel")
-            .notifyTaskAssigned(true)
-            .build();
+    CreateSlackChannelConfigRequest request = CreateSlackChannelConfigRequest.builder().channelName("new-channel")
+        .notifyTaskAssigned(true).build();
 
     when(slackConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
     when(channelConfigRepository.findBySlackConfigurationIdAndChannelName(1L, "new-channel"))
@@ -192,11 +167,8 @@ class SlackIntegrationServiceTest {
   @Test
   void createOrUpdateChannelConfig_ExistingChannel_ShouldUpdate() {
     // Given
-    CreateSlackChannelConfigRequest request =
-        CreateSlackChannelConfigRequest.builder()
-            .channelName("engineering")
-            .notifyTaskBlocked(true)
-            .build();
+    CreateSlackChannelConfigRequest request = CreateSlackChannelConfigRequest.builder().channelName("engineering")
+        .notifyTaskBlocked(true).build();
 
     when(slackConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
     when(channelConfigRepository.findBySlackConfigurationIdAndChannelName(1L, "engineering"))
@@ -214,8 +186,7 @@ class SlackIntegrationServiceTest {
   @Test
   void getChannelConfigs_ShouldReturnAll() {
     // Given
-    when(channelConfigRepository.findBySlackConfigurationId(1L))
-        .thenReturn(List.of(testChannelConfig));
+    when(channelConfigRepository.findBySlackConfigurationId(1L)).thenReturn(List.of(testChannelConfig));
 
     // When
     List<SlackChannelConfigDTO> results = slackService.getChannelConfigs(1L);
@@ -279,8 +250,8 @@ class SlackIntegrationServiceTest {
     slackService.sendNotification("TASK_ASSIGNED", "Test message", "engineering", "TASK", 1L);
 
     // Then
-    ArgumentCaptor<SlackNotificationHistory> historyCaptor =
-        ArgumentCaptor.forClass(SlackNotificationHistory.class);
+    ArgumentCaptor<SlackNotificationHistory> historyCaptor = ArgumentCaptor
+        .forClass(SlackNotificationHistory.class);
     verify(historyRepository).save(historyCaptor.capture());
 
     SlackNotificationHistory savedHistory = historyCaptor.getValue();
@@ -302,8 +273,8 @@ class SlackIntegrationServiceTest {
     slackService.sendNotification("TASK_ASSIGNED", "Test message", "engineering", "TASK", 1L);
 
     // Then
-    ArgumentCaptor<SlackNotificationHistory> historyCaptor =
-        ArgumentCaptor.forClass(SlackNotificationHistory.class);
+    ArgumentCaptor<SlackNotificationHistory> historyCaptor = ArgumentCaptor
+        .forClass(SlackNotificationHistory.class);
     verify(historyRepository).save(historyCaptor.capture());
 
     SlackNotificationHistory savedHistory = historyCaptor.getValue();
@@ -314,17 +285,10 @@ class SlackIntegrationServiceTest {
   @Test
   void getNotificationHistory_ShouldReturnHistory() {
     // Given
-    SlackNotificationHistory history =
-        SlackNotificationHistory.builder()
-            .id(1L)
-            .slackConfiguration(testConfig)
-            .notificationType("TASK_ASSIGNED")
-            .success(true)
-            .sentAt(LocalDateTime.now())
-            .build();
+    SlackNotificationHistory history = SlackNotificationHistory.builder().id(1L).slackConfiguration(testConfig)
+        .notificationType("TASK_ASSIGNED").success(true).sentAt(LocalDateTime.now()).build();
 
-    when(historyRepository.findBySlackConfigurationIdOrderBySentAtDesc(1L))
-        .thenReturn(List.of(history));
+    when(historyRepository.findBySlackConfigurationIdOrderBySentAtDesc(1L)).thenReturn(List.of(history));
 
     // When
     List<SlackNotificationHistory> results = slackService.getNotificationHistory(1L);

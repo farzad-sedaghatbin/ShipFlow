@@ -25,9 +25,11 @@ public class Person {
   @Column(unique = true)
   private String email;
 
-  @Column private String avatarUrl;
+  @Column
+  private String avatarUrl;
 
-  @Column private String department;
+  @Column
+  private String department;
 
   @Column(columnDefinition = "TEXT")
   private String skills;
@@ -41,7 +43,8 @@ public class Person {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
-  @Column private LocalDateTime updatedAt;
+  @Column
+  private LocalDateTime updatedAt;
 
   @OneToMany(mappedBy = "person", cascade = CascadeType.ALL)
   @Builder.Default

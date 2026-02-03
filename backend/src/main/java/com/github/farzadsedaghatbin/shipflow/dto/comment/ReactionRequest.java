@@ -16,6 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReactionRequest {
 
-    @NotNull(message = "Reaction type is required")
-    private CommentReaction reactionType;
+  @NotNull(message = "Reaction type is required")
+  private CommentReaction reactionType;
 }

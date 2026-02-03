@@ -10,8 +10,8 @@ import org.hibernate.envers.RevisionTimestamp;
 import java.io.Serializable;
 
 /**
- * Custom revision entity that tracks audit information.
- * Uses 'rev' column name to match the existing database schema.
+ * Custom revision entity that tracks audit information. Uses 'rev' column name
+ * to match the existing database schema.
  */
 @Entity
 @Table(name = "revinfo")
@@ -20,21 +20,20 @@ import java.io.Serializable;
 @Setter
 public class AuditRevisionEntity implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @RevisionNumber
-    @Column(name = "rev")
-    private int id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @RevisionNumber
+  @Column(name = "rev")
+  private int id;
 
-    @RevisionTimestamp
-    @Column(name = "revtstmp")
-    private long timestamp;
+  @RevisionTimestamp
+  @Column(name = "revtstmp")
+  private long timestamp;
 
-    /**
-     * The username of the user who made the change.
-     * This is automatically populated by the AuditRevisionListener
-     * from the Spring Security context.
-     */
-    @Column(name = "modified_by")
-    private String modifiedBy;
+  /**
+   * The username of the user who made the change. This is automatically populated
+   * by the AuditRevisionListener from the Spring Security context.
+   */
+  @Column(name = "modified_by")
+  private String modifiedBy;
 }

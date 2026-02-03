@@ -24,20 +24,22 @@ import org.springframework.stereotype.Component;
 /**
  * LLM Provider implementation for RunPod Serverless GPU.
  *
- * <p>RunPod is ideal for:
+ * <p>
+ * RunPod is ideal for:
  *
  * <ul>
- *   <li>Production deployments without local GPU
- *   <li>Pay-per-use GPU compute
- *   <li>Scaling AI workloads
+ * <li>Production deployments without local GPU
+ * <li>Pay-per-use GPU compute
+ * <li>Scaling AI workloads
  * </ul>
  *
- * <p>API Flow:
+ * <p>
+ * API Flow:
  *
  * <ol>
- *   <li>POST /run - Submit job, returns {id: "..."}
- *   <li>GET /status/{id} - Poll until status == "COMPLETED"
- *   <li>Extract output from completed response
+ * <li>POST /run - Submit job, returns {id: "..."}
+ * <li>GET /status/{id} - Poll until status == "COMPLETED"
+ * <li>Extract output from completed response
  * </ol>
  */
 @Component
@@ -53,21 +55,12 @@ public class RunPodLLMProvider implements LLMProvider {
   public ChatLanguageModel createModel(LLMProviderConfig config) {
     validateConfig(config);
 
-    log.info(
-        "Creating RunPod ChatLanguageModel - URL: {}, Model: {}",
-        config.getBaseUrl(),
-        config.getModelName());
+    log.info("Creating RunPod ChatLanguageModel - URL: {}, Model: {}", config.getBaseUrl(), config.getModelName());
 
     Duration pollInterval = config.getExtraParam("pollInterval", Duration.ofSeconds(2));
 
-    return new RunPodChatModel(
-        config.getBaseUrl(),
-        config.getApiKey(),
-        config.getModelName(),
-        config.getTimeout(),
-        pollInterval,
-        config.getMaxTokens(),
-        config.getTemperature());
+    return new RunPodChatModel(config.getBaseUrl(), config.getApiKey(), config.getModelName(), config.getTimeout(),
+        pollInterval, config.getMaxTokens(), config.getTemperature());
   }
 
   @Override
@@ -104,14 +97,8 @@ public class RunPodLLMProvider implements LLMProvider {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    RunPodChatModel(
-        String baseUrl,
-        String apiKey,
-        String modelName,
-        Duration timeout,
-        Duration pollInterval,
-        Integer maxTokens,
-        Double temperature) {
+    RunPodChatModel(String baseUrl, String apiKey, String modelName, Duration timeout, Duration pollInterval,
+        Integer maxTokens, Double temperature) {
       this.baseUrl = baseUrl;
       this.apiKey = apiKey;
       this.modelName = modelName;
@@ -175,16 +162,11 @@ public class RunPodLLMProvider implements LLMProvider {
       String jsonPayload = objectMapper.writeValueAsString(payload);
       log.debug("RunPod request payload: {}", jsonPayload);
 
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(runUrl))
-              .header("Content-Type", "application/json")
-              .header("Authorization", "Bearer " + apiKey)
-              .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-              .build();
+      HttpRequest request = HttpRequest.newBuilder().uri(URI.create(runUrl))
+          .header("Content-Type", "application/json").header("Authorization", "Bearer " + apiKey)
+          .POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
 
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() != 200 && response.statusCode() != 201) {
         throw new RuntimeException(
@@ -208,26 +190,17 @@ public class RunPodLLMProvider implements LLMProvider {
 
       while (true) {
         if (System.currentTimeMillis() - startTime > timeoutMillis) {
-          throw new RuntimeException(
-              "RunPod job timed out after " + timeout.getSeconds() + " seconds");
+          throw new RuntimeException("RunPod job timed out after " + timeout.getSeconds() + " seconds");
         }
 
-        HttpRequest request =
-            HttpRequest.newBuilder()
-                .uri(URI.create(statusUrl))
-                .header("Authorization", "Bearer " + apiKey)
-                .GET()
-                .build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(statusUrl))
+            .header("Authorization", "Bearer " + apiKey).GET().build();
 
-        HttpResponse<String> response =
-            httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
           throw new RuntimeException(
-              "RunPod /status failed with status "
-                  + response.statusCode()
-                  + ": "
-                  + response.body());
+              "RunPod /status failed with status " + response.statusCode() + ": " + response.body());
         }
 
         JsonNode responseJson = objectMapper.readTree(response.body());
@@ -236,23 +209,22 @@ public class RunPodLLMProvider implements LLMProvider {
         log.debug("RunPod job {} status: {}", jobId, status);
 
         switch (status) {
-          case "COMPLETED":
+          case "COMPLETED" :
             return extractTextFromResponse(responseJson);
 
-          case "FAILED":
-            String error =
-                responseJson.has("error") ? responseJson.get("error").asText() : "Unknown error";
+          case "FAILED" :
+            String error = responseJson.has("error") ? responseJson.get("error").asText() : "Unknown error";
             throw new RuntimeException("RunPod job failed: " + error);
 
-          case "CANCELLED":
+          case "CANCELLED" :
             throw new RuntimeException("RunPod job was cancelled");
 
-          case "IN_QUEUE":
-          case "IN_PROGRESS":
+          case "IN_QUEUE" :
+          case "IN_PROGRESS" :
             Thread.sleep(pollInterval.toMillis());
             break;
 
-          default:
+          default :
             log.warn("Unknown RunPod status: {}, continuing to poll", status);
             Thread.sleep(pollInterval.toMillis());
         }

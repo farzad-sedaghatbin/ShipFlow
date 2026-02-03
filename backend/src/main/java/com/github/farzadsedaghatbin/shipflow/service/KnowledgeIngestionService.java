@@ -26,7 +26,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Service for ingesting knowledge from various entities into the vector store. */
+/**
+ * Service for ingesting knowledge from various entities into the vector store.
+ */
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "app.features.qa.enabled", havingValue = "true")
@@ -48,18 +50,12 @@ public class KnowledgeIngestionService {
   private final ManualNoteRepository manualNoteRepository;
 
   @Autowired
-  public KnowledgeIngestionService(
-      KnowledgeItemRepository knowledgeItemRepository,
-      QAInteractionRepository qaInteractionRepository,
-      @Autowired(required = false) EmbeddingModel embeddingModel,
+  public KnowledgeIngestionService(KnowledgeItemRepository knowledgeItemRepository,
+      QAInteractionRepository qaInteractionRepository, @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
-      @Autowired(required = false) QAConfig qaConfig,
-      PitchRepository pitchRepository,
-      MeetingRepository meetingRepository,
-      WorkLogRepository workLogRepository,
-      TeamRepository teamRepository,
-      CycleRepository cycleRepository,
-      EvidenceRepository evidenceRepository,
+      @Autowired(required = false) QAConfig qaConfig, PitchRepository pitchRepository,
+      MeetingRepository meetingRepository, WorkLogRepository workLogRepository, TeamRepository teamRepository,
+      CycleRepository cycleRepository, EvidenceRepository evidenceRepository,
       ManualNoteRepository manualNoteRepository) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
@@ -79,7 +75,8 @@ public class KnowledgeIngestionService {
   @Transactional
   @Async
   public void ingestPitch(Long pitchId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(pitchId);
     if (pitchOpt.isEmpty()) {
@@ -90,15 +87,8 @@ public class KnowledgeIngestionService {
     Pitch pitch = pitchOpt.get();
     String content = buildPitchContent(pitch);
 
-    ingestEntity(
-        KnowledgeEntityType.PITCH,
-        pitch.getId(),
-        pitch.getTitle(),
-        content,
-        pitch.getCycle().getId(),
-        pitch.getTeam() != null ? pitch.getTeam().getId() : null,
-        pitch.getId(),
-        null);
+    ingestEntity(KnowledgeEntityType.PITCH, pitch.getId(), pitch.getTitle(), content, pitch.getCycle().getId(),
+        pitch.getTeam() != null ? pitch.getTeam().getId() : null, pitch.getId(), null);
 
     log.info("Ingested pitch: {} (ID: {})", pitch.getTitle(), pitch.getId());
   }
@@ -107,7 +97,8 @@ public class KnowledgeIngestionService {
   @Transactional
   @Async
   public void ingestMeeting(Long meetingId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<Meeting> meetingOpt = meetingRepository.findById(meetingId);
     if (meetingOpt.isEmpty()) {
@@ -119,20 +110,13 @@ public class KnowledgeIngestionService {
     String content = buildMeetingContent(meeting);
 
     Long cycleId = meeting.getPitch() != null ? meeting.getPitch().getCycle().getId() : null;
-    Long teamId =
-        meeting.getPitch() != null && meeting.getPitch().getTeam() != null
-            ? meeting.getPitch().getTeam().getId()
-            : null;
+    Long teamId = meeting.getPitch() != null && meeting.getPitch().getTeam() != null
+        ? meeting.getPitch().getTeam().getId()
+        : null;
     Long pitchId = meeting.getPitch() != null ? meeting.getPitch().getId() : null;
 
-    ingestEntity(
-        KnowledgeEntityType.MEETING,
-        meeting.getId(),
-        "Meeting: " + meeting.getType() + " - " + meeting.getDateHeld(),
-        content,
-        cycleId,
-        teamId,
-        pitchId,
+    ingestEntity(KnowledgeEntityType.MEETING, meeting.getId(),
+        "Meeting: " + meeting.getType() + " - " + meeting.getDateHeld(), content, cycleId, teamId, pitchId,
         null);
 
     log.info("Ingested meeting: {} (ID: {})", meeting.getType(), meeting.getId());
@@ -142,7 +126,8 @@ public class KnowledgeIngestionService {
   @Transactional
   @Async
   public void ingestWorkLog(Long workLogId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<WorkLog> workLogOpt = workLogRepository.findById(workLogId);
     if (workLogOpt.isEmpty()) {
@@ -160,15 +145,11 @@ public class KnowledgeIngestionService {
 
     String content = buildWorkLogContent(workLog);
 
-    ingestEntity(
-        KnowledgeEntityType.WORKLOG,
-        workLog.getId(),
-        "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(),
-        content,
+    ingestEntity(KnowledgeEntityType.WORKLOG, workLog.getId(),
+        "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(), content,
         workLog.getPitch().getCycle().getId(),
         workLog.getPitch().getTeam() != null ? workLog.getPitch().getTeam().getId() : null,
-        workLog.getPitch().getId(),
-        null);
+        workLog.getPitch().getId(), null);
 
     log.info("Ingested work log: ID: {}", workLog.getId());
   }
@@ -177,7 +158,8 @@ public class KnowledgeIngestionService {
   @Transactional
   @Async
   public void ingestEvidence(Long evidenceId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<Evidence> evidenceOpt = evidenceRepository.findById(evidenceId);
     if (evidenceOpt.isEmpty()) {
@@ -188,15 +170,10 @@ public class KnowledgeIngestionService {
     Evidence evidence = evidenceOpt.get();
     String content = buildEvidenceContent(evidence);
 
-    ingestEntity(
-        KnowledgeEntityType.EVIDENCE,
-        evidence.getId(),
-        "Evidence: " + evidence.getDate(),
-        content,
+    ingestEntity(KnowledgeEntityType.EVIDENCE, evidence.getId(), "Evidence: " + evidence.getDate(), content,
         evidence.getPitch().getCycle().getId(),
         evidence.getPitch().getTeam() != null ? evidence.getPitch().getTeam().getId() : null,
-        evidence.getPitch().getId(),
-        evidence.getPerson().getId());
+        evidence.getPitch().getId(), evidence.getPerson().getId());
 
     log.info("Ingested evidence: ID: {}", evidence.getId());
   }
@@ -205,7 +182,8 @@ public class KnowledgeIngestionService {
   @Transactional
   @Async
   public void ingestManualNote(Long noteId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<ManualNote> noteOpt = manualNoteRepository.findById(noteId);
     if (noteOpt.isEmpty()) {
@@ -222,26 +200,23 @@ public class KnowledgeIngestionService {
 
     String content = buildManualNoteContent(note);
 
-    ingestEntity(
-        KnowledgeEntityType.MANUAL_NOTE,
-        note.getId(),
-        note.getTitle(),
-        content,
-        note.getCycleId(),
-        note.getTeamId(),
-        note.getPitchId(),
-        note.getAuthorId());
+    ingestEntity(KnowledgeEntityType.MANUAL_NOTE, note.getId(), note.getTitle(), content, note.getCycleId(),
+        note.getTeamId(), note.getPitchId(), note.getAuthorId());
 
     log.info("Ingested manual note: {} (ID: {})", note.getTitle(), note.getId());
   }
 
   /**
-   * Ingest a reference document (like Shape Up methodology book) into the knowledge base. Reference
-   * documents are external materials that provide context for the Q&A system.
+   * Ingest a reference document (like Shape Up methodology book) into the
+   * knowledge base. Reference documents are external materials that provide
+   * context for the Q&A system.
    *
-   * @param sourceId Unique identifier for the reference (e.g., "shape-up-methodology")
-   * @param title Display title for the reference
-   * @param content The full text content of the document
+   * @param sourceId
+   *            Unique identifier for the reference (e.g., "shape-up-methodology")
+   * @param title
+   *            Display title for the reference
+   * @param content
+   *            The full text content of the document
    * @return The number of chunks created
    */
   @Transactional
@@ -261,22 +236,16 @@ public class KnowledgeIngestionService {
 
     String formattedContent = buildReferenceDocumentContent(sourceId, title, content);
 
-    ingestEntity(
-        KnowledgeEntityType.REFERENCE_DOCUMENT,
-        entityId,
-        title,
-        formattedContent,
-        null, // No cycle association
+    ingestEntity(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId, title, formattedContent, null, // No cycle
+        // association
         null, // No team association
         null, // No pitch association
         null // No author
-        );
+    );
 
     // Count how many chunks were created
-    int chunkCount =
-        knowledgeItemRepository
-            .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
-            .size();
+    int chunkCount = knowledgeItemRepository
+        .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId).size();
 
     log.info("Ingested reference document: {} ({} chunks)", title, chunkCount);
     return chunkCount;
@@ -297,20 +266,18 @@ public class KnowledgeIngestionService {
   /** Check if a reference document is already ingested. */
   public boolean isReferenceDocumentIngested(String sourceId) {
     Long entityId = (long) sourceId.hashCode();
-    return !knowledgeItemRepository
-        .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+    return !knowledgeItemRepository.findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
         .isEmpty();
   }
 
   /**
-   * Ingest an uploaded document into the knowledge base. Uses REQUIRES_NEW propagation to prevent
-   * rollback of parent transaction if embedding fails.
+   * Ingest an uploaded document into the knowledge base. Uses REQUIRES_NEW
+   * propagation to prevent rollback of parent transaction if embedding fails.
    */
-  @Transactional(
-      propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW,
-      noRollbackFor = Exception.class)
+  @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
   public void ingestDocument(UploadedDocument document) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     if (document.getExtractedText() == null || document.getExtractedText().isEmpty()) {
       log.warn("Document has no extracted text, skipping: {}", document.getId());
@@ -324,12 +291,9 @@ public class KnowledgeIngestionService {
 
     // Resolve entity associations
     if ("PITCH".equals(document.getEntityType()) && document.getEntityId() != null) {
-      pitchRepository
-          .findById(document.getEntityId())
-          .ifPresent(
-              pitch -> {
-                // Can't set outer variables, using ingestEntity directly below
-              });
+      pitchRepository.findById(document.getEntityId()).ifPresent(pitch -> {
+        // Can't set outer variables, using ingestEntity directly below
+      });
       Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(document.getEntityId());
       if (pitchOpt.isPresent()) {
         Pitch pitch = pitchOpt.get();
@@ -343,42 +307,30 @@ public class KnowledgeIngestionService {
         Meeting meeting = meetingOpt.get();
         if (meeting.getPitch() != null) {
           pitchId = meeting.getPitch().getId();
-          cycleId =
-              meeting.getPitch().getCycle() != null ? meeting.getPitch().getCycle().getId() : null;
-          teamId =
-              meeting.getPitch().getTeam() != null ? meeting.getPitch().getTeam().getId() : null;
+          cycleId = meeting.getPitch().getCycle() != null ? meeting.getPitch().getCycle().getId() : null;
+          teamId = meeting.getPitch().getTeam() != null ? meeting.getPitch().getTeam().getId() : null;
         }
       }
     } else if ("CYCLE".equals(document.getEntityType()) && document.getEntityId() != null) {
       cycleId = document.getEntityId();
     }
 
-    ingestEntity(
-        KnowledgeEntityType.DOCUMENT,
-        document.getId(),
-        "Document: " + document.getOriginalFileName(),
-        content,
-        cycleId,
-        teamId,
-        pitchId,
-        document.getUploaderId());
+    ingestEntity(KnowledgeEntityType.DOCUMENT, document.getId(), "Document: " + document.getOriginalFileName(),
+        content, cycleId, teamId, pitchId, document.getUploaderId());
 
     log.info("Ingested document: {} (ID: {})", document.getOriginalFileName(), document.getId());
   }
 
   /**
-   * Ingest a pitch document directly into the knowledge base. Used when extracting pitch data from
-   * uploaded documents. This makes pitch documents searchable via Q&A.
+   * Ingest a pitch document directly into the knowledge base. Used when
+   * extracting pitch data from uploaded documents. This makes pitch documents
+   * searchable via Q&A.
    */
   @Transactional
-  public void ingestPitchDocument(
-      String fileName,
-      String extractedText,
-      Long pitchId,
-      String pitchTitle,
-      Long uploaderId,
-      String uploaderUsername) {
-    if (!isQAEnabled()) return;
+  public void ingestPitchDocument(String fileName, String extractedText, Long pitchId, String pitchTitle,
+      Long uploaderId, String uploaderUsername) {
+    if (!isQAEnabled())
+      return;
 
     if (extractedText == null || extractedText.trim().isEmpty()) {
       log.warn("Pitch document has no extracted text, skipping: {}", fileName);
@@ -400,26 +352,20 @@ public class KnowledgeIngestionService {
 
     String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
 
-    // Generate a synthetic entity ID for pitch documents that don't have a database record
+    // Generate a synthetic entity ID for pitch documents that don't have a database
+    // record
     // Use a combination of pitch ID and content hash to create a unique identifier
     String contentHash = computeHash(extractedText);
     Long syntheticEntityId = generateSyntheticDocumentId(pitchId, contentHash);
 
-    ingestEntity(
-        KnowledgeEntityType.DOCUMENT,
-        syntheticEntityId,
-        "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName),
-        content,
-        cycleId,
-        teamId,
-        pitchId,
+    ingestEntity(KnowledgeEntityType.DOCUMENT, syntheticEntityId,
+        "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName), content, cycleId, teamId, pitchId,
         uploaderId);
 
     log.info("Ingested pitch document to knowledge base: {} (Pitch: {})", fileName, pitchTitle);
   }
 
-  private String buildPitchDocumentContent(
-      String fileName, String pitchTitle, String extractedText) {
+  private String buildPitchDocumentContent(String fileName, String pitchTitle, String extractedText) {
     StringBuilder sb = new StringBuilder();
     sb.append("Pitch Document: ").append(fileName).append("\n");
     if (pitchTitle != null) {
@@ -454,7 +400,8 @@ public class KnowledgeIngestionService {
   /** Ingest a validated Q&A interaction as knowledge. */
   @Transactional
   public void ingestValidatedQA(Long interactionId) {
-    if (!isQAEnabled()) return;
+    if (!isQAEnabled())
+      return;
 
     Optional<QAInteraction> interactionOpt = qaInteractionRepository.findById(interactionId);
     if (interactionOpt.isEmpty()) {
@@ -473,15 +420,9 @@ public class KnowledgeIngestionService {
 
     String content = buildValidatedQAContent(interaction);
 
-    ingestEntity(
-        KnowledgeEntityType.VALIDATED_QA,
-        interaction.getId(),
-        "Q&A: " + truncate(interaction.getQuestion(), 100),
-        content,
-        interaction.getCycleId(),
-        interaction.getTeamId(),
-        null,
-        interaction.getUserId());
+    ingestEntity(KnowledgeEntityType.VALIDATED_QA, interaction.getId(),
+        "Q&A: " + truncate(interaction.getQuestion(), 100), content, interaction.getCycleId(),
+        interaction.getTeamId(), null, interaction.getUserId());
 
     // Mark as embedded
     interaction.setIsEmbedded(true);
@@ -501,84 +442,71 @@ public class KnowledgeIngestionService {
     log.info("Starting full knowledge reindexing...");
 
     // Reindex pitches
-    pitchRepository
-        .findAll()
-        .forEach(
-            pitch -> {
-              try {
-                ingestPitch(pitch.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex pitch {}: {}", pitch.getId(), e.getMessage());
-              }
-            });
+    pitchRepository.findAll().forEach(pitch -> {
+      try {
+        ingestPitch(pitch.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex pitch {}: {}", pitch.getId(), e.getMessage());
+      }
+    });
 
     // Reindex meetings
-    meetingRepository
-        .findAll()
-        .forEach(
-            meeting -> {
-              try {
-                ingestMeeting(meeting.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex meeting {}: {}", meeting.getId(), e.getMessage());
-              }
-            });
+    meetingRepository.findAll().forEach(meeting -> {
+      try {
+        ingestMeeting(meeting.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex meeting {}: {}", meeting.getId(), e.getMessage());
+      }
+    });
 
     // Reindex work logs with notes
-    workLogRepository
-        .findAll()
-        .forEach(
-            workLog -> {
-              try {
-                ingestWorkLog(workLog.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex work log {}: {}", workLog.getId(), e.getMessage());
-              }
-            });
+    workLogRepository.findAll().forEach(workLog -> {
+      try {
+        ingestWorkLog(workLog.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex work log {}: {}", workLog.getId(), e.getMessage());
+      }
+    });
 
     // Reindex evidence
-    evidenceRepository
-        .findAll()
-        .forEach(
-            evidence -> {
-              try {
-                ingestEvidence(evidence.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex evidence {}: {}", evidence.getId(), e.getMessage());
-              }
-            });
+    evidenceRepository.findAll().forEach(evidence -> {
+      try {
+        ingestEvidence(evidence.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex evidence {}: {}", evidence.getId(), e.getMessage());
+      }
+    });
 
     // Reindex manual notes
-    manualNoteRepository
-        .findByIncludeInKnowledgeTrue()
-        .forEach(
-            note -> {
-              try {
-                ingestManualNote(note.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex note {}: {}", note.getId(), e.getMessage());
-              }
-            });
+    manualNoteRepository.findByIncludeInKnowledgeTrue().forEach(note -> {
+      try {
+        ingestManualNote(note.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex note {}: {}", note.getId(), e.getMessage());
+      }
+    });
 
     // Reindex validated Q&A
-    qaInteractionRepository
-        .findValidatedNotEmbedded(List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED))
-        .forEach(
-            qa -> {
-              try {
-                ingestValidatedQA(qa.getId());
-              } catch (Exception e) {
-                log.error("Failed to reindex QA {}: {}", qa.getId(), e.getMessage());
-              }
-            });
+    qaInteractionRepository.findValidatedNotEmbedded(List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED))
+        .forEach(qa -> {
+          try {
+            ingestValidatedQA(qa.getId());
+          } catch (Exception e) {
+            log.error("Failed to reindex QA {}: {}", qa.getId(), e.getMessage());
+          }
+        });
 
     log.info("Knowledge reindexing completed");
   }
 
-  /** Process pending embeddings - embed knowledge items that haven't been embedded yet. */
+  /**
+   * Process pending embeddings - embed knowledge items that haven't been embedded
+   * yet.
+   */
   @Transactional
   public int processPendingEmbeddings() {
-    if (!isQAEnabled()) return 0;
+    if (!isQAEnabled())
+      return 0;
 
     List<KnowledgeItem> pending = knowledgeItemRepository.findByIsEmbeddedFalse();
     int processed = 0;
@@ -598,25 +526,16 @@ public class KnowledgeIngestionService {
 
   // ===== Private helper methods =====
 
-  private void ingestEntity(
-      KnowledgeEntityType entityType,
-      Long entityId,
-      String title,
-      String content,
-      Long cycleId,
-      Long teamId,
-      Long pitchId,
-      Long authorId) {
+  private void ingestEntity(KnowledgeEntityType entityType, Long entityId, String title, String content, Long cycleId,
+      Long teamId, Long pitchId, Long authorId) {
 
     String contentHash = computeHash(content);
 
     // Check if we need to update existing knowledge
-    List<KnowledgeItem> existing =
-        knowledgeItemRepository.findByEntityTypeAndEntityId(entityType, entityId);
+    List<KnowledgeItem> existing = knowledgeItemRepository.findByEntityTypeAndEntityId(entityType, entityId);
 
     // If content hasn't changed, skip
-    if (!existing.isEmpty()
-        && existing.get(0).getContentHash() != null
+    if (!existing.isEmpty() && existing.get(0).getContentHash() != null
         && existing.get(0).getContentHash().equals(contentHash)) {
       log.debug("Content unchanged for {} {}, skipping", entityType, entityId);
       return;
@@ -624,8 +543,7 @@ public class KnowledgeIngestionService {
 
     // Remove old knowledge items and embeddings
     if (!existing.isEmpty()) {
-      List<String> oldEmbeddingIds =
-          knowledgeItemRepository.findEmbeddingIdsByEntity(entityType, entityId);
+      List<String> oldEmbeddingIds = knowledgeItemRepository.findEmbeddingIdsByEntity(entityType, entityId);
       for (String embeddingId : oldEmbeddingIds) {
         try {
           // Note: In-memory store doesn't support deletion by ID
@@ -643,21 +561,12 @@ public class KnowledgeIngestionService {
 
     // Create knowledge items for each chunk
     for (int i = 0; i < chunks.size(); i++) {
-      KnowledgeItem item =
-          KnowledgeItem.builder()
-              .entityType(entityType)
-              .entityId(entityId)
-              .title(title)
-              .content(chunks.get(i).text())
-              .cycleId(cycleId)
-              .teamId(teamId)
-              .pitchId(pitchId)
-              .authorId(authorId)
-              .chunkIndex(i)
-              .totalChunks(chunks.size())
-              .contentHash(i == 0 ? contentHash : null) // Only store hash on first chunk
-              .isEmbedded(false)
-              .build();
+      KnowledgeItem item = KnowledgeItem.builder().entityType(entityType).entityId(entityId).title(title)
+          .content(chunks.get(i).text()).cycleId(cycleId).teamId(teamId).pitchId(pitchId).authorId(authorId)
+          .chunkIndex(i).totalChunks(chunks.size()).contentHash(i == 0 ? contentHash : null) // Only store
+          // hash on first
+          // chunk
+          .isEmbedded(false).build();
 
       item.setEmbeddingId(item.generateEmbeddingId());
       knowledgeItemRepository.save(item);
@@ -738,14 +647,15 @@ public class KnowledgeIngestionService {
   }
 
   /**
-   * Generate a synthetic document ID for pitch documents that don't have a database record.
-   * Uses the pitch ID and content hash to create a unique identifier.
+   * Generate a synthetic document ID for pitch documents that don't have a
+   * database record. Uses the pitch ID and content hash to create a unique
+   * identifier.
    */
   private Long generateSyntheticDocumentId(Long pitchId, String contentHash) {
     // Create a deterministic ID based on pitch ID and content hash
     // Use the first 8 characters of the hash to avoid collisions
     String hashPrefix = contentHash.substring(0, Math.min(8, contentHash.length()));
-    
+
     // Combine pitch ID and hash prefix to create a synthetic ID
     // Use negative values to distinguish from real document IDs
     try {
@@ -758,7 +668,8 @@ public class KnowledgeIngestionService {
   }
 
   private String truncate(String text, int maxLength) {
-    if (text == null) return "";
+    if (text == null)
+      return "";
     return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
   }
 
@@ -783,12 +694,8 @@ public class KnowledgeIngestionService {
       sb.append("Team: ").append(pitch.getTeam().getName()).append("\n");
     }
 
-    sb.append("Created: ")
-        .append(pitch.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
-        .append("\n");
-    sb.append("Last Updated: ")
-        .append(pitch.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
-        .append("\n");
+    sb.append("Created: ").append(pitch.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(pitch.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
 
     return sb.toString();
   }
@@ -802,12 +709,8 @@ public class KnowledgeIngestionService {
       sb.append("Related Pitch: ").append(meeting.getPitch().getTitle()).append("\n");
     }
 
-    sb.append("Definition of Ready (DoR): ")
-        .append(meeting.getDorReady() ? "Ready" : "Not Ready")
-        .append("\n");
-    sb.append("Definition of Done (DoD): ")
-        .append(meeting.getDodReady() ? "Ready" : "Not Ready")
-        .append("\n");
+    sb.append("Definition of Ready (DoR): ").append(meeting.getDorReady() ? "Ready" : "Not Ready").append("\n");
+    sb.append("Definition of Done (DoD): ").append(meeting.getDodReady() ? "Ready" : "Not Ready").append("\n");
 
     if (meeting.getNotes() != null && !meeting.getNotes().isEmpty()) {
       sb.append("\nMeeting Notes (Minutes of Meeting):\n");
@@ -852,9 +755,7 @@ public class KnowledgeIngestionService {
     StringBuilder sb = new StringBuilder();
     sb.append("Note: ").append(note.getTitle()).append("\n");
     sb.append("Context: ").append(note.getContextType()).append("\n");
-    sb.append("Created: ")
-        .append(note.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
-        .append("\n\n");
+    sb.append("Created: ").append(note.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n\n");
     sb.append(note.getContent()).append("\n");
     return sb.toString();
   }
@@ -864,8 +765,7 @@ public class KnowledgeIngestionService {
     sb.append("Validated Q&A\n\n");
     sb.append("Question: ").append(interaction.getQuestion()).append("\n\n");
 
-    if (interaction.getFeedbackType() == QAFeedbackType.CORRECTED
-        && interaction.getFeedbackCorrection() != null) {
+    if (interaction.getFeedbackType() == QAFeedbackType.CORRECTED && interaction.getFeedbackCorrection() != null) {
       sb.append("Corrected Answer:\n").append(interaction.getFeedbackCorrection()).append("\n");
     } else {
       sb.append("Answer:\n").append(interaction.getAnswer()).append("\n");

@@ -13,12 +13,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class TestCaseValidator {
 
-  private static final List<String> VAGUE_WORDS =
-      List.of("check", "verify", "ensure", "make sure", "validate");
-  private static final Pattern SPECIFIC_ACTION_PATTERN =
-      Pattern.compile(
-          "(click|type|select|navigate|enter|submit|upload|download|delete|create|update)",
-          Pattern.CASE_INSENSITIVE);
+  private static final List<String> VAGUE_WORDS = List.of("check", "verify", "ensure", "make sure", "validate");
+  private static final Pattern SPECIFIC_ACTION_PATTERN = Pattern.compile(
+      "(click|type|select|navigate|enter|submit|upload|download|delete|create|update)", Pattern.CASE_INSENSITIVE);
 
   /** Validate a single test case suggestion. */
   public TestCaseValidationResult validate(TestCaseSuggestion testCase, TestType testType) {
@@ -40,19 +37,13 @@ public class TestCaseValidator {
     // 5. Calculate completeness score
     int completenessScore = calculateCompletenessScore(testCase);
 
-    return TestCaseValidationResult.builder()
-        .isValid(issues.isEmpty())
-        .issues(issues)
-        .completenessScore(completenessScore)
-        .hasActionableSteps(hasActionableSteps)
-        .hasRequiredFields(hasRequiredFields)
-        .suggestions(suggestions)
-        .build();
+    return TestCaseValidationResult.builder().isValid(issues.isEmpty()).issues(issues)
+        .completenessScore(completenessScore).hasActionableSteps(hasActionableSteps)
+        .hasRequiredFields(hasRequiredFields).suggestions(suggestions).build();
   }
 
   /** Validate multiple test cases as a suite. */
-  public TestCaseValidationResult validateSuite(
-      List<TestCaseSuggestion> testCases, TestType testType) {
+  public TestCaseValidationResult validateSuite(List<TestCaseSuggestion> testCases, TestType testType) {
     List<String> issues = new ArrayList<>();
     List<String> suggestions = new ArrayList<>();
 
@@ -71,17 +62,12 @@ public class TestCaseValidator {
     // Check coverage diversity
     validateCoverageDiversity(testCases, suggestions);
 
-    int avgCompleteness =
-        (int) testCases.stream().mapToInt(tc -> calculateCompletenessScore(tc)).average().orElse(0);
+    int avgCompleteness = (int) testCases.stream().mapToInt(tc -> calculateCompletenessScore(tc)).average()
+        .orElse(0);
 
-    return TestCaseValidationResult.builder()
-        .isValid(issues.isEmpty())
-        .issues(issues)
-        .completenessScore(avgCompleteness)
-        .hasActionableSteps(meetsTypeRequirements)
-        .hasRequiredFields(true)
-        .suggestions(suggestions)
-        .build();
+    return TestCaseValidationResult.builder().isValid(issues.isEmpty()).issues(issues)
+        .completenessScore(avgCompleteness).hasActionableSteps(meetsTypeRequirements).hasRequiredFields(true)
+        .suggestions(suggestions).build();
   }
 
   private boolean validateRequiredFields(TestCaseSuggestion testCase, List<String> issues) {
@@ -105,9 +91,9 @@ public class TestCaseValidator {
     return valid;
   }
 
-  private boolean validateStepQuality(
-      TestCaseSuggestion testCase, List<String> issues, List<String> suggestions) {
-    if (testCase.getSteps() == null) return false;
+  private boolean validateStepQuality(TestCaseSuggestion testCase, List<String> issues, List<String> suggestions) {
+    if (testCase.getSteps() == null)
+      return false;
 
     String steps = testCase.getSteps().toLowerCase();
 
@@ -117,8 +103,7 @@ public class TestCaseValidator {
         // Check if it has specific details
         if (!SPECIFIC_ACTION_PATTERN.matcher(steps).find()) {
           issues.add("Steps contain vague language without specific actions: '" + vague + "'");
-          suggestions.add(
-              "Make steps more specific with clear actions (click, type, navigate, etc.)");
+          suggestions.add("Make steps more specific with clear actions (click, type, navigate, etc.)");
           return false;
         }
       }
@@ -132,21 +117,19 @@ public class TestCaseValidator {
     // Check step count
     long stepCount = steps.lines().filter(line -> !line.trim().isEmpty()).count();
     if (stepCount < 2) {
-      issues.add(
-          "Test case has very few steps (" + stepCount + "), consider breaking down the actions");
+      issues.add("Test case has very few steps (" + stepCount + "), consider breaking down the actions");
       return false;
     }
 
     if (stepCount > 20) {
-      suggestions.add(
-          "Test case has many steps (" + stepCount + "), consider splitting into multiple tests");
+      suggestions.add("Test case has many steps (" + stepCount + "), consider splitting into multiple tests");
     }
 
     return true;
   }
 
-  private void validateDescriptionQuality(
-      TestCaseSuggestion testCase, List<String> issues, List<String> suggestions) {
+  private void validateDescriptionQuality(TestCaseSuggestion testCase, List<String> issues,
+      List<String> suggestions) {
     if (testCase.getDescription() == null || testCase.getDescription().length() < 10) {
       suggestions.add("Add a more detailed description explaining what is being tested");
     }
@@ -162,42 +145,38 @@ public class TestCaseValidator {
     }
   }
 
-  private void validateTestTypeRequirements(
-      TestCaseSuggestion testCase,
-      TestType testType,
-      List<String> issues,
+  private void validateTestTypeRequirements(TestCaseSuggestion testCase, TestType testType, List<String> issues,
       List<String> suggestions) {
-    if (testType == null) return;
+    if (testType == null)
+      return;
 
     switch (testType) {
-      case SMOKE:
+      case SMOKE :
         // Smoke tests should be quick
         if (testCase.getSteps() != null) {
           long stepCount = testCase.getSteps().lines().count();
           if (stepCount > 10) {
-            issues.add(
-                "SMOKE test should be quick - this test has too many steps (" + stepCount + ")");
+            issues.add("SMOKE test should be quick - this test has too many steps (" + stepCount + ")");
           }
         }
         break;
 
-      case FUNCTIONAL:
+      case FUNCTIONAL :
         // Functional tests should have preconditions
         if (testCase.getPreconditions() == null || testCase.getPreconditions().trim().isEmpty()) {
           suggestions.add("FUNCTIONAL tests benefit from explicit preconditions");
         }
         break;
 
-      case REGRESSION:
+      case REGRESSION :
         // Regression tests should reference previous functionality
-        if (testCase.getDescription() != null
-            && !testCase.getDescription().toLowerCase().contains("previous")
+        if (testCase.getDescription() != null && !testCase.getDescription().toLowerCase().contains("previous")
             && !testCase.getDescription().toLowerCase().contains("existing")) {
           suggestions.add("REGRESSION tests should reference previously working functionality");
         }
         break;
 
-      case E2E:
+      case E2E :
         // E2E tests should have multiple steps representing user journey
         if (testCase.getSteps() != null) {
           long stepCount = testCase.getSteps().lines().count();
@@ -207,35 +186,34 @@ public class TestCaseValidator {
         }
         break;
 
-      default:
+      default :
         // Other test types don't have specific requirements yet
         break;
     }
   }
 
-  private boolean validateSuiteSize(
-      List<TestCaseSuggestion> testCases, TestType testType, List<String> issues) {
-    if (testType == null) return true;
+  private boolean validateSuiteSize(List<TestCaseSuggestion> testCases, TestType testType, List<String> issues) {
+    if (testType == null)
+      return true;
 
     int size = testCases.size();
 
     switch (testType) {
-      case SMOKE:
+      case SMOKE :
         if (size < 5 || size > 10) {
           issues.add("SMOKE test suite should have 5-10 tests, got " + size);
           return false;
         }
         break;
 
-      case FUNCTIONAL:
+      case FUNCTIONAL :
         if (size < 3) {
-          issues.add(
-              "FUNCTIONAL test suite should have at least 3 tests (happy path + edge cases + errors)");
+          issues.add("FUNCTIONAL test suite should have at least 3 tests (happy path + edge cases + errors)");
           return false;
         }
         break;
 
-      default:
+      default :
         // Other test types don't have specific suite size requirements
         break;
     }
@@ -243,8 +221,7 @@ public class TestCaseValidator {
     return true;
   }
 
-  private void validateCoverageDiversity(
-      List<TestCaseSuggestion> testCases, List<String> suggestions) {
+  private void validateCoverageDiversity(List<TestCaseSuggestion> testCases, List<String> suggestions) {
     // Check if all tests are the same type
     Set<String> types = new HashSet<>();
     for (TestCaseSuggestion tc : testCases) {
@@ -299,14 +276,17 @@ public class TestCaseValidator {
     }
 
     // Type and Priority (5 points each)
-    if (testCase.getSuggestedType() != null) score += 5;
-    if (testCase.getSuggestedPriority() != null) score += 5;
+    if (testCase.getSuggestedType() != null)
+      score += 5;
+    if (testCase.getSuggestedPriority() != null)
+      score += 5;
 
     return score;
   }
 
   private String normalizeScenario(String scenario) {
-    if (scenario == null) return "";
+    if (scenario == null)
+      return "";
     return scenario.toLowerCase().replaceAll("[^a-z0-9]", "");
   }
 }

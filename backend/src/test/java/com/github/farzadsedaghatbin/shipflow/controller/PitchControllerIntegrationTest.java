@@ -29,18 +29,20 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(
-    username = "admin",
-    roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class PitchControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private PitchRepository pitchRepository;
+  @Autowired
+  private PitchRepository pitchRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
   private Cycle testCycle;
   private Pitch testPitch;
@@ -50,34 +52,19 @@ class PitchControllerIntegrationTest {
     pitchRepository.deleteAll();
     cycleRepository.deleteAll();
 
-    testCycle =
-        Cycle.builder()
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testPitch =
-        Pitch.builder()
-            .title("Test Pitch")
-            .description("Test Description")
-            .appetiteDays(6)
-            .status(PitchStatus.PENDING)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testPitch = Pitch.builder().title("Test Pitch").description("Test Description").appetiteDays(6)
+        .status(PitchStatus.PENDING).cycle(testCycle).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
     testPitch = pitchRepository.save(testPitch);
   }
 
   @Test
   void getAllPitches_ShouldReturnPitches() throws Exception {
-    mockMvc
-        .perform(get("/api/pitches"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/pitches")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$[0].title", is("Test Pitch")));
@@ -85,9 +72,7 @@ class PitchControllerIntegrationTest {
 
   @Test
   void getPitchById_WhenExists_ShouldReturnPitch() throws Exception {
-    mockMvc
-        .perform(get("/api/pitches/{id}", testPitch.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/pitches/{id}", testPitch.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id", is(testPitch.getId().intValue())))
         .andExpect(jsonPath("$.title", is("Test Pitch")));
@@ -100,62 +85,37 @@ class PitchControllerIntegrationTest {
 
   @Test
   void createPitch_WithValidData_ShouldCreatePitch() throws Exception {
-    CreatePitchRequest request =
-        CreatePitchRequest.builder()
-            .title("New Pitch")
-            .description("New Description")
-            .appetiteDays(4)
-            .status(PitchStatus.PENDING)
-            .cycleId(testCycle.getId())
-            .build();
+    CreatePitchRequest request = CreatePitchRequest.builder().title("New Pitch").description("New Description")
+        .appetiteDays(4).status(PitchStatus.PENDING).cycleId(testCycle.getId()).build();
 
-    mockMvc
-        .perform(
-            post("/api/pitches")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/pitches").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.title", is("New Pitch")))
         .andExpect(jsonPath("$.description", is("New Description")));
   }
 
   @Test
   void updatePitch_WhenExists_ShouldUpdatePitch() throws Exception {
-    CreatePitchRequest request =
-        CreatePitchRequest.builder()
-            .title("Updated Pitch")
-            .description("Updated Description")
-            .appetiteDays(3)
-            .status(PitchStatus.IN_PROGRESS)
-            .cycleId(testCycle.getId())
-            .build();
+    CreatePitchRequest request = CreatePitchRequest.builder().title("Updated Pitch")
+        .description("Updated Description").appetiteDays(3).status(PitchStatus.IN_PROGRESS)
+        .cycleId(testCycle.getId()).build();
 
-    mockMvc
-        .perform(
-            put("/api/pitches/{id}", testPitch.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title", is("Updated Pitch")))
-        .andExpect(jsonPath("$.status", is("IN_PROGRESS")));
+    mockMvc.perform(put("/api/pitches/{id}", testPitch.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.title", is("Updated Pitch"))).andExpect(jsonPath("$.status", is("IN_PROGRESS")));
   }
 
   @Test
   void deletePitch_WhenExists_ShouldDeletePitch() throws Exception {
-    mockMvc
-        .perform(delete("/api/pitches/{id}", testPitch.getId()))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/pitches/{id}", testPitch.getId())).andExpect(status().isNoContent());
 
     mockMvc.perform(get("/api/pitches/{id}", testPitch.getId())).andExpect(status().isBadRequest());
   }
 
   @Test
   void getPitchesByCycle_ShouldReturnPitchesForCycle() throws Exception {
-    mockMvc
-        .perform(get("/api/pitches/cycle/{cycleId}", testCycle.getId()))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$", hasSize(1)))
+    mockMvc.perform(get("/api/pitches/cycle/{cycleId}", testCycle.getId())).andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
         .andExpect(jsonPath("$[0].title", is("Test Pitch")));
   }
 }

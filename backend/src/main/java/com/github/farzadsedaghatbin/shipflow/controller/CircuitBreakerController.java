@@ -12,43 +12,34 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Circuit Breaker Controller - Shape Up safety valve Manages overflow detection and pitch killing
+ * Circuit Breaker Controller - Shape Up safety valve Manages overflow detection
+ * and pitch killing
  */
 @RestController
 @RequestMapping("/api/circuit-breaker")
 @RequiredArgsConstructor
-@Tag(
-    name = "Circuit Breaker",
-    description = "Shape Up safety valve - detect and manage overflowing pitches")
+@Tag(name = "Circuit Breaker", description = "Shape Up safety valve - detect and manage overflowing pitches")
 public class CircuitBreakerController {
 
   private final CircuitBreakerService circuitBreakerService;
 
   @GetMapping("/cycle/{cycleId}/overflow")
-  @Operation(
-      summary = "Detect overflowing pitches",
-      description =
-          "Find pitches that exceed their time budget. Default threshold is 100% (fully consumed appetite)")
-  public ResponseEntity<List<CircuitBreakerDTO>> detectOverflow(
-      @PathVariable Long cycleId, @RequestParam(defaultValue = "100.0") Double threshold) {
+  @Operation(summary = "Detect overflowing pitches", description = "Find pitches that exceed their time budget. Default threshold is 100% (fully consumed appetite)")
+  public ResponseEntity<List<CircuitBreakerDTO>> detectOverflow(@PathVariable Long cycleId,
+      @RequestParam(defaultValue = "100.0") Double threshold) {
     return ResponseEntity.ok(circuitBreakerService.detectOverflowPitches(cycleId, threshold));
   }
 
   @GetMapping("/cycle/{cycleId}/triggered")
-  @Operation(
-      summary = "Get triggered circuit breakers",
-      description = "Get all pitches with active circuit breakers in a cycle")
+  @Operation(summary = "Get triggered circuit breakers", description = "Get all pitches with active circuit breakers in a cycle")
   public ResponseEntity<List<CircuitBreakerDTO>> getTriggered(@PathVariable Long cycleId) {
     return ResponseEntity.ok(circuitBreakerService.getTriggeredCircuitBreakers(cycleId));
   }
 
   @PostMapping("/pitch/{pitchId}/trigger")
   @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
-  @Operation(
-      summary = "Trigger circuit breaker",
-      description = "Manually flag a pitch as overflowing its time budget")
-  public ResponseEntity<CircuitBreakerDTO> trigger(
-      @PathVariable Long pitchId, @RequestParam String reason) {
+  @Operation(summary = "Trigger circuit breaker", description = "Manually flag a pitch as overflowing its time budget")
+  public ResponseEntity<CircuitBreakerDTO> trigger(@PathVariable Long pitchId, @RequestParam String reason) {
     if (reason == null || reason.trim().isEmpty()) {
       throw new IllegalArgumentException("Reason cannot be empty");
     }
@@ -57,21 +48,15 @@ public class CircuitBreakerController {
 
   @PostMapping("/pitch/{pitchId}/resolve")
   @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
-  @Operation(
-      summary = "Resolve circuit breaker",
-      description = "Clear circuit breaker flag and set new status")
-  public ResponseEntity<CircuitBreakerDTO> resolve(
-      @PathVariable Long pitchId, @RequestParam PitchStatus newStatus) {
+  @Operation(summary = "Resolve circuit breaker", description = "Clear circuit breaker flag and set new status")
+  public ResponseEntity<CircuitBreakerDTO> resolve(@PathVariable Long pitchId, @RequestParam PitchStatus newStatus) {
     return ResponseEntity.ok(circuitBreakerService.resolveCircuitBreaker(pitchId, newStatus));
   }
 
   @PostMapping("/pitch/{pitchId}/kill")
   @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
-  @Operation(
-      summary = "Kill pitch",
-      description = "Permanently stop work on pitch due to overflow (Shape Up safety valve)")
-  public ResponseEntity<CircuitBreakerDTO> kill(
-      @PathVariable Long pitchId, @RequestParam String reason) {
+  @Operation(summary = "Kill pitch", description = "Permanently stop work on pitch due to overflow (Shape Up safety valve)")
+  public ResponseEntity<CircuitBreakerDTO> kill(@PathVariable Long pitchId, @RequestParam String reason) {
     if (reason == null || reason.trim().isEmpty()) {
       throw new IllegalArgumentException("Reason cannot be empty");
     }

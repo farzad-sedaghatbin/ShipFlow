@@ -12,18 +12,22 @@ import org.springframework.stereotype.Component;
 /**
  * Vector Store Provider implementation for In-Memory storage.
  *
- * <p>In-Memory store is ideal for:
+ * <p>
+ * In-Memory store is ideal for:
  *
  * <ul>
- *   <li>Local development without external dependencies
- *   <li>Testing and CI/CD pipelines
- *   <li>Quick prototyping
- *   <li>Small datasets that fit in memory
+ * <li>Local development without external dependencies
+ * <li>Testing and CI/CD pipelines
+ * <li>Quick prototyping
+ * <li>Small datasets that fit in memory
  * </ul>
  *
- * <p><b>Important:</b> Data is NOT persisted. All embeddings are lost on application restart.
+ * <p>
+ * <b>Important:</b> Data is NOT persisted. All embeddings are lost on
+ * application restart.
  *
- * <p>Configuration: No configuration required.
+ * <p>
+ * Configuration: No configuration required.
  */
 @Component
 @Slf4j

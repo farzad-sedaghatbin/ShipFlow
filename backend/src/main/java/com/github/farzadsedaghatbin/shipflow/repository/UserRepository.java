@@ -28,17 +28,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
   List<User> findByIsActiveTrue();
 
   @Query("SELECT u FROM User u WHERE u.role = :role AND u.isActive = true")
-  List<User> findByRoleAndActive(
-      @Param("role") com.github.farzadsedaghatbin.shipflow.entity.UserRole role);
+  List<User> findByRoleAndActive(@Param("role") com.github.farzadsedaghatbin.shipflow.entity.UserRole role);
 
   /**
-   * Search for users by username pattern for @mentions.
-   * Returns active users whose username contains the search query (case-insensitive).
+   * Search for users by username pattern for @mentions. Returns active users
+   * whose username contains the search query (case-insensitive).
    */
-  @Query("SELECT u FROM User u LEFT JOIN FETCH u.person " +
-         "WHERE u.isActive = true " +
-         "AND LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) " +
-         "ORDER BY u.username ASC")
+  @Query("SELECT u FROM User u LEFT JOIN FETCH u.person " + "WHERE u.isActive = true "
+      + "AND LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) " + "ORDER BY u.username ASC")
   List<User> searchByUsernameForMention(@Param("query") String query);
 
   /**

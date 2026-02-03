@@ -5,13 +5,11 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing a custom dashboard configuration. Users can create multiple dashboards with
- * different widget arrangements.
+ * Entity representing a custom dashboard configuration. Users can create
+ * multiple dashboards with different widget arrangements.
  */
 @Entity
-@Table(
-    name = "custom_dashboards",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "name"})})
+@Table(name = "custom_dashboards", uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "name"})})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,8 +53,8 @@ public class CustomDashboard {
   private Boolean isDefault;
 
   /**
-   * Grid layout configuration (JSON) Example: {"columns": 12, "rowHeight": 60, "breakpoints":
-   * {"lg": 1200, "md": 996, "sm": 768}}
+   * Grid layout configuration (JSON) Example: {"columns": 12, "rowHeight": 60,
+   * "breakpoints": {"lg": 1200, "md": 996, "sm": 768}}
    */
   @Column(name = "layout_config", columnDefinition = "TEXT")
   private String layoutConfig;
@@ -66,8 +64,8 @@ public class CustomDashboard {
   private Boolean isTemplate;
 
   /**
-   * When enabled, widgets filter data to user's context (their cycles, teams, tasks) When disabled,
-   * widgets show organization-wide data
+   * When enabled, widgets filter data to user's context (their cycles, teams,
+   * tasks) When disabled, widgets show organization-wide data
    */
   @Column(name = "user_context_filter")
   private Boolean userContextFilter = false;
@@ -106,10 +104,6 @@ public class CustomDashboard {
   }
 
   public enum TemplateCategory {
-    EXECUTIVE,
-    DEVELOPER,
-    MANAGER,
-    QA,
-    CUSTOM
+    EXECUTIVE, DEVELOPER, MANAGER, QA, CUSTOM
   }
 }

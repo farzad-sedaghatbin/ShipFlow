@@ -24,9 +24,7 @@ public class DashboardNotificationController {
   private final UserService userService;
 
   @GetMapping
-  @Operation(
-      summary = "Get all notifications",
-      description = "Get all active notifications for the current user")
+  @Operation(summary = "Get all notifications", description = "Get all active notifications for the current user")
   public ResponseEntity<List<DashboardNotificationDTO>> getUserNotifications() {
     Long userId = getCurrentUserId();
     List<DashboardNotificationDTO> notifications = notificationService.getUserNotifications(userId);
@@ -34,13 +32,10 @@ public class DashboardNotificationController {
   }
 
   @GetMapping("/unread")
-  @Operation(
-      summary = "Get unread notifications",
-      description = "Get only unread notifications for the current user")
+  @Operation(summary = "Get unread notifications", description = "Get only unread notifications for the current user")
   public ResponseEntity<List<DashboardNotificationDTO>> getUnreadNotifications() {
     Long userId = getCurrentUserId();
-    List<DashboardNotificationDTO> notifications =
-        notificationService.getUnreadNotifications(userId);
+    List<DashboardNotificationDTO> notifications = notificationService.getUnreadNotifications(userId);
     return ResponseEntity.ok(notifications);
   }
 
@@ -60,9 +55,7 @@ public class DashboardNotificationController {
   }
 
   @PutMapping("/read-all")
-  @Operation(
-      summary = "Mark all as read",
-      description = "Mark all notifications as read for the current user")
+  @Operation(summary = "Mark all as read", description = "Mark all notifications as read for the current user")
   public ResponseEntity<Void> markAllAsRead() {
     Long userId = getCurrentUserId();
     notificationService.markAllAsRead(userId);
@@ -77,9 +70,7 @@ public class DashboardNotificationController {
   }
 
   @PostMapping("/generate")
-  @Operation(
-      summary = "Generate notifications",
-      description = "Manually trigger notification generation (admin only)")
+  @Operation(summary = "Generate notifications", description = "Manually trigger notification generation (admin only)")
   public ResponseEntity<Void> generateNotifications() {
     notificationService.generateDailyNotifications();
     return ResponseEntity.noContent().build();

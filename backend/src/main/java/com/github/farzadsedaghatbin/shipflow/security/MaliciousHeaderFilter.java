@@ -10,41 +10,31 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Security filter to detect and block malicious requests containing exploit patterns such as
- * Log4Shell (CVE-2021-44228), JNDI injection, and other common attack vectors.
+ * Security filter to detect and block malicious requests containing exploit
+ * patterns such as Log4Shell (CVE-2021-44228), JNDI injection, and other common
+ * attack vectors.
  */
 @Slf4j
 @Component
 public class MaliciousHeaderFilter implements Filter {
 
   // Patterns for detecting common exploit attempts
-  private static final Pattern JNDI_PATTERN =
-      Pattern.compile(
-          ".*\\$\\{.*jndi:.*}.*|.*\\$\\{.*env:.*}.*|.*\\$\\{.*lower:.*}.*|.*\\$\\{.*upper:.*}.*",
-          Pattern.CASE_INSENSITIVE);
+  private static final Pattern JNDI_PATTERN = Pattern.compile(
+      ".*\\$\\{.*jndi:.*}.*|.*\\$\\{.*env:.*}.*|.*\\$\\{.*lower:.*}.*|.*\\$\\{.*upper:.*}.*",
+      Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern SCRIPT_INJECTION_PATTERN =
-      Pattern.compile(
-          ".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*",
-          Pattern.CASE_INSENSITIVE);
+  private static final Pattern SCRIPT_INJECTION_PATTERN = Pattern
+      .compile(".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*", Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern SQL_INJECTION_PATTERN =
-      Pattern.compile(".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*", Pattern.CASE_INSENSITIVE);
+  private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*",
+      Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern PATH_TRAVERSAL_PATTERN =
-      Pattern.compile(".*(\\.\\./)|(\\.\\.\\\\).*", Pattern.CASE_INSENSITIVE);
+  private static final Pattern PATH_TRAVERSAL_PATTERN = Pattern.compile(".*(\\.\\./)|(\\.\\.\\\\).*",
+      Pattern.CASE_INSENSITIVE);
 
   // Headers that commonly contain malicious payloads
-  private static final String[] SENSITIVE_HEADERS = {
-    "X-Forwarded-Host",
-    "X-Forwarded-For",
-    "X-Forwarded-Proto",
-    "Forwarded",
-    "Host",
-    "X-Real-IP",
-    "User-Agent",
-    "Referer"
-  };
+  private static final String[] SENSITIVE_HEADERS = {"X-Forwarded-Host", "X-Forwarded-For", "X-Forwarded-Proto",
+      "Forwarded", "Host", "X-Real-IP", "User-Agent", "Referer"};
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -72,8 +62,7 @@ public class MaliciousHeaderFilter implements Filter {
     String requestURI = httpRequest.getRequestURI();
     String queryString = httpRequest.getQueryString();
 
-    if (isMalicious("RequestURI", requestURI)
-        || (queryString != null && isMalicious("QueryString", queryString))) {
+    if (isMalicious("RequestURI", requestURI) || (queryString != null && isMalicious("QueryString", queryString))) {
       logSecurityEvent(httpRequest, "URI/Query", requestURI + "?" + queryString);
       httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       httpResponse.setContentType("application/json");
@@ -139,9 +128,7 @@ public class MaliciousHeaderFilter implements Filter {
     }
 
     // Check for LDAP injection patterns
-    if (value.contains("ldap://")
-        || value.contains("ldaps://")
-        || value.contains("rmi://")
+    if (value.contains("ldap://") || value.contains("ldaps://") || value.contains("rmi://")
         || value.contains("dns://")) {
       return true;
     }

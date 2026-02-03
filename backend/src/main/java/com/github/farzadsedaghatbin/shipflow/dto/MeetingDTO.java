@@ -29,5 +29,6 @@ public class MeetingDTO {
   private String decisions;
   private String attendees;
 
-  @Builder.Default private List<MeetingActionDTO> actions = new ArrayList<>();
+  @Builder.Default
+  private List<MeetingActionDTO> actions = new ArrayList<>();
 }

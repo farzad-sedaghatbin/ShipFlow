@@ -10,8 +10,6 @@ import com.github.farzadsedaghatbin.shipflow.security.RequirePermission;
 import com.github.farzadsedaghatbin.shipflow.service.AuditService;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -65,10 +63,8 @@ public class PitchController {
   }
 
   @GetMapping("/{id}/history")
-  public ResponseEntity<Page<EntityHistoryDTO>> getPitchHistory(
-      @PathVariable Long id,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+  public ResponseEntity<Page<EntityHistoryDTO>> getPitchHistory(@PathVariable Long id,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(auditService.getPitchHistory(id, pageable));
   }
@@ -83,16 +79,14 @@ public class PitchController {
   @PutMapping("/{id}")
   @RequirePermission(resource = ResourceType.PITCH, permission = PermissionType.UPDATE)
   @Operation(summary = "Update a pitch")
-  public ResponseEntity<PitchDTO> updatePitch(
-      @PathVariable Long id, @Valid @RequestBody CreatePitchRequest request) {
+  public ResponseEntity<PitchDTO> updatePitch(@PathVariable Long id, @Valid @RequestBody CreatePitchRequest request) {
     return ResponseEntity.ok(pitchService.updatePitch(id, request));
   }
 
   @PatchMapping("/{id}/status")
   @RequirePermission(resource = ResourceType.PITCH, permission = PermissionType.APPROVE)
   @Operation(summary = "Update pitch status")
-  public ResponseEntity<PitchDTO> updateStatus(
-      @PathVariable Long id, @RequestParam PitchStatus status) {
+  public ResponseEntity<PitchDTO> updateStatus(@PathVariable Long id, @RequestParam PitchStatus status) {
     return ResponseEntity.ok(pitchService.updateStatus(id, status));
   }
 

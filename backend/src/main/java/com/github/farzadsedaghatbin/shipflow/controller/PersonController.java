@@ -40,8 +40,7 @@ public class PersonController {
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('USER', 'READ')")
   @Operation(summary = "Get all persons")
-  public ResponseEntity<List<PersonDTO>> getAllPersons(
-      @RequestParam(required = false) Boolean active,
+  public ResponseEntity<List<PersonDTO>> getAllPersons(@RequestParam(required = false) Boolean active,
       @RequestParam(required = false) String search) {
 
     List<PersonDTO> persons;
@@ -74,8 +73,8 @@ public class PersonController {
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('USER', 'UPDATE')")
   @Operation(summary = "Update a person")
-  public ResponseEntity<PersonDTO> updatePerson(
-      @PathVariable Long id, @Valid @RequestBody CreatePersonRequest request) {
+  public ResponseEntity<PersonDTO> updatePerson(@PathVariable Long id,
+      @Valid @RequestBody CreatePersonRequest request) {
     PersonDTO updated = personService.updatePerson(id, request);
     return ResponseEntity.ok(updated);
   }
@@ -105,8 +104,7 @@ public class PersonController {
 
   @PostMapping("/assignments")
   @Operation(summary = "Assign a person to a team")
-  public ResponseEntity<TeamAssignmentDTO> assignToTeam(
-      @Valid @RequestBody CreateTeamAssignmentRequest request) {
+  public ResponseEntity<TeamAssignmentDTO> assignToTeam(@Valid @RequestBody CreateTeamAssignmentRequest request) {
     TeamAssignmentDTO assignment = personService.assignToTeam(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
   }
@@ -120,8 +118,8 @@ public class PersonController {
 
   @PutMapping("/assignments/{assignmentId}")
   @Operation(summary = "Update a team assignment")
-  public ResponseEntity<TeamAssignmentDTO> updateAssignment(
-      @PathVariable Long assignmentId, @Valid @RequestBody CreateTeamAssignmentRequest request) {
+  public ResponseEntity<TeamAssignmentDTO> updateAssignment(@PathVariable Long assignmentId,
+      @Valid @RequestBody CreateTeamAssignmentRequest request) {
     TeamAssignmentDTO updated = personService.updateAssignment(assignmentId, request);
     return ResponseEntity.ok(updated);
   }
