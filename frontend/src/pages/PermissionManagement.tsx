@@ -82,11 +82,28 @@ export default function PermissionManagement() {
   const [selectedPermIds, setSelectedPermIds] = useState<Set<number>>(new Set());
   const [groupBy, setGroupBy] = useState<'none' | 'role' | 'resource'>('role');
   
-  const { hasPermissionSync } = usePermission();
-  const canManagePermissions = hasPermissionSync('SYSTEM', 'MANAGE');
+  const { hasPermissionSync, hasPermission } = usePermission();
+  const [canManagePermissions, setCanManagePermissions] = useState(false);
   const roles = permissionService.getUserRoles();
   const resources = permissionService.getResourceTypes();
   const permissionTypes = permissionService.getPermissionTypes();
+
+  // Pre-load the SYSTEM:MANAGE permission
+  useEffect(() => {
+    const checkSystemManagePermission = async () => {
+      try {
+        const hasSystemManage = await hasPermission('SYSTEM', 'MANAGE');
+        setCanManagePermissions(hasSystemManage);
+      } catch (error) {
+        console.error('Failed to check SYSTEM:MANAGE permission:', error);
+        setCanManagePermissions(false);
+      }
+    };
+
+    if (currentUser) {
+      checkSystemManagePermission();
+    }
+  }, [hasPermission, currentUser]);
 
   useEffect(() => {
     loadData();
