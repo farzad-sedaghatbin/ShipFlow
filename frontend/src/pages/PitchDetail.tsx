@@ -343,14 +343,14 @@ export default function PitchDetail() {
     }));
   };
 
-  const toggleChecklistItem = (listType: 'dor' | 'dod', identifier: number) => {
+  /**
+   * Toggle the completion status of a checklist item.
+   * @param listType - 'dor' or 'dod' to specify which checklist
+   * @param itemId - The unique ID of the item to toggle
+   */
+  const toggleChecklistItem = (listType: 'dor' | 'dod', itemId: number) => {
     const items = listType === 'dor' ? [...(newMeeting.dorItems || [])] : [...(newMeeting.dodItems || [])];
-    // First, try to locate the item by its id
-    let itemIndex = items.findIndex(i => i.id === identifier);
-    // If not found by id, fall back to treating the identifier as a zero-based index
-    if (itemIndex < 0 && identifier >= 0 && identifier < items.length) {
-      itemIndex = identifier;
-    }
+    const itemIndex = items.findIndex(i => i.id === itemId);
     if (itemIndex >= 0) {
       items[itemIndex] = { ...items[itemIndex], isCompleted: !items[itemIndex].isCompleted };
       

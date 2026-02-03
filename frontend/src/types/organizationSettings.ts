@@ -146,6 +146,7 @@ export interface DorDodItem {
   description: string;
   isRequired: boolean;
   order: number;
+  isDeleted?: boolean;
 }
 
 /**

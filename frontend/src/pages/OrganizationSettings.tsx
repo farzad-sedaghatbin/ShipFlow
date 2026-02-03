@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import {
@@ -75,6 +75,7 @@ const DATE_FORMATS = [
 export default function OrganizationSettingsPage() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
+  const meetingTypesEndRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
@@ -1101,6 +1102,11 @@ export default function OrganizationSettingsPage() {
                     dodItems: [],
                   });
                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                  showToast(t('organizationSettings.meetingTypeAdded'), 'success');
+                  // Scroll to new item after render
+                  setTimeout(() => {
+                    meetingTypesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
                 }}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -1165,6 +1171,7 @@ export default function OrganizationSettingsPage() {
                           }
                           const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== typeIndex) || [];
                           setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                          showToast(t('organizationSettings.meetingTypeDeleted'), 'success');
                         }}
                         title={t('organizationSettings.deleteMeetingType')}
                       >
@@ -1210,15 +1217,17 @@ export default function OrganizationSettingsPage() {
                         </Button>
                       </div>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {meetingType.dorItems?.map((item, itemIndex) => (
-                          <div key={itemIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
+                        {meetingType.dorItems?.filter(item => !item.isDeleted).map((item, itemIndex) => {
+                          const actualIndex = meetingType.dorItems?.findIndex(d => d === item) ?? itemIndex;
+                          return (
+                          <div key={actualIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
                             <div className="flex-1 space-y-1">
                               <Input
                                 value={item.name}
                                 onChange={(e) => {
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
                                   const newDorItems = [...(meetingType.dorItems || [])];
-                                  newDorItems[itemIndex] = { ...item, name: e.target.value };
+                                  newDorItems[actualIndex] = { ...item, name: e.target.value };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1230,7 +1239,7 @@ export default function OrganizationSettingsPage() {
                                 onChange={(e) => {
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
                                   const newDorItems = [...(meetingType.dorItems || [])];
-                                  newDorItems[itemIndex] = { ...item, description: e.target.value };
+                                  newDorItems[actualIndex] = { ...item, description: e.target.value };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1245,7 +1254,7 @@ export default function OrganizationSettingsPage() {
                                   onCheckedChange={(checked) => {
                                     const newMeetingTypes = [...(formData.meetingTypes || [])];
                                     const newDorItems = [...(meetingType.dorItems || [])];
-                                    newDorItems[itemIndex] = { ...item, isRequired: checked };
+                                    newDorItems[actualIndex] = { ...item, isRequired: checked };
                                     newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
                                     setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                   }}
@@ -1257,8 +1266,14 @@ export default function OrganizationSettingsPage() {
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => {
+                                  const confirmed = window.confirm(
+                                    t('organizationSettings.confirmDeleteDorDodItem'),
+                                  );
+                                  if (!confirmed) return;
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
-                                  const newDorItems = meetingType.dorItems?.filter((_, i) => i !== itemIndex) || [];
+                                  const newDorItems = [...(meetingType.dorItems || [])];
+                                  // Soft delete - mark as deleted instead of removing
+                                  newDorItems[actualIndex] = { ...item, isDeleted: true };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1267,7 +1282,8 @@ export default function OrganizationSettingsPage() {
                               </Button>
                             </div>
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
                     </div>
 
@@ -1296,15 +1312,17 @@ export default function OrganizationSettingsPage() {
                         </Button>
                       </div>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {meetingType.dodItems?.map((item, itemIndex) => (
-                          <div key={itemIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
+                        {meetingType.dodItems?.filter(item => !item.isDeleted).map((item, itemIndex) => {
+                          const actualIndex = meetingType.dodItems?.findIndex(d => d === item) ?? itemIndex;
+                          return (
+                          <div key={actualIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
                             <div className="flex-1 space-y-1">
                               <Input
                                 value={item.name}
                                 onChange={(e) => {
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
                                   const newDodItems = [...(meetingType.dodItems || [])];
-                                  newDodItems[itemIndex] = { ...item, name: e.target.value };
+                                  newDodItems[actualIndex] = { ...item, name: e.target.value };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1316,7 +1334,7 @@ export default function OrganizationSettingsPage() {
                                 onChange={(e) => {
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
                                   const newDodItems = [...(meetingType.dodItems || [])];
-                                  newDodItems[itemIndex] = { ...item, description: e.target.value };
+                                  newDodItems[actualIndex] = { ...item, description: e.target.value };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1331,7 +1349,7 @@ export default function OrganizationSettingsPage() {
                                   onCheckedChange={(checked) => {
                                     const newMeetingTypes = [...(formData.meetingTypes || [])];
                                     const newDodItems = [...(meetingType.dodItems || [])];
-                                    newDodItems[itemIndex] = { ...item, isRequired: checked };
+                                    newDodItems[actualIndex] = { ...item, isRequired: checked };
                                     newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
                                     setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                   }}
@@ -1343,8 +1361,14 @@ export default function OrganizationSettingsPage() {
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => {
+                                  const confirmed = window.confirm(
+                                    t('organizationSettings.confirmDeleteDorDodItem'),
+                                  );
+                                  if (!confirmed) return;
                                   const newMeetingTypes = [...(formData.meetingTypes || [])];
-                                  const newDodItems = meetingType.dodItems?.filter((_, i) => i !== itemIndex) || [];
+                                  const newDodItems = [...(meetingType.dodItems || [])];
+                                  // Soft delete - mark as deleted instead of removing
+                                  newDodItems[actualIndex] = { ...item, isDeleted: true };
                                   newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
                                   setFormData({ ...formData, meetingTypes: newMeetingTypes });
                                 }}
@@ -1353,12 +1377,14 @@ export default function OrganizationSettingsPage() {
                               </Button>
                             </div>
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+              <div ref={meetingTypesEndRef} />
             </CardContent>
           </Card>
         </TabsContent>

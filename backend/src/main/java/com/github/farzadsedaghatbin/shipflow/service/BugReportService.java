@@ -328,8 +328,9 @@ public class BugReportService {
     
     // If no status filter provided and not in exclusion mode, exclude CLOSED bugs by default
     if (statusList == null && (exclude == null || !exclude)) {
-      statusList = Arrays.asList(BugStatus.OPEN, BugStatus.IN_PROGRESS, BugStatus.RESOLVED, 
-                                  BugStatus.VERIFIED, BugStatus.REOPENED, BugStatus.WONT_FIX, BugStatus.DUPLICATE);
+      statusList = Arrays.stream(BugStatus.values())
+          .filter(status -> status != BugStatus.CLOSED)
+          .collect(Collectors.toList());
       log.debug("No status filter provided - excluding CLOSED bugs by default");
     }
     
