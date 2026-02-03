@@ -97,7 +97,7 @@ class BettingTableServiceTest {
   @Test
   void getBettingTable_ShouldReturnFullBettingTableView() {
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
+    when(pitchRepository.findByCycleIdAndStatusNotDeleted(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);
@@ -126,7 +126,7 @@ class BettingTableServiceTest {
     testSlot.setPitch(shapedPitch);
 
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
+    when(pitchRepository.findByCycleIdAndStatusNotDeleted(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     lenient().when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);
