@@ -89,11 +89,11 @@ public class BettingTableService {
       // Get cycles for project, then get shaped pitches from those cycles
       List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(projectId);
       Set<Long> cycleIds = cycles.stream().map(Cycle::getId).collect(Collectors.toSet());
-      pitches = pitchRepository.findAll().stream()
+      pitches = pitchRepository.findAllNotDeleted().stream()
           .filter(p -> p.getStatus() == PitchStatus.SHAPED && cycleIds.contains(p.getCycle().getId()))
           .collect(Collectors.toList());
     } else {
-      pitches = pitchRepository.findAll().stream().filter(p -> p.getStatus() == PitchStatus.SHAPED)
+      pitches = pitchRepository.findAllNotDeleted().stream().filter(p -> p.getStatus() == PitchStatus.SHAPED)
           .collect(Collectors.toList());
     }
 
