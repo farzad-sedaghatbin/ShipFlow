@@ -28,8 +28,7 @@ public class CustomDashboardController {
 
   /** Create a new custom dashboard */
   @PostMapping
-  public ResponseEntity<CustomDashboardDTO> createDashboard(
-      @AuthenticationPrincipal UserDetails userDetails,
+  public ResponseEntity<CustomDashboardDTO> createDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @Valid @RequestBody CreateDashboardRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Creating custom dashboard for user: {}", userId);
@@ -49,8 +48,8 @@ public class CustomDashboardController {
 
   /** Get a specific dashboard by ID */
   @GetMapping("/{id}")
-  public ResponseEntity<CustomDashboardDTO> getDashboard(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<CustomDashboardDTO> getDashboard(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Fetching dashboard {} for user: {}", id, userId);
     CustomDashboardDTO dashboard = customDashboardService.getDashboard(userId, id);
@@ -59,10 +58,8 @@ public class CustomDashboardController {
 
   /** Update an existing dashboard */
   @PutMapping("/{id}")
-  public ResponseEntity<CustomDashboardDTO> updateDashboard(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long id,
-      @Valid @RequestBody UpdateDashboardRequest request) {
+  public ResponseEntity<CustomDashboardDTO> updateDashboard(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id, @Valid @RequestBody UpdateDashboardRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Updating dashboard {} for user: {}", id, userId);
     CustomDashboardDTO dashboard = customDashboardService.updateDashboard(userId, id, request);
@@ -71,8 +68,8 @@ public class CustomDashboardController {
 
   /** Delete a dashboard */
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteDashboard(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<Void> deleteDashboard(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Deleting dashboard {} for user: {}", id, userId);
     customDashboardService.deleteDashboard(userId, id);
@@ -81,8 +78,8 @@ public class CustomDashboardController {
 
   /** Set a dashboard as the default */
   @PostMapping("/{id}/set-default")
-  public ResponseEntity<Void> setDefaultDashboard(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<Void> setDefaultDashboard(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Setting dashboard {} as default for user: {}", id, userId);
     customDashboardService.setDefaultDashboard(userId, id);
@@ -90,12 +87,13 @@ public class CustomDashboardController {
   }
 
   /**
-   * Toggle user context filter for a dashboard When enabled, widgets show data filtered to user's
-   * context (their cycles, teams, tasks) When disabled, widgets show organization-wide data
+   * Toggle user context filter for a dashboard When enabled, widgets show data
+   * filtered to user's context (their cycles, teams, tasks) When disabled,
+   * widgets show organization-wide data
    */
   @PutMapping("/{id}/toggle-context-filter")
-  public ResponseEntity<CustomDashboardDTO> toggleUserContextFilter(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<CustomDashboardDTO> toggleUserContextFilter(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Toggling user context filter for dashboard {} (user: {})", id, userId);
     CustomDashboardDTO dashboard = customDashboardService.toggleUserContextFilter(userId, id);
@@ -112,10 +110,8 @@ public class CustomDashboardController {
 
   /** Add a widget to a dashboard */
   @PostMapping("/{id}/widgets")
-  public ResponseEntity<DashboardWidgetConfig> addWidget(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long id,
-      @Valid @RequestBody AddWidgetRequest request) {
+  public ResponseEntity<DashboardWidgetConfig> addWidget(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id, @Valid @RequestBody AddWidgetRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Adding widget to dashboard {} for user: {}", id, userId);
     DashboardWidgetConfig widget = customDashboardService.addWidget(userId, id, request);
@@ -134,24 +130,19 @@ public class CustomDashboardController {
 
   /** Update a widget configuration */
   @PutMapping("/{dashboardId}/widgets/{widgetId}")
-  public ResponseEntity<DashboardWidgetConfig> updateWidget(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long dashboardId,
-      @PathVariable Long widgetId,
+  public ResponseEntity<DashboardWidgetConfig> updateWidget(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long dashboardId, @PathVariable Long widgetId,
       @Valid @RequestBody UpdateWidgetRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Updating widget {} on dashboard {} for user: {}", widgetId, dashboardId, userId);
-    DashboardWidgetConfig updated =
-        customDashboardService.updateWidget(userId, dashboardId, widgetId, request);
+    DashboardWidgetConfig updated = customDashboardService.updateWidget(userId, dashboardId, widgetId, request);
     return ResponseEntity.ok(updated);
   }
 
   /** Remove a widget from a dashboard */
   @DeleteMapping("/{dashboardId}/widgets/{widgetId}")
-  public ResponseEntity<Void> removeWidget(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long dashboardId,
-      @PathVariable Long widgetId) {
+  public ResponseEntity<Void> removeWidget(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long dashboardId, @PathVariable Long widgetId) {
     Long userId = getUserId(userDetails);
     log.info("Removing widget {} from dashboard {} for user: {}", widgetId, dashboardId, userId);
     customDashboardService.removeWidget(userId, dashboardId, widgetId);
@@ -171,9 +162,7 @@ public class CustomDashboardController {
   }
 
   private Long getUserId(UserDetails userDetails) {
-    return userRepository
-        .findByUsername(userDetails.getUsername())
-        .map(User::getId)
+    return userRepository.findByUsername(userDetails.getUsername()).map(User::getId)
         .orElseThrow(() -> new RuntimeException("User not found"));
   }
 }

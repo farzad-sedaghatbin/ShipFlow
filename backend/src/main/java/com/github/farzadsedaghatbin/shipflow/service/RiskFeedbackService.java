@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service for managing AI risk assessment feedback. Used to track accuracy and improve AI over
- * time.
+ * Service for managing AI risk assessment feedback. Used to track accuracy and
+ * improve AI over time.
  */
 @Service
 @Slf4j
@@ -34,27 +34,16 @@ public class RiskFeedbackService {
 
   /** Submit feedback for an AI risk assessment. */
   public RiskFeedbackDTO submitFeedback(CreateRiskFeedbackRequest request, Long userId) {
-    Pitch pitch =
-        pitchRepository
-            .findById(request.getPitchId())
-            .orElseThrow(
-                () -> new RuntimeException("Pitch not found with id: " + request.getPitchId()));
+    Pitch pitch = pitchRepository.findById(request.getPitchId())
+        .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + request.getPitchId()));
 
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-    RiskFeedback feedback =
-        RiskFeedback.builder()
-            .pitch(pitch)
-            .user(user)
-            .originalRiskScore(request.getOriginalRiskScore())
-            .rating(request.getRating())
-            .suggestedRiskScore(request.getSuggestedRiskScore())
-            .notes(request.getNotes())
-            .missedFactors(request.getMissedFactors())
-            .build();
+    RiskFeedback feedback = RiskFeedback.builder().pitch(pitch).user(user)
+        .originalRiskScore(request.getOriginalRiskScore()).rating(request.getRating())
+        .suggestedRiskScore(request.getSuggestedRiskScore()).notes(request.getNotes())
+        .missedFactors(request.getMissedFactors()).build();
 
     RiskFeedback saved = riskFeedbackRepository.save(feedback);
     log.info("Risk feedback submitted by user {} for pitch {}", userId, request.getPitchId());
@@ -65,25 +54,19 @@ public class RiskFeedbackService {
   /** Get all feedback for a pitch. */
   @Transactional(readOnly = true)
   public List<RiskFeedbackDTO> getFeedbackByPitch(Long pitchId) {
-    return riskFeedbackRepository.findByPitchId(pitchId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return riskFeedbackRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get all feedback by a user. */
   @Transactional(readOnly = true)
   public List<RiskFeedbackDTO> getFeedbackByUser(Long userId) {
-    return riskFeedbackRepository.findByUserId(userId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return riskFeedbackRepository.findByUserId(userId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get feedback for a cycle. */
   @Transactional(readOnly = true)
   public List<RiskFeedbackDTO> getFeedbackByCycle(Long cycleId) {
-    return riskFeedbackRepository.findByCycleId(cycleId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return riskFeedbackRepository.findByCycleId(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get aggregated statistics for all feedback. */
@@ -92,18 +75,10 @@ public class RiskFeedbackService {
     long total = riskFeedbackRepository.count();
 
     if (total == 0) {
-      return RiskFeedbackStatsDTO.builder()
-          .totalFeedback(0L)
-          .accurateCount(0L)
-          .partiallyAccurateCount(0L)
-          .inaccurateCount(0L)
-          .overlyPessimisticCount(0L)
-          .overlyOptimisticCount(0L)
-          .accuracyPercent(0.0)
-          .averageScoreDelta(0.0)
-          .commonMissedFactors(Collections.emptyList())
-          .feedbackByMonth(Collections.emptyMap())
-          .build();
+      return RiskFeedbackStatsDTO.builder().totalFeedback(0L).accurateCount(0L).partiallyAccurateCount(0L)
+          .inaccurateCount(0L).overlyPessimisticCount(0L).overlyOptimisticCount(0L).accuracyPercent(0.0)
+          .averageScoreDelta(0.0).commonMissedFactors(Collections.emptyList())
+          .feedbackByMonth(Collections.emptyMap()).build();
     }
 
     Long accurateCount = riskFeedbackRepository.countByRating(FeedbackRating.ACCURATE);
@@ -112,8 +87,7 @@ public class RiskFeedbackService {
     Long pessimisticCount = riskFeedbackRepository.countByRating(FeedbackRating.OVERLY_PESSIMISTIC);
     Long optimisticCount = riskFeedbackRepository.countByRating(FeedbackRating.OVERLY_OPTIMISTIC);
 
-    double accuracyPercent =
-        total > 0 ? ((accurateCount + partialCount) / (double) total) * 100 : 0;
+    double accuracyPercent = total > 0 ? ((accurateCount + partialCount) / (double) total) * 100 : 0;
 
     Double avgDelta = riskFeedbackRepository.getAverageScoreDelta();
 
@@ -128,8 +102,7 @@ public class RiskFeedbackService {
       feedbackByMonth.put((String) row[0], (Long) row[1]);
     }
 
-    return RiskFeedbackStatsDTO.builder()
-        .totalFeedback(total)
+    return RiskFeedbackStatsDTO.builder().totalFeedback(total)
         .accurateCount(accurateCount != null ? accurateCount : 0L)
         .partiallyAccurateCount(partialCount != null ? partialCount : 0L)
         .inaccurateCount(inaccurateCount != null ? inaccurateCount : 0L)
@@ -137,9 +110,7 @@ public class RiskFeedbackService {
         .overlyOptimisticCount(optimisticCount != null ? optimisticCount : 0L)
         .accuracyPercent(Math.round(accuracyPercent * 10.0) / 10.0)
         .averageScoreDelta(avgDelta != null ? Math.round(avgDelta * 10.0) / 10.0 : 0.0)
-        .commonMissedFactors(commonMissedFactors)
-        .feedbackByMonth(feedbackByMonth)
-        .build();
+        .commonMissedFactors(commonMissedFactors).feedbackByMonth(feedbackByMonth).build();
   }
 
   /** Check if user has already submitted feedback for a pitch. */
@@ -152,25 +123,16 @@ public class RiskFeedbackService {
   @Transactional(readOnly = true)
   public List<RiskFeedbackDTO> getRecentFeedback() {
     LocalDateTime startDate = LocalDateTime.now().minusDays(30);
-    return riskFeedbackRepository.findRecentFeedback(startDate).stream()
-        .map(this::toDTO)
+    return riskFeedbackRepository.findRecentFeedback(startDate).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   private RiskFeedbackDTO toDTO(RiskFeedback entity) {
-    return RiskFeedbackDTO.builder()
-        .id(entity.getId())
-        .pitchId(entity.getPitch().getId())
-        .pitchTitle(entity.getPitch().getTitle())
-        .userId(entity.getUser().getId())
-        .userName(entity.getUser().getUsername())
-        .originalRiskScore(entity.getOriginalRiskScore())
-        .rating(entity.getRating())
-        .suggestedRiskScore(entity.getSuggestedRiskScore())
-        .notes(entity.getNotes())
-        .missedFactors(entity.getMissedFactors())
-        .createdAt(entity.getCreatedAt())
-        .build();
+    return RiskFeedbackDTO.builder().id(entity.getId()).pitchId(entity.getPitch().getId())
+        .pitchTitle(entity.getPitch().getTitle()).userId(entity.getUser().getId())
+        .userName(entity.getUser().getUsername()).originalRiskScore(entity.getOriginalRiskScore())
+        .rating(entity.getRating()).suggestedRiskScore(entity.getSuggestedRiskScore()).notes(entity.getNotes())
+        .missedFactors(entity.getMissedFactors()).createdAt(entity.getCreatedAt()).build();
   }
 
   private List<String> extractCommonFactors(List<String> allMissedFactors) {
@@ -190,10 +152,7 @@ public class RiskFeedbackService {
     }
 
     // Return top 10 most common factors
-    return wordCount.entrySet().stream()
-        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-        .limit(10)
-        .map(Map.Entry::getKey)
-        .collect(Collectors.toList());
+    return wordCount.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(10)
+        .map(Map.Entry::getKey).collect(Collectors.toList());
   }
 }

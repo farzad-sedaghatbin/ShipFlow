@@ -35,27 +35,35 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Unit tests for "My Work Logs" functionality in WorkLogService. Tests the ability for users to
- * create and manage their own work logs.
+ * Unit tests for "My Work Logs" functionality in WorkLogService. Tests the
+ * ability for users to create and manage their own work logs.
  */
 @ExtendWith(MockitoExtension.class)
 class MyWorkLogServiceTest {
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @InjectMocks private WorkLogService workLogService;
+  @InjectMocks
+  private WorkLogService workLogService;
 
-  @Mock private SecurityContext securityContext;
+  @Mock
+  private SecurityContext securityContext;
 
-  @Mock private Authentication authentication;
+  @Mock
+  private Authentication authentication;
 
   private Person testPerson;
   private Person otherPerson;
@@ -66,90 +74,55 @@ class MyWorkLogServiceTest {
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(messageService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("delete") && key.contains("own"))
-                return "You can only delete your own work logs";
-              if (key.contains("update") && key.contains("own"))
-                return "You can only update your own work logs";
-              if (key.contains("own.only")) return "You can only update your own work logs";
-              if (key.contains("no.person.profile"))
-                return "User is not linked to a person profile";
-              if (key.contains("update.own")) return "You can only update your own work logs";
-              return key;
-            });
-    lenient()
-        .when(messageService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("delete") && key.contains("own"))
-                return "You can only delete your own work logs";
-              if (key.contains("update") && key.contains("own"))
-                return "You can only update your own work logs";
-              if (key.contains("own.only")) return "You can only update your own work logs";
-              if (key.contains("no.person.profile"))
-                return "User is not linked to a person profile";
-              if (key.contains("update.own")) return "You can only update your own work logs";
-              return key;
-            });
+    lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("delete") && key.contains("own"))
+        return "You can only delete your own work logs";
+      if (key.contains("update") && key.contains("own"))
+        return "You can only update your own work logs";
+      if (key.contains("own.only"))
+        return "You can only update your own work logs";
+      if (key.contains("no.person.profile"))
+        return "User is not linked to a person profile";
+      if (key.contains("update.own"))
+        return "You can only update your own work logs";
+      return key;
+    });
+    lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("delete") && key.contains("own"))
+        return "You can only delete your own work logs";
+      if (key.contains("update") && key.contains("own"))
+        return "You can only update your own work logs";
+      if (key.contains("own.only"))
+        return "You can only update your own work logs";
+      if (key.contains("no.person.profile"))
+        return "User is not linked to a person profile";
+      if (key.contains("update.own"))
+        return "You can only update your own work logs";
+      return key;
+    });
     // Set up security context
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(authentication.getName()).thenReturn("testuser");
     SecurityContextHolder.setContext(securityContext);
 
-    testPerson =
-        Person.builder()
-            .id(1L)
-            .name("Test User")
-            .email("testuser@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPerson = Person.builder().id(1L).name("Test User").email("testuser@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
 
-    otherPerson =
-        Person.builder()
-            .id(2L)
-            .name("Other User")
-            .email("other@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    otherPerson = Person.builder().id(2L).name("Other User").email("other@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
 
-    testUser =
-        User.builder()
-            .id(1L)
-            .username("testuser")
-            .email("testuser@example.com")
-            .role(UserRole.MEMBER)
-            .person(testPerson)
-            .isActive(true)
-            .build();
+    testUser = User.builder().id(1L).username("testuser").email("testuser@example.com").role(UserRole.MEMBER)
+        .person(testPerson).isActive(true).build();
 
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
-    testWorkLog =
-        WorkLog.builder()
-            .id(1L)
-            .person(testPerson)
-            .pitch(testPitch)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(4.0))
-            .note("My work log")
-            .build();
+    testWorkLog = WorkLog.builder().id(1L).person(testPerson).pitch(testPitch).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(4.0)).note("My work log").build();
 
-    otherPersonWorkLog =
-        WorkLog.builder()
-            .id(2L)
-            .person(otherPerson)
-            .pitch(testPitch)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(3.0))
-            .note("Other's work log")
-            .build();
+    otherPersonWorkLog = WorkLog.builder().id(2L).person(otherPerson).pitch(testPitch).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(3.0)).note("Other's work log").build();
   }
 
   @AfterEach
@@ -172,8 +145,7 @@ class MyWorkLogServiceTest {
   @Test
   void getMyWorkLogsByCycle_ShouldReturnUserWorkLogsForCycle() {
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
-    when(workLogRepository.findByPersonIdAndCycleId(1L, 10L))
-        .thenReturn(Arrays.asList(testWorkLog));
+    when(workLogRepository.findByPersonIdAndCycleId(1L, 10L)).thenReturn(Arrays.asList(testWorkLog));
 
     List<WorkLogDTO> result = workLogService.getMyWorkLogsByCycle(10L);
 
@@ -195,13 +167,8 @@ class MyWorkLogServiceTest {
 
   @Test
   void createMyWorkLog_ShouldCreateWorkLogForCurrentUser() {
-    CreateWorkLogForSelfRequest request =
-        CreateWorkLogForSelfRequest.builder()
-            .pitchId(1L)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(2.5))
-            .note("New work")
-            .build();
+    CreateWorkLogForSelfRequest request = CreateWorkLogForSelfRequest.builder().pitchId(1L).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(2.5)).note("New work").build();
 
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
@@ -215,40 +182,22 @@ class MyWorkLogServiceTest {
 
   @Test
   void createMyWorkLog_WhenUserNotLinkedToPerson_ShouldThrowException() {
-    User userWithoutPerson =
-        User.builder()
-            .id(3L)
-            .username("testuser")
-            .email("nolink@example.com")
-            .role(UserRole.MEMBER)
-            .person(null)
-            .isActive(true)
-            .build();
+    User userWithoutPerson = User.builder().id(3L).username("testuser").email("nolink@example.com")
+        .role(UserRole.MEMBER).person(null).isActive(true).build();
 
-    CreateWorkLogForSelfRequest request =
-        CreateWorkLogForSelfRequest.builder()
-            .pitchId(1L)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(2.5))
-            .build();
+    CreateWorkLogForSelfRequest request = CreateWorkLogForSelfRequest.builder().pitchId(1L).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(2.5)).build();
 
-    when(userRepository.findByUsernameWithPerson("testuser"))
-        .thenReturn(Optional.of(userWithoutPerson));
+    when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(userWithoutPerson));
 
-    assertThatThrownBy(() -> workLogService.createMyWorkLog(request))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.createMyWorkLog(request)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("not linked to a person profile");
   }
 
   @Test
   void updateMyWorkLog_WhenOwned_ShouldUpdateWorkLog() {
-    CreateWorkLogForSelfRequest request =
-        CreateWorkLogForSelfRequest.builder()
-            .pitchId(1L)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(6.0))
-            .note("Updated work")
-            .build();
+    CreateWorkLogForSelfRequest request = CreateWorkLogForSelfRequest.builder().pitchId(1L).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(6.0)).note("Updated work").build();
 
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
     when(workLogRepository.findById(1L)).thenReturn(Optional.of(testWorkLog));
@@ -263,19 +212,13 @@ class MyWorkLogServiceTest {
 
   @Test
   void updateMyWorkLog_WhenNotOwned_ShouldThrowException() {
-    CreateWorkLogForSelfRequest request =
-        CreateWorkLogForSelfRequest.builder()
-            .pitchId(1L)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(6.0))
-            .note("Trying to update other's work")
-            .build();
+    CreateWorkLogForSelfRequest request = CreateWorkLogForSelfRequest.builder().pitchId(1L).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(6.0)).note("Trying to update other's work").build();
 
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
     when(workLogRepository.findById(2L)).thenReturn(Optional.of(otherPersonWorkLog));
 
-    assertThatThrownBy(() -> workLogService.updateMyWorkLog(2L, request))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.updateMyWorkLog(2L, request)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("only update your own work logs");
   }
 
@@ -295,8 +238,7 @@ class MyWorkLogServiceTest {
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
     when(workLogRepository.findById(2L)).thenReturn(Optional.of(otherPersonWorkLog));
 
-    assertThatThrownBy(() -> workLogService.deleteMyWorkLog(2L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.deleteMyWorkLog(2L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("only delete your own work logs");
 
     verify(workLogRepository, never()).deleteById(any());
@@ -306,8 +248,7 @@ class MyWorkLogServiceTest {
   void getMyWorkLogs_WhenUserNotFound_ShouldThrowException() {
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> workLogService.getMyWorkLogs())
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.getMyWorkLogs()).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("User not found");
   }
 }

@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity to store user feedback on AI risk assessments. Used for improving AI accuracy over time.
+ * Entity to store user feedback on AI risk assessments. Used for improving AI
+ * accuracy over time.
  */
 @Entity
 @Table(name = "risk_feedback")

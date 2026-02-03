@@ -63,14 +63,7 @@ public class Pitch {
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cycle_id", nullable = false)
-  @JsonIgnoreProperties({
-    "hibernateLazyInitializer",
-    "handler",
-    "pitches",
-    "teams",
-    "retrospectives",
-    "project"
-  })
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pitches", "teams", "retrospectives", "project"})
   private Cycle cycle;
 
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
@@ -92,7 +85,8 @@ public class Pitch {
   private String circuitBreakerReason;
 
   @NotAudited
-  @Column private LocalDateTime circuitBreakerDate;
+  @Column
+  private LocalDateTime circuitBreakerDate;
 
   @NotAudited
   @Column(nullable = false)

@@ -18,15 +18,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class FeedbackLearningServiceTest {
 
-  @Mock private QAInteractionRepository qaInteractionRepository;
+  @Mock
+  private QAInteractionRepository qaInteractionRepository;
 
-  @Mock private AICacheConfig cacheConfig;
+  @Mock
+  private AICacheConfig cacheConfig;
 
   private FeedbackLearningService feedbackLearningService;
 
   @BeforeEach
   void setUp() {
-    // Configure mock to use in-memory provider (avoid Redis initialization in tests)
+    // Configure mock to use in-memory provider (avoid Redis initialization in
+    // tests)
     lenient().when(cacheConfig.isRedisProvider()).thenReturn(false);
     feedbackLearningService = new FeedbackLearningService(qaInteractionRepository, cacheConfig);
   }
@@ -60,8 +63,7 @@ class FeedbackLearningServiceTest {
 
     // When & Then
     assertThatThrownBy(() -> feedbackLearningService.recordFeedback(interactionId, true, "Great!"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Q&A interaction not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Q&A interaction not found");
   }
 
   @Test
@@ -80,8 +82,7 @@ class FeedbackLearningServiceTest {
     feedbackLearningService.recordFeedback(interactionId, true, "Great answer!");
 
     // Pattern stats are updated internally
-    double successRate =
-        feedbackLearningService.getPatternSuccessRate("What are the payment risks?");
+    double successRate = feedbackLearningService.getPatternSuccessRate("What are the payment risks?");
 
     // Then
     assertThat(successRate).isGreaterThan(0.0);

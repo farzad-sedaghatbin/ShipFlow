@@ -12,18 +12,14 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 
 /**
- * Entity representing a test case in the QA system. Test cases can be linked to pitches for test
- * coverage tracking.
+ * Entity representing a test case in the QA system. Test cases can be linked to
+ * pitches for test coverage tracking.
  */
 @Entity
-@Table(
-    name = "test_cases",
-    indexes = {
-      @Index(name = "idx_test_case_pitch", columnList = "pitch_id"),
-      @Index(name = "idx_test_case_cycle", columnList = "cycle_id"),
-      @Index(name = "idx_test_case_status", columnList = "status"),
-      @Index(name = "idx_test_case_created_by", columnList = "created_by_id")
-    })
+@Table(name = "test_cases", indexes = {@Index(name = "idx_test_case_pitch", columnList = "pitch_id"),
+    @Index(name = "idx_test_case_cycle", columnList = "cycle_id"),
+    @Index(name = "idx_test_case_status", columnList = "status"),
+    @Index(name = "idx_test_case_created_by", columnList = "created_by_id")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -83,8 +79,8 @@ public class TestCase {
   private Team team;
 
   /**
-   * The scope (hill chart point) this test case is related to (optional). Links the test case to a
-   * specific scope for better traceability.
+   * The scope (hill chart point) this test case is related to (optional). Links
+   * the test case to a specific scope for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -92,8 +88,8 @@ public class TestCase {
   private HillChartPoint scope;
 
   /**
-   * The task this test case is related to (optional). Links the test case to a specific task for
-   * better traceability.
+   * The task this test case is related to (optional). Links the test case to a
+   * specific task for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)

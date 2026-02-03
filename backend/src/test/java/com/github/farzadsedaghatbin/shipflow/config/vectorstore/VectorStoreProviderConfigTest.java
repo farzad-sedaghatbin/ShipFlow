@@ -10,15 +10,9 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void builder_shouldCreateConfigWithAllFields() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .url("http://localhost:6333")
-            .host("localhost")
-            .port(6334)
-            .apiKey("test-api-key")
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().url("http://localhost:6333")
+        .host("localhost").port(6334).apiKey("test-api-key").collectionName("test_collection").dimension(384)
+        .build();
 
     assertEquals("http://localhost:6333", config.getUrl());
     assertEquals("localhost", config.getHost());
@@ -45,8 +39,7 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void hasApiKey_shouldReturnTrueWhenSet() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().apiKey("my-api-key").build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().apiKey("my-api-key").build();
 
     assertTrue(config.hasApiKey());
   }
@@ -74,20 +67,15 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void getEffectiveUrl_shouldReturnUrlWhenSet() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .url("http://custom-url:8080")
-            .host("localhost")
-            .port(6333)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().url("http://custom-url:8080")
+        .host("localhost").port(6333).build();
 
     assertEquals("http://custom-url:8080", config.getEffectiveUrl());
   }
 
   @Test
   void getEffectiveUrl_shouldConstructFromHostPortWhenUrlNotSet() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().host("qdrant-server").port(6333).build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("qdrant-server").port(6333).build();
 
     assertEquals("http://qdrant-server:6333", config.getEffectiveUrl());
   }
@@ -101,12 +89,8 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void extraParams_shouldStoreAndRetrieveValues() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .extraParam("useTls", true)
-            .extraParam("timeout", 30)
-            .extraParam("custom", "value")
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().extraParam("useTls", true)
+        .extraParam("timeout", 30).extraParam("custom", "value").build();
 
     assertEquals(true, config.getExtraParam("useTls", false));
     assertEquals(30, config.getExtraParam("timeout", 0));
@@ -126,8 +110,7 @@ class VectorStoreProviderConfigTest {
   void extraParams_shouldSupportBulkAdd() {
     Map<String, Object> params = Map.of("key1", "value1", "key2", 123, "key3", true);
 
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().extraParams(params).build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().extraParams(params).build();
 
     assertEquals("value1", config.getExtraParam("key1", null));
     assertEquals(Integer.valueOf(123), config.getExtraParam("key2", null));
@@ -136,8 +119,7 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void getExtraParams_shouldReturnCopy() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().extraParam("key", "value").build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().extraParam("key", "value").build();
 
     Map<String, Object> params = config.getExtraParams();
     params.put("newKey", "newValue");
@@ -148,8 +130,7 @@ class VectorStoreProviderConfigTest {
 
   @Test
   void toString_shouldMaskApiKey() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().apiKey("super-secret-key").build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().apiKey("super-secret-key").build();
 
     String str = config.toString();
     assertTrue(str.contains("****"));

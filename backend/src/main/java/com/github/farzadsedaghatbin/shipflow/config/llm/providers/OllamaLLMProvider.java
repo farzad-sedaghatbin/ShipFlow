@@ -11,21 +11,23 @@ import org.springframework.stereotype.Component;
 /**
  * LLM Provider implementation for Ollama (local/self-hosted).
  *
- * <p>Ollama is ideal for:
+ * <p>
+ * Ollama is ideal for:
  *
  * <ul>
- *   <li>Local development without API costs
- *   <li>Self-hosted deployments with privacy requirements
- *   <li>Running open-source models locally
+ * <li>Local development without API costs
+ * <li>Self-hosted deployments with privacy requirements
+ * <li>Running open-source models locally
  * </ul>
  *
- * <p>Configuration:
+ * <p>
+ * Configuration:
  *
  * <ul>
- *   <li>baseUrl: Ollama API URL (default: http://localhost:11434)
- *   <li>modelName: Model to use (e.g., mistral:instruct, llama2, codellama)
- *   <li>timeout: Request timeout
- *   <li>temperature: Model temperature (0.0-1.0)
+ * <li>baseUrl: Ollama API URL (default: http://localhost:11434)
+ * <li>modelName: Model to use (e.g., mistral:instruct, llama2, codellama)
+ * <li>timeout: Request timeout
+ * <li>temperature: Model temperature (0.0-1.0)
  * </ul>
  */
 @Component
@@ -49,8 +51,8 @@ public class OllamaLLMProvider implements LLMProvider {
 
     log.info("Creating Ollama ChatLanguageModel - URL: {}, Model: {}", baseUrl, modelName);
 
-    OllamaChatModel.OllamaChatModelBuilder builder =
-        OllamaChatModel.builder().baseUrl(baseUrl).modelName(modelName);
+    OllamaChatModel.OllamaChatModelBuilder builder = OllamaChatModel.builder().baseUrl(baseUrl)
+        .modelName(modelName);
 
     if (config.getTimeout() != null) {
       builder.timeout(config.getTimeout());

@@ -31,5 +31,6 @@ public class Evidence {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
-  @Column private String fileUrl;
+  @Column
+  private String fileUrl;
 }

@@ -38,17 +38,20 @@ import org.springframework.test.web.servlet.MockMvc;
 @DisplayName("ReportController Integration Tests")
 class ReportControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @MockBean private ReportService reportService;
+  @MockBean
+  private ReportService reportService;
 
   @Autowired
-  private com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository
-      permissionRepository;
+  private com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository permissionRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-  @Autowired private PersonRepository personRepository;
+  @Autowired
+  private PersonRepository personRepository;
 
   @BeforeEach
   void setUp() {
@@ -61,37 +64,19 @@ class ReportControllerIntegrationTest {
     Person testPerson = Person.builder().name("Test User").email("testuser@example.com").build();
     testPerson = personRepository.save(testPerson);
 
-    User testUser =
-        User.builder()
-            .username("testuser")
-            .password("password")
-            .role(UserRole.MEMBER)
-            .person(testPerson)
-            .isActive(true)
-            .build();
+    User testUser = User.builder().username("testuser").password("password").role(UserRole.MEMBER)
+        .person(testPerson).isActive(true).build();
     userRepository.save(testUser);
 
     // Set up permissions for MEMBER role to access reports and cycles
-    Permission cycleReadPermission =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.CYCLE)
-            .permissionType(PermissionType.READ)
-            .build();
+    Permission cycleReadPermission = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.CYCLE)
+        .permissionType(PermissionType.READ).build();
 
-    Permission cycleUpdatePermission =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.CYCLE)
-            .permissionType(PermissionType.UPDATE)
-            .build();
+    Permission cycleUpdatePermission = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.CYCLE)
+        .permissionType(PermissionType.UPDATE).build();
 
-    Permission reportViewPermission =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.REPORT)
-            .permissionType(PermissionType.READ)
-            .build();
+    Permission reportViewPermission = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.REPORT)
+        .permissionType(PermissionType.READ).build();
 
     permissionRepository.save(cycleReadPermission);
     permissionRepository.save(cycleUpdatePermission);
@@ -111,15 +96,11 @@ class ReportControllerIntegrationTest {
       when(reportService.getEnhancedCycleReport(1L)).thenReturn(report);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced").contentType(MediaType.APPLICATION_JSON))
-          .andExpect(status().isOk())
-          .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-          .andExpect(jsonPath("$.cycleId").value(1))
-          .andExpect(jsonPath("$.cycleName").value("Q1 2026"))
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced").contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+          .andExpect(jsonPath("$.cycleId").value(1)).andExpect(jsonPath("$.cycleName").value("Q1 2026"))
           .andExpect(jsonPath("$.projectName").value("Test Project"))
-          .andExpect(jsonPath("$.totalPitches").value(3))
-          .andExpect(jsonPath("$.completedPitches").value(2))
+          .andExpect(jsonPath("$.totalPitches").value(3)).andExpect(jsonPath("$.completedPitches").value(2))
           .andExpect(jsonPath("$.inProgressPitches").value(1))
           .andExpect(jsonPath("$.totalAppetiteHours").value(96.0))
           .andExpect(jsonPath("$.totalActualHours").value(85.5))
@@ -145,9 +126,7 @@ class ReportControllerIntegrationTest {
       when(reportService.getEnhancedCycleReport(1L)).thenReturn(report);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced"))
-          .andExpect(status().isOk())
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced")).andExpect(status().isOk())
           .andExpect(jsonPath("$.riskDistribution.lowRiskCount").value(1))
           .andExpect(jsonPath("$.riskDistribution.mediumRiskCount").value(1))
           .andExpect(jsonPath("$.riskDistribution.highRiskCount").value(1))
@@ -166,9 +145,7 @@ class ReportControllerIntegrationTest {
       when(reportService.getEnhancedCycleReport(1L)).thenReturn(report);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced"))
-          .andExpect(status().isOk())
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced")).andExpect(status().isOk())
           .andExpect(jsonPath("$.totalTeamMembers").value(3))
           .andExpect(jsonPath("$.averageHoursPerMember").value(28.5))
           .andExpect(jsonPath("$.maxHoursPerMember").value(45.0))
@@ -184,9 +161,7 @@ class ReportControllerIntegrationTest {
       when(reportService.getEnhancedCycleReport(1L)).thenReturn(report);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced"))
-          .andExpect(status().isOk())
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced")).andExpect(status().isOk())
           .andExpect(jsonPath("$.varianceHours").value(-10.5))
           .andExpect(jsonPath("$.variancePercentage").exists())
           .andExpect(jsonPath("$.efficiencyPercentage").value(89.06));
@@ -201,11 +176,8 @@ class ReportControllerIntegrationTest {
       when(reportService.getEnhancedCycleReport(1L)).thenReturn(report);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced"))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.totalTasks").value(10))
-          .andExpect(jsonPath("$.completedTasks").value(7))
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced")).andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalTasks").value(10)).andExpect(jsonPath("$.completedTasks").value(7))
           .andExpect(jsonPath("$.totalTaskEstimateHours").value(50.0))
           .andExpect(jsonPath("$.totalTaskActualHours").value(45.0));
     }
@@ -213,9 +185,10 @@ class ReportControllerIntegrationTest {
     @Test
     @DisplayName("Should return 401 Unauthorized when not authenticated")
     void shouldReturn401WhenNotAuthenticated() throws Exception {
-      mockMvc
-          .perform(get("/api/reports/cycle/1/enhanced"))
-          .andExpect(status().is3xxRedirection()); // Spring Security redirects to login
+      mockMvc.perform(get("/api/reports/cycle/1/enhanced")).andExpect(status().is3xxRedirection()); // Spring
+      // Security
+      // redirects
+      // to login
     }
 
     @Test
@@ -227,9 +200,7 @@ class ReportControllerIntegrationTest {
           .thenThrow(new RuntimeException("Cycle not found with id: 999"));
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/999/enhanced"))
-          .andExpect(status().is5xxServerError());
+      mockMvc.perform(get("/api/reports/cycle/999/enhanced")).andExpect(status().is5xxServerError());
     }
   }
 
@@ -246,13 +217,9 @@ class ReportControllerIntegrationTest {
       when(reportService.exportCycleReportCsv(1L)).thenReturn(csvContent);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/export"))
-          .andExpect(status().isOk())
-          .andExpect(
-              header().string("Content-Disposition", "attachment; filename=\"cycle_report_1.csv\""))
-          .andExpect(content().contentTypeCompatibleWith("text/csv"))
-          .andExpect(content().string(csvContent));
+      mockMvc.perform(get("/api/reports/cycle/1/export")).andExpect(status().isOk())
+          .andExpect(header().string("Content-Disposition", "attachment; filename=\"cycle_report_1.csv\""))
+          .andExpect(content().contentTypeCompatibleWith("text/csv")).andExpect(content().string(csvContent));
     }
   }
 
@@ -265,61 +232,29 @@ class ReportControllerIntegrationTest {
     @DisplayName("Should export PDF with correct content type")
     void shouldExportPdfWithCorrectContentType() throws Exception {
       // Given
-      byte[] pdfContent = new byte[] {0x25, 0x50, 0x44, 0x46}; // PDF header
+      byte[] pdfContent = new byte[]{0x25, 0x50, 0x44, 0x46}; // PDF header
       when(reportService.exportCycleReportPdf(1L)).thenReturn(pdfContent);
 
       // When & Then
-      mockMvc
-          .perform(get("/api/reports/cycle/1/export/pdf"))
-          .andExpect(status().isOk())
-          .andExpect(
-              header().string("Content-Disposition", "attachment; filename=\"cycle_report_1.pdf\""))
-          .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-          .andExpect(content().bytes(pdfContent));
+      mockMvc.perform(get("/api/reports/cycle/1/export/pdf")).andExpect(status().isOk())
+          .andExpect(header().string("Content-Disposition", "attachment; filename=\"cycle_report_1.pdf\""))
+          .andExpect(content().contentType(MediaType.APPLICATION_PDF)).andExpect(content().bytes(pdfContent));
     }
   }
 
   // Helper method to create sample report
   private EnhancedCycleReportDTO createSampleEnhancedReport() {
-    RiskDistributionDTO riskDist =
-        RiskDistributionDTO.builder()
-            .lowRiskCount(1)
-            .mediumRiskCount(1)
-            .highRiskCount(1)
-            .criticalRiskCount(0)
-            .averageRiskScore(45.0)
-            .maxRiskScore(65.0)
-            .minRiskScore(20.0)
-            .build();
+    RiskDistributionDTO riskDist = RiskDistributionDTO.builder().lowRiskCount(1).mediumRiskCount(1).highRiskCount(1)
+        .criticalRiskCount(0).averageRiskScore(45.0).maxRiskScore(65.0).minRiskScore(20.0).build();
 
-    return EnhancedCycleReportDTO.builder()
-        .cycleId(1L)
-        .cycleName("Q1 2026")
-        .projectName("Test Project")
-        .startDate(LocalDate.of(2026, 1, 1))
-        .endDate(LocalDate.of(2026, 2, 12))
-        .totalPitches(3)
-        .completedPitches(2)
-        .inProgressPitches(1)
-        .notStartedPitches(0)
-        .totalAppetiteHours(96.0)
-        .totalActualHours(85.5)
-        .varianceHours(-10.5)
-        .variancePercentage(-10.94)
-        .efficiencyPercentage(89.06)
-        .totalTasks(10)
-        .completedTasks(7)
-        .totalTaskEstimateHours(50.0)
-        .totalTaskActualHours(45.0)
-        .riskDistribution(riskDist)
-        .totalTeamMembers(3)
-        .averageHoursPerMember(28.5)
-        .maxHoursPerMember(45.0)
-        .minHoursPerMember(12.0)
-        .pitchReports(Collections.emptyList())
-        .memberReports(Collections.emptyList())
+    return EnhancedCycleReportDTO.builder().cycleId(1L).cycleName("Q1 2026").projectName("Test Project")
+        .startDate(LocalDate.of(2026, 1, 1)).endDate(LocalDate.of(2026, 2, 12)).totalPitches(3)
+        .completedPitches(2).inProgressPitches(1).notStartedPitches(0).totalAppetiteHours(96.0)
+        .totalActualHours(85.5).varianceHours(-10.5).variancePercentage(-10.94).efficiencyPercentage(89.06)
+        .totalTasks(10).completedTasks(7).totalTaskEstimateHours(50.0).totalTaskActualHours(45.0)
+        .riskDistribution(riskDist).totalTeamMembers(3).averageHoursPerMember(28.5).maxHoursPerMember(45.0)
+        .minHoursPerMember(12.0).pitchReports(Collections.emptyList()).memberReports(Collections.emptyList())
         .topPerformers(Arrays.asList("Alice Johnson", "Bob Smith"))
-        .overBudgetPitches(Collections.singletonList("API Integration"))
-        .build();
+        .overBudgetPitches(Collections.singletonList("API Integration")).build();
   }
 }

@@ -27,19 +27,26 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class BettingTableServiceTest {
 
-  @Mock private BettingSlotRepository bettingSlotRepository;
+  @Mock
+  private BettingSlotRepository bettingSlotRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private TeamRepository teamRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @InjectMocks private BettingTableService bettingTableService;
+  @InjectMocks
+  private BettingTableService bettingTableService;
 
   private Cycle testCycle;
   private Team testTeam;
@@ -50,80 +57,47 @@ class BettingTableServiceTest {
   @BeforeEach
   void setUp() {
     // Setup messageService with lenient stubs to handle various error messages
-    lenient()
-        .when(messageService.getMessage(anyString()))
-        .thenAnswer(
-            invocation -> {
-              String key = invocation.getArgument(0);
-              if (key.contains("no.teams")) return "No teams found";
-              if (key.contains("already.assigned")) return "Pitch is already assigned";
-              return key.replace("error.", "").replace(".", " ");
-            });
-    lenient()
-        .when(messageService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            invocation -> {
-              String key = invocation.getArgument(0);
-              if (key.contains("position.exists")) return "Slot already exists";
-              if (key.contains("dates.invalid")) return "Slot dates must be within cycle dates";
-              if (key.contains("resize.invalid"))
-                return "Cannot resize slot: assigned pitch requires more space";
-              if (key.contains("doesnt.fit"))
-                return "Pitch requires 14 days but slot only has fewer days";
-              return key.replace("error.", "").replace(".", " ");
-            });
+    lenient().when(messageService.getMessage(anyString())).thenAnswer(invocation -> {
+      String key = invocation.getArgument(0);
+      if (key.contains("no.teams"))
+        return "No teams found";
+      if (key.contains("already.assigned"))
+        return "Pitch is already assigned";
+      return key.replace("error.", "").replace(".", " ");
+    });
+    lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(invocation -> {
+      String key = invocation.getArgument(0);
+      if (key.contains("position.exists"))
+        return "Slot already exists";
+      if (key.contains("dates.invalid"))
+        return "Slot dates must be within cycle dates";
+      if (key.contains("resize.invalid"))
+        return "Cannot resize slot: assigned pitch requires more space";
+      if (key.contains("doesnt.fit"))
+        return "Pitch requires 14 days but slot only has fewer days";
+      return key.replace("error.", "").replace(".", " ");
+    });
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Q1 2024")
-            .phase(CyclePhase.BUILD)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Q1 2024").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
 
     testTeam = Team.builder().id(1L).name("Alpha Team").cycle(testCycle).build();
 
-    shapedPitch =
-        Pitch.builder()
-            .id(1L)
-            .title("User Auth Feature")
-            .description("OAuth2 implementation")
-            .appetiteDays(14)
-            .status(PitchStatus.SHAPED)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    shapedPitch = Pitch.builder().id(1L).title("User Auth Feature").description("OAuth2 implementation")
+        .appetiteDays(14).status(PitchStatus.SHAPED).cycle(testCycle).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
 
-    pendingPitch =
-        Pitch.builder()
-            .id(2L)
-            .title("Pending Feature")
-            .appetiteDays(7)
-            .status(PitchStatus.PENDING)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    pendingPitch = Pitch.builder().id(2L).title("Pending Feature").appetiteDays(7).status(PitchStatus.PENDING)
+        .cycle(testCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    testSlot =
-        BettingSlot.builder()
-            .id(1L)
-            .cycle(testCycle)
-            .team(testTeam)
-            .position(0)
-            .startDate(testCycle.getStartDate())
-            .endDate(testCycle.getEndDate())
-            .build();
+    testSlot = BettingSlot.builder().id(1L).cycle(testCycle).team(testTeam).position(0)
+        .startDate(testCycle.getStartDate()).endDate(testCycle.getEndDate()).build();
   }
 
   @Test
   void getBettingTable_ShouldReturnFullBettingTableView() {
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED))
-        .thenReturn(Arrays.asList(shapedPitch));
+    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);
@@ -142,8 +116,7 @@ class BettingTableServiceTest {
   void getBettingTable_WhenCycleNotFound_ShouldThrowException() {
     when(cycleRepository.findByIdWithProject(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> bettingTableService.getBettingTable(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> bettingTableService.getBettingTable(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Cycle not found");
   }
 
@@ -153,8 +126,7 @@ class BettingTableServiceTest {
     testSlot.setPitch(shapedPitch);
 
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED))
-        .thenReturn(Arrays.asList(shapedPitch));
+    when(pitchRepository.findByCycleIdAndStatus(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     lenient().when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);
@@ -166,27 +138,17 @@ class BettingTableServiceTest {
 
   @Test
   void createSlot_ShouldCreateNewSlot() {
-    CreateBettingSlotRequest request =
-        CreateBettingSlotRequest.builder()
-            .cycleId(1L)
-            .teamId(1L)
-            .position(1)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(3))
-            .notes("Second slot")
-            .build();
+    CreateBettingSlotRequest request = CreateBettingSlotRequest.builder().cycleId(1L).teamId(1L).position(1)
+        .startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(3)).notes("Second slot").build();
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
-    when(bettingSlotRepository.findByCycleIdAndTeamIdAndPosition(1L, 1L, 1))
-        .thenReturn(Optional.empty());
-    when(bettingSlotRepository.save(any(BettingSlot.class)))
-        .thenAnswer(
-            invocation -> {
-              BettingSlot slot = invocation.getArgument(0);
-              slot.setId(2L);
-              return slot;
-            });
+    when(bettingSlotRepository.findByCycleIdAndTeamIdAndPosition(1L, 1L, 1)).thenReturn(Optional.empty());
+    when(bettingSlotRepository.save(any(BettingSlot.class))).thenAnswer(invocation -> {
+      BettingSlot slot = invocation.getArgument(0);
+      slot.setId(2L);
+      return slot;
+    });
 
     BettingSlotDTO result = bettingTableService.createSlot(request);
 
@@ -198,22 +160,16 @@ class BettingTableServiceTest {
 
   @Test
   void createSlot_WithDuplicatePosition_ShouldThrowException() {
-    CreateBettingSlotRequest request =
-        CreateBettingSlotRequest.builder()
-            .cycleId(1L)
-            .teamId(1L)
-            .position(0) // Same as testSlot
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(3))
-            .build();
+    CreateBettingSlotRequest request = CreateBettingSlotRequest.builder().cycleId(1L).teamId(1L).position(0) // Same
+        // as
+        // testSlot
+        .startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(3)).build();
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
-    when(bettingSlotRepository.findByCycleIdAndTeamIdAndPosition(1L, 1L, 0))
-        .thenReturn(Optional.of(testSlot));
+    when(bettingSlotRepository.findByCycleIdAndTeamIdAndPosition(1L, 1L, 0)).thenReturn(Optional.of(testSlot));
 
-    assertThatThrownBy(() -> bettingTableService.createSlot(request))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> bettingTableService.createSlot(request)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("already exists");
   }
 
@@ -234,22 +190,15 @@ class BettingTableServiceTest {
   @Test
   void assignPitchToSlot_WhenPitchTooLarge_ShouldThrowException() {
     // Create a slot that's too small
-    BettingSlot smallSlot =
-        BettingSlot.builder()
-            .id(2L)
-            .cycle(testCycle)
-            .team(testTeam)
-            .position(1)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusDays(5)) // Only 5 days
-            .build();
+    BettingSlot smallSlot = BettingSlot.builder().id(2L).cycle(testCycle).team(testTeam).position(1)
+        .startDate(LocalDate.now()).endDate(LocalDate.now().plusDays(5)) // Only 5 days
+        .build();
 
     when(bettingSlotRepository.findById(2L)).thenReturn(Optional.of(smallSlot));
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(shapedPitch)); // 14 days
     when(bettingSlotRepository.findByPitchId(1L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> bettingTableService.assignPitchToSlot(2L, 1L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> bettingTableService.assignPitchToSlot(2L, 1L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("requires 14 days");
   }
 
@@ -261,8 +210,7 @@ class BettingTableServiceTest {
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(shapedPitch));
     when(bettingSlotRepository.findByPitchId(1L)).thenReturn(Optional.of(anotherSlot));
 
-    assertThatThrownBy(() -> bettingTableService.assignPitchToSlot(1L, 1L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> bettingTableService.assignPitchToSlot(1L, 1L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("already assigned");
   }
 
@@ -273,12 +221,10 @@ class BettingTableServiceTest {
 
     when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
     when(pitchRepository.save(any(Pitch.class))).thenReturn(shapedPitch);
-    when(bettingSlotRepository.save(any(BettingSlot.class)))
-        .thenAnswer(
-            invocation -> {
-              BettingSlot slot = invocation.getArgument(0);
-              return slot;
-            });
+    when(bettingSlotRepository.save(any(BettingSlot.class))).thenAnswer(invocation -> {
+      BettingSlot slot = invocation.getArgument(0);
+      return slot;
+    });
 
     BettingSlotDTO result = bettingTableService.removePitchFromSlot(1L);
 
@@ -292,12 +238,10 @@ class BettingTableServiceTest {
     LocalDate newEnd = LocalDate.now().plusWeeks(4);
 
     when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
-    when(bettingSlotRepository.save(any(BettingSlot.class)))
-        .thenAnswer(
-            invocation -> {
-              BettingSlot slot = invocation.getArgument(0);
-              return slot;
-            });
+    when(bettingSlotRepository.save(any(BettingSlot.class))).thenAnswer(invocation -> {
+      BettingSlot slot = invocation.getArgument(0);
+      return slot;
+    });
 
     BettingSlotDTO result = bettingTableService.updateSlotDates(1L, newStart, newEnd);
 
@@ -312,8 +256,7 @@ class BettingTableServiceTest {
     when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
 
     assertThatThrownBy(() -> bettingTableService.updateSlotDates(1L, LocalDate.now(), invalidEnd))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("within cycle dates");
+        .isInstanceOf(RuntimeException.class).hasMessageContaining("within cycle dates");
   }
 
   @Test
@@ -324,8 +267,7 @@ class BettingTableServiceTest {
     when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
 
     assertThatThrownBy(() -> bettingTableService.updateSlotDates(1L, LocalDate.now(), newEnd))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Cannot resize slot");
+        .isInstanceOf(RuntimeException.class).hasMessageContaining("Cannot resize slot");
   }
 
   @Test
@@ -354,12 +296,8 @@ class BettingTableServiceTest {
 
   @Test
   void canPitchFitInSlot_WhenDoesNotFit_ShouldReturnFalse() {
-    BettingSlot smallSlot =
-        BettingSlot.builder()
-            .id(2L)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusDays(5))
-            .build();
+    BettingSlot smallSlot = BettingSlot.builder().id(2L).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusDays(5)).build();
 
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(shapedPitch)); // 14 days
     when(bettingSlotRepository.findById(2L)).thenReturn(Optional.of(smallSlot)); // 5 days
@@ -375,17 +313,14 @@ class BettingTableServiceTest {
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam, team2));
-    when(bettingSlotRepository.findByCycleIdAndTeamId(1L, 1L))
-        .thenReturn(Arrays.asList(testSlot)); // Alpha has slots
-    when(bettingSlotRepository.findByCycleIdAndTeamId(1L, 2L))
-        .thenReturn(Arrays.asList()); // Beta has no slots
-    when(bettingSlotRepository.save(any(BettingSlot.class)))
-        .thenAnswer(
-            invocation -> {
-              BettingSlot slot = invocation.getArgument(0);
-              slot.setId(3L);
-              return slot;
-            });
+    when(bettingSlotRepository.findByCycleIdAndTeamId(1L, 1L)).thenReturn(Arrays.asList(testSlot)); // Alpha has
+    // slots
+    when(bettingSlotRepository.findByCycleIdAndTeamId(1L, 2L)).thenReturn(Arrays.asList()); // Beta has no slots
+    when(bettingSlotRepository.save(any(BettingSlot.class))).thenAnswer(invocation -> {
+      BettingSlot slot = invocation.getArgument(0);
+      slot.setId(3L);
+      return slot;
+    });
 
     List<BettingSlotDTO> result = bettingTableService.generateSlotsForCycle(1L);
 
@@ -398,8 +333,7 @@ class BettingTableServiceTest {
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList());
 
-    assertThatThrownBy(() -> bettingTableService.generateSlotsForCycle(1L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> bettingTableService.generateSlotsForCycle(1L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("No teams found");
   }
 }

@@ -62,6 +62,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
 const MIN_PASSWORD_LENGTH = 6;
@@ -98,6 +99,10 @@ export default function People() {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+  
+  // Delete confirmation dialog
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -216,15 +221,20 @@ export default function People() {
     }
   };
 
-  const handleDelete = async (person: Person) => {
-    if (!confirm(t('peopleManagement.confirmDeactivate') + ' ' + person.name + '?')) {
-      return;
-    }
+  const openDeleteConfirm = (person: Person) => {
+    setPersonToDelete(person);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!personToDelete) return;
 
     try {
-      await api.delete(`/persons/${person.id}`);
+      await api.delete(`/persons/${personToDelete.id}`);
       showToast(t('peopleManagement.personDeactivated'), 'success');
       fetchPeople();
+      setDeleteConfirmOpen(false);
+      setPersonToDelete(null);
     } catch (error) {
       // Error handled by interceptor
     }
@@ -478,7 +488,7 @@ export default function People() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(person)}
+                              onClick={() => openDeleteConfirm(person)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -889,6 +899,18 @@ export default function People() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title={t('peopleManagement.deactivate')}
+          description={`${t('peopleManagement.confirmDeactivate')} ${personToDelete?.name || ''}?`}
+          confirmLabel={t('common.confirm')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={handleDelete}
+          variant="destructive"
+        />
       </div>
     </TooltipProvider>
   );

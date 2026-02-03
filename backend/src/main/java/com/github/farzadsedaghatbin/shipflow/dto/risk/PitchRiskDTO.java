@@ -16,9 +16,10 @@ public class PitchRiskDTO {
   private String pitchTitle;
 
   /**
-   * Overall risk score (0-100). Thresholds are configurable via OrganizationSettings: - LOW: score
-   * <= lowMax (default: 30) - MEDIUM: score > lowMax && <= mediumMax (default: 31-60) - HIGH: score
-   * > mediumMax && <= highMax (default: 61-85) - CRITICAL: score > highMax (default: > 85)
+   * Overall risk score (0-100). Thresholds are configurable via
+   * OrganizationSettings: - LOW: score <= lowMax (default: 30) - MEDIUM: score >
+   * lowMax && <= mediumMax (default: 31-60) - HIGH: score > mediumMax && <=
+   * highMax (default: 61-85) - CRITICAL: score > highMax (default: > 85)
    */
   private Integer riskScore;
 

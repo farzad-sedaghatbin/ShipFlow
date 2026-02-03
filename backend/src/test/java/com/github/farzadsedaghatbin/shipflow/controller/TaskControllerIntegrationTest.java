@@ -30,22 +30,26 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(
-    username = "admin",
-    roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class TaskControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private TaskRepository taskRepository;
+  @Autowired
+  private TaskRepository taskRepository;
 
-  @Autowired private PersonRepository personRepository;
+  @Autowired
+  private PersonRepository personRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
   private Cycle testCycle;
   private Person testPerson;
@@ -63,60 +67,29 @@ class TaskControllerIntegrationTest {
     userRepository.flush();
     personRepository.flush();
 
-    testCycle =
-        Cycle.builder()
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testPerson =
-        Person.builder()
-            .name("John Doe")
-            .email("john.doe@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPerson = Person.builder().name("John Doe").email("john.doe@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
     testPerson = personRepository.save(testPerson);
 
-    testPairPerson =
-        Person.builder()
-            .name("Jane Smith")
-            .email("jane.smith@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPairPerson = Person.builder().name("Jane Smith").email("jane.smith@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
     testPairPerson = personRepository.save(testPairPerson);
 
-    testTask =
-        Task.builder()
-            .title("Test Task")
-            .description("Test task description")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .estimateHours(new BigDecimal("4.00"))
-            .cycle(testCycle)
-            .assignee(testPerson)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testTask = Task.builder().title("Test Task").description("Test task description").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).estimateHours(new BigDecimal("4.00")).cycle(testCycle)
+        .assignee(testPerson).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
     testTask = taskRepository.save(testTask);
     taskRepository.flush();
   }
 
   @Test
   void getAllTasks_ShouldReturnTasks() throws Exception {
-    mockMvc
-        .perform(
-            get("/api/tasks")
-                .param("page", "0")
-                .param("size", "10")
-                .param("sortBy", "createdAt")
-                .param("sortOrder", "desc"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks").param("page", "0").param("size", "10").param("sortBy", "createdAt")
+        .param("sortOrder", "desc")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].title", is("Test Task")))
@@ -125,13 +98,10 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTaskById_WhenExists_ShouldReturnTask() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/{id}", testTask.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/{id}", testTask.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id", is(testTask.getId().intValue())))
-        .andExpect(jsonPath("$.title", is("Test Task")))
-        .andExpect(jsonPath("$.status", is("TODO")))
+        .andExpect(jsonPath("$.title", is("Test Task"))).andExpect(jsonPath("$.status", is("TODO")))
         .andExpect(jsonPath("$.priority", is("MEDIUM")));
   }
 
@@ -142,9 +112,7 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTasksByCycleId_ShouldReturnTasksForCycle() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/cycle/{cycleId}", testCycle.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}", testCycle.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].cycleId", is(testCycle.getId().intValue())))
@@ -153,10 +121,8 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTasksByCycleIdAndStatus_ShouldReturnFilteredTasks() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/cycle/{cycleId}/status/{status}", testCycle.getId(), "TODO"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/status/{status}", testCycle.getId(), "TODO"))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].status", is("TODO")))
         .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(1)));
@@ -164,9 +130,7 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTaskStatisticsByCycleId_ShouldReturnStatistics() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/cycle/{cycleId}/statistics", testCycle.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/statistics", testCycle.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.cycleId", is(testCycle.getId().intValue())))
         .andExpect(jsonPath("$.totalTasks", greaterThanOrEqualTo(1)))
@@ -175,89 +139,47 @@ class TaskControllerIntegrationTest {
 
   @Test
   void createTask_WithValidData_ShouldCreateTask() throws Exception {
-    CreateTaskRequest request =
-        CreateTaskRequest.builder()
-            .title("New Task")
-            .description("New task description")
-            .cycleId(testCycle.getId())
-            .status(TaskStatus.BACKLOG)
-            .priority(TaskPriority.HIGH)
-            .estimateHours(new BigDecimal("8.00"))
-            .assigneeId(testPerson.getId())
-            .build();
+    CreateTaskRequest request = CreateTaskRequest.builder().title("New Task").description("New task description")
+        .cycleId(testCycle.getId()).status(TaskStatus.BACKLOG).priority(TaskPriority.HIGH)
+        .estimateHours(new BigDecimal("8.00")).assigneeId(testPerson.getId()).build();
 
-    mockMvc
-        .perform(
-            post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.title", is("New Task")))
-        .andExpect(jsonPath("$.status", is("BACKLOG")))
-        .andExpect(jsonPath("$.priority", is("HIGH")))
-        .andExpect(jsonPath("$.assigneeName", is("John Doe")));
+        .andExpect(jsonPath("$.title", is("New Task"))).andExpect(jsonPath("$.status", is("BACKLOG")))
+        .andExpect(jsonPath("$.priority", is("HIGH"))).andExpect(jsonPath("$.assigneeName", is("John Doe")));
   }
 
   @Test
   void createTask_WithPairAssignee_ShouldCreateTaskWithBothAssignees() throws Exception {
-    CreateTaskRequest request =
-        CreateTaskRequest.builder()
-            .title("Pair Task")
-            .description("Task for pair programming")
-            .cycleId(testCycle.getId())
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.MEDIUM)
-            .estimateHours(new BigDecimal("6.00"))
-            .assigneeId(testPerson.getId())
-            .pairAssigneeId(testPairPerson.getId())
-            .build();
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Pair Task")
+        .description("Task for pair programming").cycleId(testCycle.getId()).status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).estimateHours(new BigDecimal("6.00")).assigneeId(testPerson.getId())
+        .pairAssigneeId(testPairPerson.getId()).build();
 
-    mockMvc
-        .perform(
-            post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.title", is("Pair Task")))
-        .andExpect(jsonPath("$.assigneeName", is("John Doe")))
+    mockMvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
+        .andExpect(jsonPath("$.title", is("Pair Task"))).andExpect(jsonPath("$.assigneeName", is("John Doe")))
         .andExpect(jsonPath("$.pairAssigneeName", is("Jane Smith")));
   }
 
   @Test
   void createTask_WithDueDate_ShouldCreateTaskWithDueDate() throws Exception {
-    CreateTaskRequest request =
-        CreateTaskRequest.builder()
-            .title("Task with Due Date")
-            .cycleId(testCycle.getId())
-            .priority(TaskPriority.URGENT)
-            .dueDate(LocalDate.now().plusDays(7))
-            .build();
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Task with Due Date").cycleId(testCycle.getId())
+        .priority(TaskPriority.URGENT).dueDate(LocalDate.now().plusDays(7)).build();
 
-    mockMvc
-        .perform(
-            post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.dueDate", notNullValue()));
   }
 
   @Test
   void createTask_WithTags_ShouldCreateTaskWithTags() throws Exception {
-    CreateTaskRequest request =
-        CreateTaskRequest.builder()
-            .title("Tagged Task")
-            .cycleId(testCycle.getId())
-            .tags("bug,tech-debt,refactor")
-            .build();
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Tagged Task").cycleId(testCycle.getId())
+        .tags("bug,tech-debt,refactor").build();
 
-    mockMvc
-        .perform(
-            post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.tags", is("bug,tech-debt,refactor")));
   }
 
@@ -265,59 +187,34 @@ class TaskControllerIntegrationTest {
   void createTask_WithoutTitle_ShouldReturn400() throws Exception {
     CreateTaskRequest request = CreateTaskRequest.builder().cycleId(testCycle.getId()).build();
 
-    mockMvc
-        .perform(
-            post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isBadRequest());
+    mockMvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isBadRequest());
   }
 
   @Test
   void updateTask_WithValidData_ShouldUpdateTask() throws Exception {
-    CreateTaskRequest request =
-        CreateTaskRequest.builder()
-            .title("Updated Task")
-            .description("Updated description")
-            .cycleId(testCycle.getId())
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.HIGH)
-            .estimateHours(new BigDecimal("10.00"))
-            .assigneeId(testPerson.getId())
-            .build();
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Updated Task").description("Updated description")
+        .cycleId(testCycle.getId()).status(TaskStatus.IN_PROGRESS).priority(TaskPriority.HIGH)
+        .estimateHours(new BigDecimal("10.00")).assigneeId(testPerson.getId()).build();
 
-    mockMvc
-        .perform(
-            put("/api/tasks/{id}", testTask.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title", is("Updated Task")))
-        .andExpect(jsonPath("$.status", is("IN_PROGRESS")))
+    mockMvc.perform(put("/api/tasks/{id}", testTask.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.title", is("Updated Task"))).andExpect(jsonPath("$.status", is("IN_PROGRESS")))
         .andExpect(jsonPath("$.priority", is("HIGH")));
   }
 
   @Test
   void updateTaskStatus_ShouldUpdateOnlyStatus() throws Exception {
-    mockMvc
-        .perform(
-            patch("/api/tasks/{id}/status", testTask.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("status", "IN_PROGRESS"))))
-        .andExpect(status().isOk())
+    mockMvc.perform(patch("/api/tasks/{id}/status", testTask.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("status", "IN_PROGRESS")))).andExpect(status().isOk())
         .andExpect(jsonPath("$.status", is("IN_PROGRESS")));
   }
 
   @Test
   void updateTaskStatus_ToDone_ShouldSetCompletedAt() throws Exception {
-    mockMvc
-        .perform(
-            patch("/api/tasks/{id}/status", testTask.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("status", "DONE"))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status", is("DONE")))
-        .andExpect(jsonPath("$.completedAt", notNullValue()));
+    mockMvc.perform(patch("/api/tasks/{id}/status", testTask.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("status", "DONE")))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.status", is("DONE"))).andExpect(jsonPath("$.completedAt", notNullValue()));
   }
 
   @Test
@@ -332,9 +229,7 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTasksByAssigneeId_ShouldReturnTasksForAssignee() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/assignee/{assigneeId}", testPerson.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/assignee/{assigneeId}", testPerson.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$[0].assigneeId", is(testPerson.getId().intValue())));
@@ -342,9 +237,7 @@ class TaskControllerIntegrationTest {
 
   @Test
   void getTasksByPersonId_ShouldReturnTasksForPersonAsAssigneeOrPair() throws Exception {
-    mockMvc
-        .perform(get("/api/tasks/person/{personId}", testPerson.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/person/{personId}", testPerson.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
   }
@@ -352,25 +245,13 @@ class TaskControllerIntegrationTest {
   @Test
   void getTasksWithFilters_ByStatuses_ShouldReturnFilteredTasks() throws Exception {
     // Create additional tasks with different statuses
-    Task inProgressTask =
-        Task.builder()
-            .title("In Progress Task")
-            .description("Task in progress")
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.HIGH)
-            .cycle(testCycle)
-            .assignee(testPerson)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task inProgressTask = Task.builder().title("In Progress Task").description("Task in progress")
+        .status(TaskStatus.IN_PROGRESS).priority(TaskPriority.HIGH).cycle(testCycle).assignee(testPerson)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
     taskRepository.save(inProgressTask);
 
-    mockMvc
-        .perform(
-            get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
-                .param("statuses", "TODO,IN_PROGRESS")
-                .param("exclude", "false"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
+        .param("statuses", "TODO,IN_PROGRESS").param("exclude", "false")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
         .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)));
@@ -379,25 +260,13 @@ class TaskControllerIntegrationTest {
   @Test
   void getTasksWithFilters_ByPriorities_ShouldReturnFilteredTasks() throws Exception {
     // Create additional task with different priority
-    Task highPriorityTask =
-        Task.builder()
-            .title("High Priority Task")
-            .description("Important task")
-            .status(TaskStatus.TODO)
-            .priority(TaskPriority.HIGH)
-            .cycle(testCycle)
-            .assignee(testPerson)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task highPriorityTask = Task.builder().title("High Priority Task").description("Important task")
+        .status(TaskStatus.TODO).priority(TaskPriority.HIGH).cycle(testCycle).assignee(testPerson)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
     taskRepository.save(highPriorityTask);
 
-    mockMvc
-        .perform(
-            get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
-                .param("priorities", "HIGH")
-                .param("exclude", "false"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId()).param("priorities", "HIGH")
+        .param("exclude", "false")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].priority", is("HIGH")));
@@ -406,36 +275,22 @@ class TaskControllerIntegrationTest {
   @Test
   void getTasksWithFilters_WithExclude_ShouldReturnExcludedTasks() throws Exception {
     // Create tasks with different statuses
-    Task inProgressTask =
-        Task.builder()
-            .title("In Progress Task")
-            .status(TaskStatus.IN_PROGRESS)
-            .priority(TaskPriority.MEDIUM)
-            .cycle(testCycle)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Task inProgressTask = Task.builder().title("In Progress Task").status(TaskStatus.IN_PROGRESS)
+        .priority(TaskPriority.MEDIUM).cycle(testCycle).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
     taskRepository.save(inProgressTask);
 
-    mockMvc
-        .perform(
-            get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
-                .param("statuses", "DONE,CANCELLED")
-                .param("exclude", "true"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId()).param("statuses", "DONE,CANCELLED")
+        .param("exclude", "true")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))));
   }
 
   @Test
   void getTasksWithFilters_ByAssignees_ShouldReturnFilteredTasks() throws Exception {
-    mockMvc
-        .perform(
-            get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
-                .param("assigneeIds", testPerson.getId().toString())
-                .param("exclude", "false"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
+        .param("assigneeIds", testPerson.getId().toString()).param("exclude", "false"))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].assigneeId", is(testPerson.getId().intValue())));
   }

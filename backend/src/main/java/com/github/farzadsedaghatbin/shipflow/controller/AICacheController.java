@@ -14,18 +14,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller for managing AI response cache. Provides endpoints to view cache statistics, clear
- * cache, and manage feature flags.
+ * Controller for managing AI response cache. Provides endpoints to view cache
+ * statistics, clear cache, and manage feature flags.
  */
 @RestController
 @RequestMapping("/api/cache")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "AI Cache", description = "Manage AI response caching for risk analysis and Q&A")
-@ConditionalOnProperty(
-    name = "app.ai.risk-analysis.enabled",
-    havingValue = "true",
-    matchIfMissing = false)
+@ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 public class AICacheController {
 
   private final AICacheService cacheService;
@@ -33,17 +30,13 @@ public class AICacheController {
   private final AIConfig aiConfig;
 
   @GetMapping("/stats")
-  @Operation(
-      summary = "Get cache statistics",
-      description = "Returns current cache statistics including entry counts and hit rates")
+  @Operation(summary = "Get cache statistics", description = "Returns current cache statistics including entry counts and hit rates")
   public ResponseEntity<AICacheService.CacheStats> getCacheStats() {
     return ResponseEntity.ok(cacheService.getCacheStats());
   }
 
   @GetMapping("/ai-provider")
-  @Operation(
-      summary = "Get AI provider information",
-      description = "Returns information about the currently configured AI provider")
+  @Operation(summary = "Get AI provider information", description = "Returns information about the currently configured AI provider")
   public ResponseEntity<Map<String, Object>> getAIProviderInfo() {
     Map<String, Object> info = new HashMap<>();
     info.put("provider", aiConfig.getProvider());
@@ -51,24 +44,21 @@ public class AICacheController {
     info.put("enabled", aiConfig.isAiRiskAnalysisEnabled());
 
     // Add provider display name
-    String providerName =
-        switch (aiConfig.getProvider().toLowerCase()) {
-          case "openai" -> "OpenAI ChatGPT";
-          case "ollama" -> "Ollama (Local)";
-          case "runpod" -> "RunPod (Cloud GPU)";
-          case "anthropic" -> "Anthropic Claude";
-          case "google" -> "Google Gemini";
-          default -> aiConfig.getProvider();
-        };
+    String providerName = switch (aiConfig.getProvider().toLowerCase()) {
+      case "openai" -> "OpenAI ChatGPT";
+      case "ollama" -> "Ollama (Local)";
+      case "runpod" -> "RunPod (Cloud GPU)";
+      case "anthropic" -> "Anthropic Claude";
+      case "google" -> "Google Gemini";
+      default -> aiConfig.getProvider();
+    };
     info.put("providerName", providerName);
 
     return ResponseEntity.ok(info);
   }
 
   @GetMapping("/config")
-  @Operation(
-      summary = "Get cache configuration",
-      description = "Returns current cache feature flags and TTL settings")
+  @Operation(summary = "Get cache configuration", description = "Returns current cache feature flags and TTL settings")
   public ResponseEntity<Map<String, Object>> getCacheConfig() {
     Map<String, Object> config = new HashMap<>();
 
@@ -92,9 +82,7 @@ public class AICacheController {
   }
 
   @PostMapping("/clear")
-  @Operation(
-      summary = "Clear all caches",
-      description = "Clears all cached AI responses (risk analysis and Q&A)")
+  @Operation(summary = "Clear all caches", description = "Clears all cached AI responses (risk analysis and Q&A)")
   public ResponseEntity<Map<String, String>> clearAllCaches() {
     cacheService.clearAllCaches();
     log.info("All AI caches cleared by user request");
@@ -105,9 +93,7 @@ public class AICacheController {
   }
 
   @PostMapping("/clear/risk")
-  @Operation(
-      summary = "Clear risk analysis cache",
-      description = "Clears cached risk analysis responses only")
+  @Operation(summary = "Clear risk analysis cache", description = "Clears cached risk analysis responses only")
   public ResponseEntity<Map<String, String>> clearRiskCache() {
     // Clear risk caches by clearing all and then the stats will rebuild
     // We don't have separate clear methods, so this is a workaround
@@ -131,9 +117,7 @@ public class AICacheController {
   }
 
   @DeleteMapping("/risk/pitch/{pitchId}")
-  @Operation(
-      summary = "Invalidate pitch risk cache",
-      description = "Invalidates cached risk analysis for a specific pitch")
+  @Operation(summary = "Invalidate pitch risk cache", description = "Invalidates cached risk analysis for a specific pitch")
   public ResponseEntity<Map<String, String>> invalidatePitchCache(@PathVariable Long pitchId) {
     cacheService.invalidatePitchRiskCache(pitchId);
     log.info("Cache invalidated for pitch {}", pitchId);
@@ -144,9 +128,7 @@ public class AICacheController {
   }
 
   @DeleteMapping("/risk/cycle/{cycleId}")
-  @Operation(
-      summary = "Invalidate cycle risk cache",
-      description = "Invalidates cached risk overview for a specific cycle")
+  @Operation(summary = "Invalidate cycle risk cache", description = "Invalidates cached risk overview for a specific cycle")
   public ResponseEntity<Map<String, String>> invalidateCycleCache(@PathVariable Long cycleId) {
     cacheService.invalidateCycleRiskCache(cycleId);
     log.info("Cache invalidated for cycle {}", cycleId);
@@ -157,11 +139,9 @@ public class AICacheController {
   }
 
   @DeleteMapping("/qa/{contextType}/{contextId}")
-  @Operation(
-      summary = "Invalidate Q&A cache for context",
-      description = "Invalidates cached Q&A responses for a specific context")
-  public ResponseEntity<Map<String, String>> invalidateQACache(
-      @PathVariable String contextType, @PathVariable Long contextId) {
+  @Operation(summary = "Invalidate Q&A cache for context", description = "Invalidates cached Q&A responses for a specific context")
+  public ResponseEntity<Map<String, String>> invalidateQACache(@PathVariable String contextType,
+      @PathVariable Long contextId) {
     cacheService.invalidateQACache(contextType, contextId);
     log.info("Q&A cache invalidated for {}:{}", contextType, contextId);
 

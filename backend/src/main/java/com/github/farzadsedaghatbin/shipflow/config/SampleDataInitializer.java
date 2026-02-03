@@ -55,30 +55,17 @@ public class SampleDataInitializer implements CommandLineRunner {
     log.info("Initializing sample data...");
 
     // Create persons (independent of teams)
-    Person alice =
-        createPerson("Alice Johnson", "alice.johnson@example.com", "Java, React, PostgreSQL", null);
-    Person bob =
-        createPerson(
-            "Bob Smith", "bob.smith@example.com", "Java, Spring Boot, Microservices", null);
-    Person carol =
-        createPerson(
-            "Carol Williams", "carol.williams@example.com", "Testing, Selenium, Cypress", null);
-    Person dave =
-        createPerson("Dave Brown", "dave.brown@example.com", "React, TypeScript, CSS", null);
-    Person eve =
-        createPerson("Eve Davis", "eve.davis@example.com", "Figma, UI/UX, Prototyping", null);
-    Person frank =
-        createPerson(
-            "Frank Miller", "frank.miller@example.com", "Architecture, DevOps, Leadership", null);
-    Person grace =
-        createPerson(
-            "Grace Lee", "grace.lee@example.com", "Python, Data Analysis, Machine Learning", null);
-    Person henry =
-        createPerson(
-            "Henry Wilson",
-            "henry.wilson@example.com",
-            "Android, Kotlin, Mobile Development",
-            null);
+    Person alice = createPerson("Alice Johnson", "alice.johnson@example.com", "Java, React, PostgreSQL", null);
+    Person bob = createPerson("Bob Smith", "bob.smith@example.com", "Java, Spring Boot, Microservices", null);
+    Person carol = createPerson("Carol Williams", "carol.williams@example.com", "Testing, Selenium, Cypress", null);
+    Person dave = createPerson("Dave Brown", "dave.brown@example.com", "React, TypeScript, CSS", null);
+    Person eve = createPerson("Eve Davis", "eve.davis@example.com", "Figma, UI/UX, Prototyping", null);
+    Person frank = createPerson("Frank Miller", "frank.miller@example.com", "Architecture, DevOps, Leadership",
+        null);
+    Person grace = createPerson("Grace Lee", "grace.lee@example.com", "Python, Data Analysis, Machine Learning",
+        null);
+    Person henry = createPerson("Henry Wilson", "henry.wilson@example.com", "Android, Kotlin, Mobile Development",
+        null);
 
     // Create users for sample persons
     createUser("alice", "password", UserRole.MEMBER, alice);
@@ -94,135 +81,64 @@ public class SampleDataInitializer implements CommandLineRunner {
     User aliceUser = userRepository.findByUsername("alice").orElse(null);
     User frankUser = userRepository.findByUsername("frank").orElse(null);
 
-    Project mainProject =
-        Project.builder()
-            .name("ShipFlow")
-            .projectKey("SUT")
-            .description("Main product development - Shape Up tracking and collaboration platform")
-            .color("#3B82F6")
-            .owner(aliceUser)
-            .isActive(true)
-            .enableRetrospectives(true)
-            .createdAt(LocalDateTime.now().minusMonths(12))
-            .build();
+    Project mainProject = Project.builder().name("ShipFlow").projectKey("SUT")
+        .description("Main product development - Shape Up tracking and collaboration platform").color("#3B82F6")
+        .owner(aliceUser).isActive(true).enableRetrospectives(true)
+        .createdAt(LocalDateTime.now().minusMonths(12)).build();
     projectRepository.save(mainProject);
 
-    Project internalToolsProject =
-        Project.builder()
-            .name("Internal Tools")
-            .projectKey("IT")
-            .description("Suite of internal tools for team productivity")
-            .color("#10B981")
-            .owner(aliceUser)
-            .isActive(true)
-            .enableRetrospectives(true)
-            .createdAt(LocalDateTime.now().minusMonths(8))
-            .build();
+    Project internalToolsProject = Project.builder().name("Internal Tools").projectKey("IT")
+        .description("Suite of internal tools for team productivity").color("#10B981").owner(aliceUser)
+        .isActive(true).enableRetrospectives(true).createdAt(LocalDateTime.now().minusMonths(8)).build();
     projectRepository.save(internalToolsProject);
 
-    Project mobileAppProject =
-        Project.builder()
-            .name("Mobile App")
-            .projectKey("MA")
-            .description("Native mobile application for iOS and Android")
-            .color("#8B5CF6")
-            .owner(frankUser)
-            .isActive(true)
-            .enableRetrospectives(true)
-            .createdAt(LocalDateTime.now().minusMonths(6))
-            .build();
+    Project mobileAppProject = Project.builder().name("Mobile App").projectKey("MA")
+        .description("Native mobile application for iOS and Android").color("#8B5CF6").owner(frankUser)
+        .isActive(true).enableRetrospectives(true).createdAt(LocalDateTime.now().minusMonths(6)).build();
     projectRepository.save(mobileAppProject);
 
     // Create active cycle for main project
-    Cycle activeCycle =
-        Cycle.builder()
-            .project(mainProject)
-            .name("Q1 2025 - Feature Sprint")
-            .startDate(LocalDate.of(2025, 1, 6))
-            .endDate(LocalDate.of(2025, 2, 14))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    Cycle activeCycle = Cycle.builder().project(mainProject).name("Q1 2025 - Feature Sprint")
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.BUILD)
+        .isActive(true).build();
     cycleRepository.save(activeCycle);
 
     // Create completed cycles for main project
-    Cycle completedCycle1 =
-        Cycle.builder()
-            .project(mainProject)
-            .name("Q4 2024 - Holiday Release")
-            .startDate(LocalDate.of(2024, 11, 4))
-            .endDate(LocalDate.of(2024, 12, 13))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle completedCycle1 = Cycle.builder().project(mainProject).name("Q4 2024 - Holiday Release")
+        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.COOLDOWN)
+        .isActive(false).build();
     cycleRepository.save(completedCycle1);
 
-    Cycle completedCycle2 =
-        Cycle.builder()
-            .project(mainProject)
-            .name("Q3 2024 - Summer Sprint")
-            .startDate(LocalDate.of(2024, 8, 5))
-            .endDate(LocalDate.of(2024, 9, 20))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle completedCycle2 = Cycle.builder().project(mainProject).name("Q3 2024 - Summer Sprint")
+        .startDate(LocalDate.of(2024, 8, 5)).endDate(LocalDate.of(2024, 9, 20)).phase(CyclePhase.COOLDOWN)
+        .isActive(false).build();
     cycleRepository.save(completedCycle2);
 
-    Cycle completedCycle3 =
-        Cycle.builder()
-            .project(mainProject)
-            .name("Q2 2024 - Mobile Expansion")
-            .startDate(LocalDate.of(2024, 5, 6))
-            .endDate(LocalDate.of(2024, 6, 21))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle completedCycle3 = Cycle.builder().project(mainProject).name("Q2 2024 - Mobile Expansion")
+        .startDate(LocalDate.of(2024, 5, 6)).endDate(LocalDate.of(2024, 6, 21)).phase(CyclePhase.COOLDOWN)
+        .isActive(false).build();
     cycleRepository.save(completedCycle3);
 
     // Create cycles for Internal Tools project
-    Cycle itCycle1 =
-        Cycle.builder()
-            .project(internalToolsProject)
-            .name("IT Q1 2025 - Dashboard & Analytics")
-            .startDate(LocalDate.of(2025, 1, 6))
-            .endDate(LocalDate.of(2025, 2, 14))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    Cycle itCycle1 = Cycle.builder().project(internalToolsProject).name("IT Q1 2025 - Dashboard & Analytics")
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.BUILD)
+        .isActive(true).build();
     cycleRepository.save(itCycle1);
 
-    Cycle itCycle2 =
-        Cycle.builder()
-            .project(internalToolsProject)
-            .name("IT Q4 2024 - Automation Tools")
-            .startDate(LocalDate.of(2024, 11, 4))
-            .endDate(LocalDate.of(2024, 12, 13))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle itCycle2 = Cycle.builder().project(internalToolsProject).name("IT Q4 2024 - Automation Tools")
+        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.COOLDOWN)
+        .isActive(false).build();
     cycleRepository.save(itCycle2);
 
     // Create cycles for Mobile App project
-    Cycle maCycle1 =
-        Cycle.builder()
-            .project(mobileAppProject)
-            .name("MA Q1 2025 - iOS & Android Launch")
-            .startDate(LocalDate.of(2025, 1, 6))
-            .endDate(LocalDate.of(2025, 2, 28))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    Cycle maCycle1 = Cycle.builder().project(mobileAppProject).name("MA Q1 2025 - iOS & Android Launch")
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 28)).phase(CyclePhase.BUILD)
+        .isActive(true).build();
     cycleRepository.save(maCycle1);
 
-    Cycle maCycle2 =
-        Cycle.builder()
-            .project(mobileAppProject)
-            .name("MA Q4 2024 - Beta Testing")
-            .startDate(LocalDate.of(2024, 10, 7))
-            .endDate(LocalDate.of(2024, 12, 20))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle maCycle2 = Cycle.builder().project(mobileAppProject).name("MA Q4 2024 - Beta Testing")
+        .startDate(LocalDate.of(2024, 10, 7)).endDate(LocalDate.of(2024, 12, 20)).phase(CyclePhase.COOLDOWN)
+        .isActive(false).build();
     cycleRepository.save(maCycle2);
 
     // Create teams for active cycle
@@ -253,1249 +169,431 @@ public class SampleDataInitializer implements CommandLineRunner {
     createAssignment(frank, betaTeam, TeamMemberRole.TECH_LEAD, activeCycle.getStartDate(), null);
 
     // Create team assignments for past cycles (historical data)
-    createAssignment(
-        alice,
-        pastTeam1,
-        TeamMemberRole.TECH_LEAD,
-        completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(),
-        false);
-    createAssignment(
-        bob,
-        pastTeam1,
-        TeamMemberRole.BACKEND,
-        completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(),
-        false);
-    createAssignment(
-        grace,
-        pastTeam1,
-        TeamMemberRole.FULLSTACK,
-        completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(),
-        false);
+    createAssignment(alice, pastTeam1, TeamMemberRole.TECH_LEAD, completedCycle1.getStartDate(),
+        completedCycle1.getEndDate(), false);
+    createAssignment(bob, pastTeam1, TeamMemberRole.BACKEND, completedCycle1.getStartDate(),
+        completedCycle1.getEndDate(), false);
+    createAssignment(grace, pastTeam1, TeamMemberRole.FULLSTACK, completedCycle1.getStartDate(),
+        completedCycle1.getEndDate(), false);
 
-    createAssignment(
-        dave,
-        pastTeam2,
-        TeamMemberRole.FRONTEND,
-        completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(),
-        false);
-    createAssignment(
-        eve,
-        pastTeam2,
-        TeamMemberRole.DESIGNER,
-        completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(),
-        false);
-    createAssignment(
-        frank,
-        pastTeam2,
-        TeamMemberRole.TECH_LEAD,
-        completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(),
-        false);
+    createAssignment(dave, pastTeam2, TeamMemberRole.FRONTEND, completedCycle2.getStartDate(),
+        completedCycle2.getEndDate(), false);
+    createAssignment(eve, pastTeam2, TeamMemberRole.DESIGNER, completedCycle2.getStartDate(),
+        completedCycle2.getEndDate(), false);
+    createAssignment(frank, pastTeam2, TeamMemberRole.TECH_LEAD, completedCycle2.getStartDate(),
+        completedCycle2.getEndDate(), false);
 
-    createAssignment(
-        henry,
-        pastTeam3,
-        TeamMemberRole.FULLSTACK,
-        completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(),
-        false);
-    createAssignment(
-        grace,
-        pastTeam3,
-        TeamMemberRole.BACKEND,
-        completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(),
-        false);
-    createAssignment(
-        carol,
-        pastTeam3,
-        TeamMemberRole.QA,
-        completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(),
-        false);
+    createAssignment(henry, pastTeam3, TeamMemberRole.FULLSTACK, completedCycle3.getStartDate(),
+        completedCycle3.getEndDate(), false);
+    createAssignment(grace, pastTeam3, TeamMemberRole.BACKEND, completedCycle3.getStartDate(),
+        completedCycle3.getEndDate(), false);
+    createAssignment(carol, pastTeam3, TeamMemberRole.QA, completedCycle3.getStartDate(),
+        completedCycle3.getEndDate(), false);
 
     // Create pitches for active cycle with varied statuses
-    Pitch userDashboard =
-        Pitch.builder()
-            .title("User Dashboard Redesign")
-            .description(
-                "Complete redesign of the user dashboard with new analytics widgets and improved UX")
-            .appetiteDays(6)
-            .cycle(activeCycle)
-            .team(alphaTeam)
-            .status(PitchStatus.IN_PROGRESS)
-            .createdAt(LocalDateTime.now().minusDays(10))
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Pitch userDashboard = Pitch.builder().title("User Dashboard Redesign")
+        .description("Complete redesign of the user dashboard with new analytics widgets and improved UX")
+        .appetiteDays(6).cycle(activeCycle).team(alphaTeam).status(PitchStatus.IN_PROGRESS)
+        .createdAt(LocalDateTime.now().minusDays(10)).updatedAt(LocalDateTime.now()).build();
     pitchRepository.save(userDashboard);
 
-    Pitch apiIntegration =
-        Pitch.builder()
-            .title("Third-party API Integration")
-            .description(
-                "Integrate with external payment provider API and implement webhook handlers")
-            .appetiteDays(4)
-            .cycle(activeCycle)
-            .team(alphaTeam)
-            .status(PitchStatus.IN_PROGRESS)
-            .createdAt(LocalDateTime.now().minusDays(5))
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Pitch apiIntegration = Pitch.builder().title("Third-party API Integration")
+        .description("Integrate with external payment provider API and implement webhook handlers")
+        .appetiteDays(4).cycle(activeCycle).team(alphaTeam).status(PitchStatus.IN_PROGRESS)
+        .createdAt(LocalDateTime.now().minusDays(5)).updatedAt(LocalDateTime.now()).build();
     pitchRepository.save(apiIntegration);
 
-    Pitch mobileApp =
-        Pitch.builder()
-            .title("Mobile App Notification System")
-            .description("Push notification system for mobile app with customizable preferences")
-            .appetiteDays(5)
-            .cycle(activeCycle)
-            .team(betaTeam)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(15))
-            .updatedAt(LocalDateTime.now().minusDays(1))
-            .build();
+    Pitch mobileApp = Pitch.builder().title("Mobile App Notification System")
+        .description("Push notification system for mobile app with customizable preferences").appetiteDays(5)
+        .cycle(activeCycle).team(betaTeam).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(15))
+        .updatedAt(LocalDateTime.now().minusDays(1)).build();
     pitchRepository.save(mobileApp);
 
-    Pitch reportModule =
-        Pitch.builder()
-            .title("Advanced Reporting Module")
-            .description("New reporting module with PDF export and scheduled email delivery")
-            .appetiteDays(6)
-            .cycle(activeCycle)
-            .team(betaTeam)
-            .status(PitchStatus.IN_PROGRESS)
-            .createdAt(LocalDateTime.now().minusDays(8))
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Pitch reportModule = Pitch.builder().title("Advanced Reporting Module")
+        .description("New reporting module with PDF export and scheduled email delivery").appetiteDays(6)
+        .cycle(activeCycle).team(betaTeam).status(PitchStatus.IN_PROGRESS)
+        .createdAt(LocalDateTime.now().minusDays(8)).updatedAt(LocalDateTime.now()).build();
     pitchRepository.save(reportModule);
 
-    Pitch searchFeature =
-        Pitch.builder()
-            .title("Enhanced Search Functionality")
-            .description("Add full-text search with filters and autocomplete")
-            .appetiteDays(4)
-            .cycle(activeCycle)
-            .team(alphaTeam)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(12))
-            .updatedAt(LocalDateTime.now().minusDays(2))
-            .build();
+    Pitch searchFeature = Pitch.builder().title("Enhanced Search Functionality")
+        .description("Add full-text search with filters and autocomplete").appetiteDays(4).cycle(activeCycle)
+        .team(alphaTeam).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(12))
+        .updatedAt(LocalDateTime.now().minusDays(2)).build();
     pitchRepository.save(searchFeature);
 
     // Create pitches for completed cycles with full work history
-    Pitch darkMode =
-        Pitch.builder()
-            .title("Dark Mode Support")
-            .description("Implement dark mode across all UI components")
-            .appetiteDays(3)
-            .cycle(completedCycle1)
-            .team(pastTeam1)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(60))
-            .updatedAt(LocalDateTime.now().minusDays(45))
-            .build();
+    Pitch darkMode = Pitch.builder().title("Dark Mode Support")
+        .description("Implement dark mode across all UI components").appetiteDays(3).cycle(completedCycle1)
+        .team(pastTeam1).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(60))
+        .updatedAt(LocalDateTime.now().minusDays(45)).build();
     pitchRepository.save(darkMode);
 
-    Pitch performanceOpt =
-        Pitch.builder()
-            .title("Performance Optimization")
-            .description("Database query optimization and caching implementation")
-            .appetiteDays(5)
-            .cycle(completedCycle1)
-            .team(pastTeam1)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(58))
-            .updatedAt(LocalDateTime.now().minusDays(43))
-            .build();
+    Pitch performanceOpt = Pitch.builder().title("Performance Optimization")
+        .description("Database query optimization and caching implementation").appetiteDays(5)
+        .cycle(completedCycle1).team(pastTeam1).status(PitchStatus.DONE)
+        .createdAt(LocalDateTime.now().minusDays(58)).updatedAt(LocalDateTime.now().minusDays(43)).build();
     pitchRepository.save(performanceOpt);
 
-    Pitch socialIntegration =
-        Pitch.builder()
-            .title("Social Media Integration")
-            .description("Share content to Twitter, LinkedIn, and Facebook")
-            .appetiteDays(4)
-            .cycle(completedCycle2)
-            .team(pastTeam2)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(100))
-            .updatedAt(LocalDateTime.now().minusDays(85))
-            .build();
+    Pitch socialIntegration = Pitch.builder().title("Social Media Integration")
+        .description("Share content to Twitter, LinkedIn, and Facebook").appetiteDays(4).cycle(completedCycle2)
+        .team(pastTeam2).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(100))
+        .updatedAt(LocalDateTime.now().minusDays(85)).build();
     pitchRepository.save(socialIntegration);
 
-    Pitch dataExport =
-        Pitch.builder()
-            .title("Data Export Feature")
-            .description("Export user data in CSV and Excel formats")
-            .appetiteDays(3)
-            .cycle(completedCycle2)
-            .team(pastTeam2)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(95))
-            .updatedAt(LocalDateTime.now().minusDays(82))
-            .build();
+    Pitch dataExport = Pitch.builder().title("Data Export Feature")
+        .description("Export user data in CSV and Excel formats").appetiteDays(3).cycle(completedCycle2)
+        .team(pastTeam2).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(95))
+        .updatedAt(LocalDateTime.now().minusDays(82)).build();
     pitchRepository.save(dataExport);
 
-    Pitch mobileOnboarding =
-        Pitch.builder()
-            .title("Mobile Onboarding Flow")
-            .description("Improved first-time user experience on mobile")
-            .appetiteDays(5)
-            .cycle(completedCycle3)
-            .team(pastTeam3)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(140))
-            .updatedAt(LocalDateTime.now().minusDays(125))
-            .build();
+    Pitch mobileOnboarding = Pitch.builder().title("Mobile Onboarding Flow")
+        .description("Improved first-time user experience on mobile").appetiteDays(5).cycle(completedCycle3)
+        .team(pastTeam3).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(140))
+        .updatedAt(LocalDateTime.now().minusDays(125)).build();
     pitchRepository.save(mobileOnboarding);
 
-    Pitch offlineMode =
-        Pitch.builder()
-            .title("Offline Mode Support")
-            .description("Enable app functionality without internet connection")
-            .appetiteDays(6)
-            .cycle(completedCycle3)
-            .team(pastTeam3)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now().minusDays(138))
-            .updatedAt(LocalDateTime.now().minusDays(123))
-            .build();
+    Pitch offlineMode = Pitch.builder().title("Offline Mode Support")
+        .description("Enable app functionality without internet connection").appetiteDays(6)
+        .cycle(completedCycle3).team(pastTeam3).status(PitchStatus.DONE)
+        .createdAt(LocalDateTime.now().minusDays(138)).updatedAt(LocalDateTime.now().minusDays(123)).build();
     pitchRepository.save(offlineMode);
 
     // Create work logs for active cycle pitches
-    createWorkLog(
-        alice,
-        userDashboard,
-        LocalDate.now().minusDays(5),
-        new BigDecimal("6.5"),
+    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(5), new BigDecimal("6.5"),
         "Designed new widget layout");
-    createWorkLog(
-        alice,
-        userDashboard,
-        LocalDate.now().minusDays(4),
-        new BigDecimal("7.0"),
+    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(4), new BigDecimal("7.0"),
         "Implemented chart components");
-    createWorkLog(
-        alice,
-        userDashboard,
-        LocalDate.now().minusDays(3),
-        new BigDecimal("5.5"),
+    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(3), new BigDecimal("5.5"),
         "Added drag-and-drop functionality");
-    createWorkLog(
-        alice,
-        userDashboard,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("6.0"),
+    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("6.0"),
         "Fixed responsive layout issues");
-    createWorkLog(
-        alice,
-        userDashboard,
-        LocalDate.now().minusDays(1),
-        new BigDecimal("5.0"),
+    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
         "Integrated with analytics API");
-    createWorkLog(
-        bob,
-        userDashboard,
-        LocalDate.now().minusDays(4),
-        new BigDecimal("8.0"),
+    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(4), new BigDecimal("8.0"),
         "Built API endpoints for widgets");
-    createWorkLog(
-        bob,
-        userDashboard,
-        LocalDate.now().minusDays(3),
-        new BigDecimal("6.0"),
+    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
         "Optimized database queries");
-    createWorkLog(
-        bob,
-        userDashboard,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("7.0"),
-        "Added caching layer");
-    createWorkLog(
-        carol,
-        userDashboard,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("4.0"),
-        "Created test cases");
-    createWorkLog(
-        carol,
-        userDashboard,
-        LocalDate.now().minusDays(1),
-        new BigDecimal("5.0"),
+    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("7.0"), "Added caching layer");
+    createWorkLog(carol, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("4.0"), "Created test cases");
+    createWorkLog(carol, userDashboard, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
         "Performed integration testing");
 
-    createWorkLog(
-        bob,
-        apiIntegration,
-        LocalDate.now().minusDays(4),
-        new BigDecimal("7.5"),
+    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(4), new BigDecimal("7.5"),
         "Set up payment provider SDK");
-    createWorkLog(
-        bob,
-        apiIntegration,
-        LocalDate.now().minusDays(3),
-        new BigDecimal("6.0"),
+    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
         "Implemented webhook handlers");
-    createWorkLog(
-        bob,
-        apiIntegration,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("6.5"),
+    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(2), new BigDecimal("6.5"),
         "Added error handling and retry logic");
-    createWorkLog(
-        bob,
-        apiIntegration,
-        LocalDate.now().minusDays(1),
-        new BigDecimal("5.0"),
+    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
         "Writing integration tests");
-    createWorkLog(
-        alice,
-        apiIntegration,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("4.0"),
+    createWorkLog(alice, apiIntegration, LocalDate.now().minusDays(2), new BigDecimal("4.0"),
         "Built admin UI for payment settings");
 
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(14),
-        new BigDecimal("8.0"),
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(14), new BigDecimal("8.0"),
         "Set up notification service");
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(13),
-        new BigDecimal("7.0"),
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(13), new BigDecimal("7.0"),
         "Built notification preferences UI");
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(12),
-        new BigDecimal("6.5"),
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(12), new BigDecimal("6.5"),
         "Integrated with Firebase");
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(11),
-        new BigDecimal("6.0"),
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(11), new BigDecimal("6.0"),
         "Implemented push notification handlers");
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(10),
-        new BigDecimal("5.5"),
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(10), new BigDecimal("5.5"),
         "Added notification scheduling");
-    createWorkLog(
-        eve,
-        mobileApp,
-        LocalDate.now().minusDays(9),
-        new BigDecimal("5.0"),
+    createWorkLog(eve, mobileApp, LocalDate.now().minusDays(9), new BigDecimal("5.0"),
         "Designed notification templates");
-    createWorkLog(
-        eve,
-        mobileApp,
-        LocalDate.now().minusDays(8),
-        new BigDecimal("4.5"),
+    createWorkLog(eve, mobileApp, LocalDate.now().minusDays(8), new BigDecimal("4.5"),
         "Created user preference flows");
-    createWorkLog(
-        frank,
-        mobileApp,
-        LocalDate.now().minusDays(7),
-        new BigDecimal("4.0"),
+    createWorkLog(frank, mobileApp, LocalDate.now().minusDays(7), new BigDecimal("4.0"),
         "Code review and architecture refinement");
-    createWorkLog(
-        dave,
-        mobileApp,
-        LocalDate.now().minusDays(3),
-        new BigDecimal("6.0"),
-        "Bug fixes and polish");
+    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(3), new BigDecimal("6.0"), "Bug fixes and polish");
 
-    createWorkLog(
-        frank,
-        reportModule,
-        LocalDate.now().minusDays(7),
-        new BigDecimal("7.0"),
+    createWorkLog(frank, reportModule, LocalDate.now().minusDays(7), new BigDecimal("7.0"),
         "Designed report templates");
-    createWorkLog(
-        frank,
-        reportModule,
-        LocalDate.now().minusDays(6),
-        new BigDecimal("6.5"),
+    createWorkLog(frank, reportModule, LocalDate.now().minusDays(6), new BigDecimal("6.5"),
         "Implemented PDF generation");
-    createWorkLog(
-        frank,
-        reportModule,
-        LocalDate.now().minusDays(5),
-        new BigDecimal("7.0"),
+    createWorkLog(frank, reportModule, LocalDate.now().minusDays(5), new BigDecimal("7.0"),
         "Built report scheduler");
-    createWorkLog(
-        dave,
-        reportModule,
-        LocalDate.now().minusDays(4),
-        new BigDecimal("5.5"),
+    createWorkLog(dave, reportModule, LocalDate.now().minusDays(4), new BigDecimal("5.5"),
         "Created report UI components");
-    createWorkLog(
-        dave,
-        reportModule,
-        LocalDate.now().minusDays(3),
-        new BigDecimal("6.0"),
+    createWorkLog(dave, reportModule, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
         "Added chart visualizations");
-    createWorkLog(
-        eve,
-        reportModule,
-        LocalDate.now().minusDays(2),
-        new BigDecimal("4.0"),
+    createWorkLog(eve, reportModule, LocalDate.now().minusDays(2), new BigDecimal("4.0"),
         "Designed report layouts");
 
-    createWorkLog(
-        alice,
-        searchFeature,
-        LocalDate.now().minusDays(11),
-        new BigDecimal("7.5"),
+    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(11), new BigDecimal("7.5"),
         "Integrated Elasticsearch");
-    createWorkLog(
-        alice,
-        searchFeature,
-        LocalDate.now().minusDays(10),
-        new BigDecimal("6.0"),
+    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(10), new BigDecimal("6.0"),
         "Built search API endpoints");
-    createWorkLog(
-        alice,
-        searchFeature,
-        LocalDate.now().minusDays(9),
-        new BigDecimal("6.5"),
+    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(9), new BigDecimal("6.5"),
         "Implemented autocomplete");
-    createWorkLog(
-        bob,
-        searchFeature,
-        LocalDate.now().minusDays(8),
-        new BigDecimal("5.5"),
-        "Added search filters");
-    createWorkLog(
-        bob,
-        searchFeature,
-        LocalDate.now().minusDays(7),
-        new BigDecimal("6.0"),
+    createWorkLog(bob, searchFeature, LocalDate.now().minusDays(8), new BigDecimal("5.5"), "Added search filters");
+    createWorkLog(bob, searchFeature, LocalDate.now().minusDays(7), new BigDecimal("6.0"),
         "Optimized search performance");
-    createWorkLog(
-        alice,
-        searchFeature,
-        LocalDate.now().minusDays(6),
-        new BigDecimal("5.0"),
-        "Built search UI");
-    createWorkLog(
-        carol, searchFeature, LocalDate.now().minusDays(3), new BigDecimal("4.5"), "QA testing");
+    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(6), new BigDecimal("5.0"), "Built search UI");
+    createWorkLog(carol, searchFeature, LocalDate.now().minusDays(3), new BigDecimal("4.5"), "QA testing");
 
     // Work logs for completed cycle 1 (Q4 2024)
-    createWorkLog(
-        alice,
-        darkMode,
-        LocalDate.of(2024, 11, 5),
-        new BigDecimal("7.0"),
+    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 5), new BigDecimal("7.0"),
         "Designed dark theme color palette");
-    createWorkLog(
-        alice,
-        darkMode,
-        LocalDate.of(2024, 11, 6),
-        new BigDecimal("8.0"),
-        "Implemented theme switching");
-    createWorkLog(
-        alice,
-        darkMode,
-        LocalDate.of(2024, 11, 7),
-        new BigDecimal("6.5"),
-        "Updated all components");
-    createWorkLog(
-        bob, darkMode, LocalDate.of(2024, 11, 8), new BigDecimal("5.0"), "Fixed theme persistence");
-    createWorkLog(
-        grace,
-        darkMode,
-        LocalDate.of(2024, 11, 11),
-        new BigDecimal("4.5"),
-        "Added user preferences");
-    createWorkLog(
-        alice,
-        darkMode,
-        LocalDate.of(2024, 11, 12),
-        new BigDecimal("5.5"),
-        "Final polish and testing");
+    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 6), new BigDecimal("8.0"), "Implemented theme switching");
+    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 7), new BigDecimal("6.5"), "Updated all components");
+    createWorkLog(bob, darkMode, LocalDate.of(2024, 11, 8), new BigDecimal("5.0"), "Fixed theme persistence");
+    createWorkLog(grace, darkMode, LocalDate.of(2024, 11, 11), new BigDecimal("4.5"), "Added user preferences");
+    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 12), new BigDecimal("5.5"), "Final polish and testing");
 
-    createWorkLog(
-        bob,
-        performanceOpt,
-        LocalDate.of(2024, 11, 6),
-        new BigDecimal("8.0"),
-        "Analyzed slow queries");
-    createWorkLog(
-        bob,
-        performanceOpt,
-        LocalDate.of(2024, 11, 7),
-        new BigDecimal("7.5"),
-        "Added database indexes");
-    createWorkLog(
-        bob,
-        performanceOpt,
-        LocalDate.of(2024, 11, 8),
-        new BigDecimal("7.0"),
+    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 6), new BigDecimal("8.0"), "Analyzed slow queries");
+    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 7), new BigDecimal("7.5"), "Added database indexes");
+    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 8), new BigDecimal("7.0"),
         "Implemented Redis caching");
-    createWorkLog(
-        grace,
-        performanceOpt,
-        LocalDate.of(2024, 11, 11),
-        new BigDecimal("6.5"),
+    createWorkLog(grace, performanceOpt, LocalDate.of(2024, 11, 11), new BigDecimal("6.5"),
         "Optimized API endpoints");
-    createWorkLog(
-        bob,
-        performanceOpt,
-        LocalDate.of(2024, 11, 12),
-        new BigDecimal("6.0"),
+    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 12), new BigDecimal("6.0"),
         "Added query result caching");
-    createWorkLog(
-        grace,
-        performanceOpt,
-        LocalDate.of(2024, 11, 13),
-        new BigDecimal("5.5"),
+    createWorkLog(grace, performanceOpt, LocalDate.of(2024, 11, 13), new BigDecimal("5.5"),
         "Load testing and tuning");
-    createWorkLog(
-        alice,
-        performanceOpt,
-        LocalDate.of(2024, 11, 14),
-        new BigDecimal("4.5"),
+    createWorkLog(alice, performanceOpt, LocalDate.of(2024, 11, 14), new BigDecimal("4.5"),
         "Performance monitoring setup");
 
     // Work logs for completed cycle 2 (Q3 2024)
-    createWorkLog(
-        dave,
-        socialIntegration,
-        LocalDate.of(2024, 8, 6),
-        new BigDecimal("7.0"),
+    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 6), new BigDecimal("7.0"),
         "Set up OAuth integrations");
-    createWorkLog(
-        dave,
-        socialIntegration,
-        LocalDate.of(2024, 8, 7),
-        new BigDecimal("6.5"),
+    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 7), new BigDecimal("6.5"),
         "Built Twitter integration");
-    createWorkLog(
-        dave,
-        socialIntegration,
-        LocalDate.of(2024, 8, 8),
-        new BigDecimal("6.5"),
+    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 8), new BigDecimal("6.5"),
         "Built LinkedIn integration");
-    createWorkLog(
-        eve,
-        socialIntegration,
-        LocalDate.of(2024, 8, 9),
-        new BigDecimal("5.5"),
+    createWorkLog(eve, socialIntegration, LocalDate.of(2024, 8, 9), new BigDecimal("5.5"),
         "Designed share dialogs");
-    createWorkLog(
-        dave,
-        socialIntegration,
-        LocalDate.of(2024, 8, 12),
-        new BigDecimal("6.0"),
+    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 12), new BigDecimal("6.0"),
         "Built Facebook integration");
-    createWorkLog(
-        frank,
-        socialIntegration,
-        LocalDate.of(2024, 8, 13),
-        new BigDecimal("5.0"),
+    createWorkLog(frank, socialIntegration, LocalDate.of(2024, 8, 13), new BigDecimal("5.0"),
         "Added analytics tracking");
 
-    createWorkLog(
-        eve, dataExport, LocalDate.of(2024, 8, 14), new BigDecimal("6.5"), "Designed export UI");
-    createWorkLog(
-        frank,
-        dataExport,
-        LocalDate.of(2024, 8, 15),
-        new BigDecimal("7.0"),
-        "Implemented CSV export");
-    createWorkLog(
-        frank,
-        dataExport,
-        LocalDate.of(2024, 8, 16),
-        new BigDecimal("6.5"),
-        "Implemented Excel export");
-    createWorkLog(
-        dave, dataExport, LocalDate.of(2024, 8, 19), new BigDecimal("5.5"), "Added export filters");
-    createWorkLog(
-        frank,
-        dataExport,
-        LocalDate.of(2024, 8, 20),
-        new BigDecimal("5.0"),
-        "Performance optimization");
+    createWorkLog(eve, dataExport, LocalDate.of(2024, 8, 14), new BigDecimal("6.5"), "Designed export UI");
+    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 15), new BigDecimal("7.0"), "Implemented CSV export");
+    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 16), new BigDecimal("6.5"), "Implemented Excel export");
+    createWorkLog(dave, dataExport, LocalDate.of(2024, 8, 19), new BigDecimal("5.5"), "Added export filters");
+    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 20), new BigDecimal("5.0"), "Performance optimization");
 
     // Work logs for completed cycle 3 (Q2 2024)
-    createWorkLog(
-        henry,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 7),
-        new BigDecimal("7.5"),
+    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 7), new BigDecimal("7.5"),
         "Designed onboarding flow");
-    createWorkLog(
-        henry,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 8),
-        new BigDecimal("7.0"),
+    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 8), new BigDecimal("7.0"),
         "Built welcome screens");
-    createWorkLog(
-        grace,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 9),
-        new BigDecimal("6.5"),
+    createWorkLog(grace, mobileOnboarding, LocalDate.of(2024, 5, 9), new BigDecimal("6.5"),
         "Implemented tutorial steps");
-    createWorkLog(
-        henry,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 10),
-        new BigDecimal("6.0"),
+    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 10), new BigDecimal("6.0"),
         "Added skip functionality");
-    createWorkLog(
-        grace,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 13),
-        new BigDecimal("5.5"),
+    createWorkLog(grace, mobileOnboarding, LocalDate.of(2024, 5, 13), new BigDecimal("5.5"),
         "Built progress indicators");
-    createWorkLog(
-        carol,
-        mobileOnboarding,
-        LocalDate.of(2024, 5, 14),
-        new BigDecimal("4.5"),
-        "QA and testing");
+    createWorkLog(carol, mobileOnboarding, LocalDate.of(2024, 5, 14), new BigDecimal("4.5"), "QA and testing");
 
-    createWorkLog(
-        henry,
-        offlineMode,
-        LocalDate.of(2024, 5, 15),
-        new BigDecimal("8.0"),
+    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 15), new BigDecimal("8.0"),
         "Implemented local database");
-    createWorkLog(
-        henry,
-        offlineMode,
-        LocalDate.of(2024, 5, 16),
-        new BigDecimal("7.5"),
-        "Built sync mechanism");
-    createWorkLog(
-        grace,
-        offlineMode,
-        LocalDate.of(2024, 5, 17),
-        new BigDecimal("7.0"),
+    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 16), new BigDecimal("7.5"), "Built sync mechanism");
+    createWorkLog(grace, offlineMode, LocalDate.of(2024, 5, 17), new BigDecimal("7.0"),
         "Added conflict resolution");
-    createWorkLog(
-        henry,
-        offlineMode,
-        LocalDate.of(2024, 5, 20),
-        new BigDecimal("6.5"),
+    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 20), new BigDecimal("6.5"),
         "Implemented offline queue");
-    createWorkLog(
-        grace,
-        offlineMode,
-        LocalDate.of(2024, 5, 21),
-        new BigDecimal("6.0"),
-        "Built background sync");
-    createWorkLog(
-        carol,
-        offlineMode,
-        LocalDate.of(2024, 5, 22),
-        new BigDecimal("5.0"),
-        "Offline mode testing");
+    createWorkLog(grace, offlineMode, LocalDate.of(2024, 5, 21), new BigDecimal("6.0"), "Built background sync");
+    createWorkLog(carol, offlineMode, LocalDate.of(2024, 5, 22), new BigDecimal("5.0"), "Offline mode testing");
 
     // Create meetings
-    Meeting kickoff1 =
-        Meeting.builder()
-            .pitch(userDashboard)
-            .type(MeetingType.KICKOFF)
-            .dateHeld(LocalDate.now().minusDays(10))
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Defined scope and milestones")
-            .build();
+    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type(MeetingType.KICKOFF)
+        .dateHeld(LocalDate.now().minusDays(10)).dorReady(true).dodReady(false)
+        .notes("Defined scope and milestones").build();
     meetingRepository.save(kickoff1);
 
-    Meeting standup1 =
-        Meeting.builder()
-            .pitch(userDashboard)
-            .type(MeetingType.STANDUP)
-            .dateHeld(LocalDate.now().minusDays(3))
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Progress update - 70% complete")
-            .build();
+    Meeting standup1 = Meeting.builder().pitch(userDashboard).type(MeetingType.STANDUP)
+        .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
+        .notes("Progress update - 70% complete").build();
     meetingRepository.save(standup1);
 
-    Meeting shaping =
-        Meeting.builder()
-            .pitch(reportModule)
-            .type(MeetingType.SHAPING)
-            .dateHeld(LocalDate.now().minusDays(5))
-            .dorReady(false)
-            .dodReady(false)
-            .notes("Identified key requirements and risks")
-            .build();
+    Meeting shaping = Meeting.builder().pitch(reportModule).type(MeetingType.SHAPING)
+        .dateHeld(LocalDate.now().minusDays(5)).dorReady(false).dodReady(false)
+        .notes("Identified key requirements and risks").build();
     meetingRepository.save(shaping);
 
-    Meeting betting =
-        Meeting.builder()
-            .pitch(reportModule)
-            .type(MeetingType.BETTING)
-            .dateHeld(LocalDate.now().minusDays(3))
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Approved for next build phase")
-            .build();
+    Meeting betting = Meeting.builder().pitch(reportModule).type(MeetingType.BETTING)
+        .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
+        .notes("Approved for next build phase").build();
     meetingRepository.save(betting);
 
-    Meeting demo =
-        Meeting.builder()
-            .pitch(mobileApp)
-            .type(MeetingType.DEMO)
-            .dateHeld(LocalDate.now().minusDays(1))
-            .dorReady(true)
-            .dodReady(true)
-            .notes("Successful demo to stakeholders")
-            .build();
+    Meeting demo = Meeting.builder().pitch(mobileApp).type(MeetingType.DEMO).dateHeld(LocalDate.now().minusDays(1))
+        .dorReady(true).dodReady(true).notes("Successful demo to stakeholders").build();
     meetingRepository.save(demo);
 
     // Create evidences
-    Evidence evidence1 =
-        Evidence.builder()
-            .pitch(userDashboard)
-            .person(alice)
-            .date(LocalDate.now().minusDays(4))
-            .description(
-                "Blocker: Third-party charting library has performance issues with large datasets")
-            .fileUrl(null)
-            .build();
+    Evidence evidence1 = Evidence.builder().pitch(userDashboard).person(alice).date(LocalDate.now().minusDays(4))
+        .description("Blocker: Third-party charting library has performance issues with large datasets")
+        .fileUrl(null).build();
     evidenceRepository.save(evidence1);
 
-    Evidence evidence2 =
-        Evidence.builder()
-            .pitch(mobileApp)
-            .person(dave)
-            .date(LocalDate.now().minusDays(6))
-            .description("QA passed - All notification flows working correctly on iOS and Android")
-            .fileUrl("https://example.com/qa-report.pdf")
-            .build();
+    Evidence evidence2 = Evidence.builder().pitch(mobileApp).person(dave).date(LocalDate.now().minusDays(6))
+        .description("QA passed - All notification flows working correctly on iOS and Android")
+        .fileUrl("https://example.com/qa-report.pdf").build();
     evidenceRepository.save(evidence2);
 
-    Evidence evidence3 =
-        Evidence.builder()
-            .pitch(apiIntegration)
-            .person(bob)
-            .date(LocalDate.now().minusDays(1))
-            .description("Waiting for API credentials from payment provider - ETA 2 days")
-            .fileUrl(null)
-            .build();
+    Evidence evidence3 = Evidence.builder().pitch(apiIntegration).person(bob).date(LocalDate.now().minusDays(1))
+        .description("Waiting for API credentials from payment provider - ETA 2 days").fileUrl(null).build();
     evidenceRepository.save(evidence3);
 
     // Create sample tasks for active cycle
-    createTask(
-        "Setup Redux store for dashboard",
-        "Initialize Redux state management with slices for widgets and layout",
-        TaskStatus.DONE,
-        TaskPriority.HIGH,
-        new BigDecimal("4.0"),
-        new BigDecimal("3.5"),
-        activeCycle,
-        alice,
-        null,
-        alice,
-        LocalDate.now().plusDays(5),
-        "frontend,redux,setup");
+    createTask("Setup Redux store for dashboard",
+        "Initialize Redux state management with slices for widgets and layout", TaskStatus.DONE,
+        TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("3.5"), activeCycle, alice, null, alice,
+        LocalDate.now().plusDays(5), "frontend,redux,setup");
 
-    createTask(
-        "Implement widget drag-and-drop",
-        "Add react-beautiful-dnd for dashboard widget rearrangement",
-        TaskStatus.DONE,
-        TaskPriority.MEDIUM,
-        new BigDecimal("6.0"),
-        new BigDecimal("5.5"),
-        activeCycle,
-        alice,
-        null,
-        alice,
-        LocalDate.now().plusDays(8),
-        "frontend,ux,drag-drop");
+    createTask("Implement widget drag-and-drop", "Add react-beautiful-dnd for dashboard widget rearrangement",
+        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("5.5"), activeCycle, alice,
+        null, alice, LocalDate.now().plusDays(8), "frontend,ux,drag-drop");
 
-    createTask(
-        "Create chart API endpoints",
-        "Build REST endpoints for fetching chart data with time range filters",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.HIGH,
-        new BigDecimal("5.0"),
-        new BigDecimal("3.0"),
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(3),
-        "backend,api,charts");
+    createTask("Create chart API endpoints", "Build REST endpoints for fetching chart data with time range filters",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("5.0"), new BigDecimal("3.0"), activeCycle,
+        bob, null, bob, LocalDate.now().plusDays(3), "backend,api,charts");
 
-    createTask(
-        "Optimize dashboard queries",
-        "Add database indexes and implement query result caching",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.HIGH,
-        new BigDecimal("4.0"),
-        new BigDecimal("2.5"),
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(4),
-        "backend,performance,database");
+    createTask("Optimize dashboard queries", "Add database indexes and implement query result caching",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("2.5"), activeCycle,
+        bob, null, bob, LocalDate.now().plusDays(4), "backend,performance,database");
 
-    createTask(
-        "Write dashboard integration tests",
-        "Create Cypress tests for dashboard functionality and interactions",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("8.0"),
-        null,
-        activeCycle,
-        carol,
-        null,
-        alice,
-        LocalDate.now().plusDays(7),
-        "testing,cypress,integration");
+    createTask("Write dashboard integration tests",
+        "Create Cypress tests for dashboard functionality and interactions", TaskStatus.TODO,
+        TaskPriority.MEDIUM, new BigDecimal("8.0"), null, activeCycle, carol, null, alice,
+        LocalDate.now().plusDays(7), "testing,cypress,integration");
 
-    createTask(
-        "Payment provider SDK integration",
-        "Integrate Stripe SDK and configure API credentials",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.HIGH,
-        new BigDecimal("6.0"),
-        new BigDecimal("4.0"),
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(2),
-        "backend,payment,stripe");
+    createTask("Payment provider SDK integration", "Integrate Stripe SDK and configure API credentials",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("6.0"), new BigDecimal("4.0"), activeCycle,
+        bob, null, bob, LocalDate.now().plusDays(2), "backend,payment,stripe");
 
-    createTask(
-        "Webhook signature verification",
-        "Implement secure webhook verification using provider signatures",
-        TaskStatus.TODO,
-        TaskPriority.HIGH,
-        new BigDecimal("3.0"),
-        null,
-        activeCycle,
-        bob,
-        alice,
-        bob,
-        LocalDate.now().plusDays(4),
-        "backend,security,webhooks");
+    createTask("Webhook signature verification", "Implement secure webhook verification using provider signatures",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("3.0"), null, activeCycle, bob, alice, bob,
+        LocalDate.now().plusDays(4), "backend,security,webhooks");
 
-    createTask(
-        "Payment error handling",
-        "Add comprehensive error handling and user-friendly messages",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("4.0"),
-        null,
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(6),
-        "backend,error-handling");
+    createTask("Payment error handling", "Add comprehensive error handling and user-friendly messages",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("4.0"), null, activeCycle, bob, null, bob,
+        LocalDate.now().plusDays(6), "backend,error-handling");
 
-    createTask(
-        "Admin payment settings UI",
-        "Create admin panel for configuring payment provider settings",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.MEDIUM,
-        new BigDecimal("5.0"),
-        new BigDecimal("3.0"),
-        activeCycle,
-        alice,
-        null,
-        bob,
-        LocalDate.now().plusDays(5),
-        "frontend,admin,settings");
+    createTask("Admin payment settings UI", "Create admin panel for configuring payment provider settings",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("3.0"), activeCycle,
+        alice, null, bob, LocalDate.now().plusDays(5), "frontend,admin,settings");
 
-    createTask(
-        "PDF report template design",
-        "Create professional PDF templates for different report types",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.MEDIUM,
-        new BigDecimal("6.0"),
-        new BigDecimal("4.0"),
-        activeCycle,
-        eve,
-        null,
-        frank,
-        LocalDate.now().plusDays(8),
-        "design,pdf,templates");
+    createTask("PDF report template design", "Create professional PDF templates for different report types",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("4.0"), activeCycle,
+        eve, null, frank, LocalDate.now().plusDays(8), "design,pdf,templates");
 
-    createTask(
-        "Report scheduler backend",
-        "Build cron-based scheduler for automated report generation",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.HIGH,
-        new BigDecimal("7.0"),
-        new BigDecimal("5.0"),
-        activeCycle,
-        frank,
-        null,
-        frank,
-        LocalDate.now().plusDays(6),
-        "backend,scheduler,cron");
+    createTask("Report scheduler backend", "Build cron-based scheduler for automated report generation",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("7.0"), new BigDecimal("5.0"), activeCycle,
+        frank, null, frank, LocalDate.now().plusDays(6), "backend,scheduler,cron");
 
-    createTask(
-        "Email delivery service",
-        "Implement email service for sending scheduled reports",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("5.0"),
-        null,
-        activeCycle,
-        frank,
-        null,
-        frank,
-        LocalDate.now().plusDays(9),
-        "backend,email,notifications");
+    createTask("Email delivery service", "Implement email service for sending scheduled reports", TaskStatus.TODO,
+        TaskPriority.MEDIUM, new BigDecimal("5.0"), null, activeCycle, frank, null, frank,
+        LocalDate.now().plusDays(9), "backend,email,notifications");
 
-    createTask(
-        "Report UI components",
-        "Create React components for report builder and viewer",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.MEDIUM,
-        new BigDecimal("8.0"),
-        new BigDecimal("6.0"),
-        activeCycle,
-        dave,
-        null,
-        frank,
-        LocalDate.now().plusDays(7),
-        "frontend,react,components");
+    createTask("Report UI components", "Create React components for report builder and viewer",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("8.0"), new BigDecimal("6.0"), activeCycle,
+        dave, null, frank, LocalDate.now().plusDays(7), "frontend,react,components");
 
-    createTask(
-        "Chart visualization library",
-        "Integrate Chart.js for interactive report charts",
-        TaskStatus.TODO,
-        TaskPriority.LOW,
-        new BigDecimal("4.0"),
-        null,
-        activeCycle,
-        dave,
-        null,
-        frank,
-        LocalDate.now().plusDays(10),
-        "frontend,charts,visualization");
+    createTask("Chart visualization library", "Integrate Chart.js for interactive report charts", TaskStatus.TODO,
+        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, dave, null, frank,
+        LocalDate.now().plusDays(10), "frontend,charts,visualization");
 
-    createTask(
-        "Code review: Search feature",
-        "Review and approve search implementation before merge",
-        TaskStatus.DONE,
-        TaskPriority.HIGH,
-        new BigDecimal("2.0"),
-        new BigDecimal("1.5"),
-        activeCycle,
-        frank,
-        null,
-        alice,
-        LocalDate.now().minusDays(3),
-        "code-review,search");
+    createTask("Code review: Search feature", "Review and approve search implementation before merge",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("2.0"), new BigDecimal("1.5"), activeCycle, frank,
+        null, alice, LocalDate.now().minusDays(3), "code-review,search");
 
-    createTask(
-        "Deploy search to staging",
-        "Deploy Elasticsearch and search API to staging environment",
-        TaskStatus.DONE,
-        TaskPriority.HIGH,
-        new BigDecimal("3.0"),
-        new BigDecimal("2.5"),
-        activeCycle,
-        bob,
-        null,
-        alice,
-        LocalDate.now().minusDays(2),
-        "devops,deployment,staging");
+    createTask("Deploy search to staging", "Deploy Elasticsearch and search API to staging environment",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("3.0"), new BigDecimal("2.5"), activeCycle, bob,
+        null, alice, LocalDate.now().minusDays(2), "devops,deployment,staging");
 
-    createTask(
-        "Write API documentation",
-        "Document all new API endpoints with examples",
-        TaskStatus.TODO,
-        TaskPriority.LOW,
-        new BigDecimal("4.0"),
-        null,
-        activeCycle,
-        alice,
-        bob,
-        alice,
-        LocalDate.now().plusDays(12),
-        "documentation,api");
+    createTask("Write API documentation", "Document all new API endpoints with examples", TaskStatus.TODO,
+        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, alice, bob, alice,
+        LocalDate.now().plusDays(12), "documentation,api");
 
-    createTask(
-        "Update user guide",
-        "Add documentation for new dashboard features",
-        TaskStatus.TODO,
-        TaskPriority.LOW,
-        new BigDecimal("3.0"),
-        null,
-        activeCycle,
-        eve,
-        null,
-        alice,
-        LocalDate.now().plusDays(14),
-        "documentation,user-guide");
+    createTask("Update user guide", "Add documentation for new dashboard features", TaskStatus.TODO,
+        TaskPriority.LOW, new BigDecimal("3.0"), null, activeCycle, eve, null, alice,
+        LocalDate.now().plusDays(14), "documentation,user-guide");
 
-    createTask(
-        "Security audit: Payment flow",
-        "Conduct security review of payment integration",
-        TaskStatus.TODO,
-        TaskPriority.HIGH,
-        new BigDecimal("5.0"),
-        null,
-        activeCycle,
-        frank,
-        bob,
-        frank,
-        LocalDate.now().plusDays(8),
-        "security,audit,payment");
+    createTask("Security audit: Payment flow", "Conduct security review of payment integration", TaskStatus.TODO,
+        TaskPriority.HIGH, new BigDecimal("5.0"), null, activeCycle, frank, bob, frank,
+        LocalDate.now().plusDays(8), "security,audit,payment");
 
-    createTask(
-        "Performance monitoring setup",
-        "Configure application performance monitoring tools",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.MEDIUM,
-        new BigDecimal("4.0"),
-        new BigDecimal("2.0"),
-        activeCycle,
-        bob,
-        null,
-        frank,
-        LocalDate.now().plusDays(10),
-        "devops,monitoring,performance");
+    createTask("Performance monitoring setup", "Configure application performance monitoring tools",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("4.0"), new BigDecimal("2.0"), activeCycle,
+        bob, null, frank, LocalDate.now().plusDays(10), "devops,monitoring,performance");
 
-    createTask(
-        "Accessibility review",
-        "Ensure dashboard meets WCAG 2.1 AA standards",
-        TaskStatus.BACKLOG,
-        TaskPriority.MEDIUM,
-        new BigDecimal("6.0"),
-        null,
-        activeCycle,
-        eve,
-        alice,
-        eve,
-        LocalDate.now().plusDays(15),
-        "accessibility,a11y,compliance");
+    createTask("Accessibility review", "Ensure dashboard meets WCAG 2.1 AA standards", TaskStatus.BACKLOG,
+        TaskPriority.MEDIUM, new BigDecimal("6.0"), null, activeCycle, eve, alice, eve,
+        LocalDate.now().plusDays(15), "accessibility,a11y,compliance");
 
-    createTask(
-        "Mobile responsive fixes",
-        "Fix responsive layout issues on tablet and mobile",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("5.0"),
-        null,
-        activeCycle,
-        dave,
-        null,
-        alice,
-        LocalDate.now().plusDays(9),
-        "frontend,responsive,mobile");
+    createTask("Mobile responsive fixes", "Fix responsive layout issues on tablet and mobile", TaskStatus.TODO,
+        TaskPriority.MEDIUM, new BigDecimal("5.0"), null, activeCycle, dave, null, alice,
+        LocalDate.now().plusDays(9), "frontend,responsive,mobile");
 
-    createTask(
-        "Browser compatibility testing",
-        "Test on Safari, Firefox, Chrome, and Edge",
-        TaskStatus.BACKLOG,
-        TaskPriority.LOW,
-        new BigDecimal("4.0"),
-        null,
-        activeCycle,
-        carol,
-        null,
-        alice,
-        LocalDate.now().plusDays(16),
-        "testing,browsers,qa");
+    createTask("Browser compatibility testing", "Test on Safari, Firefox, Chrome, and Edge", TaskStatus.BACKLOG,
+        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, carol, null, alice,
+        LocalDate.now().plusDays(16), "testing,browsers,qa");
 
-    createTask(
-        "Database migration script",
-        "Create migration for new dashboard schema changes",
-        TaskStatus.DONE,
-        TaskPriority.HIGH,
-        new BigDecimal("2.0"),
-        new BigDecimal("1.5"),
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().minusDays(5),
-        "database,migration");
+    createTask("Database migration script", "Create migration for new dashboard schema changes", TaskStatus.DONE,
+        TaskPriority.HIGH, new BigDecimal("2.0"), new BigDecimal("1.5"), activeCycle, bob, null, bob,
+        LocalDate.now().minusDays(5), "database,migration");
 
-    createTask(
-        "Implement notification preferences",
-        "Add user preferences for notification channels and frequency",
-        TaskStatus.DONE,
-        TaskPriority.MEDIUM,
-        new BigDecimal("5.0"),
-        new BigDecimal("4.5"),
-        activeCycle,
-        dave,
-        null,
-        dave,
-        LocalDate.now().minusDays(8),
-        "frontend,notifications,preferences");
+    createTask("Implement notification preferences", "Add user preferences for notification channels and frequency",
+        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("4.5"), activeCycle, dave,
+        null, dave, LocalDate.now().minusDays(8), "frontend,notifications,preferences");
 
     // Create technical debt tasks
-    createTask(
-        "Refactor authentication service",
+    createTask("Refactor authentication service",
         "Technical Debt: Auth service has grown too complex, needs splitting into separate concerns",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("8.0"),
-        null,
-        activeCycle,
-        bob,
-        null,
-        frank,
-        LocalDate.now().plusDays(20),
-        "backend,technical-debt,refactoring");
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("8.0"), null, activeCycle, bob, null, frank,
+        LocalDate.now().plusDays(20), "backend,technical-debt,refactoring");
 
-    createTask(
-        "Update deprecated React lifecycle methods",
+    createTask("Update deprecated React lifecycle methods",
         "Technical Debt: Replace componentWillMount and componentWillReceiveProps with hooks",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.LOW,
-        new BigDecimal("6.0"),
-        new BigDecimal("2.0"),
-        activeCycle,
-        alice,
-        null,
-        alice,
-        LocalDate.now().plusDays(15),
-        "frontend,technical-debt,react");
+        TaskStatus.IN_PROGRESS, TaskPriority.LOW, new BigDecimal("6.0"), new BigDecimal("2.0"), activeCycle,
+        alice, null, alice, LocalDate.now().plusDays(15), "frontend,technical-debt,react");
 
-    createTask(
-        "Add missing database indexes",
+    createTask("Add missing database indexes",
         "Technical Debt: Several query performance issues due to missing indexes on foreign keys",
-        TaskStatus.TODO,
-        TaskPriority.HIGH,
-        new BigDecimal("4.0"),
-        null,
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(10),
-        "backend,technical-debt,database,performance");
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("4.0"), null, activeCycle, bob, null, bob,
+        LocalDate.now().plusDays(10), "backend,technical-debt,database,performance");
 
-    createTask(
-        "Remove duplicate code in services",
-        "Technical Debt: Pitch and Task services have duplicate validation logic",
-        TaskStatus.BACKLOG,
-        TaskPriority.LOW,
-        new BigDecimal("5.0"),
-        null,
-        activeCycle,
-        bob,
-        null,
-        frank,
-        LocalDate.now().plusDays(25),
-        "backend,technical-debt,code-quality");
+    createTask("Remove duplicate code in services",
+        "Technical Debt: Pitch and Task services have duplicate validation logic", TaskStatus.BACKLOG,
+        TaskPriority.LOW, new BigDecimal("5.0"), null, activeCycle, bob, null, frank,
+        LocalDate.now().plusDays(25), "backend,technical-debt,code-quality");
 
-    createTask(
-        "Upgrade to latest Spring Boot version",
+    createTask("Upgrade to latest Spring Boot version",
         "Technical Debt: Running on Spring Boot 3.1, need to upgrade to 3.2 for security patches",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("10.0"),
-        null,
-        activeCycle,
-        bob,
-        alice,
-        frank,
-        LocalDate.now().plusDays(18),
-        "backend,technical-debt,dependencies,security");
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("10.0"), null, activeCycle, bob, alice, frank,
+        LocalDate.now().plusDays(18), "backend,technical-debt,dependencies,security");
 
-    createTask(
-        "Fix inconsistent error handling",
+    createTask("Fix inconsistent error handling",
         "Technical Debt: API endpoints return different error formats, need standardization",
-        TaskStatus.IN_PROGRESS,
-        TaskPriority.MEDIUM,
-        new BigDecimal("6.0"),
-        new BigDecimal("3.5"),
-        activeCycle,
-        bob,
-        null,
-        bob,
-        LocalDate.now().plusDays(12),
-        "backend,technical-debt,api,error-handling");
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("3.5"), activeCycle,
+        bob, null, bob, LocalDate.now().plusDays(12), "backend,technical-debt,api,error-handling");
 
-    createTask(
-        "Improve test coverage for utils",
-        "Technical Debt: Utility classes have only 45% test coverage, target is 80%",
-        TaskStatus.TODO,
-        TaskPriority.LOW,
-        new BigDecimal("8.0"),
-        null,
-        activeCycle,
-        carol,
-        null,
-        carol,
-        LocalDate.now().plusDays(22),
-        "testing,technical-debt,coverage");
+    createTask("Improve test coverage for utils",
+        "Technical Debt: Utility classes have only 45% test coverage, target is 80%", TaskStatus.TODO,
+        TaskPriority.LOW, new BigDecimal("8.0"), null, activeCycle, carol, null, carol,
+        LocalDate.now().plusDays(22), "testing,technical-debt,coverage");
 
-    createTask(
-        "Remove unused npm dependencies",
-        "Technical Debt: Package.json has 15+ unused dependencies increasing bundle size",
-        TaskStatus.BACKLOG,
-        TaskPriority.LOW,
-        new BigDecimal("2.0"),
-        null,
-        activeCycle,
-        dave,
-        null,
-        alice,
-        LocalDate.now().plusDays(30),
-        "frontend,technical-debt,dependencies");
+    createTask("Remove unused npm dependencies",
+        "Technical Debt: Package.json has 15+ unused dependencies increasing bundle size", TaskStatus.BACKLOG,
+        TaskPriority.LOW, new BigDecimal("2.0"), null, activeCycle, dave, null, alice,
+        LocalDate.now().plusDays(30), "frontend,technical-debt,dependencies");
 
-    createTask(
-        "Migrate to React Query",
+    createTask("Migrate to React Query",
         "Technical Debt: Replace custom data fetching hooks with React Query for better caching",
-        TaskStatus.TODO,
-        TaskPriority.MEDIUM,
-        new BigDecimal("12.0"),
-        null,
-        activeCycle,
-        alice,
-        dave,
-        alice,
-        LocalDate.now().plusDays(16),
-        "frontend,technical-debt,refactoring,data-fetching");
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("12.0"), null, activeCycle, alice, dave, alice,
+        LocalDate.now().plusDays(16), "frontend,technical-debt,refactoring,data-fetching");
 
-    createTask(
-        "Add API rate limiting",
-        "Technical Debt: API endpoints lack rate limiting, vulnerable to abuse",
-        TaskStatus.TODO,
-        TaskPriority.HIGH,
-        new BigDecimal("5.0"),
-        null,
-        activeCycle,
-        bob,
-        null,
-        frank,
-        LocalDate.now().plusDays(8),
-        "backend,technical-debt,security,api");
+    createTask("Add API rate limiting", "Technical Debt: API endpoints lack rate limiting, vulnerable to abuse",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("5.0"), null, activeCycle, bob, null, frank,
+        LocalDate.now().plusDays(8), "backend,technical-debt,security,api");
 
-    createTask(
-        "Consolidate CSS styles",
-        "Technical Debt: Multiple CSS files with duplicate styles and unused rules",
-        TaskStatus.BACKLOG,
-        TaskPriority.LOW,
-        new BigDecimal("7.0"),
-        null,
-        activeCycle,
-        dave,
-        null,
-        eve,
-        LocalDate.now().plusDays(28),
-        "frontend,technical-debt,css,cleanup");
+    createTask("Consolidate CSS styles",
+        "Technical Debt: Multiple CSS files with duplicate styles and unused rules", TaskStatus.BACKLOG,
+        TaskPriority.LOW, new BigDecimal("7.0"), null, activeCycle, dave, null, eve,
+        LocalDate.now().plusDays(28), "frontend,technical-debt,css,cleanup");
 
     // Create hill chart points for all active pitches
     createHillChartPoints(userDashboard, alice);
@@ -1532,96 +630,41 @@ public class SampleDataInitializer implements CommandLineRunner {
 
   private void createUser(String username, String password, UserRole role, Person person) {
     if (!userRepository.existsByUsername(username)) {
-      User user =
-          User.builder()
-              .username(username)
-              .password(passwordEncoder.encode(password))
-              .role(role)
-              .person(person)
-              .isActive(true)
-              .build();
+      User user = User.builder().username(username).password(passwordEncoder.encode(password)).role(role)
+          .person(person).isActive(true).build();
       userRepository.save(user);
     }
   }
 
   private Person createPerson(String name, String email, String skills, String avatarUrl) {
-    Person person =
-        Person.builder()
-            .name(name)
-            .email(email)
-            .skills(skills)
-            .avatarUrl(avatarUrl)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Person person = Person.builder().name(name).email(email).skills(skills).avatarUrl(avatarUrl).isActive(true)
+        .createdAt(LocalDateTime.now()).build();
     return personRepository.save(person);
   }
 
-  private void createAssignment(
-      Person person, Team team, TeamMemberRole role, LocalDate startDate, LocalDate endDate) {
+  private void createAssignment(Person person, Team team, TeamMemberRole role, LocalDate startDate,
+      LocalDate endDate) {
     createAssignment(person, team, role, startDate, endDate, true);
   }
 
-  private void createAssignment(
-      Person person,
-      Team team,
-      TeamMemberRole role,
-      LocalDate startDate,
-      LocalDate endDate,
+  private void createAssignment(Person person, Team team, TeamMemberRole role, LocalDate startDate, LocalDate endDate,
       boolean isActive) {
-    TeamAssignment assignment =
-        TeamAssignment.builder()
-            .person(person)
-            .team(team)
-            .role(role)
-            .startDate(startDate)
-            .endDate(endDate)
-            .isActive(isActive)
-            .build();
+    TeamAssignment assignment = TeamAssignment.builder().person(person).team(team).role(role).startDate(startDate)
+        .endDate(endDate).isActive(isActive).build();
     teamAssignmentRepository.save(assignment);
   }
 
-  private void createWorkLog(
-      Person person, Pitch pitch, LocalDate date, BigDecimal hours, String note) {
-    WorkLog workLog =
-        WorkLog.builder()
-            .person(person)
-            .pitch(pitch)
-            .date(date)
-            .hoursSpent(hours)
-            .note(note)
-            .build();
+  private void createWorkLog(Person person, Pitch pitch, LocalDate date, BigDecimal hours, String note) {
+    WorkLog workLog = WorkLog.builder().person(person).pitch(pitch).date(date).hoursSpent(hours).note(note).build();
     workLogRepository.save(workLog);
   }
 
-  private void createTask(
-      String title,
-      String description,
-      TaskStatus status,
-      TaskPriority priority,
-      BigDecimal estimateHours,
-      BigDecimal actualHours,
-      Cycle cycle,
-      Person assignee,
-      Person pairAssignee,
-      Person createdBy,
-      LocalDate dueDate,
-      String tags) {
-    Task task =
-        Task.builder()
-            .title(title)
-            .description(description)
-            .status(status)
-            .priority(priority)
-            .estimateHours(estimateHours)
-            .actualHours(actualHours)
-            .cycle(cycle)
-            .assignee(assignee)
-            .pairAssignee(pairAssignee)
-            .createdBy(createdBy)
-            .dueDate(dueDate)
-            .tags(tags)
-            .build();
+  private void createTask(String title, String description, TaskStatus status, TaskPriority priority,
+      BigDecimal estimateHours, BigDecimal actualHours, Cycle cycle, Person assignee, Person pairAssignee,
+      Person createdBy, LocalDate dueDate, String tags) {
+    Task task = Task.builder().title(title).description(description).status(status).priority(priority)
+        .estimateHours(estimateHours).actualHours(actualHours).cycle(cycle).assignee(assignee)
+        .pairAssignee(pairAssignee).createdBy(createdBy).dueDate(dueDate).tags(tags).build();
 
     if (status == TaskStatus.DONE) {
       task.setCompletedAt(LocalDateTime.now().minusDays(1));
@@ -1632,110 +675,70 @@ public class SampleDataInitializer implements CommandLineRunner {
 
   private void createHillChartPoints(Pitch pitch, Person creator) {
     // Create 3-5 hill chart points per pitch to demonstrate scopes
-    HillChartPoint point1 =
-        HillChartPoint.builder()
-            .pitch(pitch)
-            .scope("Backend Development")
-            .description("API endpoints and business logic for " + pitch.getTitle())
-            .position(pitch.getStatus() == PitchStatus.DONE ? 95 : 75)
-            .build();
+    HillChartPoint point1 = HillChartPoint.builder().pitch(pitch).scope("Backend Development")
+        .description("API endpoints and business logic for " + pitch.getTitle())
+        .position(pitch.getStatus() == PitchStatus.DONE ? 95 : 75).build();
     hillChartPointRepository.save(point1);
 
-    HillChartPoint point2 =
-        HillChartPoint.builder()
-            .pitch(pitch)
-            .scope("Frontend Implementation")
-            .description("UI components and user interactions for " + pitch.getTitle())
-            .position(pitch.getStatus() == PitchStatus.DONE ? 90 : 60)
-            .build();
+    HillChartPoint point2 = HillChartPoint.builder().pitch(pitch).scope("Frontend Implementation")
+        .description("UI components and user interactions for " + pitch.getTitle())
+        .position(pitch.getStatus() == PitchStatus.DONE ? 90 : 60).build();
     hillChartPointRepository.save(point2);
 
-    HillChartPoint point3 =
-        HillChartPoint.builder()
-            .pitch(pitch)
-            .scope("Testing & QA")
-            .description("Test coverage and quality assurance")
-            .position(pitch.getStatus() == PitchStatus.DONE ? 100 : 35)
-            .build();
+    HillChartPoint point3 = HillChartPoint.builder().pitch(pitch).scope("Testing & QA")
+        .description("Test coverage and quality assurance")
+        .position(pitch.getStatus() == PitchStatus.DONE ? 100 : 35).build();
     hillChartPointRepository.save(point3);
 
-    HillChartPoint point4 =
-        HillChartPoint.builder()
-            .pitch(pitch)
-            .scope("Integration")
-            .description("Third-party integrations and API connections")
-            .position(pitch.getStatus() == PitchStatus.DONE ? 85 : 45)
-            .build();
+    HillChartPoint point4 = HillChartPoint.builder().pitch(pitch).scope("Integration")
+        .description("Third-party integrations and API connections")
+        .position(pitch.getStatus() == PitchStatus.DONE ? 85 : 45).build();
     hillChartPointRepository.save(point4);
   }
 
   private void createRetrospectives(Cycle cycle, Team team, Person... participants) {
-    // Note: Retrospective requires Project but we don't have that entity created yet
+    // Note: Retrospective requires Project but we don't have that entity created
+    // yet
     // Skip retrospective creation for now or create with minimal data
     // Commenting out to avoid compilation errors
     /*
-    Retrospective retro = Retrospective.builder()
-            .cycle(cycle)
-            .title("Retrospective for " + cycle.getName())
-            .notes("Team retrospective discussion")
-            .status(RetroStatus.COMPLETED)
-            .build();
-    retrospectiveRepository.save(retro);
-
-    // Retro items would go here but retrospective creation is disabled
-    */
+     * Retrospective retro = Retrospective.builder() .cycle(cycle)
+     * .title("Retrospective for " + cycle.getName())
+     * .notes("Team retrospective discussion") .status(RetroStatus.COMPLETED)
+     * .build(); retrospectiveRepository.save(retro);
+     *
+     * // Retro items would go here but retrospective creation is disabled
+     */
   }
 
   private void createManualNotes(Pitch pitch, Person creator) {
-    ManualNote note1 =
-        ManualNote.builder()
-            .title("API Coordination")
-            .content("Important: Need to coordinate with backend team on API contract changes")
-            .contextType("pitch")
-            .contextId(pitch.getId())
-            .pitchId(pitch.getId())
-            .authorId(creator.getId())
-            .includeInKnowledge(true)
-            .build();
+    ManualNote note1 = ManualNote.builder().title("API Coordination")
+        .content("Important: Need to coordinate with backend team on API contract changes").contextType("pitch")
+        .contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId()).includeInKnowledge(true)
+        .build();
     manualNoteRepository.save(note1);
 
-    ManualNote note2 =
-        ManualNote.builder()
-            .title("Rate Limiting Risk")
-            .content(
-                "Risk identified: Third-party service might have rate limiting issues under high load")
-            .contextType("pitch")
-            .contextId(pitch.getId())
-            .pitchId(pitch.getId())
-            .authorId(creator.getId())
-            .includeInKnowledge(true)
-            .build();
+    ManualNote note2 = ManualNote.builder().title("Rate Limiting Risk")
+        .content("Risk identified: Third-party service might have rate limiting issues under high load")
+        .contextType("pitch").contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId())
+        .includeInKnowledge(true).build();
     manualNoteRepository.save(note2);
 
-    ManualNote note3 =
-        ManualNote.builder()
-            .title("Technology Decision")
-            .content("Decision made: Use React Query for data fetching and caching")
-            .contextType("pitch")
-            .contextId(pitch.getId())
-            .pitchId(pitch.getId())
-            .authorId(creator.getId())
-            .includeInKnowledge(true)
-            .build();
+    ManualNote note3 = ManualNote.builder().title("Technology Decision")
+        .content("Decision made: Use React Query for data fetching and caching").contextType("pitch")
+        .contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId()).includeInKnowledge(true)
+        .build();
     manualNoteRepository.save(note3);
   }
 
   private void createCustomDashboards(Person... users) {
     for (Person user : users) {
       User userEntity = userRepository.findByPersonId(user.getId()).orElse(null);
-      if (userEntity == null) continue;
+      if (userEntity == null)
+        continue;
 
-      CustomDashboard dashboard =
-          CustomDashboard.builder()
-              .user(userEntity)
-              .name(user.getName() + "'s Dashboard")
-              .isDefault(true)
-              .build();
+      CustomDashboard dashboard = CustomDashboard.builder().user(userEntity).name(user.getName() + "'s Dashboard")
+          .isDefault(true).build();
       customDashboardRepository.save(dashboard);
     }
   }
@@ -1743,7 +746,8 @@ public class SampleDataInitializer implements CommandLineRunner {
   private void createUserPreferences(Person... users) {
     for (Person user : users) {
       User userEntity = userRepository.findByPersonId(user.getId()).orElse(null);
-      if (userEntity == null) continue;
+      if (userEntity == null)
+        continue;
 
       UserPreference pref = UserPreference.builder().user(userEntity).build();
       userPreferenceRepository.save(pref);
@@ -1753,43 +757,28 @@ public class SampleDataInitializer implements CommandLineRunner {
   private void createDashboardNotifications(Person... users) {
     for (int i = 0; i < users.length; i++) {
       User userEntity = userRepository.findByPersonId(users[i].getId()).orElse(null);
-      if (userEntity == null) continue;
+      if (userEntity == null)
+        continue;
 
       // Unread notification
-      DashboardNotification notif1 =
-          DashboardNotification.builder()
-              .user(userEntity)
-              .type("TASK_ASSIGNED")
-              .title("New Task Assigned")
-              .message("You have been assigned a new task: Review API documentation")
-              .isRead(false)
-              .createdAt(LocalDateTime.now().minusHours(i + 1))
-              .build();
+      DashboardNotification notif1 = DashboardNotification.builder().user(userEntity).type("TASK_ASSIGNED")
+          .title("New Task Assigned").message("You have been assigned a new task: Review API documentation")
+          .isRead(false).createdAt(LocalDateTime.now().minusHours(i + 1)).build();
       dashboardNotificationRepository.save(notif1);
 
       // Read notification
-      DashboardNotification notif2 =
-          DashboardNotification.builder()
-              .user(userEntity)
-              .type("PITCH_STATUS_CHANGED")
-              .title("Pitch Status Updated")
-              .message("Pitch 'User Dashboard Redesign' status changed to In Progress")
-              .isRead(true)
-              .createdAt(LocalDateTime.now().minusDays(i + 1))
-              .build();
+      DashboardNotification notif2 = DashboardNotification.builder().user(userEntity).type("PITCH_STATUS_CHANGED")
+          .title("Pitch Status Updated")
+          .message("Pitch 'User Dashboard Redesign' status changed to In Progress").isRead(true)
+          .createdAt(LocalDateTime.now().minusDays(i + 1)).build();
       dashboardNotificationRepository.save(notif2);
 
       // Meeting notification
       if (i % 2 == 0) {
-        DashboardNotification notif3 =
-            DashboardNotification.builder()
-                .user(userEntity)
-                .type("MEETING_SCHEDULED")
-                .title("Meeting Scheduled")
-                .message("Stand-up meeting scheduled for tomorrow at 10:00 AM")
-                .isRead(false)
-                .createdAt(LocalDateTime.now().minusHours(2))
-                .build();
+        DashboardNotification notif3 = DashboardNotification.builder().user(userEntity)
+            .type("MEETING_SCHEDULED").title("Meeting Scheduled")
+            .message("Stand-up meeting scheduled for tomorrow at 10:00 AM").isRead(false)
+            .createdAt(LocalDateTime.now().minusHours(2)).build();
         dashboardNotificationRepository.save(notif3);
       }
     }
@@ -1798,24 +787,20 @@ public class SampleDataInitializer implements CommandLineRunner {
   private void createRiskFeedback(Pitch pitch, Person... reviewers) {
     for (int i = 0; i < reviewers.length; i++) {
       User userEntity = userRepository.findByPersonId(reviewers[i].getId()).orElse(null);
-      if (userEntity == null) continue;
+      if (userEntity == null)
+        continue;
 
-      RiskFeedback feedback =
-          RiskFeedback.builder()
-              .pitch(pitch)
-              .user(userEntity)
-              .originalRiskScore(i == 0 ? 65 : 45)
-              .rating(i == 0 ? FeedbackRating.ACCURATE : FeedbackRating.ACCURATE)
-              .suggestedRiskScore(i == 0 ? 70 : null)
-              .notes(
-                  i == 0
-                      ? "Timeline might be tight given the scope. Consider reducing features or extending deadline."
-                      : "Overall looking good. Main dependencies are identified and team has necessary skills.")
-              .missedFactors(
-                  i == 0
-                      ? "Break down large features into smaller milestones for better tracking"
-                      : "Keep monitoring third-party API availability")
-              .build();
+      RiskFeedback feedback = RiskFeedback.builder().pitch(pitch).user(userEntity)
+          .originalRiskScore(i == 0 ? 65 : 45)
+          .rating(i == 0 ? FeedbackRating.ACCURATE : FeedbackRating.ACCURATE)
+          .suggestedRiskScore(i == 0 ? 70 : null)
+          .notes(i == 0
+              ? "Timeline might be tight given the scope. Consider reducing features or extending deadline."
+              : "Overall looking good. Main dependencies are identified and team has necessary skills.")
+          .missedFactors(i == 0
+              ? "Break down large features into smaller milestones for better tracking"
+              : "Keep monitoring third-party API availability")
+          .build();
       riskFeedbackRepository.save(feedback);
     }
   }

@@ -69,11 +69,14 @@ public class CycleController {
     return ResponseEntity.ok(cycleService.getCycleById(id));
   }
 
-  // Security Model: @RequirePermission allows any user with CREATE permission to invoke this
+  // Security Model: @RequirePermission allows any user with CREATE permission to
+  // invoke this
   // endpoint.
-  // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is enforced in
+  // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is
+  // enforced in
   // CycleService.
-  // Users without elevated roles can create cycles with auto-calculated end dates only.
+  // Users without elevated roles can create cycles with auto-calculated end dates
+  // only.
   @PostMapping
   @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.CREATE)
   @Operation(summary = "Create a new cycle")
@@ -81,16 +84,18 @@ public class CycleController {
     return ResponseEntity.status(HttpStatus.CREATED).body(cycleService.createCycle(request));
   }
 
-  // Security Model: @RequirePermission allows any user with UPDATE permission to invoke this
+  // Security Model: @RequirePermission allows any user with UPDATE permission to
+  // invoke this
   // endpoint.
-  // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is enforced in
+  // Role-based validation for custom end dates (ADMIN/PROJECT_MANAGER only) is
+  // enforced in
   // CycleService.
-  // Users without elevated roles can update cycles with auto-calculated end dates only.
+  // Users without elevated roles can update cycles with auto-calculated end dates
+  // only.
   @PutMapping("/{id}")
   @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.UPDATE)
   @Operation(summary = "Update a cycle")
-  public ResponseEntity<CycleDTO> updateCycle(
-      @PathVariable Long id, @Valid @RequestBody CreateCycleRequest request) {
+  public ResponseEntity<CycleDTO> updateCycle(@PathVariable Long id, @Valid @RequestBody CreateCycleRequest request) {
     return ResponseEntity.ok(cycleService.updateCycle(id, request));
   }
 
@@ -98,8 +103,7 @@ public class CycleController {
   @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.MANAGE)
   @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Update cycle phase")
-  public ResponseEntity<CycleDTO> updatePhase(
-      @PathVariable Long id, @RequestParam CyclePhase phase) {
+  public ResponseEntity<CycleDTO> updatePhase(@PathVariable Long id, @RequestParam CyclePhase phase) {
     return ResponseEntity.ok(cycleService.updatePhase(id, phase));
   }
 

@@ -32,36 +32,39 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
 
-  @Mock private UploadedDocumentRepository documentRepository;
+  @Mock
+  private UploadedDocumentRepository documentRepository;
 
-  @Mock private KnowledgeIngestionService knowledgeIngestionService;
+  @Mock
+  private KnowledgeIngestionService knowledgeIngestionService;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private DocumentService documentService;
+  @InjectMocks
+  private DocumentService documentService;
 
-  @TempDir Path tempDir;
+  @TempDir
+  Path tempDir;
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("file.not.found")) return "File not found or not readable";
-              if (key.contains("document.not.found")) return "File not found or not readable";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("file.not.found")) return "File not found or not readable";
-              if (key.contains("document.not.found")) return "File not found or not readable";
-              return key;
-            });
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("file.not.found"))
+        return "File not found or not readable";
+      if (key.contains("document.not.found"))
+        return "File not found or not readable";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("file.not.found"))
+        return "File not found or not readable";
+      if (key.contains("document.not.found"))
+        return "File not found or not readable";
+      return key;
+    });
 
     ReflectionTestUtils.setField(documentService, "uploadDir", tempDir.toString());
     ReflectionTestUtils.setField(documentService, "maxFileSize", 10485760L); // 10MB
@@ -74,21 +77,13 @@ class DocumentServiceTest {
     byte[] content = "PDF content".getBytes();
     MockMultipartFile file = new MockMultipartFile("file", fileName, "application/pdf", content);
 
-    UploadedDocument savedDoc =
-        UploadedDocument.builder()
-            .id(1L)
-            .fileName("uuid_" + fileName)
-            .originalFileName(fileName)
-            .fileType("pdf")
-            .fileSize((long) content.length)
-            .textExtracted(true)
-            .build();
+    UploadedDocument savedDoc = UploadedDocument.builder().id(1L).fileName("uuid_" + fileName)
+        .originalFileName(fileName).fileType("pdf").fileSize((long) content.length).textExtracted(true).build();
 
     when(documentRepository.save(any(UploadedDocument.class))).thenReturn(savedDoc);
 
     // When
-    DocumentUploadResponse response =
-        documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
+    DocumentUploadResponse response = documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
 
     // Then
     assertThat(response).isNotNull();
@@ -100,12 +95,10 @@ class DocumentServiceTest {
   @Test
   void uploadDocument_withEmptyFile_shouldReturnError() {
     // Given
-    MockMultipartFile emptyFile =
-        new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
+    MockMultipartFile emptyFile = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
 
     // When
-    DocumentUploadResponse response =
-        documentService.uploadDocument(emptyFile, "PITCH", 1L, 1L, "testuser");
+    DocumentUploadResponse response = documentService.uploadDocument(emptyFile, "PITCH", 1L, 1L, "testuser");
 
     // Then
     assertThat(response).isNotNull();
@@ -117,12 +110,11 @@ class DocumentServiceTest {
   @Test
   void uploadDocument_withUnsupportedFileType_shouldReturnError() {
     // Given
-    MockMultipartFile file =
-        new MockMultipartFile("file", "test.exe", "application/x-executable", "content".getBytes());
+    MockMultipartFile file = new MockMultipartFile("file", "test.exe", "application/x-executable",
+        "content".getBytes());
 
     // When
-    DocumentUploadResponse response =
-        documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
+    DocumentUploadResponse response = documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
 
     // Then
     assertThat(response).isNotNull();
@@ -139,8 +131,7 @@ class DocumentServiceTest {
     MockMultipartFile file = new MockMultipartFile("file", "large.txt", "text/plain", largeContent);
 
     // When
-    DocumentUploadResponse response =
-        documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
+    DocumentUploadResponse response = documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
 
     // Then
     assertThat(response).isNotNull();
@@ -154,8 +145,7 @@ class DocumentServiceTest {
     // Given
     UploadedDocument doc1 = UploadedDocument.builder().id(1L).originalFileName("doc1.pdf").build();
     UploadedDocument doc2 = UploadedDocument.builder().id(2L).originalFileName("doc2.pdf").build();
-    when(documentRepository.findByEntityTypeAndEntityId("PITCH", 1L))
-        .thenReturn(List.of(doc1, doc2));
+    when(documentRepository.findByEntityTypeAndEntityId("PITCH", 1L)).thenReturn(List.of(doc1, doc2));
 
     // When
     List<UploadedDocument> documents = documentService.getDocumentsByEntity("PITCH", 1L);
@@ -184,8 +174,7 @@ class DocumentServiceTest {
     when(documentRepository.findById(999L)).thenReturn(Optional.empty());
 
     // When/Then
-    assertThatThrownBy(() -> documentService.getDocumentById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> documentService.getDocumentById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Document not found");
   }
 
@@ -195,8 +184,7 @@ class DocumentServiceTest {
     Path testFile = tempDir.resolve("test-file.txt");
     Files.write(testFile, "content".getBytes());
 
-    UploadedDocument doc =
-        UploadedDocument.builder().id(1L).storagePath(testFile.toString()).build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).storagePath(testFile.toString()).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
 
@@ -214,13 +202,8 @@ class DocumentServiceTest {
     Path testFile = tempDir.resolve("download-test.pdf");
     Files.write(testFile, "PDF content".getBytes());
 
-    UploadedDocument doc =
-        UploadedDocument.builder()
-            .id(1L)
-            .originalFileName("document.pdf")
-            .fileType("pdf")
-            .storagePath(testFile.toString())
-            .build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("document.pdf").fileType("pdf")
+        .storagePath(testFile.toString()).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
 
@@ -231,8 +214,7 @@ class DocumentServiceTest {
     assertThat(response).isNotNull();
     assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
-    assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-        .contains("attachment")
+    assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).contains("attachment")
         .contains("document.pdf");
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().exists()).isTrue();
@@ -244,13 +226,8 @@ class DocumentServiceTest {
     Path testFile = tempDir.resolve("document.docx");
     Files.write(testFile, "DOCX content".getBytes());
 
-    UploadedDocument doc =
-        UploadedDocument.builder()
-            .id(1L)
-            .originalFileName("report.docx")
-            .fileType("docx")
-            .storagePath(testFile.toString())
-            .build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("report.docx").fileType("docx")
+        .storagePath(testFile.toString()).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
 
@@ -258,10 +235,8 @@ class DocumentServiceTest {
     ResponseEntity<Resource> response = documentService.downloadDocument(1L);
 
     // Then
-    assertThat(response.getHeaders().getContentType())
-        .isEqualTo(
-            MediaType.parseMediaType(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+    assertThat(response.getHeaders().getContentType()).isEqualTo(
+        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
   }
 
   @Test
@@ -270,13 +245,8 @@ class DocumentServiceTest {
     Path testFile = tempDir.resolve("notes.txt");
     Files.write(testFile, "Text content".getBytes());
 
-    UploadedDocument doc =
-        UploadedDocument.builder()
-            .id(1L)
-            .originalFileName("notes.txt")
-            .fileType("txt")
-            .storagePath(testFile.toString())
-            .build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("notes.txt").fileType("txt")
+        .storagePath(testFile.toString()).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
 
@@ -290,19 +260,13 @@ class DocumentServiceTest {
   @Test
   void downloadDocument_whenFileNotFound_shouldThrowException() {
     // Given
-    UploadedDocument doc =
-        UploadedDocument.builder()
-            .id(1L)
-            .originalFileName("missing.pdf")
-            .fileType("pdf")
-            .storagePath(tempDir.resolve("non-existent.pdf").toString())
-            .build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("missing.pdf").fileType("pdf")
+        .storagePath(tempDir.resolve("non-existent.pdf").toString()).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
 
     // When/Then
-    assertThatThrownBy(() -> documentService.downloadDocument(1L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> documentService.downloadDocument(1L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("File not found or not readable");
   }
 
@@ -310,8 +274,7 @@ class DocumentServiceTest {
   void extractTextFromFile_withTextFile_shouldExtractContent() throws IOException {
     // Given
     String textContent = "This is a test document";
-    MockMultipartFile file =
-        new MockMultipartFile("file", "test.txt", "text/plain", textContent.getBytes());
+    MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", textContent.getBytes());
 
     // When
     String extracted = documentService.extractTextFromFile(file);
@@ -338,29 +301,18 @@ class DocumentServiceTest {
   @Test
   void linkDocumentToEntity_whenDocumentExists_shouldUpdateEntity() {
     // Given
-    UploadedDocument doc =
-        UploadedDocument.builder()
-            .id(1L)
-            .fileName("test.pdf")
-            .originalFileName("test.pdf")
-            .entityType("PITCH")
-            .entityId(0L)
-            .build();
+    UploadedDocument doc = UploadedDocument.builder().id(1L).fileName("test.pdf").originalFileName("test.pdf")
+        .entityType("PITCH").entityId(0L).build();
 
     when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
-    when(documentRepository.save(any(UploadedDocument.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(documentRepository.save(any(UploadedDocument.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     // When
     documentService.linkDocumentToEntity(1L, "PITCH", 123L);
 
     // Then
-    verify(documentRepository)
-        .save(
-            argThat(
-                document ->
-                    document.getEntityType().equals("PITCH")
-                        && document.getEntityId().equals(123L)));
+    verify(documentRepository).save(
+        argThat(document -> document.getEntityType().equals("PITCH") && document.getEntityId().equals(123L)));
   }
 
   @Test
@@ -370,7 +322,6 @@ class DocumentServiceTest {
 
     // When/Then
     assertThatThrownBy(() -> documentService.linkDocumentToEntity(999L, "PITCH", 123L))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Document not found");
+        .isInstanceOf(RuntimeException.class).hasMessageContaining("Document not found");
   }
 }

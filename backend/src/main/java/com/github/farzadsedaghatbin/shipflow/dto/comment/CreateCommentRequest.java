@@ -18,13 +18,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateCommentRequest {
 
-    @NotBlank(message = "Comment content is required")
-    @Size(min = 1, max = 10000, message = "Comment content must be between 1 and 10000 characters")
-    private String content;
+  @NotBlank(message = "Comment content is required")
+  @Size(min = 1, max = 10000, message = "Comment content must be between 1 and 10000 characters")
+  private String content;
 
-    @NotNull(message = "Entity type is required")
-    private CommentEntityType entityType;
+  @NotNull(message = "Entity type is required")
+  private CommentEntityType entityType;
 
-    @NotNull(message = "Entity ID is required")
-    private Long entityId;
+  @NotNull(message = "Entity ID is required")
+  private Long entityId;
 }

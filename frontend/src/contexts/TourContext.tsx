@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { driver, DriveStep, Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 interface TourStep extends DriveStep {
   route?: string;
@@ -27,10 +29,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   });
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   
   // Track if navigation was triggered by the tour driver
   const isNavigatingRef = useRef(false);
   const expectedRouteRef = useRef<string | null>(null);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
+  const pendingDestroyRef = useRef<Driver | null>(null);
 
   // Tour steps definition
   const getTourSteps = useCallback((): TourStep[] => [
@@ -271,13 +276,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       },
       onDestroyStarted: () => {
         if (newDriver.hasNextStep()) {
-          // User clicked close/skip
-          const confirmed = window.confirm('Are you sure you want to skip the tour? You can restart it anytime from the help button.');
-          if (!confirmed) {
-            return;
-          }
+          // User clicked close/skip - show confirmation dialog
+          pendingDestroyRef.current = newDriver;
+          setSkipConfirmOpen(true);
+          return;
         }
-        // Tour completed or confirmed skip
+        // Tour completed naturally
         localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
         setHasCompletedTour(true);
         newDriver.destroy();
@@ -297,6 +301,22 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       newDriver.drive();
     }
   }, [driverInstance, getTourSteps, navigate, location.pathname]);
+
+  const handleSkipConfirm = useCallback(() => {
+    if (pendingDestroyRef.current) {
+      localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
+      setHasCompletedTour(true);
+      pendingDestroyRef.current.destroy();
+      pendingDestroyRef.current = null;
+      setIsTourActive(false);
+    }
+    setSkipConfirmOpen(false);
+  }, []);
+
+  const handleSkipCancel = useCallback(() => {
+    pendingDestroyRef.current = null;
+    setSkipConfirmOpen(false);
+  }, []);
 
   const resetTour = useCallback(() => {
     localStorage.removeItem(TOUR_COMPLETED_KEY);
@@ -359,6 +379,17 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      
+      {/* Skip Tour Confirmation Dialog */}
+      <ConfirmDialog
+        open={skipConfirmOpen}
+        onOpenChange={handleSkipCancel}
+        title={t('tour.skipTitle')}
+        description={t('tour.skipDescription')}
+        confirmLabel={t('tour.skip')}
+        cancelLabel={t('tour.continue')}
+        onConfirm={handleSkipConfirm}
+      />
     </TourContext.Provider>
   );
 }

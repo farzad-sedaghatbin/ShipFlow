@@ -24,11 +24,9 @@ public class TeamPerformanceHistoryDTO {
 
   // Average metrics
   private Double avgBetsPerCycle;
-  private Double
-      avgWeeksPerBet; // Calculated from actual cycle durations divided by bet counts (nullable if
+  private Double avgWeeksPerBet; // Calculated from actual cycle durations divided by bet counts (nullable if
   // no completed cycles)
-  private Double
-      avgTimeOverrun; // Percentage: (actual hours - appetite hours) / appetite hours * 100,
+  private Double avgTimeOverrun; // Percentage: (actual hours - appetite hours) / appetite hours * 100,
   // averaged across completed bets (nullable if no completed bets)
 
   // Recent trends (last 3 cycles)

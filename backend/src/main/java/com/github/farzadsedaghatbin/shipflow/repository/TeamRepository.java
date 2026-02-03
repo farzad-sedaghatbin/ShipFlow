@@ -11,18 +11,11 @@ import org.springframework.stereotype.Repository;
 public interface TeamRepository extends JpaRepository<Team, Long> {
   List<Team> findByCycleId(Long cycleId);
 
-  @Query(
-      "SELECT t FROM Team t "
-          + "LEFT JOIN FETCH t.assignments a "
-          + "LEFT JOIN FETCH t.cycle c "
-          + "LEFT JOIN FETCH c.project")
+  @Query("SELECT t FROM Team t " + "LEFT JOIN FETCH t.assignments a " + "LEFT JOIN FETCH t.cycle c "
+      + "LEFT JOIN FETCH c.project")
   List<Team> findAllWithAssignments();
 
-  @Query(
-      "SELECT t FROM Team t "
-          + "LEFT JOIN FETCH t.assignments a "
-          + "LEFT JOIN FETCH t.cycle c "
-          + "LEFT JOIN FETCH c.project "
-          + "WHERE t.id = :id")
+  @Query("SELECT t FROM Team t " + "LEFT JOIN FETCH t.assignments a " + "LEFT JOIN FETCH t.cycle c "
+      + "LEFT JOIN FETCH c.project " + "WHERE t.id = :id")
   Optional<Team> findByIdWithAssignments(Long id);
 }

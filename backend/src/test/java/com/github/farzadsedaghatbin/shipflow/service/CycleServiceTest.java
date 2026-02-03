@@ -15,7 +15,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -36,21 +38,38 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class CycleServiceTest {
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private ProjectRepository projectRepository;
+  @Mock
+  private ProjectRepository projectRepository;
 
-  @Mock private DashboardNotificationService notificationService;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private RetroRepository retroRepository;
 
-  @Mock private OrganizationSettingsService organizationSettingsService;
+  @Mock
+  private DashboardNotificationService notificationService;
 
-  @Mock private SecurityContext securityContext;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private Authentication authentication;
+  @Mock
+  private OrganizationSettingsService organizationSettingsService;
 
-  @InjectMocks private CycleService cycleService;
+  @Mock
+  private MessageService messageService;
+
+  @Mock
+  private SecurityContext securityContext;
+
+  @Mock
+  private Authentication authentication;
+
+  @InjectMocks
+  private CycleService cycleService;
 
   private Cycle testCycle;
   private Project testProject;
@@ -61,19 +80,10 @@ class CycleServiceTest {
 
   @BeforeEach
   void setUp() {
-    testProject =
-        Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true).build();
+    testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true).build();
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .project(testProject)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").project(testProject).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
 
     testRequest = new CreateCycleRequest();
     testRequest.setProjectId(1L);
@@ -89,6 +99,10 @@ class CycleServiceTest {
 
     // Setup organization settings
     orgSettings = OrganizationSettingsDTO.builder().defaultCycleLengthWeeks(6).build();
+
+    // Setup pitch count mock (default to 0 for most tests) - using lenient to avoid
+    // unnecessary stubbing errors
+    lenient().when(pitchRepository.countByCycleIdNotDeleted(any())).thenReturn(0L);
   }
 
   @Test
@@ -117,8 +131,7 @@ class CycleServiceTest {
   void getCycleById_WhenNotExists_ShouldThrowException() {
     when(cycleRepository.findByIdWithProject(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> cycleService.getCycleById(999L))
-        .isInstanceOf(ResourceNotFoundException.class)
+    assertThatThrownBy(() -> cycleService.getCycleById(999L)).isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Cycle not found");
   }
 
@@ -177,8 +190,8 @@ class CycleServiceTest {
 
     assertThat(result).isNotNull();
     verify(cycleRepository).save(any(Cycle.class));
-    verify(notificationService)
-        .notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD), eq(CyclePhase.COOLDOWN));
+    verify(notificationService).notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD),
+        eq(CyclePhase.COOLDOWN));
   }
 
   @Test
@@ -206,8 +219,7 @@ class CycleServiceTest {
 
   @Test
   void getCyclesByProject_ShouldReturnCyclesForProject() {
-    when(cycleRepository.findByProjectIdOrderByStartDateDesc(1L))
-        .thenReturn(Arrays.asList(testCycle));
+    when(cycleRepository.findByProjectIdOrderByStartDateDesc(1L)).thenReturn(Arrays.asList(testCycle));
 
     List<CycleDTO> result = cycleService.getCyclesByProject(1L);
 
@@ -289,8 +301,7 @@ class CycleServiceTest {
     when(userRepository.findByUsername("developer")).thenReturn(Optional.of(developerUser));
 
     // Act & Assert
-    assertThatThrownBy(() -> cycleService.createCycle(testRequest))
-        .isInstanceOf(AccessDeniedException.class)
+    assertThatThrownBy(() -> cycleService.createCycle(testRequest)).isInstanceOf(AccessDeniedException.class)
         .hasMessageContaining("Only users with ADMIN or PROJECT_MANAGER role");
 
     verify(userRepository).findByUsername("developer");
@@ -365,9 +376,87 @@ class CycleServiceTest {
         .thenReturn(Optional.of(User.builder().username("qa").role(UserRole.MEMBER).build()));
 
     // Act & Assert
-    assertThatThrownBy(() -> cycleService.updateCycle(1L, testRequest))
-        .isInstanceOf(AccessDeniedException.class)
+    assertThatThrownBy(() -> cycleService.updateCycle(1L, testRequest)).isInstanceOf(AccessDeniedException.class)
         .hasMessageContaining("Only users with ADMIN or PROJECT_MANAGER role");
+  }
+
+  @Test
+  void toDTO_ShouldExcludeDeletedPitchesFromCount() {
+    // Given
+    when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(3L); // 3 active pitches
+
+    // When
+    CycleDTO result = cycleService.getCycleById(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(1L);
+    assertThat(result.getName()).isEqualTo("Test Cycle");
+    assertThat(result.getPitchCount()).isEqualTo(3); // Should use count from repository, not entity collection
+
+    // Verify that the count method was called
+    verify(pitchRepository).countByCycleIdNotDeleted(1L);
+  }
+
+  @Test
+  void toDTO_ShouldReturnZeroPitchCount_WhenNoPitchesExist() {
+    // Given
+    when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(0L);
+
+    // When
+    CycleDTO result = cycleService.getCycleById(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getPitchCount()).isEqualTo(0);
+    verify(pitchRepository).countByCycleIdNotDeleted(1L);
+  }
+
+  @Test
+  void toDTO_ShouldReturnZeroPitchCount_WhenAllPitchesAreDeleted() {
+    // Given - cycle has pitches in entity collection but none are active
+    when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(0L); // All pitches are deleted
+
+    // When
+    CycleDTO result = cycleService.getCycleById(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getPitchCount()).isEqualTo(0); // Should be 0 even if entity has pitches
+    verify(pitchRepository).countByCycleIdNotDeleted(1L);
+  }
+
+  @Test
+  void getAllCycles_ShouldUsePitchCountFromRepository() {
+    // Given
+    when(cycleRepository.findAllByOrderByStartDateDesc()).thenReturn(Arrays.asList(testCycle));
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(5L);
+
+    // When
+    List<CycleDTO> result = cycleService.getAllCycles();
+
+    // Then
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getPitchCount()).isEqualTo(5);
+    verify(pitchRepository).countByCycleIdNotDeleted(1L);
+  }
+
+  @Test
+  void getActiveCycles_ShouldUsePitchCountFromRepository() {
+    // Given
+    when(cycleRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(testCycle));
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(2L);
+
+    // When
+    List<CycleDTO> result = cycleService.getActiveCycles();
+
+    // Then
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getPitchCount()).isEqualTo(2);
+    verify(pitchRepository).countByCycleIdNotDeleted(1L);
   }
 
   private void setupSecurityContext(String username, User user) {

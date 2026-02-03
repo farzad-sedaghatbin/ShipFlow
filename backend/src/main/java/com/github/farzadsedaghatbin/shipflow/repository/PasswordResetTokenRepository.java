@@ -17,10 +17,8 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
   Optional<PasswordResetToken> findByTokenAndUsedFalse(String token);
 
-  @Query(
-      "SELECT t FROM PasswordResetToken t WHERE t.user = :user AND t.used = false AND t.expiryDate > :now ORDER BY t.createdAt DESC")
-  Optional<PasswordResetToken> findValidTokenByUser(
-      @Param("user") User user, @Param("now") LocalDateTime now);
+  @Query("SELECT t FROM PasswordResetToken t WHERE t.user = :user AND t.used = false AND t.expiryDate > :now ORDER BY t.createdAt DESC")
+  Optional<PasswordResetToken> findValidTokenByUser(@Param("user") User user, @Param("now") LocalDateTime now);
 
   @Modifying
   @Query("UPDATE PasswordResetToken t SET t.used = true WHERE t.user = :user")

@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Configuration container for LLM providers. Supports common settings and provider-specific extra
- * parameters.
+ * Configuration container for LLM providers. Supports common settings and
+ * provider-specific extra parameters.
  */
 public class LLMProviderConfig {
 
@@ -126,21 +126,8 @@ public class LLMProviderConfig {
 
   @Override
   public String toString() {
-    return "LLMProviderConfig{"
-        + "baseUrl='"
-        + baseUrl
-        + '\''
-        + ", modelName='"
-        + modelName
-        + '\''
-        + ", timeout="
-        + timeout
-        + ", temperature="
-        + temperature
-        + ", maxTokens="
-        + maxTokens
-        + ", extraParams="
-        + extraParams.keySet()
-        + '}';
+    return "LLMProviderConfig{" + "baseUrl='" + baseUrl + '\'' + ", modelName='" + modelName + '\'' + ", timeout="
+        + timeout + ", temperature=" + temperature + ", maxTokens=" + maxTokens + ", extraParams="
+        + extraParams.keySet() + '}';
   }
 }

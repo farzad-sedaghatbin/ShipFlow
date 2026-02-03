@@ -20,10 +20,6 @@ public class UserSecurity {
     }
 
     String username = authentication.getName();
-    return userRepository
-        .findByUsername(username)
-        .map(User::getId)
-        .map(id -> id.equals(userId))
-        .orElse(false);
+    return userRepository.findByUsername(username).map(User::getId).map(id -> id.equals(userId)).orElse(false);
   }
 }

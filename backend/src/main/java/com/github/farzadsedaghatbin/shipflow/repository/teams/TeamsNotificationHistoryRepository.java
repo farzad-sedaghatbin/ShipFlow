@@ -6,11 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TeamsNotificationHistoryRepository
-    extends JpaRepository<TeamsNotificationHistory, Long> {
+public interface TeamsNotificationHistoryRepository extends JpaRepository<TeamsNotificationHistory, Long> {
 
   List<TeamsNotificationHistory> findByTeamsConfigurationIdOrderBySentAtDesc(Long teamsConfigId);
 
-  List<TeamsNotificationHistory> findTop50ByTeamsConfigurationIdOrderBySentAtDesc(
-      Long teamsConfigId);
+  List<TeamsNotificationHistory> findTop50ByTeamsConfigurationIdOrderBySentAtDesc(Long teamsConfigId);
 }

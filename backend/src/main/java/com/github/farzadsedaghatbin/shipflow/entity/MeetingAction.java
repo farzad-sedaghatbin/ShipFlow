@@ -33,7 +33,8 @@ public class MeetingAction {
   @Column(nullable = false)
   private ActionStatus status;
 
-  @Column private LocalDate dueDate;
+  @Column
+  private LocalDate dueDate;
 
   @Column(columnDefinition = "TEXT")
   private String notes;

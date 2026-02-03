@@ -32,7 +32,8 @@ public class GlobalExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @Autowired private MessageSource messageSource;
+  @Autowired
+  private MessageSource messageSource;
 
   /** Get a localized message for the given key. */
   private String getMessage(String key, Object... args) {
@@ -51,8 +52,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(AuthenticationException.class)
-  public ResponseEntity<Map<String, Object>> handleAuthenticationException(
-      AuthenticationException ex) {
+  public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("message", getMessage("auth.login.failed"));
@@ -62,8 +62,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(BadCredentialsException.class)
-  public ResponseEntity<Map<String, Object>> handleBadCredentialsException(
-      BadCredentialsException ex) {
+  public ResponseEntity<Map<String, Object>> handleBadCredentialsException(BadCredentialsException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("message", getMessage("auth.login.failed"));
@@ -73,8 +72,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(
-      ResourceNotFoundException ex) {
+  public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("message", getMessage("error.resource.not.found"));
@@ -85,8 +83,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
-      IllegalArgumentException ex) {
+  public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("message", ex.getMessage());
@@ -106,8 +103,7 @@ public class GlobalExceptionHandler {
     String rootCause = ex.getMostSpecificCause().getMessage();
 
     if (rootCause != null) {
-      if (rootCause.contains("Unique index or primary key violation")
-          || rootCause.contains("duplicate key")) {
+      if (rootCause.contains("Unique index or primary key violation") || rootCause.contains("duplicate key")) {
         if (rootCause.contains("PROJECT_KEY") || rootCause.contains("project_key")) {
           message = getMessage("project.key.duplicate");
           messageKey = "project.key.duplicate";
@@ -143,9 +139,9 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handle client disconnection exceptions (ClientAbortException, IOException: Connection reset by
-   * peer, etc.) These are normal network conditions, not server errors, so we log them at DEBUG
-   * level instead of ERROR.
+   * Handle client disconnection exceptions (ClientAbortException, IOException:
+   * Connection reset by peer, etc.) These are normal network conditions, not
+   * server errors, so we log them at DEBUG level instead of ERROR.
    */
   @ExceptionHandler(ClientAbortException.class)
   public void handleClientAbortException(ClientAbortException ex) {
@@ -154,20 +150,19 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handle general IO exceptions, particularly connection reset errors. Log at DEBUG level if it's
-   * a connection issue, ERROR level otherwise.
+   * Handle general IO exceptions, particularly connection reset errors. Log at
+   * DEBUG level if it's a connection issue, ERROR level otherwise.
    */
   @ExceptionHandler(IOException.class)
   public ResponseEntity<Map<String, Object>> handleIOException(IOException ex) {
     String message = ex.getMessage();
 
     // Check if this is a client disconnection issue
-    if (message != null
-        && (message.contains("Connection reset by peer")
-            || message.contains("Broken pipe")
-            || message.contains("An established connection was aborted"))) {
+    if (message != null && (message.contains("Connection reset by peer") || message.contains("Broken pipe")
+        || message.contains("An established connection was aborted"))) {
       log.debug("Client connection issue: {}", message);
-      // Return null to indicate no response should be sent (client already disconnected)
+      // Return null to indicate no response should be sent (client already
+      // disconnected)
       return null;
     }
 
@@ -210,16 +205,16 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Check if an exception is related to client disconnection by examining the exception chain and
-   * error messages for common client disconnection indicators.
+   * Check if an exception is related to client disconnection by examining the
+   * exception chain and error messages for common client disconnection
+   * indicators.
    */
   private boolean isClientDisconnectionException(Exception ex) {
     // Check the exception chain for client disconnection indicators
     Throwable cause = ex;
     while (cause != null) {
       // Check exception type
-      if (cause instanceof ClientAbortException
-          || cause instanceof java.net.SocketException
+      if (cause instanceof ClientAbortException || cause instanceof java.net.SocketException
           || (cause instanceof IOException && isConnectionResetMessage(cause.getMessage()))) {
         return true;
       }
@@ -242,58 +237,45 @@ public class GlobalExceptionHandler {
     }
 
     String lowerMessage = message.toLowerCase();
-    return lowerMessage.contains("connection reset by peer")
-        || lowerMessage.contains("broken pipe")
+    return lowerMessage.contains("connection reset by peer") || lowerMessage.contains("broken pipe")
         || lowerMessage.contains("an established connection was aborted")
-        || lowerMessage.contains("connection was forcibly closed")
-        || lowerMessage.contains("socket closed")
+        || lowerMessage.contains("connection was forcibly closed") || lowerMessage.contains("socket closed")
         || lowerMessage.contains("client abort");
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<Map<String, Object>> handleValidationExceptions(
-      MethodArgumentNotValidException ex) {
+  public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("status", HttpStatus.BAD_REQUEST.value());
 
     Map<String, String> fieldErrors = new HashMap<>();
-    ex.getBindingResult()
-        .getAllErrors()
-        .forEach(
-            (err) -> {
-              String fieldName = ((FieldError) err).getField();
-              String errorMessage = err.getDefaultMessage();
-              fieldErrors.put(fieldName, errorMessage);
-            });
+    ex.getBindingResult().getAllErrors().forEach((err) -> {
+      String fieldName = ((FieldError) err).getField();
+      String errorMessage = err.getDefaultMessage();
+      fieldErrors.put(fieldName, errorMessage);
+    });
     error.put("errors", fieldErrors);
 
     return ResponseEntity.badRequest().body(error);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
-      ConstraintViolationException ex) {
+  public ResponseEntity<Map<String, Object>> handleConstraintViolationException(ConstraintViolationException ex) {
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
     error.put("status", HttpStatus.BAD_REQUEST.value());
 
-    String message =
-        ex.getConstraintViolations().stream()
-            .map(ConstraintViolation::getMessage)
-            .collect(Collectors.joining(", "));
+    String message = ex.getConstraintViolations().stream().map(ConstraintViolation::getMessage)
+        .collect(Collectors.joining(", "));
 
     error.put("message", message);
     return ResponseEntity.badRequest().body(error);
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  public ResponseEntity<Map<String, Object>> handleTypeMismatchException(
-      MethodArgumentTypeMismatchException ex) {
-    log.warn(
-        "Type mismatch for parameter '{}': received '{}', expected type '{}'",
-        ex.getName(),
-        ex.getValue(),
+  public ResponseEntity<Map<String, Object>> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+    log.warn("Type mismatch for parameter '{}': received '{}', expected type '{}'", ex.getName(), ex.getValue(),
         ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
 
     Map<String, Object> error = new HashMap<>();
@@ -302,14 +284,10 @@ public class GlobalExceptionHandler {
 
     String parameterName = ex.getName();
     String receivedValue = String.valueOf(ex.getValue());
-    String expectedType =
-        ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
+    String expectedType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
 
-    error.put(
-        "message",
-        String.format(
-            "Invalid value '%s' for parameter '%s'. Expected a valid %s.",
-            receivedValue, parameterName, expectedType));
+    error.put("message", String.format("Invalid value '%s' for parameter '%s'. Expected a valid %s.", receivedValue,
+        parameterName, expectedType));
     error.put("parameter", parameterName);
     error.put("invalidValue", receivedValue);
     error.put("expectedType", expectedType);
@@ -318,8 +296,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
-  public ResponseEntity<Map<String, Object>> handleMissingRequestHeaderException(
-      MissingRequestHeaderException ex) {
+  public ResponseEntity<Map<String, Object>> handleMissingRequestHeaderException(MissingRequestHeaderException ex) {
     log.warn("Missing required header: {}", ex.getHeaderName());
 
     Map<String, Object> error = new HashMap<>();

@@ -34,17 +34,23 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
 
-  @Mock private ProjectRepository projectRepository;
+  @Mock
+  private ProjectRepository projectRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private UserProjectRepository userProjectRepository;
+  @Mock
+  private UserProjectRepository userProjectRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private ProjectService projectService;
+  @InjectMocks
+  private ProjectService projectService;
 
   private Project testProject;
   private User testOwner;
@@ -53,49 +59,35 @@ class ProjectServiceTest {
   @BeforeEach
   void setUp() {
     // Set up security context with authenticated user
-    UsernamePasswordAuthenticationToken auth =
-        new UsernamePasswordAuthenticationToken(
-            "owner", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_MANAGER")));
+    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken("owner", null,
+        Collections.singletonList(new SimpleGrantedAuthority("ROLE_MANAGER")));
     SecurityContextHolder.getContext().setAuthentication(auth);
 
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("project.key.exists")) return "Project key already exists";
-              if (key.contains("project.has.cycles"))
-                return "Cannot delete project with existing cycles";
-              if (key.contains("project.cannot.delete.with.cycles"))
-                return "Cannot delete project with existing cycles";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("project.key.exists")) return "Project key already exists";
-              if (key.contains("project.has.cycles"))
-                return "Cannot delete project with existing cycles";
-              if (key.contains("project.cannot.delete.with.cycles"))
-                return "Cannot delete project with existing cycles";
-              return key;
-            });
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("project.key.exists"))
+        return "Project key already exists";
+      if (key.contains("project.has.cycles"))
+        return "Cannot delete project with existing cycles";
+      if (key.contains("project.cannot.delete.with.cycles"))
+        return "Cannot delete project with existing cycles";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("project.key.exists"))
+        return "Project key already exists";
+      if (key.contains("project.has.cycles"))
+        return "Cannot delete project with existing cycles";
+      if (key.contains("project.cannot.delete.with.cycles"))
+        return "Cannot delete project with existing cycles";
+      return key;
+    });
 
     testOwner = User.builder().id(1L).username("owner").role(UserRole.MANAGER).build();
 
-    testProject =
-        Project.builder()
-            .id(1L)
-            .name("Test Project")
-            .projectKey("TST")
-            .description("Test Description")
-            .color("#FF0000")
-            .owner(testOwner)
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").description("Test Description")
+        .color("#FF0000").owner(testOwner).isActive(true).createdAt(LocalDateTime.now()).build();
 
     testRequest = new CreateProjectRequest();
     testRequest.setName("Test Project");
@@ -196,8 +188,7 @@ class ProjectServiceTest {
   void create_WithDuplicateKey_ShouldThrowException() {
     when(projectRepository.existsByProjectKey("TST")).thenReturn(true);
 
-    assertThatThrownBy(() -> projectService.create(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> projectService.create(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Project key already exists");
   }
 
@@ -219,14 +210,8 @@ class ProjectServiceTest {
   @Test
   void deactivate_ShouldDeactivateProject() {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-    Project deactivated =
-        Project.builder()
-            .id(1L)
-            .name("Test Project")
-            .projectKey("TST")
-            .isActive(false)
-            .createdAt(LocalDateTime.now())
-            .build();
+    Project deactivated = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(false)
+        .createdAt(LocalDateTime.now()).build();
     when(projectRepository.save(any(Project.class))).thenReturn(deactivated);
     when(cycleRepository.countByProjectId(1L)).thenReturn(0L);
     when(cycleRepository.countActiveByProjectId(1L)).thenReturn(0L);
@@ -252,8 +237,7 @@ class ProjectServiceTest {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
     when(cycleRepository.countByProjectId(1L)).thenReturn(3L);
 
-    assertThatThrownBy(() -> projectService.delete(1L))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> projectService.delete(1L)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Cannot delete project with existing cycles");
   }
 }

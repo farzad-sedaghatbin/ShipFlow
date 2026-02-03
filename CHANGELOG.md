@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **@Mention Support in Comments**
+  - **User Mentions**: Type `@` to mention users in comments with autocomplete suggestions
+  - **Real-time Search**: Debounced user search as you type (150ms delay)
+  - **Keyboard Navigation**: Arrow Up/Down to navigate, Enter to select, Escape to close
+  - **Mention Highlighting**: Mentioned usernames displayed in primary color
+  - **Notification System**: Mentioned users receive in-app dashboard notifications
+  - **Slack Integration**: Mention notifications sent to Slack channels
+  - **Self-mention Prevention**: Users don't receive notifications for mentioning themselves
+  - **API Endpoint**: New `/api/comments/users/search` for mention autocomplete
+  - **Internationalization**: Full i18n support (English/Persian) for mention UI
+
+### Fixed
+- **Pitch Count Accuracy in Cycle Display**
+  - **Soft Delete Exclusion**: Cycle pitch count now correctly excludes deleted (soft-deleted) pitches
+  - **Database Query Optimization**: Added `countByCycleIdNotDeleted()` method for efficient counting
+  - **API Consistency**: All cycle endpoints (list, active, by-project) now return accurate pitch counts
+  - **Test Coverage**: Comprehensive unit and integration tests for pitch count functionality
+  - **Data Integrity**: Ensures UI displays reflect actual active pitch numbers
+
 ## [0.3.11] - 2026-02-03
 
 ### Added

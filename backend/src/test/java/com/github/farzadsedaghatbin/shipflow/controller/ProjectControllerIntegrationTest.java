@@ -31,17 +31,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class ProjectControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private ProjectRepository projectRepository;
+  @Autowired
+  private ProjectRepository projectRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-  @Autowired private PersonRepository personRepository;
+  @Autowired
+  private PersonRepository personRepository;
 
   private Project testProject;
 
@@ -54,33 +60,16 @@ class ProjectControllerIntegrationTest {
     projectRepository.flush();
 
     // Create admin user to match @WithMockUser
-    Person adminPerson =
-        Person.builder()
-            .name("Admin User")
-            .email("admin@example.com")
-            .isActive(true)
-            .createdAt(java.time.LocalDateTime.now())
-            .build();
+    Person adminPerson = Person.builder().name("Admin User").email("admin@example.com").isActive(true)
+        .createdAt(java.time.LocalDateTime.now()).build();
     adminPerson = personRepository.save(adminPerson);
 
-    User adminUser =
-        User.builder()
-            .username("user")
-            .password("password")
-            .role(UserRole.ADMIN)
-            .person(adminPerson)
-            .isActive(true)
-            .build();
+    User adminUser = User.builder().username("user").password("password").role(UserRole.ADMIN).person(adminPerson)
+        .isActive(true).build();
     userRepository.save(adminUser);
 
-    testProject =
-        Project.builder()
-            .name("Test Project")
-            .projectKey("TST")
-            .description("Test Description")
-            .color("#FF0000")
-            .isActive(true)
-            .build();
+    testProject = Project.builder().name("Test Project").projectKey("TST").description("Test Description")
+        .color("#FF0000").isActive(true).build();
     testProject = projectRepository.save(testProject);
     projectRepository.flush();
   }
@@ -88,9 +77,7 @@ class ProjectControllerIntegrationTest {
   @Test
   @WithMockUser(roles = "ADMIN")
   void getAllProjects_ShouldReturnProjects() throws Exception {
-    mockMvc
-        .perform(get("/api/projects"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/projects")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$[0].name", is("Test Project")));
@@ -99,23 +86,17 @@ class ProjectControllerIntegrationTest {
   @Test
   @WithMockUser(roles = "ADMIN")
   void getActiveProjects_ShouldReturnActiveProjects() throws Exception {
-    mockMvc
-        .perform(get("/api/projects/active"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$", hasSize(1)));
+    mockMvc.perform(get("/api/projects/active")).andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)));
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void getProjectById_WhenExists_ShouldReturnProject() throws Exception {
-    mockMvc
-        .perform(get("/api/projects/{id}", testProject.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/projects/{id}", testProject.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id", is(testProject.getId().intValue())))
-        .andExpect(jsonPath("$.name", is("Test Project")))
-        .andExpect(jsonPath("$.projectKey", is("TST")));
+        .andExpect(jsonPath("$.name", is("Test Project"))).andExpect(jsonPath("$.projectKey", is("TST")));
   }
 
   @Test
@@ -127,9 +108,7 @@ class ProjectControllerIntegrationTest {
   @Test
   @WithMockUser(roles = "ADMIN")
   void getProjectByKey_WhenExists_ShouldReturnProject() throws Exception {
-    mockMvc
-        .perform(get("/api/projects/key/{key}", "TST"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/projects/key/{key}", "TST")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.projectKey", is("TST")));
   }
@@ -137,94 +116,58 @@ class ProjectControllerIntegrationTest {
   @Test
   @WithMockUser(roles = "ADMIN")
   void createProject_WithValidData_ShouldCreateProject() throws Exception {
-    CreateProjectRequest request =
-        CreateProjectRequest.builder()
-            .name("New Project")
-            .projectKey("NEW")
-            .description("New project description")
-            .color("#00FF00")
-            .build();
+    CreateProjectRequest request = CreateProjectRequest.builder().name("New Project").projectKey("NEW")
+        .description("New project description").color("#00FF00").build();
 
-    mockMvc
-        .perform(
-            post("/api/projects")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.name", is("New Project")))
-        .andExpect(jsonPath("$.projectKey", is("NEW")));
+    mockMvc.perform(post("/api/projects").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
+        .andExpect(jsonPath("$.name", is("New Project"))).andExpect(jsonPath("$.projectKey", is("NEW")));
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void createProject_WithDuplicateKey_ShouldReturn400() throws Exception {
-    CreateProjectRequest request =
-        CreateProjectRequest.builder().name("Another Project").projectKey("TST").build();
+    CreateProjectRequest request = CreateProjectRequest.builder().name("Another Project").projectKey("TST").build();
 
-    mockMvc
-        .perform(
-            post("/api/projects")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isBadRequest());
+    mockMvc.perform(post("/api/projects").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isBadRequest());
   }
 
   @Test
   @WithMockUser(roles = "DEVELOPER")
   void createProject_WithInsufficientPermissions_ShouldReturn403() throws Exception {
-    CreateProjectRequest request =
-        CreateProjectRequest.builder().name("New Project").projectKey("NEW").build();
+    CreateProjectRequest request = CreateProjectRequest.builder().name("New Project").projectKey("NEW").build();
 
-    mockMvc
-        .perform(
-            post("/api/projects")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/projects").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void updateProject_WhenExists_ShouldUpdateProject() throws Exception {
-    CreateProjectRequest request =
-        CreateProjectRequest.builder()
-            .name("Updated Project")
-            .projectKey("TST")
-            .description("Updated description")
-            .color("#0000FF")
-            .build();
+    CreateProjectRequest request = CreateProjectRequest.builder().name("Updated Project").projectKey("TST")
+        .description("Updated description").color("#0000FF").build();
 
-    mockMvc
-        .perform(
-            put("/api/projects/{id}", testProject.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name", is("Updated Project")))
-        .andExpect(jsonPath("$.color", is("#0000FF")));
+    mockMvc.perform(put("/api/projects/{id}", testProject.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.name", is("Updated Project"))).andExpect(jsonPath("$.color", is("#0000FF")));
   }
 
   @Test
   @WithMockUser(roles = "MANAGER")
   void updateProject_WithProjectManager_ShouldUpdateProject() throws Exception {
-    CreateProjectRequest request =
-        CreateProjectRequest.builder().name("PM Updated Project").projectKey("TST").build();
+    CreateProjectRequest request = CreateProjectRequest.builder().name("PM Updated Project").projectKey("TST")
+        .build();
 
-    mockMvc
-        .perform(
-            put("/api/projects/{id}", testProject.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
+    mockMvc.perform(put("/api/projects/{id}", testProject.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
         .andExpect(jsonPath("$.name", is("PM Updated Project")));
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void deactivateProject_ShouldDeactivate() throws Exception {
-    mockMvc
-        .perform(post("/api/projects/{id}/deactivate", testProject.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/projects/{id}/deactivate", testProject.getId())).andExpect(status().isOk())
         .andExpect(jsonPath("$.isActive", is(false)));
   }
 
@@ -235,29 +178,21 @@ class ProjectControllerIntegrationTest {
     testProject.setIsActive(false);
     projectRepository.save(testProject);
 
-    mockMvc
-        .perform(post("/api/projects/{id}/activate", testProject.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/projects/{id}/activate", testProject.getId())).andExpect(status().isOk())
         .andExpect(jsonPath("$.isActive", is(true)));
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void deleteProject_WhenNoCycles_ShouldDeleteProject() throws Exception {
-    mockMvc
-        .perform(delete("/api/projects/{id}", testProject.getId()))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/projects/{id}", testProject.getId())).andExpect(status().isNoContent());
 
-    mockMvc
-        .perform(get("/api/projects/{id}", testProject.getId()))
-        .andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/projects/{id}", testProject.getId())).andExpect(status().isNotFound());
   }
 
   @Test
   @WithMockUser(roles = "MANAGER")
   void deleteProject_WithInsufficientPermissions_ShouldReturn403() throws Exception {
-    mockMvc
-        .perform(delete("/api/projects/{id}", testProject.getId()))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(delete("/api/projects/{id}", testProject.getId())).andExpect(status().isForbidden());
   }
 }

@@ -58,6 +58,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
 
@@ -93,6 +94,10 @@ export default function UserManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  
+  // Toggle active confirmation dialog
+  const [toggleActiveConfirmOpen, setToggleActiveConfirmOpen] = useState(false);
+  const [userToToggle, setUserToToggle] = useState<UserType | null>(null);
 
   // Check if current user has user management permission
   useEffect(() => {
@@ -191,16 +196,21 @@ export default function UserManagement() {
     }
   };
 
-  const handleToggleActive = async (user: UserType) => {
-    const action = user.isActive ? 'deactivate' : 'activate';
-    if (!confirm(t(`userManagement.confirm${action.charAt(0).toUpperCase() + action.slice(1)}`, { username: user.username }))) {
-      return;
-    }
+  const openToggleActiveConfirm = (user: UserType) => {
+    setUserToToggle(user);
+    setToggleActiveConfirmOpen(true);
+  };
+
+  const handleToggleActive = async () => {
+    if (!userToToggle) return;
+    const action = userToToggle.isActive ? 'deactivate' : 'activate';
 
     try {
-      await api.put(`/users/${user.id}/${action}`);
+      await api.put(`/users/${userToToggle.id}/${action}`);
       showToast(t('userManagement.userActivated', { action }), 'success');
       fetchUsers();
+      setToggleActiveConfirmOpen(false);
+      setUserToToggle(null);
     } catch (error) {
       // Error handled by interceptor
     }
@@ -488,7 +498,7 @@ export default function UserManagement() {
                                     ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950'
                                     : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950'
                                 )}
-                                onClick={() => handleToggleActive(user)}
+                                onClick={() => openToggleActiveConfirm(user)}
                               >
                                 {user.isActive ? (
                                   <Ban className="h-4 w-4" />
@@ -741,6 +751,18 @@ export default function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Toggle Active Confirmation Dialog */}
+      <ConfirmDialog
+        open={toggleActiveConfirmOpen}
+        onOpenChange={setToggleActiveConfirmOpen}
+        title={userToToggle?.isActive ? t('userManagement.deactivate') : t('userManagement.activate')}
+        description={t(`userManagement.confirm${userToToggle?.isActive ? 'Deactivate' : 'Activate'}`, { username: userToToggle?.username || '' })}
+        confirmLabel={t('common.confirm')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleToggleActive}
+        variant={userToToggle?.isActive ? 'destructive' : 'default'}
+      />
     </div>
   );
 }

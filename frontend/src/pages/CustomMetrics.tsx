@@ -6,6 +6,7 @@ import { Plus, Calculator, Edit, Trash2, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useToast } from '../contexts';
 import { customMetricService } from '../services/customMetricService';
 import { CustomMetric, MetricValue } from '../types/metrics';
@@ -18,6 +19,8 @@ export default function CustomMetrics() {
   const [metricValues, setMetricValues] = useState<Map<number, MetricValue>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [metricToDelete, setMetricToDelete] = useState<number | null>(null);
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
 
@@ -51,13 +54,20 @@ export default function CustomMetrics() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('customMetrics.deleteConfirm'))) return;
+  const openDeleteConfirm = (id: number) => {
+    setMetricToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (metricToDelete === null) return;
     
     try {
-      await customMetricService.delete(id);
+      await customMetricService.delete(metricToDelete);
       showSuccess(t('customMetrics.deleteSuccess'));
       loadMetrics();
+      setDeleteConfirmOpen(false);
+      setMetricToDelete(null);
     } catch (err) {
       showError(getUserFriendlyError(err, t('customMetrics.deleteFailed')));
     }
@@ -206,7 +216,7 @@ export default function CustomMetrics() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(metric.id)}
+                        onClick={() => openDeleteConfirm(metric.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         {t('customMetrics.delete')}
@@ -219,6 +229,18 @@ export default function CustomMetrics() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('customMetrics.deleteTitle')}
+        description={t('customMetrics.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 }

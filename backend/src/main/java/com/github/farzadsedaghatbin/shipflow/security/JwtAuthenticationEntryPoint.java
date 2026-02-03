@@ -18,17 +18,13 @@ import org.springframework.stereotype.Component;
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
   @Override
-  public void commence(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      AuthenticationException authException)
-      throws IOException, ServletException {
+  public void commence(HttpServletRequest request, HttpServletResponse response,
+      AuthenticationException authException) throws IOException, ServletException {
     String path = request.getServletPath();
     String acceptHeader = request.getHeader("Accept");
 
     // For API requests, return JSON error
-    if (path.startsWith("/api/")
-        || (acceptHeader != null && acceptHeader.contains("application/json"))) {
+    if (path.startsWith("/api/") || (acceptHeader != null && acceptHeader.contains("application/json"))) {
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setStatus(HttpStatus.UNAUTHORIZED.value());
 

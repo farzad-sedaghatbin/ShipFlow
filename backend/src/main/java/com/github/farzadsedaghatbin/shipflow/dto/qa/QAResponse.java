@@ -44,7 +44,10 @@ public class QAResponse {
   /** Suggested follow-up questions. */
   private List<String> suggestedFollowUps;
 
-  /** Whether this response was served from cache. Helps frontend understand response source. */
+  /**
+   * Whether this response was served from cache. Helps frontend understand
+   * response source.
+   */
   private Boolean cached;
 
   /** Conversation ID for multi-turn conversations. */

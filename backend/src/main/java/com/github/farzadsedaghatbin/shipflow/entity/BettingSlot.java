@@ -6,13 +6,12 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Represents a slot in the Betting Table where a shaped pitch is assigned to a specific team for
- * implementation during a cycle.
+ * Represents a slot in the Betting Table where a shaped pitch is assigned to a
+ * specific team for implementation during a cycle.
  */
 @Entity
-@Table(
-    name = "betting_slots",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"cycle_id", "team_id", "position"})})
+@Table(name = "betting_slots", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"cycle_id", "team_id", "position"})})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -67,14 +66,16 @@ public class BettingSlot {
 
   /** Calculate duration of this slot in weeks */
   public int getDurationWeeks() {
-    if (startDate == null || endDate == null) return 0;
+    if (startDate == null || endDate == null)
+      return 0;
     long days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
     return (int) Math.ceil(days / 7.0);
   }
 
   /** Check if a pitch with given appetite (in days) fits in this slot */
   public boolean canFitPitch(int appetiteDays) {
-    if (startDate == null || endDate == null) return false;
+    if (startDate == null || endDate == null)
+      return false;
     long slotDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
     return appetiteDays <= slotDays;
   }

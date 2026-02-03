@@ -58,8 +58,8 @@ public class Task {
   private Cycle cycle;
 
   /**
-   * The pitch this task is associated with (optional). Links the task to a specific pitch for
-   * better traceability.
+   * The pitch this task is associated with (optional). Links the task to a
+   * specific pitch for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -67,8 +67,8 @@ public class Task {
   private Pitch pitch;
 
   /**
-   * The scope (hill chart point) this task is associated with (optional). Links the task to a
-   * specific scope for better traceability.
+   * The scope (hill chart point) this task is associated with (optional). Links
+   * the task to a specific scope for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -114,10 +114,12 @@ public class Task {
   private java.util.List<TaskDependency> incomingDependencies = new java.util.ArrayList<>();
 
   @NotAudited
-  @Column private LocalDate dueDate;
+  @Column
+  private LocalDate dueDate;
 
   @NotAudited
-  @Column private LocalDateTime completedAt;
+  @Column
+  private LocalDateTime completedAt;
 
   @NotAudited
   @Column(nullable = false)

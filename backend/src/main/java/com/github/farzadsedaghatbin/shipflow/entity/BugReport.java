@@ -10,21 +10,17 @@ import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
 /**
- * Entity representing a bug report in the QA system. Bug reports can be linked to pitches, cycles,
- * test runs, and assignees.
+ * Entity representing a bug report in the QA system. Bug reports can be linked
+ * to pitches, cycles, test runs, and assignees.
  */
 @Entity
-@Table(
-    name = "bug_reports",
-    indexes = {
-      @Index(name = "idx_bug_report_project", columnList = "project_id"),
-      @Index(name = "idx_bug_report_pitch", columnList = "pitch_id"),
-      @Index(name = "idx_bug_report_cycle", columnList = "cycle_id"),
-      @Index(name = "idx_bug_report_status", columnList = "status"),
-      @Index(name = "idx_bug_report_severity", columnList = "severity"),
-      @Index(name = "idx_bug_report_assignee", columnList = "assignee_id"),
-      @Index(name = "idx_bug_report_reporter", columnList = "reporter_id")
-    })
+@Table(name = "bug_reports", indexes = {@Index(name = "idx_bug_report_project", columnList = "project_id"),
+    @Index(name = "idx_bug_report_pitch", columnList = "pitch_id"),
+    @Index(name = "idx_bug_report_cycle", columnList = "cycle_id"),
+    @Index(name = "idx_bug_report_status", columnList = "status"),
+    @Index(name = "idx_bug_report_severity", columnList = "severity"),
+    @Index(name = "idx_bug_report_assignee", columnList = "assignee_id"),
+    @Index(name = "idx_bug_report_reporter", columnList = "reporter_id")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -71,9 +67,9 @@ public class BugReport {
   private String environment;
 
   /**
-   * The project this bug belongs to. Direct project association allows bugs to exist
-   * without requiring a cycle, pitch, or task - useful for Kanban projects and
-   * general/smoke testing.
+   * The project this bug belongs to. Direct project association allows bugs to
+   * exist without requiring a cycle, pitch, or task - useful for Kanban projects
+   * and general/smoke testing.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -105,8 +101,8 @@ public class BugReport {
   private TestRun testRun;
 
   /**
-   * The scope (hill chart point) this bug is related to (optional). Links the bug to a specific
-   * scope for better traceability.
+   * The scope (hill chart point) this bug is related to (optional). Links the bug
+   * to a specific scope for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -114,8 +110,8 @@ public class BugReport {
   private HillChartPoint scope;
 
   /**
-   * The task this bug is related to (optional). Links the bug to a specific task for better
-   * traceability.
+   * The task this bug is related to (optional). Links the bug to a specific task
+   * for better traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)

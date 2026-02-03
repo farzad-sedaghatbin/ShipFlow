@@ -23,24 +23,21 @@ public class OrganizationSettingsService {
   private final OrganizationSettingsRepository settingsRepository;
   private final ObjectMapper objectMapper;
 
-  /** Get current organization settings. Creates default settings if none exist. */
+  /**
+   * Get current organization settings. Creates default settings if none exist.
+   */
   @Transactional
   public OrganizationSettingsDTO getSettings() {
-    OrganizationSettings settings =
-        settingsRepository
-            .findFirstByOrderByIdAsc()
-            .orElseGet(() -> createDefaultSettings("system"));
+    OrganizationSettings settings = settingsRepository.findFirstByOrderByIdAsc()
+        .orElseGet(() -> createDefaultSettings("system"));
     return toDTO(settings);
   }
 
   /** Update organization settings. */
   @Transactional
-  public OrganizationSettingsDTO updateSettings(
-      UpdateOrganizationSettingsRequest request, String username) {
-    OrganizationSettings settings =
-        settingsRepository
-            .findFirstByOrderByIdAsc()
-            .orElseGet(() -> createDefaultSettings(username));
+  public OrganizationSettingsDTO updateSettings(UpdateOrganizationSettingsRequest request, String username) {
+    OrganizationSettings settings = settingsRepository.findFirstByOrderByIdAsc()
+        .orElseGet(() -> createDefaultSettings(username));
 
     // Update fields if provided
     if (request.getOrganizationName() != null) {
@@ -112,174 +109,66 @@ public class OrganizationSettingsService {
 
   /** Create default organization settings. */
   private OrganizationSettings createDefaultSettings(String username) {
-    OrganizationSettingsDTO.RiskThresholds defaultRiskThresholds =
-        OrganizationSettingsDTO.RiskThresholds.builder()
-            .lowMax(30)
-            .mediumMax(60)
-            .highMax(85)
-            .build();
+    OrganizationSettingsDTO.RiskThresholds defaultRiskThresholds = OrganizationSettingsDTO.RiskThresholds.builder()
+        .lowMax(30).mediumMax(60).highMax(85).build();
 
-    List<OrganizationSettingsDTO.CategoryConfig> defaultTaskCategories =
-        List.of(
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("PITCH_SCOPE")
-                .description("Work related to pitch deliverables")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(1)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("DEBT_IMPROVEMENT")
-                .description("Technical debt and improvements")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .build());
+    List<OrganizationSettingsDTO.CategoryConfig> defaultTaskCategories = List.of(
+        OrganizationSettingsDTO.CategoryConfig.builder().name("PITCH_SCOPE")
+            .description("Work related to pitch deliverables").color("#3B82F6").isActive(true).order(1)
+            .build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("DEBT_IMPROVEMENT")
+            .description("Technical debt and improvements").color("#F59E0B").isActive(true).order(2)
+            .build());
 
-    List<OrganizationSettingsDTO.CategoryConfig> defaultPitchCategories =
-        List.of(
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("FEATURE")
-                .description("New feature development")
-                .color("#10B981")
-                .isActive(true)
-                .order(1)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("INFRASTRUCTURE")
-                .description("Infrastructure and architecture")
-                .color("#6366F1")
-                .isActive(true)
-                .order(2)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("REFACTOR")
-                .description("Code refactoring")
-                .color("#8B5CF6")
-                .isActive(true)
-                .order(3)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("BUG_FIX")
-                .description("Bug fixes")
-                .color("#EF4444")
-                .isActive(true)
-                .order(4)
-                .build());
+    List<OrganizationSettingsDTO.CategoryConfig> defaultPitchCategories = List.of(
+        OrganizationSettingsDTO.CategoryConfig.builder().name("FEATURE").description("New feature development")
+            .color("#10B981").isActive(true).order(1).build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("INFRASTRUCTURE")
+            .description("Infrastructure and architecture").color("#6366F1").isActive(true).order(2)
+            .build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("REFACTOR").description("Code refactoring")
+            .color("#8B5CF6").isActive(true).order(3).build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("BUG_FIX").description("Bug fixes")
+            .color("#EF4444").isActive(true).order(4).build());
 
-    OrganizationSettingsDTO.ColorSettings defaultColors =
-        OrganizationSettingsDTO.ColorSettings.builder()
-            .appetiteHours("#3B82F6")
-            .actualHours("#10B981")
-            .overBudget("#EF4444")
-            .underBudget("#22C55E")
-            .build();
+    OrganizationSettingsDTO.ColorSettings defaultColors = OrganizationSettingsDTO.ColorSettings.builder()
+        .appetiteHours("#3B82F6").actualHours("#10B981").overBudget("#EF4444").underBudget("#22C55E").build();
 
-    List<OrganizationSettingsDTO.BugStatusConfig> defaultBugStatuses =
-        List.of(
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("NEW")
-                .description("Newly reported")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(1)
-                .isClosed(false)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("IN_PROGRESS")
-                .description("Being worked on")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .isClosed(false)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("FIXED")
-                .description("Fix implemented")
-                .color("#10B981")
-                .isActive(true)
-                .order(3)
-                .isClosed(true)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("VERIFIED")
-                .description("Fix verified")
-                .color("#22C55E")
-                .isActive(true)
-                .order(4)
-                .isClosed(true)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("WONT_FIX")
-                .description("Will not fix")
-                .color("#6B7280")
-                .isActive(true)
-                .order(5)
-                .isClosed(true)
-                .build());
+    List<OrganizationSettingsDTO.BugStatusConfig> defaultBugStatuses = List.of(
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("NEW").description("Newly reported")
+            .color("#3B82F6").isActive(true).order(1).isClosed(false).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("IN_PROGRESS").description("Being worked on")
+            .color("#F59E0B").isActive(true).order(2).isClosed(false).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("FIXED").description("Fix implemented")
+            .color("#10B981").isActive(true).order(3).isClosed(true).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("VERIFIED").description("Fix verified")
+            .color("#22C55E").isActive(true).order(4).isClosed(true).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("WONT_FIX").description("Will not fix")
+            .color("#6B7280").isActive(true).order(5).isClosed(true).build());
 
-    List<OrganizationSettingsDTO.SeverityLevelConfig> defaultSeverityLevels =
-        List.of(
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("CRITICAL")
-                .description("System down or data loss")
-                .color("#DC2626")
-                .isActive(true)
-                .order(1)
-                .priority(1)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("HIGH")
-                .description("Major feature broken")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .priority(2)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("MEDIUM")
-                .description("Feature partially broken")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(3)
-                .priority(3)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("LOW")
-                .description("Minor issue or cosmetic")
-                .color("#10B981")
-                .isActive(true)
-                .order(4)
-                .priority(4)
-                .build());
+    List<OrganizationSettingsDTO.SeverityLevelConfig> defaultSeverityLevels = List.of(
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("CRITICAL")
+            .description("System down or data loss").color("#DC2626").isActive(true).order(1).priority(1)
+            .build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("HIGH").description("Major feature broken")
+            .color("#F59E0B").isActive(true).order(2).priority(2).build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("MEDIUM")
+            .description("Feature partially broken").color("#3B82F6").isActive(true).order(3).priority(3)
+            .build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("LOW").description("Minor issue or cosmetic")
+            .color("#10B981").isActive(true).order(4).priority(4).build());
 
     // Default risk weights (balanced profile)
-    OrganizationSettingsDTO.RiskWeights defaultRiskWeights =
-        OrganizationSettingsDTO.RiskWeights.builder()
-            .budgetWeight(25)
-            .bugsWeight(30)
-            .scopeWeight(25)
-            .timeWeight(20)
-            .build();
+    OrganizationSettingsDTO.RiskWeights defaultRiskWeights = OrganizationSettingsDTO.RiskWeights.builder()
+        .budgetWeight(25).bugsWeight(30).scopeWeight(25).timeWeight(20).build();
 
-    OrganizationSettings settings =
-        OrganizationSettings.builder()
-            .organizationName("My Organization")
-            .defaultCycleLengthWeeks(6)
-            .defaultCooldownWeeks(2)
-            .riskThresholdsJson(toJson(defaultRiskThresholds))
-            .riskWeightsJson(toJson(defaultRiskWeights))
-            .taskCategoriesJson(toJson(defaultTaskCategories))
-            .pitchCategoriesJson(toJson(defaultPitchCategories))
-            .colorsJson(toJson(defaultColors))
-            .bugStatusesJson(toJson(defaultBugStatuses))
-            .severityLevelsJson(toJson(defaultSeverityLevels))
-            .timeZone("UTC")
-            .dateFormat("MM/DD/YYYY")
-            .enableNotifications(true)
-            .enableAIFeatures(true)
-            .updatedBy(username)
-            .build();
+    OrganizationSettings settings = OrganizationSettings.builder().organizationName("My Organization")
+        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
+        .riskWeightsJson(toJson(defaultRiskWeights)).taskCategoriesJson(toJson(defaultTaskCategories))
+        .pitchCategoriesJson(toJson(defaultPitchCategories)).colorsJson(toJson(defaultColors))
+        .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
+        .timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true).enableAIFeatures(true)
+        .updatedBy(username).build();
 
     return settingsRepository.save(settings);
   }
@@ -287,57 +176,36 @@ public class OrganizationSettingsService {
   /** Convert entity to DTO. */
   private OrganizationSettingsDTO toDTO(OrganizationSettings entity) {
     // Provide default risk weights if not configured
-    OrganizationSettingsDTO.RiskWeights weights =
-        fromJson(
-            entity.getRiskWeightsJson(),
-            new TypeReference<OrganizationSettingsDTO.RiskWeights>() {});
+    OrganizationSettingsDTO.RiskWeights weights = fromJson(entity.getRiskWeightsJson(),
+        new TypeReference<OrganizationSettingsDTO.RiskWeights>() {
+        });
     if (weights == null) {
-      weights =
-          OrganizationSettingsDTO.RiskWeights.builder()
-              .budgetWeight(25)
-              .bugsWeight(30)
-              .scopeWeight(25)
-              .timeWeight(20)
-              .build();
+      weights = OrganizationSettingsDTO.RiskWeights.builder().budgetWeight(25).bugsWeight(30).scopeWeight(25)
+          .timeWeight(20).build();
     }
 
-    return OrganizationSettingsDTO.builder()
-        .id(entity.getId())
-        .organizationName(entity.getOrganizationName())
+    return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())
         .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
-        .riskThresholds(
-            fromJson(
-                entity.getRiskThresholdsJson(),
-                new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {}))
-        .riskWeights(weights)
-        .taskCategories(
-            fromJson(
-                entity.getTaskCategoriesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {}))
-        .pitchCategories(
-            fromJson(
-                entity.getPitchCategoriesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {}))
-        .colors(
-            fromJson(
-                entity.getColorsJson(),
-                new TypeReference<OrganizationSettingsDTO.ColorSettings>() {}))
-        .bugStatuses(
-            fromJson(
-                entity.getBugStatusesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.BugStatusConfig>>() {}))
-        .severityLevels(
-            fromJson(
-                entity.getSeverityLevelsJson(),
-                new TypeReference<List<OrganizationSettingsDTO.SeverityLevelConfig>>() {}))
-        .timeZone(entity.getTimeZone())
-        .dateFormat(entity.getDateFormat())
-        .enableNotifications(entity.getEnableNotifications())
-        .enableAIFeatures(entity.getEnableAIFeatures())
-        .updatedAt(entity.getUpdatedAt())
-        .updatedBy(entity.getUpdatedBy())
-        .build();
+        .riskThresholds(fromJson(entity.getRiskThresholdsJson(),
+            new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {
+            }))
+        .riskWeights(weights).taskCategories(fromJson(entity.getTaskCategoriesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {
+            }))
+        .pitchCategories(fromJson(entity.getPitchCategoriesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {
+            }))
+        .colors(fromJson(entity.getColorsJson(), new TypeReference<OrganizationSettingsDTO.ColorSettings>() {
+        })).bugStatuses(fromJson(entity.getBugStatusesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.BugStatusConfig>>() {
+            }))
+        .severityLevels(fromJson(entity.getSeverityLevelsJson(),
+            new TypeReference<List<OrganizationSettingsDTO.SeverityLevelConfig>>() {
+            }))
+        .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
+        .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
+        .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 
   /** Convert object to JSON string. */

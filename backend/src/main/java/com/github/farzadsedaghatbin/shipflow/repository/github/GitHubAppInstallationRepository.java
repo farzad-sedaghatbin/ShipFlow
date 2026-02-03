@@ -8,8 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface GitHubAppInstallationRepository
-    extends JpaRepository<GitHubAppInstallation, Long> {
+public interface GitHubAppInstallationRepository extends JpaRepository<GitHubAppInstallation, Long> {
 
   /** Find installation by GitHub installation ID */
   Optional<GitHubAppInstallation> findByInstallationId(Long installationId);
@@ -27,13 +26,11 @@ public interface GitHubAppInstallationRepository
   boolean existsByAccountLogin(String accountLogin);
 
   /** Find installations that need token refresh */
-  @Query(
-      "SELECT i FROM GitHubAppInstallation i WHERE i.isActive = true AND "
-          + "(i.tokenExpiresAt IS NULL OR i.tokenExpiresAt < CURRENT_TIMESTAMP)")
+  @Query("SELECT i FROM GitHubAppInstallation i WHERE i.isActive = true AND "
+      + "(i.tokenExpiresAt IS NULL OR i.tokenExpiresAt < CURRENT_TIMESTAMP)")
   List<GitHubAppInstallation> findInstallationsNeedingTokenRefresh();
 
   /** Count total repositories across all active installations */
-  @Query(
-      "SELECT COALESCE(SUM(i.repositoryCount), 0) FROM GitHubAppInstallation i WHERE i.isActive = true")
+  @Query("SELECT COALESCE(SUM(i.repositoryCount), 0) FROM GitHubAppInstallation i WHERE i.isActive = true")
   Long countTotalRepositories();
 }

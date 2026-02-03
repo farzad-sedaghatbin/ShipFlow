@@ -12,22 +12,26 @@ import org.springframework.stereotype.Component;
 /**
  * Vector Store Provider implementation for ChromaDB.
  *
- * <p>ChromaDB is suitable for:
+ * <p>
+ * ChromaDB is suitable for:
  *
  * <ul>
- *   <li>Development and small-scale deployments
- *   <li>Python-centric environments
- *   <li>Simple setup requirements
+ * <li>Development and small-scale deployments
+ * <li>Python-centric environments
+ * <li>Simple setup requirements
  * </ul>
  *
- * <p>Configuration:
+ * <p>
+ * Configuration:
  *
  * <ul>
- *   <li>url: ChromaDB server URL (default: http://localhost:8000)
- *   <li>collectionName: Name of the collection (default: shipflow_knowledge)
+ * <li>url: ChromaDB server URL (default: http://localhost:8000)
+ * <li>collectionName: Name of the collection (default: shipflow_knowledge)
  * </ul>
  *
- * <p><b>Note:</b> For production, consider using Qdrant for better performance and scalability.
+ * <p>
+ * <b>Note:</b> For production, consider using Qdrant for better performance and
+ * scalability.
  */
 @Component
 @Slf4j
@@ -54,8 +58,8 @@ public class ChromaVectorStoreProvider implements VectorStoreProvider {
 
     log.info("Creating ChromaDB embedding store - URL: {}, Collection: {}", url, collectionName);
 
-    ChromaEmbeddingStore.Builder builder =
-        ChromaEmbeddingStore.builder().baseUrl(url).collectionName(collectionName);
+    ChromaEmbeddingStore.Builder builder = ChromaEmbeddingStore.builder().baseUrl(url)
+        .collectionName(collectionName);
 
     // Handle timeout if specified
     Integer timeoutSeconds = config.getExtraParam("timeoutSeconds", null);

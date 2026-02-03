@@ -48,11 +48,8 @@ public class QATestGenerationService {
   private final TestCaseValidator testCaseValidator;
 
   @Autowired
-  public QATestGenerationService(
-      PitchRepository pitchRepository,
-      MeetingRepository meetingRepository,
-      UploadedDocumentRepository documentRepository,
-      TestCaseRepository testCaseRepository,
+  public QATestGenerationService(PitchRepository pitchRepository, MeetingRepository meetingRepository,
+      UploadedDocumentRepository documentRepository, TestCaseRepository testCaseRepository,
       @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
@@ -75,42 +72,32 @@ public class QATestGenerationService {
     long startTime = System.currentTimeMillis();
 
     if (!testManagementEnabled || !aiTestGenerationEnabled) {
-      return GenerateTestCasesResponse.builder()
-          .aiEnabled(false)
+      return GenerateTestCasesResponse.builder().aiEnabled(false)
           .errorMessage("AI test generation feature is not enabled")
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .build();
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
     }
 
     if (chatLanguageModel == null || embeddingModel == null) {
-      return GenerateTestCasesResponse.builder()
-          .aiEnabled(false)
-          .errorMessage("AI models are not available")
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .build();
+      return GenerateTestCasesResponse.builder().aiEnabled(false).errorMessage("AI models are not available")
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
     }
 
     try {
       // Get pitch context
-      Pitch pitch =
-          pitchRepository
-              .findById(request.getPitchId())
-              .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
+      Pitch pitch = pitchRepository.findById(request.getPitchId())
+          .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
 
       // Build context from pitch description, meetings, and documents
       String context = buildPitchContext(pitch, request);
 
       if (context.isEmpty()) {
-        return GenerateTestCasesResponse.builder()
-            .aiEnabled(true)
+        return GenerateTestCasesResponse.builder().aiEnabled(true)
             .errorMessage("No context available for this pitch. Add description or meeting notes.")
-            .processingTimeMs(System.currentTimeMillis() - startTime)
-            .build();
+            .processingTimeMs(System.currentTimeMillis() - startTime).build();
       }
 
       // Retrieve relevant knowledge if available
-      String additionalContext =
-          retrieveRelevantKnowledge(pitch.getTitle() + " " + pitch.getDescription());
+      String additionalContext = retrieveRelevantKnowledge(pitch.getTitle() + " " + pitch.getDescription());
       if (!additionalContext.isEmpty()) {
         context += "\n\nRelevant Knowledge:\n" + additionalContext;
       }
@@ -133,16 +120,12 @@ public class QATestGenerationService {
       String response = chatLanguageModel.generate(prompt);
 
       // Parse the response into test case suggestions
-      List<GenerateTestCasesResponse.TestCaseSuggestion> suggestions =
-          parseTestCaseSuggestions(response);
+      List<GenerateTestCasesResponse.TestCaseSuggestion> suggestions = parseTestCaseSuggestions(response);
 
       // Validate generated test cases
       if (testCaseValidator != null && !suggestions.isEmpty()) {
-        TestCaseValidationResult validation =
-            testCaseValidator.validateSuite(suggestions, testType);
-        log.debug(
-            "Validation result - Valid: {}, Issues: {}",
-            validation.getIsValid(),
+        TestCaseValidationResult validation = testCaseValidator.validateSuite(suggestions, testType);
+        log.debug("Validation result - Valid: {}, Issues: {}", validation.getIsValid(),
             validation.getIssues().size());
 
         // If validation failed, try to regenerate or return with warnings
@@ -151,20 +134,15 @@ public class QATestGenerationService {
         }
       }
 
-      return GenerateTestCasesResponse.builder()
-          .suggestions(suggestions)
-          .contextUsed(context.length() > 500 ? context.substring(0, 500) + "..." : context)
-          .aiEnabled(true)
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .build();
+      return GenerateTestCasesResponse.builder().suggestions(suggestions)
+          .contextUsed(context.length() > 500 ? context.substring(0, 500) + "..." : context).aiEnabled(true)
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
 
     } catch (Exception e) {
       log.error("Error generating test cases: {}", e.getMessage(), e);
-      return GenerateTestCasesResponse.builder()
-          .aiEnabled(true)
+      return GenerateTestCasesResponse.builder().aiEnabled(true)
           .errorMessage("Failed to generate test cases: " + e.getMessage())
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .build();
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
     }
   }
 
@@ -175,7 +153,7 @@ public class QATestGenerationService {
     context.append("Pitch: ").append(pitch.getTitle()).append("\n");
     context.append("Status: ").append(pitch.getStatus()).append("\n");
     context.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n\n");
-    
+
     // Add all Shape Up methodology fields for comprehensive test generation
     context.append("=== PITCH DETAILS ===\n");
     if (pitch.getDescription() != null && !pitch.getDescription().isEmpty()) {
@@ -206,11 +184,7 @@ public class QATestGenerationService {
       context.append("\nMeeting Notes:\n");
       for (Meeting meeting : meetings) {
         if (meeting.getNotes() != null && !meeting.getNotes().isEmpty()) {
-          context
-              .append("- [")
-              .append(meeting.getType())
-              .append("] ")
-              .append(meeting.getNotes())
+          context.append("- [").append(meeting.getType()).append("] ").append(meeting.getNotes())
               .append("\n");
         }
       }
@@ -239,85 +213,75 @@ public class QATestGenerationService {
 
     try {
       Embedding queryEmbedding = embeddingModel.embed(query).content();
-      EmbeddingSearchRequest searchRequest =
-          EmbeddingSearchRequest.builder()
-              .queryEmbedding(queryEmbedding)
-              .maxResults(topK)
-              .minScore(0.5)
-              .build();
+      EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding)
+          .maxResults(topK).minScore(0.5).build();
 
       EmbeddingSearchResult<TextSegment> result = embeddingStore.search(searchRequest);
 
-      return result.matches().stream()
-          .map(match -> match.embedded().text())
-          .collect(Collectors.joining("\n\n"));
+      return result.matches().stream().map(match -> match.embedded().text()).collect(Collectors.joining("\n\n"));
     } catch (Exception e) {
       log.warn("Could not retrieve relevant knowledge: {}", e.getMessage());
       return "";
     }
   }
 
-  private String buildTestGenerationPrompt(
-      Pitch pitch, String context, GenerateTestCasesRequest request) {
+  private String buildTestGenerationPrompt(Pitch pitch, String context, GenerateTestCasesRequest request) {
     int maxTestCases = request.getMaxTestCases() != null ? request.getMaxTestCases() : 5;
-    String testTypes =
-        request.getTestTypes() != null && !request.getTestTypes().isEmpty()
-            ? String.join(", ", request.getTestTypes())
-            : "FUNCTIONAL, INTEGRATION, E2E";
+    String testTypes = request.getTestTypes() != null && !request.getTestTypes().isEmpty()
+        ? String.join(", ", request.getTestTypes())
+        : "FUNCTIONAL, INTEGRATION, E2E";
 
-    return String.format(
-        """
-            You are a QA engineer generating test cases for a software feature.
+    return String.format("""
+        You are a QA engineer generating test cases for a software feature.
 
-            Based on the following context, generate %d test cases for the pitch "%s".
+        Based on the following context, generate %d test cases for the pitch "%s".
 
-            Context:
-            %s
+        Context:
+        %s
 
-            Test Types to focus on: %s
+        Test Types to focus on: %s
 
-            For each test case, provide:
-            1. Title (clear, concise)
-            2. Description (what is being tested)
-            3. Preconditions (setup required)
-            4. Steps (numbered steps to execute)
-            5. Expected Result (what should happen)
-            6. Suggested Type (FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE)
-            7. Suggested Priority (LOW, MEDIUM, HIGH, CRITICAL)
-            8. Tags (comma-separated keywords)
+        For each test case, provide:
+        1. Title (clear, concise)
+        2. Description (what is being tested)
+        3. Preconditions (setup required)
+        4. Steps (numbered steps to execute)
+        5. Expected Result (what should happen)
+        6. Suggested Type (FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE)
+        7. Suggested Priority (LOW, MEDIUM, HIGH, CRITICAL)
+        8. Tags (comma-separated keywords)
 
-            Format each test case as:
-            ---TEST CASE---
-            TITLE: <title>
-            DESCRIPTION: <description>
-            PRECONDITIONS: <preconditions>
-            STEPS:
-            1. <step>
-            2. <step>
-            ...
-            EXPECTED: <expected result>
-            TYPE: <type>
-            PRIORITY: <priority>
-            TAGS: <tag1, tag2, ...>
-            ---END---
+        Format each test case as:
+        ---TEST CASE---
+        TITLE: <title>
+        DESCRIPTION: <description>
+        PRECONDITIONS: <preconditions>
+        STEPS:
+        1. <step>
+        2. <step>
+        ...
+        EXPECTED: <expected result>
+        TYPE: <type>
+        PRIORITY: <priority>
+        TAGS: <tag1, tag2, ...>
+        ---END---
 
-            Generate comprehensive test cases that cover:
-            - Happy path scenarios
-            - Edge cases
-            - Error handling
-            - Integration points
-            - User experience aspects
-            """,
-        maxTestCases, pitch.getTitle(), context, testTypes);
+        Generate comprehensive test cases that cover:
+        - Happy path scenarios
+        - Edge cases
+        - Error handling
+        - Integration points
+        - User experience aspects
+        """, maxTestCases, pitch.getTitle(), context, testTypes);
   }
 
-  private List<GenerateTestCasesResponse.TestCaseSuggestion> parseTestCaseSuggestions(
-      String response) {
+  private List<GenerateTestCasesResponse.TestCaseSuggestion> parseTestCaseSuggestions(String response) {
     List<GenerateTestCasesResponse.TestCaseSuggestion> suggestions = new ArrayList<>();
 
     String[] testCases = response.split("---TEST CASE---");
     for (String testCase : testCases) {
-      if (!testCase.contains("TITLE:")) continue;
+      if (!testCase.contains("TITLE:"))
+        continue;
 
       try {
         String title = extractField(testCase, "TITLE:");
@@ -330,18 +294,11 @@ public class QATestGenerationService {
         String tags = extractField(testCase, "TAGS:");
 
         if (title != null && !title.isEmpty()) {
-          suggestions.add(
-              GenerateTestCasesResponse.TestCaseSuggestion.builder()
-                  .title(title)
-                  .description(description)
-                  .preconditions(preconditions)
-                  .steps(steps)
-                  .expectedResult(expectedResult)
-                  .suggestedType(type)
-                  .suggestedPriority(priority)
-                  .suggestedTags(tags != null ? List.of(tags.split(",\\s*")) : null)
-                  .confidenceScore(0.8)
-                  .build());
+          suggestions.add(GenerateTestCasesResponse.TestCaseSuggestion.builder().title(title)
+              .description(description).preconditions(preconditions).steps(steps)
+              .expectedResult(expectedResult).suggestedType(type).suggestedPriority(priority)
+              .suggestedTags(tags != null ? List.of(tags.split(",\\s*")) : null).confidenceScore(0.8)
+              .build());
         }
       } catch (Exception e) {
         log.warn("Could not parse test case: {}", e.getMessage());
@@ -353,26 +310,19 @@ public class QATestGenerationService {
 
   private String extractField(String text, String fieldName) {
     int start = text.indexOf(fieldName);
-    if (start < 0) return null;
+    if (start < 0)
+      return null;
 
     start += fieldName.length();
     int end = text.indexOf("\n", start);
-    if (end < 0) end = text.length();
+    if (end < 0)
+      end = text.length();
 
     String value = text.substring(start, end).trim();
 
     // Handle multi-line fields that end at next field
-    String[] nextFields = {
-      "TITLE:",
-      "DESCRIPTION:",
-      "PRECONDITIONS:",
-      "STEPS:",
-      "EXPECTED:",
-      "TYPE:",
-      "PRIORITY:",
-      "TAGS:",
-      "---END---"
-    };
+    String[] nextFields = {"TITLE:", "DESCRIPTION:", "PRECONDITIONS:", "STEPS:", "EXPECTED:", "TYPE:", "PRIORITY:",
+        "TAGS:", "---END---"};
     for (String field : nextFields) {
       if (!field.equals(fieldName)) {
         int fieldIdx = value.indexOf(field);
@@ -387,46 +337,41 @@ public class QATestGenerationService {
 
   private String extractSteps(String text) {
     int start = text.indexOf("STEPS:");
-    if (start < 0) return null;
+    if (start < 0)
+      return null;
 
     start += "STEPS:".length();
     int end = text.indexOf("EXPECTED:");
-    if (end < 0) end = text.length();
+    if (end < 0)
+      end = text.length();
 
     return text.substring(start, end).trim();
   }
 
   /** Retrieve historical test cases for consistency and learning. */
-  private List<EmbeddingMatch<TextSegment>> retrieveHistoricalTests(
-      Pitch pitch, GenerateTestCasesRequest request) {
+  private List<EmbeddingMatch<TextSegment>> retrieveHistoricalTests(Pitch pitch, GenerateTestCasesRequest request) {
     if (embeddingStore == null || embeddingModel == null) {
       return new ArrayList<>();
     }
 
     try {
       // Build query from pitch info
-      String query =
-          pitch.getTitle() + " " + (pitch.getDescription() != null ? pitch.getDescription() : "");
+      String query = pitch.getTitle() + " " + (pitch.getDescription() != null ? pitch.getDescription() : "");
 
       Embedding queryEmbedding = embeddingModel.embed(query).content();
-      EmbeddingSearchRequest searchRequest =
-          EmbeddingSearchRequest.builder()
-              .queryEmbedding(queryEmbedding)
-              .maxResults(5)
-              .minScore(0.65) // Only retrieve reasonably similar tests
-              .build();
+      EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding)
+          .maxResults(5).minScore(0.65) // Only retrieve reasonably similar tests
+          .build();
 
       EmbeddingSearchResult<TextSegment> result = embeddingStore.search(searchRequest);
 
       // Filter for test case documents
-      return result.matches().stream()
-          .filter(
-              match -> {
-                if (match.embedded().metadata() == null) return false;
-                String entityType = match.embedded().metadata().getString("entityType");
-                return "test_case".equalsIgnoreCase(entityType);
-              })
-          .collect(Collectors.toList());
+      return result.matches().stream().filter(match -> {
+        if (match.embedded().metadata() == null)
+          return false;
+        String entityType = match.embedded().metadata().getString("entityType");
+        return "test_case".equalsIgnoreCase(entityType);
+      }).collect(Collectors.toList());
 
     } catch (Exception e) {
       log.warn("Could not retrieve historical tests: {}", e.getMessage());

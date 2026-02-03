@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -32,6 +33,7 @@ public class CycleService {
 
   private final CycleRepository cycleRepository;
   private final ProjectRepository projectRepository;
+  private final PitchRepository pitchRepository;
   private final RetroRepository retroRepository;
   private final DashboardNotificationService notificationService;
   private final UserRepository userRepository;
@@ -39,14 +41,12 @@ public class CycleService {
   private final MessageService messageService;
 
   public List<CycleDTO> getAllCycles() {
-    return cycleRepository.findAllByOrderByStartDateDesc().stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return cycleRepository.findAllByOrderByStartDateDesc().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
-   * Get cycles that the current user has access to. ADMINs can see all cycles, other users see only
-   * cycles from accessible projects.
+   * Get cycles that the current user has access to. ADMINs can see all cycles,
+   * other users see only cycles from accessible projects.
    */
   public List<CycleDTO> getAccessibleCycles() {
     User currentUser = getCurrentUser();
@@ -59,8 +59,7 @@ public class CycleService {
       return getAllCycles();
     }
 
-    return cycleRepository.findAccessibleCyclesByUserId(currentUser.getId()).stream()
-        .map(this::toDTO)
+    return cycleRepository.findAccessibleCyclesByUserId(currentUser.getId()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -76,80 +75,54 @@ public class CycleService {
       return getActiveCycles();
     }
 
-    return cycleRepository.findAccessibleActiveCyclesByUserId(currentUser.getId()).stream()
-        .map(this::toDTO)
+    return cycleRepository.findAccessibleActiveCyclesByUserId(currentUser.getId()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public List<CycleDTO> getCyclesByProject(Long projectId) {
-    return cycleRepository.findByProjectIdOrderByStartDateDesc(projectId).stream()
-        .map(this::toDTO)
+    return cycleRepository.findByProjectIdOrderByStartDateDesc(projectId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public List<CycleDTO> getActiveCyclesByProject(Long projectId) {
-    return cycleRepository.findByProjectIdAndIsActiveTrue(projectId).stream()
-        .map(this::toDTO)
+    return cycleRepository.findByProjectIdAndIsActiveTrue(projectId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public List<CycleDTO> getActiveCycles() {
-    return cycleRepository.findByIsActiveTrue().stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return cycleRepository.findByIsActiveTrue().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public CycleDTO getCycleById(Long id) {
-    Cycle cycle =
-        cycleRepository
-            .findByIdWithProject(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    Cycle cycle = cycleRepository.findByIdWithProject(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
     return toDTO(cycle);
   }
 
   public CycleDTO createCycle(CreateCycleRequest request) {
-    Project project =
-        projectRepository
-            .findById(request.getProjectId())
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(
-                        "Project not found with id: " + request.getProjectId()));
+    Project project = projectRepository.findById(request.getProjectId()).orElseThrow(
+        () -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
 
     // Calculate or validate end date
     LocalDate endDate = calculateOrValidateEndDate(request.getStartDate(), request.getEndDate());
 
-    Cycle cycle =
-        Cycle.builder()
-            .project(project)
-            .name(request.getName())
-            .startDate(request.getStartDate())
-            .endDate(endDate)
-            .phase(request.getPhase() != null ? request.getPhase() : CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    Cycle cycle = Cycle.builder().project(project).name(request.getName()).startDate(request.getStartDate())
+        .endDate(endDate).phase(request.getPhase() != null ? request.getPhase() : CyclePhase.BUILD)
+        .isActive(true).build();
 
     Cycle saved = cycleRepository.save(cycle);
     return toDTO(saved);
   }
 
   public CycleDTO updateCycle(Long id, CreateCycleRequest request) {
-    Cycle cycle =
-        cycleRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    Cycle cycle = cycleRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
 
     // Allow changing project
     if (request.getProjectId() != null
-        && (cycle.getProject() == null
-            || !cycle.getProject().getId().equals(request.getProjectId()))) {
-      Project project =
-          projectRepository
-              .findById(request.getProjectId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "Project not found with id: " + request.getProjectId()));
+        && (cycle.getProject() == null || !cycle.getProject().getId().equals(request.getProjectId()))) {
+      Project project = projectRepository.findById(request.getProjectId()).orElseThrow(
+          () -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
       cycle.setProject(project);
     }
 
@@ -166,10 +139,8 @@ public class CycleService {
   }
 
   public CycleDTO updatePhase(Long id, CyclePhase phase) {
-    Cycle cycle =
-        cycleRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    Cycle cycle = cycleRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
 
     CyclePhase oldPhase = cycle.getPhase();
     cycle.setPhase(phase);
@@ -184,10 +155,8 @@ public class CycleService {
   }
 
   public CycleDTO toggleActive(Long id) {
-    Cycle cycle =
-        cycleRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    Cycle cycle = cycleRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
 
     cycle.setIsActive(!cycle.getIsActive());
     Cycle saved = cycleRepository.save(cycle);
@@ -195,14 +164,12 @@ public class CycleService {
   }
 
   /**
-   * Close/Deactivate a cycle with retro enforcement. Requires at least one closed retrospective if
-   * retrospectives are enabled for the project.
+   * Close/Deactivate a cycle with retro enforcement. Requires at least one closed
+   * retrospective if retrospectives are enabled for the project.
    */
   public CycleDTO closeCycle(Long id) {
-    Cycle cycle =
-        cycleRepository
-            .findByIdWithProject(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    Cycle cycle = cycleRepository.findByIdWithProject(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
 
     // Check retrospective requirement
     CycleRetroStatusDTO retroStatus = getCycleRetroStatus(id);
@@ -217,15 +184,11 @@ public class CycleService {
 
   /** Get the retrospective completion status for a cycle. */
   public CycleRetroStatusDTO getCycleRetroStatus(Long cycleId) {
-    Cycle cycle =
-        cycleRepository
-            .findByIdWithProject(cycleId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+    Cycle cycle = cycleRepository.findByIdWithProject(cycleId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
 
-    boolean retroEnabled =
-        cycle.getProject() != null
-            && Boolean.TRUE.equals(cycle.getProject().getEnableRetrospectives());
+    boolean retroEnabled = cycle.getProject() != null
+        && Boolean.TRUE.equals(cycle.getProject().getEnableRetrospectives());
 
     long totalRetros = retroRepository.countByCycleId(cycleId);
     long closedRetros = retroRepository.countByCycleIdAndStatus(cycleId, RetroStatus.CLOSED);
@@ -241,18 +204,11 @@ public class CycleService {
       message = "Cycle can be closed - retrospective completed";
     } else {
       canClose = false;
-      message =
-          "You can't close this cycle yet — create and close at least one Retro for this cycle.";
+      message = "You can't close this cycle yet — create and close at least one Retro for this cycle.";
     }
 
-    return CycleRetroStatusDTO.builder()
-        .cycleId(cycleId)
-        .cycleName(cycle.getName())
-        .totalRetros((int) totalRetros)
-        .closedRetros((int) closedRetros)
-        .canCloseCycle(canClose)
-        .message(message)
-        .build();
+    return CycleRetroStatusDTO.builder().cycleId(cycleId).cycleName(cycle.getName()).totalRetros((int) totalRetros)
+        .closedRetros((int) closedRetros).canCloseCycle(canClose).message(message).build();
   }
 
   public void deleteCycle(Long id) {
@@ -263,21 +219,13 @@ public class CycleService {
   }
 
   private CycleDTO toDTO(Cycle cycle) {
-    CycleDTO.CycleDTOBuilder builder =
-        CycleDTO.builder()
-            .id(cycle.getId())
-            .name(cycle.getName())
-            .startDate(cycle.getStartDate())
-            .endDate(cycle.getEndDate())
-            .phase(cycle.getPhase())
-            .isActive(cycle.getIsActive())
-            .pitchCount(cycle.getPitches() != null ? cycle.getPitches().size() : 0)
-            .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
+    CycleDTO.CycleDTOBuilder builder = CycleDTO.builder().id(cycle.getId()).name(cycle.getName())
+        .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).phase(cycle.getPhase())
+        .isActive(cycle.getIsActive()).pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
+        .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
 
     if (cycle.getProject() != null) {
-      builder
-          .projectId(cycle.getProject().getId())
-          .projectName(cycle.getProject().getName())
+      builder.projectId(cycle.getProject().getId()).projectName(cycle.getProject().getName())
           .projectKey(cycle.getProject().getProjectKey());
     }
 
@@ -285,9 +233,10 @@ public class CycleService {
   }
 
   /**
-   * Calculate or validate cycle end date based on configuration and user privileges. - If no end
-   * date provided: auto-calculate from start date + organization's default cycle length - If end
-   * date provided: only ADMIN/PROJECT_MANAGER can override, otherwise throw exception
+   * Calculate or validate cycle end date based on configuration and user
+   * privileges. - If no end date provided: auto-calculate from start date +
+   * organization's default cycle length - If end date provided: only
+   * ADMIN/PROJECT_MANAGER can override, otherwise throw exception
    */
   private LocalDate calculateOrValidateEndDate(LocalDate startDate, LocalDate providedEndDate) {
     if (providedEndDate == null) {
@@ -306,7 +255,9 @@ public class CycleService {
     return providedEndDate;
   }
 
-  /** Calculate end date from start date using organization's default cycle length */
+  /**
+   * Calculate end date from start date using organization's default cycle length
+   */
   private LocalDate calculateEndDateFromConfiguration(LocalDate startDate) {
     var settings = organizationSettingsService.getSettings();
     Integer cycleLengthWeeks = settings.getDefaultCycleLengthWeeks();
@@ -322,8 +273,8 @@ public class CycleService {
   }
 
   /**
-   * Check if current user has privilege to override cycle dates. Only ADMIN and PROJECT_MANAGER
-   * roles can set custom dates.
+   * Check if current user has privilege to override cycle dates. Only ADMIN and
+   * PROJECT_MANAGER roles can set custom dates.
    */
   private boolean currentUserCanOverrideCycleDates() {
     try {
@@ -338,11 +289,8 @@ public class CycleService {
       return role == UserRole.ADMIN || role == UserRole.MANAGER;
     } catch (Exception e) {
       // Throw exception to surface authentication/authorization issues
-      log.error(
-          "Failed to determine current user's role when checking cycle date override privileges",
-          e);
-      throw new RuntimeException(
-          messageService.getMessage("error.cycle.permissions.verification.failed"), e);
+      log.error("Failed to determine current user's role when checking cycle date override privileges", e);
+      throw new RuntimeException(messageService.getMessage("error.cycle.permissions.verification.failed"), e);
     }
   }
 

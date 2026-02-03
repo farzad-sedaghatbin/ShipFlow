@@ -29,9 +29,11 @@ public class Project {
   @Column(columnDefinition = "TEXT")
   private String description;
 
-  @Column private String color; // Hex color for UI
+  @Column
+  private String color; // Hex color for UI
 
-  @Column private String logoUrl;
+  @Column
+  private String logoUrl;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "owner_id")
@@ -41,8 +43,9 @@ public class Project {
   private Boolean isActive;
 
   /**
-   * Project methodology type - determines available features and navigation. SHAPE_UP: 6-week
-   * cycles with betting, pitches, and cooldown KANBAN: Continuous flow with visual board, no cycles
+   * Project methodology type - determines available features and navigation.
+   * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown KANBAN:
+   * Continuous flow with visual board, no cycles
    */
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
@@ -56,7 +59,8 @@ public class Project {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
-  @Column private LocalDateTime updatedAt;
+  @Column
+  private LocalDateTime updatedAt;
 
   @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
   @Builder.Default

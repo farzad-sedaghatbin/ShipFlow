@@ -37,29 +37,22 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public UserDTO findById(Long id) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     return toDTO(user);
   }
 
   @Transactional(readOnly = true)
   public UserDTO findByUsername(String username) {
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("User not found with username: " + username));
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     return toDTO(user);
   }
 
   @Transactional(readOnly = true)
   public User findUserByUsername(String username) {
-    return userRepository
-        .findByUsernameWithPerson(username)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("User not found with username: " + username));
+    return userRepository.findByUsernameWithPerson(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
   }
 
   @Transactional
@@ -69,22 +62,12 @@ public class UserService {
           messageService.getMessage("error.user.username.exists", request.getUsername()));
     }
 
-    User user =
-        User.builder()
-            .username(request.getUsername())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role(request.getRole())
-            .isActive(true)
-            .build();
+    User user = User.builder().username(request.getUsername())
+        .password(passwordEncoder.encode(request.getPassword())).role(request.getRole()).isActive(true).build();
 
     if (request.getPersonId() != null) {
-      Person person =
-          personRepository
-              .findById(request.getPersonId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "Person not found with id: " + request.getPersonId()));
+      Person person = personRepository.findById(request.getPersonId()).orElseThrow(
+          () -> new ResourceNotFoundException("Person not found with id: " + request.getPersonId()));
       user.setPerson(person);
     }
 
@@ -94,10 +77,8 @@ public class UserService {
 
   @Transactional
   public UserDTO updateRole(Long id, UserRole role) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     user.setRole(role);
     user = userRepository.save(user);
     return toDTO(user);
@@ -105,15 +86,10 @@ public class UserService {
 
   @Transactional
   public UserDTO linkToPerson(Long userId, Long personId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-    Person person =
-        personRepository
-            .findById(personId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Person not found with id: " + personId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    Person person = personRepository.findById(personId)
+        .orElseThrow(() -> new ResourceNotFoundException("Person not found with id: " + personId));
     user.setPerson(person);
     user = userRepository.save(user);
     return toDTO(user);
@@ -121,10 +97,8 @@ public class UserService {
 
   @Transactional
   public UserDTO deactivate(Long id) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     user.setIsActive(false);
     user = userRepository.save(user);
     return toDTO(user);
@@ -132,10 +106,8 @@ public class UserService {
 
   @Transactional
   public UserDTO activate(Long id) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     user.setIsActive(true);
     user = userRepository.save(user);
     return toDTO(user);
@@ -143,24 +115,19 @@ public class UserService {
 
   @Transactional
   public void changePassword(Long id, String newPassword) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     user.setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(user);
   }
 
   @Transactional
   public void changePassword(Long id, ChangePasswordRequest request) {
-    User user =
-        userRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
     if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-      throw new IllegalArgumentException(
-          messageService.getMessage("error.user.password.incorrect"));
+      throw new IllegalArgumentException(messageService.getMessage("error.user.password.incorrect"));
     }
 
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -169,24 +136,17 @@ public class UserService {
 
   @Transactional
   public String createPasswordResetToken(String email) {
-    User user =
-        userRepository
-            .findByEmail(email)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("User not found with email: " + email));
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
     // Invalidate any existing tokens for this user
     passwordResetTokenRepository.invalidateAllTokensForUser(user);
 
     // Create new token
     String token = UUID.randomUUID().toString();
-    PasswordResetToken resetToken =
-        PasswordResetToken.builder()
-            .token(token)
-            .user(user)
-            .expiryDate(LocalDateTime.now().plusHours(24)) // Token valid for 24 hours
-            .used(false)
-            .build();
+    PasswordResetToken resetToken = PasswordResetToken.builder().token(token).user(user)
+        .expiryDate(LocalDateTime.now().plusHours(24)) // Token valid for 24 hours
+        .used(false).build();
 
     passwordResetTokenRepository.save(resetToken);
 
@@ -196,15 +156,11 @@ public class UserService {
 
   @Transactional
   public void resetPassword(ResetPasswordRequest request) {
-    PasswordResetToken resetToken =
-        passwordResetTokenRepository
-            .findByTokenAndUsedFalse(request.getToken())
-            .orElseThrow(
-                () -> new IllegalArgumentException("Invalid or expired password reset token"));
+    PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(request.getToken())
+        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
 
     if (!resetToken.isValid()) {
-      throw new IllegalArgumentException(
-          messageService.getMessage("error.user.reset.token.expired"));
+      throw new IllegalArgumentException(messageService.getMessage("error.user.reset.token.expired"));
     }
 
     User user = resetToken.getUser();
@@ -220,37 +176,28 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public boolean validateResetToken(String token) {
-    return passwordResetTokenRepository
-        .findByTokenAndUsedFalse(token)
-        .map(PasswordResetToken::isValid)
+    return passwordResetTokenRepository.findByTokenAndUsedFalse(token).map(PasswordResetToken::isValid)
         .orElse(false);
   }
 
   @Transactional(readOnly = true)
   public UserProfileDTO getProfile(Long userId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     return toProfileDTO(user);
   }
 
   @Transactional(readOnly = true)
   public UserProfileDTO getProfileByUsername(String username) {
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("User not found with username: " + username));
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     return toProfileDTO(user);
   }
 
   @Transactional
   public UserProfileDTO updateProfile(Long userId, UpdateProfileRequest request) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
     // Update email if provided
     if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
@@ -291,40 +238,23 @@ public class UserService {
   }
 
   private UserProfileDTO toProfileDTO(User user) {
-    UserProfileDTO.UserProfileDTOBuilder builder =
-        UserProfileDTO.builder()
-            .id(user.getId())
-            .username(user.getUsername())
-            .email(user.getEmail())
-            .role(user.getRole())
-            .isActive(user.getIsActive())
-            .createdAt(user.getCreatedAt())
-            .updatedAt(user.getUpdatedAt());
+    UserProfileDTO.UserProfileDTOBuilder builder = UserProfileDTO.builder().id(user.getId())
+        .username(user.getUsername()).email(user.getEmail()).role(user.getRole()).isActive(user.getIsActive())
+        .createdAt(user.getCreatedAt()).updatedAt(user.getUpdatedAt());
 
     if (user.getPerson() != null) {
       Person person = user.getPerson();
-      builder
-          .personId(person.getId())
-          .personName(person.getName())
-          .avatarUrl(person.getAvatarUrl())
-          .department(person.getDepartment())
-          .bio(person.getBio())
-          .skills(person.getSkills());
+      builder.personId(person.getId()).personName(person.getName()).avatarUrl(person.getAvatarUrl())
+          .department(person.getDepartment()).bio(person.getBio()).skills(person.getSkills());
     }
 
     return builder.build();
   }
 
   private UserDTO toDTO(User user) {
-    return UserDTO.builder()
-        .id(user.getId())
-        .username(user.getUsername())
-        .role(user.getRole())
+    return UserDTO.builder().id(user.getId()).username(user.getUsername()).role(user.getRole())
         .personId(user.getPerson() != null ? user.getPerson().getId() : null)
-        .personName(user.getPerson() != null ? user.getPerson().getName() : null)
-        .isActive(user.getIsActive())
-        .createdAt(user.getCreatedAt())
-        .updatedAt(user.getUpdatedAt())
-        .build();
+        .personName(user.getPerson() != null ? user.getPerson().getName() : null).isActive(user.getIsActive())
+        .createdAt(user.getCreatedAt()).updatedAt(user.getUpdatedAt()).build();
   }
 }

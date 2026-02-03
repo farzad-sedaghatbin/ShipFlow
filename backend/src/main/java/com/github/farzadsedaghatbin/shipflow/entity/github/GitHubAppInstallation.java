@@ -7,12 +7,14 @@ import lombok.*;
 /**
  * Entity to store GitHub App installation data.
  *
- * <p>When a user authorizes the GitHub App for their organization, this entity stores the
- * installation details including access tokens and the scope (all repositories or selected
- * repositories).
+ * <p>
+ * When a user authorizes the GitHub App for their organization, this entity
+ * stores the installation details including access tokens and the scope (all
+ * repositories or selected repositories).
  *
- * <p>This enables organization-wide repository access with a single authorization, eliminating the
- * need to add repositories one by one.
+ * <p>
+ * This enables organization-wide repository access with a single authorization,
+ * eliminating the need to add repositories one by one.
  */
 @Entity
 @Table(name = "github_app_installations")
@@ -44,15 +46,16 @@ public class GitHubAppInstallation {
   private Long accountId;
 
   /**
-   * Repository selection: "all" or "selected" "all" means access to all current and future
-   * repositories "selected" means access only to explicitly selected repositories
+   * Repository selection: "all" or "selected" "all" means access to all current
+   * and future repositories "selected" means access only to explicitly selected
+   * repositories
    */
   @Column(name = "repository_selection", nullable = false, length = 20)
   private String repositorySelection;
 
   /**
-   * Installation access token (short-lived, auto-refreshed) Used for API calls to GitHub on behalf
-   * of the installation
+   * Installation access token (short-lived, auto-refreshed) Used for API calls to
+   * GitHub on behalf of the installation
    */
   @Column(name = "access_token", length = 500)
   private String accessToken;
@@ -62,8 +65,8 @@ public class GitHubAppInstallation {
   private LocalDateTime tokenExpiresAt;
 
   /**
-   * Permissions granted to this installation (JSON format) e.g., {"contents": "read",
-   * "pull_requests": "write"}
+   * Permissions granted to this installation (JSON format) e.g., {"contents":
+   * "read", "pull_requests": "write"}
    */
   @Column(name = "permissions", columnDefinition = "TEXT")
   private String permissions;
@@ -126,7 +129,9 @@ public class GitHubAppInstallation {
     updatedAt = LocalDateTime.now();
   }
 
-  /** Check if the access token is expired or about to expire (within 5 minutes) */
+  /**
+   * Check if the access token is expired or about to expire (within 5 minutes)
+   */
   public boolean isTokenExpired() {
     if (tokenExpiresAt == null) {
       return true;

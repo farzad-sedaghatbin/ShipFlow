@@ -27,12 +27,8 @@ public class NoteService {
   private final LocalizationService localizationService;
 
   @Autowired
-  public NoteService(
-      ManualNoteRepository noteRepository,
-      PitchRepository pitchRepository,
-      MeetingRepository meetingRepository,
-      TeamRepository teamRepository,
-      CycleRepository cycleRepository,
+  public NoteService(ManualNoteRepository noteRepository, PitchRepository pitchRepository,
+      MeetingRepository meetingRepository, TeamRepository teamRepository, CycleRepository cycleRepository,
       UserRepository userRepository,
       @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService,
       LocalizationService localizationService) {
@@ -49,15 +45,9 @@ public class NoteService {
   /** Create a new note. */
   @Transactional
   public NoteDTO createNote(CreateNoteRequest request, Long authorId) {
-    ManualNote note =
-        ManualNote.builder()
-            .title(request.getTitle())
-            .content(request.getContent())
-            .contextType(request.getContextType().toLowerCase())
-            .contextId(request.getContextId())
-            .authorId(authorId)
-            .includeInKnowledge(request.getIncludeInKnowledge())
-            .build();
+    ManualNote note = ManualNote.builder().title(request.getTitle()).content(request.getContent())
+        .contextType(request.getContextType().toLowerCase()).contextId(request.getContextId())
+        .authorId(authorId).includeInKnowledge(request.getIncludeInKnowledge()).build();
 
     // Set related IDs based on context
     setRelatedIds(note, request.getContextType(), request.getContextId());
@@ -77,10 +67,8 @@ public class NoteService {
   /** Update an existing note. */
   @Transactional
   public NoteDTO updateNote(Long noteId, CreateNoteRequest request, Long userId) {
-    ManualNote note =
-        noteRepository
-            .findById(noteId)
-            .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
+    ManualNote note = noteRepository.findById(noteId)
+        .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
 
     // Verify ownership
     if (!note.getAuthorId().equals(userId)) {
@@ -104,10 +92,8 @@ public class NoteService {
   /** Delete a note. */
   @Transactional
   public void deleteNote(Long noteId, Long userId) {
-    ManualNote note =
-        noteRepository
-            .findById(noteId)
-            .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
+    ManualNote note = noteRepository.findById(noteId)
+        .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
 
     // Verify ownership
     if (!note.getAuthorId().equals(userId)) {
@@ -120,92 +106,70 @@ public class NoteService {
 
   /** Get a note by ID. */
   public NoteDTO getNoteById(Long noteId) {
-    ManualNote note =
-        noteRepository
-            .findById(noteId)
-            .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
+    ManualNote note = noteRepository.findById(noteId)
+        .orElseThrow(() -> new RuntimeException("Note not found: " + noteId));
     return toDTO(note);
   }
 
   /** Get notes by context. */
   public List<NoteDTO> getNotesByContext(String contextType, Long contextId) {
-    return noteRepository
-        .findByContextTypeAndContextId(contextType.toLowerCase(), contextId)
-        .stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return noteRepository.findByContextTypeAndContextId(contextType.toLowerCase(), contextId).stream()
+        .map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get notes by author. */
   public List<NoteDTO> getNotesByAuthor(Long authorId) {
-    return noteRepository.findByAuthorId(authorId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return noteRepository.findByAuthorId(authorId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get notes by pitch. */
   public List<NoteDTO> getNotesByPitch(Long pitchId) {
-    return noteRepository.findByPitchId(pitchId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return noteRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get notes by cycle. */
   public List<NoteDTO> getNotesByCycle(Long cycleId) {
-    return noteRepository.findByCycleId(cycleId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return noteRepository.findByCycleId(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get notes by team. */
   public List<NoteDTO> getNotesByTeam(Long teamId) {
-    return noteRepository.findByTeamId(teamId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return noteRepository.findByTeamId(teamId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   // ===== Private helper methods =====
 
   private void setRelatedIds(ManualNote note, String contextType, Long contextId) {
     switch (contextType.toLowerCase()) {
-      case "pitch":
+      case "pitch" :
         note.setPitchId(contextId);
-        pitchRepository
-            .findById(contextId)
-            .ifPresent(
-                pitch -> {
-                  note.setCycleId(pitch.getCycle().getId());
-                  if (pitch.getTeam() != null) {
-                    note.setTeamId(pitch.getTeam().getId());
-                  }
-                });
+        pitchRepository.findById(contextId).ifPresent(pitch -> {
+          note.setCycleId(pitch.getCycle().getId());
+          if (pitch.getTeam() != null) {
+            note.setTeamId(pitch.getTeam().getId());
+          }
+        });
         break;
-      case "meeting":
-        meetingRepository
-            .findById(contextId)
-            .ifPresent(
-                meeting -> {
-                  if (meeting.getPitch() != null) {
-                    note.setPitchId(meeting.getPitch().getId());
-                    note.setCycleId(meeting.getPitch().getCycle().getId());
-                    if (meeting.getPitch().getTeam() != null) {
-                      note.setTeamId(meeting.getPitch().getTeam().getId());
-                    }
-                  }
-                });
+      case "meeting" :
+        meetingRepository.findById(contextId).ifPresent(meeting -> {
+          if (meeting.getPitch() != null) {
+            note.setPitchId(meeting.getPitch().getId());
+            note.setCycleId(meeting.getPitch().getCycle().getId());
+            if (meeting.getPitch().getTeam() != null) {
+              note.setTeamId(meeting.getPitch().getTeam().getId());
+            }
+          }
+        });
         break;
-      case "team":
+      case "team" :
         note.setTeamId(contextId);
-        teamRepository
-            .findById(contextId)
-            .ifPresent(
-                team -> {
-                  if (team.getCycle() != null) {
-                    note.setCycleId(team.getCycle().getId());
-                  }
-                });
+        teamRepository.findById(contextId).ifPresent(team -> {
+          if (team.getCycle() != null) {
+            note.setCycleId(team.getCycle().getId());
+          }
+        });
         break;
-      case "cycle":
+      case "cycle" :
         note.setCycleId(contextId);
         break;
     }
@@ -217,20 +181,10 @@ public class NoteService {
       authorName = userRepository.findById(note.getAuthorId()).map(User::getUsername).orElse(null);
     }
 
-    return NoteDTO.builder()
-        .id(note.getId())
-        .title(note.getTitle())
-        .content(note.getContent())
-        .contextType(note.getContextType())
-        .contextId(note.getContextId())
-        .cycleId(note.getCycleId())
-        .teamId(note.getTeamId())
-        .pitchId(note.getPitchId())
-        .authorId(note.getAuthorId())
-        .authorName(authorName)
-        .includeInKnowledge(note.getIncludeInKnowledge())
-        .createdAt(note.getCreatedAt())
-        .updatedAt(note.getUpdatedAt())
-        .build();
+    return NoteDTO.builder().id(note.getId()).title(note.getTitle()).content(note.getContent())
+        .contextType(note.getContextType()).contextId(note.getContextId()).cycleId(note.getCycleId())
+        .teamId(note.getTeamId()).pitchId(note.getPitchId()).authorId(note.getAuthorId()).authorName(authorName)
+        .includeInKnowledge(note.getIncludeInKnowledge()).createdAt(note.getCreatedAt())
+        .updatedAt(note.getUpdatedAt()).build();
   }
 }

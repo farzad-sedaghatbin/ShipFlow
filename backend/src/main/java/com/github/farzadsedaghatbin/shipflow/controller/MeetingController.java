@@ -38,43 +38,30 @@ public class MeetingController {
   @GetMapping("/paginated")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get all meetings with pagination and sorting")
-  public ResponseEntity<Page<MeetingDTO>> getAllMeetingsPaginated(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "dateHeld") String sortBy,
+  public ResponseEntity<Page<MeetingDTO>> getAllMeetingsPaginated(@RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size, @RequestParam(defaultValue = "dateHeld") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
-    Sort.Direction direction =
-        sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(meetingService.getAllMeetingsPaginated(pageable));
   }
 
   @GetMapping("/filter")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
-  @Operation(
-      summary = "Get meetings with filters, pagination and sorting",
-      description = "Filter meetings by cycle, project, pitch, types, date range, DOR/DOD status")
-  public ResponseEntity<Page<MeetingDTO>> getMeetingsWithFilters(
-      @RequestParam(required = false) Long cycleId,
-      @RequestParam(required = false) Long projectId,
-      @RequestParam(required = false) Long pitchId,
+  @Operation(summary = "Get meetings with filters, pagination and sorting", description = "Filter meetings by cycle, project, pitch, types, date range, DOR/DOD status")
+  public ResponseEntity<Page<MeetingDTO>> getMeetingsWithFilters(@RequestParam(required = false) Long cycleId,
+      @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long pitchId,
       @RequestParam(required = false) List<MeetingType> types,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate startDate,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate endDate,
-      @RequestParam(required = false) Boolean dorReady,
-      @RequestParam(required = false) Boolean dodReady,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+      @RequestParam(required = false) Boolean dorReady, @RequestParam(required = false) Boolean dodReady,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "dateHeld") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
-    Sort.Direction direction =
-        sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-    return ResponseEntity.ok(
-        meetingService.getMeetingsWithFilters(
-            cycleId, projectId, pitchId, types, startDate, endDate, dorReady, dodReady, pageable));
+    return ResponseEntity.ok(meetingService.getMeetingsWithFilters(cycleId, projectId, pitchId, types, startDate,
+        endDate, dorReady, dodReady, pageable));
   }
 
   @GetMapping("/pitch/{pitchId}")
@@ -101,16 +88,15 @@ public class MeetingController {
   @PostMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Create a new meeting")
-  public ResponseEntity<MeetingDTO> createMeeting(
-      @Valid @RequestBody CreateMeetingRequest request) {
+  public ResponseEntity<MeetingDTO> createMeeting(@Valid @RequestBody CreateMeetingRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(meetingService.createMeeting(request));
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Update a meeting")
-  public ResponseEntity<MeetingDTO> updateMeeting(
-      @PathVariable Long id, @Valid @RequestBody CreateMeetingRequest request) {
+  public ResponseEntity<MeetingDTO> updateMeeting(@PathVariable Long id,
+      @Valid @RequestBody CreateMeetingRequest request) {
     return ResponseEntity.ok(meetingService.updateMeeting(id, request));
   }
 

@@ -26,85 +26,62 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Unit tests for GitHubIntegrationController Tests REST API endpoints for GitHub integration using
- * MockMvc
+ * Unit tests for GitHubIntegrationController Tests REST API endpoints for
+ * GitHub integration using MockMvc
  */
 @WebMvcTest(GitHubIntegrationController.class)
 @Import(TestAIConfig.class)
-@TestPropertySource(
-    properties = {
-      "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-      "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="
-    })
+@TestPropertySource(properties = {"spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+    "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="})
 class GitHubIntegrationControllerTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @MockBean private GitHubIntegrationService integrationService;
+  @MockBean
+  private GitHubIntegrationService integrationService;
 
-  @MockBean private MessageService messageService;
+  @MockBean
+  private MessageService messageService;
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void registerRepository_WithValidRequest_ShouldReturn201() throws Exception {
     // Given
-    CreateGitHubRepositoryRequest request =
-        CreateGitHubRepositoryRequest.builder()
-            .owner("testorg")
-            .name("testrepo")
-            .defaultBranch("main")
-            .autoLinkEnabled(true)
-            .autoCloseTasksOnMerge(true)
-            .build();
+    CreateGitHubRepositoryRequest request = CreateGitHubRepositoryRequest.builder().owner("testorg")
+        .name("testrepo").defaultBranch("main").autoLinkEnabled(true).autoCloseTasksOnMerge(true).build();
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/repositories")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated());
+    mockMvc.perform(post("/api/github/repositories").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated());
   }
 
   @Test
   @WithMockUser(roles = "USER")
   void registerRepository_AsNonAdmin_ShouldReturn403() throws Exception {
     // Given
-    CreateGitHubRepositoryRequest request =
-        CreateGitHubRepositoryRequest.builder().owner("testorg").name("testrepo").build();
+    CreateGitHubRepositoryRequest request = CreateGitHubRepositoryRequest.builder().owner("testorg")
+        .name("testrepo").build();
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/repositories")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/github/repositories").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser
   void getAllRepositories_ShouldReturnList() throws Exception {
     // Given
-    GitHubRepositoryDTO repo =
-        GitHubRepositoryDTO.builder()
-            .id(1L)
-            .owner("testorg")
-            .name("testrepo")
-            .fullName("testorg/testrepo")
-            .isActive(true)
-            .build();
+    GitHubRepositoryDTO repo = GitHubRepositoryDTO.builder().id(1L).owner("testorg").name("testrepo")
+        .fullName("testorg/testrepo").isActive(true).build();
 
     when(integrationService.getAllRepositories()).thenReturn(List.of(repo));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/github/repositories"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/github/repositories")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].fullName").value("testorg/testrepo"));
   }
 
@@ -112,15 +89,12 @@ class GitHubIntegrationControllerTest {
   @WithMockUser
   void getTaskGitHubLinks_ShouldReturnLinks() throws Exception {
     // Given
-    GitHubLinkDTO link =
-        GitHubLinkDTO.builder().id(1L).linkType(GitHubLinkType.COMMIT).autoLinked(true).build();
+    GitHubLinkDTO link = GitHubLinkDTO.builder().id(1L).linkType(GitHubLinkType.COMMIT).autoLinked(true).build();
 
     when(integrationService.getTaskGitHubLinks(anyLong())).thenReturn(List.of(link));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/github/tasks/42/links"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/github/tasks/42/links")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].linkType").value("COMMIT"))
         .andExpect(jsonPath("$[0].autoLinked").value(true));
   }
@@ -129,15 +103,12 @@ class GitHubIntegrationControllerTest {
   @WithMockUser
   void getPitchGitHubLinks_ShouldReturnLinks() throws Exception {
     // Given
-    GitHubLinkDTO link =
-        GitHubLinkDTO.builder().id(1L).linkType(GitHubLinkType.PULL_REQUEST).build();
+    GitHubLinkDTO link = GitHubLinkDTO.builder().id(1L).linkType(GitHubLinkType.PULL_REQUEST).build();
 
     when(integrationService.getPitchGitHubLinks(anyLong())).thenReturn(List.of(link));
 
     // When & Then
-    mockMvc
-        .perform(get("/api/github/pitches/5/links"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/github/pitches/5/links")).andExpect(status().isOk())
         .andExpect(jsonPath("$[0].linkType").value("PULL_REQUEST"));
   }
 

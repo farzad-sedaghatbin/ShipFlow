@@ -23,19 +23,23 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Unit tests for OrganizationSettingsService. Tests cover: - Retrieving settings (existing and
- * default creation) - Updating settings (full and partial updates) - Resetting to defaults - JSON
- * serialization/deserialization - Audit trail tracking
+ * Unit tests for OrganizationSettingsService. Tests cover: - Retrieving
+ * settings (existing and default creation) - Updating settings (full and
+ * partial updates) - Resetting to defaults - JSON serialization/deserialization
+ * - Audit trail tracking
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrganizationSettingsService Tests")
 class OrganizationSettingsServiceTest {
 
-  @Mock private OrganizationSettingsRepository settingsRepository;
+  @Mock
+  private OrganizationSettingsRepository settingsRepository;
 
-  @Mock private ObjectMapper objectMapper;
+  @Mock
+  private ObjectMapper objectMapper;
 
-  @InjectMocks private OrganizationSettingsService settingsService;
+  @InjectMocks
+  private OrganizationSettingsService settingsService;
 
   private OrganizationSettings testSettings;
   private String testUsername = "admin";
@@ -45,24 +49,14 @@ class OrganizationSettingsServiceTest {
     // Use real ObjectMapper for these tests
     settingsService = new OrganizationSettingsService(settingsRepository, new ObjectMapper());
 
-    testSettings =
-        OrganizationSettings.builder()
-            .id(1L)
-            .organizationName("Test Org")
-            .defaultCycleLengthWeeks(6)
-            .defaultCooldownWeeks(2)
-            .riskThresholdsJson("{\"lowMax\":30,\"mediumMax\":60,\"highMax\":85}")
-            .taskCategoriesJson(
-                "[{\"name\":\"PITCH_SCOPE\",\"description\":\"Pitch work\",\"color\":\"#3B82F6\",\"isActive\":true,\"order\":1}]")
-            .pitchCategoriesJson(
-                "[{\"name\":\"FEATURE\",\"description\":\"New features\",\"color\":\"#10B981\",\"isActive\":true,\"order\":1}]")
-            .timeZone("UTC")
-            .dateFormat("MM/DD/YYYY")
-            .enableNotifications(true)
-            .enableAIFeatures(true)
-            .updatedBy(testUsername)
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testSettings = OrganizationSettings.builder().id(1L).organizationName("Test Org").defaultCycleLengthWeeks(6)
+        .defaultCooldownWeeks(2).riskThresholdsJson("{\"lowMax\":30,\"mediumMax\":60,\"highMax\":85}")
+        .taskCategoriesJson(
+            "[{\"name\":\"PITCH_SCOPE\",\"description\":\"Pitch work\",\"color\":\"#3B82F6\",\"isActive\":true,\"order\":1}]")
+        .pitchCategoriesJson(
+            "[{\"name\":\"FEATURE\",\"description\":\"New features\",\"color\":\"#10B981\",\"isActive\":true,\"order\":1}]")
+        .timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true).enableAIFeatures(true)
+        .updatedBy(testUsername).updatedAt(LocalDateTime.now()).build();
   }
 
   @Nested
@@ -103,13 +97,11 @@ class OrganizationSettingsServiceTest {
     void shouldCreateDefaultSettingsWhenNoneExist() {
       // Given
       when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.getSettings();
@@ -126,8 +118,7 @@ class OrganizationSettingsServiceTest {
       assertThat(result.getEnableNotifications()).isTrue();
       assertThat(result.getEnableAIFeatures()).isTrue();
 
-      ArgumentCaptor<OrganizationSettings> captor =
-          ArgumentCaptor.forClass(OrganizationSettings.class);
+      ArgumentCaptor<OrganizationSettings> captor = ArgumentCaptor.forClass(OrganizationSettings.class);
       verify(settingsRepository).save(captor.capture());
       OrganizationSettings saved = captor.getValue();
       assertThat(saved.getOrganizationName()).isEqualTo("My Organization");
@@ -181,10 +172,8 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder()
-              .organizationName("New Organization Name")
-              .build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .organizationName("New Organization Name").build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -192,8 +181,7 @@ class OrganizationSettingsServiceTest {
       // Then
       assertThat(result.getOrganizationName()).isEqualTo("New Organization Name");
 
-      ArgumentCaptor<OrganizationSettings> captor =
-          ArgumentCaptor.forClass(OrganizationSettings.class);
+      ArgumentCaptor<OrganizationSettings> captor = ArgumentCaptor.forClass(OrganizationSettings.class);
       verify(settingsRepository).save(captor.capture());
       assertThat(captor.getValue().getOrganizationName()).isEqualTo("New Organization Name");
       assertThat(captor.getValue().getUpdatedBy()).isEqualTo(testUsername);
@@ -207,11 +195,8 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder()
-              .defaultCycleLengthWeeks(8)
-              .defaultCooldownWeeks(3)
-              .build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .defaultCycleLengthWeeks(8).defaultCooldownWeeks(3).build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -229,15 +214,11 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      OrganizationSettingsDTO.RiskThresholds newThresholds =
-          OrganizationSettingsDTO.RiskThresholds.builder()
-              .lowMax(25)
-              .mediumMax(55)
-              .highMax(80)
-              .build();
+      OrganizationSettingsDTO.RiskThresholds newThresholds = OrganizationSettingsDTO.RiskThresholds.builder()
+          .lowMax(25).mediumMax(55).highMax(80).build();
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder().riskThresholds(newThresholds).build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .riskThresholds(newThresholds).build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -257,18 +238,12 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      List<OrganizationSettingsDTO.CategoryConfig> newCategories =
-          List.of(
-              OrganizationSettingsDTO.CategoryConfig.builder()
-                  .name("CUSTOM_CATEGORY")
-                  .description("Custom work")
-                  .color("#FF5733")
-                  .isActive(true)
-                  .order(1)
-                  .build());
+      List<OrganizationSettingsDTO.CategoryConfig> newCategories = List
+          .of(OrganizationSettingsDTO.CategoryConfig.builder().name("CUSTOM_CATEGORY")
+              .description("Custom work").color("#FF5733").isActive(true).order(1).build());
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder().taskCategories(newCategories).build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .taskCategories(newCategories).build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -287,11 +262,8 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder()
-              .enableNotifications(false)
-              .enableAIFeatures(false)
-              .build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .enableNotifications(false).enableAIFeatures(false).build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -309,11 +281,10 @@ class OrganizationSettingsServiceTest {
       when(settingsRepository.save(any(OrganizationSettings.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder()
-              .organizationName("Partial Update")
-              // Other fields not provided
-              .build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .organizationName("Partial Update")
+          // Other fields not provided
+          .build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -335,8 +306,8 @@ class OrganizationSettingsServiceTest {
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       String specificUser = "specific-admin";
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder().organizationName("Test").build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .organizationName("Test").build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, specificUser);
@@ -350,16 +321,14 @@ class OrganizationSettingsServiceTest {
     void shouldCreateDefaultSettingsIfNoneExistWhenUpdating() {
       // Given
       when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
-      UpdateOrganizationSettingsRequest request =
-          UpdateOrganizationSettingsRequest.builder().organizationName("New Org").build();
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .organizationName("New Org").build();
 
       // When
       OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
@@ -379,13 +348,11 @@ class OrganizationSettingsServiceTest {
     @DisplayName("Should delete existing settings and create defaults")
     void shouldDeleteExistingAndCreateDefaults() {
       // Given
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.resetToDefaults(testUsername);
@@ -410,13 +377,11 @@ class OrganizationSettingsServiceTest {
     @DisplayName("Should create default task categories on reset")
     void shouldCreateDefaultTaskCategoriesOnReset() {
       // Given
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.resetToDefaults(testUsername);
@@ -431,13 +396,11 @@ class OrganizationSettingsServiceTest {
     @DisplayName("Should create default pitch categories on reset")
     void shouldCreateDefaultPitchCategoriesOnReset() {
       // Given
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.resetToDefaults(testUsername);
@@ -460,13 +423,11 @@ class OrganizationSettingsServiceTest {
     void defaultSettingsShouldHaveCorrectCycleConfiguration() {
       // Given
       when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.getSettings();
@@ -481,13 +442,11 @@ class OrganizationSettingsServiceTest {
     void defaultSettingsShouldHaveCorrectRiskThresholds() {
       // Given
       when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.getSettings();
@@ -503,13 +462,11 @@ class OrganizationSettingsServiceTest {
     void defaultSettingsShouldEnableAllFeatures() {
       // Given
       when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
-      when(settingsRepository.save(any(OrganizationSettings.class)))
-          .thenAnswer(
-              invocation -> {
-                OrganizationSettings saved = invocation.getArgument(0);
-                saved.setId(1L);
-                return saved;
-              });
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
 
       // When
       OrganizationSettingsDTO result = settingsService.getSettings();

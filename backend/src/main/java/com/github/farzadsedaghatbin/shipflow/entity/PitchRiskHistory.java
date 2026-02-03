@@ -7,18 +7,14 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Historical record of pitch risk scores for trend analysis. Snapshots are created: - Daily via
- * scheduled job - On significant events (status change, work log added) - On manual risk analysis
- * refresh
+ * Historical record of pitch risk scores for trend analysis. Snapshots are
+ * created: - Daily via scheduled job - On significant events (status change,
+ * work log added) - On manual risk analysis refresh
  */
 @Entity
-@Table(
-    name = "pitch_risk_history",
-    indexes = {
-      @Index(name = "idx_pitch_risk_history_pitch", columnList = "pitch_id"),
-      @Index(name = "idx_pitch_risk_history_date", columnList = "recorded_at"),
-      @Index(name = "idx_pitch_risk_history_pitch_date", columnList = "pitch_id, recorded_at")
-    })
+@Table(name = "pitch_risk_history", indexes = {@Index(name = "idx_pitch_risk_history_pitch", columnList = "pitch_id"),
+    @Index(name = "idx_pitch_risk_history_date", columnList = "recorded_at"),
+    @Index(name = "idx_pitch_risk_history_pitch_date", columnList = "pitch_id, recorded_at")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,16 +28,8 @@ public class PitchRiskHistory {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "pitch_id", nullable = false)
-  @JsonIgnoreProperties({
-    "hibernateLazyInitializer",
-    "handler",
-    "cycle",
-    "team",
-    "workLogs",
-    "meetings",
-    "evidences",
-    "deletedBy"
-  })
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "cycle", "team", "workLogs", "meetings", "evidences",
+      "deletedBy"})
   private Pitch pitch;
 
   @Column(nullable = false)

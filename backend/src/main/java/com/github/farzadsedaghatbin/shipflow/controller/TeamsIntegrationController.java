@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
-@Tag(
-    name = "Microsoft Teams Integration",
-    description = "APIs for managing Microsoft Teams integration and notifications")
+@Tag(name = "Microsoft Teams Integration", description = "APIs for managing Microsoft Teams integration and notifications")
 public class TeamsIntegrationController {
 
   private static final Logger LOGGER = Logger.getLogger(TeamsIntegrationController.class.getName());
@@ -30,9 +28,7 @@ public class TeamsIntegrationController {
 
   @PostMapping("/configurations")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Create or update Teams tenant configuration",
-      description = "Configure Microsoft Teams integration with webhook URL and default channel")
+  @Operation(summary = "Create or update Teams tenant configuration", description = "Configure Microsoft Teams integration with webhook URL and default channel")
   public ResponseEntity<TeamsConfigurationDTO> createConfiguration(
       @Valid @RequestBody CreateTeamsConfigurationRequest request) {
     TeamsConfigurationDTO config = teamsService.createOrUpdateConfiguration(request);
@@ -63,20 +59,16 @@ public class TeamsIntegrationController {
 
   @PostMapping("/configurations/{configId}/channels")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Create or update channel configuration",
-      description = "Configure notification preferences for a specific Teams channel")
-  public ResponseEntity<TeamsChannelConfigDTO> createChannelConfig(
-      @PathVariable Long configId, @Valid @RequestBody CreateTeamsChannelConfigRequest request) {
-    TeamsChannelConfigDTO channelConfig =
-        teamsService.createOrUpdateChannelConfig(configId, request);
+  @Operation(summary = "Create or update channel configuration", description = "Configure notification preferences for a specific Teams channel")
+  public ResponseEntity<TeamsChannelConfigDTO> createChannelConfig(@PathVariable Long configId,
+      @Valid @RequestBody CreateTeamsChannelConfigRequest request) {
+    TeamsChannelConfigDTO channelConfig = teamsService.createOrUpdateChannelConfig(configId, request);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelConfig);
   }
 
   @GetMapping("/configurations/{configId}/channels")
   @Operation(summary = "Get all channel configurations for a Teams tenant")
-  public ResponseEntity<List<TeamsChannelConfigDTO>> getChannelConfigs(
-      @PathVariable Long configId) {
+  public ResponseEntity<List<TeamsChannelConfigDTO>> getChannelConfigs(@PathVariable Long configId) {
     return ResponseEntity.ok(teamsService.getChannelConfigs(configId));
   }
 
@@ -90,11 +82,9 @@ public class TeamsIntegrationController {
 
   @PostMapping("/configurations/{configId}/test")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Send a test notification to Teams",
-      description = "Test the Microsoft Teams integration by sending a test message")
-  public ResponseEntity<String> sendTestNotification(
-      @PathVariable Long configId, @RequestBody TestTeamsNotificationRequest request) {
+  @Operation(summary = "Send a test notification to Teams", description = "Test the Microsoft Teams integration by sending a test message")
+  public ResponseEntity<String> sendTestNotification(@PathVariable Long configId,
+      @RequestBody TestTeamsNotificationRequest request) {
     try {
       teamsService.sendTestNotification(configId, request);
       return ResponseEntity.ok(messageService.getMessage("teams.notification.sent"));
@@ -107,11 +97,8 @@ public class TeamsIntegrationController {
 
   @GetMapping("/configurations/{configId}/history")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Get notification history",
-      description = "Retrieve the history of Teams notifications sent")
-  public ResponseEntity<List<TeamsNotificationHistoryDTO>> getNotificationHistory(
-      @PathVariable Long configId) {
+  @Operation(summary = "Get notification history", description = "Retrieve the history of Teams notifications sent")
+  public ResponseEntity<List<TeamsNotificationHistoryDTO>> getNotificationHistory(@PathVariable Long configId) {
     return ResponseEntity.ok(teamsService.getNotificationHistory(configId));
   }
 }

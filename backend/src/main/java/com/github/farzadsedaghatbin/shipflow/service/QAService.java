@@ -29,7 +29,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Service for handling Q&A interactions using RAG (Retrieval-Augmented Generation). */
+/**
+ * Service for handling Q&A interactions using RAG (Retrieval-Augmented
+ * Generation).
+ */
 @Service
 @Slf4j
 public class QAService {
@@ -62,17 +65,13 @@ public class QAService {
   private final ContentGuardrails contentGuardrails;
 
   @Autowired
-  public QAService(
-      KnowledgeItemRepository knowledgeItemRepository,
-      QAInteractionRepository qaInteractionRepository,
+  public QAService(KnowledgeItemRepository knowledgeItemRepository, QAInteractionRepository qaInteractionRepository,
       @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
       @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService,
-      @Autowired(required = false) QAConfig qaConfig,
-      @Autowired(required = false) AIConfig aiConfig,
-      AICacheService cacheService,
-      @Autowired(required = false) RAGEvaluator ragEvaluator,
+      @Autowired(required = false) QAConfig qaConfig, @Autowired(required = false) AIConfig aiConfig,
+      AICacheService cacheService, @Autowired(required = false) RAGEvaluator ragEvaluator,
       @Autowired(required = false) DocumentReranker documentReranker,
       @Autowired(required = false) ContextWindowManager contextWindowManager,
       @Autowired(required = false) ConversationManager conversationManager,
@@ -81,8 +80,7 @@ public class QAService {
       @Autowired(required = false) FeedbackLearningService feedbackLearningService,
       @Autowired(required = false) LLMCacheService llmCacheService,
       @Autowired(required = false) PromptCompressor promptCompressor,
-      @Autowired(required = false) ContentGuardrails contentGuardrails,
-      MessageService messageService) {
+      @Autowired(required = false) ContentGuardrails contentGuardrails, MessageService messageService) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
     this.embeddingModel = embeddingModel;
@@ -105,59 +103,45 @@ public class QAService {
     this.messageService = messageService;
   }
 
-  /** Ask a question and get an AI-generated answer based on retrieved knowledge. */
+  /**
+   * Ask a question and get an AI-generated answer based on retrieved knowledge.
+   */
   @Transactional
   public QAResponse askQuestion(AskQuestionRequest request, Long userId) {
     long startTime = System.currentTimeMillis();
 
     if (!isQAEnabled()) {
-      return QAResponse.builder()
-          .question(request.getQuestion())
-          .aiEnabled(false)
-          .errorMessage("Q&A feature is not enabled")
-          .answeredAt(LocalDateTime.now())
-          .build();
+      return QAResponse.builder().question(request.getQuestion()).aiEnabled(false)
+          .errorMessage("Q&A feature is not enabled").answeredAt(LocalDateTime.now()).build();
     }
 
     // Check cache first for similar questions
-    Optional<QAResponse> cachedResponse =
-        cacheService.getCachedQAResponse(
-            request.getQuestion(),
-            request.getContextType(),
-            request.getContextId(),
-            request.getCycleId(),
-            request.getTeamId());
+    Optional<QAResponse> cachedResponse = cacheService.getCachedQAResponse(request.getQuestion(),
+        request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId());
 
     if (cachedResponse.isPresent()) {
       log.debug("Returning cached Q&A response for similar question");
       QAResponse cached = cachedResponse.get();
       // Return cached response with updated metadata
-      return QAResponse.builder()
-          .question(request.getQuestion())
-          .answer(cached.getAnswer())
-          .sources(cached.getSources())
-          .confidenceScore(cached.getConfidenceScore())
-          .answeredAt(LocalDateTime.now())
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .aiEnabled(cached.getAiEnabled())
-          .suggestedFollowUps(cached.getSuggestedFollowUps())
-          .cached(true) // Mark as cached response
+      return QAResponse.builder().question(request.getQuestion()).answer(cached.getAnswer())
+          .sources(cached.getSources()).confidenceScore(cached.getConfidenceScore())
+          .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
+          .aiEnabled(cached.getAiEnabled()).suggestedFollowUps(cached.getSuggestedFollowUps()).cached(true) // Mark
+          // as
+          // cached
+          // response
           .build();
     }
 
-    // Get or create conversation context early so it can be used for context inference
+    // Get or create conversation context early so it can be used for context
+    // inference
     ConversationContext conversation = null;
     if (conversationManager != null && request.getConversationId() != null) {
       try {
-        conversation =
-            conversationManager.getOrCreateConversation(
-                request.getConversationId(),
-                userId,
-                request.getContextType(),
-                request.getContextId());
+        conversation = conversationManager.getOrCreateConversation(request.getConversationId(), userId,
+            request.getContextType(), request.getContextId());
       } catch (Exception e) {
-        log.warn(
-            "Failed to get/create conversation, continuing without history: {}", e.getMessage());
+        log.warn("Failed to get/create conversation, continuing without history: {}", e.getMessage());
         // Continue without conversation memory - graceful degradation
       }
     }
@@ -165,21 +149,19 @@ public class QAService {
     // Note: We don't automatically extract IDs from questions like "cycle 4"
     // because "cycle 4" could be part of a name (e.g., "Cycle 5 - Build Sprint")
     // Let semantic search handle finding entities by name naturally.
-    // IDs should be provided explicitly via contextId parameter (e.g., from URL context)
+    // IDs should be provided explicitly via contextId parameter (e.g., from URL
+    // context)
 
     // Try to infer context from conversation history if not provided
-    if (conversation != null
-        && conversationManager != null
-        && request.getContextId() == null
+    if (conversation != null && conversationManager != null && request.getContextId() == null
         && request.getContextType() != null) {
       try {
-        ConversationContext.ContextInfo previousContext =
-            conversationManager.getMostRecentContext(conversation.getConversationId());
+        ConversationContext.ContextInfo previousContext = conversationManager
+            .getMostRecentContext(conversation.getConversationId());
         if (previousContext != null
             && previousContext.getContextType().equalsIgnoreCase(request.getContextType())) {
           request.setContextId(previousContext.getContextId());
-          log.info(
-              "Inferred contextId={} from conversation history", previousContext.getContextId());
+          log.info("Inferred contextId={} from conversation history", previousContext.getContextId());
         }
       } catch (Exception e) {
         log.debug("Could not infer context from conversation: {}", e.getMessage());
@@ -190,15 +172,9 @@ public class QAService {
     String ambiguityCheck = checkForAmbiguousContext(request);
     if (ambiguityCheck != null) {
       log.info("Detected ambiguous context in question: {}", request.getQuestion());
-      return QAResponse.builder()
-          .question(request.getQuestion())
-          .answer(ambiguityCheck)
-          .confidenceScore(0)
-          .answeredAt(LocalDateTime.now())
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .aiEnabled(true)
-          .suggestedFollowUps(generateClarificationSuggestions(request))
-          .cached(false)
+      return QAResponse.builder().question(request.getQuestion()).answer(ambiguityCheck).confidenceScore(0)
+          .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
+          .aiEnabled(true).suggestedFollowUps(generateClarificationSuggestions(request)).cached(false)
           .build();
     }
 
@@ -211,8 +187,8 @@ public class QAService {
 
       if (queryDecomposer != null && queryDecomposer.shouldDecompose(request.getQuestion())) {
         try {
-          QueryDecomposer.DecompositionResult decomposition =
-              queryDecomposer.decomposeWithMetadata(request.getQuestion());
+          QueryDecomposer.DecompositionResult decomposition = queryDecomposer
+              .decomposeWithMetadata(request.getQuestion());
           if (decomposition.wasDecomposed()) {
             subQueries = decomposition.getSubQueries();
             wasDecomposed = true;
@@ -238,12 +214,9 @@ public class QAService {
       List<EmbeddingMatch<TextSegment>> matches;
 
       try {
-        EmbeddingSearchRequest searchRequest =
-            EmbeddingSearchRequest.builder()
-                .queryEmbedding(questionEmbedding)
-                .maxResults(retrieveK * 2) // Retrieve more, then filter
-                .minScore(minScore)
-                .build();
+        EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
+            .queryEmbedding(questionEmbedding).maxResults(retrieveK * 2) // Retrieve more, then filter
+            .minScore(minScore).build();
 
         EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
         matches = searchResult.matches();
@@ -257,13 +230,9 @@ public class QAService {
 
         if (matches == null || matches.isEmpty()) {
           // Last resort: check cache for similar questions
-          Optional<QAResponse> fallbackCachedResponse =
-              cacheService.getCachedQAResponse(
-                  request.getQuestion(),
-                  request.getContextType(),
-                  request.getContextId(),
-                  request.getCycleId(),
-                  request.getTeamId());
+          Optional<QAResponse> fallbackCachedResponse = cacheService.getCachedQAResponse(
+              request.getQuestion(), request.getContextType(), request.getContextId(),
+              request.getCycleId(), request.getTeamId());
 
           if (fallbackCachedResponse.isPresent()) {
             log.info("Returning cached response due to vector store failure");
@@ -272,8 +241,7 @@ public class QAService {
             return cached;
           }
 
-          throw new RuntimeException(
-              messageService.getMessage("error.qa.vector.store.unavailable"), e);
+          throw new RuntimeException(messageService.getMessage("error.qa.vector.store.unavailable"), e);
         }
       }
 
@@ -286,15 +254,12 @@ public class QAService {
       }
 
       // 4. Filter by context
-      if (request.getCycleId() != null
-          || request.getTeamId() != null
-          || request.getContextId() != null) {
+      if (request.getCycleId() != null || request.getTeamId() != null || request.getContextId() != null) {
         matches = filterMatchesByContext(matches, request);
       }
 
       // 5. Filter by minimum relevance
-      matches =
-          matches.stream().filter(match -> match.score() >= minScore).collect(Collectors.toList());
+      matches = matches.stream().filter(match -> match.score() >= minScore).collect(Collectors.toList());
 
       // 6. Re-rank for better ordering
       if (documentReranker != null && matches.size() > retrieveK) {
@@ -304,17 +269,15 @@ public class QAService {
       }
 
       // Log retrieval metrics
-      log.debug(
-          "Retrieved {} documents with avg score: {}",
-          matches.size(),
+      log.debug("Retrieved {} documents with avg score: {}", matches.size(),
           matches.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0));
 
       // 7. Build context with token management
       String context;
       boolean contextTruncated = false;
       if (contextWindowManager != null) {
-        ContextWindowManager.ContextResult contextResult =
-            contextWindowManager.buildManagedContext(matches, request.getQuestion(), 4000);
+        ContextWindowManager.ContextResult contextResult = contextWindowManager.buildManagedContext(matches,
+            request.getQuestion(), 4000);
         context = contextResult.getContext();
         contextTruncated = contextResult.isWasTruncated();
       } else {
@@ -326,11 +289,11 @@ public class QAService {
       // 8. Add conversation history if available
       String conversationHistory = "";
       if (conversation != null && conversationManager != null) {
-        conversationHistory =
-            conversationManager.buildConversationHistory(conversation.getConversationId(), 3);
+        conversationHistory = conversationManager.buildConversationHistory(conversation.getConversationId(), 3);
       }
 
-      // 9. Generate answer using LLM with rate limit handling, caching, compression, and guardrails
+      // 9. Generate answer using LLM with rate limit handling, caching, compression,
+      // and guardrails
       String answer;
       int confidenceScore;
       RAGEvaluationMetrics ragMetrics = null;
@@ -367,8 +330,8 @@ public class QAService {
 
           // Apply active learning boost if available
           if (feedbackLearningService != null) {
-            double patternSuccessRate =
-                feedbackLearningService.getPatternSuccessRate(request.getQuestion());
+            double patternSuccessRate = feedbackLearningService
+                .getPatternSuccessRate(request.getQuestion());
             if (patternSuccessRate < 0.5) {
               log.warn("Query pattern has low success rate: {}", patternSuccessRate);
               confidenceScore = (int) (confidenceScore * 0.9); // Reduce confidence
@@ -377,8 +340,8 @@ public class QAService {
 
           // Apply content guardrails
           if (contentGuardrails != null) {
-            ContentGuardrails.GuardrailResult guardrailResult =
-                contentGuardrails.validate(answer, confidenceScore);
+            ContentGuardrails.GuardrailResult guardrailResult = contentGuardrails.validate(answer,
+                confidenceScore);
 
             if (!guardrailResult.isSafe()) {
               log.warn("Content guardrails detected issues: {}", guardrailResult.getViolations());
@@ -390,8 +353,8 @@ public class QAService {
           // Save conversation turn
           if (conversation != null && conversationManager != null) {
             try {
-              conversationManager.addTurn(
-                  conversation.getConversationId(), request.getQuestion(), answer);
+              conversationManager.addTurn(conversation.getConversationId(), request.getQuestion(),
+                  answer);
             } catch (Exception e) {
               log.warn("Failed to save conversation turn: {}", e.getMessage());
               // Continue - this is not critical
@@ -402,9 +365,7 @@ public class QAService {
           if (ragEvaluator != null) {
             try {
               ragMetrics = ragEvaluator.evaluate(request.getQuestion(), answer, matches);
-              log.debug(
-                  "RAG Metrics - Faithfulness: {}, Relevance: {}",
-                  ragMetrics.getFaithfulness(),
+              log.debug("RAG Metrics - Faithfulness: {}, Relevance: {}", ragMetrics.getFaithfulness(),
                   ragMetrics.getAnswerRelevance());
             } catch (Exception e) {
               log.warn("RAG evaluation failed: {}", e.getMessage());
@@ -431,12 +392,10 @@ public class QAService {
         confidenceScore = Math.min(70, calculateConfidenceScore(matches));
       } else {
         // No semantic matches found - try database keyword search as fallback
-        log.info(
-            "No semantic matches found, attempting database keyword search for: {}",
+        log.info("No semantic matches found, attempting database keyword search for: {}",
             request.getQuestion());
-        List<EmbeddingMatch<TextSegment>> databaseMatches =
-            searchDatabaseByKeywords(
-                request.getQuestion(), request.getContextType(), request.getContextId());
+        List<EmbeddingMatch<TextSegment>> databaseMatches = searchDatabaseByKeywords(request.getQuestion(),
+            request.getContextType(), request.getContextId());
 
         if (!databaseMatches.isEmpty()) {
           log.info("Found {} database matches", databaseMatches.size());
@@ -464,53 +423,36 @@ public class QAService {
             confidenceScore = Math.min(65, calculateConfidenceScore(matches));
           }
         } else {
-          answer =
-              "I couldn't find relevant information to answer your question. "
-                  + "Try rephrasing or asking about something else related to your cycles, pitches, or meetings.";
+          answer = "I couldn't find relevant information to answer your question. "
+              + "Try rephrasing or asking about something else related to your cycles, pitches, or meetings.";
           confidenceScore = 0;
         }
       }
 
       // 6. Save the interaction
-      QAInteraction interaction =
-          QAInteraction.builder()
-              .question(originalQuestion) // Save original question
-              .answer(answer)
-              .contextType(request.getContextType())
-              .contextId(request.getContextId())
-              .cycleId(request.getCycleId())
-              .teamId(request.getTeamId())
-              .userId(userId)
-              .sourceKnowledgeIds(buildSourceIds(matches))
-              .confidenceScore(confidenceScore)
-              .processingTimeMs(System.currentTimeMillis() - startTime)
-              .build();
+      QAInteraction interaction = QAInteraction.builder().question(originalQuestion) // Save original question
+          .answer(answer).contextType(request.getContextType()).contextId(request.getContextId())
+          .cycleId(request.getCycleId()).teamId(request.getTeamId()).userId(userId)
+          .sourceKnowledgeIds(buildSourceIds(matches)).confidenceScore(confidenceScore)
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
 
       interaction = qaInteractionRepository.save(interaction);
 
       // 11. Build response
-      QAResponse response =
-          QAResponse.builder()
-              .interactionId(interaction.getId())
-              .question(originalQuestion) // Use original question in response
-              .answer(answer)
-              .sources(request.getIncludeSources() ? citations : null)
-              .confidenceScore(confidenceScore)
-              .answeredAt(LocalDateTime.now())
-              .processingTimeMs(interaction.getProcessingTimeMs())
-              .aiEnabled(chatLanguageModel != null)
-              .suggestedFollowUps(generateSuggestedFollowUps(request, matches))
-              .cached(false)
-              .conversationId(conversation != null ? conversation.getConversationId() : null)
-              .build();
+      QAResponse response = QAResponse.builder().interactionId(interaction.getId()).question(originalQuestion) // Use
+          // original
+          // question
+          // in
+          // response
+          .answer(answer).sources(request.getIncludeSources() ? citations : null)
+          .confidenceScore(confidenceScore).answeredAt(LocalDateTime.now())
+          .processingTimeMs(interaction.getProcessingTimeMs()).aiEnabled(chatLanguageModel != null)
+          .suggestedFollowUps(generateSuggestedFollowUps(request, matches)).cached(false)
+          .conversationId(conversation != null ? conversation.getConversationId() : null).build();
 
       // 8. Cache the response for future similar questions
-      cacheService.cacheQAResponse(
-          originalQuestion, // Cache with original question
-          request.getContextType(),
-          request.getContextId(),
-          request.getCycleId(),
-          request.getTeamId(),
+      cacheService.cacheQAResponse(originalQuestion, // Cache with original question
+          request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId(),
           response);
 
       return response;
@@ -518,26 +460,17 @@ public class QAService {
     } catch (Exception e) {
       log.error("Error processing question: {}", e.getMessage(), e);
 
-      return QAResponse.builder()
-          .question(request.getQuestion())
-          .aiEnabled(chatLanguageModel != null)
-          .errorMessage("Failed to process question: " + e.getMessage())
-          .answeredAt(LocalDateTime.now())
-          .processingTimeMs(System.currentTimeMillis() - startTime)
-          .build();
+      return QAResponse.builder().question(request.getQuestion()).aiEnabled(chatLanguageModel != null)
+          .errorMessage("Failed to process question: " + e.getMessage()).answeredAt(LocalDateTime.now())
+          .processingTimeMs(System.currentTimeMillis() - startTime).build();
     }
   }
 
   /** Submit feedback for a Q&A response. */
   @Transactional
   public void submitFeedback(QAFeedbackRequest request, Long userId) {
-    QAInteraction interaction =
-        qaInteractionRepository
-            .findById(request.getInteractionId())
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Q&A interaction not found: " + request.getInteractionId()));
+    QAInteraction interaction = qaInteractionRepository.findById(request.getInteractionId())
+        .orElseThrow(() -> new RuntimeException("Q&A interaction not found: " + request.getInteractionId()));
 
     // Verify the user owns this interaction
     if (!interaction.getUserId().equals(userId)) {
@@ -561,10 +494,7 @@ public class QAService {
       }
     }
 
-    log.info(
-        "Feedback submitted for interaction {}: {}",
-        interaction.getId(),
-        request.getFeedbackType());
+    log.info("Feedback submitted for interaction {}: {}", interaction.getId(), request.getFeedbackType());
   }
 
   /** Record simple helpful/unhelpful feedback for active learning. */
@@ -572,10 +502,7 @@ public class QAService {
   public void recordSimpleFeedback(Long interactionId, boolean helpful, String text) {
     if (feedbackLearningService != null) {
       feedbackLearningService.recordFeedback(interactionId, helpful, text);
-      log.info(
-          "Active learning feedback recorded for interaction {}: helpful={}",
-          interactionId,
-          helpful);
+      log.info("Active learning feedback recorded for interaction {}: helpful={}", interactionId, helpful);
     } else {
       log.warn("FeedbackLearningService not available, feedback not recorded");
     }
@@ -583,18 +510,14 @@ public class QAService {
 
   /** Get the status of the Q&A feature. */
   public QAStatusDTO getStatus() {
-    return QAStatusDTO.builder()
-        .qaEnabled(isQAEnabled())
-        .aiAvailable(chatLanguageModel != null)
+    return QAStatusDTO.builder().qaEnabled(isQAEnabled()).aiAvailable(chatLanguageModel != null)
         .vectorStoreType(qaConfig != null ? qaConfig.getVectorStoreProvider() : "none")
         .totalKnowledgeItems(knowledgeItemRepository.count())
         .embeddedKnowledgeItems(knowledgeItemRepository.countEmbedded())
         .totalInteractions(qaInteractionRepository.count())
-        .validatedInteractions(
-            qaInteractionRepository.countValidated(
-                List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED)))
-        .embeddingModel("all-MiniLM-L6-v2")
-        .llmModel(aiConfig != null ? aiConfig.getModelName() : "none")
+        .validatedInteractions(qaInteractionRepository
+            .countValidated(List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED)))
+        .embeddingModel("all-MiniLM-L6-v2").llmModel(aiConfig != null ? aiConfig.getModelName() : "none")
         .build();
   }
 
@@ -609,49 +532,48 @@ public class QAService {
     return qaEnabled && embeddingModel != null && embeddingStore != null;
   }
 
-  private List<EmbeddingMatch<TextSegment>> filterMatchesByContext(
-      List<EmbeddingMatch<TextSegment>> matches, AskQuestionRequest request) {
+  private List<EmbeddingMatch<TextSegment>> filterMatchesByContext(List<EmbeddingMatch<TextSegment>> matches,
+      AskQuestionRequest request) {
 
-    return matches.stream()
-        .filter(
-            match -> {
-              TextSegment segment = match.embedded();
-              if (segment == null || segment.metadata() == null) return true;
+    return matches.stream().filter(match -> {
+      TextSegment segment = match.embedded();
+      if (segment == null || segment.metadata() == null)
+        return true;
 
-              // Filter by cycle
-              if (request.getCycleId() != null) {
-                String cycleId = segment.metadata().getString("cycleId");
-                if (cycleId != null && !cycleId.equals(request.getCycleId().toString())) {
-                  return false;
-                }
-              }
+      // Filter by cycle
+      if (request.getCycleId() != null) {
+        String cycleId = segment.metadata().getString("cycleId");
+        if (cycleId != null && !cycleId.equals(request.getCycleId().toString())) {
+          return false;
+        }
+      }
 
-              // Filter by team
-              if (request.getTeamId() != null) {
-                String teamId = segment.metadata().getString("teamId");
-                if (teamId != null && !teamId.equals(request.getTeamId().toString())) {
-                  return false;
-                }
-              }
+      // Filter by team
+      if (request.getTeamId() != null) {
+        String teamId = segment.metadata().getString("teamId");
+        if (teamId != null && !teamId.equals(request.getTeamId().toString())) {
+          return false;
+        }
+      }
 
-              // Filter by specific entity context
-              if (request.getContextType() != null && request.getContextId() != null) {
-                String entityType = segment.metadata().getString("entityType");
-                String entityId = segment.metadata().getString("entityId");
-                if (!request.getContextType().equalsIgnoreCase(entityType)
-                    || !request.getContextId().toString().equals(entityId)) {
-                  // Allow if it's related (same cycle/team) even if not exact match
-                  return true;
-                }
-              }
+      // Filter by specific entity context
+      if (request.getContextType() != null && request.getContextId() != null) {
+        String entityType = segment.metadata().getString("entityType");
+        String entityId = segment.metadata().getString("entityId");
+        if (!request.getContextType().equalsIgnoreCase(entityType)
+            || !request.getContextId().toString().equals(entityId)) {
+          // Allow if it's related (same cycle/team) even if not exact match
+          return true;
+        }
+      }
 
-              return true;
-            })
-        .collect(Collectors.toList());
+      return true;
+    }).collect(Collectors.toList());
   }
 
   private String buildContext(List<EmbeddingMatch<TextSegment>> matches) {
-    if (matches.isEmpty()) return "";
+    if (matches.isEmpty())
+      return "";
 
     StringBuilder context = new StringBuilder();
     for (int i = 0; i < matches.size(); i++) {
@@ -667,13 +589,13 @@ public class QAService {
     return context.toString();
   }
 
-  private List<QAResponse.SourceCitation> buildCitations(
-      List<EmbeddingMatch<TextSegment>> matches) {
+  private List<QAResponse.SourceCitation> buildCitations(List<EmbeddingMatch<TextSegment>> matches) {
     List<QAResponse.SourceCitation> citations = new ArrayList<>();
 
     for (EmbeddingMatch<TextSegment> match : matches) {
       TextSegment segment = match.embedded();
-      if (segment == null) continue;
+      if (segment == null)
+        continue;
 
       var metadata = segment.metadata();
       Long knowledgeItemId = null;
@@ -704,31 +626,20 @@ public class QAService {
       String text = segment.text();
       String snippet = text.length() > 200 ? text.substring(0, 200) + "..." : text;
 
-      citations.add(
-          QAResponse.SourceCitation.builder()
-              .knowledgeItemId(knowledgeItemId)
-              .entityType(entityType)
-              .entityId(entityId)
-              .title(title)
-              .snippet(snippet)
-              .relevanceScore(match.score())
-              .build());
+      citations.add(QAResponse.SourceCitation.builder().knowledgeItemId(knowledgeItemId).entityType(entityType)
+          .entityId(entityId).title(title).snippet(snippet).relevanceScore(match.score()).build());
     }
 
     return citations;
   }
 
   private String buildSourceIds(List<EmbeddingMatch<TextSegment>> matches) {
-    return matches.stream()
-        .map(
-            match -> {
-              if (match.embedded() != null && match.embedded().metadata() != null) {
-                return match.embedded().metadata().getString("knowledgeItemId");
-              }
-              return null;
-            })
-        .filter(id -> id != null)
-        .collect(Collectors.joining(","));
+    return matches.stream().map(match -> {
+      if (match.embedded() != null && match.embedded().metadata() != null) {
+        return match.embedded().metadata().getString("knowledgeItemId");
+      }
+      return null;
+    }).filter(id -> id != null).collect(Collectors.joining(","));
   }
 
   private String buildPrompt(String question, String context, String conversationHistory) {
@@ -748,23 +659,21 @@ public class QAService {
       prompt.append("\n").append(conversationHistory).append("\n");
     }
 
-    prompt.append(
-        String.format(
-            """
-            Context:
-            %s
+    prompt.append(String.format("""
+        Context:
+        %s
 
-            Question: %s
+        Question: %s
 
-            Answer:
-            """,
-            context, question));
+        Answer:
+        """, context, question));
 
     return prompt.toString();
   }
 
   private int calculateConfidenceScore(List<EmbeddingMatch<TextSegment>> matches) {
-    if (matches.isEmpty()) return 0;
+    if (matches.isEmpty())
+      return 0;
 
     // Calculate average similarity score
     double avgScore = matches.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0.0);
@@ -776,27 +685,27 @@ public class QAService {
     return Math.min(100, baseScore + sourceBonus);
   }
 
-  private List<String> generateSuggestedFollowUps(
-      AskQuestionRequest request, List<EmbeddingMatch<TextSegment>> matches) {
+  private List<String> generateSuggestedFollowUps(AskQuestionRequest request,
+      List<EmbeddingMatch<TextSegment>> matches) {
     List<String> suggestions = new ArrayList<>();
 
     // Generate context-aware follow-up suggestions
     if (request.getContextType() != null) {
       switch (request.getContextType().toLowerCase()) {
-        case "pitch":
+        case "pitch" :
           suggestions.add("What is the current status of this pitch?");
           suggestions.add("Are there any risks associated with this pitch?");
           suggestions.add("What meetings have been held for this pitch?");
           break;
-        case "meeting":
+        case "meeting" :
           suggestions.add("What decisions were made in this meeting?");
           suggestions.add("What are the action items from this meeting?");
           break;
-        case "team":
+        case "team" :
           suggestions.add("What pitches is this team working on?");
           suggestions.add("How is the team progressing in the current cycle?");
           break;
-        case "cycle":
+        case "cycle" :
           suggestions.add("What pitches are in this cycle?");
           suggestions.add("How is the cycle progressing overall?");
           suggestions.add("Are there any at-risk pitches in this cycle?");
@@ -812,8 +721,8 @@ public class QAService {
   }
 
   /**
-   * Attempt fallback search when vector store fails. This could use a backup vector store or basic
-   * text matching.
+   * Attempt fallback search when vector store fails. This could use a backup
+   * vector store or basic text matching.
    */
   private List<EmbeddingMatch<TextSegment>> attemptFallbackSearch(AskQuestionRequest request) {
     try {
@@ -834,21 +743,22 @@ public class QAService {
   /** Detect if the exception is a rate limit error from the LLM provider. */
   private boolean isRateLimitError(Exception e) {
     String message = e.getMessage();
-    if (message == null) return false;
+    if (message == null)
+      return false;
 
     // Check for common rate limit indicators
-    return message.toLowerCase().contains("rate limit")
-        || message.toLowerCase().contains("429")
+    return message.toLowerCase().contains("rate limit") || message.toLowerCase().contains("429")
         || message.toLowerCase().contains("too many requests")
         || message.toLowerCase().contains("quota exceeded");
   }
 
   /**
-   * Search database for knowledge items using keyword matching when semantic search fails. This
-   * provides a fallback for short queries like "cycle 4" that don't embed well.
+   * Search database for knowledge items using keyword matching when semantic
+   * search fails. This provides a fallback for short queries like "cycle 4" that
+   * don't embed well.
    */
-  private List<EmbeddingMatch<TextSegment>> searchDatabaseByKeywords(
-      String question, String contextType, Long contextId) {
+  private List<EmbeddingMatch<TextSegment>> searchDatabaseByKeywords(String question, String contextType,
+      Long contextId) {
     try {
       if (question == null || question.trim().isEmpty()) {
         return Collections.emptyList();
@@ -861,160 +771,91 @@ public class QAService {
       List<com.github.farzadsedaghatbin.shipflow.entity.KnowledgeItem> items;
 
       // Get total knowledge items for debugging
-      List<com.github.farzadsedaghatbin.shipflow.entity.KnowledgeItem> allItems =
-          knowledgeItemRepository.findAll();
+      List<com.github.farzadsedaghatbin.shipflow.entity.KnowledgeItem> allItems = knowledgeItemRepository
+          .findAll();
       long embeddedCount = allItems.stream().filter(item -> item.getIsEmbedded()).count();
       log.info(
           "Database keyword search: total items={}, embedded items={}, search terms={}, contextType={}, contextId={}",
-          allItems.size(),
-          embeddedCount,
-          searchTerms,
-          contextType,
-          contextId);
+          allItems.size(), embeddedCount, searchTerms, contextType, contextId);
 
       // Log entity type distribution
-      Map<String, Long> entityTypeCounts =
-          allItems.stream()
-              .filter(item -> item.getIsEmbedded())
-              .collect(
-                  Collectors.groupingBy(
-                      item -> item.getEntityType().name(), Collectors.counting()));
+      Map<String, Long> entityTypeCounts = allItems.stream().filter(item -> item.getIsEmbedded())
+          .collect(Collectors.groupingBy(item -> item.getEntityType().name(), Collectors.counting()));
       log.info("Entity type distribution: {}", entityTypeCounts);
 
       // Log sample items matching contextType if specified
       if (contextType != null) {
         log.info("Looking for items with contextType={}", contextType);
-        long matchingTypeCount =
-            allItems.stream()
-                .filter(
-                    item ->
-                        item.getIsEmbedded()
-                            && item.getEntityType().name().equalsIgnoreCase(contextType))
-                .count();
+        long matchingTypeCount = allItems.stream().filter(
+            item -> item.getIsEmbedded() && item.getEntityType().name().equalsIgnoreCase(contextType))
+            .count();
         log.info("Found {} items with entityType={}", matchingTypeCount, contextType);
 
         if (matchingTypeCount > 0) {
-          allItems.stream()
-              .filter(
-                  item ->
-                      item.getIsEmbedded()
-                          && item.getEntityType().name().equalsIgnoreCase(contextType))
-              .limit(3)
-              .forEach(
-                  item -> {
-                    String contentPreview =
-                        item.getContent() != null && item.getContent().length() > 100
-                            ? item.getContent().substring(0, 100) + "..."
-                            : item.getContent();
-                    log.info(
-                        "Sample {} item: entityId={}, title='{}', content preview='{}'",
-                        item.getEntityType().name(),
-                        item.getEntityId(),
-                        item.getTitle(),
-                        contentPreview);
-                  });
+          allItems.stream().filter(
+              item -> item.getIsEmbedded() && item.getEntityType().name().equalsIgnoreCase(contextType))
+              .limit(3).forEach(item -> {
+                String contentPreview = item.getContent() != null && item.getContent().length() > 100
+                    ? item.getContent().substring(0, 100) + "..."
+                    : item.getContent();
+                log.info("Sample {} item: entityId={}, title='{}', content preview='{}'",
+                    item.getEntityType().name(), item.getEntityId(), item.getTitle(),
+                    contentPreview);
+              });
         } else {
-          log.info(
-              "No items found with entityType={}, will search across all entity types",
-              contextType);
+          log.info("No items found with entityType={}, will search across all entity types", contextType);
         }
       }
 
       // Search based on context
       // Check if the contextType actually has items in the database
-      boolean contextTypeHasItems =
-          contextType == null
-              || allItems.stream()
-                  .anyMatch(
-                      item ->
-                          item.getIsEmbedded()
-                              && item.getEntityType().name().equalsIgnoreCase(contextType));
+      boolean contextTypeHasItems = contextType == null || allItems.stream().anyMatch(
+          item -> item.getIsEmbedded() && item.getEntityType().name().equalsIgnoreCase(contextType));
 
       if (contextType != null && contextId != null) {
         // Search within specific context
-        items =
-            knowledgeItemRepository.findAll().stream()
-                .filter(item -> item.getIsEmbedded())
-                .filter(
-                    item -> {
-                      String content =
-                          (item.getContent()
-                                  + " "
-                                  + (item.getTitle() != null ? item.getTitle() : ""))
-                              .toLowerCase();
-                      boolean matchesSearch =
-                          searchTerms.stream().anyMatch(term -> content.contains(term));
-                      boolean matchesContext =
-                          contextType.equalsIgnoreCase(item.getEntityType().name())
-                              && contextId.equals(item.getEntityId());
-                      return matchesSearch || matchesContext;
-                    })
-                .limit(5)
-                .collect(Collectors.toList());
+        items = knowledgeItemRepository.findAll().stream().filter(item -> item.getIsEmbedded()).filter(item -> {
+          String content = (item.getContent() + " " + (item.getTitle() != null ? item.getTitle() : ""))
+              .toLowerCase();
+          boolean matchesSearch = searchTerms.stream().anyMatch(term -> content.contains(term));
+          boolean matchesContext = contextType.equalsIgnoreCase(item.getEntityType().name())
+              && contextId.equals(item.getEntityId());
+          return matchesSearch || matchesContext;
+        }).limit(5).collect(Collectors.toList());
       } else if (contextType != null && contextTypeHasItems) {
         // Search within entity type (only if that type exists)
-        items =
-            knowledgeItemRepository.findAll().stream()
-                .filter(item -> item.getIsEmbedded())
-                .filter(
-                    item -> {
-                      String content =
-                          (item.getContent()
-                                  + " "
-                                  + (item.getTitle() != null ? item.getTitle() : ""))
-                              .toLowerCase();
-                      return searchTerms.stream().anyMatch(term -> content.contains(term))
-                          && contextType.equalsIgnoreCase(item.getEntityType().name());
-                    })
-                .limit(5)
-                .collect(Collectors.toList());
+        items = knowledgeItemRepository.findAll().stream().filter(item -> item.getIsEmbedded()).filter(item -> {
+          String content = (item.getContent() + " " + (item.getTitle() != null ? item.getTitle() : ""))
+              .toLowerCase();
+          return searchTerms.stream().anyMatch(term -> content.contains(term))
+              && contextType.equalsIgnoreCase(item.getEntityType().name());
+        }).limit(5).collect(Collectors.toList());
       } else {
         // General keyword search
-        items =
-            knowledgeItemRepository.findAll().stream()
-                .filter(item -> item.getIsEmbedded())
-                .filter(
-                    item -> {
-                      String content =
-                          (item.getContent()
-                                  + " "
-                                  + (item.getTitle() != null ? item.getTitle() : ""))
-                              .toLowerCase();
-                      return searchTerms.stream().anyMatch(term -> content.contains(term));
-                    })
-                .limit(5)
-                .collect(Collectors.toList());
+        items = knowledgeItemRepository.findAll().stream().filter(item -> item.getIsEmbedded()).filter(item -> {
+          String content = (item.getContent() + " " + (item.getTitle() != null ? item.getTitle() : ""))
+              .toLowerCase();
+          return searchTerms.stream().anyMatch(term -> content.contains(term));
+        }).limit(5).collect(Collectors.toList());
       }
 
-      log.info(
-          "Database keyword search found {} items matching any of: {}", items.size(), searchTerms);
+      log.info("Database keyword search found {} items matching any of: {}", items.size(), searchTerms);
       if (!items.isEmpty()) {
-        log.debug(
-            "Sample matched item: entityType={}, entityId={}, title={}",
-            items.get(0).getEntityType(),
-            items.get(0).getEntityId(),
-            items.get(0).getTitle());
+        log.debug("Sample matched item: entityType={}, entityId={}, title={}", items.get(0).getEntityType(),
+            items.get(0).getEntityId(), items.get(0).getTitle());
       }
 
       // Convert to EmbeddingMatch format for compatibility
-      return items.stream()
-          .map(
-              item -> {
-                TextSegment segment =
-                    TextSegment.from(
-                        item.getContent(),
-                        new dev.langchain4j.data.document.Metadata()
-                            .put("id", item.getId().toString())
-                            .put("entityType", item.getEntityType().name())
-                            .put("entityId", item.getEntityId().toString())
-                            .put("title", item.getTitle() != null ? item.getTitle() : ""));
-                return new EmbeddingMatch<>(
-                    0.75, // Fixed relevance score for keyword matches
-                    item.getEmbeddingId(),
-                    null, // No embedding for keyword match
-                    segment);
-              })
-          .collect(Collectors.toList());
+      return items.stream().map(item -> {
+        TextSegment segment = TextSegment.from(item.getContent(),
+            new dev.langchain4j.data.document.Metadata().put("id", item.getId().toString())
+                .put("entityType", item.getEntityType().name())
+                .put("entityId", item.getEntityId().toString())
+                .put("title", item.getTitle() != null ? item.getTitle() : ""));
+        return new EmbeddingMatch<>(0.75, // Fixed relevance score for keyword matches
+            item.getEmbeddingId(), null, // No embedding for keyword match
+            segment);
+      }).collect(Collectors.toList());
 
     } catch (Exception e) {
       log.error("Database keyword search failed: {}", e.getMessage());
@@ -1023,9 +864,10 @@ public class QAService {
   }
 
   /**
-   * Extract meaningful search terms from a question. Examples: - "Are there any at-risk pitches in
-   * cycle 5?" → ["cycle 5", "at-risk", "at_risk", "risk"] - "cycle 4" → ["cycle 4", "4"] - "What is
-   * the status of the API pitch?" → ["api", "status", "pitch"]
+   * Extract meaningful search terms from a question. Examples: - "Are there any
+   * at-risk pitches in cycle 5?" → ["cycle 5", "at-risk", "at_risk", "risk"] -
+   * "cycle 4" → ["cycle 4", "4"] - "What is the status of the API pitch?" →
+   * ["api", "status", "pitch"]
    */
   private List<String> extractSearchTerms(String question) {
     if (question == null || question.trim().isEmpty()) {
@@ -1036,8 +878,7 @@ public class QAService {
     String lowerQuestion = question.toLowerCase().trim();
 
     // Extract entity + number patterns (cycle 5, pitch 4, etc.)
-    java.util.regex.Pattern entityPattern =
-        java.util.regex.Pattern.compile("(cycle|pitch|team|meeting)\\s+\\d+");
+    java.util.regex.Pattern entityPattern = java.util.regex.Pattern.compile("(cycle|pitch|team|meeting)\\s+\\d+");
     java.util.regex.Matcher entityMatcher = entityPattern.matcher(lowerQuestion);
     while (entityMatcher.find()) {
       terms.add(entityMatcher.group().trim());
@@ -1045,17 +886,14 @@ public class QAService {
 
     // Extract and convert status-related terms
     // "at-risk" → both "at-risk" and "at_risk" (for enum matching)
-    if (lowerQuestion.contains("at-risk")
-        || lowerQuestion.contains("at risk")
-        || lowerQuestion.contains("risk")) {
+    if (lowerQuestion.contains("at-risk") || lowerQuestion.contains("at risk") || lowerQuestion.contains("risk")) {
       terms.add("at-risk");
       terms.add("at_risk");
       terms.add("risk");
     }
 
     // "in progress" → both forms
-    if (lowerQuestion.contains("in progress")
-        || lowerQuestion.contains("in-progress")
+    if (lowerQuestion.contains("in progress") || lowerQuestion.contains("in-progress")
         || lowerQuestion.contains("progress")) {
       terms.add("in_progress");
       terms.add("in progress");
@@ -1068,8 +906,7 @@ public class QAService {
       terms.add("start");
     }
 
-    if (lowerQuestion.contains("completed")
-        || lowerQuestion.contains("complete")
+    if (lowerQuestion.contains("completed") || lowerQuestion.contains("complete")
         || lowerQuestion.contains("done")) {
       terms.add("completed");
       terms.add("complete");
@@ -1087,13 +924,9 @@ public class QAService {
     }
 
     // Remove common question words
-    String cleaned =
-        lowerQuestion
-            .replaceAll(
-                "\\b(what|where|when|who|why|how|is|are|the|a|an|in|on|at|for|to|of|about|tell|me|show|any|there)\\b",
-                " ")
-            .replaceAll("\\s+", " ")
-            .trim();
+    String cleaned = lowerQuestion.replaceAll(
+        "\\b(what|where|when|who|why|how|is|are|the|a|an|in|on|at|for|to|of|about|tell|me|show|any|there)\\b",
+        " ").replaceAll("\\s+", " ").trim();
 
     // Extract significant words (3+ characters, not stop words)
     String[] words = cleaned.split("\\s+");
@@ -1111,15 +944,12 @@ public class QAService {
     }
 
     // Remove duplicates and empty strings
-    return terms.stream()
-        .filter(t -> t != null && !t.trim().isEmpty())
-        .distinct()
-        .collect(Collectors.toList());
+    return terms.stream().filter(t -> t != null && !t.trim().isEmpty()).distinct().collect(Collectors.toList());
   }
 
   /**
-   * Check if a question is likely asking for an entity by ID only, vs. being part of a name (e.g.,
-   * "cycle 4" vs "Cycle 4 Planning").
+   * Check if a question is likely asking for an entity by ID only, vs. being part
+   * of a name (e.g., "cycle 4" vs "Cycle 4 Planning").
    */
   private boolean isLikelyIdOnlyQuery(String question) {
     if (question == null) {
@@ -1149,8 +979,8 @@ public class QAService {
   }
 
   /**
-   * Extract entity ID from question text based on context type. Examples: "cycle 4" → 4, "pitch 15"
-   * → 15, "team 2" → 2
+   * Extract entity ID from question text based on context type. Examples: "cycle
+   * 4" → 4, "pitch 15" → 15, "team 2" → 2
    */
   private Long extractEntityIdFromQuestion(String question, String contextType) {
     if (question == null || contextType == null) {
@@ -1161,8 +991,7 @@ public class QAService {
     String lowerContextType = contextType.toLowerCase();
 
     // Pattern 1: "cycle 4", "pitch 15", "team 2", "meeting 3"
-    java.util.regex.Pattern pattern1 =
-        java.util.regex.Pattern.compile("\\b" + lowerContextType + "\\s+(\\d+)\\b");
+    java.util.regex.Pattern pattern1 = java.util.regex.Pattern.compile("\\b" + lowerContextType + "\\s+(\\d+)\\b");
     java.util.regex.Matcher matcher1 = pattern1.matcher(lowerQuestion);
     if (matcher1.find()) {
       try {
@@ -1182,9 +1011,8 @@ public class QAService {
     }
 
     // Pattern 3: "in cycle 4", "for pitch 15", "about team 2"
-    java.util.regex.Pattern pattern3 =
-        java.util.regex.Pattern.compile(
-            "\\b(?:in|for|about|from)\\s+" + lowerContextType + "\\s+(\\d+)\\b");
+    java.util.regex.Pattern pattern3 = java.util.regex.Pattern
+        .compile("\\b(?:in|for|about|from)\\s+" + lowerContextType + "\\s+(\\d+)\\b");
     java.util.regex.Matcher matcher3 = pattern3.matcher(lowerQuestion);
     if (matcher3.find()) {
       try {
@@ -1198,8 +1026,8 @@ public class QAService {
   }
 
   /**
-   * Expand vague questions into more searchable queries. Examples: "cycle 4" → "What pitches are in
-   * cycle 4?"
+   * Expand vague questions into more searchable queries. Examples: "cycle 4" →
+   * "What pitches are in cycle 4?"
    */
   private String expandVagueQuestion(String question, String contextType, Long contextId) {
     if (question == null || question.trim().isEmpty()) {
@@ -1211,12 +1039,8 @@ public class QAService {
 
     // Check if question is very short (just entity name/number or 1-2 words)
     String[] words = trimmed.split("\\s+");
-    boolean isVague =
-        words.length <= 2
-            || lowerQuestion.matches(
-                "^(\\d+|"
-                    + (contextType != null ? contextType.toLowerCase() + "\\s*\\d+" : "\\d+")
-                    + ")$");
+    boolean isVague = words.length <= 2 || lowerQuestion
+        .matches("^(\\d+|" + (contextType != null ? contextType.toLowerCase() + "\\s*\\d+" : "\\d+") + ")$");
 
     if (!isVague) {
       return question; // Question is detailed enough
@@ -1225,15 +1049,15 @@ public class QAService {
     // Expand based on context type
     if (contextType != null && contextId != null) {
       switch (contextType.toLowerCase()) {
-        case "cycle":
+        case "cycle" :
           return "What pitches are in cycle " + contextId + "?";
-        case "pitch":
+        case "pitch" :
           return "Tell me about pitch " + contextId;
-        case "team":
+        case "team" :
           return "What is team " + contextId + " working on?";
-        case "meeting":
+        case "meeting" :
           return "What was discussed in meeting " + contextId + "?";
-        default:
+        default :
           return "Tell me about " + contextType + " " + contextId;
       }
     } else if (contextType != null) {
@@ -1246,14 +1070,16 @@ public class QAService {
   }
 
   /**
-   * Check if the question contains ambiguous contextual references without providing context.
-   * Returns a clarification message if ambiguous, null otherwise.
+   * Check if the question contains ambiguous contextual references without
+   * providing context. Returns a clarification message if ambiguous, null
+   * otherwise.
    */
   private String checkForAmbiguousContext(AskQuestionRequest request) {
     String question = request.getQuestion().toLowerCase();
 
     // Only check for ambiguity if contextType is set but contextId is null
-    // This means the request came from a context-aware page but without specific context
+    // This means the request came from a context-aware page but without specific
+    // context
     if (request.getContextType() == null || request.getContextId() != null) {
       return null; // No ambiguity if no context type or context ID is already set
     }
@@ -1301,25 +1127,25 @@ public class QAService {
 
     if (request.getContextType() != null) {
       switch (request.getContextType().toLowerCase()) {
-        case "cycle":
+        case "cycle" :
           suggestions.add("What pitches are in cycle 5?");
           suggestions.add("Show me the latest cycle");
           suggestions.add("List all active cycles");
           break;
-        case "pitch":
+        case "pitch" :
           suggestions.add("Tell me about the Email Notification System pitch");
           suggestions.add("What pitches need attention?");
           suggestions.add("List all pitches");
           break;
-        case "team":
+        case "team" :
           suggestions.add("What is the Frontend Team working on?");
           suggestions.add("Show me all teams");
           break;
-        case "meeting":
+        case "meeting" :
           suggestions.add("What was discussed in the latest kickoff meeting?");
           suggestions.add("Show recent meetings");
           break;
-        default:
+        default :
           suggestions.add("Tell me about the current cycle");
           suggestions.add("What pitches need attention?");
           break;

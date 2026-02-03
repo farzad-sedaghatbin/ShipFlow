@@ -23,20 +23,16 @@ public interface TestRunRepository extends JpaRepository<TestRun, Long> {
 
   List<TestRun> findByExecutedById(Long userId);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.testCase.id = :testCaseId ORDER BY tr.executedAt DESC")
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.testCase.id = :testCaseId ORDER BY tr.executedAt DESC")
   List<TestRun> findByTestCaseIdOrderByExecutedAtDesc(@Param("testCaseId") Long testCaseId);
 
-  @Query(
-      "SELECT tr FROM TestRun tr WHERE tr.testCase.id = :testCaseId ORDER BY tr.executedAt DESC LIMIT 1")
+  @Query("SELECT tr FROM TestRun tr WHERE tr.testCase.id = :testCaseId ORDER BY tr.executedAt DESC LIMIT 1")
   TestRun findLatestByTestCaseId(@Param("testCaseId") Long testCaseId);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId ORDER BY tr.executedAt DESC")
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId ORDER BY tr.executedAt DESC")
   List<TestRun> findByPitchIdOrderByExecutedAtDesc(@Param("pitchId") Long pitchId);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.cycle.id = :cycleId ORDER BY tr.executedAt DESC")
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.cycle.id = :cycleId ORDER BY tr.executedAt DESC")
   List<TestRun> findByCycleIdOrderByExecutedAtDesc(@Param("cycleId") Long cycleId);
 
   @Query("SELECT COUNT(tr) FROM TestRun tr WHERE tr.testCase.id = :testCaseId")
@@ -49,27 +45,21 @@ public interface TestRunRepository extends JpaRepository<TestRun, Long> {
   long countByCycleId(@Param("cycleId") Long cycleId);
 
   @Query("SELECT COUNT(tr) FROM TestRun tr WHERE tr.pitch.id = :pitchId AND tr.status = :status")
-  long countByPitchIdAndStatus(
-      @Param("pitchId") Long pitchId, @Param("status") TestRunStatus status);
+  long countByPitchIdAndStatus(@Param("pitchId") Long pitchId, @Param("status") TestRunStatus status);
 
   @Query("SELECT COUNT(tr) FROM TestRun tr WHERE tr.cycle.id = :cycleId AND tr.status = :status")
-  long countByCycleIdAndStatus(
-      @Param("cycleId") Long cycleId, @Param("status") TestRunStatus status);
+  long countByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") TestRunStatus status);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.executedAt >= :fromDate AND tr.executedAt <= :toDate ORDER BY tr.executedAt DESC")
-  List<TestRun> findByExecutedAtBetween(
-      @Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.executedAt >= :fromDate AND tr.executedAt <= :toDate ORDER BY tr.executedAt DESC")
+  List<TestRun> findByExecutedAtBetween(@Param("fromDate") LocalDateTime fromDate,
+      @Param("toDate") LocalDateTime toDate);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId AND tr.status = 'PASSED' ORDER BY tr.executedAt DESC")
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId AND tr.status = 'PASSED' ORDER BY tr.executedAt DESC")
   List<TestRun> findPassedByPitchId(@Param("pitchId") Long pitchId);
 
-  @Query(
-      "SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId AND tr.status = 'FAILED' ORDER BY tr.executedAt DESC")
+  @Query("SELECT tr FROM TestRun tr LEFT JOIN FETCH tr.testCase LEFT JOIN FETCH tr.pitch LEFT JOIN FETCH tr.cycle LEFT JOIN FETCH tr.executedBy WHERE tr.pitch.id = :pitchId AND tr.status = 'FAILED' ORDER BY tr.executedAt DESC")
   List<TestRun> findFailedByPitchId(@Param("pitchId") Long pitchId);
 
-  @Query(
-      "SELECT AVG(tr.durationSeconds) FROM TestRun tr WHERE tr.testCase.id = :testCaseId AND tr.durationSeconds IS NOT NULL")
+  @Query("SELECT AVG(tr.durationSeconds) FROM TestRun tr WHERE tr.testCase.id = :testCaseId AND tr.durationSeconds IS NOT NULL")
   Double findAvgDurationByTestCaseId(@Param("testCaseId") Long testCaseId);
 }

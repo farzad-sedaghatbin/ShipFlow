@@ -19,11 +19,8 @@ class VectorStoreProviderFactoryTest {
   @BeforeEach
   void setUp() {
     // Create factory with test providers
-    List<VectorStoreProvider> providers =
-        List.of(
-            new InMemoryVectorStoreProvider(),
-            new QdrantVectorStoreProvider(),
-            new ChromaVectorStoreProvider());
+    List<VectorStoreProvider> providers = List.of(new InMemoryVectorStoreProvider(),
+        new QdrantVectorStoreProvider(), new ChromaVectorStoreProvider());
     factory = new VectorStoreProviderFactory(providers);
   }
 
@@ -74,24 +71,17 @@ class VectorStoreProviderFactoryTest {
 
   @Test
   void createStore_shouldCreateInMemoryStore() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().collectionName("test_collection")
+        .dimension(384).build();
 
-    EmbeddingStore<TextSegment> store =
-        factory.createStore(VectorStoreProviderType.IN_MEMORY, config);
+    EmbeddingStore<TextSegment> store = factory.createStore(VectorStoreProviderType.IN_MEMORY, config);
     assertNotNull(store);
   }
 
   @Test
   void createStore_shouldCreateStoreByStringType() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().collectionName("test_collection")
+        .dimension(384).build();
 
     EmbeddingStore<TextSegment> store = factory.createStore("in-memory", config);
     assertNotNull(store);
@@ -101,10 +91,8 @@ class VectorStoreProviderFactoryTest {
   void createStore_shouldThrowForUnavailableProvider() {
     VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().build();
 
-    IllegalArgumentException ex =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> factory.createStore(VectorStoreProviderType.MILVUS, config));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> factory.createStore(VectorStoreProviderType.MILVUS, config));
     assertTrue(ex.getMessage().contains("No provider registered"));
   }
 
@@ -150,8 +138,8 @@ class VectorStoreProviderFactoryTest {
     InMemoryVectorStoreProvider provider1 = new InMemoryVectorStoreProvider();
     InMemoryVectorStoreProvider provider2 = new InMemoryVectorStoreProvider();
 
-    VectorStoreProviderFactory factoryWithDuplicates =
-        new VectorStoreProviderFactory(List.of(provider1, provider2));
+    VectorStoreProviderFactory factoryWithDuplicates = new VectorStoreProviderFactory(
+        List.of(provider1, provider2));
 
     // Should still work, last one wins
     assertTrue(factoryWithDuplicates.isProviderAvailable(VectorStoreProviderType.IN_MEMORY));

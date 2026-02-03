@@ -29,6 +29,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = {
   lowMax: 30,
@@ -79,6 +80,7 @@ export default function OrganizationSettingsPage() {
 
   const { hasPermission } = usePermission();
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -157,16 +159,13 @@ export default function OrganizationSettingsPage() {
   };
 
   const handleReset = async () => {
-    if (!confirm(t('organizationSettings.confirmReset'))) {
-      return;
-    }
-
     setSaving(true);
     try {
       const response = await organizationSettingsService.resetToDefaults();
       setSettings(response.data);
       setFormData(response.data);
       showToast(t('organizationSettings.resetSuccess'), 'success');
+      setResetConfirmOpen(false);
     } catch (error) {
       showToast(t('organizationSettings.resetFailed'), 'error');
     } finally {
@@ -284,7 +283,7 @@ export default function OrganizationSettingsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset} disabled={saving} size="sm">
+          <Button variant="outline" onClick={() => setResetConfirmOpen(true)} disabled={saving} size="sm">
             <RotateCcw className="mr-2 h-4 w-4" />
             {t('organizationSettings.resetToDefaults')}
           </Button>
@@ -1112,6 +1111,19 @@ export default function OrganizationSettingsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Reset Confirmation Dialog */}
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title={t('organizationSettings.resetTitle')}
+        description={t('organizationSettings.confirmReset')}
+        confirmLabel={t('common.reset')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleReset}
+        variant="destructive"
+        loading={saving}
+      />
     </div>
   );
 }

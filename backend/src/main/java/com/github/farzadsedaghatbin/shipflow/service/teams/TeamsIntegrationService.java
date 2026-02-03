@@ -20,8 +20,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Service for managing Microsoft Teams integration. Handles configuration, sending notifications,
- * and tracking history.
+ * Service for managing Microsoft Teams integration. Handles configuration,
+ * sending notifications, and tracking history.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,10 +38,8 @@ public class TeamsIntegrationService {
   private final RestTemplate webhookRestTemplate;
 
   /** Create or update Teams tenant configuration */
-  public TeamsConfigurationDTO createOrUpdateConfiguration(
-      CreateTeamsConfigurationRequest request) {
-    Optional<TeamsConfiguration> existing =
-        teamsConfigRepository.findByTenantName(request.getTenantName());
+  public TeamsConfigurationDTO createOrUpdateConfiguration(CreateTeamsConfigurationRequest request) {
+    Optional<TeamsConfiguration> existing = teamsConfigRepository.findByTenantName(request.getTenantName());
 
     TeamsConfiguration config;
     if (existing.isPresent()) {
@@ -54,13 +52,9 @@ public class TeamsIntegrationService {
         config.setIsEnabled(request.getIsEnabled());
       }
     } else {
-      config =
-          TeamsConfiguration.builder()
-              .tenantName(request.getTenantName())
-              .webhookUrl(request.getWebhookUrl())
-              .defaultChannel(request.getDefaultChannel())
-              .isEnabled(request.getIsEnabled() != null ? request.getIsEnabled() : true)
-              .build();
+      config = TeamsConfiguration.builder().tenantName(request.getTenantName())
+          .webhookUrl(request.getWebhookUrl()).defaultChannel(request.getDefaultChannel())
+          .isEnabled(request.getIsEnabled() != null ? request.getIsEnabled() : true).build();
     }
 
     TeamsConfiguration saved = teamsConfigRepository.save(config);
@@ -88,61 +82,40 @@ public class TeamsIntegrationService {
   }
 
   /** Create or update channel configuration */
-  public TeamsChannelConfigDTO createOrUpdateChannelConfig(
-      Long teamsConfigId, CreateTeamsChannelConfigRequest request) {
-    TeamsConfiguration teamsConfig =
-        teamsConfigRepository
-            .findById(teamsConfigId)
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Teams configuration not found with id: " + teamsConfigId));
+  public TeamsChannelConfigDTO createOrUpdateChannelConfig(Long teamsConfigId,
+      CreateTeamsChannelConfigRequest request) {
+    TeamsConfiguration teamsConfig = teamsConfigRepository.findById(teamsConfigId)
+        .orElseThrow(() -> new RuntimeException("Teams configuration not found with id: " + teamsConfigId));
 
-    Optional<TeamsChannelConfig> existing =
-        channelConfigRepository.findByTeamsConfigurationIdAndChannelName(
-            teamsConfigId, request.getChannelName());
+    Optional<TeamsChannelConfig> existing = channelConfigRepository
+        .findByTeamsConfigurationIdAndChannelName(teamsConfigId, request.getChannelName());
 
     TeamsChannelConfig channelConfig;
     if (existing.isPresent()) {
       channelConfig = existing.get();
       updateChannelConfig(channelConfig, request);
     } else {
-      channelConfig =
-          TeamsChannelConfig.builder()
-              .teamsConfiguration(teamsConfig)
-              .channelName(request.getChannelName())
-              .channelWebhookUrl(request.getChannelWebhookUrl())
-              .notifyTaskAssigned(
-                  request.getNotifyTaskAssigned() != null ? request.getNotifyTaskAssigned() : true)
-              .notifyTaskCompleted(
-                  request.getNotifyTaskCompleted() != null
-                      ? request.getNotifyTaskCompleted()
-                      : true)
-              .notifyTaskBlocked(
-                  request.getNotifyTaskBlocked() != null ? request.getNotifyTaskBlocked() : false)
-              .notifyPitchShaped(
-                  request.getNotifyPitchShaped() != null ? request.getNotifyPitchShaped() : true)
-              .notifyCycleStarted(
-                  request.getNotifyCycleStarted() != null ? request.getNotifyCycleStarted() : true)
-              .notifyCycleCooldown(
-                  request.getNotifyCycleCooldown() != null
-                      ? request.getNotifyCycleCooldown()
-                      : true)
-              .notifyBettingCompleted(
-                  request.getNotifyBettingCompleted() != null
-                      ? request.getNotifyBettingCompleted()
-                      : false)
-              .notifySprintStarted(
-                  request.getNotifySprintStarted() != null
-                      ? request.getNotifySprintStarted()
-                      : false)
-              .build();
+      channelConfig = TeamsChannelConfig.builder().teamsConfiguration(teamsConfig)
+          .channelName(request.getChannelName()).channelWebhookUrl(request.getChannelWebhookUrl())
+          .notifyTaskAssigned(
+              request.getNotifyTaskAssigned() != null ? request.getNotifyTaskAssigned() : true)
+          .notifyTaskCompleted(
+              request.getNotifyTaskCompleted() != null ? request.getNotifyTaskCompleted() : true)
+          .notifyTaskBlocked(request.getNotifyTaskBlocked() != null ? request.getNotifyTaskBlocked() : false)
+          .notifyPitchShaped(request.getNotifyPitchShaped() != null ? request.getNotifyPitchShaped() : true)
+          .notifyCycleStarted(
+              request.getNotifyCycleStarted() != null ? request.getNotifyCycleStarted() : true)
+          .notifyCycleCooldown(
+              request.getNotifyCycleCooldown() != null ? request.getNotifyCycleCooldown() : true)
+          .notifyBettingCompleted(
+              request.getNotifyBettingCompleted() != null ? request.getNotifyBettingCompleted() : false)
+          .notifySprintStarted(
+              request.getNotifySprintStarted() != null ? request.getNotifySprintStarted() : false)
+          .build();
     }
 
     TeamsChannelConfig saved = channelConfigRepository.save(channelConfig);
-    log.info(
-        "Created/updated channel configuration: {} for Teams config: {}",
-        saved.getChannelName(),
+    log.info("Created/updated channel configuration: {} for Teams config: {}", saved.getChannelName(),
         teamsConfigId);
 
     return toChannelDTO(saved);
@@ -151,8 +124,7 @@ public class TeamsIntegrationService {
   /** Get all channel configurations for a Teams tenant */
   @Transactional(readOnly = true)
   public List<TeamsChannelConfigDTO> getChannelConfigs(Long teamsConfigId) {
-    return channelConfigRepository.findByTeamsConfigurationId(teamsConfigId).stream()
-        .map(this::toChannelDTO)
+    return channelConfigRepository.findByTeamsConfigurationId(teamsConfigId).stream().map(this::toChannelDTO)
         .collect(Collectors.toList());
   }
 
@@ -163,8 +135,8 @@ public class TeamsIntegrationService {
   }
 
   /** Send a Microsoft Teams notification using Adaptive Card format */
-  public void sendNotification(
-      String notificationType, String message, String channel, String entityType, Long entityId) {
+  public void sendNotification(String notificationType, String message, String channel, String entityType,
+      Long entityId) {
     Optional<TeamsConfiguration> configOpt = teamsConfigRepository.findFirstByIsEnabledTrue();
 
     if (configOpt.isEmpty()) {
@@ -181,15 +153,13 @@ public class TeamsIntegrationService {
 
     // Check if there's a channel-specific configuration
     if (targetChannel != null) {
-      Optional<TeamsChannelConfig> channelConfig =
-          channelConfigRepository.findByTeamsConfigurationIdAndChannelName(
-              config.getId(), targetChannel);
+      Optional<TeamsChannelConfig> channelConfig = channelConfigRepository
+          .findByTeamsConfigurationIdAndChannelName(config.getId(), targetChannel);
 
       if (channelConfig.isPresent()) {
         // Check if this notification type is enabled for this channel
         if (!isNotificationEnabled(channelConfig.get(), notificationType)) {
-          log.debug(
-              "Notification type {} is disabled for channel {}", notificationType, targetChannel);
+          log.debug("Notification type {} is disabled for channel {}", notificationType, targetChannel);
           return;
         }
 
@@ -208,9 +178,8 @@ public class TeamsIntegrationService {
 
     try {
       // Build appropriate payload based on flow type
-      Map<String, Object> payload =
-          buildWebhookPayload(
-              webhookUrl, message, notificationType, entityType, entityId, flowType);
+      Map<String, Object> payload = buildWebhookPayload(webhookUrl, message, notificationType, entityType,
+          entityId, flowType);
 
       // Send to Teams
       HttpHeaders headers = new HttpHeaders();
@@ -223,11 +192,8 @@ public class TeamsIntegrationService {
 
       // Use dedicated webhook RestTemplate with longer timeouts
       var response = webhookRestTemplate.postForEntity(uri, request, String.class);
-      log.info(
-          "✅ Sent {} notification to Teams: {} (HTTP {})",
-          notificationType,
-          targetChannel != null ? targetChannel : "default",
-          response.getStatusCode());
+      log.info("✅ Sent {} notification to Teams: {} (HTTP {})", notificationType,
+          targetChannel != null ? targetChannel : "default", response.getStatusCode());
       success = true;
       log.info("Sent Teams notification: {} to channel: {}", notificationType, targetChannel);
 
@@ -237,52 +203,37 @@ public class TeamsIntegrationService {
     }
 
     // Record in history
-    TeamsNotificationHistory history =
-        TeamsNotificationHistory.builder()
-            .teamsConfiguration(config)
-            .channelName(targetChannel)
-            .notificationType(notificationType)
-            .messageText(message)
-            .entityType(entityType)
-            .entityId(entityId)
-            .success(success)
-            .errorMessage(errorMessage)
-            .build();
+    TeamsNotificationHistory history = TeamsNotificationHistory.builder().teamsConfiguration(config)
+        .channelName(targetChannel).notificationType(notificationType).messageText(message)
+        .entityType(entityType).entityId(entityId).success(success).errorMessage(errorMessage).build();
 
     historyRepository.save(history);
   }
 
   /** Send a test notification */
   public void sendTestNotification(Long configId, TestTeamsNotificationRequest request) {
-    TeamsConfiguration config =
-        teamsConfigRepository
-            .findById(configId)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Teams configuration not found with id: " + configId));
+    TeamsConfiguration config = teamsConfigRepository.findById(configId)
+        .orElseThrow(() -> new IllegalArgumentException("Teams configuration not found with id: " + configId));
 
     String webhookUrl = config.getWebhookUrl();
 
     // Validate webhook URL (this will throw exception if invalid)
     validateWebhookUrl(webhookUrl);
 
-    String message =
-        request.getMessage() != null
-            ? request.getMessage()
-            : "🚀 Test notification from ShipFlow - Your Teams integration is working!";
+    String message = request.getMessage() != null
+        ? request.getMessage()
+        : "🚀 Test notification from ShipFlow - Your Teams integration is working!";
 
     try {
-      // Default to Power Automate for URLs that look like Power Automate, otherwise webhook
+      // Default to Power Automate for URLs that look like Power Automate, otherwise
+      // webhook
       FlowType flowType = FlowType.WEBHOOK;
-      if (webhookUrl.contains("powerplatform.com")
-          || webhookUrl.contains("powerautomate")
+      if (webhookUrl.contains("powerplatform.com") || webhookUrl.contains("powerautomate")
           || webhookUrl.contains("logic.azure.com")) {
         flowType = FlowType.POWER_AUTOMATE_POST;
       }
 
-      Map<String, Object> payload =
-          buildWebhookPayload(webhookUrl, message, "TEST", null, null, flowType);
+      Map<String, Object> payload = buildWebhookPayload(webhookUrl, message, "TEST", null, null, flowType);
 
       log.debug("Sending Teams webhook payload: {}", payload);
 
@@ -292,15 +243,14 @@ public class TeamsIntegrationService {
       HttpEntity<Map<String, Object>> httpRequest = new HttpEntity<>(payload, headers);
 
       // Use URI object to prevent double-encoding of already-encoded URL parameters
-      // The webhook URL contains pre-encoded values like %2F that should NOT be re-encoded
+      // The webhook URL contains pre-encoded values like %2F that should NOT be
+      // re-encoded
       java.net.URI uri = java.net.URI.create(webhookUrl);
 
       // Use dedicated webhook RestTemplate with longer timeouts
       var response = webhookRestTemplate.postForEntity(uri, httpRequest, String.class);
 
-      log.info(
-          "✅ Test notification sent successfully to Teams tenant: {} (HTTP {})",
-          config.getTenantName(),
+      log.info("✅ Test notification sent successfully to Teams tenant: {} (HTTP {})", config.getTenantName(),
           response.getStatusCode());
 
     } catch (ResourceAccessException e) {
@@ -319,17 +269,14 @@ public class TeamsIntegrationService {
 
       // Check if this is a Power Automate URL - provide specific guidance
       if (webhookUrl.contains("powerplatform.com") || webhookUrl.contains("powerautomate")) {
-        if (errorMsg.contains("401")
-            || errorMsg.contains("unauthorized")
+        if (errorMsg.contains("401") || errorMsg.contains("unauthorized")
             || errorMsg.contains("authorizationfailed")) {
           throw new RuntimeException(
               "❌ POWER AUTOMATE SECURITY: Your flow is rejecting anonymous requests (401 Unauthorized). "
                   + "This is likely because your Power Automate trigger security is set to 'Organization only' or has IP restrictions. "
-                  + "\n\n📝 FIX: "
-                  + "\n1. Open your Power Automate flow"
+                  + "\n\n📝 FIX: " + "\n1. Open your Power Automate flow"
                   + "\n2. Click on 'When a HTTP request is received' trigger"
-                  + "\n3. Under 'Who can trigger the flow' → Select 'Anyone'"
-                  + "\n4. Save the flow"
+                  + "\n3. Under 'Who can trigger the flow' → Select 'Anyone'" + "\n4. Save the flow"
                   + "\n5. Test again from ShipFlow"
                   + "\n\n💡 NOTE: Your curl command worked from your machine but the application (likely in Docker) is being blocked. "
                   + "The SAS token (sig=...) in your URL doesn't provide authorization - the trigger itself must accept anonymous requests.");
@@ -338,16 +285,12 @@ public class TeamsIntegrationService {
               "❌ POWER AUTOMATE FLOW: The Power Automate flow URL appears to be invalid or the flow was deleted. "
                   + "Please check if your flow is still active and the URL is correct.");
         } else {
-          throw new RuntimeException(
-              "❌ POWER AUTOMATE ERROR: "
-                  + e.getMessage()
-                  + ". "
-                  + "Please check your Power Automate flow configuration and ensure it's running properly.");
+          throw new RuntimeException("❌ POWER AUTOMATE ERROR: " + e.getMessage() + ". "
+              + "Please check your Power Automate flow configuration and ensure it's running properly.");
         }
       }
       // Check for traditional Logic App URL mistakenly used instead of Teams webhook
-      else if (errorMsg.contains("triggers/manual/paths")
-          && !webhookUrl.contains("powerplatform.com")) {
+      else if (errorMsg.contains("triggers/manual/paths") && !webhookUrl.contains("powerplatform.com")) {
         throw new RuntimeException(
             "❌ WRONG URL TYPE: You're using an Azure Logic App URL instead of a Microsoft Teams incoming webhook URL. "
                 + "Please create a proper Teams incoming webhook: 1) Go to your Teams channel → More options (...) → Connectors → Incoming Webhook → Configure → Create. "
@@ -374,14 +317,12 @@ public class TeamsIntegrationService {
   @Transactional(readOnly = true)
   public List<TeamsNotificationHistoryDTO> getNotificationHistory(Long configId) {
     return historyRepository.findTop50ByTeamsConfigurationIdOrderBySentAtDesc(configId).stream()
-        .map(this::toHistoryDTO)
-        .collect(Collectors.toList());
+        .map(this::toHistoryDTO).collect(Collectors.toList());
   }
 
   // Helper methods
 
-  private void updateChannelConfig(
-      TeamsChannelConfig config, CreateTeamsChannelConfigRequest request) {
+  private void updateChannelConfig(TeamsChannelConfig config, CreateTeamsChannelConfigRequest request) {
     if (request.getChannelWebhookUrl() != null) {
       config.setChannelWebhookUrl(request.getChannelWebhookUrl());
     }
@@ -429,28 +370,27 @@ public class TeamsIntegrationService {
   }
 
   /** Build appropriate webhook payload based on the flow type */
-  private Map<String, Object> buildWebhookPayload(
-      String webhookUrl,
-      String message,
-      String notificationType,
-      String entityType,
-      Long entityId,
-      FlowType flowType) {
+  private Map<String, Object> buildWebhookPayload(String webhookUrl, String message, String notificationType,
+      String entityType, Long entityId, FlowType flowType) {
     return switch (flowType) {
       case POWER_AUTOMATE_POST, POWER_AUTOMATE_THREAD -> {
         // Power Automate flows expect Adaptive Card format
         yield buildPowerAutomatePayload(message, notificationType, entityType, entityId);
       }
       case WEBHOOK -> {
-        // Traditional Teams webhook - let's also use Adaptive Card format for consistency
+        // Traditional Teams webhook - let's also use Adaptive Card format for
+        // consistency
         yield buildTeamsAdaptiveCard(message, notificationType, entityType, entityId);
       }
     };
   }
 
-  /** Build payload for Power Automate flows - Adaptive Card format required by Teams */
-  private Map<String, Object> buildPowerAutomatePayload(
-      String message, String notificationType, String entityType, Long entityId) {
+  /**
+   * Build payload for Power Automate flows - Adaptive Card format required by
+   * Teams
+   */
+  private Map<String, Object> buildPowerAutomatePayload(String message, String notificationType, String entityType,
+      Long entityId) {
     // Power Automate Teams flows REQUIRE Adaptive Card format
     // Error if not: "Property 'type' must be 'AdaptiveCard'"
     Map<String, Object> payload = new LinkedHashMap<>();
@@ -518,10 +458,11 @@ public class TeamsIntegrationService {
   }
 
   /**
-   * Build Microsoft Teams Adaptive Card payload Uses the MessageCard format for incoming webhooks
+   * Build Microsoft Teams Adaptive Card payload Uses the MessageCard format for
+   * incoming webhooks
    */
-  private Map<String, Object> buildTeamsAdaptiveCard(
-      String message, String notificationType, String entityType, Long entityId) {
+  private Map<String, Object> buildTeamsAdaptiveCard(String message, String notificationType, String entityType,
+      Long entityId) {
     Map<String, Object> payload = new LinkedHashMap<>();
 
     // Use MessageCard format for Teams incoming webhooks
@@ -583,50 +524,29 @@ public class TeamsIntegrationService {
   }
 
   private TeamsConfigurationDTO toDTO(TeamsConfiguration config) {
-    return TeamsConfigurationDTO.builder()
-        .id(config.getId())
-        .tenantName(config.getTenantName())
-        .webhookUrl(config.getWebhookUrl())
-        .defaultChannel(config.getDefaultChannel())
-        .isEnabled(config.getIsEnabled())
-        .createdAt(config.getCreatedAt())
-        .updatedAt(config.getUpdatedAt())
+    return TeamsConfigurationDTO.builder().id(config.getId()).tenantName(config.getTenantName())
+        .webhookUrl(config.getWebhookUrl()).defaultChannel(config.getDefaultChannel())
+        .isEnabled(config.getIsEnabled()).createdAt(config.getCreatedAt()).updatedAt(config.getUpdatedAt())
         .build();
   }
 
   private TeamsChannelConfigDTO toChannelDTO(TeamsChannelConfig config) {
-    return TeamsChannelConfigDTO.builder()
-        .id(config.getId())
-        .teamsConfigId(config.getTeamsConfiguration().getId())
-        .channelName(config.getChannelName())
-        .channelWebhookUrl(config.getChannelWebhookUrl())
-        .notifyTaskAssigned(config.getNotifyTaskAssigned())
-        .notifyTaskCompleted(config.getNotifyTaskCompleted())
-        .notifyTaskBlocked(config.getNotifyTaskBlocked())
-        .notifyPitchShaped(config.getNotifyPitchShaped())
-        .notifyCycleStarted(config.getNotifyCycleStarted())
-        .notifyCycleCooldown(config.getNotifyCycleCooldown())
+    return TeamsChannelConfigDTO.builder().id(config.getId()).teamsConfigId(config.getTeamsConfiguration().getId())
+        .channelName(config.getChannelName()).channelWebhookUrl(config.getChannelWebhookUrl())
+        .notifyTaskAssigned(config.getNotifyTaskAssigned()).notifyTaskCompleted(config.getNotifyTaskCompleted())
+        .notifyTaskBlocked(config.getNotifyTaskBlocked()).notifyPitchShaped(config.getNotifyPitchShaped())
+        .notifyCycleStarted(config.getNotifyCycleStarted()).notifyCycleCooldown(config.getNotifyCycleCooldown())
         .notifyBettingCompleted(config.getNotifyBettingCompleted())
-        .notifySprintStarted(config.getNotifySprintStarted())
-        .flowType(config.getFlowType())
-        .createdAt(config.getCreatedAt())
-        .updatedAt(config.getUpdatedAt())
-        .build();
+        .notifySprintStarted(config.getNotifySprintStarted()).flowType(config.getFlowType())
+        .createdAt(config.getCreatedAt()).updatedAt(config.getUpdatedAt()).build();
   }
 
   private TeamsNotificationHistoryDTO toHistoryDTO(TeamsNotificationHistory history) {
-    return TeamsNotificationHistoryDTO.builder()
-        .id(history.getId())
-        .teamsConfigId(history.getTeamsConfiguration().getId())
-        .channelName(history.getChannelName())
-        .notificationType(history.getNotificationType())
-        .messageText(history.getMessageText())
-        .entityType(history.getEntityType())
-        .entityId(history.getEntityId())
-        .sentAt(history.getSentAt())
-        .success(history.getSuccess())
-        .errorMessage(history.getErrorMessage())
-        .build();
+    return TeamsNotificationHistoryDTO.builder().id(history.getId())
+        .teamsConfigId(history.getTeamsConfiguration().getId()).channelName(history.getChannelName())
+        .notificationType(history.getNotificationType()).messageText(history.getMessageText())
+        .entityType(history.getEntityType()).entityId(history.getEntityId()).sentAt(history.getSentAt())
+        .success(history.getSuccess()).errorMessage(history.getErrorMessage()).build();
   }
 
   /** Validate Teams webhook URL format and provide helpful error messages */
@@ -640,17 +560,13 @@ public class TeamsIntegrationService {
     }
 
     // Check if this is a Power Automate URL
-    boolean isPowerAutomateUrl =
-        webhookUrl.contains("powerplatform.com")
-            || webhookUrl.contains("powerautomate/automations")
-            || webhookUrl.contains("logic.azure.com")
-            || webhookUrl.contains("/triggers/manual/paths/");
+    boolean isPowerAutomateUrl = webhookUrl.contains("powerplatform.com")
+        || webhookUrl.contains("powerautomate/automations") || webhookUrl.contains("logic.azure.com")
+        || webhookUrl.contains("/triggers/manual/paths/");
 
     // Check for traditional Teams webhook URL patterns
-    boolean isTraditionalTeamsUrl =
-        webhookUrl.contains("outlook.office.com/webhook")
-            || webhookUrl.contains("outlook.office365.com/webhook")
-            || webhookUrl.contains(".webhook.office.com");
+    boolean isTraditionalTeamsUrl = webhookUrl.contains("outlook.office.com/webhook")
+        || webhookUrl.contains("outlook.office365.com/webhook") || webhookUrl.contains(".webhook.office.com");
 
     if (!isPowerAutomateUrl && !isTraditionalTeamsUrl) {
       log.warn(

@@ -11,8 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MeetingRepository
-    extends JpaRepository<Meeting, Long>, JpaSpecificationExecutor<Meeting> {
+public interface MeetingRepository extends JpaRepository<Meeting, Long>, JpaSpecificationExecutor<Meeting> {
   List<Meeting> findByPitchId(Long pitchId);
 
   List<Meeting> findByType(MeetingType type);
@@ -20,7 +19,6 @@ public interface MeetingRepository
   @Query("SELECT m FROM Meeting m WHERE m.pitch.cycle.id = :cycleId ORDER BY m.dateHeld DESC")
   Page<Meeting> findByCycleId(Long cycleId, Pageable pageable);
 
-  @Query(
-      "SELECT m FROM Meeting m WHERE m.pitch.cycle.project.id = :projectId ORDER BY m.dateHeld DESC")
+  @Query("SELECT m FROM Meeting m WHERE m.pitch.cycle.project.id = :projectId ORDER BY m.dateHeld DESC")
   Page<Meeting> findByProjectId(Long projectId, Pageable pageable);
 }

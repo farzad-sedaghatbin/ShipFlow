@@ -47,14 +47,12 @@ public class ProjectService {
   /** Find all active projects - ADMIN only, returns all active projects */
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAllActive() {
-    return projectRepository.findAllActiveOrderByName().stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return projectRepository.findAllActiveOrderByName().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
-   * Find projects accessible to the current user. ADMINs see all projects, others see only projects
-   * they have access to.
+   * Find projects accessible to the current user. ADMINs see all projects, others
+   * see only projects they have access to.
    */
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAccessibleProjects() {
@@ -67,14 +65,13 @@ public class ProjectService {
     }
 
     // Others see only accessible projects
-    return userProjectRepository.findAccessibleProjectsByUserId(currentUser.getId()).stream()
-        .map(this::toDTO)
+    return userProjectRepository.findAccessibleProjectsByUserId(currentUser.getId()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   /**
-   * Find active projects accessible to the current user. ADMINs see all active projects, others see
-   * only active projects they have access to.
+   * Find active projects accessible to the current user. ADMINs see all active
+   * projects, others see only active projects they have access to.
    */
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAccessibleActiveProjects() {
@@ -87,8 +84,7 @@ public class ProjectService {
     }
 
     // Others see only accessible active projects
-    return userProjectRepository.findActiveAccessibleProjectsByUserId(currentUser.getId()).stream()
-        .map(this::toDTO)
+    return userProjectRepository.findActiveAccessibleProjectsByUserId(currentUser.getId()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -109,8 +105,7 @@ public class ProjectService {
   @Transactional(readOnly = true)
   public void requireProjectAccess(Long projectId) {
     if (!hasProjectAccess(projectId)) {
-      throw new AccessDeniedException(
-          localizationService.getMessage("project.access.denied", projectId));
+      throw new AccessDeniedException(localizationService.getMessage("project.access.denied", projectId));
     }
   }
 
@@ -121,15 +116,12 @@ public class ProjectService {
 
     // Check if user is project owner
     Project project = projectRepository.findById(projectId).orElse(null);
-    if (project != null
-        && project.getOwner() != null
-        && project.getOwner().getId().equals(currentUser.getId())) {
+    if (project != null && project.getOwner() != null && project.getOwner().getId().equals(currentUser.getId())) {
       return Optional.of(ProjectRole.MANAGER);
     }
 
     // Check direct assignment
-    return userProjectRepository.findProjectRoleByUserIdAndProjectId(
-        currentUser.getId(), projectId);
+    return userProjectRepository.findProjectRoleByUserIdAndProjectId(currentUser.getId(), projectId);
   }
 
   @Transactional(readOnly = true)
@@ -137,20 +129,15 @@ public class ProjectService {
     // Check access first
     requireProjectAccess(id);
 
-    Project project =
-        projectRepository
-            .findByIdWithOwner(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository.findByIdWithOwner(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
     return toDTO(project);
   }
 
   @Transactional(readOnly = true)
   public ProjectDTO findByKey(String projectKey) {
-    Project project =
-        projectRepository
-            .findByProjectKey(projectKey.toUpperCase())
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Project not found with key: " + projectKey));
+    Project project = projectRepository.findByProjectKey(projectKey.toUpperCase())
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with key: " + projectKey));
 
     // Check access
     requireProjectAccess(project.getId());
@@ -165,26 +152,14 @@ public class ProjectService {
           localizationService.getMessage("project.key.exists", request.getProjectKey()));
     }
 
-    Project project =
-        Project.builder()
-            .name(request.getName())
-            .projectKey(request.getProjectKey().toUpperCase())
-            .description(request.getDescription())
-            .color(request.getColor())
-            .logoUrl(request.getLogoUrl())
-            .projectType(
-                request.getProjectType() != null ? request.getProjectType() : ProjectType.SHAPE_UP)
-            .isActive(true)
-            .build();
+    Project project = Project.builder().name(request.getName()).projectKey(request.getProjectKey().toUpperCase())
+        .description(request.getDescription()).color(request.getColor()).logoUrl(request.getLogoUrl())
+        .projectType(request.getProjectType() != null ? request.getProjectType() : ProjectType.SHAPE_UP)
+        .isActive(true).build();
 
     if (request.getOwnerId() != null) {
-      User owner =
-          userRepository
-              .findById(request.getOwnerId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "User not found with id: " + request.getOwnerId()));
+      User owner = userRepository.findById(request.getOwnerId()).orElseThrow(
+          () -> new ResourceNotFoundException("User not found with id: " + request.getOwnerId()));
       project.setOwner(owner);
     }
 
@@ -199,28 +174,20 @@ public class ProjectService {
   }
 
   /**
-   * Creates a default continuous cycle for Kanban projects. This cycle has no end date concept (set
-   * to far future) and is always active.
+   * Creates a default continuous cycle for Kanban projects. This cycle has no end
+   * date concept (set to far future) and is always active.
    */
   private void createDefaultKanbanCycle(Project project) {
-    Cycle defaultCycle =
-        Cycle.builder()
-            .name("Continuous Flow")
-            .project(project)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.of(2099, 12, 31)) // Far future end date
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    Cycle defaultCycle = Cycle.builder().name("Continuous Flow").project(project).startDate(LocalDate.now())
+        .endDate(LocalDate.of(2099, 12, 31)) // Far future end date
+        .phase(CyclePhase.BUILD).isActive(true).build();
     cycleRepository.save(defaultCycle);
   }
 
   @Transactional
   public ProjectDTO update(Long id, CreateProjectRequest request) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
     // Check if key is being changed and if new key exists
     if (!project.getProjectKey().equals(request.getProjectKey().toUpperCase())) {
@@ -239,45 +206,40 @@ public class ProjectService {
     // Check if project type is being changed to Kanban
     ProjectType oldProjectType = project.getProjectType();
     boolean isConvertingToKanban = false;
-    
+
     // Update project type if provided
     if (request.getProjectType() != null) {
-      isConvertingToKanban = (oldProjectType != ProjectType.KANBAN && request.getProjectType() == ProjectType.KANBAN);
+      isConvertingToKanban = (oldProjectType != ProjectType.KANBAN
+          && request.getProjectType() == ProjectType.KANBAN);
       project.setProjectType(request.getProjectType());
     }
 
     if (request.getOwnerId() != null) {
-      User owner =
-          userRepository
-              .findById(request.getOwnerId())
-              .orElseThrow(
-                  () ->
-                      new ResourceNotFoundException(
-                          "User not found with id: " + request.getOwnerId()));
+      User owner = userRepository.findById(request.getOwnerId()).orElseThrow(
+          () -> new ResourceNotFoundException("User not found with id: " + request.getOwnerId()));
       project.setOwner(owner);
     } else {
       project.setOwner(null);
     }
 
     project = projectRepository.save(project);
-    
-    // If project was converted to Kanban and doesn't have any active cycles, create a default one
+
+    // If project was converted to Kanban and doesn't have any active cycles, create
+    // a default one
     if (isConvertingToKanban) {
       long activeCycleCount = cycleRepository.countActiveByProjectId(project.getId());
       if (activeCycleCount == 0) {
         createDefaultKanbanCycle(project);
       }
     }
-    
+
     return toDTO(project);
   }
 
   @Transactional
   public ProjectDTO deactivate(Long id) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
     project.setIsActive(false);
     project = projectRepository.save(project);
     return toDTO(project);
@@ -285,10 +247,8 @@ public class ProjectService {
 
   @Transactional
   public ProjectDTO activate(Long id) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
     project.setIsActive(true);
     project = projectRepository.save(project);
     return toDTO(project);
@@ -296,16 +256,13 @@ public class ProjectService {
 
   @Transactional
   public void delete(Long id) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
     // Check if project has cycles
     long cycleCount = cycleRepository.countByProjectId(id);
     if (cycleCount > 0) {
-      throw new IllegalArgumentException(
-          localizationService.getMessage("project.cannot.delete.with.cycles"));
+      throw new IllegalArgumentException(localizationService.getMessage("project.cannot.delete.with.cycles"));
     }
 
     projectRepository.delete(project);
@@ -323,23 +280,13 @@ public class ProjectService {
       // Ignore - may not have auth context
     }
 
-    return ProjectDTO.builder()
-        .id(project.getId())
-        .name(project.getName())
-        .projectKey(project.getProjectKey())
-        .description(project.getDescription())
-        .color(project.getColor())
-        .logoUrl(project.getLogoUrl())
+    return ProjectDTO.builder().id(project.getId()).name(project.getName()).projectKey(project.getProjectKey())
+        .description(project.getDescription()).color(project.getColor()).logoUrl(project.getLogoUrl())
         .ownerId(project.getOwner() != null ? project.getOwner().getId() : null)
         .ownerName(project.getOwner() != null ? project.getOwner().getUsername() : null)
-        .isActive(project.getIsActive())
-        .projectType(project.getProjectType())
-        .createdAt(project.getCreatedAt())
-        .updatedAt(project.getUpdatedAt())
-        .cycleCount((int) cycleCount)
-        .activeCycleCount((int) activeCycleCount)
-        .userProjectRole(userProjectRole != null ? userProjectRole.name() : null)
-        .build();
+        .isActive(project.getIsActive()).projectType(project.getProjectType()).createdAt(project.getCreatedAt())
+        .updatedAt(project.getUpdatedAt()).cycleCount((int) cycleCount).activeCycleCount((int) activeCycleCount)
+        .userProjectRole(userProjectRole != null ? userProjectRole.name() : null).build();
   }
 
   /** Get the currently authenticated user */
@@ -350,12 +297,14 @@ public class ProjectService {
     }
 
     String username = authentication.getName();
-    return userRepository
-        .findByUsername(username)
+    return userRepository.findByUsername(username)
         .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
   }
 
-  /** Grant project access to a user. Only project MANAGERs, owners, or ADMINs can grant access. */
+  /**
+   * Grant project access to a user. Only project MANAGERs, owners, or ADMINs can
+   * grant access.
+   */
   @Transactional
   public void grantProjectAccess(Long projectId, Long userId, ProjectRole role) {
     User currentUser = getCurrentUser();
@@ -369,18 +318,13 @@ public class ProjectService {
       }
     }
 
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
-    User targetUser =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
+    User targetUser = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
     // Check if assignment already exists
-    Optional<UserProject> existing =
-        userProjectRepository.findByUserIdAndProjectId(userId, projectId);
+    Optional<UserProject> existing = userProjectRepository.findByUserIdAndProjectId(userId, projectId);
     if (existing.isPresent()) {
       // Update existing role
       UserProject up = existing.get();
@@ -389,20 +333,16 @@ public class ProjectService {
       log.info("Updated project access: user={}, project={}, role={}", userId, projectId, role);
     } else {
       // Create new assignment
-      UserProject userProject =
-          UserProject.builder()
-              .user(targetUser)
-              .project(project)
-              .projectRole(role)
-              .grantedBy(currentUser)
-              .build();
+      UserProject userProject = UserProject.builder().user(targetUser).project(project).projectRole(role)
+          .grantedBy(currentUser).build();
       userProjectRepository.save(userProject);
       log.info("Granted project access: user={}, project={}, role={}", userId, projectId, role);
     }
   }
 
   /**
-   * Revoke project access from a user. Only project MANAGERs, owners, or ADMINs can revoke access.
+   * Revoke project access from a user. Only project MANAGERs, owners, or ADMINs
+   * can revoke access.
    */
   @Transactional
   public void revokeProjectAccess(Long projectId, Long userId) {

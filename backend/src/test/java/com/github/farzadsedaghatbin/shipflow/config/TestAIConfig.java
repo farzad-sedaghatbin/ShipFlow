@@ -19,14 +19,17 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 /**
- * Test configuration that provides mock beans for dependencies that are needed by @WebMvcTest but
- * should not require actual configuration in tests.
+ * Test configuration that provides mock beans for dependencies that are needed
+ * by @WebMvcTest but should not require actual configuration in tests.
  *
- * <p>IMPORTANT: This uses @TestConfiguration which is NOT auto-detected by component scanning. It
- * must be explicitly imported using @Import(TestAIConfig.class) in tests that need it.
+ * <p>
+ * IMPORTANT: This uses @TestConfiguration which is NOT auto-detected by
+ * component scanning. It must be explicitly imported
+ * using @Import(TestAIConfig.class) in tests that need it.
  *
- * <p>Only @WebMvcTest tests should import this configuration, not @SpringBootTest integration
- * tests.
+ * <p>
+ * Only @WebMvcTest tests should import this configuration, not @SpringBootTest
+ * integration tests.
  */
 @TestConfiguration
 @EnableMethodSecurity
@@ -41,26 +44,24 @@ public class TestAIConfig {
     return mock;
   }
 
-  @MockBean private JwtTokenProvider jwtTokenProvider;
+  @MockBean
+  private JwtTokenProvider jwtTokenProvider;
 
-  @MockBean private CustomUserDetailsService customUserDetailsService;
+  @MockBean
+  private CustomUserDetailsService customUserDetailsService;
 
   /**
-   * Test security filter chain that allows webhook endpoints to bypass authentication and returns
-   * 401 for unauthenticated requests to other endpoints
+   * Test security filter chain that allows webhook endpoints to bypass
+   * authentication and returns 401 for unauthenticated requests to other
+   * endpoints
    */
   @Bean
   @Primary
   public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     return http.csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers("/api/github/webhook/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
-        .exceptionHandling(
-            ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            auth -> auth.requestMatchers("/api/github/webhook/**").permitAll().anyRequest().authenticated())
+        .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
         .build();
   }
 }
