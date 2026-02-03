@@ -84,6 +84,51 @@ export default function OrganizationSettingsPage() {
   const { hasPermission } = usePermission();
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  
+  // Confirm dialog state for meeting type deletion
+  const [deleteMeetingTypeConfirm, setDeleteMeetingTypeConfirm] = useState<{
+    open: boolean;
+    typeIndex: number | null;
+  }>({ open: false, typeIndex: null });
+  
+  // Confirm dialog state for DOR/DOD item deletion
+  const [deleteItemConfirm, setDeleteItemConfirm] = useState<{
+    open: boolean;
+    typeIndex: number | null;
+    itemIndex: number | null;
+    listType: 'dor' | 'dod' | null;
+  }>({ open: false, typeIndex: null, itemIndex: null, listType: null });
+
+  // Handler for confirming meeting type deletion
+  const handleConfirmDeleteMeetingType = () => {
+    if (deleteMeetingTypeConfirm.typeIndex === null) return;
+    const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== deleteMeetingTypeConfirm.typeIndex) || [];
+    setFormData({ ...formData, meetingTypes: newMeetingTypes });
+    showToast(t('organizationSettings.meetingTypeDeleted'), 'success');
+    setDeleteMeetingTypeConfirm({ open: false, typeIndex: null });
+  };
+
+  // Handler for confirming DOR/DOD item deletion
+  const handleConfirmDeleteItem = () => {
+    const { typeIndex, itemIndex, listType } = deleteItemConfirm;
+    if (typeIndex === null || itemIndex === null || !listType) return;
+    
+    const newMeetingTypes = [...(formData.meetingTypes || [])];
+    const meetingType = newMeetingTypes[typeIndex];
+    
+    if (listType === 'dor') {
+      const newDorItems = [...(meetingType.dorItems || [])];
+      newDorItems[itemIndex] = { ...newDorItems[itemIndex], isDeleted: true };
+      newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+    } else {
+      const newDodItems = [...(meetingType.dodItems || [])];
+      newDodItems[itemIndex] = { ...newDodItems[itemIndex], isDeleted: true };
+      newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+    }
+    
+    setFormData({ ...formData, meetingTypes: newMeetingTypes });
+    setDeleteItemConfirm({ open: false, typeIndex: null, itemIndex: null, listType: null });
+  };
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -1163,15 +1208,7 @@ export default function OrganizationSettingsPage() {
                         size="icon"
                         className="text-destructive hover:text-destructive"
                         onClick={() => {
-                          const confirmed = window.confirm(
-                            t('organizationSettings.confirmDeleteMeetingType'),
-                          );
-                          if (!confirmed) {
-                            return;
-                          }
-                          const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== typeIndex) || [];
-                          setFormData({ ...formData, meetingTypes: newMeetingTypes });
-                          showToast(t('organizationSettings.meetingTypeDeleted'), 'success');
+                          setDeleteMeetingTypeConfirm({ open: true, typeIndex });
                         }}
                         title={t('organizationSettings.deleteMeetingType')}
                       >
