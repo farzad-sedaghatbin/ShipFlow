@@ -87,7 +87,7 @@ export default function UserManagement() {
   // Check if current user has user management permission
   useEffect(() => {
     hasPermission('USER', 'MANAGE').then(setCanManageUsers).catch(() => setCanManageUsers(false));
-  }, []); // Empty dependency array - run once on mount
+  }, [hasPermission]); // Include hasPermission since it's now stable
 
   // Show loading while checking permission
   if (canManageUsers === null) {

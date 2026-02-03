@@ -231,7 +231,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
     hasPermission('SYSTEM', 'MANAGE').catch(() => {
       // Ignore errors, permission will be cached as false
     });
-  }, []); // Only run once on mount
+  }, [hasPermission]); // Include hasPermission since it's now stable
 
   // Check if we're in a cycle context (viewing pitches, betting, health, retros, reports)
   const isCycleContext = ['/pitches', '/betting', '/health', '/retros', '/reports'].some(

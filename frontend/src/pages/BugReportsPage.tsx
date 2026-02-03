@@ -69,6 +69,7 @@ import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
 import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
+import Comments from '../components/Comments';
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -1131,6 +1132,15 @@ const BugReportsPage: React.FC = () => {
                 <div>
                   <strong>{t('bugReports.detail.created')}</strong> {formatLocalizedDateTime(new Date(selectedBug.createdAt), i18n.language)}
                 </div>
+              </div>
+
+              {/* Comments Section */}
+              <div className="border-t pt-4">
+                <Comments 
+                  entityType="bug" 
+                  entityId={selectedBug.id}
+                  locale={i18n.language}
+                />
               </div>
             </div>
           )}
