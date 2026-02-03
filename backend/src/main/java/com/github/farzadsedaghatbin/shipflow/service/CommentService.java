@@ -42,7 +42,8 @@ public class CommentService {
 
   // Pattern to match @name mentions (letters, numbers, dots, underscores)
   // Matches @FirstName, @r.jahani, or @"First Name" for names with spaces
-  private static final Pattern MENTION_PATTERN = Pattern.compile("@\"([^\"]+)\"|@([\\p{L}\\p{N}._]+)");
+  // Unquoted names may contain letters/numbers with dots/underscores only between segments (no trailing punctuation)
+  private static final Pattern MENTION_PATTERN = Pattern.compile("@\"([^\"]+)\"|@([\\p{L}\\p{N}]+(?:[._][\\p{L}\\p{N}]+)*)");
 
   /**
    * Create a new comment.
@@ -275,11 +276,30 @@ public class CommentService {
 
   /**
    * Get user by display name (person name) for mention profile lookup.
+   *
+   * <p>Note: Person names are not guaranteed to be unique. If multiple users share the same
+   * display name, this method will return {@link Optional#empty()} to avoid selecting an
+   * arbitrary user.</p>
    */
   @Transactional(readOnly = true)
   public Optional<MentionUserDTO> getUserByDisplayName(String name) {
-    List<User> users = userRepository.findByPersonNameIn(List.of(name));
-    return users.stream().findFirst().map(this::toMentionUserDTO);
+    if (name == null || name.trim().isEmpty()) {
+      return Optional.empty();
+    }
+
+    String trimmedName = name.trim();
+    List<User> users = userRepository.findByPersonNameIn(List.of(trimmedName));
+
+    if (users.isEmpty()) {
+      return Optional.empty();
+    }
+
+    if (users.size() > 1) {
+      log.warn("Multiple users found with display name '{}'; cannot uniquely determine user.", trimmedName);
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(users.get(0)).map(this::toMentionUserDTO);
   }
 
   /**

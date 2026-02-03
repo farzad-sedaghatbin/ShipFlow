@@ -1085,7 +1085,11 @@ export default function OrganizationSettingsPage() {
                 variant="outline"
                 onClick={() => {
                   const newMeetingTypes = [...(formData.meetingTypes || [])];
-                  const newName = `CUSTOM_${Date.now()}`;
+                  const uniqueId =
+                    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                      ? crypto.randomUUID()
+                      : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                  const newName = `CUSTOM_${uniqueId}`;
                   newMeetingTypes.push({
                     name: newName,
                     displayName: t('organizationSettings.newMeetingType'),
@@ -1153,6 +1157,12 @@ export default function OrganizationSettingsPage() {
                         size="icon"
                         className="text-destructive hover:text-destructive"
                         onClick={() => {
+                          const confirmed = window.confirm(
+                            t('organizationSettings.confirmDeleteMeetingType'),
+                          );
+                          if (!confirmed) {
+                            return;
+                          }
                           const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== typeIndex) || [];
                           setFormData({ ...formData, meetingTypes: newMeetingTypes });
                         }}

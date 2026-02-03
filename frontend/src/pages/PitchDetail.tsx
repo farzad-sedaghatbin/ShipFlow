@@ -319,14 +319,14 @@ export default function PitchDetail() {
   const handleMeetingTypeChange = (type: MeetingType) => {
     const config = meetingTypeConfigs.find(c => c.name === type);
     const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
-      id: index + 1,
+      id: item.id ?? index + 1,
       name: item.name,
       description: item.description || '',
       isRequired: item.isRequired,
       isCompleted: false,
     })) || [];
     const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
-      id: index + 1,
+      id: item.id ?? index + 1,
       name: item.name,
       description: item.description || '',
       isRequired: item.isRequired,
@@ -343,9 +343,14 @@ export default function PitchDetail() {
     }));
   };
 
-  const toggleChecklistItem = (listType: 'dor' | 'dod', itemId: number) => {
+  const toggleChecklistItem = (listType: 'dor' | 'dod', identifier: number) => {
     const items = listType === 'dor' ? [...(newMeeting.dorItems || [])] : [...(newMeeting.dodItems || [])];
-    const itemIndex = items.findIndex(i => i.id === itemId);
+    // First, try to locate the item by its id
+    let itemIndex = items.findIndex(i => i.id === identifier);
+    // If not found by id, fall back to treating the identifier as a zero-based index
+    if (itemIndex < 0 && identifier >= 0 && identifier < items.length) {
+      itemIndex = identifier;
+    }
     if (itemIndex >= 0) {
       items[itemIndex] = { ...items[itemIndex], isCompleted: !items[itemIndex].isCompleted };
       
