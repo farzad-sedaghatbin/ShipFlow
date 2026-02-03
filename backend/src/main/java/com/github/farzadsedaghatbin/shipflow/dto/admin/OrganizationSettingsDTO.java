@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto.admin;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,6 +38,9 @@ public class OrganizationSettingsDTO {
   // Bug Configuration
   private List<BugStatusConfig> bugStatuses;
   private List<SeverityLevelConfig> severityLevels;
+
+  // Meeting Types Configuration
+  private List<MeetingTypeConfig> meetingTypes;
 
   // Other Settings
   private String timeZone;
@@ -269,5 +273,41 @@ public class OrganizationSettingsDTO {
     private Boolean isActive;
     private Integer order;
     private Integer priority;
+  }
+
+  /**
+   * Configuration for a meeting type with DOR and DOD checklist items.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class MeetingTypeConfig {
+    private Long id;
+    private String name;
+    private String displayName;
+    private String description;
+    private String color;
+    private Boolean isActive;
+    private Integer order;
+    @Builder.Default
+    private List<DorDodItem> dorItems = new ArrayList<>();
+    @Builder.Default
+    private List<DorDodItem> dodItems = new ArrayList<>();
+  }
+
+  /**
+   * A single checklist item for DOR (Definition of Ready) or DOD (Definition of Done).
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class DorDodItem {
+    private Long id;
+    private String name;
+    private String description;
+    private Boolean isRequired;
+    private Integer order;
   }
 }

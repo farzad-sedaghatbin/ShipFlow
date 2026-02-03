@@ -56,6 +56,10 @@ public class OrganizationSettings {
   @Column(columnDefinition = "TEXT")
   private String severityLevelsJson;
 
+  // Meeting Types Configuration (stored as JSON array)
+  @Column(columnDefinition = "TEXT")
+  private String meetingTypesJson;
+
   // Other Settings
   @Column(nullable = false, name = "time_zone")
   private String timeZone = "UTC";

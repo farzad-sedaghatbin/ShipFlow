@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, History } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,7 @@ import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
-import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
+import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
@@ -69,7 +69,6 @@ export default function TaskDetailPage() {
   
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -337,14 +336,6 @@ export default function TaskDetailPage() {
                 {activeTimerTaskId === task.id ? 'Running' : 'Start Timer'}
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setHistoryDialogOpen(true)}
-              >
-                <History className="h-4 w-4 mr-2" />
-                {t('history.viewHistory')}
-              </Button>
-              <Button
                 variant="default"
                 size="sm"
                 onClick={handleEdit}
@@ -484,6 +475,15 @@ export default function TaskDetailPage() {
       <Comments 
         entityType="task" 
         entityId={task.id}
+      />
+
+      {/* Activity Timeline */}
+      <ActivityTimeline
+        entityId={task.id}
+        fetchHistory={async (page, size) => {
+          const response = await taskService.getHistory(task.id, page, size);
+          return response.data;
+        }}
       />
 
       {/* Subtasks */}
@@ -861,20 +861,6 @@ export default function TaskDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* History Dialog */}
-      {task && (
-        <EntityHistoryDialog
-          open={historyDialogOpen}
-          onOpenChange={setHistoryDialogOpen}
-          entityName={t('tasks.task')}
-          entityId={String(task.id)}
-          fetchHistory={async (page, size) => {
-            const response = await taskService.getHistory(task.id, page, size);
-            return response.data;
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -25,7 +25,9 @@ import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
 import { meetingService } from '../services/meetingService';
 import { documentService, UploadedDocument } from '../services/documentService';
-import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus } from '../types';
+import { organizationSettingsService } from '../services/organizationSettingsService';
+import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem } from '../types';
+import { MeetingTypeConfig } from '../types/organizationSettings';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
@@ -84,6 +86,7 @@ export default function PitchDetail() {
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
@@ -117,6 +120,8 @@ export default function PitchDetail() {
     dateHeld: dayjs().format('YYYY-MM-DD'),
     dorReady: false,
     dodReady: false,
+    dorItems: [],
+    dodItems: [],
     notes: '',
   });
   const [meetingDate, setMeetingDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
@@ -131,17 +136,19 @@ export default function PitchDetail() {
 
   const loadData = async (pitchId: number) => {
     try {
-      const [pitchRes, workLogsRes, meetingsRes, docsRes] = await Promise.all([
+      const [pitchRes, workLogsRes, meetingsRes, docsRes, orgSettingsRes] = await Promise.all([
         pitchService.getById(pitchId),
         workLogService.getByPitchId(pitchId),
         meetingService.getByPitchId(pitchId),
         documentService.getDocumentsForPitch(pitchId),
+        organizationSettingsService.getSettings(),
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
       setWorkLogs(workLogsRes.data);
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
+      setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
       
       // Sync Shape Up fields
       setShapeUpFields({
@@ -286,6 +293,8 @@ export default function PitchDetail() {
         dateHeld: dayjs().format('YYYY-MM-DD'),
         dorReady: false,
         dodReady: false,
+        dorItems: [],
+        dodItems: [],
         notes: '',
       });
       setMeetingDate(dayjs().format('YYYY-MM-DD'));
@@ -305,6 +314,50 @@ export default function PitchDetail() {
 
   const handleRemoveMeetingPendingDoc = (index: number) => {
     setMeetingPendingDocs(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMeetingTypeChange = (type: MeetingType) => {
+    const config = meetingTypeConfigs.find(c => c.name === type);
+    const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
+      id: index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+    const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
+      id: index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+
+    setNewMeeting(prev => ({
+      ...prev,
+      type,
+      dorItems,
+      dodItems,
+      dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
+      dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
+    }));
+  };
+
+  const toggleChecklistItem = (listType: 'dor' | 'dod', itemId: number) => {
+    const items = listType === 'dor' ? [...(newMeeting.dorItems || [])] : [...(newMeeting.dodItems || [])];
+    const itemIndex = items.findIndex(i => i.id === itemId);
+    if (itemIndex >= 0) {
+      items[itemIndex] = { ...items[itemIndex], isCompleted: !items[itemIndex].isCompleted };
+      
+      // Check if all required items are completed
+      const allRequiredCompleted = items.filter(i => i.isRequired).every(i => i.isCompleted);
+      
+      if (listType === 'dor') {
+        setNewMeeting(prev => ({ ...prev, dorItems: items, dorReady: allRequiredCompleted }));
+      } else {
+        setNewMeeting(prev => ({ ...prev, dodItems: items, dodReady: allRequiredCompleted }));
+      }
+    }
   };
 
   if (id === null) {
@@ -868,21 +921,17 @@ export default function PitchDetail() {
                 <Label htmlFor="meeting-type">{t('pitchDetailPage.type')} *</Label>
                 <Select
                   value={newMeeting.type}
-                  onValueChange={(value) =>
-                    setNewMeeting({ ...newMeeting, type: value as MeetingType })
-                  }
+                  onValueChange={(value) => handleMeetingTypeChange(value as MeetingType)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('pitchDetailPage.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SHAPING">{t('meetings.type.shaping')}</SelectItem>
-                    <SelectItem value="BETTING">{t('meetings.type.betting')}</SelectItem>
-                    <SelectItem value="KICKOFF">{t('meetings.type.kickoff')}</SelectItem>
-                    <SelectItem value="STANDUP">{t('meetings.type.standup')}</SelectItem>
-                    <SelectItem value="DEMO">{t('meetings.type.demo')}</SelectItem>
-                    <SelectItem value="RETROSPECTIVE">{t('meetings.type.retrospective')}</SelectItem>
-                    <SelectItem value="HILL_CHART_REVIEW">{t('meetings.type.hillChartReview')}</SelectItem>
+                    {meetingTypeConfigs.filter(c => c.isActive).map(config => (
+                      <SelectItem key={config.name} value={config.name}>
+                        {config.displayName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -896,40 +945,75 @@ export default function PitchDetail() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="dor">{t('pitchDetailPage.dor')}</Label>
-              <Select
-                value={newMeeting.dorReady ? 'yes' : 'no'}
-                onValueChange={(value) =>
-                  setNewMeeting({ ...newMeeting, dorReady: value === 'yes' })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
-                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dod">{t('pitchDetailPage.dod')}</Label>
-              <Select
-                value={newMeeting.dodReady ? 'yes' : 'no'}
-                onValueChange={(value) =>
-                  setNewMeeting({ ...newMeeting, dodReady: value === 'yes' })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
-                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            
+            {/* DOR Checklist */}
+            {(newMeeting.dorItems && newMeeting.dorItems.length > 0) && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  {t('pitchDetailPage.dor')}
+                  {newMeeting.dorReady ? (
+                    <span className="text-xs text-green-600 font-medium">✓ {t('pitchDetailPage.ready')}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600 font-medium">({t('pitchDetailPage.pending')})</span>
+                  )}
+                </Label>
+                <div className="border rounded-md p-2 space-y-1 max-h-32 overflow-y-auto">
+                  {newMeeting.dorItems.map((item, index) => (
+                    <div key={item.id ?? index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`dor-${item.id ?? index}`}
+                        checked={item.isCompleted}
+                        onChange={() => toggleChecklistItem('dor', item.id ?? index)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label 
+                        htmlFor={`dor-${item.id ?? index}`}
+                        className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                      >
+                        {item.name}
+                        {item.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DOD Checklist */}
+            {(newMeeting.dodItems && newMeeting.dodItems.length > 0) && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  {t('pitchDetailPage.dod')}
+                  {newMeeting.dodReady ? (
+                    <span className="text-xs text-green-600 font-medium">✓ {t('pitchDetailPage.ready')}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600 font-medium">({t('pitchDetailPage.pending')})</span>
+                  )}
+                </Label>
+                <div className="border rounded-md p-2 space-y-1 max-h-32 overflow-y-auto">
+                  {newMeeting.dodItems.map((item, index) => (
+                    <div key={item.id ?? index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`dod-${item.id ?? index}`}
+                        checked={item.isCompleted}
+                        onChange={() => toggleChecklistItem('dod', item.id ?? index)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label 
+                        htmlFor={`dod-${item.id ?? index}`}
+                        className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                      >
+                        {item.name}
+                        {item.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="meeting-notes">{t('pitchDetailPage.meetingNotes')}</Label>
               <Textarea

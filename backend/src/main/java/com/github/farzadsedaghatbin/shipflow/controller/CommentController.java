@@ -125,6 +125,15 @@ public class CommentController {
     return ResponseEntity.ok(commentService.searchUsersForMention(query));
   }
 
+  @GetMapping("/users/by-name")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get user by display name", description = "Returns user info by their display name (person name) for @mention profiles")
+  public ResponseEntity<MentionUserDTO> getUserByDisplayName(@RequestParam String name) {
+    return commentService.getUserByDisplayName(name)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
+  }
+
   private Long getUserId(UserDetails userDetails) {
     return userService.findByUsername(userDetails.getUsername()).getId();
   }

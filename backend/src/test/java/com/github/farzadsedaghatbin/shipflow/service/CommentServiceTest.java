@@ -63,11 +63,17 @@ class CommentServiceTest {
 
   @BeforeEach
   void setUp() {
+    // Setup test person
+    Person testPerson = Person.builder().id(1L).name("Test User").build();
+    
+    // Setup admin person
+    Person adminPerson = Person.builder().id(2L).name("Admin User").build();
+    
     // Setup test user
-    testUser = User.builder().id(1L).username("testuser").role(UserRole.MEMBER).isActive(true).build();
+    testUser = User.builder().id(1L).username("testuser").role(UserRole.MEMBER).isActive(true).person(testPerson).build();
 
     // Setup admin user
-    adminUser = User.builder().id(2L).username("admin").role(UserRole.ADMIN).isActive(true).build();
+    adminUser = User.builder().id(2L).username("admin").role(UserRole.ADMIN).isActive(true).person(adminPerson).build();
 
     // Setup test task
     testTask = Task.builder().id(1L).title("Test Task").build();
@@ -391,18 +397,20 @@ class CommentServiceTest {
     @DisplayName("Should search users for mention")
     void shouldSearchUsersForMention() {
       // Arrange
-      User user1 = User.builder().id(1L).username("john_doe").isActive(true).build();
-      User user2 = User.builder().id(2L).username("jane_doe").isActive(true).build();
+      Person person1 = Person.builder().id(1L).name("John Doe").build();
+      Person person2 = Person.builder().id(2L).name("Jane Doe").build();
+      User user1 = User.builder().id(1L).username("john_doe").person(person1).isActive(true).build();
+      User user2 = User.builder().id(2L).username("jane_doe").person(person2).isActive(true).build();
 
-      when(userRepository.searchByUsernameForMention("doe")).thenReturn(Arrays.asList(user1, user2));
+      when(userRepository.searchByPersonNameForMention("Doe")).thenReturn(Arrays.asList(user1, user2));
 
       // Act
-      List<MentionUserDTO> result = commentService.searchUsersForMention("doe");
+      List<MentionUserDTO> result = commentService.searchUsersForMention("Doe");
 
       // Assert
       assertThat(result).hasSize(2);
-      assertThat(result.get(0).getUsername()).isEqualTo("john_doe");
-      assertThat(result.get(1).getUsername()).isEqualTo("jane_doe");
+      assertThat(result.get(0).getDisplayName()).isEqualTo("John Doe");
+      assertThat(result.get(1).getDisplayName()).isEqualTo("Jane Doe");
     }
 
     @Test
@@ -417,16 +425,17 @@ class CommentServiceTest {
       // Assert
       assertThat(result).hasSize(2);
       verify(userRepository).findByIsActiveTrue();
-      verify(userRepository, never()).searchByUsernameForMention(anyString());
+      verify(userRepository, never()).searchByPersonNameForMention(anyString());
     }
 
     @Test
     @DisplayName("Should process mentions and send notifications")
     void shouldProcessMentionsAndSendNotifications() {
       // Arrange
-      User mentionedUser = User.builder().id(3L).username("mentioned_user").isActive(true).build();
+      Person mentionedPerson = Person.builder().id(3L).name("Alice").build();
+      User mentionedUser = User.builder().id(3L).username("alice_user").person(mentionedPerson).isActive(true).build();
 
-      CreateCommentRequest request = CreateCommentRequest.builder().content("Hey @mentioned_user check this out!")
+      CreateCommentRequest request = CreateCommentRequest.builder().content("Hey @Alice check this out!")
           .entityType(CommentEntityType.TASK).entityId(1L).build();
 
       when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -437,7 +446,7 @@ class CommentServiceTest {
         c.setCreatedAt(LocalDateTime.now());
         return c;
       });
-      when(userRepository.findByUsernameIn(Arrays.asList("mentioned_user")))
+      when(userRepository.findByPersonNameIn(Arrays.asList("Alice")))
           .thenReturn(Arrays.asList(mentionedUser));
       when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
       when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
@@ -456,10 +465,12 @@ class CommentServiceTest {
     @DisplayName("Should handle multiple mentions")
     void shouldHandleMultipleMentions() {
       // Arrange
-      User user1 = User.builder().id(3L).username("user1").isActive(true).build();
-      User user2 = User.builder().id(4L).username("user2").isActive(true).build();
+      Person person1 = Person.builder().id(3L).name("Alice").build();
+      Person person2 = Person.builder().id(4L).name("Bob").build();
+      User user1 = User.builder().id(3L).username("alice_user").person(person1).isActive(true).build();
+      User user2 = User.builder().id(4L).username("bob_user").person(person2).isActive(true).build();
 
-      CreateCommentRequest request = CreateCommentRequest.builder().content("@user1 and @user2 please review")
+      CreateCommentRequest request = CreateCommentRequest.builder().content("@Alice and @Bob please review")
           .entityType(CommentEntityType.TASK).entityId(1L).build();
 
       when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -470,7 +481,7 @@ class CommentServiceTest {
         c.setCreatedAt(LocalDateTime.now());
         return c;
       });
-      when(userRepository.findByUsernameIn(anyList())).thenReturn(Arrays.asList(user1, user2));
+      when(userRepository.findByPersonNameIn(anyList())).thenReturn(Arrays.asList(user1, user2));
       when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
       when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
           .thenReturn(Collections.emptyList());

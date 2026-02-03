@@ -55,12 +55,16 @@ export interface ReactionInfo {
 }
 
 /**
- * User info for @mention suggestions
+ * User info for @mention suggestions and profile popover
  */
 export interface MentionUser {
   id: number;
   username: string;
   displayName: string;
+  email?: string;
+  avatarUrl?: string;
+  department?: string;
+  skills?: string;
 }
 
 // Emoji mapping for reactions
@@ -146,6 +150,12 @@ export const commentService = {
    */
   searchUsersForMention: (query: string) =>
     api.get<MentionUser[]>('/comments/users/search', { params: { query } }),
+
+  /**
+   * Get user by display name for @mention profile lookup
+   */
+  getUserByDisplayName: (name: string) =>
+    api.get<MentionUser>('/comments/users/by-name', { params: { name } }),
 };
 
 export default commentService;

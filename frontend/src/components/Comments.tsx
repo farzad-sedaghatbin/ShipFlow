@@ -37,6 +37,7 @@ import commentService, {
   MentionUser,
   REACTION_EMOJIS 
 } from '../services/commentService';
+import UserProfilePopover from './UserProfilePopover';
 
 interface CommentsProps {
   entityType: 'task' | 'bug';
@@ -54,6 +55,57 @@ const AVAILABLE_REACTIONS: CommentReaction[] = [
   'ROCKET',
   'EYES',
 ];
+
+/**
+ * MentionLink component - renders a clickable @mention with user profile popover
+ */
+interface MentionLinkProps {
+  name: string;
+  cachedUser?: MentionUser;
+  onFetchUser: (name: string) => Promise<MentionUser | null>;
+}
+
+const MentionLink: React.FC<MentionLinkProps> = ({ name, cachedUser, onFetchUser }) => {
+  const [user, setUser] = useState<MentionUser | null>(cachedUser || null);
+  const [loading, setLoading] = useState(false);
+  
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user && !loading) {
+      setLoading(true);
+      const fetchedUser = await onFetchUser(name);
+      setUser(fetchedUser);
+      setLoading(false);
+    }
+  };
+
+  // If we have user data, render with popover
+  if (user) {
+    return (
+      <UserProfilePopover userId={user.id} displayName={user.displayName}>
+        <button
+          type="button"
+          className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{name}
+        </button>
+      </UserProfilePopover>
+    );
+  }
+
+  // If no user data yet, render clickable mention that fetches on click
+  return (
+    <button
+      type="button"
+      className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
+      onClick={handleClick}
+      disabled={loading}
+    >
+      @{name}
+    </button>
+  );
+};
 
 const Comments: React.FC<CommentsProps> = ({
   entityType,
@@ -77,6 +129,7 @@ const Comments: React.FC<CommentsProps> = ({
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [mentionUserCache, setMentionUserCache] = useState<Map<string, MentionUser>>(new Map());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -183,7 +236,12 @@ const Comments: React.FC<CommentsProps> = ({
     const afterMention = newComment.substring(
       mentionStartIndex + mentionQuery.length + 1
     );
-    const newValue = `${beforeMention}@${user.username} ${afterMention}`;
+    // Use displayName (person's name) for the mention
+    // If name has spaces, wrap in quotes for proper parsing
+    const mentionText = user.displayName.includes(' ') 
+      ? `@"${user.displayName}"` 
+      : `@${user.displayName}`;
+    const newValue = `${beforeMention}${mentionText} ${afterMention}`;
     
     setNewComment(newValue);
     setShowMentionSuggestions(false);
@@ -194,28 +252,64 @@ const Comments: React.FC<CommentsProps> = ({
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        const newCursorPos = beforeMention.length + user.username.length + 2;
+        const newCursorPos = beforeMention.length + mentionText.length + 1;
         textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
       }
     }, 0);
   };
 
-  // Render comment content with highlighted mentions
-  const renderCommentContent = (content: string) => {
-    const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-    const parts = content.split(mentionRegex);
+  // Fetch and cache user profile for mention
+  const fetchMentionUser = useCallback(async (name: string): Promise<MentionUser | null> => {
+    // Check cache first
+    if (mentionUserCache.has(name)) {
+      return mentionUserCache.get(name) || null;
+    }
     
-    return parts.map((part, index) => {
-      // Every odd index is a captured username
-      if (index % 2 === 1) {
-        return (
-          <span key={index} className="text-primary font-medium">
-            @{part}
-          </span>
-        );
+    try {
+      const response = await commentService.getUserByDisplayName(name);
+      const user = response.data;
+      setMentionUserCache(prev => new Map(prev).set(name, user));
+      return user;
+    } catch {
+      return null;
+    }
+  }, [mentionUserCache]);
+
+  // Render comment content with highlighted and clickable mentions
+  const renderCommentContent = (content: string) => {
+    // Match both @"Full Name" and @SingleWord formats (word can include letters, numbers, dots, underscores)
+    const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}._]+)/gu;
+    const result: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex, match.index)}</span>);
       }
-      return part;
-    });
+      // Add the highlighted mention (group 1 for quoted, group 2 for unquoted)
+      const name = match[1] || match[2];
+      const cachedUser = mentionUserCache.get(name);
+      
+      // Create clickable mention with profile popover
+      result.push(
+        <MentionLink 
+          key={`mention-${match.index}`}
+          name={name}
+          cachedUser={cachedUser}
+          onFetchUser={fetchMentionUser}
+        />
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after last match
+    if (lastIndex < content.length) {
+      result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>);
+    }
+    
+    return result.length > 0 ? result : content;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -304,7 +304,7 @@ export default function OrganizationSettingsPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex flex-wrap">
           <TabsTrigger value="general">{t('organizationSettings.general')}</TabsTrigger>
           <TabsTrigger value="cycles">{t('organizationSettings.cycles')}</TabsTrigger>
           <TabsTrigger value="risk">{t('organizationSettings.risk')}</TabsTrigger>
@@ -312,6 +312,7 @@ export default function OrganizationSettingsPage() {
           <TabsTrigger value="colors">{t('organizationSettings.colors')}</TabsTrigger>
           <TabsTrigger value="bugs">{t('organizationSettings.bugs')}</TabsTrigger>
           <TabsTrigger value="categories">{t('organizationSettings.categories')}</TabsTrigger>
+          <TabsTrigger value="meetings">{t('organizationSettings.meetingTypes')}</TabsTrigger>
           <TabsTrigger value="features">{t('organizationSettings.features')}</TabsTrigger>
         </TabsList>
 
@@ -1062,6 +1063,253 @@ export default function OrganizationSettingsPage() {
                   ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Meeting Types */}
+        <TabsContent value="meetings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {t('organizationSettings.meetingTypesConfig')}
+              </CardTitle>
+              <CardDescription>{t('organizationSettings.meetingTypesDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {formData.meetingTypes?.map((meetingType, typeIndex) => (
+                <div key={typeIndex} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: meetingType.color }}
+                      />
+                      <div>
+                        <Input
+                          value={meetingType.displayName}
+                          onChange={(e) => {
+                            const newMeetingTypes = [...(formData.meetingTypes || [])];
+                            newMeetingTypes[typeIndex] = { ...meetingType, displayName: e.target.value };
+                            setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                          }}
+                          className="font-semibold h-8"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">{meetingType.name}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={meetingType.color}
+                        onChange={(e) => {
+                          const newMeetingTypes = [...(formData.meetingTypes || [])];
+                          newMeetingTypes[typeIndex] = { ...meetingType, color: e.target.value };
+                          setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Switch
+                          checked={meetingType.isActive}
+                          onCheckedChange={(checked) => {
+                            const newMeetingTypes = [...(formData.meetingTypes || [])];
+                            newMeetingTypes[typeIndex] = { ...meetingType, isActive: checked };
+                            setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                          }}
+                        />
+                        <Label className="text-xs">{t('organizationSettings.active')}</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Input
+                    value={meetingType.description}
+                    onChange={(e) => {
+                      const newMeetingTypes = [...(formData.meetingTypes || [])];
+                      newMeetingTypes[typeIndex] = { ...meetingType, description: e.target.value };
+                      setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                    }}
+                    placeholder={t('organizationSettings.meetingTypeDescPlaceholder')}
+                    className="text-sm"
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* DOR Items */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">{t('organizationSettings.dorItems')}</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newMeetingTypes = [...(formData.meetingTypes || [])];
+                            const newDorItems = [...(meetingType.dorItems || [])];
+                            newDorItems.push({
+                              name: '',
+                              description: '',
+                              isRequired: false,
+                              order: newDorItems.length + 1,
+                            });
+                            newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+                            setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                          }}
+                        >
+                          + {t('organizationSettings.addItem')}
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {meetingType.dorItems?.map((item, itemIndex) => (
+                          <div key={itemIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
+                            <div className="flex-1 space-y-1">
+                              <Input
+                                value={item.name}
+                                onChange={(e) => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDorItems = [...(meetingType.dorItems || [])];
+                                  newDorItems[itemIndex] = { ...item, name: e.target.value };
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                                placeholder={t('organizationSettings.itemName')}
+                                className="h-7 text-sm"
+                              />
+                              <Input
+                                value={item.description}
+                                onChange={(e) => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDorItems = [...(meetingType.dorItems || [])];
+                                  newDorItems[itemIndex] = { ...item, description: e.target.value };
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                                placeholder={t('organizationSettings.itemDescription')}
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <Switch
+                                  checked={item.isRequired}
+                                  onCheckedChange={(checked) => {
+                                    const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                    const newDorItems = [...(meetingType.dorItems || [])];
+                                    newDorItems[itemIndex] = { ...item, isRequired: checked };
+                                    newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+                                    setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                  }}
+                                />
+                                <span className="text-xs">{t('organizationSettings.required')}</span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDorItems = meetingType.dorItems?.filter((_, i) => i !== itemIndex) || [];
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dorItems: newDorItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* DOD Items */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">{t('organizationSettings.dodItems')}</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newMeetingTypes = [...(formData.meetingTypes || [])];
+                            const newDodItems = [...(meetingType.dodItems || [])];
+                            newDodItems.push({
+                              name: '',
+                              description: '',
+                              isRequired: false,
+                              order: newDodItems.length + 1,
+                            });
+                            newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+                            setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                          }}
+                        >
+                          + {t('organizationSettings.addItem')}
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {meetingType.dodItems?.map((item, itemIndex) => (
+                          <div key={itemIndex} className="flex items-start gap-2 p-2 border rounded bg-muted/30">
+                            <div className="flex-1 space-y-1">
+                              <Input
+                                value={item.name}
+                                onChange={(e) => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDodItems = [...(meetingType.dodItems || [])];
+                                  newDodItems[itemIndex] = { ...item, name: e.target.value };
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                                placeholder={t('organizationSettings.itemName')}
+                                className="h-7 text-sm"
+                              />
+                              <Input
+                                value={item.description}
+                                onChange={(e) => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDodItems = [...(meetingType.dodItems || [])];
+                                  newDodItems[itemIndex] = { ...item, description: e.target.value };
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                                placeholder={t('organizationSettings.itemDescription')}
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <Switch
+                                  checked={item.isRequired}
+                                  onCheckedChange={(checked) => {
+                                    const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                    const newDodItems = [...(meetingType.dodItems || [])];
+                                    newDodItems[itemIndex] = { ...item, isRequired: checked };
+                                    newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+                                    setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                  }}
+                                />
+                                <span className="text-xs">{t('organizationSettings.required')}</span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => {
+                                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                                  const newDodItems = meetingType.dodItems?.filter((_, i) => i !== itemIndex) || [];
+                                  newMeetingTypes[typeIndex] = { ...meetingType, dodItems: newDodItems };
+                                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                                }}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

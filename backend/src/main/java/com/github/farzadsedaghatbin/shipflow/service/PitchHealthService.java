@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
@@ -269,13 +270,18 @@ public class PitchHealthService {
 
   /**
    * Get health summary for all active cycles.
+   * Excludes cycles from KANBAN projects since they are long-term and health metrics would be incorrect.
    *
    * @param includeAI
    *            If true, includes AI-based risk analysis (slower)
    */
   public List<CycleHealthSummaryDTO> getAllActiveCycleHealth(boolean includeAI) {
     List<Cycle> activeCycles = cycleRepository.findByIsActiveTrue();
-    return activeCycles.stream().map(cycle -> getCycleHealthSummary(cycle.getId(), includeAI))
+    // Filter out cycles from KANBAN projects - they are long-term and health data would be wrong
+    return activeCycles.stream()
+        .filter(cycle -> cycle.getProject() != null 
+            && cycle.getProject().getProjectType() != ProjectType.KANBAN)
+        .map(cycle -> getCycleHealthSummary(cycle.getId(), includeAI))
         .collect(Collectors.toList());
   }
 

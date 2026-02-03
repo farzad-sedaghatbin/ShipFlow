@@ -27,6 +27,9 @@ export interface OrganizationSettings {
   bugStatuses: BugStatusConfig[];
   severityLevels: SeverityLevelConfig[];
   
+  // Meeting Types Configuration
+  meetingTypes: MeetingTypeConfig[];
+  
   // Other Settings
   timeZone: string;
   dateFormat: string;
@@ -112,10 +115,48 @@ export interface UpdateOrganizationSettingsRequest {
   riskWeights?: RiskWeights;
   taskCategories?: CategoryConfig[];
   pitchCategories?: CategoryConfig[];
+  meetingTypes?: MeetingTypeConfig[];
   timeZone?: string;
   dateFormat?: string;
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
+}
+
+/**
+ * Configuration for a meeting type with DOR and DOD checklist items.
+ */
+export interface MeetingTypeConfig {
+  id?: number;
+  name: string;
+  displayName: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+  order: number;
+  dorItems: DorDodItem[];
+  dodItems: DorDodItem[];
+}
+
+/**
+ * A single checklist item for DOR (Definition of Ready) or DOD (Definition of Done).
+ */
+export interface DorDodItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  order: number;
+}
+
+/**
+ * A checklist item with completion status for use in meetings.
+ */
+export interface MeetingChecklistItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  isCompleted: boolean;
 }
 
 export interface RolePermissions {
