@@ -533,6 +533,7 @@
     "deleteFailed": "حذف گزارش باگ ناموفق بود",
     "deleteSuccess": "باگ با موفقیت حذف شد",
     "selectProjectToCreate": "لطفاً یک پروژه خاص انتخاب کنید تا بتوانید گزارش باگ ایجاد کنید",
+    "allProjectsInfoMessage": "شما در حال مشاهده گزارش‌های باگ از همه پروژه‌ها هستید. برای ایجاد گزارش باگ جدید، لطفاً یک پروژه خاص از انتخابگر پروژه انتخاب کنید.",
     "detail": {
       "actualBehavior": "رفتار واقعی",
       "assignee": "مسئول:",
@@ -778,10 +779,11 @@
     "createSuccess": "با موفقیت ایجاد شد",
     "saveFailed": "ذخیره ناموفق بود",
     "cannotDeleteDefault": "امکان حذف مورد پیش‌فرض وجود ندارد",
-    "confirmDelete": "آیا از حذف این مورد اطمینان دارید؟",
+    "confirmDelete": "آیا از حذف {{name}} اطمینان دارید؟",
     "deleteSuccess": "با موفقیت حذف شد",
     "deleteFailed": "حذف ناموفق بود",
-    "tryDifferentSearch": "عبارت جستجوی دیگری را امتحان کنید"
+    "tryDifferentSearch": "عبارت جستجوی دیگری را امتحان کنید",
+    "remove": "حذف"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -5016,5 +5018,11 @@
     "removeReaction": "حذف واکنش",
     "mentionSuggestions": "منشن کردن کسی",
     "mentionHint": "@ را تایپ کنید تا کسی را منشن کنید"
+  },
+  "tour": {
+    "skipTitle": "رد کردن تور؟",
+    "skipDescription": "آیا مطمئن هستید که می‌خواهید تور را رد کنید؟ می‌توانید هر زمان از دکمه راهنما آن را مجدداً شروع کنید.",
+    "skip": "رد کردن تور",
+    "continue": "ادامه تور"
   }
 }

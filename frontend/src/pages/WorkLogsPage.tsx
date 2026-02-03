@@ -82,6 +82,9 @@ export default function WorkLogsPage() {
     note: '',
   });
   const [teamWorkLogDate, setTeamWorkLogDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [teamWorkLogType, setTeamWorkLogType] = useState<'pitch' | 'task'>('task');
+  const [teamSelectedPitchId, setTeamSelectedPitchId] = useState<string>('');
+  const [teamSelectedTaskId, setTeamSelectedTaskId] = useState<string>('');
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -295,12 +298,18 @@ export default function WorkLogsPage() {
   // Team work log handlers (admin)
   const handleCreateTeamWorkLog = async () => {
     if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.hoursSpent) return;
-    if (!teamWorkLog.pitchId && !teamWorkLog.taskId) return;
+    if (teamWorkLogType === 'pitch' && !teamSelectedPitchId) return;
+    if (teamWorkLogType === 'task' && !teamSelectedTaskId) return;
+    
     try {
-      await workLogService.create({
+      const requestData = {
         ...teamWorkLog,
+        pitchId: teamWorkLogType === 'pitch' ? parseInt(teamSelectedPitchId, 10) : undefined,
+        taskId: teamWorkLogType === 'task' ? parseInt(teamSelectedTaskId, 10) : undefined,
         date: teamWorkLogDate,
-      });
+      };
+      
+      await workLogService.create(requestData);
       setTeamWorkLog({
         personId: 0,
         pitchId: 0,
@@ -309,6 +318,8 @@ export default function WorkLogsPage() {
         note: '',
       });
       setTeamWorkLogDate(dayjs().format('YYYY-MM-DD'));
+      setTeamSelectedPitchId('');
+      setTeamSelectedTaskId('');
       showSuccess(t('workLogs.addSuccess'));
       if (selectedCycle) {
         loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
@@ -614,7 +625,7 @@ export default function WorkLogsPage() {
                 <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4 items-end">
                   <div className="space-y-2">
                     <Label htmlFor="team-person">{t('workLogs.person')} *</Label>
                     <Select
@@ -634,23 +645,63 @@ export default function WorkLogsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="team-pitch">{t('workLogs.pitch')} *</Label>
+                    <Label htmlFor="team-log-type">{t('workLogs.logType')} *</Label>
                     <Select
-                      value={teamWorkLog.pitchId ? teamWorkLog.pitchId.toString() : ''}
-                      onValueChange={(value) => setTeamWorkLog({ ...teamWorkLog, pitchId: Number(value) })}
+                      value={teamWorkLogType}
+                      onValueChange={(value: 'pitch' | 'task') => {
+                        setTeamWorkLogType(value);
+                        setTeamSelectedPitchId('');
+                        setTeamSelectedTaskId('');
+                      }}
                     >
-                      <SelectTrigger id="team-pitch">
-                        <SelectValue placeholder={t('workLogs.selectPitch')} />
+                      <SelectTrigger id="team-log-type">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {pitches.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>
-                            {p.title}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
+                        <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {teamWorkLogType === 'pitch' ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="team-pitch">{t('workLogs.pitch')} *</Label>
+                      <Select
+                        value={teamSelectedPitchId}
+                        onValueChange={setTeamSelectedPitchId}
+                      >
+                        <SelectTrigger id="team-pitch">
+                          <SelectValue placeholder={t('workLogs.selectPitch')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pitches.map((p) => (
+                            <SelectItem key={p.id} value={p.id.toString()}>
+                              {p.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="team-task">{t('workLogs.taskSubtask')} *</Label>
+                      <Select
+                        value={teamSelectedTaskId}
+                        onValueChange={setTeamSelectedTaskId}
+                      >
+                        <SelectTrigger id="team-task">
+                          <SelectValue placeholder={t('workLogs.selectTask')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tasks.map((t) => (
+                            <SelectItem key={t.id} value={t.id.toString()}>
+                              {t.parentTaskId && '└─ '}{t.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="team-date">Date</Label>
                     <LocalizedDateInput
@@ -682,10 +733,10 @@ export default function WorkLogsPage() {
                   </div>
                   <Button
                     onClick={handleCreateTeamWorkLog}
-                    disabled={!teamWorkLog.personId || (!teamWorkLog.pitchId && !teamWorkLog.taskId) || !teamWorkLog.hoursSpent}
+                    disabled={!teamWorkLog.personId || (teamWorkLogType === 'pitch' && !teamSelectedPitchId) || (teamWorkLogType === 'task' && !teamSelectedTaskId) || !teamWorkLog.hoursSpent}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Log Time
+                    {t('workLogs.logTime')}
                   </Button>
                 </div>
               </CardContent>

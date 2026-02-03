@@ -24,9 +24,8 @@ import {
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
 import { meetingService } from '../services/meetingService';
-import { personService } from '../services/personService';
 import { documentService, UploadedDocument } from '../services/documentService';
-import { Pitch, WorkLog, Meeting, Person, CreateWorkLogRequest, CreateMeetingRequest, MeetingType, PitchStatus } from '../types';
+import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus } from '../types';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
@@ -84,7 +83,6 @@ export default function PitchDetail() {
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [persons, setPersons] = useState<Person[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
@@ -106,8 +104,7 @@ export default function PitchDetail() {
   const [meetingDialog, setMeetingDialog] = useState(false);
   const [meetingPendingDocs, setMeetingPendingDocs] = useState<File[]>([]);
   const [showMeetingDocUpload, setShowMeetingDocUpload] = useState(false);
-  const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogRequest>({
-    personId: 0,
+  const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
     pitchId: 0,
     date: dayjs().format('YYYY-MM-DD'),
     hoursSpent: 0,
@@ -134,18 +131,16 @@ export default function PitchDetail() {
 
   const loadData = async (pitchId: number) => {
     try {
-      const [pitchRes, workLogsRes, meetingsRes, personsData, docsRes] = await Promise.all([
+      const [pitchRes, workLogsRes, meetingsRes, docsRes] = await Promise.all([
         pitchService.getById(pitchId),
         workLogService.getByPitchId(pitchId),
         meetingService.getByPitchId(pitchId),
-        personService.getAll(true),
         documentService.getDocumentsForPitch(pitchId),
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
       setWorkLogs(workLogsRes.data);
       setMeetings(meetingsRes.data);
-      setPersons(personsData);
       setDocuments(docsRes.data);
       
       // Sync Shape Up fields
@@ -228,7 +223,7 @@ export default function PitchDetail() {
     if (!pitch || !workLogDate) return;
     try {
       setSaving(true);
-      await workLogService.create({
+      await workLogService.createMy({
         ...newWorkLog,
         pitchId: pitch.id,
         date: workLogDate,
@@ -236,7 +231,6 @@ export default function PitchDetail() {
       showSuccess(t('pitchDetailPage.workLogAdded'));
       setWorkLogDialog(false);
       setNewWorkLog({
-        personId: 0,
         pitchId: 0,
         date: dayjs().format('YYYY-MM-DD'),
         hoursSpent: 0,
@@ -808,26 +802,6 @@ export default function PitchDetail() {
             <DialogTitle>{t('pitchDetailPage.addWorkLog')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="person">{t('pitchDetailPage.person')} *</Label>
-              <Select
-                value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
-                onValueChange={(value) =>
-                  setNewWorkLog({ ...newWorkLog, personId: parseInt(value) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('pitchDetailPage.selectPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} ({p.email || 'no email'})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="worklog-date">{t('pitchDetailPage.date')} *</Label>
@@ -874,7 +848,7 @@ export default function PitchDetail() {
             </Button>
             <Button
               onClick={handleCreateWorkLog}
-              disabled={!newWorkLog.personId || !newWorkLog.hoursSpent}
+              disabled={!newWorkLog.hoursSpent}
             >
               {t('pitchDetailPage.add')}
             </Button>

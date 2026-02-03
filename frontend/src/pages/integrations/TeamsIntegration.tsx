@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Send, RefreshCw, HelpCircle } from 'lucide-react';
+import { Plus, Trash2, Send, RefreshCw, HelpCircle, Info, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../../components/ui/dialog';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import {
   teamsService,
   TeamsConfiguration,
@@ -49,6 +50,11 @@ export default function TeamsIntegration() {
   const [channelDialogOpen, setChannelDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+  const [deleteConfigConfirmOpen, setDeleteConfigConfirmOpen] = useState(false);
+  const [deleteChannelConfirmOpen, setDeleteChannelConfirmOpen] = useState(false);
+  const [configToDelete, setConfigToDelete] = useState<number | null>(null);
+  const [channelToDelete, setChannelToDelete] = useState<number | null>(null);
+  const [configToTest, setConfigToTest] = useState<TeamsConfiguration | null>(null);
 
   // Form states
   const [configForm, setConfigForm] = useState<CreateTeamsConfigurationRequest>({
@@ -139,15 +145,20 @@ export default function TeamsIntegration() {
     }
   };
 
-  const handleDeleteConfiguration = async (configId: number) => {
-    if (!confirm(t('teamsIntegration.confirmDeleteConfig'))) {
-      return;
-    }
+  const openDeleteConfigConfirm = (configId: number) => {
+    setConfigToDelete(configId);
+    setDeleteConfigConfirmOpen(true);
+  };
+
+  const handleDeleteConfiguration = async () => {
+    if (configToDelete === null) return;
 
     try {
-      await teamsService.deleteConfiguration(configId);
+      await teamsService.deleteConfiguration(configToDelete);
       setSuccess(t('teamsIntegration.configDeleted'));
       fetchConfigurations();
+      setDeleteConfigConfirmOpen(false);
+      setConfigToDelete(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('teamsIntegration.deleteConfigFailed'));
     }
@@ -179,32 +190,38 @@ export default function TeamsIntegration() {
     }
   };
 
-  const handleDeleteChannelConfig = async (channelConfigId: number) => {
-    if (!confirm(t('teamsIntegration.confirmDeleteChannel'))) {
-      return;
-    }
+  const openDeleteChannelConfirm = (channelConfigId: number) => {
+    setChannelToDelete(channelConfigId);
+    setDeleteChannelConfirmOpen(true);
+  };
+
+  const handleDeleteChannelConfig = async () => {
+    if (channelToDelete === null) return;
 
     try {
-      await teamsService.deleteChannelConfig(channelConfigId);
+      await teamsService.deleteChannelConfig(channelToDelete);
       setSuccess(t('teamsIntegration.channelDeleted'));
       if (activeConfig) {
         fetchChannelConfigs(activeConfig.id);
       }
+      setDeleteChannelConfirmOpen(false);
+      setChannelToDelete(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('teamsIntegration.deleteChannelFailed'));
     }
   };
 
   const handleSendTestNotification = async () => {
-    if (!activeConfig) return;
+    if (!configToTest) return;
 
     try {
-      await teamsService.sendTestNotification(activeConfig.id, {
+      await teamsService.sendTestNotification(configToTest.id, {
         message: testMessage,
         channel: testChannel,
       });
       setSuccess(t('teamsIntegration.testNotificationSent'));
       setTestDialogOpen(false);
+      setConfigToTest(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('teamsIntegration.sendTestFailed'));
     }
@@ -255,11 +272,41 @@ export default function TeamsIntegration() {
         </TabsList>
 
         <TabsContent value="workspace" className="mt-6">
+          {/* Info banner explaining the setup flow */}
+          <Alert className="mb-4 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-700 dark:text-blue-300">
+              <strong>{t('teamsIntegration.howItWorksTitle')}</strong>
+              <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium">
+                    1. {t('teamsIntegration.stepConnectTeams')}
+                  </span>
+                  <ArrowRight className="h-4 w-4 hidden sm:inline" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium">
+                    2. {t('teamsIntegration.stepConfigureNotifications')}
+                  </span>
+                  <ArrowRight className="h-4 w-4 hidden sm:inline" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium">
+                    3. {t('teamsIntegration.stepTest')}
+                  </span>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+
           <Card>
             <CardHeader>
-              <CardTitle>{t('teamsIntegration.tenantConfigurationTitle')}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold">1</span>
+                {t('teamsIntegration.tenantConfigurationTitle')}
+              </CardTitle>
               <CardDescription>
-                {t('teamsIntegration.tenantConfigurationDescription')}
+                {t('teamsIntegration.tenantConfigurationDescriptionExpanded')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -304,7 +351,10 @@ export default function TeamsIntegration() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setTestDialogOpen(true)}
+                                onClick={() => {
+                                  setConfigToTest(config);
+                                  setTestDialogOpen(true);
+                                }}
                                 disabled={!config.isEnabled}
                                 title={t('teamsIntegration.sendTest')}
                               >
@@ -313,7 +363,7 @@ export default function TeamsIntegration() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteConfiguration(config.id)}
+                                onClick={() => openDeleteConfigConfirm(config.id)}
                                 title={t('teamsIntegration.deleteConfig')}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -331,11 +381,23 @@ export default function TeamsIntegration() {
         </TabsContent>
 
         <TabsContent value="channels" className="mt-6">
+          {/* Info banner explaining what channel configurations do */}
+          <Alert className="mb-4 border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertDescription className="text-green-700 dark:text-green-300">
+              <strong>{t('teamsIntegration.channelConfigExplainer')}</strong>
+              <p className="mt-1 text-sm">{t('teamsIntegration.channelConfigExplainerDetail')}</p>
+            </AlertDescription>
+          </Alert>
+
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-xl font-semibold">{t('teamsIntegration.channelSettingsTitle')}</h2>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold">2</span>
+                {t('teamsIntegration.channelSettingsTitle')}
+              </h2>
               <p className="text-sm text-muted-foreground">
-                {t('teamsIntegration.channelSettingsDescription')}
+                {t('teamsIntegration.channelSettingsDescriptionExpanded')}
               </p>
             </div>
             <Button onClick={() => setChannelDialogOpen(true)}>
@@ -405,7 +467,7 @@ export default function TeamsIntegration() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteChannelConfig(channel.id)}
+                              onClick={() => openDeleteChannelConfirm(channel.id)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -566,21 +628,32 @@ export default function TeamsIntegration() {
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.configureChannelTitle')}</DialogTitle>
             <DialogDescription>
-              {t('teamsIntegration.configureChannelDescription')}
+              {t('teamsIntegration.configureChannelDescriptionExpanded')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Info about how this relates to tenant config */}
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
+              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-amber-700 dark:text-amber-300 text-sm">
+                {t('teamsIntegration.channelWebhookExplainer')}
+              </AlertDescription>
+            </Alert>
+
             <div className="space-y-2">
-              <Label htmlFor="channelName">{t('teamsIntegration.channelName')}</Label>
+              <Label htmlFor="channelName">{t('teamsIntegration.channelNameLabel')}</Label>
               <Input
                 id="channelName"
                 value={channelForm.channelName}
                 onChange={(e) => setChannelForm({ ...channelForm, channelName: e.target.value })}
-                placeholder={t('teamsIntegration.teamNamePlaceholder')}
+                placeholder={t('teamsIntegration.channelNamePlaceholderNew')}
               />
+              <p className="text-xs text-muted-foreground">
+                {t('teamsIntegration.channelNameHelp')}
+              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channelWebhookUrl">{t('teamsIntegration.channelWebhookOptional')}</Label>
+              <Label htmlFor="channelWebhookUrl">{t('teamsIntegration.channelWebhookOptionalExpanded')}</Label>
               <Input
                 id="channelWebhookUrl"
                 value={channelForm.channelWebhookUrl}
@@ -709,7 +782,10 @@ export default function TeamsIntegration() {
       </Dialog>
 
       {/* Test Notification Dialog */}
-      <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+      <Dialog open={testDialogOpen} onOpenChange={(open) => {
+        setTestDialogOpen(open);
+        if (!open) setConfigToTest(null);
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('teamsIntegration.sendTestTitle')}</DialogTitle>
@@ -718,6 +794,15 @@ export default function TeamsIntegration() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Show which tenant will receive the test */}
+            {configToTest && (
+              <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-blue-700 dark:text-blue-300">
+                  {t('teamsIntegration.testWillSendTo', { tenant: configToTest.tenantName })}
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="testMessage">{t('teamsIntegration.message')}</Label>
               <textarea
@@ -739,7 +824,10 @@ export default function TeamsIntegration() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTestDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setTestDialogOpen(false);
+              setConfigToTest(null);
+            }}>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSendTestNotification}>
@@ -749,6 +837,30 @@ export default function TeamsIntegration() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Configuration Confirm Dialog */}
+      <ConfirmDialog
+        open={deleteConfigConfirmOpen}
+        onOpenChange={setDeleteConfigConfirmOpen}
+        title={t('teamsIntegration.deleteConfigTitle')}
+        description={t('teamsIntegration.confirmDeleteConfig')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteConfiguration}
+        variant="destructive"
+      />
+
+      {/* Delete Channel Confirm Dialog */}
+      <ConfirmDialog
+        open={deleteChannelConfirmOpen}
+        onOpenChange={setDeleteChannelConfirmOpen}
+        title={t('teamsIntegration.deleteChannelTitle')}
+        description={t('teamsIntegration.confirmDeleteChannel')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteChannelConfig}
+        variant="destructive"
+      />
     </div>
   );
 }

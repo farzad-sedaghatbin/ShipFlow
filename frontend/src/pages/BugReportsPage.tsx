@@ -19,6 +19,7 @@ import {
   LayoutList,
   Kanban,
   Check,
+  Info,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -63,6 +64,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
@@ -118,6 +120,8 @@ const BugReportsPage: React.FC = () => {
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bugToDelete, setBugToDelete] = useState<number | null>(null);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -192,11 +196,18 @@ const BugReportsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm(t('bugReports.confirmDelete'))) return;
+  const openDeleteConfirm = (id: number) => {
+    setBugToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (bugToDelete === null) return;
     try {
-      await qaTestManagementService.deleteBugReport(id);
-      setBugReports(bugReports.filter((b) => b.id !== id));
+      await qaTestManagementService.deleteBugReport(bugToDelete);
+      setBugReports(bugReports.filter((b) => b.id !== bugToDelete));
+      setDeleteConfirmOpen(false);
+      setBugToDelete(null);
     } catch (err) {
       setError(t('bugReports.deleteFailed'));
     }
@@ -382,6 +393,16 @@ const BugReportsPage: React.FC = () => {
           </TooltipProvider>
         </div>
       </div>
+
+      {/* All Projects Info Alert */}
+      {isAllProjectsSelected && (
+        <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-blue-700 dark:text-blue-300">
+            {t('bugReports.allProjectsInfoMessage')}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -819,7 +840,7 @@ const BugReportsPage: React.FC = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(bug.id)}
+                              onClick={() => openDeleteConfirm(bug.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1036,6 +1057,18 @@ const BugReportsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('bugReports.deleteTitle')}
+        description={t('bugReports.confirmDelete')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 };
