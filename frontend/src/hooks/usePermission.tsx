@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { ResourceType, PermissionType, permissionService } from '@/services/permissionService';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -32,7 +32,7 @@ interface PermissionCache {
  */
 export function usePermission() {
   const { user } = useAuth();
-  const [cache, setCache] = useState<PermissionCache>({});
+  const cacheRef = useRef<PermissionCache>({});
   const [loading, setLoading] = useState(false);
 
   /**
@@ -48,8 +48,8 @@ export function usePermission() {
       const cacheKey = `${resource}:${permission}`;
 
       // Return cached result if available
-      if (cacheKey in cache) {
-        return cache[cacheKey];
+      if (cacheKey in cacheRef.current) {
+        return cacheRef.current[cacheKey];
       }
 
       try {
@@ -57,7 +57,7 @@ export function usePermission() {
         const result = await permissionService.hasPermission(resource, permission);
         
         // Update cache
-        setCache(prev => ({ ...prev, [cacheKey]: result }));
+        cacheRef.current[cacheKey] = result;
         
         return result;
       } catch (error) {
@@ -68,7 +68,7 @@ export function usePermission() {
         setLoading(false);
       }
     },
-    [user, cache]
+    [user] // Only depend on user, not cache
   );
 
   /**
@@ -81,9 +81,9 @@ export function usePermission() {
       if (!user) return false;
       
       const cacheKey = `${resource}:${permission}`;
-      return cache[cacheKey] ?? false;
+      return cacheRef.current[cacheKey] ?? false;
     },
-    [user, cache]
+    [user] // Only depend on user, not cache
   );
 
   /**
@@ -116,7 +116,7 @@ export function usePermission() {
    * Clear permission cache (e.g., on logout or role change).
    */
   const clearCache = useCallback(() => {
-    setCache({});
+    cacheRef.current = {};
   }, []);
 
   // Clear cache when user changes or logs out
@@ -176,7 +176,7 @@ export function PermissionGate({
     return () => {
       mounted = false;
     };
-  }, [resource, permission]); // Removed hasPermission to prevent infinite loops
+  }, [resource, permission, hasPermission]); // hasPermission is now stable, safe to include
 
   // Loading state
   if (hasAccess === null) {
