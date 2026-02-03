@@ -24,6 +24,10 @@ public class CreateMeetingRequest {
   private Boolean dorReady = false;
   @Builder.Default
   private Boolean dodReady = false;
+  @Builder.Default
+  private List<MeetingDTO.MeetingChecklistItem> dorItems = new ArrayList<>();
+  @Builder.Default
+  private List<MeetingDTO.MeetingChecklistItem> dodItems = new ArrayList<>();
   private String notes;
   private Long retrospectiveId;
   private String decisions;

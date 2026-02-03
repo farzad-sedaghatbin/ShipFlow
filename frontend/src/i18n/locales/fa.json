@@ -783,7 +783,14 @@
     "deleteSuccess": "با موفقیت حذف شد",
     "deleteFailed": "حذف ناموفق بود",
     "tryDifferentSearch": "عبارت جستجوی دیگری را امتحان کنید",
-    "remove": "حذف"
+    "remove": "حذف",
+    "justNow": "همین الان",
+    "minutesAgo": "{{count}} دقیقه پیش",
+    "minutesAgo_other": "{{count}} دقیقه پیش",
+    "hoursAgo": "{{count}} ساعت پیش",
+    "hoursAgo_other": "{{count}} ساعت پیش",
+    "daysAgo": "{{count}} روز پیش",
+    "daysAgo_other": "{{count}} روز پیش"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -2460,6 +2467,9 @@
     "documents": "اسناد",
     "dodReady": "DOD آماده",
     "dorReady": "DOR آماده",
+    "ready": "آماده",
+    "notReady": "آماده نیست",
+    "noChecklistItems": "آیتم چک‌لیستی برای این نوع جلسه پیکربندی نشده است",
     "edit": "ویرایش",
     "editMeeting": "ویرایش جلسه",
     "endDate": "تاریخ پایان",
@@ -2729,6 +2739,16 @@
         "pitchScope": "کارهای مربوط به تحویلی‌های پیچ"
       }
     },
+    "meetingTypes": "انواع جلسه",
+    "meetingTypesConfig": "پیکربندی انواع جلسه",
+    "meetingTypesDesc": "پیکربندی انواع جلسه و چک‌لیست‌های DOR/DOD آن‌ها. هر نوع جلسه می‌تواند چک‌لیست تعریف آمادگی (DOR) و تعریف انجام‌شدن (DOD) خاص خود را داشته باشد.",
+    "meetingTypeDescPlaceholder": "توضیحات این نوع جلسه",
+    "dorItems": "تعریف آمادگی (DOR)",
+    "dodItems": "تعریف انجام‌شدن (DOD)",
+    "addItem": "افزودن آیتم",
+    "itemName": "نام آیتم",
+    "itemDescription": "توضیحات آیتم",
+    "required": "الزامی",
     "description": "توضیحات",
     "disable": "[TODO: Persian translation] Disable",
     "disconnect": "[TODO: Persian translation] Disconnect",
@@ -3349,7 +3369,10 @@
     "workLogDeleted": "[TODO: Persian translation] Work log deleted successfully!",
     "workLogFailed": "[TODO: Persian translation] Failed to create work log",
     "workLogs": "گزارش‌های کار",
-    "yes": "[TODO: Persian translation] Yes",
+    "yes": "بله",
+    "no": "خیر",
+    "ready": "آماده",
+    "pending": "در انتظار",
     "youCanEnable": "می‌توانید این ویژگی را در تنظیمات سازمان فعال کنید"
   },
   "pitchHillChart": {
@@ -5017,7 +5040,22 @@
     "addReaction": "افزودن واکنش",
     "removeReaction": "حذف واکنش",
     "mentionSuggestions": "منشن کردن کسی",
-    "mentionHint": "@ را تایپ کنید تا کسی را منشن کنید"
+    "mentionHint": "@ را تایپ کنید تا کسی را منشن کنید",
+    "mention": {
+      "profileError": "خطا در بارگذاری پروفایل",
+      "noDetails": "جزئیات بیشتری موجود نیست"
+    }
+  },
+  "activity": {
+    "title": "فعالیت‌ها",
+    "noActivity": "فعالیتی ثبت نشده",
+    "justNow": "همین الان",
+    "minutesAgo": "{{count}} دقیقه پیش",
+    "minutesAgo_other": "{{count}} دقیقه پیش",
+    "hoursAgo": "{{count}} ساعت پیش",
+    "hoursAgo_other": "{{count}} ساعت پیش",
+    "daysAgo": "{{count}} روز پیش",
+    "daysAgo_other": "{{count}} روز پیش"
   },
   "tour": {
     "skipTitle": "رد کردن تور؟",

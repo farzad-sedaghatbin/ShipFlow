@@ -40,8 +40,9 @@ public class CommentService {
   private final MessageService messageService;
   private final DashboardNotificationService notificationService;
 
-  // Pattern to match @username mentions (alphanumeric and underscores)
-  private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-zA-Z0-9_]+)");
+  // Pattern to match @name mentions (letters, numbers, dots, underscores)
+  // Matches @FirstName, @r.jahani, or @"First Name" for names with spaces
+  private static final Pattern MENTION_PATTERN = Pattern.compile("@\"([^\"]+)\"|@([\\p{L}\\p{N}._]+)");
 
   /**
    * Create a new comment.
@@ -253,31 +254,45 @@ public class CommentService {
   }
 
   /**
-   * Search for users to mention in comments.
+   * Search for users to mention in comments (by person name).
    */
   @Transactional(readOnly = true)
   public List<MentionUserDTO> searchUsersForMention(String query) {
     if (query == null || query.trim().isEmpty()) {
-      // Return first 10 active users if no query
-      return userRepository.findByIsActiveTrue().stream().limit(10).map(this::toMentionUserDTO)
+      // Return first 10 active users with person profiles if no query
+      return userRepository.findByIsActiveTrue().stream()
+          .filter(u -> u.getPerson() != null)
+          .limit(10)
+          .map(this::toMentionUserDTO)
           .collect(Collectors.toList());
     }
 
-    return userRepository.searchByUsernameForMention(query.trim()).stream().limit(10).map(this::toMentionUserDTO)
+    return userRepository.searchByPersonNameForMention(query.trim()).stream()
+        .limit(10)
+        .map(this::toMentionUserDTO)
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Get user by display name (person name) for mention profile lookup.
+   */
+  @Transactional(readOnly = true)
+  public Optional<MentionUserDTO> getUserByDisplayName(String name) {
+    List<User> users = userRepository.findByPersonNameIn(List.of(name));
+    return users.stream().findFirst().map(this::toMentionUserDTO);
   }
 
   /**
    * Extract @mentions from content and send notifications.
    */
   private void processMentions(String content, User author, CommentEntityType entityType, Long entityId) {
-    Set<String> mentionedUsernames = extractMentions(content);
+    Set<String> mentionedNames = extractMentions(content);
 
-    if (mentionedUsernames.isEmpty()) {
+    if (mentionedNames.isEmpty()) {
       return;
     }
 
-    List<User> mentionedUsers = userRepository.findByUsernameIn(new ArrayList<>(mentionedUsernames));
+    List<User> mentionedUsers = userRepository.findByPersonNameIn(new ArrayList<>(mentionedNames));
 
     for (User mentionedUser : mentionedUsers) {
       try {
@@ -292,14 +307,19 @@ public class CommentService {
   }
 
   /**
-   * Extract usernames from @mentions in content.
+   * Extract person names from @mentions in content.
+   * Supports both @Name and @"Full Name" formats.
    */
   private Set<String> extractMentions(String content) {
     Set<String> mentions = new HashSet<>();
     Matcher matcher = MENTION_PATTERN.matcher(content);
 
     while (matcher.find()) {
-      mentions.add(matcher.group(1));
+      // Group 1 is for quoted names (@"Full Name"), Group 2 is for single word names (@Name)
+      String name = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+      if (name != null && !name.trim().isEmpty()) {
+        mentions.add(name.trim());
+      }
     }
 
     return mentions;
@@ -307,7 +327,28 @@ public class CommentService {
 
   private MentionUserDTO toMentionUserDTO(User user) {
     String displayName = user.getPerson() != null ? user.getPerson().getName() : user.getUsername();
+    String email = user.getEmail();
+    String avatarUrl = null;
+    String department = null;
+    String skills = null;
+    
+    if (user.getPerson() != null) {
+      avatarUrl = user.getPerson().getAvatarUrl();
+      department = user.getPerson().getDepartment();
+      skills = user.getPerson().getSkills();
+      if (email == null) {
+        email = user.getPerson().getEmail();
+      }
+    }
 
-    return MentionUserDTO.builder().id(user.getId()).username(user.getUsername()).displayName(displayName).build();
+    return MentionUserDTO.builder()
+        .id(user.getId())
+        .username(user.getUsername())
+        .displayName(displayName)
+        .email(email)
+        .avatarUrl(avatarUrl)
+        .department(department)
+        .skills(skills)
+        .build();
   }
 }

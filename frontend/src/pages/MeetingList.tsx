@@ -16,7 +16,9 @@ import { pitchService } from '../services/pitchService';
 import { retroService } from '../services/retroService';
 import { personService } from '../services/personService';
 import { cycleService } from '../services/cycleService';
-import { Meeting, Pitch, CreateMeetingRequest, MeetingType, MeetingAction, ActionStatus, Retrospective, Person, Cycle } from '../types';
+import { organizationSettingsService } from '../services/organizationSettingsService';
+import { Meeting, Pitch, CreateMeetingRequest, MeetingType, MeetingAction, ActionStatus, Retrospective, Person, Cycle, MeetingChecklistItem } from '../types';
+import { MeetingTypeConfig } from '../types/organizationSettings';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { MeetingDocumentsDialog } from '../components/MeetingDocumentsDialog';
 import EmptyState from '../components/EmptyState';
@@ -24,6 +26,7 @@ import { EmptyMeetingsIllustration } from '../components/illustrations';
 import { useToast, useProject } from '../contexts';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
+import { Checkbox } from '../components/ui/checkbox';
 
 
 import { Card, CardContent } from '../components/ui/card';
@@ -72,6 +75,7 @@ export default function MeetingList() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [retrospectives, setRetrospectives] = useState<Retrospective[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
+  const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -110,6 +114,8 @@ export default function MeetingList() {
     dateHeld: dayjs().format('YYYY-MM-DD'),
     dorReady: false,
     dodReady: false,
+    dorItems: [],
+    dodItems: [],
     notes: '',
     decisions: '',
     attendees: '',
@@ -126,18 +132,24 @@ export default function MeetingList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [pitchesRes, cyclesRes, retrospectivesRes, personsRes] = await Promise.all([
+      const [pitchesRes, cyclesRes, retrospectivesRes, personsRes, settingsRes] = await Promise.all([
         pitchService.getMyPitches(),
         cycleService.getMyCycles(),
         currentProject 
           ? retroService.getByProject(currentProject.id).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
         personService.getAll(true), // Get active persons
+        organizationSettingsService.getSettings().catch(() => ({ data: null })),
       ]);
       setPitches(pitchesRes.data);
       setCycles(cyclesRes.data);
       setRetrospectives(retrospectivesRes.data || []);
       setPersons(personsRes);
+      
+      // Load meeting type configs from org settings
+      if (settingsRes.data?.meetingTypes) {
+        setMeetingTypeConfigs(settingsRes.data.meetingTypes.filter((mt: MeetingTypeConfig) => mt.isActive));
+      }
       
       // Load meetings with pagination, filters, and project filter
       const hasFilters = filters.types.length > 0 || filters.startDate || filters.endDate || 
@@ -199,6 +211,8 @@ export default function MeetingList() {
         dateHeld: meeting.dateHeld,
         dorReady: meeting.dorReady,
         dodReady: meeting.dodReady,
+        dorItems: meeting.dorItems || [],
+        dodItems: meeting.dodItems || [],
         notes: meeting.notes || '',
         decisions: meeting.decisions || '',
         attendees: meeting.attendees || '',
@@ -208,12 +222,26 @@ export default function MeetingList() {
       setMeetingDate(meeting.dateHeld);
     } else {
       setEditId(null);
+      // Initialize with checklist from org settings for default meeting type
+      const defaultType = 'STANDUP';
+      const typeConfig = meetingTypeConfigs.find(mt => mt.name === defaultType);
+      const initialDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map(item => ({
+        ...item,
+        isCompleted: false,
+      })) || [];
+      const initialDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map(item => ({
+        ...item,
+        isCompleted: false,
+      })) || [];
+      
       setFormData({
         pitchId: undefined,
-        type: 'STANDUP',
+        type: defaultType,
         dateHeld: dayjs().format('YYYY-MM-DD'),
         dorReady: false,
         dodReady: false,
+        dorItems: initialDorItems,
+        dodItems: initialDodItems,
         notes: '',
         decisions: '',
         attendees: '',
@@ -252,6 +280,47 @@ export default function MeetingList() {
       loadData();
     } catch (error) {
       showError(t('meetingList.toast.deleteFailed'));
+    }
+  };
+
+  // Handle meeting type change - update DOR/DOD checklist items
+  const handleMeetingTypeChange = (newType: MeetingType) => {
+    const typeConfig = meetingTypeConfigs.find(mt => mt.name === newType);
+    const newDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map(item => ({
+      ...item,
+      isCompleted: false,
+    })) || [];
+    const newDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map(item => ({
+      ...item,
+      isCompleted: false,
+    })) || [];
+    
+    setFormData({
+      ...formData,
+      type: newType,
+      dorItems: newDorItems,
+      dodItems: newDodItems,
+      dorReady: false,
+      dodReady: false,
+    });
+  };
+
+  // Update checklist item completion status
+  const toggleChecklistItem = (listType: 'dor' | 'dod', index: number) => {
+    const items = listType === 'dor' ? [...(formData.dorItems || [])] : [...(formData.dodItems || [])];
+    if (items[index]) {
+      items[index] = { ...items[index], isCompleted: !items[index].isCompleted };
+      
+      // Calculate if all required items are completed
+      const allRequiredCompleted = items
+        .filter(item => item.isRequired)
+        .every(item => item.isCompleted);
+      
+      if (listType === 'dor') {
+        setFormData({ ...formData, dorItems: items, dorReady: allRequiredCompleted });
+      } else {
+        setFormData({ ...formData, dodItems: items, dodReady: allRequiredCompleted });
+      }
     }
   };
 
@@ -650,15 +719,15 @@ export default function MeetingList() {
                 <Label htmlFor="meeting-type">{t('meetingList.dialog.type')} *</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value) => setFormData({ ...formData, type: value as MeetingType })}
+                  onValueChange={(value) => handleMeetingTypeChange(value as MeetingType)}
                 >
                   <SelectTrigger id="meeting-type">
                     <SelectValue placeholder={t('meetingList.dialog.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {meetingTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {formatMeetingType(type)}
+                    {(meetingTypeConfigs.length > 0 ? meetingTypeConfigs : meetingTypes.map(t => ({ name: t, displayName: formatMeetingType(t) }))).map((type) => (
+                      <SelectItem key={typeof type === 'string' ? type : type.name} value={typeof type === 'string' ? type : type.name}>
+                        {typeof type === 'string' ? formatMeetingType(type) : type.displayName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -721,37 +790,94 @@ export default function MeetingList() {
               </div>
             </div>
 
-            {/* DOR & DOD */}
+            {/* DOR & DOD Checklists */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* DOR Checklist */}
               <div className="space-y-2">
-                <Label htmlFor="dor-ready">{t('meetingList.dialog.dorReady')}</Label>
-                <Select
-                  value={formData.dorReady ? 'yes' : 'no'}
-                  onValueChange={(value) => setFormData({ ...formData, dorReady: value === 'yes' })}
-                >
-                  <SelectTrigger id="dor-ready">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">{t('meetingList.dialog.yes')}</SelectItem>
-                    <SelectItem value="no">{t('meetingList.dialog.no')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    {t('meetingList.dialog.dorReady')}
+                    {formData.dorReady ? (
+                      <Badge variant="success" className="text-xs">{t('meetingList.dialog.ready')}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">{t('meetingList.dialog.notReady')}</Badge>
+                    )}
+                  </Label>
+                </div>
+                {(formData.dorItems && formData.dorItems.length > 0) ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {formData.dorItems.map((item, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-start gap-2 p-1 hover:bg-muted/50 rounded cursor-pointer"
+                        onClick={() => toggleChecklistItem('dor', index)}
+                      >
+                        <Checkbox
+                          checked={item.isCompleted}
+                          onCheckedChange={() => toggleChecklistItem('dor', index)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className={`text-sm ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                              {item.name}
+                            </span>
+                            {item.isRequired && <span className="text-red-500 text-xs">*</span>}
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">{t('meetingList.dialog.noChecklistItems')}</p>
+                )}
               </div>
+
+              {/* DOD Checklist */}
               <div className="space-y-2">
-                <Label htmlFor="dod-ready">{t('meetingList.dialog.dodReady')}</Label>
-                <Select
-                  value={formData.dodReady ? 'yes' : 'no'}
-                  onValueChange={(value) => setFormData({ ...formData, dodReady: value === 'yes' })}
-                >
-                  <SelectTrigger id="dod-ready">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">{t('meetingList.dialog.yes')}</SelectItem>
-                    <SelectItem value="no">{t('meetingList.dialog.no')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    {t('meetingList.dialog.dodReady')}
+                    {formData.dodReady ? (
+                      <Badge variant="success" className="text-xs">{t('meetingList.dialog.ready')}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">{t('meetingList.dialog.notReady')}</Badge>
+                    )}
+                  </Label>
+                </div>
+                {(formData.dodItems && formData.dodItems.length > 0) ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {formData.dodItems.map((item, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-start gap-2 p-1 hover:bg-muted/50 rounded cursor-pointer"
+                        onClick={() => toggleChecklistItem('dod', index)}
+                      >
+                        <Checkbox
+                          checked={item.isCompleted}
+                          onCheckedChange={() => toggleChecklistItem('dod', index)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className={`text-sm ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                              {item.name}
+                            </span>
+                            {item.isRequired && <span className="text-red-500 text-xs">*</span>}
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">{t('meetingList.dialog.noChecklistItems')}</p>
+                )}
               </div>
             </div>
 

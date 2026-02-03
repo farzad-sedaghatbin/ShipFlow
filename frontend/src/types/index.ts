@@ -314,6 +314,8 @@ export interface Meeting {
   dateHeld: string;
   dorReady: boolean;
   dodReady: boolean;
+  dorItems?: MeetingChecklistItem[];
+  dodItems?: MeetingChecklistItem[];
   notes?: string;
   retrospectiveId?: number;
   retrospectiveTitle?: string;
@@ -322,12 +324,22 @@ export interface Meeting {
   actions?: MeetingAction[];
 }
 
+export interface MeetingChecklistItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  isCompleted: boolean;
+}
+
 export interface CreateMeetingRequest {
   pitchId?: number;
   type: MeetingType;
   dateHeld: string;
   dorReady?: boolean;
   dodReady?: boolean;
+  dorItems?: MeetingChecklistItem[];
+  dodItems?: MeetingChecklistItem[];
   notes?: string;
   retrospectiveId?: number;
   decisions?: string;

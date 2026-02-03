@@ -75,7 +75,14 @@
     "tryDifferentSearch": "Try a different search term",
     "setDefaultFailed": "Failed to set as default",
     "setDefaultSuccess": "Set as default successfully",
-    "remove": "Remove"
+    "remove": "Remove",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1590,6 +1597,9 @@
       "none": "None",
       "dorReady": "DOR Ready",
       "dodReady": "DOD Ready",
+      "ready": "Ready",
+      "notReady": "Not Ready",
+      "noChecklistItems": "No checklist items configured for this meeting type",
       "yes": "Yes",
       "no": "No",
       "attendees": "Attendees",
@@ -2853,6 +2863,16 @@
         "low": "Low"
       }
     },
+    "meetingTypes": "Meeting Types",
+    "meetingTypesConfig": "Meeting Types Configuration",
+    "meetingTypesDesc": "Configure meeting types and their DOR/DOD checklist items. Each meeting type can have its own Definition of Ready (DOR) and Definition of Done (DOD) checklist.",
+    "meetingTypeDescPlaceholder": "Description of this meeting type",
+    "dorItems": "Definition of Ready (DOR)",
+    "dodItems": "Definition of Done (DOD)",
+    "addItem": "Add Item",
+    "itemName": "Item name",
+    "itemDescription": "Item description",
+    "required": "Required",
     "failedToReset": "[Translation needed: بازنشانی تنظیمات ناموفق بود]",
     "failedToSave": "Failed to save settings",
     "mustEqual100": "[Translation needed: باید ۱۰۰% باشد]",
@@ -3334,6 +3354,8 @@
     "date": "Date",
     "yes": "Yes",
     "no": "No",
+    "ready": "Ready",
+    "pending": "Pending",
     "add": "Add",
     "hours": "Hours",
     "cancel": "Cancel",
@@ -5110,7 +5132,22 @@
     "addReaction": "Add reaction",
     "removeReaction": "Remove reaction",
     "mentionSuggestions": "Mention someone",
-    "mentionHint": "Type @ to mention someone"
+    "mentionHint": "Type @ to mention someone",
+    "mention": {
+      "profileError": "Failed to load profile",
+      "noDetails": "No additional details available"
+    }
+  },
+  "activity": {
+    "title": "Activity",
+    "noActivity": "No activity recorded",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
   },
   "tour": {
     "skipTitle": "Skip Tour?",

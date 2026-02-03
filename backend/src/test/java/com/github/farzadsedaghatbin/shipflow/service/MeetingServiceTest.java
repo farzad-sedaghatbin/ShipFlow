@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
@@ -44,6 +46,9 @@ class MeetingServiceTest {
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
+
+  @Spy
+  private ObjectMapper objectMapper = new ObjectMapper();
 
   @InjectMocks
   private MeetingService meetingService;
@@ -270,5 +275,75 @@ class MeetingServiceTest {
 
     assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Person not found");
+  }
+
+  @Test
+  void createMeeting_WithDorDodItems_ShouldSaveWithChecklistItems() {
+    // Create DOR/DOD checklist items
+    List<MeetingDTO.MeetingChecklistItem> dorItems = List.of(
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Problem Statement Defined")
+            .description("Clear problem statement is documented")
+            .isRequired(true)
+            .isCompleted(true)
+            .build(),
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Stakeholders Identified")
+            .description("All relevant stakeholders are identified")
+            .isRequired(false)
+            .isCompleted(false)
+            .build()
+    );
+    
+    List<MeetingDTO.MeetingChecklistItem> dodItems = List.of(
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Solution Outlined")
+            .description("High-level solution approach documented")
+            .isRequired(true)
+            .isCompleted(true)
+            .build()
+    );
+
+    testRequest.setDorItems(dorItems);
+    testRequest.setDodItems(dodItems);
+
+    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+    MeetingDTO result = meetingService.createMeeting(testRequest);
+
+    assertThat(result).isNotNull();
+    verify(meetingRepository).save(any(Meeting.class));
+  }
+
+  @Test
+  void getMeetingById_WithDorDodItems_ShouldReturnChecklistItems() {
+    // Create meeting with DOR/DOD JSON
+    String dorItemsJson = "[{\"name\":\"Test DOR\",\"description\":\"Test desc\",\"isRequired\":true,\"isCompleted\":true}]";
+    String dodItemsJson = "[{\"name\":\"Test DOD\",\"description\":\"Test desc\",\"isRequired\":true,\"isCompleted\":false}]";
+    
+    Meeting meetingWithChecklist = Meeting.builder()
+        .id(1L)
+        .pitch(testPitch)
+        .type(MeetingType.SHAPING)
+        .dateHeld(LocalDate.now())
+        .dorReady(true)
+        .dodReady(false)
+        .dorItemsJson(dorItemsJson)
+        .dodItemsJson(dodItemsJson)
+        .notes("Test notes")
+        .build();
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(meetingWithChecklist));
+
+    MeetingDTO result = meetingService.getMeetingById(1L);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).isNotNull();
+    assertThat(result.getDodItems()).isNotNull();
+    assertThat(result.getDorItems()).hasSize(1);
+    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems().get(0).getName()).isEqualTo("Test DOR");
+    assertThat(result.getDodItems().get(0).getName()).isEqualTo("Test DOD");
   }
 }

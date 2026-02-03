@@ -5,15 +5,42 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Dynamic Meeting Types with DOR/DOD Checklists**
+  - **Configurable Meeting Types**: Manage meeting types through Organization Settings instead of hardcoded enum
+  - **DOR/DOD Checklists**: Each meeting type can have its own Definition of Ready (DOR) and Definition of Done (DOD) checklist items
+  - **Per-Meeting Tracking**: When creating/editing meetings, check off DOR/DOD items as they are completed
+  - **Auto-Ready Status**: DOR/DOD Ready status automatically calculated based on required item completion
+  - **Default Meeting Types**: Initialized with 7 default types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
+  - **Default Checklists**: Each default meeting type comes with sensible DOR/DOD checklist items
+  - **Organization Settings UI**: New "Meeting Types" tab for managing types, colors, and checklist items
+  - **Visual Checklist UI**: Interactive checkbox-based checklist in meeting creation/edit dialog
+  - **Database Migration**: V68 adds `meeting_types_json` to organization_settings and `dor_items_json`/`dod_items_json` to meetings
+  - **Backwards Compatible**: Existing meetings continue to work with legacy `dorReady`/`dodReady` boolean fields
+  - **Internationalization**: Full i18n support (English/Persian) for new meeting type configuration
+
+- **Jira-Style Activity Timeline**
+  - **Embedded Activity View**: View change history directly inline without opening a dialog
+  - **Bug View Dialog**: New tabbed interface with Details, Activity, and Comments tabs
+  - **Task Detail Page**: Activity Timeline card showing complete change history
+  - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
+  - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
+  - **Field-Level Changes**: See exactly what changed with old → new value comparisons
+  - **Reusable Component**: New `ActivityTimeline` component for consistent UX across entities
+  - **Pagination Support**: Navigate through history with Previous/Next controls
+  - **Internationalization**: Full i18n support (English/Persian) for activity labels
+
 - **@Mention Support in Comments**
   - **User Mentions**: Type `@` to mention users in comments with autocomplete suggestions
+  - **Person Name Search**: Search by person's display name (e.g., `@r.jahani`, `@"John Doe"`)
+  - **Clickable Mentions**: Click on @mentions to view comprehensive user profile popover
+  - **User Profile Popover**: Shows avatar, name, role, email, department, and skills
   - **Real-time Search**: Debounced user search as you type (150ms delay)
   - **Keyboard Navigation**: Arrow Up/Down to navigate, Enter to select, Escape to close
-  - **Mention Highlighting**: Mentioned usernames displayed in primary color
+  - **Mention Highlighting**: Mentioned names displayed in primary color with hover underline
   - **Notification System**: Mentioned users receive in-app dashboard notifications
   - **Slack Integration**: Mention notifications sent to Slack channels
   - **Self-mention Prevention**: Users don't receive notifications for mentioning themselves
-  - **API Endpoint**: New `/api/comments/users/search` for mention autocomplete
+  - **API Endpoints**: `/api/comments/users/search` for autocomplete, `/api/comments/users/by-name` for profile lookup
   - **Internationalization**: Full i18n support (English/Persian) for mention UI
 
 ### Fixed

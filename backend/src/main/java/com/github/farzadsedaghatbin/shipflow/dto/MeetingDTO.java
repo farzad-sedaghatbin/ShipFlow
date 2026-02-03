@@ -23,6 +23,10 @@ public class MeetingDTO {
   private LocalDate dateHeld;
   private Boolean dorReady;
   private Boolean dodReady;
+  @Builder.Default
+  private List<MeetingChecklistItem> dorItems = new ArrayList<>();
+  @Builder.Default
+  private List<MeetingChecklistItem> dodItems = new ArrayList<>();
   private String notes;
   private Long retrospectiveId;
   private String retrospectiveTitle;
@@ -31,4 +35,19 @@ public class MeetingDTO {
 
   @Builder.Default
   private List<MeetingActionDTO> actions = new ArrayList<>();
+
+  /**
+   * A checklist item for DOR/DOD with completion status.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class MeetingChecklistItem {
+    private Long id;
+    private String name;
+    private String description;
+    private Boolean isRequired;
+    private Boolean isCompleted;
+  }
 }

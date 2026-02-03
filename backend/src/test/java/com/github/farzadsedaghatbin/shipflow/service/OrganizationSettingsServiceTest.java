@@ -475,5 +475,67 @@ class OrganizationSettingsServiceTest {
       assertThat(result.getEnableNotifications()).isTrue();
       assertThat(result.getEnableAIFeatures()).isTrue();
     }
+
+    @Test
+    @DisplayName("Default settings should have meeting types with DOR/DOD items")
+    void defaultSettingsShouldHaveMeetingTypesWithDorDodItems() {
+      // Given
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
+
+      // When
+      OrganizationSettingsDTO result = settingsService.getSettings();
+
+      // Then
+      assertThat(result.getMeetingTypes()).isNotNull();
+      assertThat(result.getMeetingTypes()).hasSizeGreaterThanOrEqualTo(7); // SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW
+      
+      // Check SHAPING meeting type
+      var shapingType = result.getMeetingTypes().stream()
+          .filter(mt -> "SHAPING".equals(mt.getName()))
+          .findFirst()
+          .orElse(null);
+      assertThat(shapingType).isNotNull();
+      assertThat(shapingType.getDisplayName()).isEqualTo("Shaping");
+      assertThat(shapingType.getIsActive()).isTrue();
+      assertThat(shapingType.getDorItems()).isNotEmpty();
+      assertThat(shapingType.getDodItems()).isNotEmpty();
+      
+      // Check DOR items have required fields
+      var firstDorItem = shapingType.getDorItems().get(0);
+      assertThat(firstDorItem.getName()).isNotBlank();
+      assertThat(firstDorItem.getIsRequired()).isNotNull();
+      assertThat(firstDorItem.getOrder()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Meeting types should be saved correctly")
+    void meetingTypesShouldBeSavedCorrectly() {
+      // Given
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
+      when(settingsRepository.save(any(OrganizationSettings.class))).thenAnswer(invocation -> {
+        OrganizationSettings saved = invocation.getArgument(0);
+        saved.setId(1L);
+        return saved;
+      });
+
+      // When
+      settingsService.getSettings();
+
+      // Then
+      ArgumentCaptor<OrganizationSettings> captor = ArgumentCaptor.forClass(OrganizationSettings.class);
+      verify(settingsRepository).save(captor.capture());
+      OrganizationSettings saved = captor.getValue();
+      
+      assertThat(saved.getMeetingTypesJson()).isNotNull();
+      assertThat(saved.getMeetingTypesJson()).contains("SHAPING");
+      assertThat(saved.getMeetingTypesJson()).contains("KICKOFF");
+      assertThat(saved.getMeetingTypesJson()).contains("dorItems");
+      assertThat(saved.getMeetingTypesJson()).contains("dodItems");
+    }
   }
 }

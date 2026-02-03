@@ -1,5 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class MeetingService {
 
   private final MeetingRepository meetingRepository;
@@ -33,6 +38,7 @@ public class MeetingService {
   private final RetrospectiveRepository retrospectiveRepository;
   private final PersonRepository personRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final ObjectMapper objectMapper;
 
   public List<MeetingDTO> getAllMeetings() {
     return meetingRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
@@ -103,7 +109,10 @@ public class MeetingService {
   public MeetingDTO createMeeting(CreateMeetingRequest request) {
     Meeting meeting = Meeting.builder().type(request.getType()).dateHeld(request.getDateHeld())
         .dorReady(request.getDorReady() != null ? request.getDorReady() : false)
-        .dodReady(request.getDodReady() != null ? request.getDodReady() : false).notes(request.getNotes())
+        .dodReady(request.getDodReady() != null ? request.getDodReady() : false)
+        .dorItemsJson(toJson(request.getDorItems()))
+        .dodItemsJson(toJson(request.getDodItems()))
+        .notes(request.getNotes())
         .decisions(request.getDecisions()).attendees(request.getAttendees()).build();
 
     if (request.getPitchId() != null) {
@@ -154,6 +163,8 @@ public class MeetingService {
     meeting.setDateHeld(request.getDateHeld());
     meeting.setDorReady(request.getDorReady());
     meeting.setDodReady(request.getDodReady());
+    meeting.setDorItemsJson(toJson(request.getDorItems()));
+    meeting.setDodItemsJson(toJson(request.getDodItems()));
     meeting.setNotes(request.getNotes());
     meeting.setDecisions(request.getDecisions());
     meeting.setAttendees(request.getAttendees());
@@ -238,9 +249,38 @@ public class MeetingService {
                 ? meeting.getPitch().getCycle().getProject().getProjectKey()
                 : null)
         .type(meeting.getType()).dateHeld(meeting.getDateHeld()).dorReady(meeting.getDorReady())
-        .dodReady(meeting.getDodReady()).notes(meeting.getNotes())
+        .dodReady(meeting.getDodReady())
+        .dorItems(fromJson(meeting.getDorItemsJson(), new TypeReference<List<MeetingDTO.MeetingChecklistItem>>() {}))
+        .dodItems(fromJson(meeting.getDodItemsJson(), new TypeReference<List<MeetingDTO.MeetingChecklistItem>>() {}))
+        .notes(meeting.getNotes())
         .retrospectiveId(meeting.getRetrospective() != null ? meeting.getRetrospective().getId() : null)
         .retrospectiveTitle(meeting.getRetrospective() != null ? meeting.getRetrospective().getTitle() : null)
         .decisions(meeting.getDecisions()).attendees(meeting.getAttendees()).actions(actionDTOs).build();
+  }
+
+  /** Convert object to JSON string. */
+  private String toJson(Object obj) {
+    if (obj == null) {
+      return null;
+    }
+    try {
+      return objectMapper.writeValueAsString(obj);
+    } catch (JsonProcessingException e) {
+      log.error("Failed to serialize object to JSON", e);
+      return null;
+    }
+  }
+
+  /** Convert JSON string to object. */
+  private <T> T fromJson(String json, TypeReference<T> typeRef) {
+    if (json == null || json.isEmpty()) {
+      return null;
+    }
+    try {
+      return objectMapper.readValue(json, typeRef);
+    } catch (JsonProcessingException e) {
+      log.error("Failed to deserialize JSON", e);
+      return null;
+    }
   }
 }

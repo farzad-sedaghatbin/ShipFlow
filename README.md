@@ -100,8 +100,12 @@ A modern project management application implementing the [Shape Up](https://base
   - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
   - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more
   - **User Attribution**: Every change records who made it and when
-  - **Visual Timeline**: Interactive dialog showing revision history with expandable details
-  - **Field Change Display**: Color-coded old → new value comparisons
+  - **Jira-Style Activity Timeline**: Embedded activity view showing all changes inline (no popup required)
+    - Bug View: Tabbed interface with Details, Activity, and Comments tabs
+    - Task Detail Page: Activity timeline card showing complete change history
+  - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
+  - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
+  - **Field Change Display**: Color-coded old → new value comparisons with strikethrough
   - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
