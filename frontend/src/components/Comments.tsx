@@ -277,8 +277,9 @@ const Comments: React.FC<CommentsProps> = ({
 
   // Render comment content with highlighted and clickable mentions
   const renderCommentContent = (content: string) => {
-    // Match both @"Full Name" and @SingleWord formats (word can include letters, numbers, dots, underscores)
-    const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}._]+)/gu;
+    // Match both @"Full Name" and @SingleWord formats.
+    // Unquoted names may contain letters/numbers with dots/underscores only between segments (no trailing punctuation).
+    const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}]+(?:[._][\p{L}\p{N}]+)*)/gu;
     const result: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;

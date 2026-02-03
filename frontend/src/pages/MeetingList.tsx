@@ -726,8 +726,8 @@ export default function MeetingList() {
                   </SelectTrigger>
                   <SelectContent>
                     {(meetingTypeConfigs.length > 0 ? meetingTypeConfigs : meetingTypes.map(t => ({ name: t, displayName: formatMeetingType(t) }))).map((type) => (
-                      <SelectItem key={typeof type === 'string' ? type : type.name} value={typeof type === 'string' ? type : type.name}>
-                        {typeof type === 'string' ? formatMeetingType(type) : type.displayName}
+                      <SelectItem key={type.name} value={type.name}>
+                        {type.displayName}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -325,6 +325,14 @@ public class BugReportService {
 
     // Convert empty lists to null for the query
     List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
+    
+    // If no status filter provided and not in exclusion mode, exclude CLOSED bugs by default
+    if (statusList == null && (exclude == null || !exclude)) {
+      statusList = Arrays.asList(BugStatus.OPEN, BugStatus.IN_PROGRESS, BugStatus.RESOLVED, 
+                                  BugStatus.VERIFIED, BugStatus.REOPENED, BugStatus.WONT_FIX, BugStatus.DUPLICATE);
+      log.debug("No status filter provided - excluding CLOSED bugs by default");
+    }
+    
     List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
 
