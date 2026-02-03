@@ -588,9 +588,20 @@
       "list": "نمای لیست",
       "kanban": "نمای کانبان"
     },
+    "status": {
+      "open": "باز",
+      "inProgress": "در حال انجام", 
+      "resolved": "حل شده",
+      "verified": "تأیید شده",
+      "closed": "بسته",
+      "reopened": "بازگشایی",
+      "wontFix": "قابل حل نیست",
+      "duplicate": "تکراری"
+    },
     "kanban": {
       "moveTo": "انتقال به...",
-      "empty": "بدون باگ"
+      "empty": "بدون باگ",
+      "noBugs": "هیچ باگی در این ستون نیست"
     },
     "pitch": "پیچ",
     "reportBug": "گزارش باگ",
@@ -4688,6 +4699,10 @@
     "password": "رمز عبور",
     "passwordMinLength": "رمز عبور باید حداقل ۶ کاراکتر باشد",
     "passwordReset": "رمز عبور با موفقیت بازنشانی شد",
+    "generatePassword": "تولید رمز عبور تصادفی",
+    "enterNewPassword": "رمز عبور جدید را وارد کنید",
+    "resetPasswordFor": "بازنشانی رمز عبور برای {{username}}",
+    "resetting": "در حال بازنشانی...",
     "pendingUsers": "[TODO: Persian translation] Pending Users",
     "permissionDenied": "شما مجوز دسترسی به این صفحه را ندارید. نقش مدیر مورد نیاز است.",
     "resetPassword": "بازنشانی رمز عبور",
