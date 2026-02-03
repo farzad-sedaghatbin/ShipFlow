@@ -15,6 +15,8 @@ import {
   Clock,
   Palette,
   Bug,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
@@ -1070,12 +1072,36 @@ export default function OrganizationSettingsPage() {
         {/* Meeting Types */}
         <TabsContent value="meetings" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                {t('organizationSettings.meetingTypesConfig')}
-              </CardTitle>
-              <CardDescription>{t('organizationSettings.meetingTypesDesc')}</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  {t('organizationSettings.meetingTypesConfig')}
+                </CardTitle>
+                <CardDescription>{t('organizationSettings.meetingTypesDesc')}</CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const newMeetingTypes = [...(formData.meetingTypes || [])];
+                  const newName = `CUSTOM_${Date.now()}`;
+                  newMeetingTypes.push({
+                    name: newName,
+                    displayName: t('organizationSettings.newMeetingType'),
+                    description: '',
+                    color: '#6b7280',
+                    isActive: true,
+                    order: newMeetingTypes.length + 1,
+                    dorItems: [],
+                    dodItems: [],
+                  });
+                  setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('organizationSettings.addMeetingType')}
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               {formData.meetingTypes?.map((meetingType, typeIndex) => (
@@ -1121,6 +1147,19 @@ export default function OrganizationSettingsPage() {
                         />
                         <Label className="text-xs">{t('organizationSettings.active')}</Label>
                       </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== typeIndex) || [];
+                          setFormData({ ...formData, meetingTypes: newMeetingTypes });
+                        }}
+                        title={t('organizationSettings.deleteMeetingType')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
 
