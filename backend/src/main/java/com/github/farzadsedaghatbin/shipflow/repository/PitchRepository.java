@@ -63,6 +63,13 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
 
   List<Pitch> findByCycleIdAndStatusIn(Long cycleId, List<PitchStatus> statuses);
 
+  @Query("SELECT p FROM Pitch p WHERE p.status = :status AND p.deletedAt IS NULL")
+  List<Pitch> findByStatusNotDeleted(@Param("status") PitchStatus status);
+
+  @Query("SELECT p FROM Pitch p WHERE p.status = :status AND p.cycle.id IN :cycleIds AND p.deletedAt IS NULL")
+  List<Pitch> findByStatusAndCycleIdInNotDeleted(@Param("status") PitchStatus status,
+      @Param("cycleIds") java.util.Set<Long> cycleIds);
+
   /**
    * Find all pitches for projects accessible to a user. Access is granted
    * through: 1. Project ownership 2. Direct project assignment (user_projects) 3.

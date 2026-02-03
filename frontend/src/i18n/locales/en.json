@@ -2868,6 +2868,7 @@
     "meetingTypesDesc": "Configure meeting types and their DOR/DOD checklist items. Each meeting type can have its own Definition of Ready (DOR) and Definition of Done (DOD) checklist.",
     "addMeetingType": "Add Meeting Type",
     "deleteMeetingType": "Delete Meeting Type",
+    "confirmDeleteMeetingType": "Are you sure you want to delete this meeting type? This action cannot be undone.",
     "meetingTypeName": "Meeting Type Name (identifier)",
     "meetingTypeDisplayName": "Display Name",
     "newMeetingType": "New Meeting Type",
