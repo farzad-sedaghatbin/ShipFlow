@@ -89,31 +89,6 @@ export default function UserManagement() {
     hasPermission('USER', 'MANAGE').then(setCanManageUsers).catch(() => setCanManageUsers(false));
   }, [hasPermission]); // Include hasPermission since it's now stable
 
-  // Show loading while checking permission
-  if (canManageUsers === null) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    );
-  }
-
-  // Only admins can manage users
-  if (!canManageUsers) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Alert variant="destructive">
-          <ShieldAlert className="h-4 w-4" />
-          <AlertDescription>
-            {t('auth.accessDenied')}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   useEffect(() => {
     const abortController = new AbortController();
     if (canManageUsers) {
@@ -152,6 +127,31 @@ export default function UserManagement() {
     });
     setDialogOpen(true);
   };
+
+  // Show loading while checking permission
+  if (canManageUsers === null) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  // Only admins can manage users
+  if (!canManageUsers) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertDescription>
+            {t('auth.accessDenied')}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
