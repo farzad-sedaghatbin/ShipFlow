@@ -47,6 +47,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
   /**
    * Find multiple users by their person names (for @mention notification lookup).
    */
-  @Query("SELECT u FROM User u JOIN FETCH u.person p WHERE u.isActive = true AND p.name IN :names")
+  @Query("SELECT u FROM User u LEFT JOIN FETCH u.person p WHERE u.isActive = true AND p IS NOT NULL AND p.name IN :names")
   List<User> findByPersonNameIn(@Param("names") List<String> names);
 }
