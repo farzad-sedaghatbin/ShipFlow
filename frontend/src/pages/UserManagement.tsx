@@ -13,6 +13,9 @@ import {
   KeyRound,
   Loader2,
   ShieldAlert,
+  Eye,
+  EyeOff,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
 import { usePermission } from '../hooks/usePermission';
@@ -83,6 +86,13 @@ export default function UserManagement() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('MEMBER');
+
+  // Reset password dialog
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserType | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   // Check if current user has user management permission
   useEffect(() => {
@@ -215,22 +225,44 @@ export default function UserManagement() {
     }
   };
 
-  const handleResetPassword = async (user: UserType) => {
-    const newPassword = prompt(t('userManagement.newPasswordFor', { username: user.username }));
-    if (!newPassword) return;
+  const handleOpenResetPasswordDialog = (user: UserType) => {
+    setResetPasswordUser(user);
+    setNewPassword('');
+    setShowNewPassword(false);
+    setResetPasswordDialogOpen(true);
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(password);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) return;
+    
     if (newPassword.length < 6) {
       showToast(t('userManagement.passwordMinLength'), 'error');
       return;
     }
 
+    setResettingPassword(true);
     try {
-      await api.put(`/users/${user.id}/password`, {
+      await api.put(`/users/${resetPasswordUser.id}/password`, {
         currentPassword: 'admin-override', // Admin can reset without knowing current
         newPassword,
       });
       showToast(t('userManagement.passwordReset'), 'success');
+      setResetPasswordDialogOpen(false);
+      setNewPassword('');
+      setResetPasswordUser(null);
     } catch (error) {
       // Error handled by interceptor
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -437,7 +469,7 @@ export default function UserManagement() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => handleResetPassword(user)}
+                              onClick={() => handleOpenResetPasswordDialog(user)}
                             >
                               <KeyRound className="h-4 w-4" />
                             </Button>
@@ -630,6 +662,82 @@ export default function UserManagement() {
               {t('userManagement.cancel')}
             </Button>
             <Button onClick={handleChangeRole}>{t('userManagement.updateRole')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('userManagement.resetPassword')}</DialogTitle>
+            <DialogDescription>
+              {t('userManagement.resetPasswordFor', { username: resetPasswordUser?.username })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">{t('userManagement.newPassword')}</Label>
+              <div className="flex space-x-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={t('userManagement.enterNewPassword')}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={generateRandomPassword}
+                  title={t('userManagement.generatePassword')}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('userManagement.passwordMinLength')}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setResetPasswordDialogOpen(false)}
+              disabled={resettingPassword}
+            >
+              {t('userManagement.cancel')}
+            </Button>
+            <Button 
+              onClick={handleResetPassword}
+              disabled={!newPassword || newPassword.length < 6 || resettingPassword}
+            >
+              {resettingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('userManagement.resetting')}
+                </>
+              ) : (
+                t('userManagement.resetPassword')
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

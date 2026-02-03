@@ -1952,9 +1952,20 @@
       "list": "List View",
       "kanban": "Kanban View"
     },
+    "status": {
+      "open": "Open",
+      "inProgress": "In Progress", 
+      "resolved": "Resolved",
+      "verified": "Verified",
+      "closed": "Closed",
+      "reopened": "Reopened",
+      "wontFix": "Won't Fix",
+      "duplicate": "Duplicate"
+    },
     "kanban": {
       "moveTo": "Move to...",
-      "empty": "No bugs"
+      "empty": "No bugs",
+      "noBugs": "No bugs in this column"
     },
     "pagination": {
       "rowsPerPage": "Rows per page",
@@ -2902,6 +2913,10 @@
     "userActivated": "{{action}}",
     "roleUpdated": "User role updated successfully",
     "passwordReset": "Password reset successfully",
+    "generatePassword": "Generate random password",
+    "enterNewPassword": "Enter new password",
+    "resetPasswordFor": "Reset password for {{username}}",
+    "resetting": "Resetting...",
     "loadFailed": "Failed to load users",
     "saveFailed": "Failed to save user",
     "deleteFailed": "Failed to delete user",
