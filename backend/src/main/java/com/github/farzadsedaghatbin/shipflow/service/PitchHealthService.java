@@ -791,4 +791,189 @@ public class PitchHealthService {
         return "#9e9e9e"; // grey
     }
   }
+
+  // ========== STAGNATION DETECTION METHODS ==========
+
+  /**
+   * Detect stagnating pitches in a cycle.
+   * Returns a list of pitches that show signs of stagnation based on:
+   * - Hill chart movement (or lack thereof)
+   * - Work log activity
+   * - Status changes
+   * - Budget vs progress mismatches
+   */
+  public List<com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO> detectStagnatingPitches(Long cycleId) {
+    List<com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO> alerts = new java.util.ArrayList<>();
+    
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new RuntimeException("Cycle not found: " + cycleId));
+    
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
+    var thresholds = getThresholds();
+    
+    LocalDateTime now = LocalDateTime.now();
+    long totalDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+    long daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), LocalDate.now());
+    double cycleProgress = totalDays > 0 ? (daysElapsed * 100.0 / totalDays) : 0;
+    
+    for (Pitch pitch : pitches) {
+      // Skip completed or cancelled pitches
+      if (pitch.getStatus() == PitchStatus.DONE || pitch.getStatus() == PitchStatus.CANCELLED) {
+        continue;
+      }
+      
+      List<HillChartPoint> scopes = hillChartPointRepository.findByPitchId(pitch.getId());
+      List<WorkLog> workLogs = workLogRepository.findByPitchId(pitch.getId());
+      
+      // Calculate average hill chart position
+      double avgPosition = scopes.isEmpty() ? 0 : 
+          scopes.stream().mapToDouble(HillChartPoint::getPosition).average().orElse(0);
+      
+      // Find last activity date
+      LocalDateTime lastActivity = findLastActivityDate(pitch, scopes, workLogs);
+      int daysSinceActivity = (int) ChronoUnit.DAYS.between(
+          lastActivity.toLocalDate(), LocalDate.now());
+      
+      // Check for various stagnation types
+      var alert = detectStagnationType(pitch, cycle, scopes, daysSinceActivity, 
+          avgPosition, cycleProgress, thresholds, lastActivity);
+      
+      if (alert != null) {
+        alerts.add(alert);
+      }
+    }
+    
+    // Sort by severity (CRITICAL first) then by days since activity
+    alerts.sort((a, b) -> {
+      int severityCompare = b.getSeverity().compareTo(a.getSeverity());
+      if (severityCompare != 0) return severityCompare;
+      return Integer.compare(b.getDaysSinceActivity(), a.getDaysSinceActivity());
+    });
+    
+    log.info("Detected {} stagnating pitches in cycle {}", alerts.size(), cycleId);
+    return alerts;
+  }
+
+  /**
+   * Detect all stagnating pitches across active cycles.
+   */
+  public List<com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO> detectAllStagnatingPitches() {
+    List<com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO> allAlerts = new java.util.ArrayList<>();
+    
+    // Get all active cycles (in BUILD phase)
+    List<Cycle> activeCycles = cycleRepository.findAll().stream()
+        .filter(c -> c.getPhase() == com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.BUILD)
+        .collect(Collectors.toList());
+    
+    for (Cycle cycle : activeCycles) {
+      allAlerts.addAll(detectStagnatingPitches(cycle.getId()));
+    }
+    
+    return allAlerts;
+  }
+
+  private LocalDateTime findLastActivityDate(Pitch pitch, List<HillChartPoint> scopes, 
+      List<WorkLog> workLogs) {
+    LocalDateTime lastActivity = pitch.getUpdatedAt() != null ? pitch.getUpdatedAt() : pitch.getCreatedAt();
+    
+    // Check hill chart updates
+    for (HillChartPoint scope : scopes) {
+      if (scope.getUpdatedAt() != null && scope.getUpdatedAt().isAfter(lastActivity)) {
+        lastActivity = scope.getUpdatedAt();
+      }
+    }
+    
+    // Check work log dates - find most recent
+    for (WorkLog workLog : workLogs) {
+      if (workLog.getDate() != null) {
+        LocalDateTime workLogDate = workLog.getDate().atStartOfDay();
+        if (workLogDate.isAfter(lastActivity)) {
+          lastActivity = workLogDate;
+        }
+      }
+    }
+    
+    return lastActivity;
+  }
+
+  private com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO detectStagnationType(
+      Pitch pitch, Cycle cycle, List<HillChartPoint> scopes, int daysSinceActivity,
+      double avgPosition, double cycleProgress,
+      com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds,
+      LocalDateTime lastActivity) {
+    
+    List<String> stagnantScopeNames = new java.util.ArrayList<>();
+    List<String> recommendations = new java.util.ArrayList<>();
+    com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.StagnationType type = null;
+    String description = null;
+    
+    // Check for stagnant scopes (not moved in threshold days)
+    int stagnationDays = thresholds.getScopeStagnationDays();
+    LocalDateTime stagnationThreshold = LocalDateTime.now().minusDays(stagnationDays);
+    
+    for (HillChartPoint scope : scopes) {
+      if (scope.getPosition() < thresholds.getScopeUphillMax() 
+          && scope.getUpdatedAt() != null 
+          && scope.getUpdatedAt().isBefore(stagnationThreshold)) {
+        stagnantScopeNames.add(scope.getScope());
+      }
+    }
+    
+    // Check for scopes stuck at peak (decision point)
+    List<HillChartPoint> peakStuckScopes = scopes.stream()
+        .filter(s -> s.getPosition() >= thresholds.getScopePeakMin() 
+            && s.getPosition() <= thresholds.getScopePeakMax()
+            && s.getUpdatedAt() != null
+            && s.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(thresholds.getPeakStuckDays())))
+        .collect(Collectors.toList());
+    
+    // Determine stagnation type and severity
+    if (!stagnantScopeNames.isEmpty() && !peakStuckScopes.isEmpty()) {
+      type = com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.StagnationType.COMPOUND_STAGNATION;
+      description = String.format("%d scopes stalled, %d stuck at decision point", 
+          stagnantScopeNames.size(), peakStuckScopes.size());
+      recommendations.add("Break down complex work into smaller tasks");
+      recommendations.add("Schedule a team sync to discuss blockers");
+      recommendations.add("Consider descoping or simplifying problem areas");
+    } else if (!peakStuckScopes.isEmpty()) {
+      type = com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.StagnationType.STUCK_AT_PEAK;
+      description = String.format("%d scopes stuck at the hill peak (decision point)", peakStuckScopes.size());
+      stagnantScopeNames.addAll(peakStuckScopes.stream().map(HillChartPoint::getScope).collect(Collectors.toList()));
+      recommendations.add("Review understanding - are requirements clear?");
+      recommendations.add("Make a decision on uncertain areas to move downhill");
+    } else if (!stagnantScopeNames.isEmpty()) {
+      type = com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.StagnationType.HILL_CHART_STALLED;
+      description = String.format("%d scopes haven't moved in %d+ days", stagnantScopeNames.size(), stagnationDays);
+      recommendations.add("Update hill chart to reflect current understanding");
+      recommendations.add("If blocked, flag the issue in standup");
+    } else if (daysSinceActivity > 7 && cycleProgress > 25) {
+      type = com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.StagnationType.NO_RECENT_WORK;
+      description = String.format("No activity recorded for %d days", daysSinceActivity);
+      recommendations.add("Log recent work to track progress");
+      recommendations.add("If deprioritized, update status accordingly");
+    }
+    
+    // Only create alert if we detected a stagnation type
+    if (type == null) {
+      return null;
+    }
+    
+    var severity = com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO
+        .calculateSeverity(daysSinceActivity, avgPosition, cycleProgress);
+    
+    return com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO.builder()
+        .pitchId(pitch.getId())
+        .pitchTitle(pitch.getTitle())
+        .cycleId(cycle.getId())
+        .cycleName(cycle.getName())
+        .stagnationType(type)
+        .description(description)
+        .daysSinceActivity(daysSinceActivity)
+        .hillChartPosition(avgPosition)
+        .lastActivityAt(lastActivity)
+        .stagnantScopes(stagnantScopeNames)
+        .recommendations(recommendations)
+        .severity(severity)
+        .build();
+  }
 }

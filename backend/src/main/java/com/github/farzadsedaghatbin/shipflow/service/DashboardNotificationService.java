@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardNotificationDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,9 @@ public class DashboardNotificationService {
   private final HillChartPointRepository hillChartPointRepository;
   private final UserRepository userRepository;
   private final SlackIntegrationService slackService;
+
+  @Autowired(required = false)
+  private PitchHealthService pitchHealthService;
 
   /** Get all notifications for a user */
   @Transactional(readOnly = true)
@@ -291,9 +296,68 @@ public class DashboardNotificationService {
     generateBlockedTaskNotifications();
     generateCycleDeadlineNotifications();
     generateStalledHillChartNotifications();
+    generateStagnationNotifications();
     cleanupOldNotifications();
 
     log.info("Completed daily notification generation");
+  }
+
+  /** Generate notifications for stagnating pitches detected by PitchHealthService */
+  private void generateStagnationNotifications() {
+    if (pitchHealthService == null) {
+      log.debug("PitchHealthService not available, skipping stagnation notifications");
+      return;
+    }
+
+    List<StagnationAlertDTO> alerts = pitchHealthService.detectAllStagnatingPitches();
+    
+    for (StagnationAlertDTO alert : alerts) {
+      // Only notify for WARNING and CRITICAL alerts
+      if (alert.getSeverity() == StagnationAlertDTO.AlertSeverity.INFO) {
+        continue;
+      }
+
+      Pitch pitch = pitchRepository.findById(alert.getPitchId()).orElse(null);
+      if (pitch == null || pitch.getTeam() == null) {
+        continue;
+      }
+
+      List<User> teamMembers = getTeamMembers(pitch.getTeam());
+      String severity = alert.getSeverity() == StagnationAlertDTO.AlertSeverity.CRITICAL ? "ERROR" : "WARNING";
+      String icon = alert.getSeverity() == StagnationAlertDTO.AlertSeverity.CRITICAL ? "🚨" : "⚠️";
+
+      for (User user : teamMembers) {
+        // Check if notification already sent in last 24 hours
+        List<DashboardNotification> existing = notificationRepository
+            .findByUserIdAndTypeOrderByCreatedAtDesc(user.getId(), "PITCH_STAGNATION");
+
+        boolean alreadyNotified = existing.stream()
+            .anyMatch(n -> n.getEntityId().equals(alert.getPitchId())
+                && n.getCreatedAt().isAfter(LocalDateTime.now().minusDays(1)));
+
+        if (!alreadyNotified) {
+          String title = String.format("%s Pitch Stagnating: %s", icon, alert.getPitchTitle());
+          String message = String.format("%s. %s", alert.getDescription(), 
+              alert.getRecommendations().isEmpty() ? "" : "Recommendation: " + alert.getRecommendations().get(0));
+
+          createNotification(user, "PITCH_STAGNATION", title, message, severity,
+              "/pitches/" + alert.getPitchId(), "PITCH", alert.getPitchId());
+        }
+      }
+
+      // Send Slack notification for critical alerts
+      if (alert.getSeverity() == StagnationAlertDTO.AlertSeverity.CRITICAL) {
+        slackService.sendNotification("PITCH_STAGNATION",
+            String.format("🚨 *Pitch Stagnating*\n*%s* (%s)\n%s\n%s",
+                alert.getPitchTitle(),
+                alert.getCycleName(),
+                alert.getDescription(),
+                alert.getRecommendations().isEmpty() ? "" : "💡 " + String.join("\n💡 ", alert.getRecommendations())),
+            null, "PITCH", alert.getPitchId());
+      }
+    }
+
+    log.info("Generated stagnation notifications for {} pitches", alerts.size());
   }
 
   /** Generate notifications for overdue tasks */
