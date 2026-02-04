@@ -69,4 +69,11 @@ public interface BettingDecisionRepository extends JpaRepository<BettingDecision
 
   /** Check if a decision already exists for a pitch in a cycle */
   boolean existsByPitchIdAndCycleId(Long pitchId, Long cycleId);
+
+  /** Count all decisions for a cycle (for phase transition validation) */
+  long countByCycleId(Long cycleId);
+
+  /** Count committed decisions for a cycle */
+  @Query("SELECT COUNT(bd) FROM BettingDecision bd WHERE bd.cycle.id = :cycleId AND bd.decision = 'COMMITTED'")
+  long countCommittedByCycleId(@Param("cycleId") Long cycleId);
 }

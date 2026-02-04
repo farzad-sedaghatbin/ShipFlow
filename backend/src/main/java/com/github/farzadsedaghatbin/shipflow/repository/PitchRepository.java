@@ -63,6 +63,13 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
 
   List<Pitch> findByCycleIdAndStatusIn(Long cycleId, List<PitchStatus> statuses);
 
+  // Count methods for phase transition validation
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.cycle.id = :cycleId AND p.status = :status AND p.deletedAt IS NULL")
+  long countByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") PitchStatus status);
+
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.cycle.id = :cycleId AND p.status IN :statuses AND p.deletedAt IS NULL")
+  long countByCycleIdAndStatusIn(@Param("cycleId") Long cycleId, @Param("statuses") List<PitchStatus> statuses);
+
   @Query("SELECT p FROM Pitch p WHERE p.status = :status AND p.deletedAt IS NULL")
   List<Pitch> findByStatusNotDeleted(@Param("status") PitchStatus status);
 
