@@ -90,8 +90,8 @@ export default function CycleDetail() {
             const statusRes = await retroService.getCycleStatus(cycleId);
             setRetroStatus(statusRes.data);
           }
-        } catch (retroError) {
-          console.log('Retro status unavailable:', retroError);
+        } catch {
+          // Retro status unavailable - feature may not be enabled
         }
       }
     } catch (error: any) {

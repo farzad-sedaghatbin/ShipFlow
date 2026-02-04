@@ -261,6 +261,9 @@ public class QAService {
       // 5. Filter by minimum relevance
       matches = matches.stream().filter(match -> match.score() >= minScore).collect(Collectors.toList());
 
+      // 5.5. Apply recency boost - favor more recent documents
+      matches = applyRecencyBoost(matches);
+
       // 6. Re-rank for better ordering
       if (documentReranker != null && matches.size() > retrieveK) {
         matches = documentReranker.rerank(request.getQuestion(), matches, retrieveK);
@@ -569,6 +572,57 @@ public class QAService {
 
       return true;
     }).collect(Collectors.toList());
+  }
+
+  /**
+   * Apply recency boost to search results. More recently updated documents
+   * get a higher effective score, helping surface the most current information.
+   * 
+   * Boost factors:
+   * - Updated within 7 days: +15% boost
+   * - Updated within 30 days: +10% boost
+   * - Updated within 90 days: +5% boost
+   * - Older: no boost
+   */
+  private List<EmbeddingMatch<TextSegment>> applyRecencyBoost(List<EmbeddingMatch<TextSegment>> matches) {
+    if (matches.isEmpty()) {
+      return matches;
+    }
+
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime sevenDaysAgo = now.minusDays(7);
+    LocalDateTime thirtyDaysAgo = now.minusDays(30);
+    LocalDateTime ninetyDaysAgo = now.minusDays(90);
+
+    return matches.stream()
+        .map(match -> {
+          double boostFactor = 1.0;
+          
+          if (match.embedded() != null && match.embedded().metadata() != null) {
+            String updatedAtStr = match.embedded().metadata().getString("updatedAt");
+            if (updatedAtStr != null) {
+              try {
+                LocalDateTime updatedAt = LocalDateTime.parse(updatedAtStr);
+                if (updatedAt.isAfter(sevenDaysAgo)) {
+                  boostFactor = 1.15; // 15% boost for very recent
+                } else if (updatedAt.isAfter(thirtyDaysAgo)) {
+                  boostFactor = 1.10; // 10% boost for recent
+                } else if (updatedAt.isAfter(ninetyDaysAgo)) {
+                  boostFactor = 1.05; // 5% boost for somewhat recent
+                }
+              } catch (Exception e) {
+                // Invalid date format, no boost applied
+                log.debug("Could not parse updatedAt for recency boost: {}", updatedAtStr);
+              }
+            }
+          }
+          
+          // Create new match with boosted score (capped at 1.0)
+          double boostedScore = Math.min(1.0, match.score() * boostFactor);
+          return new EmbeddingMatch<>(boostedScore, match.embeddingId(), match.embedding(), match.embedded());
+        })
+        .sorted((a, b) -> Double.compare(b.score(), a.score())) // Re-sort by boosted scores
+        .collect(Collectors.toList());
   }
 
   private String buildContext(List<EmbeddingMatch<TextSegment>> matches) {

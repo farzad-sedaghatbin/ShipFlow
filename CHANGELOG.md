@@ -39,6 +39,13 @@ All notable changes to this project will be documented in this file.
   - **Health Status**: Healthy, warning, critical, stalled status badges
   - **Contextual Narratives**: Phase-appropriate descriptions of scope progress
 
+- **Semantic Search Improvements**
+  - **Recency Boost**: Recently updated documents score higher in search results
+    - 15% boost for documents updated within 7 days
+    - 10% boost for documents updated within 30 days
+    - 5% boost for documents updated within 90 days
+  - **Keyword Fallback**: Database keyword search when semantic search returns no results
+
 - **Phase Transition Validation**
   - Enforce betting decisions before cycle transition to BUILD phase
   - Validate all shaped pitches have decisions recorded
@@ -47,6 +54,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Enhanced PitchHealthService with comprehensive stagnation analysis
 - Updated DashboardNotificationService to generate stagnation alerts
+- Removed debug console.log statements from frontend code
 
 ### Database
 - **V69**: Added `betting_decisions` table for decision tracking

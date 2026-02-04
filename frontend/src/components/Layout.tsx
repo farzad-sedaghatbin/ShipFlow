@@ -422,9 +422,8 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Dashboard Switcher */}
           <div className="hidden lg:block">
-            <DashboardSwitcher onDashboardChange={(dashboardId) => {
-              // Dashboard changed - could refresh widgets or navigate
-              console.log('Dashboard switched to:', dashboardId);
+            <DashboardSwitcher onDashboardChange={() => {
+              // Dashboard changed - widgets will auto-refresh based on context
             }} />
           </div>
 

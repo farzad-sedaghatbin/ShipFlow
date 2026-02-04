@@ -216,20 +216,15 @@ const BugReportsPage: React.FC = () => {
   const handleCreateOrUpdate = async (data: any) => {
     try {
       if (selectedBug) {
-        console.log('Updating bug:', selectedBug.id, 'with data:', data);
         const response = await qaTestManagementService.updateBugReport(selectedBug.id, data);
-        console.log('Update response:', response.data);
         setBugReports(bugReports.map((b) => (b.id === selectedBug.id ? response.data : b)));
       } else {
-        console.log('Creating bug with data:', data);
         const response = await qaTestManagementService.createBugReport(data);
-        console.log('Create response:', response.data);
         setBugReports([response.data, ...bugReports]);
       }
       setModalOpen(false);
       setSelectedBug(null);
     } catch (err) {
-      console.error('Error in handleCreateOrUpdate:', err);
       setError(t('bugReports.saveFailed'));
       throw err; // Re-throw so the modal knows there was an error
     }
