@@ -323,6 +323,22 @@ public class OrganizationSettingsService {
     if (meetingTypes == null || meetingTypes.isEmpty()) {
       meetingTypes = createDefaultMeetingTypes();
     }
+    
+    // Filter out deleted DOR/DOD items from all meeting types
+    if (meetingTypes != null) {
+      meetingTypes.forEach(meetingType -> {
+        if (meetingType.getDorItems() != null) {
+          meetingType.setDorItems(meetingType.getDorItems().stream()
+              .filter(item -> item.getIsDeleted() == null || !item.getIsDeleted())
+              .collect(java.util.stream.Collectors.toList()));
+        }
+        if (meetingType.getDodItems() != null) {
+          meetingType.setDodItems(meetingType.getDodItems().stream()
+              .filter(item -> item.getIsDeleted() == null || !item.getIsDeleted())
+              .collect(java.util.stream.Collectors.toList()));
+        }
+      });
+    }
 
     return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())

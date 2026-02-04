@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Meeting View Mode with Smart Filtering**
+  - **View-Only Dialog**: Click on meeting type badge to open read-only view showing only completed checklist items
+  - **Backend Filtering**: New `/api/meetings/{id}/view` endpoint returns only completed DOR/DOD items
+  - **Deleted Items Filter**: Organization Settings automatically filters out deleted DOR/DOD items when loading meeting types
+  - **Consistent Behavior**: View mode works identically in both Meeting List and Pitch Detail pages
+  - **Edit from View**: Seamlessly switch from view mode to edit mode with dedicated button
+  - **Test Coverage**: Comprehensive unit and integration tests for all filtering logic
+  - **Better UX**: View completed items without clutter, edit when needed with full context
+
 - **Dynamic Meeting Types with DOR/DOD Checklists**
   - **Configurable Meeting Types**: Manage meeting types through Organization Settings instead of hardcoded enum
   - **DOR/DOD Checklists**: Each meeting type can have its own Definition of Ready (DOR) and Definition of Done (DOD) checklist items

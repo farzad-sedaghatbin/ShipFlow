@@ -96,6 +96,15 @@ A modern project management application implementing the [Shape Up](https://base
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+- **Meetings**: Comprehensive meeting management with customizable types
+  - **Configurable Meeting Types**: Manage 7+ meeting types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
+  - **DOR/DOD Checklists**: Definition of Ready (DOR) and Definition of Done (DOD) checklist items per meeting type
+  - **View Mode**: Click meeting type badge to view read-only summary showing only completed checklist items
+  - **Edit Mode**: Full editing with all DOR/DOD items visible and editable
+  - **Smart Filtering**: Deleted checklist items automatically filtered from new meetings
+  - **Action Items**: Track meeting decisions with assignees, due dates, and status tracking
+  - **Meeting Documents**: Attach and manage meeting-related documents
+  - **Meeting History**: Full audit trail of all meeting changes
 - **Entity Change History (Audit Trail)**: Complete change tracking with Hibernate Envers
   - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
   - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more

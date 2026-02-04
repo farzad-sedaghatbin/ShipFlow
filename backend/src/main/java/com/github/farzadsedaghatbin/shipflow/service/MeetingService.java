@@ -106,6 +106,26 @@ public class MeetingService {
     return toDTO(meeting);
   }
 
+  public MeetingDTO getMeetingForView(Long id) {
+    Meeting meeting = meetingRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Meeting not found with id: " + id));
+    MeetingDTO dto = toDTO(meeting);
+    
+    // Filter to show only completed items in view mode
+    if (dto.getDorItems() != null) {
+      dto.setDorItems(dto.getDorItems().stream()
+          .filter(item -> Boolean.TRUE.equals(item.getIsCompleted()))
+          .collect(Collectors.toList()));
+    }
+    if (dto.getDodItems() != null) {
+      dto.setDodItems(dto.getDodItems().stream()
+          .filter(item -> Boolean.TRUE.equals(item.getIsCompleted()))
+          .collect(Collectors.toList()));
+    }
+    
+    return dto;
+  }
+
   public MeetingDTO createMeeting(CreateMeetingRequest request) {
     Meeting meeting = Meeting.builder().type(request.getType()).dateHeld(request.getDateHeld())
         .dorReady(request.getDorReady() != null ? request.getDorReady() : false)

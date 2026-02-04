@@ -78,6 +78,8 @@ export default function MeetingList() {
   const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(false);
+  const [viewDialog, setViewDialog] = useState(false);
+  const [viewMeeting, setViewMeeting] = useState<Meeting | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [docsDialog, setDocsDialog] = useState<{ open: boolean; meeting: Meeting | null }>({ open: false, meeting: null });
   
@@ -250,6 +252,17 @@ export default function MeetingList() {
       setMeetingDate(dayjs().format('YYYY-MM-DD'));
     }
     setDialog(true);
+  };
+
+  const handleViewMeeting = async (meetingId: number) => {
+    try {
+      const response = await meetingService.getByIdForView(meetingId);
+      setViewMeeting(response.data);
+      setViewDialog(true);
+    } catch (error) {
+      console.error('Failed to load meeting for view:', error);
+      showError(t('meetingList.errors.loadFailed'));
+    }
   };
 
   const handleSubmit = async () => {
@@ -559,7 +572,11 @@ export default function MeetingList() {
                         {formatLocalizedDate(meeting.dateHeld, i18n.language)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getMeetingTypeBadgeVariant(meeting.type)}>
+                        <Badge 
+                          variant={getMeetingTypeBadgeVariant(meeting.type)}
+                          className="cursor-pointer hover:opacity-80"
+                          onClick={() => handleViewMeeting(meeting.id)}
+                        >
                           {formatMeetingType(meeting.type)}
                         </Badge>
                       </TableCell>
@@ -1032,6 +1049,147 @@ export default function MeetingList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Meeting Dialog (Read-only, shows only completed items) */}
+      {viewMeeting && (
+        <Dialog open={viewDialog} onOpenChange={setViewDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('meetingList.dialog.viewTitle')}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {/* Meeting Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.type')}</Label>
+                  <div className="text-sm font-medium">{formatMeetingType(viewMeeting.type)}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.date')}</Label>
+                  <div className="text-sm">{formatLocalizedDate(viewMeeting.dateHeld, i18n.language)}</div>
+                </div>
+              </div>
+
+              {viewMeeting.pitchTitle && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.pitch')}</Label>
+                  <div className="text-sm">{viewMeeting.pitchTitle}</div>
+                </div>
+              )}
+
+              {viewMeeting.attendees && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.attendees')}</Label>
+                  <div className="text-sm whitespace-pre-wrap">{viewMeeting.attendees}</div>
+                </div>
+              )}
+
+              {/* DOR Items (only completed) */}
+              {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dor')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dorItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* DOD Items (only completed) */}
+              {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dod')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dodItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewMeeting.notes && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.notes')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.notes}</div>
+                </div>
+              )}
+
+              {viewMeeting.decisions && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.decisions')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.decisions}</div>
+                </div>
+              )}
+
+              {/* Action Items */}
+              {viewMeeting.actions && viewMeeting.actions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.actionItems.title')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.actions.map((action, index) => (
+                      <Card key={index}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="text-sm flex-1">{action.description}</div>
+                              <Badge variant={action.status === 'COMPLETED' ? 'success' : action.status === 'IN_PROGRESS' ? 'warning' : 'outline'}>
+                                {action.status === 'COMPLETED' ? t('meetingList.actionItems.completed') : 
+                                 action.status === 'IN_PROGRESS' ? t('meetingList.actionItems.inProgress') : 
+                                 t('meetingList.actionItems.open')}
+                              </Badge>
+                            </div>
+                            {action.assignedToName && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.assignedTo')}: {action.assignedToName}
+                              </div>
+                            )}
+                            {action.dueDate && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.dueDate')}: {formatLocalizedDate(action.dueDate, i18n.language)}
+                              </div>
+                            )}
+                            {action.notes && (
+                              <div className="text-xs text-muted-foreground mt-1">{action.notes}</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewDialog(false)}>
+                {t('meetingList.dialog.close')}
+              </Button>
+              <Button onClick={() => {
+                setViewDialog(false);
+                handleOpenDialog(viewMeeting);
+              }}>
+                {t('meetingList.dialog.edit')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <QAFloatingButton contextType="meeting" />
     </div>

@@ -346,4 +346,78 @@ class MeetingServiceTest {
     assertThat(result.getDorItems().get(0).getName()).isEqualTo("Test DOR");
     assertThat(result.getDodItems().get(0).getName()).isEqualTo("Test DOD");
   }
+
+  @Test
+  void getMeetingForView_ShouldReturnOnlyCompletedItems() {
+    // Given - meeting with mixed completed/uncompleted items
+    MeetingDTO.MeetingChecklistItem completedDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(1L).name("Completed DOR").isRequired(true).isCompleted(true).build();
+    MeetingDTO.MeetingChecklistItem incompleteDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(2L).name("Incomplete DOR").isRequired(false).isCompleted(false).build();
+    MeetingDTO.MeetingChecklistItem completedDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(3L).name("Completed DOD").isRequired(true).isCompleted(true).build();
+    MeetingDTO.MeetingChecklistItem incompleteDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(4L).name("Incomplete DOD").isRequired(false).isCompleted(false).build();
+
+    List<MeetingDTO.MeetingChecklistItem> dorItems = Arrays.asList(completedDor, incompleteDor);
+    List<MeetingDTO.MeetingChecklistItem> dodItems = Arrays.asList(completedDod, incompleteDod);
+
+    try {
+      testMeeting.setDorItemsJson(objectMapper.writeValueAsString(dorItems));
+      testMeeting.setDodItemsJson(objectMapper.writeValueAsString(dodItems));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+    // When
+    MeetingDTO result = meetingService.getMeetingForView(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).hasSize(1);
+    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems().get(0).getName()).isEqualTo("Completed DOR");
+    assertThat(result.getDorItems().get(0).getIsCompleted()).isTrue();
+    assertThat(result.getDodItems().get(0).getName()).isEqualTo("Completed DOD");
+    assertThat(result.getDodItems().get(0).getIsCompleted()).isTrue();
+  }
+
+  @Test
+  void getMeetingForView_WhenNoCompletedItems_ShouldReturnEmptyLists() {
+    // Given - meeting with only incomplete items
+    MeetingDTO.MeetingChecklistItem incompleteDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(1L).name("Incomplete DOR").isCompleted(false).build();
+    MeetingDTO.MeetingChecklistItem incompleteDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(2L).name("Incomplete DOD").isCompleted(false).build();
+
+    try {
+      testMeeting.setDorItemsJson(objectMapper.writeValueAsString(List.of(incompleteDor)));
+      testMeeting.setDodItemsJson(objectMapper.writeValueAsString(List.of(incompleteDod)));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+    // When
+    MeetingDTO result = meetingService.getMeetingForView(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).isEmpty();
+    assertThat(result.getDodItems()).isEmpty();
+  }
+
+  @Test
+  void getMeetingForView_WhenNotExists_ShouldThrowException() {
+    // Given
+    when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+    // When/Then
+    assertThatThrownBy(() -> meetingService.getMeetingForView(999L))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Meeting not found");
+  }
 }

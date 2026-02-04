@@ -47,6 +47,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
+import { Checkbox } from '../components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -105,6 +106,8 @@ export default function PitchDetail() {
 
   const [workLogDialog, setWorkLogDialog] = useState(false);
   const [meetingDialog, setMeetingDialog] = useState(false);
+  const [viewMeetingDialog, setViewMeetingDialog] = useState(false);
+  const [viewMeeting, setViewMeeting] = useState<Meeting | null>(null);
   const [meetingPendingDocs, setMeetingPendingDocs] = useState<File[]>([]);
   const [showMeetingDocUpload, setShowMeetingDocUpload] = useState(false);
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -305,6 +308,17 @@ export default function PitchDetail() {
       showError(getUserFriendlyError(error, t('pitchDetailPage.meetingFailed')));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleViewMeeting = async (meetingId: number) => {
+    try {
+      const response = await meetingService.getByIdForView(meetingId);
+      setViewMeeting(response.data);
+      setViewMeetingDialog(true);
+    } catch (error) {
+      console.error('Failed to load meeting for view:', error);
+      showError(t('pitchDetailPage.error'));
     }
   };
 
@@ -818,7 +832,13 @@ export default function PitchDetail() {
                     <div key={m.id}>
                       <div className="py-3">
                         <div className="flex gap-2 items-center mb-2">
-                          <Badge variant="outline">{m.type}</Badge>
+                          <Badge 
+                            variant="outline"
+                            className="cursor-pointer hover:opacity-80"
+                            onClick={() => handleViewMeeting(m.id)}
+                          >
+                            {m.type}
+                          </Badge>
                           <span className="text-sm text-muted-foreground">
                             {formatLocalizedDate(new Date(m.dateHeld), i18n.language)}
                           </span>
@@ -1109,6 +1129,134 @@ export default function PitchDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Meeting Dialog (Read-only, shows only completed items) */}
+      {viewMeeting && (
+        <Dialog open={viewMeetingDialog} onOpenChange={setViewMeetingDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('meetingList.dialog.viewTitle')}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {/* Meeting Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.type')}</Label>
+                  <div className="text-sm font-medium">{viewMeeting.type}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.date')}</Label>
+                  <div className="text-sm">{formatLocalizedDate(new Date(viewMeeting.dateHeld), i18n.language)}</div>
+                </div>
+              </div>
+
+              {viewMeeting.attendees && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.attendees')}</Label>
+                  <div className="text-sm whitespace-pre-wrap">{viewMeeting.attendees}</div>
+                </div>
+              )}
+
+              {/* DOR Items (only completed) */}
+              {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dor')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dorItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* DOD Items (only completed) */}
+              {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dod')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dodItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewMeeting.notes && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.notes')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.notes}</div>
+                </div>
+              )}
+
+              {viewMeeting.decisions && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.decisions')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.decisions}</div>
+                </div>
+              )}
+
+              {/* Action Items */}
+              {viewMeeting.actions && viewMeeting.actions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.actionItems.title')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.actions.map((action, index) => (
+                      <Card key={index}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="text-sm flex-1">{action.description}</div>
+                              <Badge variant={action.status === 'COMPLETED' ? 'success' : action.status === 'IN_PROGRESS' ? 'warning' : 'outline'}>
+                                {action.status === 'COMPLETED' ? t('meetingList.actionItems.completed') : 
+                                 action.status === 'IN_PROGRESS' ? t('meetingList.actionItems.inProgress') : 
+                                 t('meetingList.actionItems.open')}
+                              </Badge>
+                            </div>
+                            {action.assignedToName && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.assignedTo')}: {action.assignedToName}
+                              </div>
+                            )}
+                            {action.dueDate && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.dueDate')}: {formatLocalizedDate(new Date(action.dueDate), i18n.language)}
+                              </div>
+                            )}
+                            {action.notes && (
+                              <div className="text-xs text-muted-foreground mt-1">{action.notes}</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewMeetingDialog(false)}>
+                {t('meetingList.dialog.close')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* History Dialog */}
       <EntityHistoryDialog
