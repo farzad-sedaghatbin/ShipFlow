@@ -85,13 +85,11 @@ export default function OrganizationSettingsPage() {
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   
-  // Confirm dialog state for meeting type deletion
   const [deleteMeetingTypeConfirm, setDeleteMeetingTypeConfirm] = useState<{
     open: boolean;
     typeIndex: number | null;
   }>({ open: false, typeIndex: null });
   
-  // Confirm dialog state for DOR/DOD item deletion
   const [deleteItemConfirm, setDeleteItemConfirm] = useState<{
     open: boolean;
     typeIndex: number | null;
@@ -99,7 +97,6 @@ export default function OrganizationSettingsPage() {
     listType: 'dor' | 'dod' | null;
   }>({ open: false, typeIndex: null, itemIndex: null, listType: null });
 
-  // Handler for confirming meeting type deletion
   const handleConfirmDeleteMeetingType = () => {
     if (deleteMeetingTypeConfirm.typeIndex === null) return;
     const newMeetingTypes = formData.meetingTypes?.filter((_, i) => i !== deleteMeetingTypeConfirm.typeIndex) || [];
@@ -108,7 +105,6 @@ export default function OrganizationSettingsPage() {
     setDeleteMeetingTypeConfirm({ open: false, typeIndex: null });
   };
 
-  // Handler for confirming DOR/DOD item deletion
   const handleConfirmDeleteItem = () => {
     const { typeIndex, itemIndex, listType } = deleteItemConfirm;
     if (typeIndex === null || itemIndex === null || !listType) return;
@@ -127,6 +123,7 @@ export default function OrganizationSettingsPage() {
     }
     
     setFormData({ ...formData, meetingTypes: newMeetingTypes });
+    showToast(t('organizationSettings.dorDodItemDeleted'), 'success');
     setDeleteItemConfirm({ open: false, typeIndex: null, itemIndex: null, listType: null });
   };
 
@@ -1483,6 +1480,30 @@ export default function OrganizationSettingsPage() {
         onConfirm={handleReset}
         variant="destructive"
         loading={saving}
+      />
+
+      {/* Delete Meeting Type Confirmation */}
+      <ConfirmDialog
+        open={deleteMeetingTypeConfirm.open}
+        onOpenChange={(open) => setDeleteMeetingTypeConfirm({ open, typeIndex: null })}
+        title={t('organizationSettings.deleteMeetingTypeTitle')}
+        description={t('organizationSettings.confirmDeleteMeetingType')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDeleteMeetingType}
+        variant="destructive"
+      />
+
+      {/* Delete DOD/DOR Item Confirmation */}
+      <ConfirmDialog
+        open={deleteItemConfirm.open}
+        onOpenChange={(open) => setDeleteItemConfirm({ open, typeIndex: null, itemIndex: null, listType: null })}
+        title={t('organizationSettings.deleteItemTitle')}
+        description={t('organizationSettings.confirmDeleteItem')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDeleteItem}
+        variant="destructive"
       />
     </div>
   );
