@@ -1028,6 +1028,27 @@
     "scope": "Scope",
     "noScopes": "No scopes defined"
   },
+  "scopeNarrative": {
+    "complete": "Complete",
+    "completeDesc": "This scope has been fully implemented",
+    "criticallyStalled": "Critically Stalled",
+    "criticallyDesc": "No progress in {{days}} days - needs immediate attention",
+    "stuckAtPeak": "Stuck at Peak",
+    "stuckAtPeakDesc": "Work is at the decision point but hasn't moved - is there a blocker?",
+    "stalled": "Stalled",
+    "stalledDesc": "No movement in {{days}} days",
+    "figuringOut": "Figuring Out",
+    "figuringOutDesc": "Making progress understanding the problem and solution",
+    "exploring": "Exploring",
+    "exploringDesc": "Still in discovery phase, building understanding",
+    "atPeak": "At Peak",
+    "atPeakDesc": "Ready to transition from figuring out to execution",
+    "executing": "Executing",
+    "executingDesc": "Making good progress implementing the solution",
+    "makingProgress": "Making Progress",
+    "makingProgressDesc": "Work is progressing through implementation",
+    "lastUpdated": "Updated {{days}} days ago"
+  },
   "circuitBreaker": {
     "title": "Circuit Breaker Monitor",
     "subtitle": "Shape Up safety valve - detect and kill overflowing pitches",
