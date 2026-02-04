@@ -441,9 +441,9 @@ export default function PitchBoard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4" data-tour="pitch-board">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
           {statusColumns.map((status) => (
-            <div key={status} className="min-w-[300px] flex-shrink-0">
+            <div key={status} className="min-w-0">
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3">
                 <StatusChip status={status} size="medium" />
