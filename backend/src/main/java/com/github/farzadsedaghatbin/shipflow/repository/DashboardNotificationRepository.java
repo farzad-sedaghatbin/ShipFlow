@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.DashboardNotification;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,6 +35,7 @@ public interface DashboardNotificationRepository extends JpaRepository<Dashboard
   List<DashboardNotification> findExpiredNotifications(@Param("now") LocalDateTime now);
 
   /** Delete old read notifications */
+  @Modifying
   @Query("DELETE FROM DashboardNotification n WHERE n.isRead = true " + "AND n.readAt < :cutoffDate")
   void deleteOldReadNotifications(@Param("cutoffDate") LocalDateTime cutoffDate);
 }
