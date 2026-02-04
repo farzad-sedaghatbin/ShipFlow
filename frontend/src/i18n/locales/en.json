@@ -1608,6 +1608,7 @@
     "dialog": {
       "newTitle": "New Meeting",
       "editTitle": "Edit Meeting",
+      "viewTitle": "Meeting Details",
       "type": "Type",
       "selectType": "Select type",
       "date": "Date",
@@ -1616,6 +1617,8 @@
       "retrospective": "Retrospective (optional)",
       "selectRetrospective": "Select retrospective",
       "none": "None",
+      "dor": "Definition of Ready",
+      "dod": "Definition of Done",
       "dorReady": "DOR Ready",
       "dodReady": "DOD Ready",
       "ready": "Ready",
@@ -1632,19 +1635,26 @@
       "decisionsPlaceholder": "Record key decisions made during the meeting...",
       "cancel": "Cancel",
       "create": "Create",
-      "update": "Update"
+      "update": "Update",
+      "close": "Close",
+      "edit": "Edit"
     },
     "actionItems": {
       "label": "Action Items",
+      "title": "Action Items",
       "add": "Add Action",
       "descriptionPlaceholder": "Action description *",
       "assignee": "Assignee",
+      "assignedTo": "Assigned to",
       "unassigned": "Unassigned",
       "status": "Status",
       "statusOpen": "Open",
       "statusInProgress": "In Progress",
       "statusCompleted": "Completed",
       "statusCancelled": "Cancelled",
+      "open": "Open",
+      "inProgress": "In Progress",
+      "completed": "Completed",
       "dueDate": "Due Date",
       "notes": "Notes",
       "notesPlaceholder": "Additional notes (optional)",
@@ -1656,6 +1666,9 @@
       "deleteSuccess": "Meeting deleted",
       "saveFailed": "Failed to save meeting",
       "deleteFailed": "Failed to delete meeting"
+    },
+    "errors": {
+      "loadFailed": "Failed to load meeting details"
     }
   },
   "workLogs": {
