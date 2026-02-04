@@ -320,4 +320,74 @@ class MeetingControllerIntegrationTest {
         .andExpect(jsonPath("$.actions[2].status", is("COMPLETED")))
         .andExpect(jsonPath("$.actions[3].status", is("CANCELLED")));
   }
+
+  @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
+  @Test
+  void getMeetingForView_ShouldReturnOnlyCompletedChecklistItems() throws Exception {
+    // Create test meeting with mixed completed/incomplete items
+    testMeeting = Meeting.builder()
+        .pitch(testPitch)
+        .type(MeetingType.KICKOFF)
+        .dateHeld(LocalDate.now())
+        .dorReady(true)
+        .dodReady(true)
+        .dorItemsJson("[{\"id\":1,\"name\":\"Completed DOR\",\"isCompleted\":true},{\"id\":2,\"name\":\"Incomplete DOR\",\"isCompleted\":false}]")
+        .dodItemsJson("[{\"id\":3,\"name\":\"Completed DOD\",\"isCompleted\":true},{\"id\":4,\"name\":\"Incomplete DOD\",\"isCompleted\":false}]")
+        .notes("Test notes")
+        .build();
+    testMeeting = meetingRepository.save(testMeeting);
+
+    mockMvc.perform(get("/api/meetings/" + testMeeting.getId() + "/view"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(testMeeting.getId().intValue())))
+        .andExpect(jsonPath("$.dorItems", hasSize(1)))
+        .andExpect(jsonPath("$.dodItems", hasSize(1)))
+        .andExpect(jsonPath("$.dorItems[0].name", is("Completed DOR")))
+        .andExpect(jsonPath("$.dorItems[0].isCompleted", is(true)))
+        .andExpect(jsonPath("$.dodItems[0].name", is("Completed DOD")))
+        .andExpect(jsonPath("$.dodItems[0].isCompleted", is(true)));
+  }
+
+  @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
+  @Test
+  void getMeetingForView_WhenNoCompletedItems_ShouldReturnEmptyLists() throws Exception {
+    // Create test meeting with only incomplete items
+    testMeeting = Meeting.builder()
+        .pitch(testPitch)
+        .type(MeetingType.STANDUP)
+        .dateHeld(LocalDate.now())
+        .dorReady(false)
+        .dodReady(false)
+        .dorItemsJson("[{\"id\":1,\"name\":\"Incomplete DOR\",\"isCompleted\":false}]")
+        .dodItemsJson("[{\"id\":2,\"name\":\"Incomplete DOD\",\"isCompleted\":false}]")
+        .build();
+    testMeeting = meetingRepository.save(testMeeting);
+
+    mockMvc.perform(get("/api/meetings/" + testMeeting.getId() + "/view"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dorItems", hasSize(0)))
+        .andExpect(jsonPath("$.dodItems", hasSize(0)));
+  }
+
+  @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
+  @Test
+  void getById_ShouldReturnAllChecklistItems() throws Exception {
+    // Create test meeting with mixed completed/incomplete items
+    testMeeting = Meeting.builder()
+        .pitch(testPitch)
+        .type(MeetingType.DEMO)
+        .dateHeld(LocalDate.now())
+        .dorReady(true)
+        .dodReady(false)
+        .dorItemsJson("[{\"id\":1,\"name\":\"Completed DOR\",\"isCompleted\":true},{\"id\":2,\"name\":\"Incomplete DOR\",\"isCompleted\":false}]")
+        .dodItemsJson("[{\"id\":3,\"name\":\"Completed DOD\",\"isCompleted\":true},{\"id\":4,\"name\":\"Incomplete DOD\",\"isCompleted\":false}]")
+        .build();
+    testMeeting = meetingRepository.save(testMeeting);
+
+    // Regular getById should return ALL items (for editing)
+    mockMvc.perform(get("/api/meetings/" + testMeeting.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dorItems", hasSize(2)))
+        .andExpect(jsonPath("$.dodItems", hasSize(2)));
+  }
 }

@@ -537,5 +537,72 @@ class OrganizationSettingsServiceTest {
       assertThat(saved.getMeetingTypesJson()).contains("dorItems");
       assertThat(saved.getMeetingTypesJson()).contains("dodItems");
     }
+
+    @Test
+    @DisplayName("Should filter out deleted DOR/DOD items from meeting types")
+    void shouldFilterDeletedItemsFromMeetingTypes() {
+      // Given - settings with meeting types containing deleted items
+      String meetingTypesWithDeleted = "[{" +
+          "\"name\":\"KICKOFF\"," +
+          "\"displayName\":\"Kick-off Meeting\"," +
+          "\"dorItems\":[" +
+            "{\"id\":1,\"name\":\"Active DOR\",\"isRequired\":true,\"isDeleted\":false}," +
+            "{\"id\":2,\"name\":\"Deleted DOR\",\"isRequired\":false,\"isDeleted\":true}" +
+          "]," +
+          "\"dodItems\":[" +
+            "{\"id\":3,\"name\":\"Active DOD\",\"isRequired\":true,\"isDeleted\":false}," +
+            "{\"id\":4,\"name\":\"Deleted DOD\",\"isRequired\":false,\"isDeleted\":true}" +
+          "]" +
+        "}]";
+      
+      testSettings.setMeetingTypesJson(meetingTypesWithDeleted);
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+
+      // When
+      OrganizationSettingsDTO result = settingsService.getSettings();
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getMeetingTypes()).hasSize(1);
+      
+      OrganizationSettingsDTO.MeetingTypeConfig kickoff = result.getMeetingTypes().get(0);
+      assertThat(kickoff.getName()).isEqualTo("KICKOFF");
+      
+      // Should only contain active (non-deleted) items
+      assertThat(kickoff.getDorItems()).hasSize(1);
+      assertThat(kickoff.getDorItems().get(0).getName()).isEqualTo("Active DOR");
+      assertThat(kickoff.getDorItems().get(0).getIsDeleted()).isFalse();
+      
+      assertThat(kickoff.getDodItems()).hasSize(1);
+      assertThat(kickoff.getDodItems().get(0).getName()).isEqualTo("Active DOD");
+      assertThat(kickoff.getDodItems().get(0).getIsDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should handle null isDeleted flag as not deleted")
+    void shouldHandleNullIsDeletedAsNotDeleted() {
+      // Given - items with null isDeleted (older data)
+      String meetingTypesWithNull = "[{" +
+          "\"name\":\"STANDUP\"," +
+          "\"displayName\":\"Daily Standup\"," +
+          "\"dorItems\":[" +
+            "{\"id\":1,\"name\":\"Item with null\",\"isRequired\":true}" +
+          "]," +
+          "\"dodItems\":[" +
+            "{\"id\":2,\"name\":\"Another null item\",\"isRequired\":false}" +
+          "]" +
+        "}]";
+      
+      testSettings.setMeetingTypesJson(meetingTypesWithNull);
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+
+      // When
+      OrganizationSettingsDTO result = settingsService.getSettings();
+
+      // Then
+      assertThat(result.getMeetingTypes()).hasSize(1);
+      assertThat(result.getMeetingTypes().get(0).getDorItems()).hasSize(1);
+      assertThat(result.getMeetingTypes().get(0).getDodItems()).hasSize(1);
+    }
   }
 }

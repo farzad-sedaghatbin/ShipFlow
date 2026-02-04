@@ -85,6 +85,13 @@ public class MeetingController {
     return ResponseEntity.ok(meetingService.getMeetingById(id));
   }
 
+  @GetMapping("/{id}/view")
+  @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
+  @Operation(summary = "Get meeting by ID for viewing (shows only completed checklist items)")
+  public ResponseEntity<MeetingDTO> getMeetingForView(@PathVariable Long id) {
+    return ResponseEntity.ok(meetingService.getMeetingForView(id));
+  }
+
   @PostMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Create a new meeting")
