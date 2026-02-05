@@ -105,9 +105,9 @@ export function EntityHistoryDialog({
     setError(null);
     try {
       const response = await fetchHistory(page, pageSize);
-      setHistory(response.content);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
+      setHistory(response?.content || []);
+      setTotalPages(response?.totalPages || 0);
+      setTotalElements(response?.totalElements || 0);
     } catch (err) {
       console.error('Failed to load history:', err);
       setError(t('history.loadError'));
@@ -154,8 +154,8 @@ export function EntityHistoryDialog({
     return fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   };
 
-  const renderValue = (value: string | null): React.ReactNode => {
-    if (value === null || value === '') {
+  const renderValue = (value: string | null | undefined): React.ReactNode => {
+    if (value === null || value === undefined || value === '') {
       return <span className="text-muted-foreground italic">{t('history.emptyValue')}</span>;
     }
     return <span className="font-medium">{value}</span>;
