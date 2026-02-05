@@ -26,6 +26,8 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -304,6 +306,53 @@ public class GlobalExceptionHandler {
     error.put("status", HttpStatus.BAD_REQUEST.value());
     error.put("message", String.format("Missing required header: %s", ex.getHeaderName()));
     error.put("header", ex.getHeaderName());
+
+    return ResponseEntity.badRequest().body(error);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+    log.warn("File upload size exceeded: {}", ex.getMessage());
+
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.PAYLOAD_TOO_LARGE.value());
+    error.put("message", "File size exceeds maximum allowed limit (10MB)");
+    error.put("messageKey", "error.file.size.exceeded");
+
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
+  }
+
+  @ExceptionHandler(MultipartException.class)
+  public ResponseEntity<Map<String, Object>> handleMultipartException(MultipartException ex) {
+    // Check if client disconnected during upload
+    if (isClientDisconnectionException(ex)) {
+      log.debug("Client disconnected during file upload: {}", ex.getMessage());
+      return null; // No response - client already disconnected
+    }
+
+    // Check for malformed stream (incomplete upload)
+    String message = ex.getMessage();
+    if (message != null && (message.contains("Stream ended unexpectedly") 
+        || message.contains("MalformedStreamException"))) {
+      log.warn("Incomplete file upload detected: {}", message);
+      
+      Map<String, Object> error = new HashMap<>();
+      error.put("timestamp", LocalDateTime.now());
+      error.put("status", HttpStatus.BAD_REQUEST.value());
+      error.put("message", "File upload was incomplete. Please try again.");
+      error.put("messageKey", "error.file.upload.incomplete");
+      
+      return ResponseEntity.badRequest().body(error);
+    }
+
+    log.error("Multipart request parsing failed: {}", message, ex);
+    
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    error.put("message", "Failed to process file upload. Please check the file and try again.");
+    error.put("messageKey", "error.file.upload.failed");
 
     return ResponseEntity.badRequest().body(error);
   }
