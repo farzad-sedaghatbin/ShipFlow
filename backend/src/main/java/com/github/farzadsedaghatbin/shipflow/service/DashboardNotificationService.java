@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class DashboardNotificationService {
   private final HillChartPointRepository hillChartPointRepository;
   private final UserRepository userRepository;
   private final SlackIntegrationService slackService;
+  private final TeamsIntegrationService teamsService;
 
   @Autowired(required = false)
   private PitchHealthService pitchHealthService;
@@ -237,12 +239,12 @@ public class DashboardNotificationService {
           "/cycles/" + cycle.getId(), "CYCLE", cycle.getId());
     }
 
-    // Always send Slack notification for cycle phase changes
-    String slackMessage = String.format(
+    // Send to configured external channels (Slack, Teams, or both)
+    String externalMessage = String.format(
         "🔄 *Cycle Phase Changed*\n" + "*Cycle:* %s\n" + "*Phase Transition:* %s → %s\n" + "*Description:* %s",
         cycle.getName(), oldPhase.name(), newPhase.name(), phaseDescription);
 
-    slackService.sendNotification("CYCLE_PHASE_CHANGED", slackMessage, null, "CYCLE", cycle.getId());
+    sendToConfiguredChannels("CYCLE_PHASE_CHANGED", externalMessage, "CYCLE", cycle.getId());
 
     log.info("Created cycle phase change notifications for cycle {} ({}→{}) - {} users notified", cycle.getId(),
         oldPhase, newPhase, usersToNotify.size());
@@ -345,15 +347,15 @@ public class DashboardNotificationService {
         }
       }
 
-      // Send Slack notification for critical alerts
+      // Send external notifications for critical alerts
       if (alert.getSeverity() == StagnationAlertDTO.AlertSeverity.CRITICAL) {
-        slackService.sendNotification("PITCH_STAGNATION",
-            String.format("🚨 *Pitch Stagnating*\n*%s* (%s)\n%s\n%s",
-                alert.getPitchTitle(),
-                alert.getCycleName(),
-                alert.getDescription(),
-                alert.getRecommendations().isEmpty() ? "" : "💡 " + String.join("\n💡 ", alert.getRecommendations())),
-            null, "PITCH", alert.getPitchId());
+        String externalMessage = String.format("🚨 *Pitch Stagnating*\n*%s* (%s)\n%s\n%s",
+            alert.getPitchTitle(),
+            alert.getCycleName(),
+            alert.getDescription(),
+            alert.getRecommendations().isEmpty() ? "" : "💡 " + String.join("\n💡 ", alert.getRecommendations()));
+        
+        sendToConfiguredChannels("PITCH_STAGNATION", externalMessage, "PITCH", alert.getPitchId());
       }
     }
 
@@ -518,15 +520,15 @@ public class DashboardNotificationService {
             "CRITICAL", "/pitches/" + pitch.getId(), "PITCH", pitch.getId());
       }
     } else {
-      log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
+      log.warn("Pitch {} has no team assigned - sending external notifications only", pitch.getId());
     }
 
-    // Always send Slack notification for circuit breaker events
-    String slackMessage = String.format("⚠️ Circuit Breaker triggered for pitch '%s' - exceeded time budget",
+    // Send to configured external channels (Slack, Teams, or both)
+    String externalMessage = String.format("⚠️ Circuit Breaker triggered for pitch '%s' - exceeded time budget",
         pitch.getTitle());
-    slackService.sendNotification("CIRCUIT_BREAKER_TRIGGERED", slackMessage, null, "PITCH", pitch.getId());
+    sendToConfiguredChannels("CIRCUIT_BREAKER_TRIGGERED", externalMessage, "PITCH", pitch.getId());
 
-    log.info("Created circuit breaker triggered notifications for pitch {} ({} team members, Slack sent)",
+    log.info("Created circuit breaker triggered notifications for pitch {} ({} team members, external channels sent)",
         pitch.getId(), teamMembers.size());
   }
 
@@ -543,15 +545,15 @@ public class DashboardNotificationService {
             "CRITICAL", "/pitches/" + pitch.getId(), "PITCH", pitch.getId());
       }
     } else {
-      log.warn("Pitch {} has no team assigned - sending Slack notification only", pitch.getId());
+      log.warn("Pitch {} has no team assigned - sending external notifications only", pitch.getId());
     }
 
-    // Always send Slack notification for pitch killed events
-    String slackMessage = String.format("🛑 Pitch '%s' has been permanently cancelled. Reason: %s",
+    // Send to configured external channels (Slack, Teams, or both)
+    String externalMessage = String.format("🛑 Pitch '%s' has been permanently cancelled. Reason: %s",
         pitch.getTitle(), reason);
-    slackService.sendNotification("PITCH_KILLED", slackMessage, null, "PITCH", pitch.getId());
+    sendToConfiguredChannels("PITCH_KILLED", externalMessage, "PITCH", pitch.getId());
 
-    log.info("Created pitch killed notifications for pitch {} ({} team members, Slack sent)", pitch.getId(),
+    log.info("Created pitch killed notifications for pitch {} ({} team members, external channels sent)", pitch.getId(),
         teamMembers.size());
   }
 
@@ -564,6 +566,47 @@ public class DashboardNotificationService {
     return team.getAssignments().stream()
         .filter(assignment -> assignment.getPerson() != null && assignment.getPerson().getUser() != null)
         .map(assignment -> assignment.getPerson().getUser()).toList();
+  }
+
+  /**
+   * Send notification to all configured external channels (Slack, Teams, or both).
+   * Checks which integrations are configured and active before sending.
+   */
+  private void sendToConfiguredChannels(String notificationType, String message, 
+      String entityType, Long entityId) {
+    boolean slackSent = false;
+    boolean teamsSent = false;
+
+    // Check if Slack is configured and send
+    try {
+      if (slackService != null && slackService.getActiveConfiguration().isPresent()) {
+        slackService.sendNotification(notificationType, message, null, entityType, entityId);
+        slackSent = true;
+        log.debug("Sent {} notification to Slack", notificationType);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to send {} notification to Slack: {}", notificationType, e.getMessage());
+    }
+
+    // Check if Teams is configured and send
+    try {
+      if (teamsService != null && teamsService.getActiveConfiguration().isPresent()) {
+        teamsService.sendNotification(notificationType, message, null, entityType, entityId);
+        teamsSent = true;
+        log.debug("Sent {} notification to Teams", notificationType);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to send {} notification to Teams: {}", notificationType, e.getMessage());
+    }
+
+    if (!slackSent && !teamsSent) {
+      log.info("No external notification channels configured for {} - skipping external notification", 
+          notificationType);
+    } else {
+      log.info("Sent {} notification to: {}{}", notificationType,
+          slackSent ? "Slack" : "",
+          teamsSent ? (slackSent ? ", Teams" : "Teams") : "");
+    }
   }
 
   private DashboardNotificationDTO toDTO(DashboardNotification notification) {

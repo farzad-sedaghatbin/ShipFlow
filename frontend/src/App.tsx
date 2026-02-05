@@ -44,6 +44,7 @@ import CycleQADashboardPage from './pages/CycleQADashboardPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
 import CircuitBreakerMonitor from './pages/CircuitBreakerMonitor';
+import CooldownActivities from './pages/CooldownActivities';
 import CustomMetrics from './pages/CustomMetrics';
 import MetricBuilder from './pages/MetricBuilder';
 import DashboardManager from './pages/DashboardManager';
@@ -114,6 +115,7 @@ function App() {
                     <Route path="cycles/:id/edit" element={<CycleForm />} />
                     <Route path="cycles/:cycleId/hill-chart" element={<CycleHillChart />} />
                     <Route path="cycles/:cycleId/circuit-breaker" element={<CircuitBreakerMonitor />} />
+                    <Route path="cycles/:cycleId/cooldown" element={<CooldownActivities />} />
 
                     {/* Cycle Workspace */}
                     <Route path="pitches" element={<PitchBoard />} />

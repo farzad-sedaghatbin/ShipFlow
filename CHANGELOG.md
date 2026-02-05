@@ -25,7 +25,11 @@ All notable changes to this project will be documented in this file.
   - **Stagnation Types**: HILL_CHART_STALLED, STUCK_AT_PEAK, NO_RECENT_WORK, COMPOUND_STAGNATION
   - **Severity Calculation**: LOW, MEDIUM, HIGH, CRITICAL based on days and cycle progress
   - **Dashboard Notifications**: Generate notifications for stagnating pitches
-  - **Slack Integration**: Send critical stagnation alerts to Slack channels
+  - **Multi-Channel Integration**: Send critical stagnation alerts to configured external channels
+    - Supports Slack, Microsoft Teams, or both simultaneously
+    - Automatically detects which channels are configured and active
+    - Gracefully handles cases where no external channels are configured
+    - Sends notifications only to configured and enabled integrations
 
 - **Frontend: Betting Decisions UI**
   - **BettingDecisionDialog**: Record betting decisions with rationale and options

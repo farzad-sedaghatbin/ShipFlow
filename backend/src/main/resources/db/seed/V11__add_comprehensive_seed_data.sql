@@ -12,15 +12,16 @@ VALUES
 (6, 'Emma Martinez', 'emma@shipflow.com', 'QA, Automation Testing', 'Engineering', 'QA engineer ensuring product quality', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert users (password is 'admin123' for all users)
+-- Using dollar-quoted strings to prevent Flyway from escaping $ characters in bcrypt hashes
 INSERT INTO users (id, username, password, role, person_id, is_active, created_at, updated_at)
 OVERRIDING SYSTEM VALUE
 VALUES
-(1, 'admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'ADMIN', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'alice', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'PROJECT_MANAGER', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'bob', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'DEVELOPER', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 'carol', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'PROJECT_MANAGER', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 'david', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'DEVELOPER', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(6, 'emma', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cyhyBOIKoJDgdlGrjqDSNEr8WZvr6', 'DEVELOPER', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, 'admin', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'ADMIN', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'alice', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'PROJECT_MANAGER', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'bob', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'DEVELOPER', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'carol', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'PROJECT_MANAGER', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'david', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'DEVELOPER', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'emma', $$2a$10$R8G6A/1xWYXIXAhV3NwUTuaqzy2ryvHsELGCM5aOiMAxQSUYKuM3i$$, 'DEVELOPER', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample projects
 INSERT INTO projects (id, name, project_key, description, color, owner_id, is_active, created_at, updated_at)

@@ -190,6 +190,14 @@ export default function CycleDetail() {
               {t('cycleDetailPage.circuitBreaker')}
             </Link>
           </Button>
+          {cycle.phase === 'COOLDOWN' && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/cycles/${cycle.id}/cooldown`}>
+                <Clock className="h-4 w-4 mr-2" />
+                {t('cycleDetailPage.cooldownActivities')}
+              </Link>
+            </Button>
+          )}
           <Button variant="outline" size="sm" asChild>
             <Link to={`/cycles/${cycle.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />

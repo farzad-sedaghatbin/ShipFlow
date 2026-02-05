@@ -393,7 +393,7 @@ export default function Layout({ children }: LayoutProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar - hidden on mobile (< 768px) */}
       <aside className="hidden lg:flex w-64 flex-shrink-0 border-e border-border bg-sidebar">
         <SidebarContent />
@@ -407,7 +407,7 @@ export default function Layout({ children }: LayoutProps) {
       </Sheet>
 
       {/* Main Content - Full width on mobile */}
-      <div className="flex flex-1 flex-col w-full lg:w-auto">
+      <div className="flex flex-1 flex-col w-full lg:w-auto overflow-hidden">
         {/* Header */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-2 sm:gap-4 border-b border-border bg-background/95 px-3 sm:px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {/* Mobile Menu Button - Touch-friendly */}
@@ -550,8 +550,8 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Page Content - Responsive padding */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6">
+        {/* Page Content - Responsive padding with scroll */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
           <Breadcrumbs />
           {children}
         </main>
