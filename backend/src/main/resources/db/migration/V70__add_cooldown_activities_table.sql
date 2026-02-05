@@ -2,7 +2,7 @@
 -- Cooldown is the 2-week period between cycles for cleanup, bugs, tech debt, and preparation
 
 CREATE TABLE cooldown_activities (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cycle_id BIGINT NOT NULL,
     activity_type VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
