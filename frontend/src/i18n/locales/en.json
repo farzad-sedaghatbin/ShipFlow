@@ -82,7 +82,12 @@
     "hoursAgo": "{{count}} hour ago",
     "hoursAgo_other": "{{count}} hours ago",
     "daysAgo": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago"
+    "daysAgo_other": "{{count}} days ago",
+    "unknown": "Unknown",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "errorOccurred": "An error occurred",
+    "active": "Active"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -457,6 +462,13 @@
       "build": "Build",
       "cooldown": "Cooldown"
     },
+    "phases": {
+      "shaping": "Shaping",
+      "betting": "Betting",
+      "build": "Build",
+      "cooldown": "Cooldown"
+    },
+    "totalDays": "Total Days",
     "phaseValues": {
       "SHAPING": "Shaping",
       "BETTING": "Betting",
@@ -508,7 +520,24 @@
     "inReview": "In Review",
     "approved": "Approved",
     "rejected": "Rejected",
-    "betting": "In Betting"
+    "betting": "In Betting",
+    "progress": "Progress",
+    "days": "Days",
+    "cycle": "Cycle",
+    "description": "Description",
+    "problemStatement": "Problem Statement",
+    "risks": "Risks",
+    "wireframes": "Wireframes",
+    "status": {
+      "pending": "Pending",
+      "shaped": "Shaped",
+      "started": "Started",
+      "inProgress": "In Progress",
+      "testing": "Testing",
+      "done": "Done",
+      "cooldown": "Cooldown",
+      "cancelled": "Cancelled"
+    }
   },
   "pitch": {
     "statuses": {
@@ -805,6 +834,7 @@
     "registerRepositoryFailed": "Failed to register repository",
     "getAnswerFailed": "Failed to get answer",
     "submitFeedbackFailed": "Failed to submit feedback",
+    "loadPermissionsFailed": "Failed to load permissions",
     "loadCycleHealthFailed": "Failed to load cycle health summary",
     "saveBugReportFailed": "Failed to save bug report",
     "loadDependenciesFailed": "Failed to load task dependencies",
@@ -1026,7 +1056,8 @@
     "makeHappen": "Making it happen",
     "updateProgress": "Update Progress",
     "scope": "Scope",
-    "noScopes": "No scopes defined"
+    "noScopes": "No scopes defined",
+    "positionUpdated": "Position updated with confidence tracking"
   },
   "scopeNarrative": {
     "complete": "Complete",
@@ -1085,6 +1116,44 @@
     "triggerFailed": "Failed to trigger circuit breaker",
     "killSuccess": "Pitch permanently cancelled due to overflow",
     "killFailed": "Failed to kill pitch"
+  },
+  "feedback": {
+    "submitSuccess": "Feedback submitted successfully. Thank you!",
+    "wasHelpful": "Was this assessment helpful?",
+    "submitted": "Feedback submitted"
+  },
+  "bugs": {
+    "reporter": "Reporter",
+    "assignee": "Assignee",
+    "pitch": "Pitch",
+    "cycle": "Cycle",
+    "team": "Team",
+    "task": "Task",
+    "description": "Description",
+    "stepsToReproduce": "Steps to Reproduce",
+    "expectedBehavior": "Expected Behavior",
+    "actualBehavior": "Actual Behavior",
+    "environment": "Environment",
+    "tags": "Tags",
+    "resolution": "Resolution",
+    "resolvedAt": "Resolved At",
+    "severity": {
+      "trivial": "Trivial",
+      "minor": "Minor",
+      "major": "Major",
+      "critical": "Critical",
+      "blocker": "Blocker"
+    },
+    "status": {
+      "open": "Open",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "verified": "Verified",
+      "closed": "Closed",
+      "reopened": "Reopened",
+      "wontFix": "Won't Fix",
+      "duplicate": "Duplicate"
+    }
   },
   "empty": {
     "noData": "No data available",
@@ -2052,7 +2121,7 @@
     "pitch": "Pitches",
     "reporter": "Reporter",
     "severity": "Severity",
-    "status": "Status",
+    "statusLabel": "Status",
     "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]"
   },
   "chartConfig": {
@@ -2338,7 +2407,11 @@
     "channelCreateFailed": "Failed to create channel configuration",
     "channelDeleteFailed": "Failed to delete channel configuration",
     "testFailed": "Failed to send test notification",
-    "actions": "Actions"
+    "actions": "Actions",
+    "webhookPlaceholder": "https://hooks.slack.com/services/...",
+    "channelPlaceholder": "general",
+    "leaveEmptyWorkspaceWebhook": "Leave empty to use workspace webhook",
+    "leaveEmptyDefaultChannel": "Leave empty to use default channel"
   },
   "customMetrics": {
     "title": "Custom Metrics",
@@ -2466,6 +2539,7 @@
     "description": "Description",
     "taskDescription": "Enter task description",
     "assignee": "Assignee",
+    "assignedTo": "Assigned To",
     "selectAssignee": "Select assignee",
     "unassigned": "Unassigned",
     "pairAssignee": "Pair Assignee",
@@ -2599,6 +2673,7 @@
       "actions": "Actions"
     },
     "actions": {
+      "_value": "Actions",
       "createItem": "Create Backlog Item",
       "export": "Export",
       "bulkEdit": "Bulk Edit"
@@ -2918,13 +2993,17 @@
     "itemDescription": "Item description",
     "required": "Required",
     "confirmDeleteDorDodItem": "Are you sure you want to delete this checklist item? Existing meetings using this item will retain their data.",
-    "failedToReset": "[Translation needed: بازنشانی تنظیمات ناموفق بود]",
+    "deleteMeetingTypeTitle": "Delete Meeting Type",
+    "deleteItemTitle": "Delete Item",
+    "confirmDeleteItem": "Are you sure you want to delete this item?",
+    "dorDodItemDeleted": "Item deleted successfully",
+    "failedToReset": "Failed to reset settings",
     "failedToSave": "Failed to save settings",
-    "mustEqual100": "[Translation needed: باید ۱۰۰% باشد]",
-    "permissionDenied": "[Translation needed: شما مجوز دسترسی به این صفحه را ندارید. نقش مدیر مورد نیاز است.]",
-    "settingsReset": "[Translation needed: تنظیمات به پیش‌فرض بازنشانی شدند]",
-    "settingsSaved": "[Translation needed: تنظیمات سازمان با موفقیت ذخیره شد]",
-    "updatedBy": "[Translation needed: توسط {{user}}]"
+    "mustEqual100": "Must equal 100%",
+    "permissionDenied": "You don't have permission to access this page. Admin role required.",
+    "settingsReset": "Settings reset to defaults",
+    "settingsSaved": "Organization settings saved successfully",
+    "updatedBy": "by {{user}}"
   },
   "userManagement": {
     "title": "User Management",
@@ -3011,11 +3090,13 @@
     "developers": "Developers",
     "activeUsers": "Active Users",
     "pendingUsers": "Pending Users",
-    "creating": "[Translation needed: در حال ایجاد...]",
-    "editRole": "[Translation needed: تغییر نقش]",
-    "selectNewRole": "[Translation needed: نقش جدید را انتخاب کنید]",
-    "userDeactivated": "[Translation needed: کاربر با موفقیت غیرفعال شد]",
-    "roleRequired": "Role is required"
+    "creating": "Creating...",
+    "editRole": "Change Role",
+    "selectNewRole": "Select new role",
+    "userDeactivated": "User deactivated successfully",
+    "roleRequired": "Role is required",
+    "members": "Members",
+    "newPassword": "New Password"
   },
   "peopleManagement": {
     "title": "People Management",
@@ -3082,7 +3163,45 @@
     "noPeopleDescription": "Add team members to track their assignments and work",
     "addFirstPerson": "Add First Person",
     "noMatches": "No people match your search",
-    "noMatchesDescription": "Try adjusting your search term for \"{{searchTerm}}\""
+    "noMatchesDescription": "Try adjusting your search term for \"{{searchTerm}}\"",
+    "actions": "Actions",
+    "activeAssignments": "Active Assignments",
+    "avatar": "Avatar",
+    "completed": "Completed",
+    "confirmDelete": "Confirm Delete",
+    "currentAssignments": "Current Assignments",
+    "deleteFailed": "Delete Failed",
+    "deletePerson": "Delete Person",
+    "deleteWarning": "This will permanently delete this person",
+    "department": "Department",
+    "description": "Description",
+    "edit": "Edit",
+    "emptyDesc": "No people found",
+    "emptyTitle": "No People",
+    "endDate": "End Date",
+    "entries": "Entries",
+    "joined": "Joined",
+    "joinedDate": "Joined Date",
+    "loadFailed": "Failed to load",
+    "loading": "Loading...",
+    "noActivity": "No activity",
+    "noHistory": "No history",
+    "note": "Note",
+    "past": "Past",
+    "pastAssignments": "Past Assignments",
+    "person": "Person",
+    "personDeleted": "Person deleted",
+    "saveFailed": "Save Failed",
+    "search": "Search",
+    "startDate": "Start Date",
+    "status": "Status",
+    "task": "Task",
+    "teamHistory": "Team History",
+    "totalWorkLogs": "Total Work Logs",
+    "viewActivity": "View Activity",
+    "viewHistory": "View History",
+    "workLogActivity": "Work Log Activity",
+    "workingHere": "Working Here"
   },
   "pitchBoard": {
     "title": "Pitch Board",
@@ -3324,6 +3443,7 @@
   },
   "pitchDetailPage": {
     "title": "Pitch Details",
+    "error": "Error loading pitch details",
     "pitch": "Pitch",
     "overview": "Overview",
     "shapeUpDetails": "Shape Up Details",
@@ -3775,7 +3895,10 @@
     "create": "Create",
     "update": "Update",
     "page": "Page {{current}} of {{total}}",
-    "totalEntries": "Total: {{count}} meetings"
+    "totalEntries": "Total: {{count}} meetings",
+    "ready": "Ready",
+    "notReady": "Not Ready",
+    "noChecklistItems": "No checklist items"
   },
   "landing": {
     "title": "ShipFlow",
@@ -4362,7 +4485,8 @@
     "metricCreated": "Metric created successfully",
     "metricUpdated": "Metric updated successfully",
     "saveFailed": "Failed to save metric",
-    "loadFailed": "Failed to load metric"
+    "loadFailed": "Failed to load metric",
+    "otherProjects": "Other Projects"
   },
   "pitchTestPage": {
     "title": "Pitch Test Runner",
@@ -4610,6 +4734,7 @@
   },
   "guides": {
     "backToHelp": "Back to Help & Guides",
+    "relatedGuides": "Related Guides",
     "gettingStarted": {
       "title": "Getting Started with ShipFlow",
       "subtitle": "Learn the basics of ShipFlow and start managing your projects using the Shape Up methodology",
@@ -5222,6 +5347,7 @@
   },
   "cycleId": "Cycle ID",
   "softDelete": {
+    "delete": "Delete",
     "softDeleteNote": "Note: This will not permanently delete the item. It can be restored if needed.",
     "deletePitch": "Delete Pitch",
     "deletePitchConfirmation": "Are you sure you want to delete the pitch '{{title}}'?",
@@ -5320,6 +5446,8 @@
     "types": {
       "bug_fix": "Bug Fix",
       "tech_debt": "Tech Debt",
+      "bugFix": "Bug Fix",
+      "techDebt": "Tech Debt",
       "research": "Research",
       "experiment": "Experiment",
       "training": "Training",
@@ -5328,6 +5456,7 @@
     "statuses": {
       "planned": "Planned",
       "inprogress": "In Progress",
+      "inProgress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
     }

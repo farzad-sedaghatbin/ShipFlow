@@ -406,7 +406,7 @@ export default function SlackIntegrationPage() {
                 id="webhookUrl"
                 value={configForm.webhookUrl}
                 onChange={(e) => setConfigForm({ ...configForm, webhookUrl: e.target.value })}
-                placeholder="https://hooks.slack.com/services/..."
+                placeholder={t('slackIntegration.webhookPlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -415,7 +415,7 @@ export default function SlackIntegrationPage() {
                 id="defaultChannel"
                 value={configForm.defaultChannel}
                 onChange={(e) => setConfigForm({ ...configForm, defaultChannel: e.target.value })}
-                placeholder="general"
+                placeholder={t('slackIntegration.channelPlaceholder')}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -449,7 +449,7 @@ export default function SlackIntegrationPage() {
                 id="channelName"
                 value={channelForm.channelName}
                 onChange={(e) => setChannelForm({ ...channelForm, channelName: e.target.value })}
-                placeholder="general"
+                placeholder={t('slackIntegration.channelPlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -460,7 +460,7 @@ export default function SlackIntegrationPage() {
                 onChange={(e) =>
                   setChannelForm({ ...channelForm, channelWebhookUrl: e.target.value })
                 }
-                placeholder="Leave empty to use workspace webhook"
+                placeholder={t('slackIntegration.leaveEmptyWorkspaceWebhook')}
               />
             </div>
 
@@ -582,7 +582,7 @@ export default function SlackIntegrationPage() {
                 id="testChannel"
                 value={testChannel}
                 onChange={(e) => setTestChannel(e.target.value)}
-                placeholder="Leave empty to use default channel"
+                placeholder={t('slackIntegration.leaveEmptyDefaultChannel')}
               />
             </div>
           </div>
