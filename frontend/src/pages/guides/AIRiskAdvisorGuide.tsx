@@ -4,6 +4,7 @@ import { ArrowLeft, Brain, AlertTriangle, CheckCircle2, ThumbsUp, ThumbsDown } f
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function AIRiskAdvisorGuide() {
     const { t } = useTranslation();
@@ -36,7 +37,7 @@ export default function AIRiskAdvisorGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p dangerouslySetInnerHTML={{ __html: t('guides.aiRiskAdvisor.whatDesc') }} />
+                    <p><MarkdownInline content={t('guides.aiRiskAdvisor.whatDesc')} /></p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
                             <strong>{t('guides.aiRiskAdvisor.howWorks')}</strong> {t('guides.aiRiskAdvisor.howWorksDesc')}

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function CooldownActivitiesGuide() {
     const { t } = useTranslation();
@@ -38,13 +39,13 @@ export default function CooldownActivitiesGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>{t('guides.cooldownActivities.whatIsDesc1')}</p>
+                    <p><MarkdownInline content={t('guides.cooldownActivities.whatIsDesc1')} /></p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
                             <strong>{t('guides.cooldownActivities.shapeUpQuote')}</strong> {t('guides.cooldownActivities.shapeUpQuoteText')}
                         </p>
                     </div>
-                    <p>{t('guides.cooldownActivities.whatIsDesc2')}</p>
+                    <p><MarkdownInline content={t('guides.cooldownActivities.whatIsDesc2')} /></p>
                 </CardContent>
             </Card>
 
@@ -64,11 +65,11 @@ export default function CooldownActivitiesGuide() {
                             <ul className="space-y-2 text-sm">
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.backlogPoint1')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.backlogPoint1')} />
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.backlogPoint2')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.backlogPoint2')} />
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
@@ -76,7 +77,7 @@ export default function CooldownActivitiesGuide() {
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.backlogPoint4')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.backlogPoint4')} />
                                 </li>
                             </ul>
                         </div>
@@ -89,11 +90,11 @@ export default function CooldownActivitiesGuide() {
                             <ul className="space-y-2 text-sm">
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.cooldownPoint1')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.cooldownPoint1')} />
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.cooldownPoint2')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.cooldownPoint2')} />
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
@@ -101,7 +102,7 @@ export default function CooldownActivitiesGuide() {
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary">•</span>
-                                    <span>{t('guides.cooldownActivities.cooldownPoint4')}</span>
+                                    <MarkdownInline content={t('guides.cooldownActivities.cooldownPoint4')} />
                                 </li>
                             </ul>
                         </div>
@@ -181,8 +182,8 @@ export default function CooldownActivitiesGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="space-y-3 list-decimal list-inside">
-                        <li>{t('guides.cooldownActivities.accessStep1')}</li>
-                        <li>{t('guides.cooldownActivities.accessStep2')}</li>
+                        <li><MarkdownInline content={t('guides.cooldownActivities.accessStep1')} /></li>
+                        <li><MarkdownInline content={t('guides.cooldownActivities.accessStep2')} /></li>
                         <li>{t('guides.cooldownActivities.accessStep3')}</li>
                     </ol>
                 </CardContent>
@@ -197,23 +198,23 @@ export default function CooldownActivitiesGuide() {
                     <ul className="space-y-2">
                         <li className="flex items-start gap-2">
                             <span className="text-green-500 font-bold">✓</span>
-                            <span>{t('guides.cooldownActivities.practice1')}</span>
+                            <MarkdownInline content={t('guides.cooldownActivities.practice1')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <span className="text-green-500 font-bold">✓</span>
-                            <span>{t('guides.cooldownActivities.practice2')}</span>
+                            <MarkdownInline content={t('guides.cooldownActivities.practice2')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <span className="text-green-500 font-bold">✓</span>
-                            <span>{t('guides.cooldownActivities.practice3')}</span>
+                            <MarkdownInline content={t('guides.cooldownActivities.practice3')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <span className="text-green-500 font-bold">✓</span>
-                            <span>{t('guides.cooldownActivities.practice4')}</span>
+                            <MarkdownInline content={t('guides.cooldownActivities.practice4')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <span className="text-green-500 font-bold">✓</span>
-                            <span>{t('guides.cooldownActivities.practice5')}</span>
+                            <MarkdownInline content={t('guides.cooldownActivities.practice5')} />
                         </li>
                     </ul>
                 </CardContent>
