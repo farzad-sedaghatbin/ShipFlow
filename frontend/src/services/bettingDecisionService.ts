@@ -7,7 +7,7 @@ export interface BettingDecisionDTO {
   pitchId: number;
   pitchTitle: string;
   decision: 'COMMITTED' | 'REJECTED' | 'DEFERRED' | 'NEEDS_SHAPING';
-  rationale?: string;
+  reason?: string;
   decidedBy: {
     id: number;
     username: string;
@@ -23,7 +23,7 @@ export interface RecordBettingDecisionRequest {
   cycleId: number;
   pitchId: number;
   decision: 'COMMITTED' | 'REJECTED' | 'DEFERRED' | 'NEEDS_SHAPING';
-  rationale?: string;
+  reason?: string;
   commitmentLevel?: number;
   deferralReason?: string;
   deferredUntilCycleId?: number;

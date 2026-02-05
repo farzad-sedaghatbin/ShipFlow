@@ -99,7 +99,7 @@ export function BettingDecisionDialog({
   const [decision, setDecision] = useState<DecisionType | null>(
     existingDecision?.decision || null
   );
-  const [rationale, setRationale] = useState(existingDecision?.rationale || '');
+  const [reason, setReason] = useState(existingDecision?.reason || '');
   const [commitmentLevel, setCommitmentLevel] = useState<number>(
     existingDecision?.commitmentLevel || 80
   );
@@ -119,11 +119,16 @@ export function BettingDecisionDialog({
     setError(null);
 
     try {
+      // For DEFERRED decisions, use deferralReason as the reason if no general reason provided
+      const effectiveReason = reason.trim() || 
+        (decision === 'DEFERRED' ? deferralReason.trim() : '') || 
+        undefined;
+      
       const request: RecordBettingDecisionRequest = {
         cycleId,
         pitchId: pitch.id,
         decision,
-        rationale: rationale.trim() || undefined,
+        reason: effectiveReason,
         commitmentLevel: decision === 'COMMITTED' ? commitmentLevel : undefined,
         deferralReason: decision === 'DEFERRED' ? deferralReason.trim() || undefined : undefined,
         deferredUntilCycleId: decision === 'DEFERRED' && deferredUntilCycleId 
@@ -137,7 +142,7 @@ export function BettingDecisionDialog({
       
       // Reset form
       setDecision(null);
-      setRationale('');
+      setReason('');
       setCommitmentLevel(80);
       setDeferralReason('');
       setDeferredUntilCycleId('');
@@ -282,8 +287,8 @@ export function BettingDecisionDialog({
         <div>
           <Label>{t('bettingTablePage.decisionDialog.decisionRationale')}</Label>
           <Textarea
-            value={rationale}
-            onChange={(e) => setRationale(e.target.value)}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
             placeholder={t('bettingTablePage.decisionDialog.decisionRationalePlaceholder')}
             className="mt-1.5"
             rows={3}

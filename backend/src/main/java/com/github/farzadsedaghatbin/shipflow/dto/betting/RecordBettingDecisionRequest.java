@@ -1,7 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.betting;
 
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BettingDecisionType;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -23,7 +22,7 @@ public class RecordBettingDecisionRequest {
   @NotNull(message = "Decision type is required")
   private BettingDecisionType decision;
 
-  @NotBlank(message = "Reason for decision is required")
+  /** Optional reason/rationale for the decision */
   private String reason;
 
   /** Team being considered for this pitch (optional) */

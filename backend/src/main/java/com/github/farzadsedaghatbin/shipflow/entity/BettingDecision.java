@@ -47,7 +47,7 @@ public class BettingDecision {
   private BettingDecisionType decision;
 
   /** The reasoning behind this decision - why commit or why reject */
-  @Column(columnDefinition = "TEXT", nullable = false)
+  @Column(columnDefinition = "TEXT")
   private String reason;
 
   /** User who made/recorded the decision */
