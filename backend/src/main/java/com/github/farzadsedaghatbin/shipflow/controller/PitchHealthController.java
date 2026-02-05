@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.health.CycleHealthSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.health.PitchHealthDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.health.StagnationAlertDTO;
 import com.github.farzadsedaghatbin.shipflow.service.PitchHealthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,5 +67,21 @@ public class PitchHealthController {
   public ResponseEntity<List<CycleHealthSummaryDTO>> getAllActiveCycleHealthWithAI() {
     List<CycleHealthSummaryDTO> summaries = pitchHealthService.getAllActiveCycleHealth(true);
     return ResponseEntity.ok(summaries);
+  }
+
+  @GetMapping("/cycle/{cycleId}/stagnation")
+  @Operation(summary = "Detect stagnating pitches in cycle", 
+      description = "Returns alerts for pitches showing signs of stagnation (no progress, stuck at peak, etc.)")
+  public ResponseEntity<List<StagnationAlertDTO>> getStagnationAlerts(@PathVariable Long cycleId) {
+    List<StagnationAlertDTO> alerts = pitchHealthService.detectStagnatingPitches(cycleId);
+    return ResponseEntity.ok(alerts);
+  }
+
+  @GetMapping("/stagnation/all")
+  @Operation(summary = "Detect all stagnating pitches", 
+      description = "Returns stagnation alerts for all pitches in active cycles")
+  public ResponseEntity<List<StagnationAlertDTO>> getAllStagnationAlerts() {
+    List<StagnationAlertDTO> alerts = pitchHealthService.detectAllStagnatingPitches();
+    return ResponseEntity.ok(alerts);
   }
 }

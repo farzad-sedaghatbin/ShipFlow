@@ -64,6 +64,42 @@ class I18nValidator {
   }
 
   /**
+   * Check if a string looks like a valid translation key
+   * Filters out false positives like single characters, date formats, etc.
+   */
+  isValidTranslationKey(key) {
+    // Skip single characters and very short strings
+    if (key.length <= 1) return false;
+    
+    // Skip date format strings
+    if (/^[YMDHmsTZ\-\/: ]+$/.test(key)) return false;
+    
+    // Skip pure numbers
+    if (/^\d+$/.test(key)) return false;
+    
+    // Skip strings that are just punctuation/whitespace
+    if (/^[\s\.,;:!?\/\-_]+$/.test(key)) return false;
+    
+    // Skip keys that end with a dot (incomplete dynamic keys)
+    if (key.endsWith('.')) return false;
+    
+    // Skip keys that contain segments starting with underscore (internal/metadata keys)
+    if (/\._/.test(key)) return false;
+    
+    // Skip single word keys that look like HTML attributes or generic terms
+    if (!key.includes('.') && /^(category|type|value|name|id|key|href|src|alt)$/i.test(key)) return false;
+    
+    // Valid keys should match camelCase.camelCase or camelCase pattern
+    // Allow alphanumeric with dots and underscores
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$/.test(key)) {
+      // Also allow keys that start with a namespace like "common." etc.
+      if (!/^[a-zA-Z]/.test(key)) return false;
+    }
+    
+    return true;
+  }
+
+  /**
    * Recursively extract all keys from a nested object
    */
   extractKeys(obj, prefix = '') {
@@ -173,20 +209,46 @@ class I18nValidator {
         /useTranslation.*?t\(['"]([^'"]+)['"]/gs, // const { t } = useTranslation(); ... t('key')
       ];
       
+      // Additional patterns to detect dynamic key usage (for reporting, not validation)
+      const dynamicKeyPatterns = [
+        /\bt\([^'")\n]+\.([a-zA-Z]+Key)\)/g,       // t(item.textKey), t(config.labelKey)
+        /\bt\(`([^`]+)\$\{[^}]+\}[^`]*`\)/g,       // t(`prefix.${dynamic}`)
+        /textKey:\s*['"]([^'"]+)['"]/g,             // textKey: 'nav.dashboard'
+        /labelKey:\s*['"]([^'"]+)['"]/g,            // labelKey: 'common.save'
+        /titleKey:\s*['"]([^'"]+)['"]/g,            // titleKey: 'page.title'
+        /messageKey:\s*['"]([^'"]+)['"]/g,          // messageKey: 'errors.failed'
+        /translationKey:\s*['"]([^'"]+)['"]/g,      // translationKey: 'key'
+      ];
+      
       let keysFound = 0;
+      let dynamicKeysFound = 0;
       
       files.forEach(file => {
         try {
           const content = fs.readFileSync(file, 'utf8');
           
+          // Process direct t('key') patterns
           patterns.forEach(pattern => {
             let match;
             while ((match = pattern.exec(content)) !== null) {
               const key = match[1];
-              // Skip interpolated/dynamic keys
-              if (!key.includes('${') && !key.includes('{') && key.length > 0) {
+              // Skip interpolated/dynamic keys and false positives
+              if (!key.includes('${') && !key.includes('{') && key.length > 1 && this.isValidTranslationKey(key)) {
                 this.usedKeys.add(key);
                 keysFound++;
+              }
+            }
+          });
+          
+          // Process dynamic key patterns (textKey, labelKey, etc.)
+          dynamicKeyPatterns.forEach(pattern => {
+            let match;
+            while ((match = pattern.exec(content)) !== null) {
+              const key = match[1];
+              // These are typically full keys like 'nav.dashboard'
+              if (key && !key.includes('${') && key.includes('.') && this.isValidTranslationKey(key)) {
+                this.usedKeys.add(key);
+                dynamicKeysFound++;
               }
             }
           });
@@ -196,7 +258,10 @@ class I18nValidator {
       });
       
       this.stats.totalUsedKeys = this.usedKeys.size;
-      this.log(`✓ Found ${keysFound} translation calls using ${this.usedKeys.size} unique keys`, 'green');
+      this.log(`✓ Found ${keysFound} direct translation calls using ${this.usedKeys.size} unique keys`, 'green');
+      if (dynamicKeysFound > 0) {
+        this.log(`✓ Found ${dynamicKeysFound} additional keys via dynamic patterns (textKey, labelKey, etc.)`, 'green');
+      }
       
     } catch (error) {
       this.log(`✗ Error scanning code: ${error.message}`, 'red');

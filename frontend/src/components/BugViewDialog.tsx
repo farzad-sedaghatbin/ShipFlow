@@ -117,8 +117,8 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     setHistoryError(null);
     try {
       const response = await qaTestManagementService.getBugReportHistory(bug.id, historyPage, pageSize);
-      setHistory(response.data.content);
-      setTotalHistoryPages(response.data.totalPages);
+      setHistory(response.data?.content || []);
+      setTotalHistoryPages(response.data?.totalPages || 0);
     } catch (err) {
       console.error('Failed to load history:', err);
       setHistoryError(t('history.loadError'));
@@ -179,8 +179,8 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     return fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   };
 
-  const renderValue = (value: string | null): React.ReactNode => {
-    if (value === null || value === '') {
+  const renderValue = (value: string | null | undefined): React.ReactNode => {
+    if (value === null || value === undefined || value === '') {
       return <span className="text-muted-foreground italic">{t('history.emptyValue')}</span>;
     }
     // Truncate long values

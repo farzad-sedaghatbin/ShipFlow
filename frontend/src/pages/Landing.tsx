@@ -12,6 +12,8 @@ import {
   Accessibility,
   RotateCcw,
   ArrowRight,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -80,6 +82,16 @@ export default function Landing() {
       title: t('landing.wcagAccessible'),
       description: t('landing.wcagAccessibleDesc'),
     },
+    {
+      icon: <FileText className="h-10 w-10" />,
+      title: t('landing.reportsAnalytics'),
+      description: t('landing.reportsAnalyticsDesc'),
+    },
+    {
+      icon: <BookOpen className="h-10 w-10" />,
+      title: t('landing.inAppGuides'),
+      description: t('landing.inAppGuidesDesc'),
+    },
   ];
 
   const steps = [
@@ -122,11 +134,11 @@ export default function Landing() {
                 <img src="/icon.png" alt="ShipFlow" className="w-14 h-14 rounded-xl" />
                 <h1 className="text-3xl font-bold text-primary">ShipFlow</h1>
               </div>
-              
+
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 {t('landing.heroTitle')}
               </h2>
-              
+
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 {t('landing.heroDescription')}
               </p>
@@ -137,22 +149,22 @@ export default function Landing() {
                   <LogIn className="h-5 w-5 mr-2" />
                   {t('landing.getStarted')}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   asChild
                 >
-                  <a 
-                    href="https://github.com/farzad-sedaghatbin/ShipFlow" 
-                    target="_blank" 
+                  <a
+                    href="https://github.com/farzad-sedaghatbin/ShipFlow"
+                    target="_blank"
                     rel="noopener noreferrer"
                   >
                     <Github className="h-5 w-5 mr-2" />
                     {t('landing.viewOnGitHub')}
                   </a>
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="lg"
                   onClick={() => navigate('/compare')}
                 >
@@ -164,9 +176,9 @@ export default function Landing() {
               {/* Tech Stack */}
               <div className="flex flex-wrap gap-2">
                 {techStack.map((tech) => (
-                  <Badge 
-                    key={tech.name} 
-                    variant="outline" 
+                  <Badge
+                    key={tech.name}
+                    variant="outline"
                     className={`${tech.color} font-medium`}
                   >
                     {tech.name}
@@ -212,9 +224,9 @@ export default function Landing() {
                       {t('landing.makingHappen')}
                     </text>
                   </svg>
-                  
+
                   <Separator className="my-4" />
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
@@ -250,8 +262,8 @@ export default function Landing() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card 
-                key={index} 
+              <Card
+                key={index}
                 className="h-full hover:-translate-y-1 hover:shadow-lg transition-all"
               >
                 <CardContent className="p-6">
@@ -315,9 +327,9 @@ export default function Landing() {
                 </div>
                 <div className="text-center">
                   <Button size="lg" asChild>
-                    <a 
-                      href="https://github.com/farzad-sedaghatbin/ShipFlow" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com/farzad-sedaghatbin/ShipFlow"
+                      target="_blank"
                       rel="noopener noreferrer"
                     >
                       <Github className="h-5 w-5 mr-2" />
@@ -340,8 +352,8 @@ export default function Landing() {
           <p className="text-lg opacity-90 mb-8">
             {t('landing.heroDescription')}
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             variant="secondary"
             onClick={() => navigate('/login')}
           >
@@ -361,7 +373,7 @@ export default function Landing() {
               © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
             </p>
             <nav className="flex gap-6">
-              <a 
+              <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -369,7 +381,7 @@ export default function Landing() {
               >
                 GitHub
               </a>
-              <a 
+              <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow/blob/main/CONTRIBUTING.md"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -377,7 +389,7 @@ export default function Landing() {
               >
                 Contributing
               </a>
-              <a 
+              <a
                 href="https://basecamp.com/shapeup"
                 target="_blank"
                 rel="noopener noreferrer"

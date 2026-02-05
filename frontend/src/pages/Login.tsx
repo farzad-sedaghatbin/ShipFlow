@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, LogIn, Info, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Info } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth, useToast } from '../contexts';
 import { authService } from '../services/authService';
 import { LoginIllustration } from '../components/illustrations';
@@ -12,6 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { loginSchema, type LoginFormData } from '@/lib/validations';
+import { cn } from '@/lib/utils';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -20,12 +24,23 @@ export default function Login() {
   const { login } = useAuth();
   const { showSuccess } = useToast();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
 
@@ -33,23 +48,22 @@ export default function Login() {
   useEffect(() => {
     const rememberedUsername = localStorage.getItem('rememberedUsername');
     if (rememberedUsername) {
-      setUsername(rememberedUsername);
+      setValue('username', rememberedUsername);
       setRememberMe(true);
     }
-  }, []);
+  }, [setValue]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError('');
     setLoading(true);
 
     try {
-      const response = await authService.login({ username, password });
+      const response = await authService.login({ username: data.username, password: data.password });
       const { token, userId, username: user, role, personId, personName } = response.data;
 
       // Handle remember me
       if (rememberMe) {
-        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberedUsername', data.username);
       } else {
         localStorage.removeItem('rememberedUsername');
       }
@@ -60,7 +74,7 @@ export default function Login() {
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message 
         || t('login.invalidCredentials');
-      setError(errorMessage);
+      setServerError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -95,24 +109,27 @@ export default function Login() {
               </p>
             </div>
 
-            {error && (
+            {serverError && (
               <Alert variant="destructive" className="mb-6">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{serverError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">{t('login.username')}</Label>
                 <Input
                   id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  autoFocus={!username}
+                  {...register('username')}
+                  autoFocus
                   autoComplete="username"
                   placeholder={t('login.username')}
+                  aria-invalid={!!errors.username}
+                  className={cn(errors.username && 'border-destructive focus-visible:ring-destructive')}
                 />
+                {errors.username && (
+                  <p className="text-sm font-medium text-destructive">{errors.username.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -121,12 +138,11 @@ export default function Login() {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    {...register('password')}
                     autoComplete="current-password"
                     placeholder={t('login.password')}
-                    className="pr-10"
+                    aria-invalid={!!errors.password}
+                    className={cn('pr-10', errors.password && 'border-destructive focus-visible:ring-destructive')}
                   />
                   <Button
                     type="button"
@@ -143,6 +159,9 @@ export default function Login() {
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm font-medium text-destructive">{errors.password.message}</p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -160,19 +179,16 @@ export default function Login() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !username || !password}
+                disabled={loading}
+                loading={loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
+                {!loading && (
                   <>
                     <LogIn className="h-4 w-4 mr-2" />
                     {t('login.signIn')}
                   </>
                 )}
+                {loading && t('common.loading')}
               </Button>
             </form>
 

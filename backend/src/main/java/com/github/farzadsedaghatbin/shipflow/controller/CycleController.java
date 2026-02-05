@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.cycle.PhaseTransitionResultDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
@@ -105,6 +106,21 @@ public class CycleController {
   @Operation(summary = "Update cycle phase")
   public ResponseEntity<CycleDTO> updatePhase(@PathVariable Long id, @RequestParam CyclePhase phase) {
     return ResponseEntity.ok(cycleService.updatePhase(id, phase));
+  }
+
+  @PostMapping("/{id}/transition")
+  @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.MANAGE)
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+  @Operation(
+      summary = "Transition cycle to a new phase with validation",
+      description = "Validates prerequisites before transitioning. Returns warnings if issues found but proceeds. " +
+          "Shape Up phases: SHAPING → BETTING → BUILD → COOLDOWN. " +
+          "Warnings include: incomplete betting decisions, uncommitted pitches, missing retrospectives.")
+  public ResponseEntity<PhaseTransitionResultDTO> transitionPhase(
+      @PathVariable Long id,
+      @RequestParam CyclePhase targetPhase) {
+    PhaseTransitionResultDTO result = cycleService.transitionPhase(id, targetPhase);
+    return ResponseEntity.ok(result);
   }
 
   @PatchMapping("/{id}/toggle-active")

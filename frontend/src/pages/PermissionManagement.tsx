@@ -135,7 +135,7 @@ export default function PermissionManagement() {
         setRoleFilter(currentUser!.role as UserRole);
       }
     } catch (error) {
-      showToast('Failed to load permissions', 'error');
+      showToast(t('errors.loadPermissionsFailed'), 'error');
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,75 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
+
+### Added
+- **Betting Decision Tracking**
+  - **BettingDecision Entity**: Record commit/reject/defer/needs-shaping decisions for pitches
+  - **Decision History**: Full audit trail of betting decisions across cycles
+  - **Commitment Levels**: Track confidence (50-100%) for committed pitches
+  - **Deferral Tracking**: Link deferred pitches to future cycles with reasons
+  - **Decision Statistics**: View committed/rejected/deferred counts per cycle
+
+- **Cooldown Activity Tracking**
+  - **CooldownActivity Entity**: Track activities during Shape Up cooldown periods
+  - **Activity Types**: Bug fixes, tech debt, research, experiments, training, documentation
+  - **Activity Status**: Track pending, in-progress, completed, cancelled activities
+  - **Cooldown Summary**: View activity counts and completion rates per cycle
+
+- **Stagnation Detection & Notifications**
+  - **Pitch Stagnation Detection**: Automatically detect pitches with no progress
+  - **Stagnation Types**: HILL_CHART_STALLED, STUCK_AT_PEAK, NO_RECENT_WORK, COMPOUND_STAGNATION
+  - **Severity Calculation**: LOW, MEDIUM, HIGH, CRITICAL based on days and cycle progress
+  - **Dashboard Notifications**: Generate notifications for stagnating pitches
+  - **Multi-Channel Integration**: Send critical stagnation alerts to configured external channels
+    - Supports Slack, Microsoft Teams, or both simultaneously
+    - Automatically detects which channels are configured and active
+    - Gracefully handles cases where no external channels are configured
+    - Sends notifications only to configured and enabled integrations
+
+- **Frontend: Betting Decisions UI**
+  - **BettingDecisionDialog**: Record betting decisions with rationale and options
+  - **BettingDecisionBadge**: Display decision status with color-coded badges
+  - **BettingTable Integration**: Show decisions on pitch cards with quick actions
+  - **Cycle Summary**: Display decision counts in betting table header
+
+- **Frontend: Hill Chart Narrative**
+  - **ScopeNarrative Component**: Show scope progress with health indicators
+  - **Stagnation Warnings**: Visual indicators for stalled and stuck-at-peak scopes
+  - **Health Status**: Healthy, warning, critical, stalled status badges
+  - **Contextual Narratives**: Phase-appropriate descriptions of scope progress
+
+- **Async AI Advisor Pattern**
+  - **Cache-First Optimization**: AI analysis returns instantly if cached, avoiding unnecessary async jobs
+  - **Job-Based Async Execution**: Long-running AI operations execute in background with job tracking
+  - **Dedicated Thread Pool**: `aiTaskExecutor` with configurable pool size (2-5 threads)
+  - **Polling API**: Frontend polls for job completion with exponential backoff (1-5 seconds)
+  - **Job Status Tracking**: PENDING → PROCESSING → COMPLETED/FAILED with error messages
+  - **API Endpoints**: `/api/risk/async/pitch/{id}/analyze`, `/api/risk/async/cycle/{id}/analyze`
+  - **Comprehensive Tests**: Unit tests for cache-first pattern, job lifecycle, and statistics
+
+- **Semantic Search Improvements**
+  - **Recency Boost**: Recently updated documents score higher in search results
+    - 15% boost for documents updated within 7 days
+    - 10% boost for documents updated within 30 days
+    - 5% boost for documents updated within 90 days
+  - **Keyword Fallback**: Database keyword search when semantic search returns no results
+
+- **Phase Transition Validation**
+  - Enforce betting decisions before cycle transition to BUILD phase
+  - Validate all shaped pitches have decisions recorded
+  - Prevent premature phase transitions
+
+### Changed
+- Enhanced PitchHealthService with comprehensive stagnation analysis
+- Updated DashboardNotificationService to generate stagnation alerts
+- Removed debug console.log statements from frontend code
+
+### Database
+- **V69**: Added `betting_decisions` table for decision tracking
+- **V70**: Added `cooldown_activities` table for cooldown period tracking
+
 ### Added
 - **Meeting View Mode with Smart Filtering**
   - **View-Only Dialog**: Click on meeting type badge to open read-only view showing only completed checklist items

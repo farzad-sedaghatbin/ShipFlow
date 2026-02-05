@@ -7,7 +7,7 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## 📸 Screenshots & Demo
 
-![ShipFlow Demo](screenshots/demo.webp)
+<img src="screenshots/demo.webp" alt="ShipFlow Demo" width="100%" />
 
 | Dashboard | Hill Charts | Pitch Board |
 |-----------|-------------|-------------|
@@ -84,6 +84,10 @@ A modern project management application implementing the [Shape Up](https://base
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
+- **Help & Guides**: Built-in comprehensive documentation and interactive tour
+  - **Interactive Tour**: Step-by-step walkthrough for new users
+  - **Rich Guides**: Detailed guides for Getting Started, Cycle Setup, Betting Meetings, Hill Charts, and AI Risk Advisor
+  - **Context-Aware**: Access relevant guides directly from related pages
 - **Comments & Collaboration**: Full commenting system for tasks and bug reports
   - **@Mentions**: Type `@` to mention users with autocomplete suggestions
   - **Mention Notifications**: Mentioned users receive in-app and Slack notifications
@@ -167,6 +171,11 @@ A modern project management application implementing the [Shape Up](https://base
   - Source citation tracking
   - RAG evaluation metrics (faithfulness, relevance)
   - Semantic caching for faster responses
+  - **Async AI Advisor**: Non-blocking AI analysis with cache-first optimization
+    - Cache-first pattern: Returns instantly if result is already cached
+    - Job-based async execution: Long-running AI analysis runs in background
+    - Polling API: Frontend polls for completion with exponential backoff
+    - Dedicated thread pool: Prevents AI operations from blocking main threads
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)

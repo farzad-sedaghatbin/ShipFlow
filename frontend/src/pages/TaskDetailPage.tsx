@@ -121,7 +121,7 @@ export default function TaskDetailPage() {
       
       // Load subtasks
       const subtasksResponse = await taskService.getSubTasks(id);
-      setSubtasks(subtasksResponse.data);
+      setSubtasks(subtasksResponse.data || []);
     } catch (error) {
       console.error('Failed to load task:', error);
       toast.error('Failed to load task');

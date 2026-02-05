@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
+import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
 import {
   Bug,
@@ -34,13 +34,6 @@ import {
   TableRow,
 } from '../components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -72,7 +65,7 @@ import { useProject } from '../contexts';
 import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
-import Comments from '../components/Comments';
+import { BugViewDialog } from '../components/BugViewDialog';
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -216,20 +209,15 @@ const BugReportsPage: React.FC = () => {
   const handleCreateOrUpdate = async (data: any) => {
     try {
       if (selectedBug) {
-        console.log('Updating bug:', selectedBug.id, 'with data:', data);
         const response = await qaTestManagementService.updateBugReport(selectedBug.id, data);
-        console.log('Update response:', response.data);
         setBugReports(bugReports.map((b) => (b.id === selectedBug.id ? response.data : b)));
       } else {
-        console.log('Creating bug with data:', data);
         const response = await qaTestManagementService.createBugReport(data);
-        console.log('Create response:', response.data);
         setBugReports([response.data, ...bugReports]);
       }
       setModalOpen(false);
       setSelectedBug(null);
     } catch (err) {
-      console.error('Error in handleCreateOrUpdate:', err);
       setError(t('bugReports.saveFailed'));
       throw err; // Re-throw so the modal knows there was an error
     }
@@ -942,121 +930,12 @@ const BugReportsPage: React.FC = () => {
         pitchId={!isAllProjectsSelected && currentProject ? filteredPitches[0]?.id : undefined}
       />
 
-      {/* Bug Detail Dialog */}
-      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <Bug className="h-5 w-5 text-destructive" />
-              <div>
-                <div className="text-lg">{selectedBug?.bugKey}</div>
-                <div className="text-base font-normal text-muted-foreground">{selectedBug?.title}</div>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-          {selectedBug && (
-            <div className="space-y-4">
-              {/* Status and Severity badges */}
-              <div className="flex gap-2">
-                <Badge variant={severityBadgeVariants[selectedBug.severity]}>
-                  {selectedBug.severity}
-                </Badge>
-                <Badge variant={statusBadgeVariants[selectedBug.status]}>
-                  {selectedBug.status.replace('_', ' ')}
-                </Badge>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.description')}</h4>
-                <div className="border rounded-md p-3 bg-muted/30">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.description || t('bugReports.detail.noDescription')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Steps to Reproduce */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.stepsToReproduce')}</h4>
-                <div className="border rounded-md p-3 bg-muted/30">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.stepsToReproduce || t('bugReports.detail.notProvided')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Expected / Actual Behavior */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.expectedBehavior')}</h4>
-                  <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.expectedBehavior || t('bugReports.detail.notProvided')}</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.actualBehavior')}</h4>
-                  <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.actualBehavior || t('bugReports.detail.notProvided')}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Environment */}
-              <div className="text-sm text-muted-foreground">
-                <strong>{t('bugReports.detail.environment')}</strong> {selectedBug.environment || '-'}
-              </div>
-
-              {/* Tags */}
-              {selectedBug.tags && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.tags')}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedBug.tags.split(',').map((tag: string) => (
-                      <Badge key={tag} variant="secondary">{tag.trim()}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
-                <div>
-                  <strong>{t('bugReports.detail.reporter')}</strong> {selectedBug.reporterName || '-'}
-                </div>
-                <div>
-                  <strong>{t('bugReports.detail.assignee')}</strong> {selectedBug.assigneeName || t('bugReports.unassigned')}
-                </div>
-                <div>
-                  <strong>{t('bugReports.detail.created')}</strong> {formatLocalizedDateTime(new Date(selectedBug.createdAt), i18n.language)}
-                </div>
-              </div>
-
-              {/* Comments Section */}
-              <div className="border-t pt-4">
-                <Comments 
-                  entityType="bug" 
-                  entityId={selectedBug.id}
-                  locale={i18n.language}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailModalOpen(false)}>
-              {t('bugReports.actions.close')}
-            </Button>
-            <Button
-              onClick={() => {
-                setDetailModalOpen(false);
-                if (selectedBug) openEditModal(selectedBug);
-              }}
-            >
-              {t('bugReports.actions.editBug')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Bug Detail Dialog - uses BugViewDialog with Activity tab */}
+      <BugViewDialog
+        bug={selectedBug}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

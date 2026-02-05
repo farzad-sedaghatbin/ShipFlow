@@ -5,14 +5,14 @@
 -- Cycle 5 - Active BUILD Phase
 -- ===========================================
 
-INSERT INTO cycles OVERRIDING SYSTEM VALUE (id, name, start_date, end_date, phase, project_id, is_active) VALUES
+INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) OVERRIDING SYSTEM VALUE VALUES
 (5, 'Cycle 5 - Build Sprint', '2026-01-05', '2026-02-13', 'BUILD', 1, true);
 
 -- ===========================================
 -- Teams for Cycle 5
 -- ===========================================
 
-INSERT INTO teams OVERRIDING SYSTEM VALUE (id, name, cycle_id) VALUES
+INSERT INTO teams (id, name, cycle_id) OVERRIDING SYSTEM VALUE VALUES
 (4, 'Phoenix Team', 5),
 (5, 'Dragon Team', 5);
 
@@ -28,7 +28,7 @@ INSERT INTO team_assignments (person_id, team_id, role, start_date, is_active) V
 -- Pitches for Cycle 5 (IN_PROGRESS status - actively being built)
 -- ===========================================
 
-INSERT INTO pitches OVERRIDING SYSTEM VALUE (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) VALUES
+INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 (11, 'Real-time Notifications', 'Implement WebSocket-based real-time notifications for user activities, mentions, and updates', 14, 5, 4, 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (12, 'Advanced Search', 'Full-text search with filters, autocomplete, and recent searches', 10, 5, 4, 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (13, 'Data Export Feature', 'Allow users to export their data in CSV, JSON, and PDF formats', 7, 5, 5, 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -166,12 +166,13 @@ INSERT INTO tasks (title, description, status, priority, estimate_hours, actual_
 
 -- ===========================================
 -- Reset sequences to avoid primary key conflicts
+-- PostgreSQL uses setval to reset sequences
 -- ===========================================
 
-ALTER TABLE cycles ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE teams ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE pitches ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE hill_chart_points ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE work_logs ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE meetings ALTER COLUMN id RESTART WITH 200;
-ALTER TABLE tasks ALTER COLUMN id RESTART WITH 200;
+SELECT setval(pg_get_serial_sequence('cycles', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('teams', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('pitches', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('hill_chart_points', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('work_logs', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('meetings', 'id'), 200, false);
+SELECT setval(pg_get_serial_sequence('tasks', 'id'), 200, false);

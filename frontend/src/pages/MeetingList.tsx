@@ -519,22 +519,6 @@ export default function MeetingList() {
         </Card>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {meetingTypes.slice(0, 4).map((type) => (
-          <Card key={type}>
-            <CardContent className="pt-6 text-center">
-              <Badge variant={getMeetingTypeBadgeVariant(type)} className="mb-2">
-                {formatMeetingType(type)}
-              </Badge>
-              <p className="text-3xl font-bold text-foreground">
-                {meetings.filter((m) => m.type === type).length}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Meetings Table */}
       <Card>
         <CardContent className="pt-6">
@@ -677,7 +661,7 @@ export default function MeetingList() {
           )}
           
           {/* Pagination */}
-          {meetings.length > 0 && totalPages > 1 && (
+          {meetings.length > 0 && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
                 {t('meetingList.pagination.showing', {
@@ -686,27 +670,29 @@ export default function MeetingList() {
                   total: totalElements
                 })}
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.max(0, page - 1))}
-                  disabled={page === 0}
-                >
-                  {t('meetingList.pagination.previous')}
-                </Button>
-                <div className="text-sm text-muted-foreground">
-                  {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                  >
+                    {t('meetingList.pagination.previous')}
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                  >
+                    {t('meetingList.pagination.next')}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                  disabled={page >= totalPages - 1}
-                >
-                  {t('meetingList.pagination.next')}
-                </Button>
-              </div>
+              )}
             </div>
           )}
         </CardContent>

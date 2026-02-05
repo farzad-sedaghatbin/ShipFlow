@@ -4,6 +4,7 @@ import { ArrowLeft, Users, Dices, CheckCircle2, AlertCircle } from 'lucide-react
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function BettingMeetingGuide() {
     const { t } = useTranslation();
@@ -36,7 +37,7 @@ export default function BettingMeetingGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>{t('guides.bettingMeeting.whatDesc')}</p>
+                    <p><MarkdownInline content={t('guides.bettingMeeting.whatDesc')} /></p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
                             <strong>{t('guides.bettingMeeting.keyPrinciple')}</strong> {t('guides.bettingMeeting.keyPrincipleDesc')}
@@ -54,7 +55,7 @@ export default function BettingMeetingGuide() {
                 <CardContent className="space-y-4">
                     <h4 className="font-semibold">{t('guides.bettingMeeting.step1Title')}</h4>
                     <p className="text-sm text-muted-foreground">
-                        {t('guides.bettingMeeting.step1Desc')}
+                        <MarkdownInline content={t('guides.bettingMeeting.step1Desc')} />
                     </p>
                     <div className="rounded-lg border bg-muted/50 p-4">
                         <img
@@ -78,23 +79,23 @@ export default function BettingMeetingGuide() {
                     <ul className="space-y-2 ml-6">
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>{t('guides.bettingMeeting.problemStatement')}</span>
+                            <MarkdownInline content={t('guides.bettingMeeting.problemStatement')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>{t('guides.bettingMeeting.appetite')}</span>
+                            <MarkdownInline content={t('guides.bettingMeeting.appetite')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>{t('guides.bettingMeeting.solutionSketch')}</span>
+                            <MarkdownInline content={t('guides.bettingMeeting.solutionSketch')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>{t('guides.bettingMeeting.risks')}</span>
+                            <MarkdownInline content={t('guides.bettingMeeting.risks')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>{t('guides.bettingMeeting.noGos')}</span>
+                            <MarkdownInline content={t('guides.bettingMeeting.noGos')} />
                         </li>
                     </ul>
 
@@ -132,7 +133,7 @@ export default function BettingMeetingGuide() {
                 <CardContent className="space-y-4">
                     <h4 className="font-semibold">{t('guides.bettingMeeting.usingTableTitle')}</h4>
                     <p className="text-sm text-muted-foreground mb-2">
-                        {t('guides.bettingMeeting.usingTableDesc')}
+                        <MarkdownInline content={t('guides.bettingMeeting.usingTableDesc')} />
                     </p>
 
                     <div className="rounded-lg border bg-muted/50 p-4">
@@ -195,8 +196,8 @@ export default function BettingMeetingGuide() {
                 <CardContent className="space-y-4">
                     <h4 className="font-semibold">{t('guides.bettingMeeting.after1Title')}</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-2 text-sm">
-                        <li>{t('guides.bettingMeeting.after1Step1')}</li>
-                        <li>{t('guides.bettingMeeting.after1Step2')}</li>
+                        <li><MarkdownInline content={t('guides.bettingMeeting.after1Step1')} /></li>
+                        <li><MarkdownInline content={t('guides.bettingMeeting.after1Step2')} /></li>
                         <li>{t('guides.bettingMeeting.after1Step3')}</li>
                         <li>{t('guides.bettingMeeting.after1Step4')}</li>
                     </ol>
@@ -234,11 +235,11 @@ export default function BettingMeetingGuide() {
                     <ul className="space-y-3">
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <div dangerouslySetInnerHTML={{ __html: t('guides.bettingMeeting.bestPractice1') }} />
+                            <MarkdownInline content={t('guides.bettingMeeting.bestPractice1')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <div dangerouslySetInnerHTML={{ __html: t('guides.bettingMeeting.bestPractice2') }} />
+                            <MarkdownInline content={t('guides.bettingMeeting.bestPractice2')} />
                         </li>
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
