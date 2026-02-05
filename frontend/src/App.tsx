@@ -59,6 +59,7 @@ import ProjectTypesGuide from './pages/guides/ProjectTypesGuide';
 import QATestingGuide from './pages/guides/QATestingGuide';
 import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
+import CooldownActivitiesGuide from './pages/guides/CooldownActivitiesGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
@@ -191,6 +192,7 @@ function App() {
                     <Route path="help/qa-testing" element={<QATestingGuide />} />
                     <Route path="help/retrospectives" element={<RetrospectivesGuide />} />
                     <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />
+                    <Route path="help/cooldown-activities" element={<CooldownActivitiesGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
 
 

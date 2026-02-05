@@ -84,6 +84,10 @@ A modern project management application implementing the [Shape Up](https://base
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
+- **Help & Guides**: Built-in comprehensive documentation and interactive tour
+  - **Interactive Tour**: Step-by-step walkthrough for new users
+  - **Rich Guides**: Detailed guides for Getting Started, Cycle Setup, Betting Meetings, Hill Charts, and AI Risk Advisor
+  - **Context-Aware**: Access relevant guides directly from related pages
 - **Comments & Collaboration**: Full commenting system for tasks and bug reports
   - **@Mentions**: Type `@` to mention users with autocomplete suggestions
   - **Mention Notifications**: Mentioned users receive in-app and Slack notifications

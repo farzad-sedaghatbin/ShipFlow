@@ -12,7 +12,8 @@ import {
     RotateCcw,
     BarChart3,
     Zap,
-    Layers
+    Layers,
+    Coffee
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,6 +94,13 @@ export default function HelpGuides() {
             icon: Zap,
             path: '/help/circuit-breaker',
             color: 'text-amber-500',
+        },
+        {
+            title: t('helpGuides.cooldownActivities'),
+            description: t('helpGuides.cooldownActivitiesDesc'),
+            icon: Coffee,
+            path: '/help/cooldown-activities',
+            color: 'text-sky-500',
         },
         {
             title: t('helpGuides.reports'),

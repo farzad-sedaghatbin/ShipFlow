@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../contexts';
 import { Card, CardContent } from './ui/card';
 import { HillChartPoint } from '../types';
+import ScopeNarrative from './ScopeNarrative';
 
 // Sound effects for tactile feedback - uses lazy initialization to comply with browser autoplay policy
 const createSoundEffect = () => {
@@ -658,19 +659,14 @@ export const HillChart: React.FC<HillChartProps> = ({
           />
         </div>
 
-        {/* Hover info card - absolute positioned to prevent layout shift */}
+        {/* Hover info card with narrative - absolute positioned to prevent layout shift */}
         {hoveredPoint && !draggingPoint && (
-          <div className="absolute left-1/2 -translate-x-1/2 mt-4 p-4 bg-card border-2 border-primary/30 rounded-xl shadow-xl transition-all animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none z-10 max-w-md w-full mx-4">
-            <p className="font-bold text-base text-primary">{hoveredPoint.scope}</p>
-            <p className="text-sm text-foreground mt-2 leading-relaxed">{hoveredPoint.description}</p>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-sm font-bold bg-primary text-primary-foreground px-3 py-1 rounded-md">
-                {hoveredPoint.position}%
-              </span>
-              <span className="text-sm font-medium text-foreground">
-                {hoveredPoint.position < 50 ? '🔍 Figuring things out' : '🚀 Making it happen'}
-              </span>
-            </div>
+          <div className="absolute left-1/2 -translate-x-1/2 mt-4 transition-all animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none z-10 max-w-md w-full mx-4">
+            <ScopeNarrative 
+              point={hoveredPoint} 
+              daysSinceUpdate={Math.floor((Date.now() - new Date(hoveredPoint.updatedAt).getTime()) / (1000 * 60 * 60 * 24))}
+              showNarrative={true}
+            />
           </div>
         )}
 

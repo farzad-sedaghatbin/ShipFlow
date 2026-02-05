@@ -332,13 +332,13 @@ export default function CooldownActivitiesPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getActivityTypeBadgeColor(activity.activityType)}>
-                        {getActivityTypeIcon(activity.activityType)} {t(`cooldownActivity.types.${activity.activityType.toLowerCase().replace('_', '')}`)}
+                        {getActivityTypeIcon(activity.activityType)} {t(`cooldownActivity.types.${activity.activityType.toLowerCase()}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`${getStatusBadgeColor(activity.status)} flex items-center gap-1 w-fit`}>
                         {getStatusIcon(activity.status)}
-                        {t(`cooldownActivity.statuses.${activity.status.toLowerCase().replace('_', '')}`)}
+                        {t(`cooldownActivity.statuses.${activity.status === 'IN_PROGRESS' ? 'inprogress' : activity.status.toLowerCase()}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
