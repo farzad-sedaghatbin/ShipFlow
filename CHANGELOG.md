@@ -43,6 +43,15 @@ All notable changes to this project will be documented in this file.
   - **Health Status**: Healthy, warning, critical, stalled status badges
   - **Contextual Narratives**: Phase-appropriate descriptions of scope progress
 
+- **Async AI Advisor Pattern**
+  - **Cache-First Optimization**: AI analysis returns instantly if cached, avoiding unnecessary async jobs
+  - **Job-Based Async Execution**: Long-running AI operations execute in background with job tracking
+  - **Dedicated Thread Pool**: `aiTaskExecutor` with configurable pool size (2-5 threads)
+  - **Polling API**: Frontend polls for job completion with exponential backoff (1-5 seconds)
+  - **Job Status Tracking**: PENDING → PROCESSING → COMPLETED/FAILED with error messages
+  - **API Endpoints**: `/api/risk/async/pitch/{id}/analyze`, `/api/risk/async/cycle/{id}/analyze`
+  - **Comprehensive Tests**: Unit tests for cache-first pattern, job lifecycle, and statistics
+
 - **Semantic Search Improvements**
   - **Recency Boost**: Recently updated documents score higher in search results
     - 15% boost for documents updated within 7 days

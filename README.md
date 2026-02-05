@@ -171,6 +171,11 @@ A modern project management application implementing the [Shape Up](https://base
   - Source citation tracking
   - RAG evaluation metrics (faithfulness, relevance)
   - Semantic caching for faster responses
+  - **Async AI Advisor**: Non-blocking AI analysis with cache-first optimization
+    - Cache-first pattern: Returns instantly if result is already cached
+    - Job-based async execution: Long-running AI analysis runs in background
+    - Polling API: Frontend polls for completion with exponential backoff
+    - Dedicated thread pool: Prevents AI operations from blocking main threads
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)
