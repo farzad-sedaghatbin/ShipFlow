@@ -70,6 +70,7 @@ import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
+import { RouteProgressProvider } from './RouteProgressProvider';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -552,8 +553,10 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Page Content - Responsive padding with scroll */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
-          <Breadcrumbs />
-          {children}
+          <RouteProgressProvider>
+            <Breadcrumbs />
+            {children}
+          </RouteProgressProvider>
         </main>
       </div>
 
