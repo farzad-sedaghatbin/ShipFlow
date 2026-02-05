@@ -7,7 +7,7 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## 📸 Screenshots & Demo
 
-![ShipFlow Demo](screenshots/demo.webp)
+<img src="screenshots/demo.webp" alt="ShipFlow Demo" width="100%" />
 
 | Dashboard | Hill Charts | Pitch Board |
 |-----------|-------------|-------------|
