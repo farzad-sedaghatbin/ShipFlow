@@ -33,6 +33,7 @@ import {
   Github,
   Plug,
   BookOpen,
+  Beaker,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -115,6 +116,7 @@ const peopleItems: NavItemConfig[] = [
 const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
+  { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/qa/wise-architecture', tourId: 'qa-wise-architecture-menu' },
 ];
 
 // Meetings (accessible from cycle context)

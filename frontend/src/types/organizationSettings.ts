@@ -35,6 +35,10 @@ export interface OrganizationSettings {
   dateFormat: string;
   enableNotifications: boolean;
   enableAIFeatures: boolean;
+  enableWiseArchitecture: boolean;
+  
+  // Figma Integration (for Wise Architecture)
+  hasFigmaAccessToken: boolean;
   
   updatedAt: string;
   updatedBy: string;
@@ -120,6 +124,9 @@ export interface UpdateOrganizationSettingsRequest {
   dateFormat?: string;
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
+  enableWiseArchitecture?: boolean;
+  /** Figma access token for Wise Architecture. Set to update, empty string to clear. */
+  figmaAccessToken?: string;
 }
 
 /**

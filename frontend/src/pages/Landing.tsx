@@ -58,6 +58,11 @@ export default function Landing() {
       description: t('landing.aiRiskAnalysisDesc'),
     },
     {
+      icon: <Brain className="h-10 w-10" />,
+      title: t('landing.wiseArchitecture'),
+      description: t('landing.wiseArchitectureDesc'),
+    },
+    {
       icon: <Target className="h-10 w-10" />,
       title: t('landing.pitchHealthSummary'),
       description: t('landing.pitchHealthSummaryDesc'),

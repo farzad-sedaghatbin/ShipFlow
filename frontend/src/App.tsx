@@ -38,6 +38,7 @@ import TestCaseFormPage from './pages/TestCaseFormPage';
 import TestCaseDetailPage from './pages/TestCaseDetailPage';
 import TestRunPage from './pages/TestRunPage';
 import AITestGeneratePage from './pages/AITestGeneratePage';
+import WiseArchitecturePage from './pages/WiseArchitecturePage';
 import BugReportsPage from './pages/BugReportsPage';
 import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
@@ -61,6 +62,7 @@ import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
 import CooldownActivitiesGuide from './pages/guides/CooldownActivitiesGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
+import WiseArchitectureGuide from './pages/guides/WiseArchitectureGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
@@ -174,6 +176,7 @@ function App() {
                     <Route path="qa/test-cases" element={<TestCasesPage />} />
                     <Route path="qa/test-cases/new" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/generate" element={<AITestGeneratePage />} />
+                    <Route path="qa/wise-architecture" element={<WiseArchitecturePage />} />
                     <Route path="qa/test-cases/:id" element={<TestCaseDetailPage />} />
                     <Route path="qa/test-cases/:id/edit" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/:id/run" element={<TestRunPage />} />
@@ -194,6 +197,7 @@ function App() {
                     <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />
                     <Route path="help/cooldown-activities" element={<CooldownActivitiesGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
+                    <Route path="help/wise-architecture" element={<WiseArchitectureGuide />} />
 
 
                     {/* Catch-all for unmatched routes within protected area */}

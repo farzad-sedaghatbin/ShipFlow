@@ -28,4 +28,11 @@ public class UpdateOrganizationSettingsRequest {
   private String dateFormat;
   private Boolean enableNotifications;
   private Boolean enableAIFeatures;
+  private Boolean enableWiseArchitecture;
+  
+  /**
+   * Figma personal access token for Wise Architecture design context.
+   * Set to update the token, empty string to clear it, null to leave unchanged.
+   */
+  private String figmaAccessToken;
 }

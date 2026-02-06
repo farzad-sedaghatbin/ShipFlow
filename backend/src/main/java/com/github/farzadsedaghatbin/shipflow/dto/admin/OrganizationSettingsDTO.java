@@ -47,6 +47,19 @@ public class OrganizationSettingsDTO {
   private String dateFormat;
   private Boolean enableNotifications;
   private Boolean enableAIFeatures;
+  private Boolean enableWiseArchitecture;
+  
+  /**
+   * Figma personal access token for Wise Architecture design context.
+   * When set, allows AI to analyze Figma designs linked in pitches.
+   * Note: Token is stored but not returned in responses for security.
+   */
+  private String figmaAccessToken;
+  
+  /**
+   * Indicates if a Figma access token is configured (without exposing the token).
+   */
+  private Boolean hasFigmaAccessToken;
 
   private LocalDateTime updatedAt;
   private String updatedBy;

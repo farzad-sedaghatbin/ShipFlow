@@ -176,6 +176,14 @@ A modern project management application implementing the [Shape Up](https://base
     - Job-based async execution: Long-running AI analysis runs in background
     - Polling API: Frontend polls for completion with exponential backoff
     - Dedicated thread pool: Prevents AI operations from blocking main threads
+- **Wise Architecture (Experimental)**: AI-powered technical solution generator for pitches
+  - Analyzes project codebase to understand existing architecture, patterns, and conventions
+  - Generates stack-specific solutions for Backend Java, Frontend React, and Database
+  - Identifies reusable services, recommended libraries, and implementation steps
+  - **Team Skills Integration**: Considers team member skills for technology recommendations
+  - **Figma MCP Integration**: Analyzes linked Figma designs for UI/UX context
+  - **Context Availability Warnings**: Transparent feedback when context sources are missing
+  - Configurable via Organization Settings with per-org Figma token storage
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)
@@ -228,7 +236,9 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
+| **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Wise Architecture Enhancements**
+  - **Team Skills Integration**: AI solutions now consider team member skills when generating technical recommendations
+    - Extracts unique skills from assigned team members (~25-35 tokens)
+    - Suggests technologies matching team expertise for faster implementation
+  - **Figma MCP Integration**: Analyze Figma design files linked in pitches for better solution generation
+    - Extracts design context from wireframeLinks via Figma MCP server (~100-200 tokens)
+    - Per-organization Figma access token storage in Organization Settings
+    - Environment-variable driven MCP configuration (MCP_FIGMA_ENABLED, MCP_FIGMA_SERVER_URL)
+  - **Context Availability Warnings**: Frontend displays alerts when context sources are missing
+    - Shows which sources were used (code analysis, team skills, design context)
+    - Warns users that recommendations may be less accurate without full context
+
 ## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
 
 ### Added

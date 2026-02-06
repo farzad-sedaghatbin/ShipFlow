@@ -33,6 +33,19 @@ public class OrganizationSettingsService {
     return toDTO(settings);
   }
 
+  /**
+   * Get the Figma access token for the organization.
+   * This is a separate method to avoid exposing the token in the DTO.
+   *
+   * @return the Figma access token, or null if not configured
+   */
+  @Transactional(readOnly = true)
+  public String getFigmaAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getFigmaAccessToken)
+        .orElse(null);
+  }
+
   /** Update organization settings. */
   @Transactional
   public OrganizationSettingsDTO updateSettings(UpdateOrganizationSettingsRequest request, String username) {
@@ -90,6 +103,17 @@ public class OrganizationSettingsService {
     }
     if (request.getEnableAIFeatures() != null) {
       settings.setEnableAIFeatures(request.getEnableAIFeatures());
+    }
+    if (request.getEnableWiseArchitecture() != null) {
+      settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
+    }
+    // Only update Figma token if provided (non-null and non-empty means set it, empty string means clear it)
+    if (request.getFigmaAccessToken() != null) {
+      if (request.getFigmaAccessToken().isBlank()) {
+        settings.setFigmaAccessToken(null); // Clear the token
+      } else {
+        settings.setFigmaAccessToken(request.getFigmaAccessToken());
+      }
     }
 
     settings.setUpdatedBy(username);
@@ -175,6 +199,7 @@ public class OrganizationSettingsService {
         .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
         .meetingTypesJson(toJson(defaultMeetingTypes))
         .timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true).enableAIFeatures(true)
+        .enableWiseArchitecture(false)
         .updatedBy(username).build();
 
     return settingsRepository.save(settings);
@@ -362,6 +387,9 @@ public class OrganizationSettingsService {
         .meetingTypes(meetingTypes)
         .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
         .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
+        .enableWiseArchitecture(entity.getEnableWiseArchitecture())
+        // Don't expose the actual token, just indicate if it's configured
+        .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

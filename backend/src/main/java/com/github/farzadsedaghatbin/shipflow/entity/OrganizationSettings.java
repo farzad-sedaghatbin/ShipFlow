@@ -73,6 +73,16 @@ public class OrganizationSettings {
   @Column(nullable = false, name = "enable_ai_features")
   private Boolean enableAIFeatures = true;
 
+  @Column(nullable = false, name = "enable_wise_architecture")
+  private Boolean enableWiseArchitecture = false;
+
+  /**
+   * Figma personal access token for reading design files via MCP.
+   * Used by Wise Architecture to analyze Figma designs linked in pitches.
+   */
+  @Column(name = "figma_access_token", columnDefinition = "TEXT")
+  private String figmaAccessToken;
+
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
