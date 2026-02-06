@@ -398,27 +398,27 @@ public class SampleDataInitializer implements CommandLineRunner {
     createWorkLog(carol, offlineMode, LocalDate.of(2024, 5, 22), new BigDecimal("5.0"), "Offline mode testing");
 
     // Create meetings
-    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type(MeetingType.KICKOFF)
+    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type("KICKOFF")
         .dateHeld(LocalDate.now().minusDays(10)).dorReady(true).dodReady(false)
         .notes("Defined scope and milestones").build();
     meetingRepository.save(kickoff1);
 
-    Meeting standup1 = Meeting.builder().pitch(userDashboard).type(MeetingType.STANDUP)
+    Meeting standup1 = Meeting.builder().pitch(userDashboard).type("STANDUP")
         .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
         .notes("Progress update - 70% complete").build();
     meetingRepository.save(standup1);
 
-    Meeting shaping = Meeting.builder().pitch(reportModule).type(MeetingType.SHAPING)
+    Meeting shaping = Meeting.builder().pitch(reportModule).type("SHAPING")
         .dateHeld(LocalDate.now().minusDays(5)).dorReady(false).dodReady(false)
         .notes("Identified key requirements and risks").build();
     meetingRepository.save(shaping);
 
-    Meeting betting = Meeting.builder().pitch(reportModule).type(MeetingType.BETTING)
+    Meeting betting = Meeting.builder().pitch(reportModule).type("BETTING")
         .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
         .notes("Approved for next build phase").build();
     meetingRepository.save(betting);
 
-    Meeting demo = Meeting.builder().pitch(mobileApp).type(MeetingType.DEMO).dateHeld(LocalDate.now().minusDays(1))
+    Meeting demo = Meeting.builder().pitch(mobileApp).type("DEMO").dateHeld(LocalDate.now().minusDays(1))
         .dorReady(true).dodReady(true).notes("Successful demo to stakeholders").build();
     meetingRepository.save(demo);
 

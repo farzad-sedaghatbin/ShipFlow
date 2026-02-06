@@ -241,9 +241,13 @@ public class OrganizationSettingsDTO {
   @AllArgsConstructor
   @Builder
   public static class ColorSettings {
+    @Builder.Default
     private String appetiteHours = "#3B82F6";
+    @Builder.Default
     private String actualHours = "#10B981";
+    @Builder.Default
     private String overBudget = "#EF4444";
+    @Builder.Default
     private String underBudget = "#22C55E";
   }
 
