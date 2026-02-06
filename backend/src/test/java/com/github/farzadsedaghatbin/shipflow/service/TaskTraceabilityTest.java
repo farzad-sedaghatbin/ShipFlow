@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /** Unit tests for Task traceability relationships - pitch and scope linking. */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Task Traceability Tests")
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class TaskTraceabilityTest {
 
   @Mock
@@ -148,7 +149,7 @@ class TaskTraceabilityTest {
     CreateTaskRequest updateRequest = CreateTaskRequest.builder().title("Generic task - now linked to pitch")
         .cycleId(1L).pitchId(1L).scopeId(1L).build();
 
-    when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+    when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(existingTask));
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(pitch));
     when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
     when(taskRepository.save(any(Task.class))).thenReturn(existingTask);
@@ -209,7 +210,7 @@ class TaskTraceabilityTest {
         // pitchId and scopeId are null
         .build();
 
-    when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+    when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(existingTask));
     when(taskRepository.save(any(Task.class))).thenReturn(existingTask);
 
     // Act

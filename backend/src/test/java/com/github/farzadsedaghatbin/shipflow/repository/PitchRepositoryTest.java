@@ -147,12 +147,15 @@ class PitchRepositoryTest {
     // Act
     long count = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
 
-    // Assert - Should only count the 2 non-deleted pitches
-    assertThat(count).isEqualTo(2);
+    // Assert - Should only count the 2 non-deleted pitches + 1 from setUp
+    assertThat(count).isEqualTo(3);
   }
 
   @Test
   void countByCycleIdNotDeleted_ShouldReturnZero_WhenNoPitchesExist() {
+    // Arrange
+    pitchRepository.delete(testPitch);
+
     // Act
     long count = pitchRepository.countByCycleIdNotDeleted(testCycle.getId());
 
@@ -162,7 +165,9 @@ class PitchRepositoryTest {
 
   @Test
   void countByCycleIdNotDeleted_ShouldReturnZero_WhenAllPitchesAreDeleted() {
-    // Arrange - Create and delete all pitches
+    // Arrange - Create and delete all pitches and remove setup pitch
+    pitchRepository.delete(testPitch);
+
     Pitch pitch1 = Pitch.builder().title("Pitch 1").description("Description 1").appetiteDays(6).cycle(testCycle)
         .status(PitchStatus.PENDING).build();
 
@@ -208,7 +213,8 @@ class PitchRepositoryTest {
     long countForAnotherCycle = pitchRepository.countByCycleIdNotDeleted(anotherCycle.getId());
 
     // Assert
-    assertThat(countForTestCycle).isEqualTo(1);
+    // Assert
+    assertThat(countForTestCycle).isEqualTo(2); // pitch1 + testPitch
     assertThat(countForAnotherCycle).isEqualTo(1);
   }
 }

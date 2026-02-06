@@ -10,8 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.SlackNotificationHistory;
-import com.github.farzadsedaghatbin.shipflow.security.CustomUserDetailsService;
-import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
 import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
 import java.time.LocalDateTime;
@@ -19,31 +17,21 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.TestConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
+import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
+import com.github.farzadsedaghatbin.shipflow.security.CustomUserDetailsService;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Unit tests for SlackIntegrationController Tests REST API endpoints for Slack
  * integration using MockMvc
  */
-@WebMvcTest(controllers = SlackIntegrationController.class, 
-    excludeAutoConfiguration = {
-        OAuth2ClientAutoConfiguration.class, 
-        OAuth2ResourceServerAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
-    })
+@WebMvcTest(SlackIntegrationController.class)
+@ActiveProfiles("test")
 class SlackIntegrationControllerTest {
 
   @Autowired
@@ -58,21 +46,15 @@ class SlackIntegrationControllerTest {
   @MockBean
   private MessageService messageService;
 
+  // Mock security components that @WebMvcTest tries to load
   @MockBean
   private JwtTokenProvider jwtTokenProvider;
 
   @MockBean
   private CustomUserDetailsService customUserDetailsService;
 
-  @TestConfiguration
-  static class TestSecurityConfig {
-    @Bean
-    public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-      return http.csrf(AbstractHttpConfigurer::disable)
-          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-          .build();
-    }
-  }
+  @MockBean(name = "entityManagerFactory")
+  private jakarta.persistence.EntityManagerFactory entityManagerFactory;
 
   @Test
   @WithMockUser(roles = "ADMIN")

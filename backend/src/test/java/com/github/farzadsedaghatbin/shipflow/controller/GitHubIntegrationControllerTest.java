@@ -22,6 +22,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @WebMvcTest(GitHubIntegrationController.class)
 @Import(TestAIConfig.class)
+@ActiveProfiles("test")
 class GitHubIntegrationControllerTest {
 
   @Autowired
@@ -44,6 +46,15 @@ class GitHubIntegrationControllerTest {
 
   @MockBean
   private MessageService messageService;
+
+  @MockBean
+  private com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider jwtTokenProvider;
+
+  @MockBean
+  private com.github.farzadsedaghatbin.shipflow.security.CustomUserDetailsService customUserDetailsService;
+
+  @MockBean(name = "entityManagerFactory")
+  private jakarta.persistence.EntityManagerFactory entityManagerFactory;
 
   @Test
   @WithMockUser(roles = "ADMIN")
