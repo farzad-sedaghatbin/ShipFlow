@@ -678,8 +678,11 @@ public class PitchHealthService {
 
     // Check if there's been any QA-related meeting
     List<Meeting> meetings = meetingRepository.findByPitchId(pitch.getId());
-    boolean hasQAActivity = meetings.stream().anyMatch(m -> "DEMO".equals(m.getType())
-        || (m.getNotes() != null && m.getNotes().toLowerCase().contains("qa")));
+    boolean hasQAActivity = meetings.stream().anyMatch(m -> {
+      String type = m.getType() != null ? m.getType().trim().toUpperCase() : "";
+      return "DEMO".equals(type)
+          || (m.getNotes() != null && m.getNotes().toLowerCase().contains("qa"));
+    });
 
     if (hasQAActivity) {
       return "IN_PROGRESS";

@@ -112,9 +112,10 @@ export function BettingDecisionDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear reason field when decision changes to one that doesn't need it
+  // Clear reason field when decision changes to one that doesn't use it
+  // Reason is only used for REJECTED and NEEDS_SHAPING decisions
   useEffect(() => {
-    if (decision === 'COMMITTED') {
+    if (decision !== 'REJECTED' && decision !== 'NEEDS_SHAPING') {
       setReason('');
     }
   }, [decision]);
