@@ -63,11 +63,11 @@ class TestCaseSoftDeleteTest {
         .status(TestCaseStatus.READY).aiGenerated(false).createdBy(testUser).createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now()).build();
 
-    // Mock security context
+    // Mock security context (lenient because not all tests use it)
     SecurityContextHolder.setContext(securityContext);
-    when(securityContext.getAuthentication()).thenReturn(authentication);
-    when(authentication.getName()).thenReturn("testuser");
-    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+    lenient().when(authentication.getName()).thenReturn("testuser");
+    lenient().when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
     // Enable feature by default (simulate @Value injection)
     try {
@@ -77,6 +77,12 @@ class TestCaseSoftDeleteTest {
     } catch (Exception e) {
       // Handle reflection issues in test
     }
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() {
+    // Clear security context to prevent leaking authentication state into other tests
+    SecurityContextHolder.clearContext();
   }
 
   @Test
