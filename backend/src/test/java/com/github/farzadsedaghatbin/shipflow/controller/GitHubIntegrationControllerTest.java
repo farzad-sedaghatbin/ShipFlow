@@ -31,8 +31,6 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @WebMvcTest(GitHubIntegrationController.class)
 @Import(TestAIConfig.class)
-@TestPropertySource(properties = {"spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-    "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="})
 class GitHubIntegrationControllerTest {
 
   @Autowired

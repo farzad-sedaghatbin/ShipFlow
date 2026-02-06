@@ -7,6 +7,9 @@ import static org.mockito.Mockito.when;
 import com.github.farzadsedaghatbin.shipflow.security.CustomUserDetailsService;
 import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +36,13 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
  */
 @TestConfiguration
 @EnableMethodSecurity
+@EnableAutoConfiguration(exclude = {
+    OAuth2ClientAutoConfiguration.class, 
+    OAuth2ResourceServerAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
+})
 public class TestAIConfig {
 
   @Bean
