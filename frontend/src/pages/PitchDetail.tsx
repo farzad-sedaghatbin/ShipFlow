@@ -330,22 +330,21 @@ export default function PitchDetail() {
     setMeetingPendingDocs(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Helper function to map checklist items from config to meeting format
+  const mapChecklistItems = (items?: typeof meetingTypeConfigs[0]['dorItems']): MeetingChecklistItem[] => {
+    return items?.map((item, index) => ({
+      id: item.id ?? index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+  };
+
   const handleMeetingTypeChange = (type: MeetingType) => {
     const config = meetingTypeConfigs.find(c => c.name === type);
-    const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
-    const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
 
     setNewMeeting(prev => ({
       ...prev,
@@ -360,20 +359,8 @@ export default function PitchDetail() {
   const resetMeetingForm = () => {
     const defaultType = 'STANDUP';
     const config = meetingTypeConfigs.find(c => c.name === defaultType);
-    const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
-    const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
 
     setNewMeeting({
       pitchId: pitch?.id || 0,
