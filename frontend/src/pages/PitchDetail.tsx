@@ -357,6 +357,44 @@ export default function PitchDetail() {
     }));
   };
 
+  const resetMeetingForm = () => {
+    const defaultType = 'STANDUP';
+    const config = meetingTypeConfigs.find(c => c.name === defaultType);
+    const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
+      id: item.id ?? index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+    const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
+      id: item.id ?? index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+
+    setNewMeeting({
+      pitchId: pitch?.id || 0,
+      type: defaultType,
+      dateHeld: dayjs().format('YYYY-MM-DD'),
+      dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
+      dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
+      dorItems,
+      dodItems,
+      notes: '',
+    });
+    setMeetingDate(dayjs().format('YYYY-MM-DD'));
+    setMeetingPendingDocs([]);
+    setShowMeetingDocUpload(false);
+  };
+
+  const handleOpenMeetingDialog = () => {
+    resetMeetingForm();
+    setMeetingDialog(true);
+  };
+
   /**
    * Toggle the completion status of a checklist item.
    * @param listType - 'dor' or 'dod' to specify which checklist
@@ -817,7 +855,7 @@ export default function PitchDetail() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>{t('pitchDetailPage.meetings')}</CardTitle>
-                <Button size="sm" onClick={() => setMeetingDialog(true)}>
+                <Button size="sm" onClick={handleOpenMeetingDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   {t('pitchDetailPage.add')}
                 </Button>

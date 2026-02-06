@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ public class CreateMeetingRequest {
   private Long pitchId;
 
   @NotNull(message = "Meeting type is required")
-  private MeetingType type;
+  private String type;
 
   @NotNull(message = "Date held is required")
   private LocalDate dateHeld;

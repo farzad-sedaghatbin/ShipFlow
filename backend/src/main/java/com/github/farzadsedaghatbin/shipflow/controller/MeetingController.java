@@ -2,7 +2,6 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.service.MeetingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +50,7 @@ public class MeetingController {
   @Operation(summary = "Get meetings with filters, pagination and sorting", description = "Filter meetings by cycle, project, pitch, types, date range, DOR/DOD status")
   public ResponseEntity<Page<MeetingDTO>> getMeetingsWithFilters(@RequestParam(required = false) Long cycleId,
       @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long pitchId,
-      @RequestParam(required = false) List<MeetingType> types,
+      @RequestParam(required = false) List<String> types,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
       @RequestParam(required = false) Boolean dorReady, @RequestParam(required = false) Boolean dodReady,
@@ -74,7 +73,7 @@ public class MeetingController {
   @GetMapping("/type/{type}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get meetings by type")
-  public ResponseEntity<List<MeetingDTO>> getMeetingsByType(@PathVariable MeetingType type) {
+  public ResponseEntity<List<MeetingDTO>> getMeetingsByType(@PathVariable String type) {
     return ResponseEntity.ok(meetingService.getMeetingsByType(type));
   }
 
