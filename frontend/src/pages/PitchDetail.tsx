@@ -131,7 +131,7 @@ export default function PitchDetail() {
 
   // Get meeting type display name from configurations or fallback to formatted name
   const getMeetingTypeDisplayName = (type: MeetingType): string => {
-    const config = meetingTypeConfigs.find(mt => mt.name === type);
+    const config = meetingTypeConfigs.find(mt => mt.name.toLowerCase() === type.toLowerCase());
     return config?.displayName || type.replace(/_/g, ' ');
   };
 
