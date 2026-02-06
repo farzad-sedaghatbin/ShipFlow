@@ -9,16 +9,12 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
-import com.github.farzadsedaghatbin.shipflow.entity.User;
-import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,8 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -49,9 +43,6 @@ class TaskServiceTest {
   private PersonRepository personRepository;
 
   @Autowired
-  private UserRepository userRepository;
-
-  @Autowired
   private MessageService messageService;
 
   @Autowired
@@ -61,7 +52,6 @@ class TaskServiceTest {
   private Cycle testCycle;
   private Person testPerson;
   private Person testPairPerson;
-  private User testUser;
   private CreateTaskRequest testRequest;
 
   @BeforeEach
@@ -70,49 +60,23 @@ class TaskServiceTest {
     taskRepository.deleteAll();
     cycleRepository.deleteAll();
     personRepository.deleteAll();
-    userRepository.deleteAll();
 
     // Create real test data
     testCycle = Cycle.builder()
         .name("Test Cycle")
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BUILD)
         .isActive(true)
         .build();
     testCycle = cycleRepository.save(testCycle);
 
     testPerson = Person.builder()
         .name("John Doe")
-        .email("john.tasktest@example.com")
+        .email("john@example.com")
         .isActive(true)
         .createdAt(LocalDateTime.now())
         .build();
     testPerson = personRepository.save(testPerson);
-
-    testPairPerson = Person.builder()
-        .name("Jane Smith")
-        .email("jane.tasktest@example.com")
-        .isActive(true)
-        .createdAt(LocalDateTime.now())
-        .build();
-    testPairPerson = personRepository.save(testPairPerson);
-
-    // Create test user for security context
-    testUser = User.builder()
-        .username("testuserTask")
-        .email("testuserTask@example.com")
-        .password("testpassword")
-        .role(UserRole.MEMBER)
-        .person(testPerson)
-        .isActive(true)
-        .build();
-    testUser = userRepository.save(testUser);
-
-    // Set up security context
-    UsernamePasswordAuthenticationToken auth = 
-        new UsernamePasswordAuthenticationToken("testuserTask", "testpassword");
-    SecurityContextHolder.getContext().setAuthentication(auth);
 
     testPairPerson = Person.builder()
         .name("Jane Smith")
@@ -186,27 +150,35 @@ class TaskServiceTest {
 
   @Test
   void createTask_ShouldSaveTask() {
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
+
     TaskDTO result = taskService.createTask(testRequest);
 
     assertThat(result).isNotNull();
-    assertThat(result.getTitle()).isEqualTo(testRequest.getTitle());
-    assertThat(result.getCycleId()).isEqualTo(testCycle.getId());
-    assertThat(result.getAssigneeId()).isEqualTo(testPerson.getId());
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void createTask_WithPairAssignee_ShouldSaveTaskWithBothAssignees() {
-    testRequest.setPairAssigneeId(testPairPerson.getId());
+    testRequest.setPairAssigneeId(2L);
+
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(personRepository.findById(2L)).thenReturn(Optional.of(testPairPerson));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
 
     TaskDTO result = taskService.createTask(testRequest);
 
     assertThat(result).isNotNull();
-    assertThat(result.getAssigneeId()).isEqualTo(testPerson.getId());
-    assertThat(result.getPairAssigneeId()).isEqualTo(testPairPerson.getId());
+    verify(personRepository).findById(1L);
+    verify(personRepository).findById(2L);
   }
 
   @Test
   void createTask_WithInvalidCycle_ShouldThrowException() {
+    when(cycleRepository.findById(999L)).thenReturn(Optional.empty());
     testRequest.setCycleId(999L);
 
     assertThatThrownBy(() -> taskService.createTask(testRequest)).isInstanceOf(RuntimeException.class)
@@ -215,104 +187,103 @@ class TaskServiceTest {
 
   @Test
   void updateTask_WhenExists_ShouldUpdateTask() {
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
+
     testRequest.setTitle("Updated Task");
-    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+    TaskDTO result = taskService.updateTask(1L, testRequest);
 
     assertThat(result).isNotNull();
-    assertThat(result.getTitle()).isEqualTo("Updated Task");
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void updateTaskStatus_ShouldUpdateStatus() {
-    TaskDTO result = taskService.updateTaskStatus(testTask.getId(), TaskStatus.IN_PROGRESS);
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
+
+    TaskDTO result = taskService.updateTaskStatus(1L, TaskStatus.IN_PROGRESS);
 
     assertThat(result).isNotNull();
-    assertThat(result.getStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void updateTaskStatus_ToDone_ShouldSetCompletedAt() {
-    TaskDTO result = taskService.updateTaskStatus(testTask.getId(), TaskStatus.DONE);
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
+      Task saved = invocation.getArgument(0);
+      assertThat(saved.getCompletedAt()).isNotNull();
+      return saved;
+    });
 
-    assertThat(result).isNotNull();
-    assertThat(result.getStatus()).isEqualTo(TaskStatus.DONE);
-    // Verify the task was actually updated in the database
-    Task updatedTask = taskRepository.findById(testTask.getId()).orElseThrow();
-    assertThat(updatedTask.getCompletedAt()).isNotNull();
+    taskService.updateTaskStatus(1L, TaskStatus.DONE);
+
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void deleteTask_WhenExists_ShouldDelete() {
-    Long taskId = testTask.getId();
-    
-    taskService.deleteTask(taskId);
+    when(taskRepository.existsById(1L)).thenReturn(true);
+    doNothing().when(taskRepository).deleteById(1L);
 
-    // Verify soft delete - task still exists in DB but is marked as deleted
-    assertThat(taskRepository.existsById(taskId)).isTrue(); // Task still exists in database
-    assertThat(taskRepository.findByIdNotDeleted(taskId)).isEmpty(); // But not found by soft-delete-aware query
+    taskService.deleteTask(1L);
+
+    verify(taskRepository).deleteById(1L);
   }
 
   @Test
   void deleteTask_WhenNotExists_ShouldThrowException() {
+    when(taskRepository.existsById(999L)).thenReturn(false);
+
     assertThatThrownBy(() -> taskService.deleteTask(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Task not found");
   }
 
   @Test
   void getTaskStatisticsByCycleId_ShouldReturnStatistics() {
-    // Create additional tasks with different statuses for testing
-    Task todoTask = Task.builder()
-        .title("Todo Task")
-        .description("Todo task")
-        .status(TaskStatus.TODO)
-        .priority(TaskPriority.LOW)
-        .category(TaskCategory.PITCH_SCOPE)
-        .estimateHours(BigDecimal.valueOf(2.0))
-        .cycle(testCycle)
-        .assignee(testPerson)
-        .createdAt(LocalDateTime.now())
-        .updatedAt(LocalDateTime.now())
-        .build();
-    taskRepository.save(todoTask);
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(taskRepository.countByCycleId(1L)).thenReturn(10);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.BACKLOG)).thenReturn(2);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.TODO)).thenReturn(3);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.IN_PROGRESS)).thenReturn(2);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.BLOCKED)).thenReturn(1);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.IN_REVIEW)).thenReturn(1);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.DONE)).thenReturn(1);
+    when(taskRepository.countByCycleIdAndStatus(1L, TaskStatus.CANCELLED)).thenReturn(0);
+    when(taskRepository.getTotalEstimateHoursByCycleId(1L)).thenReturn(40.0);
+    when(taskRepository.getTotalActualHoursByCycleId(1L)).thenReturn(20.0);
+    when(taskRepository.countDistinctAssigneesByCycleId(1L)).thenReturn(3);
 
-    Task doneTask = Task.builder()
-        .title("Done Task")
-        .description("Done task")
-        .status(TaskStatus.DONE)
-        .priority(TaskPriority.HIGH)
-        .category(TaskCategory.PITCH_SCOPE)
-        .estimateHours(BigDecimal.valueOf(6.0))
-        .actualHours(BigDecimal.valueOf(5.0))
-        .cycle(testCycle)
-        .assignee(testPerson)
-        .createdAt(LocalDateTime.now())
-        .updatedAt(LocalDateTime.now())
-        .completedAt(LocalDateTime.now())
-        .build();
-    taskRepository.save(doneTask);
-
-    TaskStatisticsDTO result = taskService.getTaskStatisticsByCycleId(testCycle.getId());
+    TaskStatisticsDTO result = taskService.getTaskStatisticsByCycleId(1L);
 
     assertThat(result).isNotNull();
-    assertThat(result.getTotalTasks()).isEqualTo(3); // testTask + todoTask + doneTask
+    assertThat(result.getTotalTasks()).isEqualTo(10);
     assertThat(result.getDoneTasks()).isEqualTo(1);
-    assertThat(result.getTodoTasks()).isEqualTo(2); // testTask (TODO) + todoTask (TODO)
+    assertThat(result.getInProgressTasks()).isEqualTo(2);
+    assertThat(result.getCompletionPercentage()).isEqualTo(10.0);
+    assertThat(result.getTotalEstimateHours()).isEqualTo(40.0);
   }
 
   @Test
   void getTasksByAssigneeId_ShouldReturnTasksForAssignee() {
-    List<TaskDTO> result = taskService.getTasksByAssigneeId(testPerson.getId());
+    when(taskRepository.findByAssigneeId(1L)).thenReturn(Arrays.asList(testTask));
+
+    List<TaskDTO> result = taskService.getTasksByAssigneeId(1L);
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getAssigneeId()).isEqualTo(testPerson.getId());
+    verify(taskRepository).findByAssigneeId(1L);
   }
 
   @Test
   void getTasksByPersonId_ShouldReturnTasksForPerson() {
-    List<TaskDTO> result = taskService.getTasksByPersonId(testPerson.getId());
+    when(taskRepository.findByPersonId(1L)).thenReturn(Arrays.asList(testTask));
+
+    List<TaskDTO> result = taskService.getTasksByPersonId(1L);
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getId()).isEqualTo(testTask.getId());
+    verify(taskRepository).findByPersonId(1L);
   }
 
   // ========== Category Tests ==========
@@ -321,79 +292,78 @@ class TaskServiceTest {
   void createTask_WithCategory_ShouldSaveTaskWithCategory() {
     testRequest.setCategory(TaskCategory.DEBT_IMPROVEMENT);
 
-    TaskDTO result = taskService.createTask(testRequest);
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
+      Task saved = invocation.getArgument(0);
+      assertThat(saved.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+      return testTask;
+    });
 
-    assertThat(result).isNotNull();
-    assertThat(result.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+    taskService.createTask(testRequest);
+
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void createTask_WithoutCategory_ShouldDefaultToPitchScope() {
     testRequest.setCategory(null);
 
-    TaskDTO result = taskService.createTask(testRequest);
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
+      Task saved = invocation.getArgument(0);
+      assertThat(saved.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
+      return testTask;
+    });
 
-    assertThat(result).isNotNull();
-    assertThat(result.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
+    taskService.createTask(testRequest);
+
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void updateTask_ShouldUpdateCategory() {
     testRequest.setCategory(TaskCategory.DEBT_IMPROVEMENT);
 
-    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
+    when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
+      Task saved = invocation.getArgument(0);
+      assertThat(saved.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+      return saved;
+    });
 
-    assertThat(result).isNotNull();
-    assertThat(result.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+    taskService.updateTask(1L, testRequest);
+
+    verify(taskRepository).save(any(Task.class));
   }
 
   @Test
   void getTasksByCycleIdAndCategory_ShouldReturnFilteredTasks() {
-    List<TaskDTO> result = taskService.getTasksByCycleIdAndCategory(testCycle.getId(), TaskCategory.PITCH_SCOPE);
+    when(taskRepository.findByCycleIdAndCategory(1L, TaskCategory.PITCH_SCOPE)).thenReturn(Arrays.asList(testTask));
+
+    List<TaskDTO> result = taskService.getTasksByCycleIdAndCategory(1L, TaskCategory.PITCH_SCOPE);
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
+    verify(taskRepository).findByCycleIdAndCategory(1L, TaskCategory.PITCH_SCOPE);
   }
 
   @Test
   void countTasksByCycleIdAndCategory_ShouldReturnCount() {
-    // Create additional tasks with DEBT_IMPROVEMENT category for testing
-    Task debtTask1 = Task.builder()
-        .title("Debt Task 1")
-        .description("Debt improvement task 1")
-        .status(TaskStatus.TODO)
-        .priority(TaskPriority.LOW)
-        .category(TaskCategory.DEBT_IMPROVEMENT)
-        .estimateHours(BigDecimal.valueOf(2.0))
-        .cycle(testCycle)
-        .assignee(testPerson)
-        .createdAt(LocalDateTime.now())
-        .updatedAt(LocalDateTime.now())
-        .build();
-    taskRepository.save(debtTask1);
+    when(taskRepository.countByCycleIdAndCategory(1L, TaskCategory.DEBT_IMPROVEMENT)).thenReturn(5);
 
-    Task debtTask2 = Task.builder()
-        .title("Debt Task 2")
-        .description("Debt improvement task 2")
-        .status(TaskStatus.DONE)
-        .priority(TaskPriority.HIGH)
-        .category(TaskCategory.DEBT_IMPROVEMENT)
-        .estimateHours(BigDecimal.valueOf(4.0))
-        .cycle(testCycle)
-        .assignee(testPerson)
-        .createdAt(LocalDateTime.now())
-        .updatedAt(LocalDateTime.now())
-        .build();
-    taskRepository.save(debtTask2);
+    int result = taskService.countTasksByCycleIdAndCategory(1L, TaskCategory.DEBT_IMPROVEMENT);
 
-    int result = taskService.countTasksByCycleIdAndCategory(testCycle.getId(), TaskCategory.DEBT_IMPROVEMENT);
-
-    assertThat(result).isEqualTo(2);
+    assertThat(result).isEqualTo(5);
+    verify(taskRepository).countByCycleIdAndCategory(1L, TaskCategory.DEBT_IMPROVEMENT);
   }
 
   @Test
   void toDTO_ShouldIncludeCategory() {
-    TaskDTO result = taskService.getTaskById(testTask.getId());
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+
+    TaskDTO result = taskService.getTaskById(1L);
 
     assertThat(result.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
   }

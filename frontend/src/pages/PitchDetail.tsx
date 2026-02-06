@@ -129,6 +129,12 @@ export default function PitchDetail() {
   });
   const [meetingDate, setMeetingDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
 
+  // Get meeting type display name from configurations or fallback to formatted name
+  const getMeetingTypeDisplayName = (type: MeetingType): string => {
+    const config = meetingTypeConfigs.find(mt => mt.name === type);
+    return config?.displayName || type.replace(/_/g, ' ');
+  };
+
   useEffect(() => {
     const abortController = new AbortController();
     if (id) {
@@ -862,7 +868,7 @@ export default function PitchDetail() {
                             className="cursor-pointer hover:opacity-80"
                             onClick={() => handleViewMeeting(m.id)}
                           >
-                            {m.type}
+                            {getMeetingTypeDisplayName(m.type)}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
                             {formatLocalizedDate(new Date(m.dateHeld), i18n.language)}
@@ -1167,7 +1173,7 @@ export default function PitchDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.type')}</Label>
-                  <div className="text-sm font-medium">{viewMeeting.type}</div>
+                  <div className="text-sm font-medium">{getMeetingTypeDisplayName(viewMeeting.type)}</div>
                 </div>
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.date')}</Label>
