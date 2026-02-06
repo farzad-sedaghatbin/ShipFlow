@@ -17,21 +17,23 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
-import com.github.farzadsedaghatbin.shipflow.security.CustomUserDetailsService;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for SlackIntegrationController Tests REST API endpoints for Slack
- * integration using MockMvc
+ * Integration tests for SlackIntegrationController Tests REST API endpoints for Slack
+ * integration using MockMvc with full Spring context
  */
-@WebMvcTest(SlackIntegrationController.class)
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
+@Transactional
 class SlackIntegrationControllerTest {
 
   @Autowired
@@ -45,16 +47,6 @@ class SlackIntegrationControllerTest {
 
   @MockBean
   private MessageService messageService;
-
-  // Mock security components that @WebMvcTest tries to load
-  @MockBean
-  private JwtTokenProvider jwtTokenProvider;
-
-  @MockBean
-  private CustomUserDetailsService customUserDetailsService;
-
-  @MockBean(name = "entityManagerFactory")
-  private jakarta.persistence.EntityManagerFactory entityManagerFactory;
 
   @Test
   @WithMockUser(roles = "ADMIN")

@@ -321,34 +321,10 @@ Press `?` to view all keyboard shortcuts:
 - `G` - Go to Dashboard
 - `C` - Go to Cycles
 - `P` - Go to Pitches
-  - `B` - Go to Backlog
-  - `T` - Go to Time (Work Logs)
-  - `Shift+N` - New Cycle
-  - `Shift+W` - Log Work
-
-## 📋 Prerequisites
-
-### Java Requirement
-**Important**: ShipFlow requires **Java 17** for building and running tests. The project will not compile correctly with Java versions newer than 17 (e.g., Java 25) due to Lombok and ByteBuddy compatibility limitations.
-
-**For Local Development:**
-```bash
-# Install Java 17 (if not already installed)
-# macOS (using Homebrew)
-brew install openjdk@17
-
-# Set JAVA_HOME for Maven (add to ~/.zshrc or ~/.bashrc)
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-
-# Verify Java version
-java -version # Should show version 17.x.x
-```
-
-**For CI/CD:**
-- Ensure your CI/CD pipeline uses Java 17
-- GitHub Actions: Use `actions/setup-java@v3` with `java-version: '17'`
-- GitLab CI: Use `maven:3.9-openjdk-17` Docker image
-- Jenkins: Configure JDK 17 in tool configuration
+- `B` - Go to Backlog
+- `T` - Go to Time (Work Logs)
+- `Shift+N` - New Cycle
+- `Shift+W` - Log Work
 
 ## 🚀 Quick Start
 
