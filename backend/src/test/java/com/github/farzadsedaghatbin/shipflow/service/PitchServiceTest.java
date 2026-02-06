@@ -95,6 +95,12 @@ class PitchServiceTest {
     testRequest.setStatus(PitchStatus.PENDING);
   }
 
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() {
+    // Clear security context to prevent leaking authentication state into other tests
+    SecurityContextHolder.clearContext();
+  }
+
   @Test
   void getAllPitches_ShouldReturnAllPitches() {
     when(pitchRepository.findAllNotDeleted()).thenReturn(Arrays.asList(testPitch));
