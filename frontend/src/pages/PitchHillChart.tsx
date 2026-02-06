@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Plus, AlertCircle, Info, X } from 'lucide-react';
 import { HillChart } from '../components/HillChart';
 import { hillChartApi } from '../services/hillChartApi';
-import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest } from '../types';
-import { useParams } from 'react-router-dom';
+import { pitchService } from '../services/pitchService';
+import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest, Pitch } from '../types';
+import { useParams, useLocation } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import { HillChartSkeleton } from '../components/Skeletons';
 import { Button } from '../components/ui/button';
@@ -33,7 +34,9 @@ import {
 export const PitchHillChart: React.FC = () => {
   const { t } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
+  const location = useLocation();
   const pitchId = safeParseId(pitchIdParam);
+  const [pitch, setPitch] = useState<Pitch | null>(location.state?.pitch || null);
   const [points, setPoints] = useState<HillChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,23 +54,42 @@ export const PitchHillChart: React.FC = () => {
 
   useEffect(() => {
     const abortController = new AbortController();
-    loadHillChartPoints();
+    loadPitchData();
     return () => abortController.abort();
   }, [pitchId]);
 
-  const loadHillChartPoints = async () => {
+  const loadPitchData = async () => {
     if (!pitchId) return;
     
     try {
       setLoading(true);
-      const data = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setPoints(data);
+      // Only fetch pitch if not available from navigation state
+      const pitchPromise = pitch ? Promise.resolve({ data: pitch }) : pitchService.getById(pitchId);
+      const [pitchData, hillChartData] = await Promise.all([
+        pitchPromise,
+        hillChartApi.getHillChartPointsByPitch(pitchId)
+      ]);
+      setPitch(pitchData.data);
+      setPoints(hillChartData);
       setError(null);
     } catch (err) {
       setError(t('pitchHillChart.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHillChartPoints = async () => {
+    if (!pitchId) return;
+    
+    try {
+      const data = await hillChartApi.getHillChartPointsByPitch(pitchId);
+      setPoints(data);
+      setError(null);
+    } catch (err) {
+      setError(t('pitchHillChart.loadFailed'));
+      console.error(err);
     }
   };
 
@@ -176,7 +198,12 @@ export const PitchHillChart: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{t('pitchHillChart.title')}</h1>
+        <div>
+          <h1 className="text-3xl font-bold">{t('pitchHillChart.title')}</h1>
+          {pitch && (
+            <p className="text-lg text-muted-foreground mt-1">{pitch.title}</p>
+          )}
+        </div>
         <Button onClick={handleAddPoint} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('pitchHillChart.addScope')}
