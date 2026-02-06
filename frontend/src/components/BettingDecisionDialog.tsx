@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Dialog, 
@@ -112,6 +112,13 @@ export function BettingDecisionDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear reason field when decision changes to one that doesn't need it
+  useEffect(() => {
+    if (decision === 'COMMITTED') {
+      setReason('');
+    }
+  }, [decision]);
+
   const handleSubmit = async () => {
     if (!decision || !pitch) return;
 
@@ -119,16 +126,11 @@ export function BettingDecisionDialog({
     setError(null);
 
     try {
-      // For DEFERRED decisions, use deferralReason as the reason if no general reason provided
-      const effectiveReason = reason.trim() || 
-        (decision === 'DEFERRED' ? deferralReason.trim() : '') || 
-        undefined;
-      
       const request: RecordBettingDecisionRequest = {
         cycleId,
         pitchId: pitch.id,
         decision,
-        reason: effectiveReason,
+        reason: decision === 'REJECTED' || decision === 'NEEDS_SHAPING' ? reason.trim() || undefined : undefined,
         commitmentLevel: decision === 'COMMITTED' ? commitmentLevel : undefined,
         deferralReason: decision === 'DEFERRED' ? deferralReason.trim() || undefined : undefined,
         deferredUntilCycleId: decision === 'DEFERRED' && deferredUntilCycleId 

@@ -11,7 +11,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
@@ -679,7 +678,7 @@ public class PitchHealthService {
 
     // Check if there's been any QA-related meeting
     List<Meeting> meetings = meetingRepository.findByPitchId(pitch.getId());
-    boolean hasQAActivity = meetings.stream().anyMatch(m -> m.getType() == MeetingType.DEMO
+    boolean hasQAActivity = meetings.stream().anyMatch(m -> "DEMO".equals(m.getType())
         || (m.getNotes() != null && m.getNotes().toLowerCase().contains("qa")));
 
     if (hasQAActivity) {
