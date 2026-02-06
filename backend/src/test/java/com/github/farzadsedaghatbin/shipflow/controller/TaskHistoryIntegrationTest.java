@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "admin", roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = { "ADMIN" })
 class TaskHistoryIntegrationTest {
 
   @Autowired
@@ -52,6 +52,12 @@ class TaskHistoryIntegrationTest {
   @Autowired
   private CycleRepository cycleRepository;
 
+  @Autowired
+  private UserRepository userRepository;
+
+  @Autowired
+  private PitchRepository pitchRepository;
+
   private Cycle testCycle;
   private Person testPerson;
   private Task testTask;
@@ -59,6 +65,8 @@ class TaskHistoryIntegrationTest {
   @BeforeEach
   void setUp() {
     taskRepository.deleteAll();
+    pitchRepository.deleteAll();
+    userRepository.deleteAll();
     cycleRepository.deleteAll();
     personRepository.deleteAll();
     taskRepository.flush();

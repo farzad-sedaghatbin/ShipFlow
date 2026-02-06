@@ -6,24 +6,27 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.github.farzadsedaghatbin.shipflow.config.TestAIConfig;
 import com.github.farzadsedaghatbin.shipflow.service.github.GitHubWebhookService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for GitHubWebhookController Tests webhook endpoint and signature
- * validation using MockMvc
+ * Integration tests for GitHubWebhookController Tests webhook endpoint and signature
+ * validation using MockMvc with full Spring context
  */
-@WebMvcTest(GitHubWebhookController.class)
-@Import(TestAIConfig.class)
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 @TestPropertySource(properties = {"github.webhook.secret=test-secret"})
+@Transactional
 class GitHubWebhookControllerTest {
 
   @Autowired

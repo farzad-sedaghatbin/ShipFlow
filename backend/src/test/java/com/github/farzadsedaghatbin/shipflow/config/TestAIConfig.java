@@ -61,6 +61,36 @@ public class TestAIConfig {
   private CustomUserDetailsService customUserDetailsService;
 
   /**
+   * Mock EntityManagerFactory bean to prevent JPA from trying to initialize
+   */
+  @Bean
+  @Primary
+  public jakarta.persistence.EntityManagerFactory entityManagerFactory() {
+    jakarta.persistence.EntityManagerFactory emf = mock(jakarta.persistence.EntityManagerFactory.class);
+    jakarta.persistence.EntityManager em = mock(jakarta.persistence.EntityManager.class);
+    jakarta.persistence.metamodel.Metamodel metamodel = mock(jakarta.persistence.metamodel.Metamodel.class);
+    
+    when(emf.createEntityManager()).thenReturn(em);
+    when(em.getMetamodel()).thenReturn(metamodel);
+    when(em.getDelegate()).thenReturn(em);
+    when(em.isOpen()).thenReturn(true);
+    
+    return emf;
+  }
+
+  /**
+   * Mock JPA MappingContext to prevent "Metamodel must not be null" error
+   */
+  @Bean
+  @Primary
+  public org.springframework.data.mapping.context.MappingContext<?, ?> jpaMappingContext() {
+    @SuppressWarnings("unchecked")
+    org.springframework.data.mapping.context.MappingContext<?, ?> context =  
+        mock(org.springframework.data.mapping.context.MappingContext.class);
+    return context;
+  }
+
+  /**
    * Test security filter chain that allows webhook endpoints to bypass
    * authentication and returns 401 for unauthenticated requests to other
    * endpoints

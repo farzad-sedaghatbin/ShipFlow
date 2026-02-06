@@ -30,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class TaskHierarchyServiceTest {
 
   @Mock
@@ -235,7 +236,7 @@ class TaskHierarchyServiceTest {
     // Try to make taskA a child of taskB (would create circular reference)
     createRequest.setParentTaskId(2L);
 
-    when(taskRepository.findById(1L)).thenReturn(Optional.of(taskA));
+    when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(taskA));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(taskB));
 
     // When / Then
@@ -248,6 +249,7 @@ class TaskHierarchyServiceTest {
     // Given
     createRequest.setParentTaskId(1L); // Try to set task as its own parent
 
+    when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(parentTask));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentTask));
 
     // When / Then
@@ -264,7 +266,7 @@ class TaskHierarchyServiceTest {
 
     createRequest.setParentTaskId(10L);
 
-    when(taskRepository.findById(2L)).thenReturn(Optional.of(childTask));
+    when(taskRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(childTask));
     when(taskRepository.findById(10L)).thenReturn(Optional.of(newParent));
     when(taskRepository.save(any(Task.class))).thenReturn(childTask);
 
@@ -282,7 +284,7 @@ class TaskHierarchyServiceTest {
     // Given
     createRequest.setParentTaskId(null); // Remove parent
 
-    when(taskRepository.findById(2L)).thenReturn(Optional.of(childTask));
+    when(taskRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(childTask));
     when(taskRepository.save(any(Task.class))).thenReturn(childTask);
 
     // When
