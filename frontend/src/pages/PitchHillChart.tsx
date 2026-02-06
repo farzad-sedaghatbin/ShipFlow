@@ -36,7 +36,9 @@ export const PitchHillChart: React.FC = () => {
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
   const location = useLocation();
   const pitchId = safeParseId(pitchIdParam);
-  const [pitch, setPitch] = useState<Pitch | null>(location.state?.pitch || null);
+  // Only use location.state pitch if its ID matches the current pitchId
+  const initialPitch = location.state?.pitch?.id === pitchId ? location.state.pitch : null;
+  const [pitch, setPitch] = useState<Pitch | null>(initialPitch);
   const [points, setPoints] = useState<HillChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,10 @@ export const PitchHillChart: React.FC = () => {
 
   useEffect(() => {
     const abortController = new AbortController();
+    // Reset pitch state when pitchId changes to avoid stale data
+    if (pitch && pitch.id !== pitchId) {
+      setPitch(null);
+    }
     loadPitchData();
     return () => abortController.abort();
   }, [pitchId]);

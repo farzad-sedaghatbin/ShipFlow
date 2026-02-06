@@ -24,6 +24,9 @@ public interface BettingDecisionRepository extends JpaRepository<BettingDecision
   /** Find all decisions for a pitch in a specific cycle */
   List<BettingDecision> findByPitchIdAndCycleIdOrderByDecidedAtDesc(Long pitchId, Long cycleId);
 
+  /** Find the single decision for a pitch in a specific cycle (optimized for unique constraint) */
+  Optional<BettingDecision> findByPitchIdAndCycleId(Long pitchId, Long cycleId);
+
   /** Find the most recent decision for a pitch */
   Optional<BettingDecision> findFirstByPitchIdOrderByDecidedAtDesc(Long pitchId);
 

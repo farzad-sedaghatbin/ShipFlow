@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
  * organization's configured meeting types.
  * 
  * Note: This validator normalizes the input by trimming and converting to uppercase
- * before validation. The normalized value is set back to the field being validated.
+ * before validation. The normalized value is used only for comparison during
+ * validation and does not modify the underlying field or DTO.
  */
 @Component
 @RequiredArgsConstructor

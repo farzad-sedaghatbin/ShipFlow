@@ -37,11 +37,13 @@ public class BettingDecisionService {
   /**
    * Record a new betting decision for a pitch in a cycle.
    * If a decision already exists for this pitch+cycle, it will be updated instead of creating a duplicate.
+   * Uses database unique constraint (pitch_id, cycle_id) to ensure data integrity.
    *
    * @param request the decision details
    * @param decidedByUserId the user making the decision
    * @return the recorded decision
    */
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public BettingDecisionDTO recordDecision(RecordBettingDecisionRequest request, Long decidedByUserId) {
     log.info("Recording betting decision for pitch {} in cycle {} by user {}",
         request.getPitchId(), request.getCycleId(), decidedByUserId);
@@ -67,13 +69,14 @@ public class BettingDecisionService {
     }
 
     // Check if a decision already exists for this pitch+cycle combination
-    List<BettingDecision> existingDecisions = bettingDecisionRepository
-        .findByPitchIdAndCycleIdOrderByDecidedAtDesc(request.getPitchId(), request.getCycleId());
+    // Using the optimized method that expects at most one result due to unique constraint
+    Optional<BettingDecision> existingDecision = bettingDecisionRepository
+        .findByPitchIdAndCycleId(request.getPitchId(), request.getCycleId());
     
     BettingDecision decision;
-    if (!existingDecisions.isEmpty()) {
-      // Update the most recent decision instead of creating a new one
-      decision = existingDecisions.get(0);
+    if (existingDecision.isPresent()) {
+      // Update the existing decision instead of creating a new one
+      decision = existingDecision.get();
       log.info("Updating existing betting decision {} for pitch {}", decision.getId(), pitch.getTitle());
       
       decision.setDecision(request.getDecision());

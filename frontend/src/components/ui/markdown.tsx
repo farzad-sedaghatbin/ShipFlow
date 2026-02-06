@@ -126,9 +126,9 @@ export const MarkdownInline: React.FC<MarkdownInlineProps> = ({
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
     // Italic: *text* or _text_ (single asterisk/underscore not part of double)
-    // Replace remaining single asterisks/underscores that aren't adjacent to their pairs
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
     .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
-    .replace(/([^_]|^)_([^_]+?)_([^_]|$)/g, '$1<em>$2</em>$3');
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
   
   return (
     <Component 
@@ -148,7 +148,7 @@ export function parseInlineMarkdown(content: string): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
     // Italic: *text* or _text_ (single asterisk/underscore not part of double)
-    // Replace remaining single asterisks/underscores that aren't adjacent to their pairs
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
     .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
-    .replace(/([^_]|^)_([^_]+?)_([^_]|$)/g, '$1<em>$2</em>$3');
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
 }
