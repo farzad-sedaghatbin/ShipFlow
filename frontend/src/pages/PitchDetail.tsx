@@ -859,7 +859,7 @@ export default function PitchDetail() {
                 <p className="text-muted-foreground">{t('pitchDetailPage.noMeetings')}</p>
               ) : (
                 <div className="space-y-1">
-                  {meetings.map((m, index) => (
+                  {[...meetings].sort((a, b) => new Date(b.dateHeld).getTime() - new Date(a.dateHeld).getTime()).map((m, index) => (
                     <div key={m.id}>
                       <div className="py-3">
                         <div className="flex gap-2 items-center mb-2">
