@@ -3,9 +3,9 @@ import api from './api';
 export interface CycleNarrative {
   id: number;
   cycleId: number;
-  type: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY';
+  narrativeType: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY';
   content: string;
-  aiGenerated: boolean;
+  isAiGenerated: boolean;
   generatedAt: string;
 }
 
@@ -30,7 +30,7 @@ export const narrativeService = {
     return response.data;
   },
 
-  async getNarrative(cycleId: number, type: CycleNarrative['type']): Promise<CycleNarrative> {
+  async getNarrative(cycleId: number, type: CycleNarrative['narrativeType']): Promise<CycleNarrative> {
     const response = await api.get<CycleNarrative>(`/narratives/cycle/${cycleId}/${type}`);
     return response.data;
   },
@@ -40,7 +40,7 @@ export const narrativeService = {
     return response.data;
   },
 
-  async regenerateNarrative(cycleId: number, type: CycleNarrative['type']): Promise<CycleNarrative> {
+  async regenerateNarrative(cycleId: number, type: CycleNarrative['narrativeType']): Promise<CycleNarrative> {
     const response = await api.post<CycleNarrative>(`/narratives/cycle/${cycleId}/${type}/regenerate`);
     return response.data;
   },

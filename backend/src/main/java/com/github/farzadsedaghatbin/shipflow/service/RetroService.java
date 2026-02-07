@@ -545,7 +545,7 @@ public class RetroService {
    */
   public List<RetroItemDTO> getPendingActionItems(Long projectId) {
     validateRetrospectivesEnabled(projectId);
-    return retroItemRepository.findUnactedActionItems(projectId)
+    return retroItemRepository.findUnactedActionItemsByProjectId(projectId)
         .stream()
         .map(this::toItemDTO)
         .collect(Collectors.toList());

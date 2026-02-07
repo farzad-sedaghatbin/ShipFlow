@@ -105,6 +105,12 @@ public class TagService {
     Tag tag = tagRepository.findById(tagId)
         .orElseThrow(() -> new RuntimeException("Tag not found: " + tagId));
 
+    // Enforce project boundary: tag and retro item must belong to same project
+    Long retroProjectId = item.getRetrospective().getCycle().getProject().getId();
+    if (!tag.getProject().getId().equals(retroProjectId)) {
+      throw new RuntimeException("Tag from project " + tag.getProject().getId() + " cannot be linked to retro item from project " + retroProjectId);
+    }
+
     item.getTags().add(tag);
     retroItemRepository.save(item);
   }
@@ -124,6 +130,12 @@ public class TagService {
         .orElseThrow(() -> new RuntimeException("Pitch not found: " + pitchId));
     Tag tag = tagRepository.findById(tagId)
         .orElseThrow(() -> new RuntimeException("Tag not found: " + tagId));
+
+    // Enforce project boundary: tag and pitch must belong to same project
+    Long pitchProjectId = pitch.getCycle().getProject().getId();
+    if (!tag.getProject().getId().equals(pitchProjectId)) {
+      throw new RuntimeException("Tag from project " + tag.getProject().getId() + " cannot be linked to pitch from project " + pitchProjectId);
+    }
 
     pitch.getTags().add(tag);
     pitchRepository.save(pitch);

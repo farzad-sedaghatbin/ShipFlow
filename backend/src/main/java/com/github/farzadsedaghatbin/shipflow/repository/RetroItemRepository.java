@@ -33,9 +33,13 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
   // v0.5 - Find action items by column type for follow-through tracking
   List<RetroItem> findByRetrospectiveIdAndColumnType(Long retrospectiveId, RetroColumnType columnType);
 
-  // v0.5 - Find unacted action items
+  // v0.5 - Find unacted action items by retrospective
   @Query("SELECT i FROM RetroItem i WHERE i.retrospective.id = :retroId AND i.columnType = 'ACTIONS' AND (i.actedOn IS NULL OR i.actedOn = false)")
   List<RetroItem> findUnactedActionItems(@Param("retroId") Long retrospectiveId);
+
+  // v0.5 - Find unacted action items across all retros in a project
+  @Query("SELECT i FROM RetroItem i WHERE i.retrospective.cycle.project.id = :projectId AND i.columnType = 'ACTIONS' AND (i.actedOn IS NULL OR i.actedOn = false)")
+  List<RetroItem> findUnactedActionItemsByProjectId(@Param("projectId") Long projectId);
 
   // v0.5 - Count action items acted upon by retrospective
   @Query("SELECT COUNT(i) FROM RetroItem i WHERE i.retrospective.id = :retroId AND i.columnType = 'ACTIONS' AND i.actedOn = true")

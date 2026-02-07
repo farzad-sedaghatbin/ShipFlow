@@ -73,12 +73,12 @@ export interface RetroFollowThroughSignal {
 export interface CycleSignals {
   cycleId?: number;
   projectId: number;
-  healthScore: number;
+  overallHealthScore: number;
   appetiteAccuracy: AppetiteAccuracySignal | null;
   shapingPattern: ShapingPatternSignal | null;
   riskCorrelation: RiskCorrelationSignal | null;
   retroFollowThrough: RetroFollowThroughSignal | null;
-  generatedAt: string;
+  analyzedAt: string;
 }
 
 // Appetite Accuracy Signal Card
@@ -88,6 +88,15 @@ interface AppetiteAccuracyCardProps {
 
 export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ signal }) => {
   const { t } = useTranslation();
+
+  const getTrendKey = (trend: string) => {
+    switch (trend) {
+      case 'IMPROVING': return 'trendingUp';
+      case 'DECLINING': return 'trendingDown';
+      case 'STABLE': return 'stable';
+      default: return 'stable';
+    }
+  };
 
   const getTrendIcon = () => {
     switch (signal.trend) {
@@ -124,7 +133,7 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
           <Badge variant="outline" className={cn(getTrendColor())}>
             {getTrendIcon()}
             <span className="ml-1">
-              {t(`signals.appetiteAccuracy.${signal.trend.toLowerCase()}`)}
+              {t(`signals.appetiteAccuracy.${getTrendKey(signal.trend)}`)}
             </span>
           </Badge>
         </div>
@@ -388,10 +397,11 @@ export const RetroFollowThroughCard: React.FC<RetroFollowThroughCardProps> = ({ 
 
 // Health Score Card
 interface HealthScoreCardProps {
-  score: number;
+  score: number | undefined;
 }
 
 export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({ score }) => {
+  if (score === undefined) return null;
   const { t } = useTranslation();
 
   const getScoreColor = () => {

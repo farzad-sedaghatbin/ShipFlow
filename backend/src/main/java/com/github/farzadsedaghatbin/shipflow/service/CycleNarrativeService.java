@@ -102,6 +102,7 @@ public class CycleNarrativeService {
     CycleNarrativeDTO whatShipped = getOrGenerateNarrative(cycleId, NarrativeType.WHAT_SHIPPED, false);
     CycleNarrativeDTO whatWeCut = getOrGenerateNarrative(cycleId, NarrativeType.WHAT_WE_CUT, false);
     CycleNarrativeDTO surprises = getOrGenerateNarrative(cycleId, NarrativeType.SURPRISES, false);
+    CycleNarrativeDTO fullSummary = getOrGenerateNarrative(cycleId, NarrativeType.FULL_SUMMARY, false);
 
     // Calculate quick stats
     int committed = (int) pitches.stream()
@@ -135,6 +136,7 @@ public class CycleNarrativeService {
         .whatShipped(whatShipped)
         .whatWeCut(whatWeCut)
         .surprises(surprises)
+        .fullSummary(fullSummary)
         .totalPitchesCommitted(committed)
         .pitchesShipped(shipped)
         .pitchesCut(cut)

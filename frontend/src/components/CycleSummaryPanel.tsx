@@ -79,11 +79,11 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={cn(
                   "text-xs",
-                  narrative.aiGenerated 
+                  narrative.isAiGenerated 
                     ? "bg-purple-500/15 text-purple-500" 
                     : "bg-muted text-muted-foreground"
                 )}>
-                  {narrative.aiGenerated ? (
+                  {narrative.isAiGenerated ? (
                     <>
                       <Sparkles className="h-3 w-3 mr-1" />
                       {t('narratives.aiGenerated')}
@@ -170,13 +170,13 @@ export const CycleSummaryPanel: React.FC<CycleSummaryPanelProps> = ({
     loadSummary();
   }, [cycleId]);
 
-  const handleRegenerate = async (type: CycleNarrative['type']) => {
+  const handleRegenerate = async (type: CycleNarrative['narrativeType']) => {
     setRegenerating(prev => ({ ...prev, [type]: true }));
     try {
       const narrative = await narrativeService.regenerateNarrative(cycleId, type);
       setSummary(prev => {
         if (!prev) return prev;
-        const key = type.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) as keyof CycleSummary;
+        const key = type.toLowerCase().replace(/_([a-z])/g, (_: string, letter: string) => letter.toUpperCase()) as keyof CycleSummary;
         return { ...prev, [key]: narrative };
       });
     } catch (err) {

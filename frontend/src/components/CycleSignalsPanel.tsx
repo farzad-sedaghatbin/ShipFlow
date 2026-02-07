@@ -102,7 +102,7 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
             {t('signals.title')}
           </CardTitle>
           <div className="flex items-center gap-4">
-            <HealthScoreCard score={signals.healthScore} />
+            <HealthScoreCard score={signals.overallHealthScore} />
             <Button variant="outline" size="sm" onClick={loadSignals}>
               <RefreshCcw className="h-4 w-4 mr-1" />
               {t('signals.refresh')}
@@ -137,7 +137,7 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
         )}
         
         <p className="text-xs text-muted-foreground text-right mt-4">
-          {t('narratives.generatedAt')} {new Date(signals.generatedAt).toLocaleString()}
+          {t('narratives.generatedAt')} {new Date(signals.analyzedAt).toLocaleString()}
         </p>
       </CardContent>
     </Card>

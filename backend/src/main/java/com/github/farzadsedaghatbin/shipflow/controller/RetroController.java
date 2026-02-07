@@ -173,6 +173,7 @@ public class RetroController {
   // ==================== ACTION TRACKING (v0.5) ====================
 
   @PostMapping("/items/{itemId}/acted-on")
+  @PreAuthorize("hasPermission(#itemId, 'RetroItem', 'UPDATE')")
   @Operation(summary = "Mark a retro item as acted upon", 
       description = "Part of v0.5 - tracks whether teams follow through on retro decisions")
   public ResponseEntity<RetroItemDTO> markActedOn(
@@ -184,12 +185,14 @@ public class RetroController {
   }
 
   @GetMapping("/{retroId}/action-stats")
+  @PreAuthorize("hasPermission(#retroId, 'Retrospective', 'READ')")
   @Operation(summary = "Get action tracking statistics for a retrospective")
   public ResponseEntity<RetroActionStatsDTO> getActionStats(@PathVariable Long retroId) {
     return ResponseEntity.ok(retroService.getActionStats(retroId));
   }
 
   @GetMapping("/project/{projectId}/pending-actions")
+  @PreAuthorize("hasPermission(#projectId, 'Project', 'READ')")
   @Operation(summary = "Get pending action items across all retros in a project")
   public ResponseEntity<List<RetroItemDTO>> getPendingActionItems(@PathVariable Long projectId) {
     return ResponseEntity.ok(retroService.getPendingActionItems(projectId));

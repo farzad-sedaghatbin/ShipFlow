@@ -218,7 +218,7 @@ public class CycleSignalService {
           .underBudgetCount(underBudget)
           .build());
 
-      variancePercents.add(Math.abs(variancePercent));
+      variancePercents.add(variancePercent);
     }
 
     if (cycleData.isEmpty()) {
@@ -229,9 +229,11 @@ public class CycleSignalService {
           .build();
     }
 
-    // Calculate statistics
+    // Calculate statistics (use absolute values for std dev but keep signed average)
     double avgVariance = variancePercents.stream().mapToDouble(Double::doubleValue).average().orElse(0);
-    double stdDev = calculateStdDev(variancePercents, avgVariance);
+    List<Double> absVariances = variancePercents.stream().map(Math::abs).collect(Collectors.toList());
+    double avgAbsVariance = absVariances.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+    double stdDev = calculateStdDev(absVariances, avgAbsVariance);
     TrendDirection trend = calculateTrend(variancePercents);
 
     // Generate interpretation and recommendations
