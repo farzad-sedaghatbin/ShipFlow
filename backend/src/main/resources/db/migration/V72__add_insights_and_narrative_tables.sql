@@ -96,7 +96,7 @@ CREATE TABLE cycle_signal_cache (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     project_id BIGINT NOT NULL,
     signal_type VARCHAR(50) NOT NULL,
-    signal_data JSONB NOT NULL,
+    signal_data TEXT NOT NULL,
     cycles_included TEXT, -- Comma-separated cycle IDs
     calculated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     valid_until TIMESTAMP,

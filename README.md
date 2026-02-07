@@ -101,7 +101,7 @@ A modern project management application implementing the [Shape Up](https://base
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
   - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
-    - "Did we act on this?" checkbox for TO_IMPROVE items
+    - "Did we act on this?" checkbox for Action Items (ACTIONS column)
     - Notes and attribution for action follow-through
     - Follow-through rate calculation per retrospective
   - **Tag-Based Linking**: Connect retro items to future pitches via shared tags

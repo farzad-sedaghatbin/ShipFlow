@@ -230,7 +230,7 @@ export const ShapingPatternCard: React.FC<ShapingPatternCardProps> = ({ signal }
           </div>
           
           <div className="text-xs text-muted-foreground border-t pt-2">
-            <p className="font-medium text-foreground">{t('signals.appetiteAccuracy.interpretation')}</p>
+            <p className="font-medium text-foreground">{t('signals.shapingPattern.interpretation')}</p>
             <p className="mt-1">{signal.interpretation}</p>
           </div>
           

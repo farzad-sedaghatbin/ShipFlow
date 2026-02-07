@@ -35,7 +35,7 @@ public class CycleSummaryDTO {
   private Integer pitchesShipped;
   private Integer pitchesCut;
   private Integer pitchesInProgress;
-  private Double avergeAppetiteAccuracy;
+  private Double averageAppetiteAccuracy;
 
   /** Generation metadata */
   private LocalDateTime generatedAt;

@@ -106,12 +106,8 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="pt-0">
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: narrative.content.replace(/\n/g, '<br/>') 
-                }} 
-              />
+            <div className="whitespace-pre-wrap break-words text-sm">
+              {narrative.content}
             </div>
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <span className="text-xs text-muted-foreground">

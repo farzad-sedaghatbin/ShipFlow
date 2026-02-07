@@ -501,9 +501,15 @@ public class RetroService {
     User currentUser = getCurrentUser();
 
     item.setActedOn(actedOn);
-    item.setActedOnNotes(notes);
-    item.setActedOnAt(LocalDateTime.now());
-    item.setActedOnBy(currentUser);
+    if (Boolean.TRUE.equals(actedOn)) {
+      item.setActedOnNotes(notes);
+      item.setActedOnAt(LocalDateTime.now());
+      item.setActedOnBy(currentUser);
+    } else {
+      item.setActedOnNotes(null);
+      item.setActedOnAt(null);
+      item.setActedOnBy(null);
+    }
 
     RetroItem saved = retroItemRepository.save(item);
     return toItemDTO(saved);

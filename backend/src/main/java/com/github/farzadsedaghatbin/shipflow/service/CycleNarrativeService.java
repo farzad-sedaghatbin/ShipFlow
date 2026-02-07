@@ -139,7 +139,7 @@ public class CycleNarrativeService {
         .pitchesShipped(shipped)
         .pitchesCut(cut)
         .pitchesInProgress(inProgress)
-        .avergeAppetiteAccuracy(accuracy)
+        .averageAppetiteAccuracy(accuracy)
         .generatedAt(LocalDateTime.now())
         .aiGenerated(isAIEnabled())
         .exportFormats(List.of("PDF", "MARKDOWN"))

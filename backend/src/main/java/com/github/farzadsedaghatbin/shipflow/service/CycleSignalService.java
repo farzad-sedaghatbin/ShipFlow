@@ -881,8 +881,9 @@ public class CycleSignalService {
   /** Batch load work hours for a cycle using a single query. */
   private Map<Long, Double> batchLoadWorkHoursForCycle(Long cycleId) {
     Map<Long, Double> hoursMap = new java.util.HashMap<>();
-    List<Object[]> results = workLogRepository.getTotalHoursByCycleId(cycleId);
-    for (Object[] row : results) {
+    List<Object[]> results = workLogRepository.getTotalHoursByCycleId(cycleId);    if (results == null) {
+      return hoursMap;
+    }    for (Object[] row : results) {
       Long pitchId = (Long) row[0];
       Double hours = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
       hoursMap.put(pitchId, hours);
