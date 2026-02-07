@@ -178,7 +178,11 @@ public class CycleSignalService {
     List<Double> variancePercents = new ArrayList<>();
 
     for (Cycle cycle : cycles) {
-      List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
+      // Only include completed pitches (DONE or CANCELLED) to avoid partial work log data
+      List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId())
+          .stream()
+          .filter(p -> p.getStatus() == PitchStatus.DONE || p.getStatus() == PitchStatus.CANCELLED)
+          .collect(Collectors.toList());
       if (pitches.isEmpty()) continue;
 
       double totalAppetite = pitches.stream()

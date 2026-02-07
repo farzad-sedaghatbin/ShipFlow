@@ -158,11 +158,14 @@ class CycleSignalServiceTest {
           .thenReturn(List.of(cycle3, cycle2, cycle1));
       when(pitchRepository.findByCycleIdNotDeleted(anyLong()))
           .thenReturn(pitches);
-      when(workLogRepository.findByPitchId(anyLong()))
+      // Mock batch work hours query used by batchLoadWorkHoursForCycle
+      when(workLogRepository.getTotalHoursByCycleId(anyLong()))
           .thenReturn(List.of(
-              createWorkLog(1L, 30.0), // pitch 1: 30h for 5 days (75%)
-              createWorkLog(2L, 30.0)  // pitch 2: 30h for 3 days (125%)
+              new Object[]{1L, 30.0}, // pitch 1: 30h
+              new Object[]{2L, 30.0}  // pitch 2: 30h
           ));
+      when(workLogRepository.getTotalHoursByPitchId(anyLong()))
+          .thenReturn(30.0);
       when(retroRepository.findByCycleIdOrderByCreatedAtDesc(anyLong()))
           .thenReturn(List.of());
       when(riskHistoryRepository.findByPitchIdOrderByRecordedAtDesc(anyLong()))
