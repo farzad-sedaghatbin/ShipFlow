@@ -40,7 +40,7 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
         : await signalService.getProjectSignals(projectId);
       setSignals(data);
     } catch (err) {
-      setError('Failed to load signals');
+      setError(t('signals.loadError'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
       <Card className={className}>
         <CardContent className="p-6">
           <Alert>
-            <AlertDescription>No signal data available</AlertDescription>
+            <AlertDescription>{t('signals.noData')}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -105,7 +105,7 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
             <HealthScoreCard score={signals.healthScore} />
             <Button variant="outline" size="sm" onClick={loadSignals}>
               <RefreshCcw className="h-4 w-4 mr-1" />
-              Refresh
+              {t('signals.refresh')}
             </Button>
           </div>
         </div>
@@ -131,13 +131,13 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
          !signals.riskCorrelation && !signals.retroFollowThrough && (
           <Alert>
             <AlertDescription>
-              Not enough historical data to generate signals. Complete more cycles to see insights.
+              {t('signals.noHistoricalData')}
             </AlertDescription>
           </Alert>
         )}
         
         <p className="text-xs text-muted-foreground text-right mt-4">
-          Generated at {new Date(signals.generatedAt).toLocaleString()}
+          {t('narratives.generatedAt')} {new Date(signals.generatedAt).toLocaleString()}
         </p>
       </CardContent>
     </Card>

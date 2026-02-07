@@ -813,6 +813,10 @@
     "subtitle": "Decision support insights from historical patterns",
     "healthScore": "Health Score",
     "healthScoreDesc": "Overall signal health (0-100)",
+    "refresh": "Refresh",
+    "loadError": "Failed to load signals",
+    "noData": "No signal data available",
+    "noHistoricalData": "Not enough historical data to generate signals. Complete more cycles to see insights.",
     "appetiteAccuracy": {
       "title": "Appetite Accuracy",
       "description": "How well do our appetite estimates match reality?",
