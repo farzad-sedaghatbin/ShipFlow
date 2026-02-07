@@ -1,4 +1,4 @@
-// Signal types matching backend DTOs exactly
+// Frontend signal types / view models (may differ from backend DTOs)
 
 export type TrendDirection = 'IMPROVING' | 'STABLE' | 'DECLINING' | 'INSUFFICIENT_DATA';
 
@@ -7,13 +7,15 @@ export type ShapingQuality = 'EXCELLENT' | 'GOOD' | 'NEEDS_ATTENTION' | 'POOR' |
 export interface CycleAccuracyData {
   cycleId: number;
   cycleName: string;
+  startDate: string;
+  endDate: string;
   totalAppetiteHours: number;
   totalActualHours: number;
+  varianceHours: number;
   variancePercent: number;
   pitchCount: number;
   overBudgetCount: number;
   underBudgetCount: number;
-  accurateCount: number;
 }
 
 export interface AppetiteAccuracySignal {

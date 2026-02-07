@@ -378,8 +378,8 @@ interface HealthScoreCardProps {
 }
 
 export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({ score }) => {
-  if (score === undefined) return null;
   const { t } = useTranslation();
+  if (score === undefined) return null;
 
   const getScoreColor = () => {
     if (score >= 80) return 'text-green-500 border-green-500';

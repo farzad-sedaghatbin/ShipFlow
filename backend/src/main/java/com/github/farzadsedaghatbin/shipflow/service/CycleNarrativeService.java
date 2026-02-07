@@ -7,8 +7,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.NarrativeType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,7 +35,6 @@ public class CycleNarrativeService {
   private final CycleNarrativeRepository narrativeRepository;
   private final AIConfig aiConfig;
   private final ChatLanguageModel chatLanguageModel;
-  private final UserService userService;
   private final UserRepository userRepository;
 
   @Autowired
@@ -49,7 +46,6 @@ public class CycleNarrativeService {
       CycleNarrativeRepository narrativeRepository,
       AIConfig aiConfig,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
-      UserService userService,
       UserRepository userRepository) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
@@ -58,7 +54,6 @@ public class CycleNarrativeService {
     this.narrativeRepository = narrativeRepository;
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
-    this.userService = userService;
     this.userRepository = userRepository;
   }
 
@@ -90,7 +85,7 @@ public class CycleNarrativeService {
   /**
    * Get complete cycle summary with all narrative sections.
    */
-  @Transactional(readOnly = true)
+  @Transactional
   public CycleSummaryDTO getCycleSummary(Long cycleId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new RuntimeException("Cycle not found: " + cycleId));

@@ -1,7 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.signal.*;
 import com.github.farzadsedaghatbin.shipflow.dto.signal.AppetiteAccuracySignalDTO.CycleAccuracyData;
@@ -39,7 +37,6 @@ public class CycleSignalService {
   private static final double HOURS_PER_DAY = 8.0;
   private static final double DEFAULT_TOLERANCE_PERCENT = 15.0;
   private static final int MIN_CYCLES_FOR_TREND = 3;
-  private static final int DEFAULT_CACHE_HOURS = 24;
 
   private final CycleRepository cycleRepository;
   private final PitchRepository pitchRepository;
@@ -47,11 +44,9 @@ public class CycleSignalService {
   private final RetroRepository retroRepository;
   private final RetroItemRepository retroItemRepository;
   private final PitchRiskHistoryRepository riskHistoryRepository;
-  private final CycleSignalCacheRepository signalCacheRepository;
   private final ProjectRepository projectRepository;
   private final AIConfig aiConfig;
   private final ChatLanguageModel chatLanguageModel;
-  private final ObjectMapper objectMapper;
 
   @Autowired
   public CycleSignalService(
@@ -61,22 +56,18 @@ public class CycleSignalService {
       RetroRepository retroRepository,
       RetroItemRepository retroItemRepository,
       PitchRiskHistoryRepository riskHistoryRepository,
-      CycleSignalCacheRepository signalCacheRepository,
       ProjectRepository projectRepository,
       AIConfig aiConfig,
-      @Autowired(required = false) ChatLanguageModel chatLanguageModel,
-      ObjectMapper objectMapper) {
+      @Autowired(required = false) ChatLanguageModel chatLanguageModel) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.workLogRepository = workLogRepository;
     this.retroRepository = retroRepository;
     this.retroItemRepository = retroItemRepository;
     this.riskHistoryRepository = riskHistoryRepository;
-    this.signalCacheRepository = signalCacheRepository;
     this.projectRepository = projectRepository;
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
-    this.objectMapper = objectMapper;
   }
 
   /**
@@ -551,7 +542,7 @@ public class CycleSignalService {
     List<Double> rates = retroData.stream()
         .map(RetroFollowThroughData::getFollowThroughRate)
         .collect(Collectors.toList());
-    // Reverse because we want recent data first for trend
+    // Reverse so data is ordered oldest-to-newest for regression-based trend calculation
     Collections.reverse(rates);
     return calculateTrend(rates);
   }
@@ -873,11 +864,11 @@ public class CycleSignalService {
     
     // Appetite accuracy contribution (±15 points)
     if (appetite != null && appetite.getAverageVariancePercent() != null) {
-      double variance = appetite.getAverageVariancePercent();
-      if (variance < 10) score += 15;
-      else if (variance < 20) score += 10;
-      else if (variance < 30) score += 5;
-      else if (variance > 40) score -= 10;
+      double absVariance = Math.abs(appetite.getAverageVariancePercent());
+      if (absVariance < 10) score += 15;
+      else if (absVariance < 20) score += 10;
+      else if (absVariance < 30) score += 5;
+      else if (absVariance > 40) score -= 10;
     }
     
     // Shaping quality contribution (±15 points)

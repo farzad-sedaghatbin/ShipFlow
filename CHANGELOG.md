@@ -17,10 +17,10 @@ This release introduces **decision support signals** that replace vanity metrics
     - Per-cycle ratio analysis (actual/appetite)
     - Linear regression for trend detection (IMPROVING, DECLINING, STABLE)
     - Contextual interpretation and recommendations
-  - **Shaping Quality Signal**: Detect over/under-shaping patterns
-    - Uncertainty score analysis from risk assessments
-    - Rabbit hole frequency tracking
-    - Quality classification (WELL_SHAPED, OVER_SHAPED, UNDER_SHAPED, NEEDS_IMPROVEMENT)
+  - **Shaping Quality Signal**: Detect shaping health patterns
+    - Aggregated shaping health evaluation based on existing shaping data
+    - Highlights cycles that may warrant closer review
+    - Quality classification (EXCELLENT, GOOD, NEEDS_ATTENTION, POOR, INSUFFICIENT_DATA)
   - **Risk Prediction Signal**: Measure risk prediction accuracy
     - Compare predicted vs actual risk outcomes
     - Correlation strength indicator (STRONG, MODERATE, WEAK)
