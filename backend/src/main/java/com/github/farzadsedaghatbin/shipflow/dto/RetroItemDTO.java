@@ -23,4 +23,11 @@ public class RetroItemDTO {
   private List<Long> mergedItemIds; // IDs of items merged into this one
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  
+  // Action tracking fields (v0.5)
+  private Boolean actedOn;
+  private String actedOnNotes;
+  private LocalDateTime actedOnAt;
+  private Long actedOnById;
+  private String actedOnByName;
 }

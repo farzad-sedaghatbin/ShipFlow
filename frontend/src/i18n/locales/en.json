@@ -786,7 +786,93 @@
     "actionItems": "Action Items",
     "addItem": "Add Item",
     "vote": "Vote",
-    "noRetros": "No retrospectives found"
+    "noRetros": "No retrospectives found",
+    "actedOn": {
+      "title": "Action Follow-Through",
+      "markActedOn": "Mark as Acted On",
+      "markNotActedOn": "Mark as Not Acted On",
+      "actedOnLabel": "Acted On",
+      "pendingLabel": "Pending",
+      "notes": "Notes",
+      "notesPlaceholder": "What action was taken?",
+      "followThroughRate": "Follow-Through Rate",
+      "pendingActions": "Pending Actions",
+      "actedBy": "Acted on by",
+      "actedAt": "Acted on at"
+    },
+    "tags": {
+      "title": "Tags",
+      "addTag": "Add Tag",
+      "removeTag": "Remove Tag",
+      "relatedPitches": "Related Pitches",
+      "linkToFutureBet": "Link to Future Bet"
+    }
+  },
+  "signals": {
+    "title": "Cycle Signals",
+    "subtitle": "Decision support insights from historical patterns",
+    "healthScore": "Health Score",
+    "healthScoreDesc": "Overall signal health (0-100)",
+    "appetiteAccuracy": {
+      "title": "Appetite Accuracy",
+      "description": "How well do our appetite estimates match reality?",
+      "trending": "Trending",
+      "trendingUp": "Improving",
+      "trendingDown": "Declining",
+      "stable": "Stable",
+      "avgRatio": "Average Ratio",
+      "interpretation": "Interpretation",
+      "recommendation": "Recommendation",
+      "cycleData": "Cycle Data",
+      "noCycles": "Not enough cycles to analyze"
+    },
+    "shapingPattern": {
+      "title": "Shaping Quality",
+      "description": "Are we over-shaping or under-shaping pitches?",
+      "quality": "Quality",
+      "wellShaped": "Well Shaped",
+      "overShaped": "Over-Shaped",
+      "underShaped": "Under-Shaped",
+      "needsImprovement": "Needs Improvement",
+      "avgUncertainty": "Avg Uncertainty",
+      "avgRabbitHoles": "Avg Rabbit Holes"
+    },
+    "riskCorrelation": {
+      "title": "Risk Prediction",
+      "description": "How accurate are our risk predictions?",
+      "accuracy": "Accuracy",
+      "avgPredicted": "Avg Predicted Risk",
+      "avgActual": "Avg Actual Risk",
+      "correlationStrength": "Correlation Strength",
+      "strong": "Strong",
+      "moderate": "Moderate",
+      "weak": "Weak"
+    },
+    "retroFollowThrough": {
+      "title": "Retro Follow-Through",
+      "description": "Do we act on what we learn?",
+      "overallRate": "Overall Rate",
+      "totalActions": "Total Action Items",
+      "actedOn": "Acted On",
+      "pending": "Pending",
+      "recentRetros": "Recent Retrospectives"
+    }
+  },
+  "narratives": {
+    "title": "Cycle Summary",
+    "subtitle": "AI-generated narrative of cycle outcomes",
+    "whatWeBet": "What We Bet On",
+    "whatShipped": "What Shipped",
+    "whatWeCut": "What We Cut",
+    "surprises": "Surprises",
+    "fullSummary": "Full Summary",
+    "regenerate": "Regenerate",
+    "regenerateAll": "Regenerate All",
+    "exportMarkdown": "Export as Markdown",
+    "aiGenerated": "AI Generated",
+    "templateBased": "Template Based",
+    "generatedAt": "Generated at",
+    "noNarrativeYet": "No narrative generated yet"
   },
   "settings": {
     "title": "Settings",
@@ -3935,6 +4021,8 @@
     "wcagAccessibleDesc": "Full keyboard navigation, screen reader support, high contrast, and focus indicators for all users.",
     "reportsAnalytics": "Reports & Analytics",
     "reportsAnalyticsDesc": "Comprehensive insights into team performance, cycle progress, and risk factors.",
+    "cycleSignals": "Cycle Signals",
+    "cycleSignalsDesc": "Decision support from historical patterns: appetite accuracy, shaping quality, risk prediction, and retrospective follow-through.",
     "inAppGuides": "In-App Help & Guides",
     "inAppGuidesDesc": "Interactive tour and detailed guides to help you master Shape Up methodology.",
     "aboutAuthorTitle": "About the Author",

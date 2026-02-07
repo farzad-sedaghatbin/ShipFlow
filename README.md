@@ -100,6 +100,34 @@ A modern project management application implementing the [Shape Up](https://base
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+  - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
+    - "Did we act on this?" checkbox for TO_IMPROVE items
+    - Notes and attribution for action follow-through
+    - Follow-through rate calculation per retrospective
+  - **Tag-Based Linking**: Connect retro items to future pitches via shared tags
+    - Link learnings to future bets
+    - Cross-cycle pattern detection
+- **Cycle Signals (v0.5)**: Decision support from historical patterns
+  - **Appetite Accuracy**: Track how well estimates match reality over time
+    - Per-cycle ratio analysis with trend detection
+    - Contextual recommendations for estimate calibration
+  - **Shaping Quality**: Detect over-shaping or under-shaping patterns
+    - Analysis of uncertainty scores and rabbit holes
+    - Quality classification with improvement guidance
+  - **Risk Prediction**: Measure risk forecast accuracy
+    - Compare predicted vs actual outcomes
+    - Correlation strength indicators
+  - **Retro Follow-Through**: Surface action item completion rates
+    - Per-retrospective and cross-cycle analysis
+    - Pending action visibility
+  - **Health Score**: Combined signal health (0-100) for process overview
+- **Narrative Summaries (v0.5)**: AI-generated cycle narratives
+  - **What We Bet On**: Committed pitches and appetite allocations
+  - **What Shipped**: Completed work with key outcomes
+  - **What We Cut**: Descoped items and rationale
+  - **Surprises**: Unexpected discoveries and lessons learned
+  - Template fallback when AI is unavailable
+  - Markdown export for stakeholder communication
 - **Meetings**: Comprehensive meeting management with customizable types
   - **Configurable Meeting Types**: Manage 7+ meeting types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
   - **DOR/DOD Checklists**: Definition of Ready (DOR) and Definition of Done (DOD) checklist items per meeting type

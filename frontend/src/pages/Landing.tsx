@@ -17,6 +17,7 @@ import {
   Linkedin,
   Mail,
   Code2,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -89,6 +90,11 @@ export default function Landing() {
       icon: <FileText className="h-10 w-10" />,
       title: t('landing.reportsAnalytics'),
       description: t('landing.reportsAnalyticsDesc'),
+    },
+    {
+      icon: <Activity className="h-10 w-10" />,
+      title: t('landing.cycleSignals'),
+      description: t('landing.cycleSignalsDesc'),
     },
     {
       icon: <BookOpen className="h-10 w-10" />,

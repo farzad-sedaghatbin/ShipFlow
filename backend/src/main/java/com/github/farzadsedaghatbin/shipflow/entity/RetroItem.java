@@ -4,7 +4,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.*;
 
 @Entity
@@ -60,6 +62,30 @@ public class RetroItem {
 
   @Column
   private LocalDateTime updatedAt;
+
+  // v0.5 - Action follow-through tracking
+  @Builder.Default
+  @Column(name = "acted_on")
+  private Boolean actedOn = false;
+
+  @Column(name = "acted_on_notes", columnDefinition = "TEXT")
+  private String actedOnNotes;
+
+  @Column(name = "acted_on_at")
+  private LocalDateTime actedOnAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "acted_on_by_id")
+  private User actedOnBy;
+
+  // v0.5 - Tag-based correlation
+  @Builder.Default
+  @ManyToMany
+  @JoinTable(
+      name = "retro_item_tags",
+      joinColumns = @JoinColumn(name = "retro_item_id"),
+      inverseJoinColumns = @JoinColumn(name = "tag_id"))
+  private Set<Tag> tags = new HashSet<>();
 
   @PrePersist
   protected void onCreate() {

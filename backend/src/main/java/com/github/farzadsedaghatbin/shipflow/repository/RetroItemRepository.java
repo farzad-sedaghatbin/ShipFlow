@@ -30,5 +30,16 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
   // Find items merged into a specific item
   List<RetroItem> findByMergedIntoId(Long mergedIntoId);
 
+  // v0.5 - Find action items by column type for follow-through tracking
+  List<RetroItem> findByRetrospectiveIdAndColumnType(Long retrospectiveId, RetroColumnType columnType);
+
+  // v0.5 - Find unacted action items
+  @Query("SELECT i FROM RetroItem i WHERE i.retrospective.id = :retroId AND i.columnType = 'ACTIONS' AND (i.actedOn IS NULL OR i.actedOn = false)")
+  List<RetroItem> findUnactedActionItems(@Param("retroId") Long retrospectiveId);
+
+  // v0.5 - Count action items acted upon by retrospective
+  @Query("SELECT COUNT(i) FROM RetroItem i WHERE i.retrospective.id = :retroId AND i.columnType = 'ACTIONS' AND i.actedOn = true")
+  long countActedOnByRetrospectiveId(@Param("retroId") Long retrospectiveId);
+
   void deleteAllByRetrospectiveId(Long retrospectiveId);
 }

@@ -1,5 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto.report;
 
+import com.github.farzadsedaghatbin.shipflow.dto.signal.CycleSignalsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.narrative.CycleSummaryDTO;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.*;
@@ -56,4 +58,8 @@ public class EnhancedCycleReportDTO {
   // Top performers and risks
   private List<String> topPerformers; // Members who worked most efficiently
   private List<String> overBudgetPitches; // Pitches exceeding appetite
+  
+  // v0.5 - Insight, Not Metrics
+  private CycleSignalsDTO signals; // Decision support signals
+  private CycleSummaryDTO narrativeSummary; // AI-generated or template narrative
 }

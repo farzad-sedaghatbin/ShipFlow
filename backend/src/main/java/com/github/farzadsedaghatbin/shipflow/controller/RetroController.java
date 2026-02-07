@@ -169,4 +169,29 @@ public class RetroController {
     retroService.setRetrospectivesEnabled(projectId, enabled);
     return ResponseEntity.ok(Map.of("enabled", enabled));
   }
+
+  // ==================== ACTION TRACKING (v0.5) ====================
+
+  @PostMapping("/items/{itemId}/acted-on")
+  @Operation(summary = "Mark a retro item as acted upon", 
+      description = "Part of v0.5 - tracks whether teams follow through on retro decisions")
+  public ResponseEntity<RetroItemDTO> markActedOn(
+      @PathVariable Long itemId,
+      @RequestBody Map<String, Object> body) {
+    Boolean actedOn = (Boolean) body.get("actedOn");
+    String notes = (String) body.get("notes");
+    return ResponseEntity.ok(retroService.markActedOn(itemId, actedOn, notes));
+  }
+
+  @GetMapping("/{retroId}/action-stats")
+  @Operation(summary = "Get action tracking statistics for a retrospective")
+  public ResponseEntity<RetroActionStatsDTO> getActionStats(@PathVariable Long retroId) {
+    return ResponseEntity.ok(retroService.getActionStats(retroId));
+  }
+
+  @GetMapping("/project/{projectId}/pending-actions")
+  @Operation(summary = "Get pending action items across all retros in a project")
+  public ResponseEntity<List<RetroItemDTO>> getPendingActionItems(@PathVariable Long projectId) {
+    return ResponseEntity.ok(retroService.getPendingActionItems(projectId));
+  }
 }

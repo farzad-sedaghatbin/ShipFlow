@@ -2426,6 +2426,8 @@
     "wcagAccessibleDesc": "ناوبری کامل صفحه‌کلید، پشتیبانی صفحه‌خوان، کنتراست بالا و نشانگرهای فوکوس برای همه کاربران.",
     "reportsAnalytics": "گزارش‌ها و تحلیل‌ها",
     "reportsAnalyticsDesc": "بینش‌های جامع درباره عملکرد تیم، پیشرفت چرخه و عوامل ریسک.",
+    "cycleSignals": "سیگنال‌های سیکل",
+    "cycleSignalsDesc": "پشتیبانی تصمیم‌گیری از الگوهای تاریخی: دقت اشتها، کیفیت شکل‌دهی، پیش‌بینی ریسک، و پیگیری بازنگری.",
     "inAppGuides": "راهنماهای تعاملی",
     "inAppGuidesDesc": "تور تعاملی و راهنماهای دقیق برای کمک به تسلط بر متدولوژی Shape Up.",
     "aboutAuthorTitle": "درباره نویسنده",
@@ -4276,7 +4278,93 @@
     "title": "بازنگری‌ها",
     "vote": "رأی",
     "whatToImprove": "چه چیزی باید بهبود یابد",
-    "whatWentWell": "چه چیزی خوب پیش رفت"
+    "whatWentWell": "چه چیزی خوب پیش رفت",
+    "actedOn": {
+      "title": "پیگیری اقدامات",
+      "markActedOn": "علامت‌گذاری به عنوان انجام شده",
+      "markNotActedOn": "علامت‌گذاری به عنوان انجام نشده",
+      "actedOnLabel": "انجام شده",
+      "pendingLabel": "در انتظار",
+      "notes": "یادداشت‌ها",
+      "notesPlaceholder": "چه اقدامی انجام شد؟",
+      "followThroughRate": "نرخ پیگیری",
+      "pendingActions": "اقدامات در انتظار",
+      "actedBy": "انجام شده توسط",
+      "actedAt": "انجام شده در"
+    },
+    "tags": {
+      "title": "برچسب‌ها",
+      "addTag": "افزودن برچسب",
+      "removeTag": "حذف برچسب",
+      "relatedPitches": "پیچ‌های مرتبط",
+      "linkToFutureBet": "اتصال به شروع آینده"
+    }
+  },
+  "signals": {
+    "title": "سیگنال‌های سیکل",
+    "subtitle": "بینش‌های پشتیبانی تصمیم‌گیری از الگوهای تاریخی",
+    "healthScore": "امتیاز سلامت",
+    "healthScoreDesc": "سلامت کلی سیگنال (۰-۱۰۰)",
+    "appetiteAccuracy": {
+      "title": "دقت اشتها",
+      "description": "تخمین‌های اشتهای ما چقدر با واقعیت مطابقت دارند؟",
+      "trending": "روند",
+      "trendingUp": "در حال بهبود",
+      "trendingDown": "در حال کاهش",
+      "stable": "باثبات",
+      "avgRatio": "نسبت میانگین",
+      "interpretation": "تفسیر",
+      "recommendation": "پیشنهاد",
+      "cycleData": "داده‌های سیکل",
+      "noCycles": "سیکل‌های کافی برای تحلیل موجود نیست"
+    },
+    "shapingPattern": {
+      "title": "کیفیت شکل‌دهی",
+      "description": "آیا پیچ‌ها را بیش از حد یا کمتر از حد شکل می‌دهیم؟",
+      "quality": "کیفیت",
+      "wellShaped": "به خوبی شکل‌دهی شده",
+      "overShaped": "بیش از حد شکل‌دهی شده",
+      "underShaped": "کمتر از حد شکل‌دهی شده",
+      "needsImprovement": "نیاز به بهبود",
+      "avgUncertainty": "میانگین عدم قطعیت",
+      "avgRabbitHoles": "میانگین حفره‌های خرگوش"
+    },
+    "riskCorrelation": {
+      "title": "پیش‌بینی ریسک",
+      "description": "پیش‌بینی‌های ریسک ما چقدر دقیق هستند؟",
+      "accuracy": "دقت",
+      "avgPredicted": "میانگین ریسک پیش‌بینی شده",
+      "avgActual": "میانگین ریسک واقعی",
+      "correlationStrength": "قدرت همبستگی",
+      "strong": "قوی",
+      "moderate": "متوسط",
+      "weak": "ضعیف"
+    },
+    "retroFollowThrough": {
+      "title": "پیگیری بازنگری",
+      "description": "آیا بر اساس آنچه یاد می‌گیریم عمل می‌کنیم؟",
+      "overallRate": "نرخ کلی",
+      "totalActions": "کل موارد اقدام",
+      "actedOn": "انجام شده",
+      "pending": "در انتظار",
+      "recentRetros": "بازنگری‌های اخیر"
+    }
+  },
+  "narratives": {
+    "title": "خلاصه سیکل",
+    "subtitle": "روایت تولید شده با هوش مصنوعی از نتایج سیکل",
+    "whatWeBet": "آنچه شرط بستیم",
+    "whatShipped": "آنچه ارسال شد",
+    "whatWeCut": "آنچه کنار گذاشتیم",
+    "surprises": "شگفتی‌ها",
+    "fullSummary": "خلاصه کامل",
+    "regenerate": "بازتولید",
+    "regenerateAll": "بازتولید همه",
+    "exportMarkdown": "خروجی به صورت Markdown",
+    "aiGenerated": "تولید شده با هوش مصنوعی",
+    "templateBased": "بر اساس قالب",
+    "generatedAt": "تولید شده در",
+    "noNarrativeYet": "هنوز روایتی تولید نشده"
   },
   "settings": {
     "appearance": "ظاهر",

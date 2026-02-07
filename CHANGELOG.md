@@ -4,6 +4,99 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-15 - Insight, Not Metrics
+
+### Theme
+> "Help teams think, not measure velocity."
+
+This release introduces **decision support signals** that replace vanity metrics with actionable insights. Instead of tracking velocity or story points, ShipFlow now surfaces patterns that help teams improve their process.
+
+### Added
+- **Cycle Signals - Decision Support from Historical Data**
+  - **Appetite Accuracy Signal**: Track how well appetite estimates match reality
+    - Per-cycle ratio analysis (actual/appetite)
+    - Linear regression for trend detection (IMPROVING, DECLINING, STABLE)
+    - Contextual interpretation and recommendations
+  - **Shaping Quality Signal**: Detect over/under-shaping patterns
+    - Uncertainty score analysis from risk assessments
+    - Rabbit hole frequency tracking
+    - Quality classification (WELL_SHAPED, OVER_SHAPED, UNDER_SHAPED, NEEDS_IMPROVEMENT)
+  - **Risk Prediction Signal**: Measure risk prediction accuracy
+    - Compare predicted vs actual risk outcomes
+    - Correlation strength indicator (STRONG, MODERATE, WEAK)
+    - Calibration guidance for future estimates
+  - **Retro Follow-Through Signal**: Track action item completion rates
+    - Per-retrospective follow-through analysis
+    - Cross-cycle trending for systemic issues
+    - Pending action item surfacing
+
+- **Narrative Cycle Summaries**
+  - **AI-Powered Narratives**: Generate cycle summaries with LangChain4j
+    - What We Bet On: Committed pitches and appetites
+    - What Shipped: Completed work with outcomes
+    - What We Cut: Descoped items with rationale
+    - Surprises: Unexpected discoveries and lessons
+  - **Template Fallback**: Structured summaries when AI is unavailable
+  - **Markdown Export**: Download cycle summaries for stakeholders
+  - **Regeneration**: Re-generate narratives as cycle evolves
+
+- **Enhanced Retrospectives 2.0**
+  - **Action Tracking**: "Did we act on this?" checkbox for retro items
+    - Boolean `actedOn` status with notes
+    - Timestamp and user attribution for actions
+    - Visual indicators in retro board
+  - **Tag-Based Correlation**: Link retro items to pitches via tags
+    - Shared tags between RetroItem and Pitch entities
+    - "Link to Future Bet" suggestions
+    - Cross-cycle learning patterns
+  - **Action Statistics**: Follow-through metrics per retrospective
+    - Total action items vs acted-on count
+    - Follow-through rate percentage
+    - Pending actions dashboard
+
+- **Health Score Dashboard**
+  - Combined signal health score (0-100)
+  - Holistic view of team process health
+  - Trend indicators across all signal types
+
+- **API Endpoints**
+  - `GET /api/signals/project/{projectId}` - Project-level signals
+  - `GET /api/signals/cycle/{cycleId}` - Cycle-specific signals
+  - `GET /api/narratives/cycle/{cycleId}/summary` - Full cycle summary
+  - `POST /api/narratives/cycle/{cycleId}/regenerate` - Regenerate narratives
+  - `GET /api/narratives/cycle/{cycleId}/export/markdown` - Export as Markdown
+  - `GET /api/tags/project/{projectId}` - Tag management
+  - `POST /api/retros/items/{itemId}/acted-on` - Mark action items
+  - `GET /api/retros/{retroId}/action-stats` - Action statistics
+
+- **Frontend Components**
+  - `SignalCards.tsx` - Individual signal visualization cards
+  - `CycleSignalsPanel.tsx` - Combined signals overview
+  - `CycleSummaryPanel.tsx` - Narrative display with regeneration
+  - Signal and narrative services for API integration
+
+### Changed
+- **EnhancedCycleReportDTO**: Now includes signals and narrative summary
+- **RetroItemDTO**: Extended with action tracking fields
+- **ReportService**: Integrates signals and narratives into enhanced reports
+
+### Database
+- **V72**: Added insights and narrative tables
+  - `tags` - Project-scoped tags for cross-entity correlation
+  - `retro_item_tags` - Many-to-many for RetroItem-Tag
+  - `pitch_tags` - Many-to-many for Pitch-Tag
+  - `cycle_narratives` - AI/template generated narratives
+  - `cycle_signal_cache` - Cached signal calculations
+  - Added `acted_on`, `acted_on_notes`, `acted_on_at`, `acted_on_by_id` to `retro_items`
+
+### Philosophy
+This release embodies Shape Up's principle that **appetite is not an estimate**. Instead of measuring whether teams "hit their targets," signals help teams understand:
+- Are we getting better at shaping?
+- Do our risk predictions match reality?
+- Are we learning from retrospectives?
+
+These signals inform better betting decisions, not performance evaluations.
+
 ## [0.4.1] - 2026-02-07 - Bug Fixes & Improvements
 
 ### Fixed
