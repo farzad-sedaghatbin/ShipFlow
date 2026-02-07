@@ -825,6 +825,10 @@
       "trendingDown": "Declining",
       "stable": "Stable",
       "avgRatio": "Average Ratio",
+      "avgVariance": "Average Variance",
+      "over": "Over",
+      "under": "Under",
+      "cyclesAnalyzed": "Cycles Analyzed",
       "interpretation": "Interpretation",
       "recommendation": "Recommendation",
       "cycleData": "Cycle Data",
@@ -837,20 +841,31 @@
       "wellShaped": "Well Shaped",
       "overShaped": "Over-Shaped",
       "underShaped": "Under-Shaped",
+      "excellent": "Excellent",
+      "good": "Good",
+      "needsAttention": "Needs Attention",
+      "poor": "Poor",
+      "insufficientData": "Insufficient Data",
       "needsImprovement": "Needs Improvement",
       "avgUncertainty": "Avg Uncertainty",
-      "avgRabbitHoles": "Avg Rabbit Holes"
+      "avgRabbitHoles": "Avg Rabbit Holes",
+      "interpretation": "Interpretation"
     },
     "riskCorrelation": {
       "title": "Risk Prediction",
       "description": "How accurate are our risk predictions?",
       "accuracy": "Accuracy",
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low",
       "avgPredicted": "Avg Predicted Risk",
       "avgActual": "Avg Actual Risk",
+      "truePositives": "Correctly Flagged",
+      "missedRisks": "Missed Risks",
       "correlationStrength": "Correlation Strength",
       "strong": "Strong",
-      "moderate": "Moderate",
-      "weak": "Weak"
+      "weak": "Weak",
+      "interpretation": "Interpretation"
     },
     "retroFollowThrough": {
       "title": "Retro Follow-Through",
@@ -859,7 +874,8 @@
       "totalActions": "Total Action Items",
       "actedOn": "Acted On",
       "pending": "Pending",
-      "recentRetros": "Recent Retrospectives"
+      "recentRetros": "Recent Retrospectives",
+      "interpretation": "Interpretation"
     }
   },
   "narratives": {

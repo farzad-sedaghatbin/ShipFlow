@@ -14,72 +14,26 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { cn } from '../lib/utils';
+import {
+  AppetiteAccuracySignal,
+  ShapingPatternSignal,
+  RiskCorrelationSignal,
+  RetroFollowThroughSignal,
+  CycleSignals,
+  TrendDirection,
+  ShapingQuality
+} from '../types/signals';
 
-// Types matching backend DTOs
-export interface AppetiteAccuracySignal {
-  averageAccuracyRatio: number;
-  trend: 'IMPROVING' | 'DECLINING' | 'STABLE';
-  trendSlope: number;
-  cycleCount: number;
-  cycleData: Array<{
-    cycleId: number;
-    cycleName: string;
-    appetiteTotal: number;
-    actualTotal: number;
-    ratio: number;
-  }>;
-  interpretation: string;
-  recommendation: string;
-}
-
-export interface ShapingPatternSignal {
-  quality: 'WELL_SHAPED' | 'OVER_SHAPED' | 'UNDER_SHAPED' | 'NEEDS_IMPROVEMENT';
-  avgUncertaintyScore: number;
-  avgRabbitHoles: number;
-  overShapedCount: number;
-  underShapedCount: number;
-  wellShapedCount: number;
-  totalAnalyzed: number;
-  interpretation: string;
-  recommendation: string;
-}
-
-export interface RiskCorrelationSignal {
-  correlationStrength: 'STRONG' | 'MODERATE' | 'WEAK' | 'NONE';
-  avgPredictedRisk: number;
-  avgActualRisk: number;
-  accuracy: number;
-  pitchesAnalyzed: number;
-  interpretation: string;
-  recommendation: string;
-}
-
-export interface RetroFollowThroughSignal {
-  overallFollowThroughRate: number;
-  totalActionItems: number;
-  actedOnCount: number;
-  pendingCount: number;
-  retroData: Array<{
-    retroId: number;
-    retroTitle: string;
-    actionItems: number;
-    actedOn: number;
-    rate: number;
-  }>;
-  interpretation: string;
-  recommendation: string;
-}
-
-export interface CycleSignals {
-  cycleId?: number;
-  projectId: number;
-  overallHealthScore: number;
-  appetiteAccuracy: AppetiteAccuracySignal | null;
-  shapingPattern: ShapingPatternSignal | null;
-  riskCorrelation: RiskCorrelationSignal | null;
-  retroFollowThrough: RetroFollowThroughSignal | null;
-  analyzedAt: string;
-}
+// Re-export for backward compatibility
+export type {
+  AppetiteAccuracySignal,
+  ShapingPatternSignal,
+  RiskCorrelationSignal,
+  RetroFollowThroughSignal,
+  CycleSignals,
+  TrendDirection,
+  ShapingQuality
+};
 
 // Appetite Accuracy Signal Card
 interface AppetiteAccuracyCardProps {
@@ -89,11 +43,12 @@ interface AppetiteAccuracyCardProps {
 export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ signal }) => {
   const { t } = useTranslation();
 
-  const getTrendKey = (trend: string) => {
+  const getTrendKey = (trend: TrendDirection) => {
     switch (trend) {
       case 'IMPROVING': return 'trendingUp';
       case 'DECLINING': return 'trendingDown';
       case 'STABLE': return 'stable';
+      case 'INSUFFICIENT_DATA': return 'stable';
       default: return 'stable';
     }
   };
@@ -120,7 +75,9 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
     }
   };
 
-  const ratioPercentage = Math.min(signal.averageAccuracyRatio * 100, 200);
+  // Show absolute variance percentage (0-100+ scale)
+  const absVariance = Math.abs(signal.averageVariancePercent);
+  const isOverBudget = signal.averageVariancePercent > 0;
 
   return (
     <Card>
@@ -145,13 +102,13 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-muted-foreground">{t('signals.appetiteAccuracy.avgRatio')}</span>
-              <span className="font-medium">{(signal.averageAccuracyRatio * 100).toFixed(0)}%</span>
+              <span className="text-muted-foreground">{t('signals.appetiteAccuracy.avgVariance')}</span>
+              <span className="font-medium">{absVariance.toFixed(1)}% {isOverBudget ? t('signals.appetiteAccuracy.over') : t('signals.appetiteAccuracy.under')}</span>
             </div>
-            <Progress value={ratioPercentage > 100 ? 100 : ratioPercentage} className="h-2" />
-            {ratioPercentage > 100 && (
-              <p className="text-xs text-yellow-500 mt-1">Over appetite by {((signal.averageAccuracyRatio - 1) * 100).toFixed(0)}%</p>
-            )}
+            <Progress value={Math.min(absVariance, 100)} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('signals.appetiteAccuracy.cyclesAnalyzed')}: {signal.cyclesAnalyzed}
+            </p>
           </div>
           
           <div className="text-xs text-muted-foreground border-t pt-2">
@@ -159,10 +116,14 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
             <p className="mt-1">{signal.interpretation}</p>
           </div>
           
-          {signal.recommendation && (
-            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10">
-              <ArrowRight className="h-3 w-3 inline mr-1" />
-              {signal.recommendation}
+          {signal.recommendations && signal.recommendations.length > 0 && (
+            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10 space-y-1">
+              {signal.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-1">
+                  <ArrowRight className="h-3 w-3 inline-block mt-0.5 flex-shrink-0" />
+                  <span>{rec}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -180,28 +141,34 @@ export const ShapingPatternCard: React.FC<ShapingPatternCardProps> = ({ signal }
   const { t } = useTranslation();
 
   const getQualityColor = () => {
-    switch (signal.quality) {
-      case 'WELL_SHAPED':
+    switch (signal.overallQuality) {
+      case 'EXCELLENT':
         return 'bg-green-500/15 text-green-500';
-      case 'OVER_SHAPED':
+      case 'GOOD':
         return 'bg-blue-500/15 text-blue-500';
-      case 'UNDER_SHAPED':
+      case 'NEEDS_ATTENTION':
         return 'bg-yellow-500/15 text-yellow-500';
-      default:
+      case 'POOR':
         return 'bg-red-500/15 text-red-500';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const getQualityLabel = () => {
-    switch (signal.quality) {
-      case 'WELL_SHAPED':
-        return t('signals.shapingPattern.wellShaped');
-      case 'OVER_SHAPED':
-        return t('signals.shapingPattern.overShaped');
-      case 'UNDER_SHAPED':
-        return t('signals.shapingPattern.underShaped');
+    switch (signal.overallQuality) {
+      case 'EXCELLENT':
+        return t('signals.shapingPattern.excellent');
+      case 'GOOD':
+        return t('signals.shapingPattern.good');
+      case 'NEEDS_ATTENTION':
+        return t('signals.shapingPattern.needsAttention');
+      case 'POOR':
+        return t('signals.shapingPattern.poor');
+      case 'INSUFFICIENT_DATA':
+        return t('signals.shapingPattern.insufficientData');
       default:
-        return t('signals.shapingPattern.needsImprovement');
+        return t('signals.shapingPattern.insufficientData');
     }
   };
 
@@ -225,16 +192,16 @@ export const ShapingPatternCard: React.FC<ShapingPatternCardProps> = ({ signal }
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-green-500/10 p-2 rounded">
-              <p className="text-lg font-bold text-green-600">{signal.wellShapedCount}</p>
-              <p className="text-xs text-muted-foreground">Well Shaped</p>
+              <p className="text-lg font-bold text-green-600">{signal.accuratelyShapedCount}</p>
+              <p className="text-xs text-muted-foreground">{t('signals.shapingPattern.wellShaped')}</p>
             </div>
             <div className="bg-blue-500/10 p-2 rounded">
               <p className="text-lg font-bold text-blue-600">{signal.overShapedCount}</p>
-              <p className="text-xs text-muted-foreground">Over Shaped</p>
+              <p className="text-xs text-muted-foreground">{t('signals.shapingPattern.overShaped')}</p>
             </div>
             <div className="bg-yellow-500/10 p-2 rounded">
               <p className="text-lg font-bold text-yellow-600">{signal.underShapedCount}</p>
-              <p className="text-xs text-muted-foreground">Under Shaped</p>
+              <p className="text-xs text-muted-foreground">{t('signals.shapingPattern.underShaped')}</p>
             </div>
           </div>
           
@@ -243,10 +210,14 @@ export const ShapingPatternCard: React.FC<ShapingPatternCardProps> = ({ signal }
             <p className="mt-1">{signal.interpretation}</p>
           </div>
           
-          {signal.recommendation && (
-            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10">
-              <ArrowRight className="h-3 w-3 inline mr-1" />
-              {signal.recommendation}
+          {signal.recommendations && signal.recommendations.length > 0 && (
+            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10 space-y-1">
+              {signal.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-1">
+                  <ArrowRight className="h-3 w-3 inline-block mt-0.5 flex-shrink-0" />
+                  <span>{rec}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -263,28 +234,16 @@ interface RiskCorrelationCardProps {
 export const RiskCorrelationCard: React.FC<RiskCorrelationCardProps> = ({ signal }) => {
   const { t } = useTranslation();
 
-  const getStrengthColor = () => {
-    switch (signal.correlationStrength) {
-      case 'STRONG':
-        return 'bg-green-500/15 text-green-500';
-      case 'MODERATE':
-        return 'bg-yellow-500/15 text-yellow-500';
-      case 'WEAK':
-        return 'bg-orange-500/15 text-orange-500';
-      default:
-        return 'bg-red-500/15 text-red-500';
-    }
+  const getAccuracyColor = () => {
+    if (signal.predictiveAccuracyPercent >= 80) return 'bg-green-500/15 text-green-500';
+    if (signal.predictiveAccuracyPercent >= 60) return 'bg-yellow-500/15 text-yellow-500';
+    return 'bg-red-500/15 text-red-500';
   };
 
-  const getStrengthLabel = () => {
-    switch (signal.correlationStrength) {
-      case 'STRONG':
-        return t('signals.riskCorrelation.strong');
-      case 'MODERATE':
-        return t('signals.riskCorrelation.moderate');
-      default:
-        return t('signals.riskCorrelation.weak');
-    }
+  const getAccuracyLabel = () => {
+    if (signal.predictiveAccuracyPercent >= 80) return t('signals.riskCorrelation.high');
+    if (signal.predictiveAccuracyPercent >= 60) return t('signals.riskCorrelation.moderate');
+    return t('signals.riskCorrelation.low');
   };
 
   return (
@@ -295,8 +254,8 @@ export const RiskCorrelationCard: React.FC<RiskCorrelationCardProps> = ({ signal
             <AlertTriangle className="h-4 w-4 text-primary" />
             {t('signals.riskCorrelation.title')}
           </CardTitle>
-          <Badge variant="outline" className={cn(getStrengthColor())}>
-            {getStrengthLabel()}
+          <Badge variant="outline" className={cn(getAccuracyColor())}>
+            {getAccuracyLabel()}
           </Badge>
         </div>
         <CardDescription className="text-xs">
@@ -307,25 +266,34 @@ export const RiskCorrelationCard: React.FC<RiskCorrelationCardProps> = ({ signal
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">{t('signals.riskCorrelation.accuracy')}</span>
-            <span className="font-medium">{(signal.accuracy * 100).toFixed(0)}%</span>
+            <span className="font-medium">{signal.predictiveAccuracyPercent.toFixed(0)}%</span>
           </div>
-          <Progress value={signal.accuracy * 100} className="h-2" />
+          <Progress value={signal.predictiveAccuracyPercent} className="h-2" />
           
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-muted-foreground">{t('signals.riskCorrelation.avgPredicted')}</span>
-              <p className="font-medium">{(signal.avgPredictedRisk * 100).toFixed(0)}%</p>
+              <span className="text-muted-foreground">{t('signals.riskCorrelation.truePositives')}</span>
+              <p className="font-medium text-green-600">{signal.truePositives}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">{t('signals.riskCorrelation.avgActual')}</span>
-              <p className="font-medium">{(signal.avgActualRisk * 100).toFixed(0)}%</p>
+              <span className="text-muted-foreground">{t('signals.riskCorrelation.missedRisks')}</span>
+              <p className="font-medium text-red-600">{signal.missedRisks}</p>
             </div>
           </div>
           
-          {signal.recommendation && (
-            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10">
-              <ArrowRight className="h-3 w-3 inline mr-1" />
-              {signal.recommendation}
+          <div className="text-xs text-muted-foreground border-t pt-2">
+            <p className="font-medium text-foreground">{t('signals.riskCorrelation.interpretation')}</p>
+            <p className="mt-1">{signal.interpretation}</p>
+          </div>
+          
+          {signal.recommendations && signal.recommendations.length > 0 && (
+            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10 space-y-1">
+              {signal.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-1">
+                  <ArrowRight className="h-3 w-3 inline-block mt-0.5 flex-shrink-0" />
+                  <span>{rec}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -343,8 +311,8 @@ export const RetroFollowThroughCard: React.FC<RetroFollowThroughCardProps> = ({ 
   const { t } = useTranslation();
 
   const getRateColor = () => {
-    if (signal.overallFollowThroughRate >= 0.8) return 'text-green-500';
-    if (signal.overallFollowThroughRate >= 0.5) return 'text-yellow-500';
+    if (signal.followThroughRatePercent >= 80) return 'text-green-500';
+    if (signal.followThroughRatePercent >= 50) return 'text-yellow-500';
     return 'text-red-500';
   };
 
@@ -357,7 +325,7 @@ export const RetroFollowThroughCard: React.FC<RetroFollowThroughCardProps> = ({ 
             {t('signals.retroFollowThrough.title')}
           </CardTitle>
           <span className={cn("text-lg font-bold", getRateColor())}>
-            {(signal.overallFollowThroughRate * 100).toFixed(0)}%
+            {signal.followThroughRatePercent.toFixed(0)}%
           </span>
         </div>
         <CardDescription className="text-xs">
@@ -366,7 +334,7 @@ export const RetroFollowThroughCard: React.FC<RetroFollowThroughCardProps> = ({ 
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <Progress value={signal.overallFollowThroughRate * 100} className="h-2" />
+          <Progress value={signal.followThroughRatePercent} className="h-2" />
           
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <div>
@@ -383,10 +351,19 @@ export const RetroFollowThroughCard: React.FC<RetroFollowThroughCardProps> = ({ 
             </div>
           </div>
           
-          {signal.recommendation && (
-            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10">
-              <ArrowRight className="h-3 w-3 inline mr-1" />
-              {signal.recommendation}
+          <div className="text-xs text-muted-foreground border-t pt-2">
+            <p className="font-medium text-foreground">{t('signals.retroFollowThrough.interpretation')}</p>
+            <p className="mt-1">{signal.interpretation}</p>
+          </div>
+          
+          {signal.recommendations && signal.recommendations.length > 0 && (
+            <div className="text-xs bg-primary/5 p-2 rounded border border-primary/10 space-y-1">
+              {signal.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-1">
+                  <ArrowRight className="h-3 w-3 inline-block mt-0.5 flex-shrink-0" />
+                  <span>{rec}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -10,9 +10,9 @@ import {
   ShapingPatternCard, 
   RiskCorrelationCard, 
   RetroFollowThroughCard,
-  HealthScoreCard,
-  CycleSignals
+  HealthScoreCard
 } from './SignalCards';
+import { CycleSignals } from '../types/signals';
 import { signalService } from '../services/signalService';
 
 interface CycleSignalsPanelProps {
@@ -113,22 +113,22 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {signals.appetiteAccuracy && (
-            <AppetiteAccuracyCard signal={signals.appetiteAccuracy} />
+          {signals.appetiteAccuracySignal && (
+            <AppetiteAccuracyCard signal={signals.appetiteAccuracySignal} />
           )}
-          {signals.shapingPattern && (
-            <ShapingPatternCard signal={signals.shapingPattern} />
+          {signals.shapingPatternSignal && (
+            <ShapingPatternCard signal={signals.shapingPatternSignal} />
           )}
-          {signals.riskCorrelation && (
-            <RiskCorrelationCard signal={signals.riskCorrelation} />
+          {signals.riskCorrelationSignal && (
+            <RiskCorrelationCard signal={signals.riskCorrelationSignal} />
           )}
-          {signals.retroFollowThrough && (
-            <RetroFollowThroughCard signal={signals.retroFollowThrough} />
+          {signals.retroFollowThroughSignal && (
+            <RetroFollowThroughCard signal={signals.retroFollowThroughSignal} />
           )}
         </div>
         
-        {!signals.appetiteAccuracy && !signals.shapingPattern && 
-         !signals.riskCorrelation && !signals.retroFollowThrough && (
+        {!signals.appetiteAccuracySignal && !signals.shapingPatternSignal && 
+         !signals.riskCorrelationSignal && !signals.retroFollowThroughSignal && (
           <Alert>
             <AlertDescription>
               {t('signals.noHistoricalData')}

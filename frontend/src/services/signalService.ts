@@ -1,5 +1,5 @@
 import api from './api';
-import { CycleSignals } from '../components/SignalCards';
+import { CycleSignals } from '../types/signals';
 
 export const signalService = {
   async getProjectSignals(projectId: number, cycleCount: number = 6): Promise<CycleSignals> {
@@ -14,3 +14,4 @@ export const signalService = {
     return response.data;
   }
 };
+

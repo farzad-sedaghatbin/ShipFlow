@@ -4317,6 +4317,10 @@
       "trendingDown": "در حال کاهش",
       "stable": "باثبات",
       "avgRatio": "نسبت میانگین",
+      "avgVariance": "واریانس میانگین",
+      "over": "بیشتر",
+      "under": "کمتر",
+      "cyclesAnalyzed": "سیکل‌های تحلیل شده",
       "interpretation": "تفسیر",
       "recommendation": "پیشنهاد",
       "cycleData": "داده‌های سیکل",
@@ -4329,20 +4333,31 @@
       "wellShaped": "به خوبی شکل‌دهی شده",
       "overShaped": "بیش از حد شکل‌دهی شده",
       "underShaped": "کمتر از حد شکل‌دهی شده",
+      "excellent": "عالی",
+      "good": "خوب",
+      "needsAttention": "نیاز به توجه",
+      "poor": "ضعیف",
+      "insufficientData": "داده‌ناکافی",
       "needsImprovement": "نیاز به بهبود",
       "avgUncertainty": "میانگین عدم قطعیت",
-      "avgRabbitHoles": "میانگین حفره‌های خرگوش"
+      "avgRabbitHoles": "میانگین حفره‌های خرگوش",
+      "interpretation": "تفسیر"
     },
     "riskCorrelation": {
       "title": "پیش‌بینی ریسک",
       "description": "پیش‌بینی‌های ریسک ما چقدر دقیق هستند؟",
       "accuracy": "دقت",
+      "high": "بالا",
+      "moderate": "متوسط",
+      "low": "پایین",
       "avgPredicted": "میانگین ریسک پیش‌بینی شده",
       "avgActual": "میانگین ریسک واقعی",
+      "truePositives": "به درستی علامت‌گذاری شده",
+      "missedRisks": "ریسک‌های از دست رفته",
       "correlationStrength": "قدرت همبستگی",
       "strong": "قوی",
-      "moderate": "متوسط",
-      "weak": "ضعیف"
+      "weak": "ضعیف",
+      "interpretation": "تفسیر"
     },
     "retroFollowThrough": {
       "title": "پیگیری بازنگری",
@@ -4351,7 +4366,8 @@
       "totalActions": "کل موارد اقدام",
       "actedOn": "انجام شده",
       "pending": "در انتظار",
-      "recentRetros": "بازنگری‌های اخیر"
+      "recentRetros": "بازنگری‌های اخیر",
+      "interpretation": "تفسیر"
     }
   },
   "narratives": {
