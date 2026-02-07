@@ -233,7 +233,7 @@ public class CycleNarrativeService {
     md.append("| Shipped | ").append(summary.getPitchesShipped()).append(" |\n");
     md.append("| Cut | ").append(summary.getPitchesCut()).append(" |\n");
     md.append("| In Progress | ").append(summary.getPitchesInProgress()).append(" |\n");
-    md.append("| Appetite Accuracy | ").append(String.format("%.1f%%", summary.getAvergeAppetiteAccuracy())).append(" |\n\n");
+    md.append("| Appetite Accuracy | ").append(String.format("%.1f%%", summary.getAverageAppetiteAccuracy())).append(" |\n\n");
 
     if (summary.getWhatWeBet() != null) {
       md.append("## What We Bet\n\n");
