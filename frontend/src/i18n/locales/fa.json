@@ -4378,13 +4378,15 @@
     "whatWeCut": "آنچه کنار گذاشتیم",
     "surprises": "شگفتی‌ها",
     "fullSummary": "خلاصه کامل",
+    "generate": "تولید",
     "regenerate": "بازتولید",
     "regenerateAll": "بازتولید همه",
     "exportMarkdown": "خروجی به صورت Markdown",
     "aiGenerated": "تولید شده با هوش مصنوعی",
     "templateBased": "بر اساس قالب",
     "generatedAt": "تولید شده در",
-    "noNarrativeYet": "هنوز روایتی تولید نشده"
+    "noNarrativeYet": "هنوز روایتی تولید نشده",
+    "loadError": "خطا در بارگذاری خلاصه سیکل"
   },
   "settings": {
     "appearance": "ظاهر",

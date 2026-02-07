@@ -102,14 +102,14 @@ export interface RetroFollowThroughSignal {
 }
 
 export interface CycleSignals {
-  cycleId: number;
-  cycleName: string;
+  cycleId: number | null;
+  cycleName: string | null;
   projectId: number;
   projectName: string;
   analyzedAt: string;
   overallHealthScore: number;
-  appetiteAccuracySignal: AppetiteAccuracySignal | null;
-  shapingPatternSignal: ShapingPatternSignal | null;
-  riskCorrelationSignal: RiskCorrelationSignal | null;
-  retroFollowThroughSignal: RetroFollowThroughSignal | null;
+  appetiteAccuracy: AppetiteAccuracySignal | null;
+  shapingPattern: ShapingPatternSignal | null;
+  riskCorrelation: RiskCorrelationSignal | null;
+  retroFollowThrough: RetroFollowThroughSignal | null;
 }

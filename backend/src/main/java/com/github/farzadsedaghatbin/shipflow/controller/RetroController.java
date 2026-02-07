@@ -178,10 +178,8 @@ public class RetroController {
       description = "Part of v0.5 - tracks whether teams follow through on retro decisions")
   public ResponseEntity<RetroItemDTO> markActedOn(
       @PathVariable Long itemId,
-      @RequestBody Map<String, Object> body) {
-    Boolean actedOn = (Boolean) body.get("actedOn");
-    String notes = (String) body.get("notes");
-    return ResponseEntity.ok(retroService.markActedOn(itemId, actedOn, notes));
+      @Valid @RequestBody MarkActedOnRequest request) {
+    return ResponseEntity.ok(retroService.markActedOn(itemId, request.getActedOn(), request.getNotes()));
   }
 
   @GetMapping("/{retroId}/action-stats")

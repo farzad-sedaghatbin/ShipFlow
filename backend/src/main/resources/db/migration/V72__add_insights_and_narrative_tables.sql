@@ -78,7 +78,8 @@ CREATE TABLE cycle_narratives (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     CONSTRAINT fk_narrative_cycle FOREIGN KEY (cycle_id) REFERENCES cycles(id) ON DELETE CASCADE,
-    CONSTRAINT fk_narrative_generated_by FOREIGN KEY (generated_by_id) REFERENCES users(id)
+    CONSTRAINT fk_narrative_generated_by FOREIGN KEY (generated_by_id) REFERENCES users(id),
+    CONSTRAINT uk_cycle_narratives_cycle_type UNIQUE (cycle_id, narrative_type)
 );
 
 CREATE INDEX idx_narrative_cycle ON cycle_narratives(cycle_id);

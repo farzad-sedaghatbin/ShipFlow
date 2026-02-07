@@ -189,16 +189,19 @@ public class CycleNarrativeService {
       content = generateTemplateNarrative(cycle, type);
     }
 
-    // Save to database
-    CycleNarrative narrative = CycleNarrative.builder()
-        .cycle(cycle)
-        .narrativeType(type)
-        .content(content)
-        .isAiGenerated(isAI)
-        .aiModel(aiModel)
-        .generatedAt(LocalDateTime.now())
-        .generatedBy(getCurrentUser())
-        .build();
+    // Find existing narrative or create new one (avoid duplicates on regenerate)
+    CycleNarrative narrative = narrativeRepository.findByCycleIdAndNarrativeType(cycleId, type)
+        .orElseGet(() -> CycleNarrative.builder()
+            .cycle(cycle)
+            .narrativeType(type)
+            .build());
+
+    // Update fields (works for both new and existing narratives)
+    narrative.setContent(content);
+    narrative.setIsAiGenerated(isAI);
+    narrative.setAiModel(aiModel);
+    narrative.setGeneratedAt(LocalDateTime.now());
+    narrative.setGeneratedBy(getCurrentUser());
 
     narrative = narrativeRepository.save(narrative);
     return toDTO(narrative);

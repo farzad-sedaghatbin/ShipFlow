@@ -113,22 +113,22 @@ export const CycleSignalsPanel: React.FC<CycleSignalsPanelProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {signals.appetiteAccuracySignal && (
-            <AppetiteAccuracyCard signal={signals.appetiteAccuracySignal} />
+          {signals.appetiteAccuracy && (
+            <AppetiteAccuracyCard signal={signals.appetiteAccuracy} />
           )}
-          {signals.shapingPatternSignal && (
-            <ShapingPatternCard signal={signals.shapingPatternSignal} />
+          {signals.shapingPattern && (
+            <ShapingPatternCard signal={signals.shapingPattern} />
           )}
-          {signals.riskCorrelationSignal && (
-            <RiskCorrelationCard signal={signals.riskCorrelationSignal} />
+          {signals.riskCorrelation && (
+            <RiskCorrelationCard signal={signals.riskCorrelation} />
           )}
-          {signals.retroFollowThroughSignal && (
-            <RetroFollowThroughCard signal={signals.retroFollowThroughSignal} />
+          {signals.retroFollowThrough && (
+            <RetroFollowThroughCard signal={signals.retroFollowThrough} />
           )}
         </div>
         
-        {!signals.appetiteAccuracySignal && !signals.shapingPatternSignal && 
-         !signals.riskCorrelationSignal && !signals.retroFollowThroughSignal && (
+        {!signals.appetiteAccuracy && !signals.shapingPattern && 
+         !signals.riskCorrelation && !signals.retroFollowThrough && (
           <Alert>
             <AlertDescription>
               {t('signals.noHistoricalData')}

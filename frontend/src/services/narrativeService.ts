@@ -12,7 +12,6 @@ export interface CycleNarrative {
 export interface CycleSummary {
   cycleId: number;
   cycleName: string;
-  projectId: number;
   projectName: string;
   startDate: string;
   endDate: string;

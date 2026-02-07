@@ -238,11 +238,14 @@ public class CycleSignalService {
     List<Double> absVariances = variancePercents.stream().map(Math::abs).collect(Collectors.toList());
     double avgAbsVariance = absVariances.stream().mapToDouble(Double::doubleValue).average().orElse(0);
     double stdDev = calculateStdDev(absVariances, avgAbsVariance);
-    TrendDirection trend = calculateTrend(variancePercents);
+    // Reverse list before trend calculation - cycles loaded DESC but regression needs oldest-to-newest
+    List<Double> reversedVariances = new ArrayList<>(variancePercents);
+    Collections.reverse(reversedVariances);
+    TrendDirection trend = calculateTrend(reversedVariances);
 
-    // Generate interpretation and recommendations
-    String interpretation = generateAppetiteInterpretation(avgVariance, trend, cycleData.size());
-    List<String> recommendations = generateAppetiteRecommendations(avgVariance, trend, cycleData);
+    // Generate interpretation and recommendations (use absolute variance for accuracy grading)
+    String interpretation = generateAppetiteInterpretation(avgAbsVariance, trend, cycleData.size());
+    List<String> recommendations = generateAppetiteRecommendations(avgAbsVariance, trend, cycleData);
 
     return AppetiteAccuracySignalDTO.builder()
         .trend(trend)
@@ -270,9 +273,11 @@ public class CycleSignalService {
           .filter(p -> p.getStatus() == PitchStatus.DONE || p.getStatus() == PitchStatus.CANCELLED)
           .collect(Collectors.toList());
 
+      // Batch load work hours for all pitches in this cycle (avoid N+1 query)
+      Map<Long, Double> workHoursMap = batchLoadWorkHoursForCycle(cycle.getId());
+
       for (Pitch pitch : pitches) {
-        Double actualHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
-        if (actualHours == null) actualHours = 0.0;
+        Double actualHours = workHoursMap.getOrDefault(pitch.getId(), 0.0);
         double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
         double variancePercent = appetiteHours > 0 ? ((actualHours - appetiteHours) / appetiteHours) * 100 : 0;
 
@@ -331,15 +336,36 @@ public class CycleSignalService {
     List<RiskCorrelationSignalDTO.MissedRiskPitch> missedRiskDetails = new ArrayList<>();
     List<RiskCorrelationSignalDTO.FalseAlarmPitch> falseAlarmDetails = new ArrayList<>();
 
+    // Batch prefetch all risk histories for all pitches (avoid N+1 query)
+    List<Long> allPitchIds = new ArrayList<>();
+    Map<Long, List<Pitch>> pitchesByCycle = new HashMap<>();
     for (Cycle cycle : cycles) {
       List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
+      pitchesByCycle.put(cycle.getId(), pitches);
+      pitches.forEach(p -> allPitchIds.add(p.getId()));
+    }
+
+    List<PitchRiskHistory> allHistories = allPitchIds.isEmpty() ? Collections.emptyList() 
+        : riskHistoryRepository.findByPitchIdInOrderByRecordedAtDesc(allPitchIds);
+    
+    // Build map of pitchId -> earliest risk level
+    Map<Long, RiskLevel> initialRiskByPitch = new HashMap<>();
+    Map<Long, List<PitchRiskHistory>> historiesByPitch = allHistories.stream()
+        .collect(Collectors.groupingBy(h -> h.getPitch().getId()));
+    
+    for (Long pitchId : allPitchIds) {
+      List<PitchRiskHistory> histories = historiesByPitch.getOrDefault(pitchId, Collections.emptyList());
+      RiskLevel initialRisk = histories.isEmpty() ? RiskLevel.LOW 
+          : histories.get(histories.size() - 1).getRiskLevel();
+      initialRiskByPitch.put(pitchId, initialRisk);
+    }
+
+    for (Cycle cycle : cycles) {
+      List<Pitch> pitches = pitchesByCycle.get(cycle.getId());
 
       for (Pitch pitch : pitches) {
-        // Get initial/earliest risk assessment
-        List<PitchRiskHistory> riskHistory = riskHistoryRepository.findByPitchIdOrderByRecordedAtDesc(pitch.getId());
-        // Get earliest (last in desc order) risk level, or LOW if no history
-        RiskLevel initialRisk = riskHistory.isEmpty() ? RiskLevel.LOW : 
-            riskHistory.get(riskHistory.size() - 1).getRiskLevel();
+        // Get initial risk from prefetched map
+        RiskLevel initialRisk = initialRiskByPitch.getOrDefault(pitch.getId(), RiskLevel.LOW);
         boolean wasHighRisk = initialRisk == RiskLevel.HIGH || initialRisk == RiskLevel.CRITICAL;
 
         // Determine outcome
@@ -887,9 +913,11 @@ public class CycleSignalService {
   /** Batch load work hours for a cycle using a single query. */
   private Map<Long, Double> batchLoadWorkHoursForCycle(Long cycleId) {
     Map<Long, Double> hoursMap = new java.util.HashMap<>();
-    List<Object[]> results = workLogRepository.getTotalHoursByCycleId(cycleId);    if (results == null) {
+    List<Object[]> results = workLogRepository.getTotalHoursByCycleId(cycleId);
+    if (results == null) {
       return hoursMap;
-    }    for (Object[] row : results) {
+    }
+    for (Object[] row : results) {
       Long pitchId = (Long) row[0];
       Double hours = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
       hoursMap.put(pitchId, hours);

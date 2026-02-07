@@ -59,7 +59,7 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
             ) : (
               <RefreshCcw className="h-3 w-3 mr-1" />
             )}
-            Generate
+            {t('narratives.generate')}
           </Button>
         </CardContent>
       </Card>
@@ -159,7 +159,7 @@ export const CycleSummaryPanel: React.FC<CycleSummaryPanelProps> = ({
       const data = await narrativeService.getCycleSummary(cycleId);
       setSummary(data);
     } catch (err) {
-      setError('Failed to load cycle summary');
+      setError(t('narratives.loadError'));
       console.error(err);
     } finally {
       setLoading(false);

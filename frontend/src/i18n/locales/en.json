@@ -886,13 +886,15 @@
     "whatWeCut": "What We Cut",
     "surprises": "Surprises",
     "fullSummary": "Full Summary",
+    "generate": "Generate",
     "regenerate": "Regenerate",
     "regenerateAll": "Regenerate All",
     "exportMarkdown": "Export as Markdown",
     "aiGenerated": "AI Generated",
     "templateBased": "Template Based",
     "generatedAt": "Generated at",
-    "noNarrativeYet": "No narrative generated yet"
+    "noNarrativeYet": "No narrative generated yet",
+    "loadError": "Failed to load cycle summary"
   },
   "settings": {
     "title": "Settings",
