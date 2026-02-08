@@ -16,7 +16,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TeamMemberRole;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -172,45 +175,46 @@ public class ReportService {
       PdfWriter writer = new PdfWriter(baos);
       PdfDocument pdf = new PdfDocument(writer);
       Document document = new Document(pdf);
+      PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 
       // Title
-      Paragraph title = new Paragraph("Cycle Report: " + report.getCycleName()).setFontSize(20).setBold()
+      Paragraph title = new Paragraph("Cycle Report: " + report.getCycleName()).setFontSize(20).setFont(boldFont)
           .setTextAlignment(TextAlignment.CENTER);
       document.add(title);
       document.add(new Paragraph(" "));
 
       // Summary Section
-      Paragraph summaryHeader = new Paragraph("Summary").setFontSize(16).setBold();
+      Paragraph summaryHeader = new Paragraph("Summary").setFontSize(16).setFont(boldFont);
       document.add(summaryHeader);
 
       Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{3, 2}));
       summaryTable.setWidth(UnitValue.createPercentValue(60));
-      addSummaryRow(summaryTable, "Total Pitches", String.valueOf(report.getTotalPitches()));
-      addSummaryRow(summaryTable, "Completed", String.valueOf(report.getCompletedPitches()));
-      addSummaryRow(summaryTable, "In Progress", String.valueOf(report.getInProgressPitches()));
+      addSummaryRow(summaryTable, "Total Pitches", String.valueOf(report.getTotalPitches()), boldFont);
+      addSummaryRow(summaryTable, "Completed", String.valueOf(report.getCompletedPitches()), boldFont);
+      addSummaryRow(summaryTable, "In Progress", String.valueOf(report.getInProgressPitches()), boldFont);
       addSummaryRow(summaryTable, "Total Appetite (hours)",
-          String.format("%.2f", report.getTotalAppetiteHours()));
-      addSummaryRow(summaryTable, "Total Actual (hours)", String.format("%.2f", report.getTotalActualHours()));
-      addSummaryRow(summaryTable, "Efficiency %", String.format("%.2f%%", report.getEfficiencyPercentage()));
+          String.format("%.2f", report.getTotalAppetiteHours()), boldFont);
+      addSummaryRow(summaryTable, "Total Actual (hours)", String.format("%.2f", report.getTotalActualHours()), boldFont);
+      addSummaryRow(summaryTable, "Efficiency %", String.format("%.2f%%", report.getEfficiencyPercentage()), boldFont);
       document.add(summaryTable);
       document.add(new Paragraph(" "));
 
       // Out-of-Scope Work Section
-      Paragraph taskHeader = new Paragraph("Out-of-Scope Work (Tasks)").setFontSize(16).setBold();
+      Paragraph taskHeader = new Paragraph("Out-of-Scope Work (Tasks)").setFontSize(16).setFont(boldFont);
       document.add(taskHeader);
 
       Table taskTable = new Table(UnitValue.createPercentArray(new float[]{3, 2}));
       taskTable.setWidth(UnitValue.createPercentValue(60));
-      addSummaryRow(taskTable, "Total Tasks", String.valueOf(report.getTotalTasks()));
-      addSummaryRow(taskTable, "Completed Tasks", String.valueOf(report.getCompletedTasks()));
+      addSummaryRow(taskTable, "Total Tasks", String.valueOf(report.getTotalTasks()), boldFont);
+      addSummaryRow(taskTable, "Completed Tasks", String.valueOf(report.getCompletedTasks()), boldFont);
       addSummaryRow(taskTable, "Task Estimate (hours)",
-          String.format("%.2f", report.getTotalTaskEstimateHours()));
-      addSummaryRow(taskTable, "Task Actual (hours)", String.format("%.2f", report.getTotalTaskActualHours()));
+          String.format("%.2f", report.getTotalTaskEstimateHours()), boldFont);
+      addSummaryRow(taskTable, "Task Actual (hours)", String.format("%.2f", report.getTotalTaskActualHours()), boldFont);
       document.add(taskTable);
       document.add(new Paragraph(" "));
 
       // Pitch Reports Section
-      Paragraph pitchHeader = new Paragraph("Pitch Reports").setFontSize(16).setBold();
+      Paragraph pitchHeader = new Paragraph("Pitch Reports").setFontSize(16).setFont(boldFont);
       document.add(pitchHeader);
 
       Table pitchTable = new Table(
@@ -218,15 +222,15 @@ public class ReportService {
       pitchTable.setWidth(UnitValue.createPercentValue(100));
 
       // Header row
-      addHeaderCell(pitchTable, "Pitch");
-      addHeaderCell(pitchTable, "Team");
-      addHeaderCell(pitchTable, "Status");
-      addHeaderCell(pitchTable, "Appetite Days");
-      addHeaderCell(pitchTable, "Appetite Hours");
-      addHeaderCell(pitchTable, "Actual Hours");
-      addHeaderCell(pitchTable, "Variance Hours");
-      addHeaderCell(pitchTable, "Variance %");
-      addHeaderCell(pitchTable, "Over Budget");
+      addHeaderCell(pitchTable, "Pitch", boldFont);
+      addHeaderCell(pitchTable, "Team", boldFont);
+      addHeaderCell(pitchTable, "Status", boldFont);
+      addHeaderCell(pitchTable, "Appetite Days", boldFont);
+      addHeaderCell(pitchTable, "Appetite Hours", boldFont);
+      addHeaderCell(pitchTable, "Actual Hours", boldFont);
+      addHeaderCell(pitchTable, "Variance Hours", boldFont);
+      addHeaderCell(pitchTable, "Variance %", boldFont);
+      addHeaderCell(pitchTable, "Over Budget", boldFont);
 
       // Data rows
       for (PitchReportDTO pitch : report.getPitchReports()) {
@@ -250,19 +254,19 @@ public class ReportService {
       document.add(new Paragraph(" "));
 
       // Member Reports Section
-      Paragraph memberHeader = new Paragraph("Member Work Summary").setFontSize(16).setBold();
+      Paragraph memberHeader = new Paragraph("Member Work Summary").setFontSize(16).setFont(boldFont);
       document.add(memberHeader);
 
       Table memberTable = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2, 2, 2, 2}));
       memberTable.setWidth(UnitValue.createPercentValue(100));
 
       // Header row
-      addHeaderCell(memberTable, "Member");
-      addHeaderCell(memberTable, "Role");
-      addHeaderCell(memberTable, "Team");
-      addHeaderCell(memberTable, "Total Hours");
-      addHeaderCell(memberTable, "Work Days");
-      addHeaderCell(memberTable, "Avg Hours/Day");
+      addHeaderCell(memberTable, "Member", boldFont);
+      addHeaderCell(memberTable, "Role", boldFont);
+      addHeaderCell(memberTable, "Team", boldFont);
+      addHeaderCell(memberTable, "Total Hours", boldFont);
+      addHeaderCell(memberTable, "Work Days", boldFont);
+      addHeaderCell(memberTable, "Avg Hours/Day", boldFont);
 
       // Data rows
       for (MemberWorkReportDTO member : report.getMemberReports()) {
@@ -285,13 +289,13 @@ public class ReportService {
     return baos.toByteArray();
   }
 
-  private void addSummaryRow(Table table, String label, String value) {
-    table.addCell(new Cell().add(new Paragraph(label).setBold()));
+  private void addSummaryRow(Table table, String label, String value, PdfFont boldFont) {
+    table.addCell(new Cell().add(new Paragraph(label).setFont(boldFont)));
     table.addCell(new Cell().add(new Paragraph(value)));
   }
 
-  private void addHeaderCell(Table table, String text) {
-    Cell cell = new Cell().add(new Paragraph(text).setBold().setFontSize(10));
+  private void addHeaderCell(Table table, String text, PdfFont boldFont) {
+    Cell cell = new Cell().add(new Paragraph(text).setFont(boldFont).setFontSize(10));
     cell.setBackgroundColor(ColorConstants.LIGHT_GRAY);
     cell.setTextAlignment(TextAlignment.CENTER);
     table.addHeaderCell(cell);
