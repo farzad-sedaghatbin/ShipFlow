@@ -116,7 +116,7 @@ class MeetingControllerIntegrationTest {
         .cycle(testCycle).project(testProject).createdAt(LocalDateTime.now()).build();
     testRetrospective = retrospectiveRepository.save(testRetrospective);
 
-    testMeeting = Meeting.builder().type(MeetingType.KICKOFF).dateHeld(LocalDate.now()).dorReady(false)
+    testMeeting = Meeting.builder().type("KICKOFF").dateHeld(LocalDate.now()).dorReady(false)
         .dodReady(false).pitch(testPitch).notes("Test notes").decisions("Test decisions")
         .attendees("John Doe, Jane Smith").build();
     testMeeting = meetingRepository.save(testMeeting);
@@ -149,7 +149,7 @@ class MeetingControllerIntegrationTest {
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
   void createMeeting_WithValidData_ShouldCreateMeeting() throws Exception {
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.STANDUP)
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("STANDUP")
         .dateHeld(LocalDate.now().plusDays(1)).pitchId(testPitch.getId()).dorReady(true).dodReady(false)
         .notes("New meeting notes").build();
 
@@ -161,7 +161,7 @@ class MeetingControllerIntegrationTest {
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
   void updateMeeting_WhenExists_ShouldUpdateMeeting() throws Exception {
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.DEMO)
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("DEMO")
         .dateHeld(LocalDate.now().plusDays(2)).pitchId(testPitch.getId()).dorReady(true).dodReady(true)
         .notes("Updated notes").build();
 
@@ -191,7 +191,7 @@ class MeetingControllerIntegrationTest {
   void getAllMeetingsPaginated_ShouldReturnPagedMeetings() throws Exception {
     // Create additional meetings for pagination testing
     for (int i = 0; i < 25; i++) {
-      Meeting meeting = Meeting.builder().type(MeetingType.STANDUP).dateHeld(LocalDate.now().minusDays(i))
+      Meeting meeting = Meeting.builder().type("STANDUP").dateHeld(LocalDate.now().minusDays(i))
           .dorReady(false).dodReady(false).pitch(testPitch).notes("Meeting " + i).build();
       meetingRepository.save(meeting);
     }
@@ -208,7 +208,7 @@ class MeetingControllerIntegrationTest {
   @Test
   void getMeetingsWithFilters_ByType_ShouldReturnFilteredMeetings() throws Exception {
     // Create meetings of different types
-    Meeting demo = Meeting.builder().type(MeetingType.DEMO).dateHeld(LocalDate.now()).dorReady(true).dodReady(true)
+    Meeting demo = Meeting.builder().type("DEMO").dateHeld(LocalDate.now()).dorReady(true).dodReady(true)
         .pitch(testPitch).build();
     meetingRepository.save(demo);
 
@@ -231,7 +231,7 @@ class MeetingControllerIntegrationTest {
   @Test
   void getMeetingsWithFilters_ByDorReady_ShouldReturnFilteredMeetings() throws Exception {
     // Create meeting with DOR ready
-    Meeting dorReadyMeeting = Meeting.builder().type(MeetingType.KICKOFF).dateHeld(LocalDate.now()).dorReady(true)
+    Meeting dorReadyMeeting = Meeting.builder().type("KICKOFF").dateHeld(LocalDate.now()).dorReady(true)
         .dodReady(false).pitch(testPitch).build();
     meetingRepository.save(dorReadyMeeting);
 
@@ -248,7 +248,7 @@ class MeetingControllerIntegrationTest {
         .notes("High priority").build();
     actions.add(action1);
 
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.RETROSPECTIVE)
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("RETROSPECTIVE")
         .dateHeld(LocalDate.now()).pitchId(testPitch.getId()).dorReady(true).dodReady(true).notes("Retro notes")
         .decisions("Decision to improve testing").attendees("Team A, Team B").actions(actions).build();
 
@@ -265,7 +265,7 @@ class MeetingControllerIntegrationTest {
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
   void createMeeting_WithRetrospective_ShouldLinkRetrospective() throws Exception {
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.RETROSPECTIVE)
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("RETROSPECTIVE")
         .dateHeld(LocalDate.now()).pitchId(testPitch.getId()).retrospectiveId(testRetrospective.getId())
         .dorReady(true).dodReady(true).notes("Retrospective meeting notes")
         .decisions("Action plan for next cycle").build();
@@ -288,7 +288,7 @@ class MeetingControllerIntegrationTest {
     actions.add(action1);
     actions.add(action2);
 
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.DEMO).dateHeld(LocalDate.now())
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("DEMO").dateHeld(LocalDate.now())
         .pitchId(testPitch.getId()).dorReady(true).dodReady(true).notes("Updated meeting")
         .decisions("New decisions").attendees("Updated attendees").actions(actions).build();
 
@@ -310,7 +310,7 @@ class MeetingControllerIntegrationTest {
     actions.add(MeetingActionDTO.builder().description("Task 3").status(ActionStatus.COMPLETED).build());
     actions.add(MeetingActionDTO.builder().description("Task 4").status(ActionStatus.CANCELLED).build());
 
-    CreateMeetingRequest request = CreateMeetingRequest.builder().type(MeetingType.STANDUP)
+    CreateMeetingRequest request = CreateMeetingRequest.builder().type("STANDUP")
         .dateHeld(LocalDate.now()).dorReady(false).dodReady(false).actions(actions).build();
 
     mockMvc.perform(post("/api/meetings").contentType(MediaType.APPLICATION_JSON)
@@ -327,7 +327,7 @@ class MeetingControllerIntegrationTest {
     // Create test meeting with mixed completed/incomplete items
     testMeeting = Meeting.builder()
         .pitch(testPitch)
-        .type(MeetingType.KICKOFF)
+        .type("KICKOFF")
         .dateHeld(LocalDate.now())
         .dorReady(true)
         .dodReady(true)
@@ -354,7 +354,7 @@ class MeetingControllerIntegrationTest {
     // Create test meeting with only incomplete items
     testMeeting = Meeting.builder()
         .pitch(testPitch)
-        .type(MeetingType.STANDUP)
+        .type("STANDUP")
         .dateHeld(LocalDate.now())
         .dorReady(false)
         .dodReady(false)
@@ -375,7 +375,7 @@ class MeetingControllerIntegrationTest {
     // Create test meeting with mixed completed/incomplete items
     testMeeting = Meeting.builder()
         .pitch(testPitch)
-        .type(MeetingType.DEMO)
+        .type("DEMO")
         .dateHeld(LocalDate.now())
         .dorReady(true)
         .dodReady(false)

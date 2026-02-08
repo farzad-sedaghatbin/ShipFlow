@@ -94,7 +94,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(84.0); // 75% of appetite (112 hours)
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -123,7 +123,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
 
     // 2 critical bugs - should trigger moderate risk with custom threshold
@@ -156,7 +156,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -189,7 +189,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
 
     // 95% budget usage - should score medium-high risk points
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(106.4); // 95%
@@ -212,7 +212,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldFallBackToDefaultsWhenSettingsUnavailable() {
     // Given: No organization settings available
     when(organizationSettingsService.getSettings()).thenReturn(null);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -233,7 +233,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldHandleOrganizationSettingsException() {
     // Given: Organization settings service throws exception
     when(organizationSettingsService.getSettings()).thenThrow(new RuntimeException("Database error"));
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -270,7 +270,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(2L)).thenReturn(Optional.of(urgentPitch));
+    when(pitchRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(urgentPitch));
     when(workLogRepository.getTotalHoursByPitchId(2L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());

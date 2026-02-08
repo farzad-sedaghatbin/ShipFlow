@@ -64,8 +64,6 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 
-const meetingTypes: MeetingType[] = ['SHAPING', 'BETTING', 'KICKOFF', 'STANDUP', 'DEMO', 'RETROSPECTIVE', 'HILL_CHART_REVIEW'];
-
 export default function MeetingList() {
   const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
@@ -124,6 +122,12 @@ export default function MeetingList() {
     actions: [],
   });
   const [meetingDate, setMeetingDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+
+  // Get meeting type display name from configurations or fallback to formatted name
+  const getMeetingTypeDisplayName = (type: MeetingType): string => {
+    const config = meetingTypeConfigs.find(mt => mt.name.toLowerCase() === type.toLowerCase());
+    return config?.displayName || type.replace(/_/g, ' ');
+  };
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -227,11 +231,11 @@ export default function MeetingList() {
       // Initialize with checklist from org settings for default meeting type
       const defaultType = 'STANDUP';
       const typeConfig = meetingTypeConfigs.find(mt => mt.name === defaultType);
-      const initialDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map(item => ({
+      const initialDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map((item: any) => ({
         ...item,
         isCompleted: false,
       })) || [];
-      const initialDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map(item => ({
+      const initialDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map((item: any) => ({
         ...item,
         isCompleted: false,
       })) || [];
@@ -299,11 +303,11 @@ export default function MeetingList() {
   // Handle meeting type change - update DOR/DOD checklist items
   const handleMeetingTypeChange = (newType: MeetingType) => {
     const typeConfig = meetingTypeConfigs.find(mt => mt.name === newType);
-    const newDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map(item => ({
+    const newDorItems: MeetingChecklistItem[] = typeConfig?.dorItems?.map((item: any) => ({
       ...item,
       isCompleted: false,
     })) || [];
-    const newDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map(item => ({
+    const newDodItems: MeetingChecklistItem[] = typeConfig?.dodItems?.map((item: any) => ({
       ...item,
       isCompleted: false,
     })) || [];
@@ -385,9 +389,7 @@ export default function MeetingList() {
     return variants[type] || 'outline';
   };
 
-  const formatMeetingType = (type: MeetingType) => {
-    return type.replace(/_/g, ' ');
-  };
+  // Meeting type display name is now handled by OrganizationContext
 
   return (
     <div className="space-y-6">
@@ -440,9 +442,9 @@ export default function MeetingList() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('meetingList.filters.allTypes')}</SelectItem>
-                      {meetingTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {formatMeetingType(type)}
+                      {meetingTypeConfigs.map((config) => (
+                        <SelectItem key={config.name} value={config.name}>
+                          {config.displayName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -561,7 +563,7 @@ export default function MeetingList() {
                           className="cursor-pointer hover:opacity-80"
                           onClick={() => handleViewMeeting(meeting.id)}
                         >
-                          {formatMeetingType(meeting.type)}
+                          {getMeetingTypeDisplayName(meeting.type)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -728,9 +730,9 @@ export default function MeetingList() {
                     <SelectValue placeholder={t('meetingList.dialog.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(meetingTypeConfigs.length > 0 ? meetingTypeConfigs : meetingTypes.map(t => ({ name: t, displayName: formatMeetingType(t) }))).map((type) => (
-                      <SelectItem key={type.name} value={type.name}>
-                        {type.displayName}
+                    {meetingTypeConfigs.map((config) => (
+                      <SelectItem key={config.name} value={config.name}>
+                        {config.displayName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1048,7 +1050,7 @@ export default function MeetingList() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.type')}</Label>
-                  <div className="text-sm font-medium">{formatMeetingType(viewMeeting.type)}</div>
+                  <div className="text-sm font-medium">{getMeetingTypeDisplayName(viewMeeting.type)}</div>
                 </div>
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.date')}</Label>

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-07 - Bug Fixes & Improvements
+
+### Fixed
+- **Meeting List Sorting**: Fixed meeting list to show newest meetings first in pitch detail view
+- **Meeting Type Display**: Fixed case-sensitive UUID matching for meeting type display
+- **Meeting Type Names**: Display meeting type names instead of UUIDs throughout the application
+- **Test Suite Improvements**: Fixed backend and frontend tests for improved reliability
+
 ## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
 
 ### Added
