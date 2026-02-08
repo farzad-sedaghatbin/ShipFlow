@@ -828,6 +828,7 @@
       "trendingUp": "Improving",
       "trendingDown": "Declining",
       "stable": "Stable",
+      "insufficientData": "Insufficient Data",
       "avgRatio": "Average Ratio",
       "avgVariance": "Average Variance",
       "over": "Over",

@@ -7,6 +7,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.RetroItem;
 import com.github.farzadsedaghatbin.shipflow.entity.Tag;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
@@ -54,11 +56,11 @@ public class TagService {
   @Transactional
   public TagDTO createTag(TagRequest request) {
     if (tagRepository.existsByNameAndProjectId(request.getName(), request.getProjectId())) {
-      throw new RuntimeException("Tag with name '" + request.getName() + "' already exists in this project");
+      throw new BadRequestException("Tag with name '" + request.getName() + "' already exists in this project");
     }
 
     Project project = projectRepository.findById(request.getProjectId())
-        .orElseThrow(() -> new RuntimeException("Project not found: " + request.getProjectId()));
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + request.getProjectId()));
 
     Tag tag = Tag.builder()
         .name(request.getName())
@@ -74,12 +76,12 @@ public class TagService {
   @Transactional
   public TagDTO updateTag(Long tagId, TagRequest request) {
     Tag tag = tagRepository.findById(tagId)
-        .orElseThrow(() -> new RuntimeException("Tag not found: " + tagId));
+        .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + tagId));
 
     // Check for duplicate name if changing
     if (!tag.getName().equals(request.getName()) && 
         tagRepository.existsByNameAndProjectId(request.getName(), tag.getProject().getId())) {
-      throw new RuntimeException("Tag with name '" + request.getName() + "' already exists in this project");
+      throw new BadRequestException("Tag with name '" + request.getName() + "' already exists in this project");
     }
 
     tag.setName(request.getName());
@@ -101,14 +103,14 @@ public class TagService {
   @Transactional
   public void addTagToRetroItem(Long retroItemId, Long tagId) {
     RetroItem item = retroItemRepository.findById(retroItemId)
-        .orElseThrow(() -> new RuntimeException("RetroItem not found: " + retroItemId));
+        .orElseThrow(() -> new ResourceNotFoundException("RetroItem not found: " + retroItemId));
     Tag tag = tagRepository.findById(tagId)
-        .orElseThrow(() -> new RuntimeException("Tag not found: " + tagId));
+        .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + tagId));
 
     // Enforce project boundary: tag and retro item must belong to same project
     Long retroProjectId = item.getRetrospective().getCycle().getProject().getId();
     if (!tag.getProject().getId().equals(retroProjectId)) {
-      throw new RuntimeException("Tag from project " + tag.getProject().getId() + " cannot be linked to retro item from project " + retroProjectId);
+      throw new BadRequestException("Tag from project " + tag.getProject().getId() + " cannot be linked to retro item from project " + retroProjectId);
     }
 
     item.getTags().add(tag);
@@ -118,7 +120,7 @@ public class TagService {
   @Transactional
   public void removeTagFromRetroItem(Long retroItemId, Long tagId) {
     RetroItem item = retroItemRepository.findById(retroItemId)
-        .orElseThrow(() -> new RuntimeException("RetroItem not found: " + retroItemId));
+        .orElseThrow(() -> new ResourceNotFoundException("RetroItem not found: " + retroItemId));
     
     item.getTags().removeIf(t -> t.getId().equals(tagId));
     retroItemRepository.save(item);
@@ -127,14 +129,14 @@ public class TagService {
   @Transactional
   public void addTagToPitch(Long pitchId, Long tagId) {
     Pitch pitch = pitchRepository.findById(pitchId)
-        .orElseThrow(() -> new RuntimeException("Pitch not found: " + pitchId));
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found: " + pitchId));
     Tag tag = tagRepository.findById(tagId)
-        .orElseThrow(() -> new RuntimeException("Tag not found: " + tagId));
+        .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + tagId));
 
     // Enforce project boundary: tag and pitch must belong to same project
     Long pitchProjectId = pitch.getCycle().getProject().getId();
     if (!tag.getProject().getId().equals(pitchProjectId)) {
-      throw new RuntimeException("Tag from project " + tag.getProject().getId() + " cannot be linked to pitch from project " + pitchProjectId);
+      throw new BadRequestException("Tag from project " + tag.getProject().getId() + " cannot be linked to pitch from project " + pitchProjectId);
     }
 
     pitch.getTags().add(tag);
@@ -144,7 +146,7 @@ public class TagService {
   @Transactional
   public void removeTagFromPitch(Long pitchId, Long tagId) {
     Pitch pitch = pitchRepository.findById(pitchId)
-        .orElseThrow(() -> new RuntimeException("Pitch not found: " + pitchId));
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found: " + pitchId));
     
     pitch.getTags().removeIf(t -> t.getId().equals(tagId));
     pitchRepository.save(pitch);
@@ -153,7 +155,7 @@ public class TagService {
   @Transactional(readOnly = true)
   public List<TagDTO> getTagsForRetroItem(Long retroItemId) {
     RetroItem item = retroItemRepository.findById(retroItemId)
-        .orElseThrow(() -> new RuntimeException("RetroItem not found: " + retroItemId));
+        .orElseThrow(() -> new ResourceNotFoundException("RetroItem not found: " + retroItemId));
     return item.getTags().stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
@@ -162,7 +164,7 @@ public class TagService {
   @Transactional(readOnly = true)
   public List<TagDTO> getTagsForPitch(Long pitchId) {
     Pitch pitch = pitchRepository.findById(pitchId)
-        .orElseThrow(() -> new RuntimeException("Pitch not found: " + pitchId));
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found: " + pitchId));
     return pitch.getTags().stream()
         .map(this::toDTO)
         .collect(Collectors.toList());
@@ -175,7 +177,7 @@ public class TagService {
   @Transactional(readOnly = true)
   public List<Pitch> findRelatedPitches(Long retroItemId) {
     RetroItem item = retroItemRepository.findById(retroItemId)
-        .orElseThrow(() -> new RuntimeException("RetroItem not found: " + retroItemId));
+        .orElseThrow(() -> new ResourceNotFoundException("RetroItem not found: " + retroItemId));
 
     if (item.getTags().isEmpty()) {
       return List.of();

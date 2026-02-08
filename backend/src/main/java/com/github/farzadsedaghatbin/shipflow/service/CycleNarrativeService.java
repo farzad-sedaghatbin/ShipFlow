@@ -280,6 +280,8 @@ public class CycleNarrativeService {
     prompt.append("Write in a conversational, team-friendly tone. Be concise but informative.\n\n");
 
     List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
+    // Bulk load work hours to avoid N+1 queries
+    Map<Long, Double> workHoursMap = buildWorkHoursMap(cycle.getId());
     
     // Build map of pitch decisions to avoid N+1 queries
     Map<Long, BettingDecision> decisionsMap = new HashMap<>();
@@ -311,7 +313,7 @@ public class CycleNarrativeService {
         prompt.append("Completed pitches:\n");
         for (Pitch pitch : pitches) {
           if (pitch.getStatus() == PitchStatus.DONE) {
-            Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+            Double actual = workHoursMap.get(pitch.getId());
             prompt.append("- ").append(pitch.getTitle());
             prompt.append(" (appetite: ").append(pitch.getAppetiteDays()).append(" days");
             if (actual != null) {
@@ -343,7 +345,7 @@ public class CycleNarrativeService {
         prompt.append("Write a summary of surprising outcomes in this cycle - things that went much better or worse than expected.\n\n");
         prompt.append("Pitch outcomes:\n");
         for (Pitch pitch : pitches) {
-          Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+          Double actual = workHoursMap.get(pitch.getId());
           if (actual != null) {
             double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
             double variance = (actual - appetite) / appetite;
@@ -365,7 +367,7 @@ public class CycleNarrativeService {
         for (Pitch pitch : pitches) {
           prompt.append("- ").append(pitch.getTitle());
           prompt.append(" (").append(pitch.getStatus()).append(")");
-          Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+          Double actual = workHoursMap.get(pitch.getId());
           if (actual != null) {
             prompt.append(" - ").append(String.format("%.1f", actual / HOURS_PER_DAY)).append("/").append(pitch.getAppetiteDays()).append(" days");
           }
@@ -392,18 +394,20 @@ public class CycleNarrativeService {
 
   private String generateTemplateNarrative(Cycle cycle, NarrativeType type) {
     List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
+    // Bulk load work hours to avoid N+1 queries
+    Map<Long, Double> workHoursMap = buildWorkHoursMap(cycle.getId());
 
     switch (type) {
       case WHAT_WE_BET:
         return generateWhatWeBetTemplate(cycle, pitches);
       case WHAT_SHIPPED:
-        return generateWhatShippedTemplate(cycle, pitches);
+        return generateWhatShippedTemplate(cycle, pitches, workHoursMap);
       case WHAT_WE_CUT:
         return generateWhatWeCutTemplate(cycle, pitches);
       case SURPRISES:
-        return generateSurprisesTemplate(cycle, pitches);
+        return generateSurprisesTemplate(cycle, pitches, workHoursMap);
       case FULL_SUMMARY:
-        return generateFullSummaryTemplate(cycle, pitches);
+        return generateFullSummaryTemplate(cycle, pitches, workHoursMap);
       default:
         return "No template available for this narrative type.";
     }
@@ -446,7 +450,7 @@ public class CycleNarrativeService {
     return sb.toString();
   }
 
-  private String generateWhatShippedTemplate(Cycle cycle, List<Pitch> pitches) {
+  private String generateWhatShippedTemplate(Cycle cycle, List<Pitch> pitches, Map<Long, Double> workHoursMap) {
     StringBuilder sb = new StringBuilder();
     
     List<Pitch> shipped = pitches.stream()
@@ -462,7 +466,7 @@ public class CycleNarrativeService {
 
     for (Pitch pitch : shipped) {
       sb.append("• **").append(pitch.getTitle()).append("**");
-      Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+      Double actual = workHoursMap.get(pitch.getId());
       if (actual != null) {
         double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
         double variance = (actual - appetite) / appetite * 100;
@@ -504,14 +508,14 @@ public class CycleNarrativeService {
     return sb.toString();
   }
 
-  private String generateSurprisesTemplate(Cycle cycle, List<Pitch> pitches) {
+  private String generateSurprisesTemplate(Cycle cycle, List<Pitch> pitches, Map<Long, Double> workHoursMap) {
     StringBuilder sb = new StringBuilder();
     
     List<Pitch> underBudget = new ArrayList<>();
     List<Pitch> overBudget = new ArrayList<>();
 
     for (Pitch pitch : pitches) {
-      Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+      Double actual = workHoursMap.get(pitch.getId());
       if (actual != null && actual > 0) {
         double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
         double variance = (actual - appetite) / appetite;
@@ -530,7 +534,7 @@ public class CycleNarrativeService {
     if (!overBudget.isEmpty()) {
       sb.append("**Took longer than expected:**\n");
       for (Pitch pitch : overBudget) {
-        Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+        Double actual = workHoursMap.get(pitch.getId());
         sb.append("• ").append(pitch.getTitle()).append(" - ");
         sb.append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days vs ");
         sb.append(pitch.getAppetiteDays()).append(" day appetite\n");
@@ -541,7 +545,7 @@ public class CycleNarrativeService {
     if (!underBudget.isEmpty()) {
       sb.append("**Finished faster than expected:**\n");
       for (Pitch pitch : underBudget) {
-        Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+        Double actual = workHoursMap.get(pitch.getId());
         sb.append("• ").append(pitch.getTitle()).append(" - ");
         sb.append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days vs ");
         sb.append(pitch.getAppetiteDays()).append(" day appetite\n");
@@ -551,14 +555,14 @@ public class CycleNarrativeService {
     return sb.toString();
   }
 
-  private String generateFullSummaryTemplate(Cycle cycle, List<Pitch> pitches) {
+  private String generateFullSummaryTemplate(Cycle cycle, List<Pitch> pitches, Map<Long, Double> workHoursMap) {
     StringBuilder sb = new StringBuilder();
     
     sb.append("## Cycle Summary: ").append(cycle.getName()).append("\n\n");
     sb.append(generateWhatWeBetTemplate(cycle, pitches)).append("\n\n");
-    sb.append(generateWhatShippedTemplate(cycle, pitches)).append("\n\n");
+    sb.append(generateWhatShippedTemplate(cycle, pitches, workHoursMap)).append("\n\n");
     sb.append(generateWhatWeCutTemplate(cycle, pitches)).append("\n\n");
-    sb.append(generateSurprisesTemplate(cycle, pitches));
+    sb.append(generateSurprisesTemplate(cycle, pitches, workHoursMap));
     
     return sb.toString();
   }

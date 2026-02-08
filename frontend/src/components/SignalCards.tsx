@@ -48,7 +48,7 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
       case 'IMPROVING': return 'trendingUp';
       case 'DECLINING': return 'trendingDown';
       case 'STABLE': return 'stable';
-      case 'INSUFFICIENT_DATA': return 'stable';
+      case 'INSUFFICIENT_DATA': return 'insufficientData';
       default: return 'stable';
     }
   };
@@ -76,14 +76,8 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
   };
 
   // Show absolute variance percentage (0-100+ scale)
-  const absVariance =
-    signal.averageVariancePercent != null
-      ? Math.abs(signal.averageVariancePercent)
-      : undefined;
-  const isOverBudget =
-    signal.averageVariancePercent != null
-      ? signal.averageVariancePercent > 0
-      : undefined;
+  const absVariance = signal.averageVariancePercent != null ? Math.abs(signal.averageVariancePercent) : 0;
+  const isOverBudget = (signal.averageVariancePercent ?? 0) > 0;
 
   return (
     <Card>
