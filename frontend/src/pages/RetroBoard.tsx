@@ -16,8 +16,10 @@ import {
   ThumbsUp,
   Merge,
   Loader2,
+  Rocket,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
+import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
 
 import { usePermission } from '../hooks/usePermission';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
@@ -83,6 +85,7 @@ export default function RetroBoard() {
     sourceItem: null,
     columnType: null,
   });
+  const [actOnItemsDialog, setActOnItemsDialog] = useState(false);
 
   const { hasPermissionSync } = usePermission();
   const canManageRetro = hasPermissionSync('RETROSPECTIVE', 'MANAGE');
@@ -218,6 +221,13 @@ export default function RetroBoard() {
       const res = await retroService.close(retro.id);
       setRetro(res.data);
       showSuccess(t('retroBoardPage.retroClosed'));
+      // After closing, offer to act on action items
+      const actionItems = items.filter(
+        (item) => (item.columnType === 'TRY_NEXT' || item.columnType === 'ACTIONS') && !item.mergedIntoId
+      );
+      if (actionItems.length > 0) {
+        setActOnItemsDialog(true);
+      }
     } catch (error) {
       showError(t('retroBoardPage.saveFailed'));
     }
@@ -314,6 +324,12 @@ export default function RetroBoard() {
               <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleCloseRetro}>
                 <Square className="mr-2 h-4 w-4" />
                 {t('retroBoardPage.closeRetro')}
+              </Button>
+            )}
+            {retro.status === 'CLOSED' && items.filter(i => (i.columnType === 'TRY_NEXT' || i.columnType === 'ACTIONS') && !i.mergedIntoId).length > 0 && (
+              <Button variant="default" onClick={() => setActOnItemsDialog(true)}>
+                <Rocket className="mr-2 h-4 w-4" />
+                {t('retroBoardPage.actOnItems', 'Act on Items')}
               </Button>
             )}
           </div>
@@ -573,6 +589,22 @@ export default function RetroBoard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Act on Items Dialog */}
+        {retro && (
+          <ActOnRetroItemsDialog
+            open={actOnItemsDialog}
+            onOpenChange={setActOnItemsDialog}
+            retroId={retro.id}
+            retroTitle={retro.title}
+            projectId={retro.projectId}
+            items={items}
+            onActionComplete={() => {
+              // Refresh items to show acted-on status
+              retroService.getItems(retro.id).then((res) => setItems(res.data));
+            }}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

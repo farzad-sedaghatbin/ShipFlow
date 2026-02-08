@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import { CustomMetric } from '../types/metrics';
 
-export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS';
+export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'BUG_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS';
 
 export interface WidgetDataFilter {
   field: string;
@@ -94,6 +94,7 @@ export default function WidgetDataConfig({
             <SelectItem value="METRIC">Metric Value</SelectItem>
             <SelectItem value="PITCH_LIST">Pitch List</SelectItem>
             <SelectItem value="TASK_LIST">Task List</SelectItem>
+            <SelectItem value="BUG_LIST">Bug Report List</SelectItem>
             <SelectItem value="CYCLE_SUMMARY">Cycle Summary</SelectItem>
             <SelectItem value="TEAM_STATS">Team Statistics</SelectItem>
           </SelectContent>

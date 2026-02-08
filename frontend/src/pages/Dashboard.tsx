@@ -46,6 +46,8 @@ import {
   RecentActivityWidget,
 } from '../components/widgets';
 import { DashboardCustomizer } from '../components/DashboardCustomizer';
+import { CycleSignalsPanel } from '../components/CycleSignalsPanel';
+import { CycleSummaryPanel } from '../components/CycleSummaryPanel';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
@@ -487,6 +489,19 @@ export default function Dashboard() {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* v0.5 - Cycle Signals for first active cycle */}
+        {!isKanbanProject && activeCycles.length > 0 && currentProject && (
+          <div className="col-span-full grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CycleSignalsPanel 
+              cycleId={activeCycles[0].id}
+              projectId={currentProject.id}
+            />
+            <CycleSummaryPanel 
+              cycleId={activeCycles[0].id}
+            />
           </div>
         )}
 

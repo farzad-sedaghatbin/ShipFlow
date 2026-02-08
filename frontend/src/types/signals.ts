@@ -34,8 +34,8 @@ export interface ShapingPatternPitch {
   appetiteHours: number;
   actualHours: number;
   variancePercent: number;
-  uncertaintyScore: number | null;
-  rabbitHoleCount: number | null;
+  uncertaintyScore?: number | null; // Make optional to match potential backend variations
+  rabbitHoleCount?: number | null;  // Make optional to match potential backend variations
 }
 
 export interface ShapingPatternSignal {
@@ -56,7 +56,7 @@ export interface RiskDetailItem {
   pitchTitle: string;
   predictedRiskLevel: string;
   actualOutcome: string;
-  explanation: string;
+  explanation?: string; // Make optional to match backend variations
 }
 
 export interface RiskCorrelationSignal {
@@ -68,8 +68,8 @@ export interface RiskCorrelationSignal {
   trueNegatives: number;
   missedRiskDetails: RiskDetailItem[];
   falseAlarmDetails: RiskDetailItem[];
-  mostPredictiveFactors: string[];
-  leastPredictiveFactors: string[];
+  mostPredictiveFactors?: string[];      // Make optional as backend may not always include
+  leastPredictiveFactors?: string[];     // Make optional as backend may not always include
   interpretation: string;
   recommendations: string[];
 }

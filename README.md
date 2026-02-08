@@ -100,6 +100,12 @@ A modern project management application implementing the [Shape Up](https://base
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+  - **Flexible Action Conversion (v0.5)**: Transform retro insights into actionable work
+    - **Convert to Pitch**: Create draft pitches for the next betting table
+    - **Convert to Tasks**: Generate tasks for immediate work
+    - **Mark as Acted On**: Track completion without creating new items
+    - Batch processing of multiple retro items with customizable titles and notes
+    - Automatic status tracking with notes and timestamps
   - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
     - "Did we act on this?" checkbox for Action Items (ACTIONS column)
     - Notes and attribution for action follow-through

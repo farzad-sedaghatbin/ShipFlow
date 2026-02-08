@@ -150,7 +150,7 @@ INSERT INTO tasks (title, description, status, priority, estimate_hours, actual_
 
 -- Documentation tasks
 ('API documentation update', 'Update Swagger docs for new notification endpoints', 'IN_PROGRESS', 'MEDIUM', 3.0, 2.0, 5, 3, NULL, 4, '2026-01-16', 'documentation,backend,api', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Write user guide for export feature', 'Create help documentation for data export functionality', 'BACKLOG', 'LOW', 4.0, NULL, 5, 4, NULL, 4, '2026-01-25', 'documentation,user-guide', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Write user guide for export feature', 'Create help documentation for data export functionality', 'BACKLOG', 'MEDIUM', 4.0, NULL, 5, 4, NULL, 4, '2026-01-25', 'documentation,user-guide', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
 -- Infrastructure tasks
 ('Set up staging environment', 'Configure new staging environment for QA testing', 'DONE', 'HIGH', 6.0, 5.5, 5, 5, NULL, 5, '2026-01-08', 'infrastructure,devops', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -161,8 +161,18 @@ INSERT INTO tasks (title, description, status, priority, estimate_hours, actual_
 ('Performance testing for search', 'Load test search API with realistic data volumes', 'BACKLOG', 'MEDIUM', 5.0, NULL, 5, 6, NULL, 6, '2026-01-28', 'testing,performance,backend', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
 -- Feature enhancement tasks
-('Add keyboard shortcuts', 'Implement keyboard navigation for power users', 'TODO', 'LOW', 6.0, NULL, 5, 2, NULL, 4, '2026-01-30', 'enhancement,frontend,ux', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Implement dark mode for exports', 'Support dark mode styling in PDF exports', 'BACKLOG', 'LOW', 3.0, NULL, 5, 5, NULL, 4, '2026-02-05', 'enhancement,frontend,ux', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('Add keyboard shortcuts', 'Implement keyboard navigation for power users', 'TODO', 'MEDIUM', 6.0, NULL, 5, 2, NULL, 4, '2026-01-30', 'enhancement,frontend,ux', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Implement dark mode for exports', 'Support dark mode styling in PDF exports', 'BACKLOG', 'MEDIUM', 3.0, NULL, 5, 5, NULL, 4, '2026-02-05', 'enhancement,frontend,ux', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Additional tech debt and improvement tasks for backlog
+('Refactor legacy API endpoints', 'Modernize old REST endpoints to use consistent response format', 'BACKLOG', 'MEDIUM', 8.0, NULL, 5, 3, NULL, 3, '2026-02-10', 'tech-debt,backend,api,refactoring', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Remove duplicate utility functions', 'Consolidate duplicate code in utils packages', 'BACKLOG', 'LOW', 3.0, NULL, 5, 2, NULL, 2, '2026-02-12', 'tech-debt,frontend,code-quality', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Implement API response caching', 'Add Redis caching layer for frequently accessed endpoints', 'BACKLOG', 'MEDIUM', 6.0, NULL, 5, 3, NULL, 3, '2026-02-08', 'improvement,backend,performance', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Add TypeScript strict mode', 'Enable strict TypeScript checks and fix type issues', 'BACKLOG', 'MEDIUM', 10.0, NULL, 5, 2, NULL, 2, '2026-02-15', 'improvement,frontend,type-safety', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Setup automated dependency updates', 'Configure Renovate/Dependabot for automatic PR creation', 'BACKLOG', 'LOW', 2.0, NULL, 5, 5, NULL, 5, '2026-02-18', 'improvement,devops,automation', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Improve error logging', 'Add structured logging with correlation IDs for better debugging', 'BACKLOG', 'MEDIUM', 5.0, NULL, 5, 3, NULL, 3, '2026-02-20', 'improvement,backend,observability', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Optimize bundle size', 'Analyze and reduce frontend JavaScript bundle size', 'BACKLOG', 'HIGH', 6.0, NULL, 5, 2, NULL, 2, '2026-02-07', 'tech-debt,frontend,performance', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Update test data builders', 'Refactor test fixtures to use builder pattern', 'BACKLOG', 'LOW', 4.0, NULL, 5, 6, NULL, 6, '2026-02-25', 'tech-debt,testing,maintainability', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- Reset sequences to avoid primary key conflicts

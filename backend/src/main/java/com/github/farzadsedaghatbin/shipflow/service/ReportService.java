@@ -29,6 +29,7 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -175,7 +176,14 @@ public class ReportService {
       PdfWriter writer = new PdfWriter(baos);
       PdfDocument pdf = new PdfDocument(writer);
       Document document = new Document(pdf);
-      PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+      
+      PdfFont boldFont;
+      try {
+        boldFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+      } catch (IOException e) {
+        document.close();
+        throw new RuntimeException("Failed to create PDF font", e);
+      }
 
       // Title
       Paragraph title = new Paragraph("Cycle Report: " + report.getCycleName()).setFontSize(20).setFont(boldFont)

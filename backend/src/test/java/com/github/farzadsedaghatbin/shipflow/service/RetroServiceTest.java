@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
@@ -50,6 +51,9 @@ class RetroServiceTest {
 
   @Mock
   private RetroItemVoteRepository retroItemVoteRepository;
+
+  @Mock
+  private PitchRepository pitchRepository;
 
   @Mock
   private MessageService messageService;
@@ -446,6 +450,210 @@ class RetroServiceTest {
 
       assertThatThrownBy(() -> retroService.deleteRetroItem(1L)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Cannot delete items from a closed retrospective");
+    }
+  }
+
+  @Nested
+  @DisplayName("Retro Action Tracking Tests (v0.5)")
+  class RetroActionTrackingTests {
+
+    @Test
+    @DisplayName("markActedOn sets acted_on fields correctly")
+    void markActedOnSetsFieldsCorrectly() {
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(testItem));
+      when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+      when(retroItemRepository.save(any(RetroItem.class))).thenAnswer(i -> i.getArgument(0));
+
+      RetroItemDTO result = retroService.markActedOn(1L, true, "Completed during sprint planning");
+
+      verify(retroItemRepository).save(any(RetroItem.class));
+      assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("markActedOn with false clears acted_on fields")
+    void markActedOnWithFalseClearsFields() {
+      testItem.setActedOn(true);
+      testItem.setActedOnNotes("Previous notes");
+      testItem.setActedOnAt(LocalDateTime.now().minusDays(1));
+      testItem.setActedOnBy(testUser);
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(testItem));
+      when(retroItemRepository.save(any(RetroItem.class))).thenAnswer(i -> i.getArgument(0));
+
+      RetroItemDTO result = retroService.markActedOn(1L, false, null);
+
+      verify(retroItemRepository).save(any(RetroItem.class));
+      assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("markActedOn throws exception for non-existent item")
+    void markActedOnThrowsExceptionForNonExistentItem() {
+      when(retroItemRepository.findById(999L)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> retroService.markActedOn(999L, true, "notes"))
+          .isInstanceOf(ResourceNotFoundException.class)
+          .hasMessageContaining("Retro item not found");
+    }
+
+    @Test
+    @DisplayName("convertToPitchDraft creates pitch from retro items")
+    void convertToPitchDraftCreatesPitchFromRetroItems() {
+      // Setup closed retro with ACTION items
+      testRetro.setStatus(RetroStatus.CLOSED);
+      RetroItem actionItem1 = RetroItem.builder()
+          .id(2L)
+          .content("Implement feature flags")
+          .columnType(RetroColumnType.ACTIONS)
+          .retrospective(testRetro)
+          .author(testUser)
+          .voteCount(5)
+          .createdAt(LocalDateTime.now())
+          .build();
+      RetroItem actionItem2 = RetroItem.builder()
+          .id(3L)
+          .content("Add performance testing")
+          .columnType(RetroColumnType.TRY_NEXT)
+          .retrospective(testRetro)
+          .author(testUser)
+          .voteCount(3)
+          .createdAt(LocalDateTime.now())
+          .build();
+      testRetro.setItems(Arrays.asList(testItem, actionItem1, actionItem2));
+
+      Cycle nextCycle = Cycle.builder()
+          .id(2L)
+          .name("Next Cycle")
+          .project(testProject)
+          .startDate(LocalDate.now().plusWeeks(1))
+          .endDate(LocalDate.now().plusWeeks(7))
+          .phase(CyclePhase.SHAPING)
+          .isActive(true)
+          .build();
+
+      Pitch createdPitch = Pitch.builder()
+          .id(10L)
+          .title("Improvements from: Test Retro")
+          .description("Auto-generated from retrospective: Test Retro")
+          .appetiteDays(1)
+          .cycle(nextCycle)
+          .status(PitchStatus.PENDING)
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+
+      ConvertRetroToPitchRequest request = ConvertRetroToPitchRequest.builder()
+          .retrospectiveId(1L)
+          .retroItemIds(Arrays.asList(2L, 3L))
+          .appetiteDays(1)
+          .build();
+
+      when(retroRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testRetro));
+      when(cycleRepository.findNextUpcomingCycle(1L)).thenReturn(Optional.of(nextCycle));
+      when(pitchRepository.save(any(Pitch.class))).thenReturn(createdPitch);
+      when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+      when(retroItemRepository.save(any(RetroItem.class))).thenAnswer(i -> i.getArgument(0));
+
+      PitchDTO result = retroService.convertToPitchDraft(request);
+
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isEqualTo(10L);
+      assertThat(result.getTitle()).contains("Test Retro");
+      verify(pitchRepository).save(any(Pitch.class));
+      verify(retroItemRepository, times(2)).save(any(RetroItem.class)); // 2 items marked as acted on
+    }
+
+    @Test
+    @DisplayName("convertToPitchDraft throws exception for non-closed retro")
+    void convertToPitchDraftThrowsExceptionForNonClosedRetro() {
+      testRetro.setStatus(RetroStatus.OPEN);
+
+      ConvertRetroToPitchRequest request = ConvertRetroToPitchRequest.builder()
+          .retrospectiveId(1L)
+          .build();
+
+      when(retroRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testRetro));
+      when(localizationService.getMessage(anyString(), any(Object[].class)))
+          .thenReturn("Retrospective must be closed before converting to pitch draft");
+
+      assertThatThrownBy(() -> retroService.convertToPitchDraft(request))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("must be closed");
+    }
+
+    @Test
+    @DisplayName("convertToPitchDraft throws exception when no actionable items found")
+    void convertToPitchDraftThrowsExceptionWhenNoActionableItems() {
+      testRetro.setStatus(RetroStatus.CLOSED);
+      testRetro.setItems(Arrays.asList(testItem)); // Only WENT_WELL items
+
+      ConvertRetroToPitchRequest request = ConvertRetroToPitchRequest.builder()
+          .retrospectiveId(1L)
+          .build();
+
+      when(retroRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testRetro));
+      when(localizationService.getMessage(anyString(), any(Object[].class)))
+          .thenReturn("No actionable items found to convert");
+
+      assertThatThrownBy(() -> retroService.convertToPitchDraft(request))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("No actionable items");
+    }
+
+    @Test
+    @DisplayName("convertToPitchDraft uses custom title when provided")
+    void convertToPitchDraftUsesCustomTitle() {
+      testRetro.setStatus(RetroStatus.CLOSED);
+      RetroItem actionItem = RetroItem.builder()
+          .id(2L)
+          .content("Test action")
+          .columnType(RetroColumnType.ACTIONS)
+          .retrospective(testRetro)
+          .author(testUser)
+          .voteCount(2)
+          .createdAt(LocalDateTime.now())
+          .build();
+      testRetro.setItems(Arrays.asList(actionItem));
+
+      Cycle nextCycle = Cycle.builder()
+          .id(2L)
+          .name("Next Cycle")
+          .project(testProject)
+          .startDate(LocalDate.now().plusWeeks(1))
+          .endDate(LocalDate.now().plusWeeks(7))
+          .phase(CyclePhase.SHAPING)
+          .isActive(true)
+          .build();
+
+      Pitch createdPitch = Pitch.builder()
+          .id(11L)
+          .title("Custom Infrastructure Improvements")
+          .description("Auto-generated from retrospective: Test Retro")
+          .appetiteDays(2)
+          .cycle(nextCycle)
+          .status(PitchStatus.PENDING)
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+
+      ConvertRetroToPitchRequest request = ConvertRetroToPitchRequest.builder()
+          .retrospectiveId(1L)
+          .customTitle("Custom Infrastructure Improvements")
+          .appetiteDays(2)
+          .build();
+
+      when(retroRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testRetro));
+      when(cycleRepository.findNextUpcomingCycle(1L)).thenReturn(Optional.of(nextCycle));
+      when(pitchRepository.save(any(Pitch.class))).thenReturn(createdPitch);
+      when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+      when(retroItemRepository.save(any(RetroItem.class))).thenAnswer(i -> i.getArgument(0));
+
+      PitchDTO result = retroService.convertToPitchDraft(request);
+
+      assertThat(result).isNotNull();
+      assertThat(result.getTitle()).isEqualTo("Custom Infrastructure Improvements");
+      assertThat(result.getAppetiteDays()).isEqualTo(2);
     }
   }
 }

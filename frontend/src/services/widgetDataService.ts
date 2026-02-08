@@ -30,6 +30,9 @@ class WidgetDataService {
       case 'TASK_LIST':
         return this.fetchTaskList(filters, sortBy, sortOrder, limit, userContextFilter);
       
+      case 'BUG_LIST':
+        return this.fetchBugList(filters, sortBy, sortOrder, limit, userContextFilter);
+      
       case 'CYCLE_SUMMARY':
         return this.fetchCycleSummary(filters, userContextFilter);
       
@@ -165,6 +168,67 @@ class WidgetDataService {
       };
     } catch (error) {
       console.error('Error fetching task list:', error);
+      return {
+        type: 'TABLE',
+        data: [],
+        metadata: {
+          total: 0,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    }
+  }
+
+  private async fetchBugList(
+    filters?: any[],
+    sortBy?: string,
+    sortOrder?: string,
+    limit?: number,
+    userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      // Bug reports API uses pagination
+      const response = await api.get('/qa/bug-reports', {
+        params: {
+          page: 0,
+          size: limit || 10,
+          sortBy: sortBy || 'createdAt',
+          sortOrder: sortOrder || 'desc'
+        }
+      });
+
+      // Response is a Page object with content array
+      const bugReports = response.data.content || [];
+      
+      // Apply user context filter first (if enabled)
+      let filteredBugs = bugReports;
+      if (userContextFilter) {
+        // Get current user info from auth context (stored in localStorage)
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          // Filter to bug reports assigned to or reported by current user
+          filteredBugs = bugReports.filter((bug: any) => 
+            bug.assigneeId === user.id || bug.reportedById === user.id
+          );
+        }
+      }
+      
+      // Apply additional filters if provided
+      if (filters && filters.length > 0) {
+        filteredBugs = this.applyFilters(filteredBugs, filters);
+      }
+
+      return {
+        type: 'TABLE',
+        data: filteredBugs,
+        metadata: {
+          total: response.data.totalElements || filteredBugs.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching bug report list:', error);
       return {
         type: 'TABLE',
         data: [],

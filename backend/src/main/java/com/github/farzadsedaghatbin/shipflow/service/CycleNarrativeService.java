@@ -216,7 +216,7 @@ public class CycleNarrativeService {
   /**
    * Export cycle summary as Markdown.
    */
-  @Transactional(readOnly = true)
+  @Transactional
   public String exportAsMarkdown(Long cycleId) {
     CycleSummaryDTO summary = getCycleSummary(cycleId);
     StringBuilder md = new StringBuilder();
@@ -281,6 +281,13 @@ public class CycleNarrativeService {
 
     List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
     
+    // Build map of pitch decisions to avoid N+1 queries
+    Map<Long, BettingDecision> decisionsMap = new HashMap<>();
+    List<BettingDecision> decisions = bettingDecisionRepository.findByCycleIdOrderByDecidedAtDesc(cycle.getId());
+    for (BettingDecision decision : decisions) {
+      decisionsMap.put(decision.getPitch().getId(), decision);
+    }
+    
     switch (type) {
       case WHAT_WE_BET:
         prompt.append("Write a summary of what this team committed to in their betting meeting.\n\n");
@@ -290,9 +297,9 @@ public class CycleNarrativeService {
           if (pitch.getStatus() != PitchStatus.PENDING) {
             prompt.append("- ").append(pitch.getTitle());
             prompt.append(" (").append(pitch.getAppetiteDays()).append(" day appetite)");
-            Optional<BettingDecision> decision = bettingDecisionRepository.findByPitchIdAndCycleId(pitch.getId(), cycle.getId());
-            if (decision.isPresent() && decision.get().getReason() != null) {
-              prompt.append(" - Reason: ").append(decision.get().getReason());
+            BettingDecision decision = decisionsMap.get(pitch.getId());
+            if (decision != null && decision.getReason() != null) {
+              prompt.append(" - Reason: ").append(decision.getReason());
             }
             prompt.append("\n");
           }
@@ -415,6 +422,13 @@ public class CycleNarrativeService {
 
     int totalAppetite = committed.stream().mapToInt(Pitch::getAppetiteDays).sum();
     
+    // Load all decisions for this cycle at once to avoid N+1
+    Map<Long, BettingDecision> decisionsMap = new HashMap<>();
+    List<BettingDecision> decisions = bettingDecisionRepository.findByCycleIdOrderByDecidedAtDesc(cycle.getId());
+    for (BettingDecision decision : decisions) {
+      decisionsMap.put(decision.getPitch().getId(), decision);
+    }
+    
     sb.append("In the betting meeting for ").append(cycle.getName()).append(", the team committed to ");
     sb.append(committed.size()).append(" pitch").append(committed.size() > 1 ? "es" : "");
     sb.append(" with a total appetite of ").append(totalAppetite).append(" days.\n\n");
@@ -422,9 +436,9 @@ public class CycleNarrativeService {
     sb.append("The bets included:\n");
     for (Pitch pitch : committed) {
       sb.append("• **").append(pitch.getTitle()).append("** (").append(pitch.getAppetiteDays()).append(" days)");
-      Optional<BettingDecision> decision = bettingDecisionRepository.findByPitchIdAndCycleId(pitch.getId(), cycle.getId());
-      if (decision.isPresent() && decision.get().getReason() != null && !decision.get().getReason().isEmpty()) {
-        sb.append(" - ").append(decision.get().getReason());
+      BettingDecision decision = decisionsMap.get(pitch.getId());
+      if (decision != null && decision.getReason() != null && !decision.getReason().isEmpty()) {
+        sb.append(" - ").append(decision.getReason());
       }
       sb.append("\n");
     }
@@ -569,5 +583,23 @@ public class CycleNarrativeService {
         .generatedAt(entity.getGeneratedAt())
         .generatedByUsername(entity.getGeneratedBy() != null ? entity.getGeneratedBy().getUsername() : null)
         .build();
+  }
+
+  /** Build map of pitchId -> total work hours using bulk query to avoid N+1. */
+  private Map<Long, Double> buildWorkHoursMap(Long cycleId) {
+    Map<Long, Double> hoursMap = new HashMap<>();
+    List<Object[]> results = workLogRepository.getTotalHoursByCycleId(cycleId);
+    if (results == null) {
+      return hoursMap;
+    }
+    for (Object[] row : results) {
+      if (row[0] == null) {
+        continue;
+      }
+      Long pitchId = ((Number) row[0]).longValue();
+      Double hours = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+      hoursMap.put(pitchId, hours);
+    }
+    return hoursMap;
   }
 }

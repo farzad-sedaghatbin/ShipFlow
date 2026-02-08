@@ -58,6 +58,20 @@ export default function TableWidget({
       return effectiveColumns.some(col => {
         const value = row[col.key];
         if (value === null || value === undefined) return false;
+        
+        // Handle different types for search
+        if (Array.isArray(value)) {
+          // Search in array items
+          return value.some(item => 
+            String(item).toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        } else if (typeof value === 'object') {
+          // Search in object properties
+          return Object.values(value).some(v => 
+            String(v).toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        
         return String(value).toLowerCase().includes(searchTerm.toLowerCase());
       });
     });
@@ -109,6 +123,47 @@ export default function TableWidget({
     if (sortKey !== key) return <ArrowUpDown className="h-3 w-3 ml-1" />;
     if (sortDirection === 'asc') return <ArrowUp className="h-3 w-3 ml-1" />;
     return <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
+  // Helper function to render cell values safely
+  const renderCellValue = (value: any): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+    
+    // Handle arrays
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '-';
+      // If array contains objects, show count
+      if (typeof value[0] === 'object') {
+        return `${value.length} items`;
+      }
+      // For primitive arrays, join them
+      return value.join(', ');
+    }
+    
+    // Handle objects
+    if (typeof value === 'object') {
+      // Check if it's a Date object
+      if (value instanceof Date) {
+        return value.toLocaleDateString();
+      }
+      // For other objects, try to find a meaningful field to display
+      // Common patterns: name, title, id, or show as JSON string
+      if ('name' in value) return value.name;
+      if ('title' in value) return value.title;
+      if ('id' in value) return `ID: ${value.id}`;
+      // Otherwise, show count of properties
+      return `{${Object.keys(value).length} fields}`;
+    }
+    
+    // Handle booleans
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    
+    // Handle numbers and strings
+    return String(value);
   };
 
   if (loading) {
@@ -178,7 +233,7 @@ export default function TableWidget({
                     <td key={col.key} className="p-2">
                       {col.render
                         ? col.render(row[col.key], row)
-                        : row[col.key] ?? '-'}
+                        : renderCellValue(row[col.key])}
                     </td>
                   ))}
                 </tr>

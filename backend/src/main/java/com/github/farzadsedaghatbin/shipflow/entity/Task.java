@@ -52,6 +52,10 @@ public class Task {
   @Column(precision = 5, scale = 2)
   private BigDecimal actualHours;
 
+  /**
+   * The cycle this task belongs to. For Kanban projects, tasks are associated with a long-term
+   * hidden cycle for data consistency, but this cycle is never shown in the UI.
+   */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cycle_id", nullable = false)

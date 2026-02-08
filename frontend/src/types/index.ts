@@ -424,6 +424,95 @@ export interface EnhancedCycleReport {
   // Top performers and risks
   topPerformers: string[];
   overBudgetPitches: string[];
+  
+  // v0.5 - Insight, Not Metrics
+  signals?: CycleSignalsDTO;            // Decision support signals
+  narrativeSummary?: CycleSummaryDTO;   // AI-generated or template narrative
+}
+
+// v0.5 - Signal and Narrative DTOs for enhanced reports
+export interface CycleSignalsDTO {
+  cycleId: number | null;
+  cycleName: string | null;
+  projectId: number;
+  projectName: string;
+  analyzedAt: string;
+  overallHealthScore: number;
+  appetiteAccuracy: AppetiteAccuracyDTO | null;
+  shapingPattern: ShapingPatternDTO | null;
+  riskCorrelation: RiskCorrelationDTO | null;
+  retroFollowThrough: RetroFollowThroughDTO | null;
+}
+
+export interface AppetiteAccuracyDTO {
+  trend: string;
+  averageVariancePercent: number;
+  cyclesAnalyzed: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface ShapingPatternDTO {
+  overallQuality: string;
+  overShapedCount: number;
+  underShapedCount: number;
+  accuratelyShapedCount: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface RiskCorrelationDTO {
+  predictiveAccuracyPercent: number;
+  pitchesAnalyzed: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface RetroFollowThroughDTO {
+  followThroughRatePercent: number;
+  totalActionItems: number;
+  actedOnCount: number;
+  pendingCount: number;
+  trend: string;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface CycleSummaryDTO {
+  cycleId: number;
+  cycleName: string;
+  projectName?: string;
+  startDate: string;
+  endDate: string;
+  phase?: string;
+  
+  // Narrative sections
+  whatWeBet: CycleNarrativeDTO | null;
+  whatShipped: CycleNarrativeDTO | null;
+  whatWeCut: CycleNarrativeDTO | null;
+  surprises: CycleNarrativeDTO | null;
+  fullSummary: CycleNarrativeDTO | null;
+  
+  // Quick stats for context
+  totalPitchesCommitted?: number;
+  pitchesShipped?: number;
+  pitchesCut?: number;
+  pitchesInProgress?: number;
+  averageAppetiteAccuracy?: number;
+  
+  // Generation metadata
+  generatedAt: string;
+  aiGenerated?: boolean;
+  exportFormats?: string[];
+}
+
+export interface CycleNarrativeDTO {
+  id: number;
+  cycleId: number;
+  narrativeType: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY';
+  content: string;
+  isAiGenerated: boolean;
+  generatedAt: string;
 }
 
 export interface CycleReport {
@@ -1058,6 +1147,13 @@ export interface RetroItem {
   mergedItemIds?: number[];
   createdAt: string;
   updatedAt?: string;
+  
+  // v0.5 - Action tracking fields
+  actedOn?: boolean;
+  actedOnNotes?: string;
+  actedOnAt?: string;
+  actedOnById?: number;
+  actedOnByName?: string;
 }
 
 export interface CreateRetroRequest {

@@ -2,6 +2,8 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class RetroService {
   private final CycleRepository cycleRepository;
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
+  private final PitchRepository pitchRepository;
   private final LocalizationService localizationService;
   private final MessageService messageService;
 
@@ -549,5 +553,134 @@ public class RetroService {
         .stream()
         .map(this::toItemDTO)
         .collect(Collectors.toList());
+  }
+
+  // ==================== RETRO → PITCH CONVERSION (v0.5) ====================
+
+  /**
+   * Convert retrospective action/improvement items into a pitch draft.
+   * This enables closed retro insights to feed into the next cycle's shaping phase.
+   * 
+   * @param request the conversion request with retro ID and options
+   * @return the created draft pitch
+   */
+  public PitchDTO convertToPitchDraft(ConvertRetroToPitchRequest request) {
+    Retrospective retro = retroRepository.findByIdWithItems(request.getRetrospectiveId())
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Retrospective not found with id: " + request.getRetrospectiveId()));
+
+    if (retro.getStatus() != RetroStatus.CLOSED) {
+      throw new IllegalStateException(
+          localizationService.getMessage("retro.convert.must.be.closed", 
+              "Retrospective must be closed before converting to pitch draft"));
+    }
+
+    // Get items to convert
+    List<RetroItem> itemsToConvert;
+    if (request.getRetroItemIds() != null && !request.getRetroItemIds().isEmpty()) {
+      // Use specific items if specified
+      itemsToConvert = retro.getItems().stream()
+          .filter(item -> request.getRetroItemIds().contains(item.getId()))
+          .filter(item -> item.getMergedInto() == null) // Exclude merged items
+          .collect(Collectors.toList());
+    } else {
+      // Default: get ACTIONS and TRY_NEXT items
+      itemsToConvert = retro.getItems().stream()
+          .filter(item -> item.getColumnType() == RetroColumnType.ACTIONS 
+                       || item.getColumnType() == RetroColumnType.TRY_NEXT)
+          .filter(item -> item.getMergedInto() == null)
+          .collect(Collectors.toList());
+    }
+
+    if (itemsToConvert.isEmpty()) {
+      throw new IllegalStateException(
+          localizationService.getMessage("retro.convert.no.items", 
+              "No actionable items found to convert"));
+    }
+
+    // Determine target cycle
+    Cycle targetCycle;
+    if (request.getTargetCycleId() != null) {
+      targetCycle = cycleRepository.findById(request.getTargetCycleId())
+          .orElseThrow(() -> new ResourceNotFoundException(
+              "Target cycle not found with id: " + request.getTargetCycleId()));
+    } else {
+      // Find next upcoming cycle in the same project
+      targetCycle = cycleRepository.findNextUpcomingCycle(retro.getProject().getId())
+          .orElseThrow(() -> new ResourceNotFoundException(
+              localizationService.getMessage("retro.convert.no.target.cycle",
+                  "No upcoming cycle found for pitch draft")));
+    }
+
+    // Generate pitch title
+    String pitchTitle = request.getCustomTitle() != null 
+        ? request.getCustomTitle()
+        : "Improvements from: " + retro.getTitle();
+
+    // Build problem statement from retro items
+    StringBuilder problemStatement = new StringBuilder();
+    problemStatement.append("Based on retrospective insights from cycle: ")
+        .append(retro.getCycle().getName()).append("\n\n");
+    
+    for (RetroItem item : itemsToConvert) {
+      String columnLabel = item.getColumnType() == RetroColumnType.ACTIONS ? "[Action]" : "[Try Next]";
+      problemStatement.append(columnLabel).append(" ")
+          .append(item.getContent())
+          .append(" (").append(item.getVoteCount()).append(" votes)\n");
+    }
+
+    // Add additional notes if provided
+    if (request.getAdditionalNotes() != null && !request.getAdditionalNotes().isBlank()) {
+      problemStatement.append("\n--- Additional Context ---\n")
+          .append(request.getAdditionalNotes());
+    }
+
+    // Create the pitch as a PENDING draft
+    Pitch pitch = Pitch.builder()
+        .title(pitchTitle)
+        .description("Auto-generated from retrospective: " + retro.getTitle())
+        .problemStatement(problemStatement.toString())
+        .appetiteDays(request.getAppetiteDays() != null ? request.getAppetiteDays() : 1)
+        .cycle(targetCycle)
+        .status(PitchStatus.PENDING)
+        .build();
+
+    Pitch saved = pitchRepository.save(pitch);
+
+    // Mark retro items as acted on
+    for (RetroItem item : itemsToConvert) {
+      item.setActedOn(true);
+      item.setActedOnNotes("Converted to pitch draft: " + saved.getTitle());
+      item.setActedOnAt(LocalDateTime.now());
+      item.setActedOnBy(getCurrentUser());
+      retroItemRepository.save(item);
+    }
+
+    return toPitchDTO(saved);
+  }
+
+  private PitchDTO toPitchDTO(Pitch pitch) {
+    return PitchDTO.builder()
+        .id(pitch.getId())
+        .title(pitch.getTitle())
+        .description(pitch.getDescription())
+        .problemStatement(pitch.getProblemStatement())
+        .solution(pitch.getSolution())
+        .rabbitHoles(pitch.getRabbitHoles())
+        .risks(pitch.getRisks())
+        .noGos(pitch.getNoGos())
+        .wireframeLinks(pitch.getWireframeLinks())
+        .appetiteDays(pitch.getAppetiteDays())
+        .cycleId(pitch.getCycle().getId())
+        .cycleName(pitch.getCycle().getName())
+        .status(pitch.getStatus())
+        .teamId(pitch.getTeam() != null ? pitch.getTeam().getId() : null)
+        .teamName(pitch.getTeam() != null ? pitch.getTeam().getName() : null)
+        .projectId(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getId() : null)
+        .projectName(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getName() : null)
+        .projectKey(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getProjectKey() : null)
+        .createdAt(pitch.getCreatedAt())
+        .updatedAt(pitch.getUpdatedAt())
+        .build();
   }
 }

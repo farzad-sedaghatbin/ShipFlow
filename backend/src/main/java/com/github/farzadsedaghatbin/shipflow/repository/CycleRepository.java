@@ -77,4 +77,17 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
       ORDER BY c.startDate DESC
       """)
   List<Cycle> findAccessibleActiveCyclesByUserId(@Param("userId") Long userId);
+
+  /**
+   * Find the next upcoming cycle for a project (start date after today, ordered by start date).
+   * Used for converting retro items to pitch drafts.
+   */
+  @Query("""
+      SELECT c FROM Cycle c
+      WHERE c.project.id = :projectId
+      AND c.startDate > CURRENT_DATE
+      ORDER BY c.startDate ASC
+      LIMIT 1
+      """)
+  java.util.Optional<Cycle> findNextUpcomingCycle(@Param("projectId") Long projectId);
 }
