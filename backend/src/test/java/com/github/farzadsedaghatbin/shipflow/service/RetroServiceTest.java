@@ -14,6 +14,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.retro.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -60,6 +61,21 @@ class RetroServiceTest {
 
   @Mock
   private LocalizationService localizationService;
+
+  @Mock
+  private RetroCrudService retroCrudService;
+
+  @Mock
+  private RetroItemService retroItemService;
+
+  @Mock
+  private RetroActionService retroActionService;
+
+  @Mock
+  private RetroConversionService retroConversionService;
+
+  @Mock
+  private RetroMapper retroMapper;
 
   @InjectMocks
   private RetroService retroService;
