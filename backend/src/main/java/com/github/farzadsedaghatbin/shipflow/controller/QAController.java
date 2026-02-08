@@ -44,10 +44,7 @@ public class QAController {
 
   /** Check if Q&A feature is enabled. */
   @GetMapping("/status")
-  @Operation(
-      summary = "Get Q&A feature status",
-      description =
-          "Returns the status of the Q&A feature including availability of AI and vector store")
+  @Operation(summary = "Get Q&A feature status", description = "Returns the status of the Q&A feature including availability of AI and vector store")
   public ResponseEntity<QAStatusDTO> getStatus() {
     return ResponseEntity.ok(qaService.getStatus());
   }
@@ -55,22 +52,13 @@ public class QAController {
   /** Ask a question. */
   @PostMapping("/ask")
   @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'READ')")
-  @Operation(
-      summary = "Ask a question",
-      description =
-          "Submit a question and receive an AI-generated answer based on stored knowledge")
-  public ResponseEntity<QAResponse> askQuestion(
-      @Valid @RequestBody AskQuestionRequest request,
+  @Operation(summary = "Ask a question", description = "Submit a question and receive an AI-generated answer based on stored knowledge")
+  public ResponseEntity<QAResponse> askQuestion(@Valid @RequestBody AskQuestionRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled) {
-      return ResponseEntity.badRequest()
-          .body(
-              QAResponse.builder()
-                  .question(request.getQuestion())
-                  .aiEnabled(false)
-                  .errorMessage("Q&A feature is not enabled")
-                  .build());
+      return ResponseEntity.badRequest().body(QAResponse.builder().question(request.getQuestion())
+          .aiEnabled(false).errorMessage("Q&A feature is not enabled").build());
     }
 
     Long userId = getUserId(userDetails);
@@ -80,11 +68,8 @@ public class QAController {
 
   /** Submit feedback for a Q&A response. */
   @PostMapping("/feedback")
-  @Operation(
-      summary = "Submit feedback",
-      description = "Provide feedback on a Q&A response (accurate, inaccurate, or corrected)")
-  public ResponseEntity<Map<String, String>> submitFeedback(
-      @Valid @RequestBody QAFeedbackRequest request,
+  @Operation(summary = "Submit feedback", description = "Provide feedback on a Q&A response (accurate, inaccurate, or corrected)")
+  public ResponseEntity<Map<String, String>> submitFeedback(@Valid @RequestBody QAFeedbackRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled) {
@@ -98,13 +83,9 @@ public class QAController {
 
   /** Submit simple helpful/unhelpful feedback for active learning. */
   @PostMapping("/feedback/simple")
-  @Operation(
-      summary = "Submit simple feedback",
-      description = "Submit helpful/unhelpful feedback for active learning")
-  public ResponseEntity<Map<String, String>> submitSimpleFeedback(
-      @RequestParam Long interactionId,
-      @RequestParam boolean helpful,
-      @RequestParam(required = false) String text,
+  @Operation(summary = "Submit simple feedback", description = "Submit helpful/unhelpful feedback for active learning")
+  public ResponseEntity<Map<String, String>> submitSimpleFeedback(@RequestParam Long interactionId,
+      @RequestParam boolean helpful, @RequestParam(required = false) String text,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled) {
@@ -117,11 +98,8 @@ public class QAController {
 
   /** Get recent Q&A interactions for the current user. */
   @GetMapping("/history")
-  @Operation(
-      summary = "Get Q&A history",
-      description = "Get recent Q&A interactions for the current user")
-  public ResponseEntity<List<QAInteraction>> getHistory(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  @Operation(summary = "Get Q&A history", description = "Get recent Q&A interactions for the current user")
+  public ResponseEntity<List<QAInteraction>> getHistory(@AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled) {
       return ResponseEntity.ok(List.of());
@@ -135,11 +113,8 @@ public class QAController {
 
   /** Create a new note. */
   @PostMapping("/notes")
-  @Operation(
-      summary = "Create a note",
-      description = "Create a new manual note that can be included in the knowledge base")
-  public ResponseEntity<NoteDTO> createNote(
-      @Valid @RequestBody CreateNoteRequest request,
+  @Operation(summary = "Create a note", description = "Create a new manual note that can be included in the knowledge base")
+  public ResponseEntity<NoteDTO> createNote(@Valid @RequestBody CreateNoteRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     Long userId = getUserId(userDetails);
@@ -150,9 +125,7 @@ public class QAController {
   /** Update a note. */
   @PutMapping("/notes/{id}")
   @Operation(summary = "Update a note", description = "Update an existing note")
-  public ResponseEntity<NoteDTO> updateNote(
-      @PathVariable Long id,
-      @Valid @RequestBody CreateNoteRequest request,
+  public ResponseEntity<NoteDTO> updateNote(@PathVariable Long id, @Valid @RequestBody CreateNoteRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     Long userId = getUserId(userDetails);
@@ -163,8 +136,8 @@ public class QAController {
   /** Delete a note. */
   @DeleteMapping("/notes/{id}")
   @Operation(summary = "Delete a note", description = "Delete a note")
-  public ResponseEntity<Map<String, String>> deleteNote(
-      @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<Map<String, String>> deleteNote(@PathVariable Long id,
+      @AuthenticationPrincipal UserDetails userDetails) {
 
     Long userId = getUserId(userDetails);
     noteService.deleteNote(id, userId);
@@ -181,8 +154,7 @@ public class QAController {
   /** Get notes by context. */
   @GetMapping("/notes")
   @Operation(summary = "Get notes", description = "Get notes by context type and ID")
-  public ResponseEntity<List<NoteDTO>> getNotes(
-      @RequestParam String contextType, @RequestParam Long contextId) {
+  public ResponseEntity<List<NoteDTO>> getNotes(@RequestParam String contextType, @RequestParam Long contextId) {
     return ResponseEntity.ok(noteService.getNotesByContext(contextType, contextId));
   }
 
@@ -210,8 +182,7 @@ public class QAController {
   /** Get notes for the current user. */
   @GetMapping("/notes/my")
   @Operation(summary = "Get my notes", description = "Get all notes created by the current user")
-  public ResponseEntity<List<NoteDTO>> getMyNotes(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<List<NoteDTO>> getMyNotes(@AuthenticationPrincipal UserDetails userDetails) {
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(noteService.getNotesByAuthor(userId));
   }
@@ -220,11 +191,8 @@ public class QAController {
 
   /** Trigger a full knowledge reindex (admin only). */
   @PostMapping("/admin/reindex")
-  @Operation(
-      summary = "Reindex knowledge",
-      description = "Trigger a full reindex of all knowledge items (admin only)")
-  public ResponseEntity<Map<String, String>> reindexKnowledge(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  @Operation(summary = "Reindex knowledge", description = "Trigger a full reindex of all knowledge items (admin only)")
+  public ResponseEntity<Map<String, String>> reindexKnowledge(@AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled || knowledgeIngestionService == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Q&A feature is not enabled"));
@@ -237,28 +205,21 @@ public class QAController {
 
   /** Process pending embeddings (admin only). */
   @PostMapping("/admin/process-pending")
-  @Operation(
-      summary = "Process pending embeddings",
-      description =
-          "Process any pending knowledge items that haven't been embedded yet (admin only)")
-  public ResponseEntity<Map<String, Object>> processPending(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  @Operation(summary = "Process pending embeddings", description = "Process any pending knowledge items that haven't been embedded yet (admin only)")
+  public ResponseEntity<Map<String, Object>> processPending(@AuthenticationPrincipal UserDetails userDetails) {
 
     if (!qaEnabled || knowledgeIngestionService == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Q&A feature is not enabled"));
     }
 
     int processed = knowledgeIngestionService.processPendingEmbeddings();
-    return ResponseEntity.ok(
-        Map.of("message", "Processing completed", "processedCount", processed));
+    return ResponseEntity.ok(Map.of("message", "Processing completed", "processedCount", processed));
   }
 
   // ===== Helper methods =====
 
   private Long getUserId(UserDetails userDetails) {
-    return userRepository
-        .findByUsername(userDetails.getUsername())
-        .map(User::getId)
+    return userRepository.findByUsername(userDetails.getUsername()).map(User::getId)
         .orElseThrow(() -> new RuntimeException("User not found"));
   }
 }

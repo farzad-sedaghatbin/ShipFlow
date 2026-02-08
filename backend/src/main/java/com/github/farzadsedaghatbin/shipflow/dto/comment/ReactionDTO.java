@@ -16,10 +16,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReactionDTO {
 
-    private Long id;
-    private CommentReaction reactionType;
-    private String emoji;
-    private Long userId;
-    private String userName;
-    private LocalDateTime createdAt;
+  private Long id;
+  private CommentReaction reactionType;
+  private String emoji;
+  private Long userId;
+  private String userName;
+  private LocalDateTime createdAt;
 }

@@ -42,16 +42,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentService {
 
   /**
-   * Mapping of file extensions to MIME content types. Centralized to maintain consistency across
-   * the codebase.
+   * Mapping of file extensions to MIME content types. Centralized to maintain
+   * consistency across the codebase.
    */
-  private static final Map<String, String> CONTENT_TYPE_MAP =
-      Map.of(
-          "pdf", "application/pdf",
-          "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "doc", "application/msword",
-          "txt", "text/plain",
-          "md", "text/markdown");
+  private static final Map<String, String> CONTENT_TYPE_MAP = Map.of("pdf", "application/pdf", "docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "doc", "application/msword",
+      "txt", "text/plain", "md", "text/markdown");
 
   private final UploadedDocumentRepository documentRepository;
   private final LocalizationService localizationService;
@@ -67,26 +63,17 @@ public class DocumentService {
 
   /** Upload a document and extract its text content. */
   @Transactional
-  public DocumentUploadResponse uploadDocument(
-      MultipartFile file,
-      String entityType,
-      Long entityId,
-      Long uploaderId,
+  public DocumentUploadResponse uploadDocument(MultipartFile file, String entityType, Long entityId, Long uploaderId,
       String uploaderUsername) {
     try {
       // Validate file
       if (file.isEmpty()) {
-        return DocumentUploadResponse.builder()
-            .textExtracted(false)
-            .errorMessage("File is empty")
-            .build();
+        return DocumentUploadResponse.builder().textExtracted(false).errorMessage("File is empty").build();
       }
 
       if (file.getSize() > maxFileSize) {
-        return DocumentUploadResponse.builder()
-            .textExtracted(false)
-            .errorMessage("File size exceeds maximum allowed size")
-            .build();
+        return DocumentUploadResponse.builder().textExtracted(false)
+            .errorMessage("File size exceeds maximum allowed size").build();
       }
 
       String originalFileName = file.getOriginalFilename();
@@ -94,11 +81,8 @@ public class DocumentService {
 
       // Validate file type
       if (!isAllowedFileType(fileType)) {
-        return DocumentUploadResponse.builder()
-            .fileName(originalFileName)
-            .fileType(fileType)
-            .textExtracted(false)
-            .errorMessage("Unsupported file type. Allowed: PDF, DOCX, DOC, TXT, MD")
+        return DocumentUploadResponse.builder().fileName(originalFileName).fileType(fileType)
+            .textExtracted(false).errorMessage("Unsupported file type. Allowed: PDF, DOCX, DOC, TXT, MD")
             .build();
       }
 
@@ -113,7 +97,8 @@ public class DocumentService {
       Files.createDirectories(uploadPath);
       Path filePath = uploadPath.resolve(uniqueFileName);
 
-      // Verify the resolved path is still within the upload directory (additional security check)
+      // Verify the resolved path is still within the upload directory (additional
+      // security check)
       if (!filePath.normalize().startsWith(uploadPath)) {
         throw new SecurityException("Invalid file path detected");
       }
@@ -125,21 +110,11 @@ public class DocumentService {
       boolean textExtracted = extractedText != null && !extractedText.isEmpty();
 
       // Save document metadata to database
-      UploadedDocument document =
-          UploadedDocument.builder()
-              .fileName(uniqueFileName)
-              .originalFileName(originalFileName)
-              .fileType(fileType)
-              .fileSize(file.getSize())
-              .storagePath(filePath.toString())
-              .extractedText(extractedText)
-              .textExtracted(textExtracted)
-              .entityType(entityType)
-              .entityId(entityId)
-              .uploaderId(uploaderId)
-              .uploaderUsername(uploaderUsername)
-              .indexedForQA(false)
-              .build();
+      UploadedDocument document = UploadedDocument.builder().fileName(uniqueFileName)
+          .originalFileName(originalFileName).fileType(fileType).fileSize(file.getSize())
+          .storagePath(filePath.toString()).extractedText(extractedText).textExtracted(textExtracted)
+          .entityType(entityType).entityId(entityId).uploaderId(uploaderId).uploaderUsername(uploaderUsername)
+          .indexedForQA(false).build();
 
       document = documentRepository.save(document);
 
@@ -156,22 +131,14 @@ public class DocumentService {
 
       log.info("Document uploaded successfully: {} ({})", originalFileName, fileType);
 
-      return DocumentUploadResponse.builder()
-          .id(document.getId())
-          .fileName(originalFileName)
-          .fileType(fileType)
-          .fileSize(file.getSize())
-          .extractedText(textExtracted ? extractedText : null)
-          .storagePath(uniqueFileName)
-          .textExtracted(textExtracted)
-          .build();
+      return DocumentUploadResponse.builder().id(document.getId()).fileName(originalFileName).fileType(fileType)
+          .fileSize(file.getSize()).extractedText(textExtracted ? extractedText : null)
+          .storagePath(uniqueFileName).textExtracted(textExtracted).build();
 
     } catch (Exception e) {
       log.error("Error uploading document: {}", e.getMessage(), e);
-      return DocumentUploadResponse.builder()
-          .textExtracted(false)
-          .errorMessage("Error uploading document: " + e.getMessage())
-          .build();
+      return DocumentUploadResponse.builder().textExtracted(false)
+          .errorMessage("Error uploading document: " + e.getMessage()).build();
     }
   }
 
@@ -179,17 +146,17 @@ public class DocumentService {
   public String extractText(InputStream inputStream, String fileType) {
     try {
       switch (fileType.toLowerCase()) {
-        case "pdf":
+        case "pdf" :
           return extractTextFromPdf(inputStream);
-        case "docx":
+        case "docx" :
           return extractTextFromDocx(inputStream);
-        case "doc":
+        case "doc" :
           return extractTextFromDoc(inputStream);
-        case "txt":
-        case "md":
-        case "markdown":
+        case "txt" :
+        case "md" :
+        case "markdown" :
           return extractTextFromPlainText(inputStream);
-        default:
+        default :
           log.warn("Unsupported file type for text extraction: {}", fileType);
           return null;
       }
@@ -200,8 +167,8 @@ public class DocumentService {
   }
 
   /**
-   * Extract text from a MultipartFile without saving it. Useful for extracting pitch data before
-   * creating a pitch.
+   * Extract text from a MultipartFile without saving it. Useful for extracting
+   * pitch data before creating a pitch.
    */
   public String extractTextFromFile(MultipartFile file) {
     try {
@@ -250,8 +217,7 @@ public class DocumentService {
   }
 
   private String extractTextFromPlainText(InputStream inputStream) throws IOException {
-    try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
       return reader.lines().collect(Collectors.joining("\n")).trim();
     }
   }
@@ -264,13 +230,8 @@ public class DocumentService {
   }
 
   private boolean isAllowedFileType(String fileType) {
-    return fileType != null
-        && (fileType.equals("pdf")
-            || fileType.equals("docx")
-            || fileType.equals("doc")
-            || fileType.equals("txt")
-            || fileType.equals("md")
-            || fileType.equals("markdown"));
+    return fileType != null && (fileType.equals("pdf") || fileType.equals("docx") || fileType.equals("doc")
+        || fileType.equals("txt") || fileType.equals("md") || fileType.equals("markdown"));
   }
 
   /** Get all documents for an entity. */
@@ -280,9 +241,7 @@ public class DocumentService {
 
   /** Get document by ID. */
   public UploadedDocument getDocumentById(Long id) {
-    return documentRepository
-        .findById(id)
-        .orElseThrow(() -> new RuntimeException("Document not found: " + id));
+    return documentRepository.findById(id).orElseThrow(() -> new RuntimeException("Document not found: " + id));
   }
 
   /** Delete a document. */
@@ -317,23 +276,21 @@ public class DocumentService {
       // Determine content type
       String contentType = determineContentType(document.getFileType());
 
-      return ResponseEntity.ok()
-          .contentType(MediaType.parseMediaType(contentType))
-          .header(
-              HttpHeaders.CONTENT_DISPOSITION,
+      return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+          .header(HttpHeaders.CONTENT_DISPOSITION,
               "attachment; filename=\"" + document.getOriginalFileName() + "\"")
           .body(resource);
 
     } catch (MalformedURLException e) {
-      throw new RuntimeException(
-          localizationService.getMessage("document.read.error", e.getMessage()), e);
+      throw new RuntimeException(localizationService.getMessage("document.read.error", e.getMessage()), e);
     }
   }
 
   /**
    * Determines the MIME content type based on file extension.
    *
-   * @param fileType The file extension (e.g., "pdf", "docx")
+   * @param fileType
+   *            The file extension (e.g., "pdf", "docx")
    * @return The MIME content type, or "application/octet-stream" if unknown
    */
   private String determineContentType(String fileType) {
@@ -381,8 +338,8 @@ public class DocumentService {
   }
 
   /**
-   * Sanitizes a filename to prevent path traversal attacks. Removes all path separators and only
-   * keeps the filename portion.
+   * Sanitizes a filename to prevent path traversal attacks. Removes all path
+   * separators and only keeps the filename portion.
    */
   private String sanitizeFileName(String filename) {
     if (filename == null || filename.isEmpty()) {

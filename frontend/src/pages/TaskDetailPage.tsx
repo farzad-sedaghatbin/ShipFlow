@@ -37,6 +37,7 @@ import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
@@ -120,7 +121,7 @@ export default function TaskDetailPage() {
       
       // Load subtasks
       const subtasksResponse = await taskService.getSubTasks(id);
-      setSubtasks(subtasksResponse.data);
+      setSubtasks(subtasksResponse.data || []);
     } catch (error) {
       console.error('Failed to load task:', error);
       toast.error('Failed to load task');
@@ -474,6 +475,15 @@ export default function TaskDetailPage() {
       <Comments 
         entityType="task" 
         entityId={task.id}
+      />
+
+      {/* Activity Timeline */}
+      <ActivityTimeline
+        entityId={task.id}
+        fetchHistory={async (page, size) => {
+          const response = await taskService.getHistory(task.id, page, size);
+          return response.data;
+        }}
       />
 
       {/* Subtasks */}

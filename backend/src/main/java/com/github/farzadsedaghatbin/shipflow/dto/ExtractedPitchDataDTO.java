@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for pitch shaping data extracted from documents. Contains Shape Up methodology elements
- * extracted via AI analysis.
+ * DTO for pitch shaping data extracted from documents. Contains Shape Up
+ * methodology elements extracted via AI analysis.
  */
 @Data
 @NoArgsConstructor

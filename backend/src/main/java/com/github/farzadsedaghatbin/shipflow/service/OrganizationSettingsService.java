@@ -23,24 +23,21 @@ public class OrganizationSettingsService {
   private final OrganizationSettingsRepository settingsRepository;
   private final ObjectMapper objectMapper;
 
-  /** Get current organization settings. Creates default settings if none exist. */
+  /**
+   * Get current organization settings. Creates default settings if none exist.
+   */
   @Transactional
   public OrganizationSettingsDTO getSettings() {
-    OrganizationSettings settings =
-        settingsRepository
-            .findFirstByOrderByIdAsc()
-            .orElseGet(() -> createDefaultSettings("system"));
+    OrganizationSettings settings = settingsRepository.findFirstByOrderByIdAsc()
+        .orElseGet(() -> createDefaultSettings("system"));
     return toDTO(settings);
   }
 
   /** Update organization settings. */
   @Transactional
-  public OrganizationSettingsDTO updateSettings(
-      UpdateOrganizationSettingsRequest request, String username) {
-    OrganizationSettings settings =
-        settingsRepository
-            .findFirstByOrderByIdAsc()
-            .orElseGet(() -> createDefaultSettings(username));
+  public OrganizationSettingsDTO updateSettings(UpdateOrganizationSettingsRequest request, String username) {
+    OrganizationSettings settings = settingsRepository.findFirstByOrderByIdAsc()
+        .orElseGet(() -> createDefaultSettings(username));
 
     // Update fields if provided
     if (request.getOrganizationName() != null) {
@@ -79,6 +76,9 @@ public class OrganizationSettingsService {
     if (request.getSeverityLevels() != null) {
       settings.setSeverityLevelsJson(toJson(request.getSeverityLevels()));
     }
+    if (request.getMeetingTypes() != null) {
+      settings.setMeetingTypesJson(toJson(request.getMeetingTypes()));
+    }
     if (request.getTimeZone() != null) {
       settings.setTimeZone(request.getTimeZone());
     }
@@ -112,232 +112,257 @@ public class OrganizationSettingsService {
 
   /** Create default organization settings. */
   private OrganizationSettings createDefaultSettings(String username) {
-    OrganizationSettingsDTO.RiskThresholds defaultRiskThresholds =
-        OrganizationSettingsDTO.RiskThresholds.builder()
-            .lowMax(30)
-            .mediumMax(60)
-            .highMax(85)
-            .build();
+    OrganizationSettingsDTO.RiskThresholds defaultRiskThresholds = OrganizationSettingsDTO.RiskThresholds.builder()
+        .lowMax(30).mediumMax(60).highMax(85).build();
 
-    List<OrganizationSettingsDTO.CategoryConfig> defaultTaskCategories =
-        List.of(
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("PITCH_SCOPE")
-                .description("Work related to pitch deliverables")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(1)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("DEBT_IMPROVEMENT")
-                .description("Technical debt and improvements")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .build());
+    List<OrganizationSettingsDTO.CategoryConfig> defaultTaskCategories = List.of(
+        OrganizationSettingsDTO.CategoryConfig.builder().name("PITCH_SCOPE")
+            .description("Work related to pitch deliverables").color("#3B82F6").isActive(true).order(1)
+            .build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("DEBT_IMPROVEMENT")
+            .description("Technical debt and improvements").color("#F59E0B").isActive(true).order(2)
+            .build());
 
-    List<OrganizationSettingsDTO.CategoryConfig> defaultPitchCategories =
-        List.of(
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("FEATURE")
-                .description("New feature development")
-                .color("#10B981")
-                .isActive(true)
-                .order(1)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("INFRASTRUCTURE")
-                .description("Infrastructure and architecture")
-                .color("#6366F1")
-                .isActive(true)
-                .order(2)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("REFACTOR")
-                .description("Code refactoring")
-                .color("#8B5CF6")
-                .isActive(true)
-                .order(3)
-                .build(),
-            OrganizationSettingsDTO.CategoryConfig.builder()
-                .name("BUG_FIX")
-                .description("Bug fixes")
-                .color("#EF4444")
-                .isActive(true)
-                .order(4)
-                .build());
+    List<OrganizationSettingsDTO.CategoryConfig> defaultPitchCategories = List.of(
+        OrganizationSettingsDTO.CategoryConfig.builder().name("FEATURE").description("New feature development")
+            .color("#10B981").isActive(true).order(1).build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("INFRASTRUCTURE")
+            .description("Infrastructure and architecture").color("#6366F1").isActive(true).order(2)
+            .build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("REFACTOR").description("Code refactoring")
+            .color("#8B5CF6").isActive(true).order(3).build(),
+        OrganizationSettingsDTO.CategoryConfig.builder().name("BUG_FIX").description("Bug fixes")
+            .color("#EF4444").isActive(true).order(4).build());
 
-    OrganizationSettingsDTO.ColorSettings defaultColors =
-        OrganizationSettingsDTO.ColorSettings.builder()
-            .appetiteHours("#3B82F6")
-            .actualHours("#10B981")
-            .overBudget("#EF4444")
-            .underBudget("#22C55E")
-            .build();
+    OrganizationSettingsDTO.ColorSettings defaultColors = OrganizationSettingsDTO.ColorSettings.builder()
+        .appetiteHours("#3B82F6").actualHours("#10B981").overBudget("#EF4444").underBudget("#22C55E").build();
 
-    List<OrganizationSettingsDTO.BugStatusConfig> defaultBugStatuses =
-        List.of(
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("NEW")
-                .description("Newly reported")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(1)
-                .isClosed(false)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("IN_PROGRESS")
-                .description("Being worked on")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .isClosed(false)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("FIXED")
-                .description("Fix implemented")
-                .color("#10B981")
-                .isActive(true)
-                .order(3)
-                .isClosed(true)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("VERIFIED")
-                .description("Fix verified")
-                .color("#22C55E")
-                .isActive(true)
-                .order(4)
-                .isClosed(true)
-                .build(),
-            OrganizationSettingsDTO.BugStatusConfig.builder()
-                .name("WONT_FIX")
-                .description("Will not fix")
-                .color("#6B7280")
-                .isActive(true)
-                .order(5)
-                .isClosed(true)
-                .build());
+    List<OrganizationSettingsDTO.BugStatusConfig> defaultBugStatuses = List.of(
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("NEW").description("Newly reported")
+            .color("#3B82F6").isActive(true).order(1).isClosed(false).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("IN_PROGRESS").description("Being worked on")
+            .color("#F59E0B").isActive(true).order(2).isClosed(false).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("FIXED").description("Fix implemented")
+            .color("#10B981").isActive(true).order(3).isClosed(true).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("VERIFIED").description("Fix verified")
+            .color("#22C55E").isActive(true).order(4).isClosed(true).build(),
+        OrganizationSettingsDTO.BugStatusConfig.builder().name("WONT_FIX").description("Will not fix")
+            .color("#6B7280").isActive(true).order(5).isClosed(true).build());
 
-    List<OrganizationSettingsDTO.SeverityLevelConfig> defaultSeverityLevels =
-        List.of(
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("CRITICAL")
-                .description("System down or data loss")
-                .color("#DC2626")
-                .isActive(true)
-                .order(1)
-                .priority(1)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("HIGH")
-                .description("Major feature broken")
-                .color("#F59E0B")
-                .isActive(true)
-                .order(2)
-                .priority(2)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("MEDIUM")
-                .description("Feature partially broken")
-                .color("#3B82F6")
-                .isActive(true)
-                .order(3)
-                .priority(3)
-                .build(),
-            OrganizationSettingsDTO.SeverityLevelConfig.builder()
-                .name("LOW")
-                .description("Minor issue or cosmetic")
-                .color("#10B981")
-                .isActive(true)
-                .order(4)
-                .priority(4)
-                .build());
+    List<OrganizationSettingsDTO.SeverityLevelConfig> defaultSeverityLevels = List.of(
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("CRITICAL")
+            .description("System down or data loss").color("#DC2626").isActive(true).order(1).priority(1)
+            .build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("HIGH").description("Major feature broken")
+            .color("#F59E0B").isActive(true).order(2).priority(2).build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("MEDIUM")
+            .description("Feature partially broken").color("#3B82F6").isActive(true).order(3).priority(3)
+            .build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("LOW").description("Minor issue or cosmetic")
+            .color("#10B981").isActive(true).order(4).priority(4).build());
 
     // Default risk weights (balanced profile)
-    OrganizationSettingsDTO.RiskWeights defaultRiskWeights =
-        OrganizationSettingsDTO.RiskWeights.builder()
-            .budgetWeight(25)
-            .bugsWeight(30)
-            .scopeWeight(25)
-            .timeWeight(20)
-            .build();
+    OrganizationSettingsDTO.RiskWeights defaultRiskWeights = OrganizationSettingsDTO.RiskWeights.builder()
+        .budgetWeight(25).bugsWeight(30).scopeWeight(25).timeWeight(20).build();
 
-    OrganizationSettings settings =
-        OrganizationSettings.builder()
-            .organizationName("My Organization")
-            .defaultCycleLengthWeeks(6)
-            .defaultCooldownWeeks(2)
-            .riskThresholdsJson(toJson(defaultRiskThresholds))
-            .riskWeightsJson(toJson(defaultRiskWeights))
-            .taskCategoriesJson(toJson(defaultTaskCategories))
-            .pitchCategoriesJson(toJson(defaultPitchCategories))
-            .colorsJson(toJson(defaultColors))
-            .bugStatusesJson(toJson(defaultBugStatuses))
-            .severityLevelsJson(toJson(defaultSeverityLevels))
-            .timeZone("UTC")
-            .dateFormat("MM/DD/YYYY")
-            .enableNotifications(true)
-            .enableAIFeatures(true)
-            .updatedBy(username)
-            .build();
+    // Default meeting types with DOR and DOD checklist items
+    List<OrganizationSettingsDTO.MeetingTypeConfig> defaultMeetingTypes = createDefaultMeetingTypes();
+
+    OrganizationSettings settings = OrganizationSettings.builder().organizationName("My Organization")
+        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
+        .riskWeightsJson(toJson(defaultRiskWeights)).taskCategoriesJson(toJson(defaultTaskCategories))
+        .pitchCategoriesJson(toJson(defaultPitchCategories)).colorsJson(toJson(defaultColors))
+        .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
+        .meetingTypesJson(toJson(defaultMeetingTypes))
+        .timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true).enableAIFeatures(true)
+        .updatedBy(username).build();
 
     return settingsRepository.save(settings);
+  }
+
+  /** Create default meeting types based on the original hardcoded MeetingType enum. */
+  private List<OrganizationSettingsDTO.MeetingTypeConfig> createDefaultMeetingTypes() {
+    return List.of(
+        // SHAPING meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("SHAPING").displayName("Shaping").description("Shape pitch ideas into concrete proposals")
+            .color("#8B5CF6").isActive(true).order(1)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Problem Statement Defined")
+                    .description("Clear problem statement is documented").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Stakeholders Identified")
+                    .description("All relevant stakeholders are identified").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Initial Research Complete")
+                    .description("Background research has been done").isRequired(false).order(3).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Solution Outlined")
+                    .description("High-level solution approach documented").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Appetite Estimated")
+                    .description("Time/effort appetite is defined").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Risks Identified")
+                    .description("Known risks and rabbit holes documented").isRequired(false).order(3).build()))
+            .build(),
+
+        // BETTING meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("BETTING").displayName("Betting").description("Decide which pitches to bet on for the cycle")
+            .color("#F59E0B").isActive(true).order(2)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Pitches Shaped")
+                    .description("All candidate pitches are fully shaped").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Team Availability Known")
+                    .description("Team capacity for the cycle is clear").isRequired(true).order(2).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Bets Selected")
+                    .description("Pitches for the cycle are selected").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Teams Assigned")
+                    .description("Teams are assigned to each bet").isRequired(true).order(2).build()))
+            .build(),
+
+        // KICKOFF meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("KICKOFF").displayName("Kickoff").description("Start work on a pitch with team alignment")
+            .color("#10B981").isActive(true).order(3)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Pitch Documentation Ready")
+                    .description("Full pitch documentation is available").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Team Members Present")
+                    .description("All team members are attending").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Acceptance Criteria Clear")
+                    .description("Success criteria is defined").isRequired(false).order(3).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Team Understands Scope")
+                    .description("Team has clear understanding of the work").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Initial Tasks Created")
+                    .description("First tasks are identified and created").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Questions Addressed")
+                    .description("Initial questions are answered").isRequired(false).order(3).build()))
+            .build(),
+
+        // STANDUP meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("STANDUP").displayName("Standup").description("Daily sync on progress and blockers")
+            .color("#3B82F6").isActive(true).order(4)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Team Present")
+                    .description("Team members are present").isRequired(true).order(1).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Updates Shared")
+                    .description("Each member shared their updates").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Blockers Identified")
+                    .description("Any blockers are surfaced").isRequired(true).order(2).build()))
+            .build(),
+
+        // DEMO meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("DEMO").displayName("Demo").description("Demonstrate completed work to stakeholders")
+            .color("#EC4899").isActive(true).order(5)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Demo Environment Ready")
+                    .description("Demo environment is set up and working").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Features Complete")
+                    .description("Features to demo are complete").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Demo Script Prepared")
+                    .description("Demo flow is planned").isRequired(false).order(3).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Features Demonstrated")
+                    .description("All planned features were shown").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Feedback Collected")
+                    .description("Stakeholder feedback is documented").isRequired(true).order(2).build()))
+            .build(),
+
+        // RETROSPECTIVE meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("RETROSPECTIVE").displayName("Retrospective").description("Reflect on the cycle and identify improvements")
+            .color("#6366F1").isActive(true).order(6)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Cycle Completed")
+                    .description("The cycle work is finished").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Team Available")
+                    .description("All team members can attend").isRequired(true).order(2).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("What Went Well")
+                    .description("Positive points are documented").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("What To Improve")
+                    .description("Improvement areas are identified").isRequired(true).order(2).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Action Items Created")
+                    .description("Concrete action items are defined").isRequired(true).order(3).build()))
+            .build(),
+
+        // HILL_CHART_REVIEW meeting
+        OrganizationSettingsDTO.MeetingTypeConfig.builder()
+            .name("HILL_CHART_REVIEW").displayName("Hill Chart Review").description("Review progress using hill charts")
+            .color("#14B8A6").isActive(true).order(7)
+            .dorItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Hill Charts Updated")
+                    .description("All scopes have current hill positions").isRequired(true).order(1).build()))
+            .dodItems(List.of(
+                OrganizationSettingsDTO.DorDodItem.builder().name("Progress Reviewed")
+                    .description("All hill chart positions discussed").isRequired(true).order(1).build(),
+                OrganizationSettingsDTO.DorDodItem.builder().name("Risks Addressed")
+                    .description("Stuck items have mitigation plans").isRequired(false).order(2).build()))
+            .build()
+    );
   }
 
   /** Convert entity to DTO. */
   private OrganizationSettingsDTO toDTO(OrganizationSettings entity) {
     // Provide default risk weights if not configured
-    OrganizationSettingsDTO.RiskWeights weights =
-        fromJson(
-            entity.getRiskWeightsJson(),
-            new TypeReference<OrganizationSettingsDTO.RiskWeights>() {});
+    OrganizationSettingsDTO.RiskWeights weights = fromJson(entity.getRiskWeightsJson(),
+        new TypeReference<OrganizationSettingsDTO.RiskWeights>() {
+        });
     if (weights == null) {
-      weights =
-          OrganizationSettingsDTO.RiskWeights.builder()
-              .budgetWeight(25)
-              .bugsWeight(30)
-              .scopeWeight(25)
-              .timeWeight(20)
-              .build();
+      weights = OrganizationSettingsDTO.RiskWeights.builder().budgetWeight(25).bugsWeight(30).scopeWeight(25)
+          .timeWeight(20).build();
     }
 
-    return OrganizationSettingsDTO.builder()
-        .id(entity.getId())
-        .organizationName(entity.getOrganizationName())
+    // Provide default meeting types if not configured
+    List<OrganizationSettingsDTO.MeetingTypeConfig> meetingTypes = fromJson(entity.getMeetingTypesJson(),
+        new TypeReference<List<OrganizationSettingsDTO.MeetingTypeConfig>>() {
+        });
+    if (meetingTypes == null || meetingTypes.isEmpty()) {
+      meetingTypes = createDefaultMeetingTypes();
+    }
+    
+    // Filter out deleted DOR/DOD items from all meeting types
+    if (meetingTypes != null) {
+      meetingTypes.forEach(meetingType -> {
+        if (meetingType.getDorItems() != null) {
+          meetingType.setDorItems(meetingType.getDorItems().stream()
+              .filter(item -> item.getIsDeleted() == null || !item.getIsDeleted())
+              .collect(java.util.stream.Collectors.toList()));
+        }
+        if (meetingType.getDodItems() != null) {
+          meetingType.setDodItems(meetingType.getDodItems().stream()
+              .filter(item -> item.getIsDeleted() == null || !item.getIsDeleted())
+              .collect(java.util.stream.Collectors.toList()));
+        }
+      });
+    }
+
+    return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())
         .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
-        .riskThresholds(
-            fromJson(
-                entity.getRiskThresholdsJson(),
-                new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {}))
-        .riskWeights(weights)
-        .taskCategories(
-            fromJson(
-                entity.getTaskCategoriesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {}))
-        .pitchCategories(
-            fromJson(
-                entity.getPitchCategoriesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {}))
-        .colors(
-            fromJson(
-                entity.getColorsJson(),
-                new TypeReference<OrganizationSettingsDTO.ColorSettings>() {}))
-        .bugStatuses(
-            fromJson(
-                entity.getBugStatusesJson(),
-                new TypeReference<List<OrganizationSettingsDTO.BugStatusConfig>>() {}))
-        .severityLevels(
-            fromJson(
-                entity.getSeverityLevelsJson(),
-                new TypeReference<List<OrganizationSettingsDTO.SeverityLevelConfig>>() {}))
-        .timeZone(entity.getTimeZone())
-        .dateFormat(entity.getDateFormat())
-        .enableNotifications(entity.getEnableNotifications())
-        .enableAIFeatures(entity.getEnableAIFeatures())
-        .updatedAt(entity.getUpdatedAt())
-        .updatedBy(entity.getUpdatedBy())
-        .build();
+        .riskThresholds(fromJson(entity.getRiskThresholdsJson(),
+            new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {
+            }))
+        .riskWeights(weights).taskCategories(fromJson(entity.getTaskCategoriesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {
+            }))
+        .pitchCategories(fromJson(entity.getPitchCategoriesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.CategoryConfig>>() {
+            }))
+        .colors(fromJson(entity.getColorsJson(), new TypeReference<OrganizationSettingsDTO.ColorSettings>() {
+        })).bugStatuses(fromJson(entity.getBugStatusesJson(),
+            new TypeReference<List<OrganizationSettingsDTO.BugStatusConfig>>() {
+            }))
+        .severityLevels(fromJson(entity.getSeverityLevelsJson(),
+            new TypeReference<List<OrganizationSettingsDTO.SeverityLevelConfig>>() {
+            }))
+        .meetingTypes(meetingTypes)
+        .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
+        .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
+        .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 
   /** Convert object to JSON string. */

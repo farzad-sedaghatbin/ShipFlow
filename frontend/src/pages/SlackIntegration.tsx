@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   slackService,
   SlackConfiguration,
@@ -46,6 +47,10 @@ export default function SlackIntegrationPage() {
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [channelDialogOpen, setChannelDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [deleteConfigConfirmOpen, setDeleteConfigConfirmOpen] = useState(false);
+  const [deleteChannelConfirmOpen, setDeleteChannelConfirmOpen] = useState(false);
+  const [configToDelete, setConfigToDelete] = useState<number | null>(null);
+  const [channelToDelete, setChannelToDelete] = useState<number | null>(null);
   
   // Form states
   const [configForm, setConfigForm] = useState<CreateSlackConfigurationRequest>({
@@ -124,15 +129,20 @@ export default function SlackIntegrationPage() {
     }
   };
 
-  const handleDeleteConfiguration = async (configId: number) => {
-    if (!confirm(t('slackIntegration.deleteConfirm'))) {
-      return;
-    }
+  const openDeleteConfigConfirm = (configId: number) => {
+    setConfigToDelete(configId);
+    setDeleteConfigConfirmOpen(true);
+  };
+
+  const handleDeleteConfiguration = async () => {
+    if (configToDelete === null) return;
     
     try {
-      await slackService.deleteConfiguration(configId);
+      await slackService.deleteConfiguration(configToDelete);
       setSuccess(t('slackIntegration.configDeleted'));
       fetchConfigurations();
+      setDeleteConfigConfirmOpen(false);
+      setConfigToDelete(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('slackIntegration.deleteFailed'));
     }
@@ -163,17 +173,22 @@ export default function SlackIntegrationPage() {
     }
   };
 
-  const handleDeleteChannelConfig = async (channelConfigId: number) => {
-    if (!confirm(t('slackIntegration.deleteChannelConfirm'))) {
-      return;
-    }
+  const openDeleteChannelConfirm = (channelConfigId: number) => {
+    setChannelToDelete(channelConfigId);
+    setDeleteChannelConfirmOpen(true);
+  };
+
+  const handleDeleteChannelConfig = async () => {
+    if (channelToDelete === null) return;
     
     try {
-      await slackService.deleteChannelConfig(channelConfigId);
+      await slackService.deleteChannelConfig(channelToDelete);
       setSuccess(t('slackIntegration.channelDeleted'));
       if (activeConfig) {
         fetchChannelConfigs(activeConfig.id);
       }
+      setDeleteChannelConfirmOpen(false);
+      setChannelToDelete(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('slackIntegration.channelDeleteFailed'));
     }
@@ -276,7 +291,7 @@ export default function SlackIntegrationPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteConfiguration(config.id)}
+                                onClick={() => openDeleteConfigConfirm(config.id)}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -354,7 +369,7 @@ export default function SlackIntegrationPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteChannelConfig(channel.id)}
+                              onClick={() => openDeleteChannelConfirm(channel.id)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -391,7 +406,7 @@ export default function SlackIntegrationPage() {
                 id="webhookUrl"
                 value={configForm.webhookUrl}
                 onChange={(e) => setConfigForm({ ...configForm, webhookUrl: e.target.value })}
-                placeholder="https://hooks.slack.com/services/..."
+                placeholder={t('slackIntegration.webhookPlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -400,7 +415,7 @@ export default function SlackIntegrationPage() {
                 id="defaultChannel"
                 value={configForm.defaultChannel}
                 onChange={(e) => setConfigForm({ ...configForm, defaultChannel: e.target.value })}
-                placeholder="general"
+                placeholder={t('slackIntegration.channelPlaceholder')}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -434,7 +449,7 @@ export default function SlackIntegrationPage() {
                 id="channelName"
                 value={channelForm.channelName}
                 onChange={(e) => setChannelForm({ ...channelForm, channelName: e.target.value })}
-                placeholder="general"
+                placeholder={t('slackIntegration.channelPlaceholder')}
               />
             </div>
             <div className="space-y-2">
@@ -445,7 +460,7 @@ export default function SlackIntegrationPage() {
                 onChange={(e) =>
                   setChannelForm({ ...channelForm, channelWebhookUrl: e.target.value })
                 }
-                placeholder="Leave empty to use workspace webhook"
+                placeholder={t('slackIntegration.leaveEmptyWorkspaceWebhook')}
               />
             </div>
 
@@ -567,7 +582,7 @@ export default function SlackIntegrationPage() {
                 id="testChannel"
                 value={testChannel}
                 onChange={(e) => setTestChannel(e.target.value)}
-                placeholder="Leave empty to use default channel"
+                placeholder={t('slackIntegration.leaveEmptyDefaultChannel')}
               />
             </div>
           </div>
@@ -582,6 +597,30 @@ export default function SlackIntegrationPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Configuration Confirm Dialog */}
+      <ConfirmDialog
+        open={deleteConfigConfirmOpen}
+        onOpenChange={setDeleteConfigConfirmOpen}
+        title={t('slackIntegration.deleteConfigTitle')}
+        description={t('slackIntegration.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteConfiguration}
+        variant="destructive"
+      />
+
+      {/* Delete Channel Confirm Dialog */}
+      <ConfirmDialog
+        open={deleteChannelConfirmOpen}
+        onOpenChange={setDeleteChannelConfirmOpen}
+        title={t('slackIntegration.deleteChannelTitle')}
+        description={t('slackIntegration.deleteChannelConfirm')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteChannelConfig}
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -100,7 +100,7 @@ export const InteractiveHillChart: React.FC<InteractiveHillChartProps> = ({
       };
 
       await hillChartApi.updatePositionWithHistory(draggedPoint.id, request);
-      showToast('Position updated with confidence tracking', 'success');
+      showToast(t('hillChart.positionUpdated'), 'success');
       
       // Reset and close
       setDialogOpen(false);

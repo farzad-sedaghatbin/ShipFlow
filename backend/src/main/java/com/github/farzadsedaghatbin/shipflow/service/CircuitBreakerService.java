@@ -16,9 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Circuit Breaker Service - Shape Up safety valve Detects and flags pitches that overflow their
- * time budget (appetite) Key Shape Up principle: if work won't fit in the box, stop it rather than
- * extend the timeline
+ * Circuit Breaker Service - Shape Up safety valve Detects and flags pitches
+ * that overflow their time budget (appetite) Key Shape Up principle: if work
+ * won't fit in the box, stop it rather than extend the timeline
  */
 @Service
 @RequiredArgsConstructor
@@ -31,64 +31,44 @@ public class CircuitBreakerService {
   private final DashboardNotificationService notificationService;
 
   /**
-   * Detect pitches that are overflowing their appetite (time budget). Returns pitches where actual
-   * time spent exceeds appetite by a threshold.
+   * Detect pitches that are overflowing their appetite (time budget). Returns
+   * pitches where actual time spent exceeds appetite by a threshold.
    */
   public List<CircuitBreakerDTO> detectOverflowPitches(Long cycleId, double thresholdPercentage) {
-    List<Pitch> activePitches =
-        pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
-            .filter(
-                p ->
-                    p.getStatus() == PitchStatus.IN_PROGRESS
-                        || p.getStatus() == PitchStatus.STARTED
-                        || p.getStatus() == PitchStatus.TESTING)
-            .toList();
+    List<Pitch> activePitches = pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
+        .filter(p -> p.getStatus() == PitchStatus.IN_PROGRESS || p.getStatus() == PitchStatus.STARTED
+            || p.getStatus() == PitchStatus.TESTING)
+        .toList();
 
-    return activePitches.stream()
-        .map(
-            pitch -> {
-              double hoursSpent = calculateTotalHoursSpent(pitch.getId());
-              double daysSpent = hoursSpent / 8.0; // 8 hours per day
-              double appetiteDays = pitch.getAppetiteDays();
-              double utilizationPercentage = (daysSpent / appetiteDays) * 100.0;
-              double overflowPercentage = utilizationPercentage - 100.0;
+    return activePitches.stream().map(pitch -> {
+      double hoursSpent = calculateTotalHoursSpent(pitch.getId());
+      double daysSpent = hoursSpent / 8.0; // 8 hours per day
+      double appetiteDays = pitch.getAppetiteDays();
+      double utilizationPercentage = (daysSpent / appetiteDays) * 100.0;
+      double overflowPercentage = utilizationPercentage - 100.0;
 
-              return CircuitBreakerDTO.builder()
-                  .pitchId(pitch.getId())
-                  .pitchTitle(pitch.getTitle())
-                  .appetiteDays(appetiteDays)
-                  .daysSpent(daysSpent)
-                  .hoursSpent(hoursSpent)
-                  .utilizationPercentage(utilizationPercentage)
-                  .overflowPercentage(overflowPercentage)
-                  .isOverflowing(utilizationPercentage >= thresholdPercentage)
-                  .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
-                  .circuitBreakerReason(pitch.getCircuitBreakerReason())
-                  .circuitBreakerDate(pitch.getCircuitBreakerDate())
-                  .status(pitch.getStatus().name())
-                  .build();
-            })
-        .filter(dto -> dto.getUtilizationPercentage() >= thresholdPercentage)
-        .collect(Collectors.toList());
+      return CircuitBreakerDTO.builder().pitchId(pitch.getId()).pitchTitle(pitch.getTitle())
+          .appetiteDays(appetiteDays).daysSpent(daysSpent).hoursSpent(hoursSpent)
+          .utilizationPercentage(utilizationPercentage).overflowPercentage(overflowPercentage)
+          .isOverflowing(utilizationPercentage >= thresholdPercentage)
+          .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
+          .circuitBreakerReason(pitch.getCircuitBreakerReason())
+          .circuitBreakerDate(pitch.getCircuitBreakerDate()).status(pitch.getStatus().name()).build();
+    }).filter(dto -> dto.getUtilizationPercentage() >= thresholdPercentage).collect(Collectors.toList());
   }
 
   /** Get all pitches with active circuit breakers */
   public List<CircuitBreakerDTO> getTriggeredCircuitBreakers(Long cycleId) {
-    List<Pitch> pitches =
-        pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
-            .filter(Pitch::getIsCircuitBreakerTriggered)
-            .toList();
+    List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId).stream()
+        .filter(Pitch::getIsCircuitBreakerTriggered).toList();
 
     return pitches.stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Trigger circuit breaker for a pitch (flag as overflowing) */
   public CircuitBreakerDTO triggerCircuitBreaker(Long pitchId, String reason) {
-    Pitch pitch =
-        pitchRepository
-            .findById(pitchId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
 
     pitch.setIsCircuitBreakerTriggered(true);
     pitch.setCircuitBreakerReason(reason);
@@ -104,13 +84,12 @@ public class CircuitBreakerService {
     return toDTO(saved);
   }
 
-  /** Resolve/clear circuit breaker (e.g., after killing the work or re-scoping) */
+  /**
+   * Resolve/clear circuit breaker (e.g., after killing the work or re-scoping)
+   */
   public CircuitBreakerDTO resolveCircuitBreaker(Long pitchId, PitchStatus newStatus) {
-    Pitch pitch =
-        pitchRepository
-            .findById(pitchId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
 
     pitch.setIsCircuitBreakerTriggered(false);
     pitch.setCircuitBreakerReason(null);
@@ -125,11 +104,8 @@ public class CircuitBreakerService {
 
   /** Kill the pitch (cancel it due to overflow) */
   public CircuitBreakerDTO killPitch(Long pitchId, String reason) {
-    Pitch pitch =
-        pitchRepository
-            .findById(pitchId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
 
     pitch.setIsCircuitBreakerTriggered(true);
     pitch.setCircuitBreakerReason("KILLED: " + reason);
@@ -156,19 +132,12 @@ public class CircuitBreakerService {
     double utilizationPercentage = (daysSpent / appetiteDays) * 100.0;
     double overflowPercentage = utilizationPercentage - 100.0;
 
-    return CircuitBreakerDTO.builder()
-        .pitchId(pitch.getId())
-        .pitchTitle(pitch.getTitle())
-        .appetiteDays(appetiteDays)
-        .daysSpent(daysSpent)
-        .hoursSpent(hoursSpent)
-        .utilizationPercentage(utilizationPercentage)
-        .overflowPercentage(overflowPercentage)
+    return CircuitBreakerDTO.builder().pitchId(pitch.getId()).pitchTitle(pitch.getTitle())
+        .appetiteDays(appetiteDays).daysSpent(daysSpent).hoursSpent(hoursSpent)
+        .utilizationPercentage(utilizationPercentage).overflowPercentage(overflowPercentage)
         .isOverflowing(utilizationPercentage > 100.0)
         .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
-        .circuitBreakerReason(pitch.getCircuitBreakerReason())
-        .circuitBreakerDate(pitch.getCircuitBreakerDate())
-        .status(pitch.getStatus().name())
-        .build();
+        .circuitBreakerReason(pitch.getCircuitBreakerReason()).circuitBreakerDate(pitch.getCircuitBreakerDate())
+        .status(pitch.getStatus().name()).build();
   }
 }

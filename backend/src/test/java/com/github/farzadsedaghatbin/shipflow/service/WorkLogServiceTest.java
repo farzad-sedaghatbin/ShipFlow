@@ -32,21 +32,29 @@ import org.springframework.context.ApplicationEventPublisher;
 @ExtendWith(MockitoExtension.class)
 class WorkLogServiceTest {
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @Mock private AICacheService cacheService;
+  @Mock
+  private AICacheService cacheService;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @InjectMocks private WorkLogService workLogService;
+  @InjectMocks
+  private WorkLogService workLogService;
 
   private WorkLog testWorkLog;
   private Person testPerson;
@@ -56,28 +64,15 @@ class WorkLogServiceTest {
 
   @BeforeEach
   void setUp() {
-    testPerson =
-        Person.builder()
-            .id(1L)
-            .name("John Doe")
-            .email("john@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPerson = Person.builder().id(1L).name("John Doe").email("john@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
 
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
     testTask = Task.builder().id(1L).title("Test Task").build();
 
-    testWorkLog =
-        WorkLog.builder()
-            .id(1L)
-            .person(testPerson)
-            .pitch(testPitch)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(8.0))
-            .note("Test work log entry")
-            .build();
+    testWorkLog = WorkLog.builder().id(1L).person(testPerson).pitch(testPitch).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(8.0)).note("Test work log entry").build();
 
     testRequest = new CreateWorkLogRequest();
     testRequest.setPersonId(1L);
@@ -109,8 +104,7 @@ class WorkLogServiceTest {
   void getWorkLogById_WhenNotExists_ShouldThrowException() {
     when(workLogRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> workLogService.getWorkLogById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.getWorkLogById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Work log not found");
   }
 
@@ -178,15 +172,8 @@ class WorkLogServiceTest {
     taskRequest.setHoursSpent(BigDecimal.valueOf(4.0));
     taskRequest.setNote("Working on task");
 
-    WorkLog taskWorkLog =
-        WorkLog.builder()
-            .id(2L)
-            .person(testPerson)
-            .task(testTask)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(4.0))
-            .note("Working on task")
-            .build();
+    WorkLog taskWorkLog = WorkLog.builder().id(2L).person(testPerson).task(testTask).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(4.0)).note("Working on task").build();
 
     when(personRepository.findById(1L)).thenReturn(Optional.of(testPerson));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -233,14 +220,8 @@ class WorkLogServiceTest {
 
   @Test
   void getWorkLogsByTaskId_ShouldReturnWorkLogs() {
-    WorkLog taskWorkLog =
-        WorkLog.builder()
-            .id(2L)
-            .person(testPerson)
-            .task(testTask)
-            .date(LocalDate.now())
-            .hoursSpent(BigDecimal.valueOf(4.0))
-            .build();
+    WorkLog taskWorkLog = WorkLog.builder().id(2L).person(testPerson).task(testTask).date(LocalDate.now())
+        .hoursSpent(BigDecimal.valueOf(4.0)).build();
 
     when(workLogRepository.findByTaskId(1L)).thenReturn(Arrays.asList(taskWorkLog));
 

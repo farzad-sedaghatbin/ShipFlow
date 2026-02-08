@@ -41,16 +41,9 @@ class RunPodLLMProviderTest {
 
   @Test
   void createModel_shouldCreateWithFullConfig() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("https://api.runpod.ai/v2/test-endpoint")
-            .apiKey("test-api-key")
-            .modelName("mistral:instruct")
-            .timeout(Duration.ofSeconds(180))
-            .temperature(0.3)
-            .maxTokens(2048)
-            .extraParam("pollInterval", Duration.ofSeconds(2))
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("https://api.runpod.ai/v2/test-endpoint")
+        .apiKey("test-api-key").modelName("mistral:instruct").timeout(Duration.ofSeconds(180)).temperature(0.3)
+        .maxTokens(2048).extraParam("pollInterval", Duration.ofSeconds(2)).build();
 
     ChatLanguageModel model = provider.createModel(config);
     assertNotNull(model);
@@ -60,8 +53,8 @@ class RunPodLLMProviderTest {
   void validateConfig_shouldThrowWithoutBaseUrl() {
     LLMProviderConfig config = LLMProviderConfig.builder().apiKey("test-key").build();
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> provider.validateConfig(config));
     assertTrue(ex.getMessage().contains("base URL"));
   }
 
@@ -69,15 +62,15 @@ class RunPodLLMProviderTest {
   void validateConfig_shouldThrowWithoutApiKey() {
     LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("https://api.runpod.ai").build();
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> provider.validateConfig(config));
     assertTrue(ex.getMessage().contains("API key"));
   }
 
   @Test
   void validateConfig_shouldPassWithBothRequired() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder().baseUrl("https://api.runpod.ai").apiKey("test-key").build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("https://api.runpod.ai").apiKey("test-key")
+        .build();
 
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }

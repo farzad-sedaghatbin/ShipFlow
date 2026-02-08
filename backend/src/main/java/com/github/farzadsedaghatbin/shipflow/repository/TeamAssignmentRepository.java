@@ -21,31 +21,23 @@ public interface TeamAssignmentRepository extends JpaRepository<TeamAssignment, 
 
   List<TeamAssignment> findByTeamIdAndIsActiveTrue(Long teamId);
 
-  @Query(
-      "SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
-  Optional<TeamAssignment> findActiveByPersonAndTeam(
-      @Param("personId") Long personId, @Param("teamId") Long teamId);
+  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
+  Optional<TeamAssignment> findActiveByPersonAndTeam(@Param("personId") Long personId, @Param("teamId") Long teamId);
 
-  @Query(
-      "SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.cycle.id = :cycleId")
-  List<TeamAssignment> findByPersonAndCycle(
-      @Param("personId") Long personId, @Param("cycleId") Long cycleId);
+  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.cycle.id = :cycleId")
+  List<TeamAssignment> findByPersonAndCycle(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
 
-  @Query(
-      "SELECT ta FROM TeamAssignment ta WHERE ta.team.cycle.id = :cycleId AND ta.isActive = true")
+  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.team.cycle.id = :cycleId AND ta.isActive = true")
   List<TeamAssignment> findActiveByCycle(@Param("cycleId") Long cycleId);
 
   List<TeamAssignment> findByRole(TeamMemberRole role);
 
-  @Query(
-      "SELECT ta FROM TeamAssignment ta WHERE ta.startDate <= :date AND (ta.endDate IS NULL OR ta.endDate >= :date)")
+  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.startDate <= :date AND (ta.endDate IS NULL OR ta.endDate >= :date)")
   List<TeamAssignment> findActiveOnDate(@Param("date") LocalDate date);
 
-  @Query(
-      "SELECT COUNT(ta) > 0 FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
+  @Query("SELECT COUNT(ta) > 0 FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
   boolean existsActiveAssignment(@Param("personId") Long personId, @Param("teamId") Long teamId);
 
-  @Query(
-      "SELECT ta FROM TeamAssignment ta JOIN FETCH ta.team t JOIN FETCH t.cycle WHERE ta.person.id = :personId ORDER BY ta.startDate DESC")
+  @Query("SELECT ta FROM TeamAssignment ta JOIN FETCH ta.team t JOIN FETCH t.cycle WHERE ta.person.id = :personId ORDER BY ta.startDate DESC")
   List<TeamAssignment> findByPersonIdWithTeamAndCycle(@Param("personId") Long personId);
 }

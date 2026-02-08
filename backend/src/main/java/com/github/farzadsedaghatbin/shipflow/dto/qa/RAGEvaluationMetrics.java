@@ -12,7 +12,10 @@ public class RAGEvaluationMetrics {
   /** How relevant the retrieved documents are (0-100). */
   private Double retrievalRelevance;
 
-  /** Whether the answer stays grounded in sources (0-100). Low score indicates hallucination. */
+  /**
+   * Whether the answer stays grounded in sources (0-100). Low score indicates
+   * hallucination.
+   */
   private Double faithfulness;
 
   /** How well the answer addresses the question (0-100). */

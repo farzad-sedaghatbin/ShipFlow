@@ -55,8 +55,7 @@ public class RetroController {
 
   @PutMapping("/{id}")
   @Operation(summary = "Update a retrospective")
-  public ResponseEntity<RetroDTO> updateRetro(
-      @PathVariable Long id, @Valid @RequestBody UpdateRetroRequest request) {
+  public ResponseEntity<RetroDTO> updateRetro(@PathVariable Long id, @Valid @RequestBody UpdateRetroRequest request) {
     return ResponseEntity.ok(retroService.updateRetro(id, request));
   }
 
@@ -91,15 +90,14 @@ public class RetroController {
 
   @PostMapping("/items")
   @Operation(summary = "Add an item to a retrospective")
-  public ResponseEntity<RetroItemDTO> createRetroItem(
-      @Valid @RequestBody CreateRetroItemRequest request) {
+  public ResponseEntity<RetroItemDTO> createRetroItem(@Valid @RequestBody CreateRetroItemRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(retroService.createRetroItem(request));
   }
 
   @PutMapping("/items/{itemId}")
   @Operation(summary = "Update a retrospective item")
-  public ResponseEntity<RetroItemDTO> updateRetroItem(
-      @PathVariable Long itemId, @RequestBody Map<String, String> body) {
+  public ResponseEntity<RetroItemDTO> updateRetroItem(@PathVariable Long itemId,
+      @RequestBody Map<String, String> body) {
     String content = body.get("content");
     return ResponseEntity.ok(retroService.updateRetroItem(itemId, content));
   }
@@ -124,8 +122,7 @@ public class RetroController {
   @PostMapping("/items/{targetItemId}/merge/{sourceItemId}")
   @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
   @Operation(summary = "Merge one item into another (Admin/Project Manager only)")
-  public ResponseEntity<RetroItemDTO> mergeItems(
-      @PathVariable Long targetItemId, @PathVariable Long sourceItemId) {
+  public ResponseEntity<RetroItemDTO> mergeItems(@PathVariable Long targetItemId, @PathVariable Long sourceItemId) {
     return ResponseEntity.ok(retroService.mergeItems(targetItemId, sourceItemId));
   }
 
@@ -155,8 +152,7 @@ public class RetroController {
 
   @GetMapping("/project/{projectId}/enabled")
   @Operation(summary = "Check if retrospectives are enabled for a project")
-  public ResponseEntity<Map<String, Boolean>> isRetrospectivesEnabled(
-      @PathVariable Long projectId) {
+  public ResponseEntity<Map<String, Boolean>> isRetrospectivesEnabled(@PathVariable Long projectId) {
     boolean enabled = retroService.isRetrospectivesEnabled(projectId);
     return ResponseEntity.ok(Map.of("enabled", enabled));
   }
@@ -164,8 +160,8 @@ public class RetroController {
   @PutMapping("/project/{projectId}/enabled")
   @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Enable or disable retrospectives for a project (Admin only)")
-  public ResponseEntity<Map<String, Boolean>> setRetrospectivesEnabled(
-      @PathVariable Long projectId, @RequestBody Map<String, Boolean> body) {
+  public ResponseEntity<Map<String, Boolean>> setRetrospectivesEnabled(@PathVariable Long projectId,
+      @RequestBody Map<String, Boolean> body) {
     Boolean enabled = body.get("enabled");
     if (enabled == null) {
       return ResponseEntity.badRequest().build();

@@ -11,32 +11,35 @@ import org.springframework.stereotype.Component;
 /**
  * LLM Provider implementation for OpenAI ChatGPT.
  *
- * <p>OpenAI/ChatGPT is ideal for:
+ * <p>
+ * OpenAI/ChatGPT is ideal for:
  *
  * <ul>
- *   <li>Production deployments requiring high-quality responses
- *   <li>Complex reasoning and analysis tasks
- *   <li>Broad general knowledge applications
+ * <li>Production deployments requiring high-quality responses
+ * <li>Complex reasoning and analysis tasks
+ * <li>Broad general knowledge applications
  * </ul>
  *
- * <p>Supported models:
+ * <p>
+ * Supported models:
  *
  * <ul>
- *   <li>gpt-4o - Most capable model for complex tasks
- *   <li>gpt-4o-mini - Fast and cost-effective
- *   <li>gpt-4-turbo - Previous generation, still powerful
- *   <li>gpt-3.5-turbo - Fast and cost-effective for simpler tasks
+ * <li>gpt-4o - Most capable model for complex tasks
+ * <li>gpt-4o-mini - Fast and cost-effective
+ * <li>gpt-4-turbo - Previous generation, still powerful
+ * <li>gpt-3.5-turbo - Fast and cost-effective for simpler tasks
  * </ul>
  *
- * <p>Configuration:
+ * <p>
+ * Configuration:
  *
  * <ul>
- *   <li>apiKey: OpenAI API key (required)
- *   <li>modelName: Model to use (default: gpt-4o-mini)
- *   <li>baseUrl: Optional custom endpoint (for Azure OpenAI or proxies)
- *   <li>temperature: Model temperature (0.0-2.0)
- *   <li>maxTokens: Maximum tokens in response
- *   <li>organizationId: Optional OpenAI organization ID
+ * <li>apiKey: OpenAI API key (required)
+ * <li>modelName: Model to use (default: gpt-4o-mini)
+ * <li>baseUrl: Optional custom endpoint (for Azure OpenAI or proxies)
+ * <li>temperature: Model temperature (0.0-2.0)
+ * <li>maxTokens: Maximum tokens in response
+ * <li>organizationId: Optional OpenAI organization ID
  * </ul>
  */
 @Component
@@ -58,8 +61,8 @@ public class OpenAILLMProvider implements LLMProvider {
 
     log.info("Creating OpenAI ChatLanguageModel - Model: {}", modelName);
 
-    OpenAiChatModel.OpenAiChatModelBuilder builder =
-        OpenAiChatModel.builder().apiKey(config.getApiKey()).modelName(modelName);
+    OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder().apiKey(config.getApiKey())
+        .modelName(modelName);
 
     // Optional base URL for custom endpoints (Azure, proxies, etc.)
     if (config.getBaseUrl() != null && !config.getBaseUrl().trim().isEmpty()) {
@@ -111,9 +114,8 @@ public class OpenAILLMProvider implements LLMProvider {
   @Override
   public void validateConfig(LLMProviderConfig config) {
     if (config.getApiKey() == null || config.getApiKey().trim().isEmpty()) {
-      throw new IllegalArgumentException(
-          "OpenAI requires an API key (app.ai.openai.api-key). "
-              + "Get one at https://platform.openai.com/api-keys");
+      throw new IllegalArgumentException("OpenAI requires an API key (app.ai.openai.api-key). "
+          + "Get one at https://platform.openai.com/api-keys");
     }
   }
 

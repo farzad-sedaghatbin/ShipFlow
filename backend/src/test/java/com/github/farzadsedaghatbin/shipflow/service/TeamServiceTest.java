@@ -25,11 +25,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TeamServiceTest {
 
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private TeamRepository teamRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @InjectMocks private TeamService teamService;
+  @InjectMocks
+  private TeamService teamService;
 
   private Team testTeam;
   private Cycle testCycle;
@@ -39,13 +42,7 @@ class TeamServiceTest {
   void setUp() {
     testCycle = Cycle.builder().id(1L).name("Test Cycle").build();
 
-    testTeam =
-        Team.builder()
-            .id(1L)
-            .name("Test Team")
-            .cycle(testCycle)
-            .assignments(new ArrayList<>())
-            .build();
+    testTeam = Team.builder().id(1L).name("Test Team").cycle(testCycle).assignments(new ArrayList<>()).build();
 
     testRequest = new CreateTeamRequest();
     testRequest.setName("Test Team");
@@ -76,8 +73,7 @@ class TeamServiceTest {
   void getTeamById_WhenNotExists_ShouldThrowException() {
     when(teamRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> teamService.getTeamById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> teamService.getTeamById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Team not found");
   }
 

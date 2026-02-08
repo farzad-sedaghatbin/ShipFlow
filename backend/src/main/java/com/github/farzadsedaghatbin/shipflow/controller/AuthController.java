@@ -31,25 +31,18 @@ public class AuthController {
   @PostMapping("/login")
   @Operation(summary = "Authenticate user and return JWT token")
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-    Authentication authentication =
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+    Authentication authentication = authenticationManager
+        .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
     SecurityContextHolder.getContext().setAuthentication(authentication);
     String token = jwtTokenProvider.generateToken(authentication);
 
     User user = userService.findUserByUsername(request.getUsername());
 
-    AuthResponse response =
-        AuthResponse.builder()
-            .token(token)
-            .type("Bearer")
-            .userId(user.getId())
-            .username(user.getUsername())
-            .role(user.getRole())
-            .personId(user.getPerson() != null ? user.getPerson().getId() : null)
-            .personName(user.getPerson() != null ? user.getPerson().getName() : null)
-            .build();
+    AuthResponse response = AuthResponse.builder().token(token).type("Bearer").userId(user.getId())
+        .username(user.getUsername()).role(user.getRole())
+        .personId(user.getPerson() != null ? user.getPerson().getId() : null)
+        .personName(user.getPerson() != null ? user.getPerson().getName() : null).build();
 
     return ResponseEntity.ok(response);
   }
@@ -72,8 +65,7 @@ public class AuthController {
 
   @PostMapping("/reset-password")
   @Operation(summary = "Reset password using token")
-  public ResponseEntity<Map<String, String>> resetPassword(
-      @Valid @RequestBody ResetPasswordRequest request) {
+  public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
     userService.resetPassword(request);
     return ResponseEntity.ok(Map.of("message", "Password reset successful"));
   }

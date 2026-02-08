@@ -6,8 +6,8 @@ public enum TestType {
   SMOKE,
 
   /**
-   * Functional tests - comprehensive feature validation with happy path, edge cases, and error
-   * handling.
+   * Functional tests - comprehensive feature validation with happy path, edge
+   * cases, and error handling.
    */
   FUNCTIONAL,
 

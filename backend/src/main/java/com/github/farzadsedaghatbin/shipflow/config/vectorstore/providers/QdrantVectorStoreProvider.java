@@ -12,25 +12,27 @@ import org.springframework.stereotype.Component;
 /**
  * Vector Store Provider implementation for Qdrant.
  *
- * <p>Qdrant is the recommended production vector database:
+ * <p>
+ * Qdrant is the recommended production vector database:
  *
  * <ul>
- *   <li>High performance (written in Rust)
- *   <li>Excellent filtered search capabilities
- *   <li>Horizontal scaling support
- *   <li>Built-in clustering and replication
- *   <li>Snapshot and backup features
- *   <li>REST and gRPC APIs
+ * <li>High performance (written in Rust)
+ * <li>Excellent filtered search capabilities
+ * <li>Horizontal scaling support
+ * <li>Built-in clustering and replication
+ * <li>Snapshot and backup features
+ * <li>REST and gRPC APIs
  * </ul>
  *
- * <p>Configuration:
+ * <p>
+ * Configuration:
  *
  * <ul>
- *   <li>host: Qdrant server host (default: localhost)
- *   <li>port: Qdrant gRPC port (default: 6334)
- *   <li>apiKey: API key for authentication (required in production)
- *   <li>collectionName: Name of the collection (default: shipflow_knowledge)
- *   <li>dimension: Vector dimension (default: 384 for all-MiniLM-L6-v2)
+ * <li>host: Qdrant server host (default: localhost)
+ * <li>port: Qdrant gRPC port (default: 6334)
+ * <li>apiKey: API key for authentication (required in production)
+ * <li>collectionName: Name of the collection (default: shipflow_knowledge)
+ * <li>dimension: Vector dimension (default: 384 for all-MiniLM-L6-v2)
  * </ul>
  */
 @Component
@@ -54,15 +56,11 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
     String collectionName = config.getCollectionName();
     int dimension = config.getDimension();
 
-    log.info(
-        "Creating Qdrant embedding store - Host: {}, Port: {}, Collection: {}, Dimension: {}",
-        host,
-        port,
-        collectionName,
-        dimension);
+    log.info("Creating Qdrant embedding store - Host: {}, Port: {}, Collection: {}, Dimension: {}", host, port,
+        collectionName, dimension);
 
-    QdrantEmbeddingStore.Builder builder =
-        QdrantEmbeddingStore.builder().host(host).port(port).collectionName(collectionName);
+    QdrantEmbeddingStore.Builder builder = QdrantEmbeddingStore.builder().host(host).port(port)
+        .collectionName(collectionName);
 
     // Configure API key if provided
     if (config.hasApiKey()) {

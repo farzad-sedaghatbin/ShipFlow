@@ -20,9 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/slack")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(
-    name = "Slack Integration",
-    description = "APIs for managing Slack integration and notifications")
+@Tag(name = "Slack Integration", description = "APIs for managing Slack integration and notifications")
 public class SlackIntegrationController {
 
   private final SlackIntegrationService slackService;
@@ -30,9 +28,7 @@ public class SlackIntegrationController {
 
   @PostMapping("/configurations")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Create or update Slack workspace configuration",
-      description = "Configure Slack workspace integration with webhook URL and default channel")
+  @Operation(summary = "Create or update Slack workspace configuration", description = "Configure Slack workspace integration with webhook URL and default channel")
   public ResponseEntity<SlackConfigurationDTO> createConfiguration(
       @Valid @RequestBody CreateSlackConfigurationRequest request) {
     SlackConfigurationDTO config = slackService.createOrUpdateConfiguration(request);
@@ -63,20 +59,16 @@ public class SlackIntegrationController {
 
   @PostMapping("/configurations/{configId}/channels")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Create or update channel configuration",
-      description = "Configure notification preferences for a specific Slack channel")
-  public ResponseEntity<SlackChannelConfigDTO> createChannelConfig(
-      @PathVariable Long configId, @Valid @RequestBody CreateSlackChannelConfigRequest request) {
-    SlackChannelConfigDTO channelConfig =
-        slackService.createOrUpdateChannelConfig(configId, request);
+  @Operation(summary = "Create or update channel configuration", description = "Configure notification preferences for a specific Slack channel")
+  public ResponseEntity<SlackChannelConfigDTO> createChannelConfig(@PathVariable Long configId,
+      @Valid @RequestBody CreateSlackChannelConfigRequest request) {
+    SlackChannelConfigDTO channelConfig = slackService.createOrUpdateChannelConfig(configId, request);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelConfig);
   }
 
   @GetMapping("/configurations/{configId}/channels")
   @Operation(summary = "Get all channel configurations for a Slack workspace")
-  public ResponseEntity<List<SlackChannelConfigDTO>> getChannelConfigs(
-      @PathVariable Long configId) {
+  public ResponseEntity<List<SlackChannelConfigDTO>> getChannelConfigs(@PathVariable Long configId) {
     return ResponseEntity.ok(slackService.getChannelConfigs(configId));
   }
 
@@ -90,11 +82,9 @@ public class SlackIntegrationController {
 
   @PostMapping("/configurations/{configId}/test")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Send a test notification to Slack",
-      description = "Test the Slack integration by sending a test message")
-  public ResponseEntity<String> sendTestNotification(
-      @PathVariable Long configId, @RequestBody TestSlackNotificationRequest request) {
+  @Operation(summary = "Send a test notification to Slack", description = "Test the Slack integration by sending a test message")
+  public ResponseEntity<String> sendTestNotification(@PathVariable Long configId,
+      @RequestBody TestSlackNotificationRequest request) {
     try {
       slackService.sendTestNotification(configId, request);
       return ResponseEntity.ok(messageService.getMessage("slack.notification.sent"));
@@ -107,11 +97,8 @@ public class SlackIntegrationController {
 
   @GetMapping("/configurations/{configId}/history")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  @Operation(
-      summary = "Get notification history",
-      description = "Retrieve the history of Slack notifications sent")
-  public ResponseEntity<List<SlackNotificationHistory>> getNotificationHistory(
-      @PathVariable Long configId) {
+  @Operation(summary = "Get notification history", description = "Retrieve the history of Slack notifications sent")
+  public ResponseEntity<List<SlackNotificationHistory>> getNotificationHistory(@PathVariable Long configId) {
     return ResponseEntity.ok(slackService.getNotificationHistory(configId));
   }
 }

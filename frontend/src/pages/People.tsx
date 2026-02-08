@@ -13,12 +13,14 @@ import {
   ClipboardList, 
   Clock, 
   FileText,
-  Loader2 
+  Loader2,
+  Lock,
+  UserPlus
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import api from '../services/api';
 import { workLogService } from '../services/workLogService';
-import { Person, CreatePersonRequest, TeamAssignment, WorkLog } from '../types';
+import { Person, CreatePersonRequest, TeamAssignment, WorkLog, UserRole } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyPeopleIllustration, EmptyWorkLogsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
@@ -29,6 +31,14 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Checkbox } from '../components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +62,10 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
+
+const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function People() {
   const { t, i18n } = useTranslation();
@@ -68,6 +82,10 @@ export default function People() {
     email: '',
     skills: '',
     avatarUrl: '',
+    createUser: false,
+    username: '',
+    password: '',
+    userRole: 'MEMBER',
   });
   const [saving, setSaving] = useState(false);
   
@@ -81,6 +99,10 @@ export default function People() {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+  
+  // Delete confirmation dialog
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -119,10 +141,23 @@ export default function People() {
         email: person.email,
         skills: person.skills || '',
         avatarUrl: person.avatarUrl || '',
+        createUser: false,
+        username: '',
+        password: '',
+        userRole: 'MEMBER',
       });
     } else {
       setEditingPerson(null);
-      setFormData({ name: '', email: '', skills: '', avatarUrl: '' });
+      setFormData({ 
+        name: '', 
+        email: '', 
+        skills: '', 
+        avatarUrl: '',
+        createUser: false,
+        username: '',
+        password: '',
+        userRole: 'MEMBER',
+      });
     }
     setDialogOpen(true);
   };
@@ -130,7 +165,16 @@ export default function People() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingPerson(null);
-    setFormData({ name: '', email: '', skills: '', avatarUrl: '' });
+    setFormData({ 
+      name: '', 
+      email: '', 
+      skills: '', 
+      avatarUrl: '',
+      createUser: false,
+      username: '',
+      password: '',
+      userRole: 'MEMBER',
+    });
   };
 
   const handleSave = async () => {
@@ -143,6 +187,18 @@ export default function People() {
       return;
     }
 
+    // Validate user creation fields if creating user
+    if (formData.createUser && !editingPerson) {
+      if (!formData.password || !formData.password.trim() || formData.password.length < MIN_PASSWORD_LENGTH) {
+        showToast(t('userManagement.passwordMinLength'), 'error');
+        return;
+      }
+      if (!formData.userRole) {
+        showToast(t('userManagement.roleRequired'), 'error');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (editingPerson) {
@@ -150,7 +206,11 @@ export default function People() {
         showToast(t('peopleManagement.personUpdated'), 'success');
       } else {
         await api.post('/persons', formData);
-        showToast(t('peopleManagement.personCreated'), 'success');
+        if (formData.createUser) {
+          showToast(t('peopleManagement.personAndUserCreated'), 'success');
+        } else {
+          showToast(t('peopleManagement.personCreated'), 'success');
+        }
       }
       fetchPeople();
       handleCloseDialog();
@@ -161,15 +221,20 @@ export default function People() {
     }
   };
 
-  const handleDelete = async (person: Person) => {
-    if (!confirm(t('peopleManagement.confirmDeactivate') + ' ' + person.name + '?')) {
-      return;
-    }
+  const openDeleteConfirm = (person: Person) => {
+    setPersonToDelete(person);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!personToDelete) return;
 
     try {
-      await api.delete(`/persons/${person.id}`);
+      await api.delete(`/persons/${personToDelete.id}`);
       showToast(t('peopleManagement.personDeactivated'), 'success');
       fetchPeople();
+      setDeleteConfirmOpen(false);
+      setPersonToDelete(null);
     } catch (error) {
       // Error handled by interceptor
     }
@@ -202,6 +267,28 @@ export default function People() {
     } finally {
       setLoadingWorkLogs(false);
     }
+  };
+
+  // Handle email change and automatically set username when creating user
+  const handleEmailChange = (email: string) => {
+    setFormData(prev => ({
+      ...prev,
+      email,
+      // If creating user is enabled, automatically set username to email
+      username: prev.createUser ? email : prev.username
+    }));
+  };
+
+  // Handle create user checkbox change
+  const handleCreateUserChange = (createUser: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      createUser,
+      // If enabling user creation, set username to current email
+      username: createUser ? prev.email : '',
+      // Reset password when toggling
+      password: createUser ? prev.password : ''
+    }));
   };
 
   const filteredPeople = people.filter(
@@ -401,7 +488,7 @@ export default function People() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(person)}
+                              onClick={() => openDeleteConfirm(person)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -477,7 +564,7 @@ export default function People() {
                     type="email"
                     className="pl-10"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder={t('peopleManagement.enterEmail')}
                   />
                 </div>
@@ -505,6 +592,88 @@ export default function People() {
                   placeholder={t('peopleManagement.avatarPlaceholder')}
                 />
               </div>
+              
+              {/* User Account Creation Section */}
+              {!editingPerson && (
+                <>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="createUser"
+                        checked={formData.createUser}
+                        onCheckedChange={handleCreateUserChange}
+                      />
+                      <Label htmlFor="createUser" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        {t('peopleManagement.createUserAccount')}
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('peopleManagement.createUserAccountDesc')}
+                    </p>
+                  </div>
+                  
+                  {formData.createUser && (
+                    <div className="space-y-4 pl-6 border-l-2 border-muted">
+                      <div className="space-y-2">
+                        <Label htmlFor="username">{t('userManagement.username')}</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="username"
+                            className="pl-10"
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            placeholder={t('userManagement.enterUsername')}
+                            aria-describedby="username-help"
+                            disabled
+                          />
+                        </div>
+                        <p id="username-help" className="text-xs text-muted-foreground">
+                          {t('peopleManagement.usernameAutoSet')}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">{t('userManagement.password')} *</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type="password"
+                            className="pl-10"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            placeholder={t('userManagement.enterPassword')}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t('userManagement.minCharacters')}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="userRole">{t('userManagement.role')}</Label>
+                        <Select
+                          value={formData.userRole}
+                          onValueChange={(value) => setFormData({ ...formData, userRole: value as UserRole })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('userManagement.selectRole')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {USER_ROLES.map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {role.replace('_', ' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={handleCloseDialog}>
@@ -730,6 +899,18 @@ export default function People() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title={t('peopleManagement.deactivate')}
+          description={`${t('peopleManagement.confirmDeactivate')} ${personToDelete?.name || ''}?`}
+          confirmLabel={t('common.confirm')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={handleDelete}
+          variant="destructive"
+        />
       </div>
     </TooltipProvider>
   );

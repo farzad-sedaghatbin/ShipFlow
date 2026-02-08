@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity to track hill chart position history. Stores historical positions to track confidence vs
- * actual progress.
+ * Entity to track hill chart position history. Stores historical positions to
+ * track confidence vs actual progress.
  */
 @Entity
 @Table(name = "hill_chart_history")

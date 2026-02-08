@@ -17,8 +17,7 @@ class PromptCompressorTest {
   @Test
   void compress_removesFillerWords() {
     // Given
-    String prompt =
-        "Actually, this is basically a very important question that is literally essential.";
+    String prompt = "Actually, this is basically a very important question that is literally essential.";
 
     // When
     String compressed = promptCompressor.compress(prompt);

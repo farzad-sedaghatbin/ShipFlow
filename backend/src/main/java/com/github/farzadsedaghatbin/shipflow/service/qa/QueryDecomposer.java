@@ -10,11 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Decomposes complex questions into simpler sub-queries for better RAG retrieval.
+ * Decomposes complex questions into simpler sub-queries for better RAG
+ * retrieval.
  *
- * <p>Examples: - "Compare payment feature risks vs checkout redesign" → ["What are the risks for
- * payment feature?", "What are the risks for checkout redesign?"] - "Which team is faster on
- * backend work?" → ["What teams work on backend?", "What is the velocity of each team?"]
+ * <p>
+ * Examples: - "Compare payment feature risks vs checkout redesign" → ["What are
+ * the risks for payment feature?", "What are the risks for checkout redesign?"]
+ * - "Which team is faster on backend work?" → ["What teams work on backend?",
+ * "What is the velocity of each team?"]
  */
 @Slf4j
 @Component
@@ -34,13 +37,9 @@ public class QueryDecomposer {
 
     // Indicators of complex queries
     String lowerQuery = query.toLowerCase();
-    return lowerQuery.contains("compare")
-        || lowerQuery.contains("versus")
-        || lowerQuery.contains(" vs ")
-        || lowerQuery.contains(" and ")
-            && (lowerQuery.contains("which") || lowerQuery.contains("what"))
-        || lowerQuery.contains("both")
-        || lowerQuery.contains("all") && lowerQuery.contains("?")
+    return lowerQuery.contains("compare") || lowerQuery.contains("versus") || lowerQuery.contains(" vs ")
+        || lowerQuery.contains(" and ") && (lowerQuery.contains("which") || lowerQuery.contains("what"))
+        || lowerQuery.contains("both") || lowerQuery.contains("all") && lowerQuery.contains("?")
         || (lowerQuery.split("\\?").length > 1); // Multiple questions
   }
 
@@ -72,39 +71,37 @@ public class QueryDecomposer {
 
   /** Builds the decomposition prompt for the LLM. */
   private String buildDecompositionPrompt(String query) {
-    return String.format(
-        """
-            You are a query analysis expert. Break down the following complex question into simpler sub-questions.
-            Each sub-question should be answerable independently and focus on a single concept.
+    return String.format("""
+        You are a query analysis expert. Break down the following complex question into simpler sub-questions.
+        Each sub-question should be answerable independently and focus on a single concept.
 
-            Rules:
-            1. Number each sub-question (1., 2., 3., etc.)
-            2. Keep sub-questions simple and focused
-            3. Preserve context from the original question
-            4. If the question is already simple, return just "1. [original question]"
+        Rules:
+        1. Number each sub-question (1., 2., 3., etc.)
+        2. Keep sub-questions simple and focused
+        3. Preserve context from the original question
+        4. If the question is already simple, return just "1. [original question]"
 
-            Examples:
+        Examples:
 
-            Question: "Compare payment feature risks vs checkout redesign risks"
-            Sub-questions:
-            1. What are the risks for the payment feature?
-            2. What are the risks for the checkout redesign?
+        Question: "Compare payment feature risks vs checkout redesign risks"
+        Sub-questions:
+        1. What are the risks for the payment feature?
+        2. What are the risks for the checkout redesign?
 
-            Question: "Which team is faster on backend work?"
-            Sub-questions:
-            1. What teams work on backend development?
-            2. What is the velocity of each backend team?
+        Question: "Which team is faster on backend work?"
+        Sub-questions:
+        1. What teams work on backend development?
+        2. What is the velocity of each backend team?
 
-            Question: "What is the status of the pitch?"
-            Sub-questions:
-            1. What is the status of the pitch?
+        Question: "What is the status of the pitch?"
+        Sub-questions:
+        1. What is the status of the pitch?
 
-            Now break down this question:
+        Now break down this question:
 
-            Question: "%s"
-            Sub-questions:
-            """,
-        query);
+        Question: "%s"
+        Sub-questions:
+        """, query);
   }
 
   /** Parses numbered sub-queries from LLM response. */

@@ -7,7 +7,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-/** Event listener that triggers knowledge ingestion when relevant entities are modified. */
+/**
+ * Event listener that triggers knowledge ingestion when relevant entities are
+ * modified.
+ */
 @Component
 @Slf4j
 public class KnowledgeEventListener {
@@ -18,8 +21,7 @@ public class KnowledgeEventListener {
   private final KnowledgeIngestionService knowledgeIngestionService;
 
   @Autowired
-  public KnowledgeEventListener(
-      @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService) {
+  public KnowledgeEventListener(@Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService) {
     this.knowledgeIngestionService = knowledgeIngestionService;
   }
 
@@ -27,7 +29,8 @@ public class KnowledgeEventListener {
   @Async
   @EventListener
   public void handlePitchEvent(PitchKnowledgeEvent event) {
-    if (!qaEnabled || knowledgeIngestionService == null) return;
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
 
     log.debug("Handling pitch event for pitch ID: {}", event.getPitchId());
     try {
@@ -41,7 +44,8 @@ public class KnowledgeEventListener {
   @Async
   @EventListener
   public void handleMeetingEvent(MeetingKnowledgeEvent event) {
-    if (!qaEnabled || knowledgeIngestionService == null) return;
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
 
     log.debug("Handling meeting event for meeting ID: {}", event.getMeetingId());
     try {
@@ -55,7 +59,8 @@ public class KnowledgeEventListener {
   @Async
   @EventListener
   public void handleWorkLogEvent(WorkLogKnowledgeEvent event) {
-    if (!qaEnabled || knowledgeIngestionService == null) return;
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
 
     log.debug("Handling work log event for work log ID: {}", event.getWorkLogId());
     try {
@@ -69,7 +74,8 @@ public class KnowledgeEventListener {
   @Async
   @EventListener
   public void handleEvidenceEvent(EvidenceKnowledgeEvent event) {
-    if (!qaEnabled || knowledgeIngestionService == null) return;
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
 
     log.debug("Handling evidence event for evidence ID: {}", event.getEvidenceId());
     try {

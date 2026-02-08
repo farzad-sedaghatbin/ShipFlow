@@ -9,46 +9,38 @@ import org.springframework.stereotype.Component;
 /**
  * Content safety guardrails for RAG responses.
  *
- * <p>Checks for: - Toxic/offensive content - Potential bias - Hallucination indicators - PII
- * leakage (bonus - not requested but good to have)
+ * <p>
+ * Checks for: - Toxic/offensive content - Potential bias - Hallucination
+ * indicators - PII leakage (bonus - not requested but good to have)
  */
 @Slf4j
 @Component
 public class ContentGuardrails {
 
   // Toxic content patterns
-  private static final List<Pattern> TOXIC_PATTERNS =
-      List.of(
-          Pattern.compile("\\b(hate|stupid|idiot|dumb|moron)\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile(
-              "\\b(attack|destroy|kill|eliminate)\\s+(team|person|people)",
-              Pattern.CASE_INSENSITIVE));
+  private static final List<Pattern> TOXIC_PATTERNS = List.of(
+      Pattern.compile("\\b(hate|stupid|idiot|dumb|moron)\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\b(attack|destroy|kill|eliminate)\\s+(team|person|people)", Pattern.CASE_INSENSITIVE));
 
   // Bias indicators
-  private static final List<Pattern> BIAS_PATTERNS =
-      List.of(
-          Pattern.compile(
-              "\\b(always|never)\\s+(the\\s+)?(best|worst|right|wrong)", Pattern.CASE_INSENSITIVE),
-          Pattern.compile(
-              "\\b(all|none)\\s+(men|women|developers|managers)", Pattern.CASE_INSENSITIVE),
-          Pattern.compile(
-              "\\b(obviously|clearly)\\s+(better|worse|superior|inferior)",
-              Pattern.CASE_INSENSITIVE));
+  private static final List<Pattern> BIAS_PATTERNS = List.of(
+      Pattern.compile("\\b(always|never)\\s+(the\\s+)?(best|worst|right|wrong)", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\b(all|none)\\s+(men|women|developers|managers)", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\b(obviously|clearly)\\s+(better|worse|superior|inferior)", Pattern.CASE_INSENSITIVE));
 
   // Hallucination indicators (each as separate pattern for counting)
-  private static final List<Pattern> HALLUCINATION_PATTERNS =
-      List.of(
-          Pattern.compile("\\bI think\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bI believe\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bprobably\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bmaybe\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bmight be\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bcould be\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("\\bI'm not sure\\b", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("according to my knowledge", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("as far as I know", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("I don't have access to", Pattern.CASE_INSENSITIVE),
-          Pattern.compile("I cannot verify", Pattern.CASE_INSENSITIVE));
+  private static final List<Pattern> HALLUCINATION_PATTERNS = List.of(
+      Pattern.compile("\\bI think\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bI believe\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bprobably\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bmaybe\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bmight be\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bcould be\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("\\bI'm not sure\\b", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("according to my knowledge", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("as far as I know", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("I don't have access to", Pattern.CASE_INSENSITIVE),
+      Pattern.compile("I cannot verify", Pattern.CASE_INSENSITIVE));
 
   /** Validates response against all guardrails. */
   public GuardrailResult validate(String response, double confidenceScore) {
@@ -64,7 +56,8 @@ public class ContentGuardrails {
       violations.add("POTENTIAL_BIAS");
     }
 
-    // Check hallucination confidence (confidenceScore is 0-1 scale, e.g., 0.9 = 90%)
+    // Check hallucination confidence (confidenceScore is 0-1 scale, e.g., 0.9 =
+    // 90%)
     boolean hasHallucinationIndicators = containsHallucinationIndicators(response);
 
     if (hasHallucinationIndicators) {
@@ -128,13 +121,13 @@ public class ContentGuardrails {
 
     for (String violation : violations) {
       switch (violation) {
-        case "TOXIC_CONTENT":
+        case "TOXIC_CONTENT" :
           baseScore -= 60; // Severe
           break;
-        case "POTENTIAL_BIAS":
+        case "POTENTIAL_BIAS" :
           baseScore -= 20; // Moderate
           break;
-        case "LOW_CONFIDENCE_HALLUCINATION":
+        case "LOW_CONFIDENCE_HALLUCINATION" :
           baseScore -= 30; // Significant
           break;
       }
@@ -162,8 +155,7 @@ public class ContentGuardrails {
 
     // If hallucination risk, add confidence warning
     if (result.getViolations().contains("LOW_CONFIDENCE_HALLUCINATION")) {
-      return response
-          + "\n\n*Note: I have low confidence in this answer. Please verify the information.*";
+      return response + "\n\n*Note: I have low confidence in this answer. Please verify the information.*";
     }
 
     return response;

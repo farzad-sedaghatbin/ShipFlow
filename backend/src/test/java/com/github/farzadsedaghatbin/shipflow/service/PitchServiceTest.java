@@ -24,28 +24,51 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class PitchServiceTest {
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private TeamRepository teamRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @Mock private AICacheService cacheService;
+  @Mock
+  private AICacheService cacheService;
 
-  @InjectMocks private PitchService pitchService;
+  @Mock
+  private com.github.farzadsedaghatbin.shipflow.repository.UserRepository userRepository;
+
+  @Mock
+  private SecurityContext securityContext;
+
+  @Mock
+  private Authentication authentication;
+
+  @InjectMocks
+  private PitchService pitchService;
 
   private Pitch testPitch;
   private Cycle testCycle;
   private Team testTeam;
+  private com.github.farzadsedaghatbin.shipflow.entity.User testUser;
   private CreatePitchRequest testRequest;
 
   @BeforeEach
@@ -54,16 +77,14 @@ class PitchServiceTest {
 
     testTeam = Team.builder().id(1L).name("Test Team").build();
 
-    testPitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Test Pitch")
-            .description("Test Description")
-            .appetiteDays(14)
-            .cycle(testCycle)
-            .team(testTeam)
-            .status(PitchStatus.PENDING)
-            .build();
+    testUser = com.github.farzadsedaghatbin.shipflow.entity.User.builder()
+        .id(1L)
+        .username("testuser")
+        .email("test@example.com")
+        .build();
+
+    testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.PENDING).build();
 
     testRequest = new CreatePitchRequest();
     testRequest.setTitle("Test Pitch");
@@ -74,9 +95,15 @@ class PitchServiceTest {
     testRequest.setStatus(PitchStatus.PENDING);
   }
 
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() {
+    // Clear security context to prevent leaking authentication state into other tests
+    SecurityContextHolder.clearContext();
+  }
+
   @Test
   void getAllPitches_ShouldReturnAllPitches() {
-    when(pitchRepository.findAll()).thenReturn(Arrays.asList(testPitch));
+    when(pitchRepository.findAllNotDeleted()).thenReturn(Arrays.asList(testPitch));
 
     List<PitchDTO> result = pitchService.getAllPitches();
 
@@ -86,7 +113,7 @@ class PitchServiceTest {
 
   @Test
   void getPitchById_WhenExists_ShouldReturnPitch() {
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
 
     PitchDTO result = pitchService.getPitchById(1L);
 
@@ -96,10 +123,9 @@ class PitchServiceTest {
 
   @Test
   void getPitchById_WhenNotExists_ShouldThrowException() {
-    when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
+    when(pitchRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> pitchService.getPitchById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> pitchService.getPitchById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Pitch not found");
   }
 
@@ -118,7 +144,7 @@ class PitchServiceTest {
 
   @Test
   void updatePitch_WhenExists_ShouldUpdatePitch() {
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
     when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
 
@@ -131,36 +157,45 @@ class PitchServiceTest {
 
   @Test
   void deletePitch_ShouldCallRepository() {
-    doNothing().when(pitchRepository).deleteById(1L);
+    // Setup security context
+    SecurityContextHolder.setContext(securityContext);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    when(authentication.getName()).thenReturn("testuser");
+    when(userRepository.findByUsername("testuser")).thenReturn(java.util.Optional.of(testUser));
+
+    when(pitchRepository.findById(1L)).thenReturn(java.util.Optional.of(testPitch));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
 
     pitchService.deletePitch(1L);
 
-    verify(pitchRepository).deleteById(1L);
+    verify(pitchRepository).save(testPitch);
+    assertThat(testPitch.getDeletedAt()).isNotNull();
+    assertThat(testPitch.getDeletedBy()).isEqualTo(testUser);
   }
 
   @Test
   void getPitchesByCycleId_ShouldReturnPitches() {
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testPitch));
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch));
 
     List<PitchDTO> result = pitchService.getPitchesByCycleId(1L);
 
     assertThat(result).hasSize(1);
-    verify(pitchRepository).findByCycleId(1L);
+    verify(pitchRepository).findByCycleIdNotDeleted(1L);
   }
 
   @Test
   void getPitchesByTeamId_ShouldReturnPitches() {
-    when(pitchRepository.findByTeamId(1L)).thenReturn(Arrays.asList(testPitch));
+    when(pitchRepository.findByTeamIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch));
 
     List<PitchDTO> result = pitchService.getPitchesByTeamId(1L);
 
     assertThat(result).hasSize(1);
-    verify(pitchRepository).findByTeamId(1L);
+    verify(pitchRepository).findByTeamIdNotDeleted(1L);
   }
 
   @Test
   void updateStatus_ShouldUpdatePitchStatus() {
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
 
     PitchDTO result = pitchService.updateStatus(1L, PitchStatus.IN_PROGRESS);

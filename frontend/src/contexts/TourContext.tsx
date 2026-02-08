@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { driver, DriveStep, Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 interface TourStep extends DriveStep {
   route?: string;
@@ -27,10 +29,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   });
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const { t } = useTranslation();
+
   // Track if navigation was triggered by the tour driver
   const isNavigatingRef = useRef(false);
   const expectedRouteRef = useRef<string | null>(null);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
+  const pendingDestroyRef = useRef<Driver | null>(null);
 
   // Tour steps definition
   const getTourSteps = useCallback((): TourStep[] => [
@@ -175,6 +180,56 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       route: '/health',
     },
     {
+      element: '[data-tour="retros-menu"]',
+      popover: {
+        title: '🧠 Retrospectives',
+        description: 'Capture learnings after every cycle. Document what went well and what didn\'t to improve your process.',
+        side: 'right',
+        align: 'start',
+      },
+      route: '/retros',
+    },
+    {
+      element: '[data-tour="reports-menu"]',
+      popover: {
+        title: '📊 Reports',
+        description: 'View detailed analytics about your team\'s performance, cycle velocity, and issue trends.',
+        side: 'right',
+        align: 'start',
+      },
+      route: '/reports',
+    },
+    {
+      element: '[data-tour="meetings-menu"]',
+      popover: {
+        title: '📅 Meetings',
+        description: 'Manage your cycle meetings, including kick-offs and betting tables, directly within the context of your work.',
+        side: 'right',
+        align: 'start',
+      },
+      route: '/meetings',
+    },
+    {
+      element: '[data-tour="backlog-menu"]',
+      popover: {
+        title: '📝 Backlog',
+        description: 'A place for raw ideas and tasks that aren\'t yet shaped into pitches. Keep your cycle focused by moving noise here.',
+        side: 'right',
+        align: 'start',
+      },
+      route: '/backlog',
+    },
+    {
+      element: '[data-tour="worklogs-menu"]',
+      popover: {
+        title: '⏱️ Work Logs',
+        description: 'Track time and effort spent on pitches. Essential for verifying if you\'re staying within appetite.',
+        side: 'right',
+        align: 'start',
+      },
+      route: '/time/logs',
+    },
+    {
       element: '[data-tour="project-selector"]',
       popover: {
         title: '🎯 Project Selector',
@@ -240,7 +295,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       onNextClick: () => {
         currentStepIndex++;
         const nextStep = steps[currentStepIndex];
-        
+
         if (nextStep?.route && location.pathname !== nextStep.route) {
           isNavigatingRef.current = true;
           expectedRouteRef.current = nextStep.route;
@@ -256,7 +311,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       onPrevClick: () => {
         currentStepIndex--;
         const prevStep = steps[currentStepIndex];
-        
+
         if (prevStep?.route && location.pathname !== prevStep.route) {
           isNavigatingRef.current = true;
           expectedRouteRef.current = prevStep.route;
@@ -271,13 +326,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       },
       onDestroyStarted: () => {
         if (newDriver.hasNextStep()) {
-          // User clicked close/skip
-          const confirmed = window.confirm('Are you sure you want to skip the tour? You can restart it anytime from the help button.');
-          if (!confirmed) {
-            return;
-          }
+          // User clicked close/skip - show confirmation dialog
+          pendingDestroyRef.current = newDriver;
+          setSkipConfirmOpen(true);
+          return;
         }
-        // Tour completed or confirmed skip
+        // Tour completed naturally
         localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
         setHasCompletedTour(true);
         newDriver.destroy();
@@ -297,6 +351,22 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       newDriver.drive();
     }
   }, [driverInstance, getTourSteps, navigate, location.pathname]);
+
+  const handleSkipConfirm = useCallback(() => {
+    if (pendingDestroyRef.current) {
+      localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
+      setHasCompletedTour(true);
+      pendingDestroyRef.current.destroy();
+      pendingDestroyRef.current = null;
+      setIsTourActive(false);
+    }
+    setSkipConfirmOpen(false);
+  }, []);
+
+  const handleSkipCancel = useCallback(() => {
+    pendingDestroyRef.current = null;
+    setSkipConfirmOpen(false);
+  }, []);
 
   const resetTour = useCallback(() => {
     localStorage.removeItem(TOUR_COMPLETED_KEY);
@@ -323,16 +393,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-    
+
     // Only clean up if tour is active and user navigated manually
     if (isTourActive && driverInstance) {
       const steps = getTourSteps();
       const currentRoute = location.pathname;
-      
+
       // Check if this route matches the expected tour flow
       // If user manually navigated (not via tour), destroy the tour
       const isValidTourRoute = steps.some(step => step.route === currentRoute);
-      
+
       if (!isValidTourRoute) {
         // User navigated to a route not in the tour - definitely manual
         driverInstance.destroy();
@@ -359,6 +429,17 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+
+      {/* Skip Tour Confirmation Dialog */}
+      <ConfirmDialog
+        open={skipConfirmOpen}
+        onOpenChange={handleSkipCancel}
+        title={t('tour.skipTitle')}
+        description={t('tour.skipDescription')}
+        confirmLabel={t('tour.skip')}
+        cancelLabel={t('tour.continue')}
+        onConfirm={handleSkipConfirm}
+      />
     </TourContext.Provider>
   );
 }

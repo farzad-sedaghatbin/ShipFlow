@@ -23,6 +23,7 @@ public class UpdateOrganizationSettingsRequest {
   private OrganizationSettingsDTO.ColorSettings colors;
   private List<OrganizationSettingsDTO.BugStatusConfig> bugStatuses;
   private List<OrganizationSettingsDTO.SeverityLevelConfig> severityLevels;
+  private List<OrganizationSettingsDTO.MeetingTypeConfig> meetingTypes;
   private String timeZone;
   private String dateFormat;
   private Boolean enableNotifications;

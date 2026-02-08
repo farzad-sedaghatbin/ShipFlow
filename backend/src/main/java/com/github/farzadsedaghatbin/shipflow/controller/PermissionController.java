@@ -37,20 +37,12 @@ public class PermissionController {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     String username = auth.getName();
 
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+    User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
 
     List<Permission> permissions = permissionService.getCurrentUserPermissions();
 
-    UserPermissionsResponse response =
-        UserPermissionsResponse.builder()
-            .userId(user.getId())
-            .username(user.getUsername())
-            .role(user.getRole())
-            .permissions(permissions)
-            .build();
+    UserPermissionsResponse response = UserPermissionsResponse.builder().userId(user.getId())
+        .username(user.getUsername()).role(user.getRole()).permissions(permissions).build();
 
     return ResponseEntity.ok(response);
   }
@@ -66,16 +58,15 @@ public class PermissionController {
   @GetMapping("/resource/{resourceType}")
   @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Get all permissions for a specific resource type (admin only)")
-  public ResponseEntity<List<PermissionDTO>> getPermissionsForResource(
-      @PathVariable ResourceType resourceType) {
+  public ResponseEntity<List<PermissionDTO>> getPermissionsForResource(@PathVariable ResourceType resourceType) {
     List<Permission> permissions = permissionService.getPermissionsForResource(resourceType);
     return ResponseEntity.ok(permissions.stream().map(this::toDTO).collect(Collectors.toList()));
   }
 
   @GetMapping("/has-permission")
   @Operation(summary = "Check if current user has a specific permission")
-  public ResponseEntity<Boolean> hasPermission(
-      @RequestParam ResourceType resourceType, @RequestParam PermissionType permissionType) {
+  public ResponseEntity<Boolean> hasPermission(@RequestParam ResourceType resourceType,
+      @RequestParam PermissionType permissionType) {
     boolean hasPermission = permissionService.hasPermission(resourceType, permissionType);
     return ResponseEntity.ok(hasPermission);
   }
@@ -91,22 +82,17 @@ public class PermissionController {
   @PostMapping
   @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Create a new permission (admin only)")
-  public ResponseEntity<Permission> createPermission(
-      @Valid @RequestBody CreatePermissionRequest request) {
-    Permission permission =
-        permissionService.createPermission(
-            request.getRole(),
-            request.getResourceType(),
-            request.getPermissionType(),
-            request.getDescription());
+  public ResponseEntity<Permission> createPermission(@Valid @RequestBody CreatePermissionRequest request) {
+    Permission permission = permissionService.createPermission(request.getRole(), request.getResourceType(),
+        request.getPermissionType(), request.getDescription());
     return ResponseEntity.status(HttpStatus.CREATED).body(permission);
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Update an existing permission (admin only)")
-  public ResponseEntity<Permission> updatePermission(
-      @PathVariable Long id, @Valid @RequestBody UpdatePermissionRequest request) {
+  public ResponseEntity<Permission> updatePermission(@PathVariable Long id,
+      @Valid @RequestBody UpdatePermissionRequest request) {
     Permission permission = permissionService.updatePermission(id, request.getDescription());
     return ResponseEntity.ok(permission);
   }
@@ -124,17 +110,9 @@ public class PermissionController {
   @Operation(summary = "Create multiple permissions (admin only)")
   public ResponseEntity<List<Permission>> createBulkPermissions(
       @Valid @RequestBody List<CreatePermissionRequest> requests) {
-    List<Permission> permissions =
-        permissionService.createBulkPermissions(
-            requests.stream()
-                .map(
-                    r ->
-                        new PermissionService.PermissionRequest(
-                            r.getRole(),
-                            r.getResourceType(),
-                            r.getPermissionType(),
-                            r.getDescription()))
-                .collect(Collectors.toList()));
+    List<Permission> permissions = permissionService
+        .createBulkPermissions(requests.stream().map(r -> new PermissionService.PermissionRequest(r.getRole(),
+            r.getResourceType(), r.getPermissionType(), r.getDescription())).collect(Collectors.toList()));
     return ResponseEntity.status(HttpStatus.CREATED).body(permissions);
   }
 
@@ -147,14 +125,9 @@ public class PermissionController {
   }
 
   private PermissionDTO toDTO(Permission permission) {
-    return PermissionDTO.builder()
-        .id(permission.getId())
-        .role(permission.getRole())
-        .resourceType(permission.getResourceType())
-        .permissionType(permission.getPermissionType())
-        .description(permission.getDescription())
-        .createdAt(permission.getCreatedAt())
-        .build();
+    return PermissionDTO.builder().id(permission.getId()).role(permission.getRole())
+        .resourceType(permission.getResourceType()).permissionType(permission.getPermissionType())
+        .description(permission.getDescription()).createdAt(permission.getCreatedAt()).build();
   }
 
   @Data

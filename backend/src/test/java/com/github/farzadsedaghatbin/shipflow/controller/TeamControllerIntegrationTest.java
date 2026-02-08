@@ -34,22 +34,26 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(
-    username = "admin",
-    roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class TeamControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private TeamRepository teamRepository;
+  @Autowired
+  private TeamRepository teamRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
-  @Autowired private PermissionRepository permissionRepository;
+  @Autowired
+  private PermissionRepository permissionRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
   private Cycle testCycle;
   private Team testTeam;
@@ -62,54 +66,27 @@ class TeamControllerIntegrationTest {
     cycleRepository.deleteAll();
 
     // Create test user
-    User testUser =
-        User.builder()
-            .username("admin")
-            .password("password")
-            .email("admin@test.com")
-            .role(UserRole.MEMBER)
-            .build();
+    User testUser = User.builder().username("admin").password("password").email("admin@test.com")
+        .role(UserRole.MEMBER).build();
     testUser = userRepository.save(testUser);
 
     // Create permissions for MEMBER role
-    Permission teamRead =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.TEAM)
-            .permissionType(PermissionType.READ)
-            .build();
-    Permission teamCreate =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.TEAM)
-            .permissionType(PermissionType.CREATE)
-            .build();
-    Permission teamUpdate =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.TEAM)
-            .permissionType(PermissionType.UPDATE)
-            .build();
-    Permission teamDelete =
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.TEAM)
-            .permissionType(PermissionType.DELETE)
-            .build();
+    Permission teamRead = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.TEAM)
+        .permissionType(PermissionType.READ).build();
+    Permission teamCreate = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.TEAM)
+        .permissionType(PermissionType.CREATE).build();
+    Permission teamUpdate = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.TEAM)
+        .permissionType(PermissionType.UPDATE).build();
+    Permission teamDelete = Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.TEAM)
+        .permissionType(PermissionType.DELETE).build();
 
     permissionRepository.save(teamRead);
     permissionRepository.save(teamCreate);
     permissionRepository.save(teamUpdate);
     permissionRepository.save(teamDelete);
 
-    testCycle =
-        Cycle.builder()
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
     testTeam = Team.builder().name("Test Team").cycle(testCycle).build();
@@ -118,9 +95,7 @@ class TeamControllerIntegrationTest {
 
   @Test
   void getAllTeams_ShouldReturnTeams() throws Exception {
-    mockMvc
-        .perform(get("/api/teams"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/teams")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$[0].name", is("Test Team")));
@@ -128,9 +103,7 @@ class TeamControllerIntegrationTest {
 
   @Test
   void getTeamById_WhenExists_ShouldReturnTeam() throws Exception {
-    mockMvc
-        .perform(get("/api/teams/{id}", testTeam.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/teams/{id}", testTeam.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id", is(testTeam.getId().intValue())))
         .andExpect(jsonPath("$.name", is("Test Team")));
@@ -143,29 +116,19 @@ class TeamControllerIntegrationTest {
 
   @Test
   void createTeam_WithValidData_ShouldCreateTeam() throws Exception {
-    CreateTeamRequest request =
-        CreateTeamRequest.builder().name("New Team").cycleId(testCycle.getId()).build();
+    CreateTeamRequest request = CreateTeamRequest.builder().name("New Team").cycleId(testCycle.getId()).build();
 
-    mockMvc
-        .perform(
-            post("/api/teams")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
+    mockMvc.perform(post("/api/teams").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.name", is("New Team")));
   }
 
   @Test
   void updateTeam_WhenExists_ShouldUpdateTeam() throws Exception {
-    CreateTeamRequest request =
-        CreateTeamRequest.builder().name("Updated Team").cycleId(testCycle.getId()).build();
+    CreateTeamRequest request = CreateTeamRequest.builder().name("Updated Team").cycleId(testCycle.getId()).build();
 
-    mockMvc
-        .perform(
-            put("/api/teams/{id}", testTeam.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
+    mockMvc.perform(put("/api/teams/{id}", testTeam.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
         .andExpect(jsonPath("$.name", is("Updated Team")));
   }
 
@@ -178,11 +141,8 @@ class TeamControllerIntegrationTest {
 
   @Test
   void getTeamsByCycle_ShouldReturnTeamsForCycle() throws Exception {
-    mockMvc
-        .perform(get("/api/teams/cycle/{cycleId}", testCycle.getId()))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$", hasSize(1)))
+    mockMvc.perform(get("/api/teams/cycle/{cycleId}", testCycle.getId())).andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
         .andExpect(jsonPath("$[0].name", is("Test Team")));
   }
 }

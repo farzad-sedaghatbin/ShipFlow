@@ -28,17 +28,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class HillChartControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private ProjectRepository projectRepository;
+  @Autowired
+  private ProjectRepository projectRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
-  @Autowired private PitchRepository pitchRepository;
+  @Autowired
+  private PitchRepository pitchRepository;
 
-  @Autowired private HillChartPointRepository hillChartPointRepository;
+  @Autowired
+  private HillChartPointRepository hillChartPointRepository;
 
   private Pitch testPitch;
   private HillChartPoint testPoint;
@@ -83,97 +89,62 @@ class HillChartControllerIntegrationTest {
   @Test
   @WithMockUser(roles = "ADMIN")
   void createHillChartPoint_WithValidData_ShouldCreatePoint() throws Exception {
-    CreateHillChartPointRequest request =
-        CreateHillChartPointRequest.builder()
-            .pitchId(testPitch.getId())
-            .scope("Feature A")
-            .description("Implementing feature A")
-            .position(25)
-            .build();
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(testPitch.getId())
+        .scope("Feature A").description("Implementing feature A").position(25).build();
 
-    mockMvc
-        .perform(
-            post("/api/hill-chart")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.scope").value("Feature A"))
-        .andExpect(jsonPath("$.position").value(25));
+    mockMvc.perform(post("/api/hill-chart").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
+        .andExpect(jsonPath("$.scope").value("Feature A")).andExpect(jsonPath("$.position").value(25));
   }
 
   @Test
   @WithMockUser(roles = "DEVELOPER")
   void getAllHillChartPoints_ShouldReturnPoints() throws Exception {
-    mockMvc
-        .perform(get("/api/hill-chart"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray());
+    mockMvc.perform(get("/api/hill-chart")).andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
   }
 
   @Test
   @WithMockUser(roles = "DEVELOPER")
   void getHillChartPointById_WhenExists_ShouldReturnPoint() throws Exception {
-    mockMvc
-        .perform(get("/api/hill-chart/" + testPoint.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/hill-chart/" + testPoint.getId())).andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(testPoint.getId()));
   }
 
   @Test
   @WithMockUser(roles = "DEVELOPER")
   void getHillChartPointsByPitch_ShouldReturnPointsForPitch() throws Exception {
-    mockMvc
-        .perform(get("/api/hill-chart/pitch/" + testPitch.getId()))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/hill-chart/pitch/" + testPitch.getId())).andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray());
   }
 
   @Test
   @WithMockUser(roles = "PROJECT_MANAGER")
   void updateHillChartPoint_WhenExists_ShouldUpdatePoint() throws Exception {
-    UpdateHillChartPointRequest request =
-        UpdateHillChartPointRequest.builder().position(75).build();
+    UpdateHillChartPointRequest request = UpdateHillChartPointRequest.builder().position(75).build();
 
-    mockMvc
-        .perform(
-            put("/api/hill-chart/" + testPoint.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk());
+    mockMvc.perform(put("/api/hill-chart/" + testPoint.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk());
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void deleteHillChartPoint_WhenExists_ShouldDeletePoint() throws Exception {
-    mockMvc
-        .perform(delete("/api/hill-chart/" + testPoint.getId()))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/hill-chart/" + testPoint.getId())).andExpect(status().isNoContent());
   }
 
   @Test
   @WithMockUser(roles = "DEVELOPER")
   void createHillChartPoint_AsDeveloper_ShouldReturn403() throws Exception {
-    CreateHillChartPointRequest request =
-        CreateHillChartPointRequest.builder()
-            .pitchId(testPitch.getId())
-            .scope("Feature B")
-            .description("Test")
-            .position(50)
-            .build();
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(testPitch.getId())
+        .scope("Feature B").description("Test").position(50).build();
 
-    mockMvc
-        .perform(
-            post("/api/hill-chart")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/hill-chart").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser(roles = "QA")
   void deleteHillChartPoint_AsQA_ShouldReturn403() throws Exception {
-    mockMvc
-        .perform(delete("/api/hill-chart/" + testPoint.getId()))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(delete("/api/hill-chart/" + testPoint.getId())).andExpect(status().isForbidden());
   }
 }

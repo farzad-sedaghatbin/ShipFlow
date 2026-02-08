@@ -21,24 +21,29 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Integration tests for AICacheController. Tests the REST API endpoints for cache management. */
+/**
+ * Integration tests for AICacheController. Tests the REST API endpoints for
+ * cache management.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(
-    username = "admin",
-    roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 @DisplayName("AI Cache Controller Integration Tests")
 class AICacheControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private AICacheService cacheService;
+  @Autowired
+  private AICacheService cacheService;
 
-  @Autowired private AICacheConfig cacheConfig;
+  @Autowired
+  private AICacheConfig cacheConfig;
 
   @BeforeEach
   void setUp() {
@@ -56,14 +61,10 @@ class AICacheControllerIntegrationTest {
     cacheService.cachePitchRisk(1L, true, riskData, "hash1");
 
     // When & Then
-    mockMvc
-        .perform(get("/api/cache/stats"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/cache/stats")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.totalEntries", is(1)))
-        .andExpect(jsonPath("$.pitchRiskEntries", is(1)))
-        .andExpect(jsonPath("$.cycleRiskEntries", is(0)))
-        .andExpect(jsonPath("$.qaEntries", is(0)))
+        .andExpect(jsonPath("$.totalEntries", is(1))).andExpect(jsonPath("$.pitchRiskEntries", is(1)))
+        .andExpect(jsonPath("$.cycleRiskEntries", is(0))).andExpect(jsonPath("$.qaEntries", is(0)))
         .andExpect(jsonPath("$.riskCacheEnabled", notNullValue()))
         .andExpect(jsonPath("$.qaCacheEnabled", notNullValue()))
         .andExpect(jsonPath("$.provider", is("in-memory")));
@@ -72,30 +73,22 @@ class AICacheControllerIntegrationTest {
   @Test
   @DisplayName("GET /api/cache/stats - Should return empty stats when no cache entries")
   void getCacheStats_WhenEmpty_ShouldReturnZeroEntries() throws Exception {
-    mockMvc
-        .perform(get("/api/cache/stats"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalEntries", is(0)))
-        .andExpect(jsonPath("$.pitchRiskEntries", is(0)))
-        .andExpect(jsonPath("$.cycleRiskEntries", is(0)))
+    mockMvc.perform(get("/api/cache/stats")).andExpect(status().isOk()).andExpect(jsonPath("$.totalEntries", is(0)))
+        .andExpect(jsonPath("$.pitchRiskEntries", is(0))).andExpect(jsonPath("$.cycleRiskEntries", is(0)))
         .andExpect(jsonPath("$.qaEntries", is(0)));
   }
 
   @Test
   @DisplayName("GET /api/cache/config - Should return cache configuration")
   void getCacheConfig_ShouldReturnConfiguration() throws Exception {
-    mockMvc
-        .perform(get("/api/cache/config"))
-        .andExpect(status().isOk())
+    mockMvc.perform(get("/api/cache/config")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.enabled", notNullValue()))
-        .andExpect(jsonPath("$.risk", notNullValue()))
+        .andExpect(jsonPath("$.enabled", notNullValue())).andExpect(jsonPath("$.risk", notNullValue()))
         .andExpect(jsonPath("$.risk.enabled", notNullValue()))
         .andExpect(jsonPath("$.risk.pitchTtlMinutes", notNullValue()))
         .andExpect(jsonPath("$.risk.cycleTtlMinutes", notNullValue()))
         .andExpect(jsonPath("$.risk.invalidateOnDataChange", notNullValue()))
-        .andExpect(jsonPath("$.qa", notNullValue()))
-        .andExpect(jsonPath("$.qa.enabled", notNullValue()))
+        .andExpect(jsonPath("$.qa", notNullValue())).andExpect(jsonPath("$.qa.enabled", notNullValue()))
         .andExpect(jsonPath("$.qa.ttlHours", notNullValue()))
         .andExpect(jsonPath("$.qa.similarityThreshold", notNullValue()))
         .andExpect(jsonPath("$.qa.maxEntriesPerContext", notNullValue()));
@@ -114,9 +107,7 @@ class AICacheControllerIntegrationTest {
     mockMvc.perform(get("/api/cache/stats")).andExpect(jsonPath("$.totalEntries", is(2)));
 
     // When
-    mockMvc
-        .perform(post("/api/cache/clear"))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/cache/clear")).andExpect(status().isOk())
         .andExpect(jsonPath("$.message", containsString("cleared successfully")));
 
     // Then
@@ -132,9 +123,7 @@ class AICacheControllerIntegrationTest {
     cacheService.cachePitchRisk(1L, true, riskData, "hash1");
 
     // When
-    mockMvc
-        .perform(post("/api/cache/clear/risk"))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/cache/clear/risk")).andExpect(status().isOk())
         .andExpect(jsonPath("$.message", containsString("cleared successfully")));
 
     // Then
@@ -145,9 +134,7 @@ class AICacheControllerIntegrationTest {
   @DisplayName("POST /api/cache/clear/qa - Should clear Q&A cache")
   void clearQACache_ShouldClearQACache() throws Exception {
     // When
-    mockMvc
-        .perform(post("/api/cache/clear/qa"))
-        .andExpect(status().isOk())
+    mockMvc.perform(post("/api/cache/clear/qa")).andExpect(status().isOk())
         .andExpect(jsonPath("$.message", containsString("cleared successfully")));
 
     // Then
@@ -168,9 +155,7 @@ class AICacheControllerIntegrationTest {
     mockMvc.perform(get("/api/cache/stats")).andExpect(jsonPath("$.pitchRiskEntries", is(2)));
 
     // When
-    mockMvc
-        .perform(delete("/api/cache/risk/pitch/{id}", pitchId))
-        .andExpect(status().isOk())
+    mockMvc.perform(delete("/api/cache/risk/pitch/{id}", pitchId)).andExpect(status().isOk())
         .andExpect(jsonPath("$.message", containsString("invalidated")));
 
     // Then - Pitch cache should be invalidated
@@ -181,17 +166,13 @@ class AICacheControllerIntegrationTest {
   @DisplayName("DELETE /api/cache/risk/cycle/{id} - Should invalidate cycle cache")
   void invalidateCycleCache_ShouldInvalidateCache() throws Exception {
     // When
-    mockMvc
-        .perform(delete("/api/cache/risk/cycle/{id}", 1L))
-        .andExpect(status().isOk())
+    mockMvc.perform(delete("/api/cache/risk/cycle/{id}", 1L)).andExpect(status().isOk())
         .andExpect(jsonPath("$.message", containsString("invalidated")));
   }
 
   @Test
   @DisplayName("Unauthorized access should be rejected")
-  @WithMockUser(
-      username = "user",
-      roles = {})
+  @WithMockUser(username = "user", roles = {})
   void unauthorizedAccess_ShouldBeHandled() throws Exception {
     // This test verifies the endpoint is accessible with default roles
     // In a real scenario, you might test role-based access control

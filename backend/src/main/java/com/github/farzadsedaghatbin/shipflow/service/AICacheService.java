@@ -19,34 +19,31 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * Server-side caching service for AI responses. Provides intelligent caching to reduce AI API calls
- * across all users.
+ * Server-side caching service for AI responses. Provides intelligent caching to
+ * reduce AI API calls across all users.
  *
- * <p>Features: - TTL-based cache expiration (0 = infinite until invalidation or restart) -
- * Automatic invalidation when data changes - Fuzzy matching for similar Q&A questions - Feature
- * flags for enabling/disabling caching per feature - Thread-safe concurrent access - Supports
- * in-memory (dev) and Redis (production) providers
+ * <p>
+ * Features: - TTL-based cache expiration (0 = infinite until invalidation or
+ * restart) - Automatic invalidation when data changes - Fuzzy matching for
+ * similar Q&A questions - Feature flags for enabling/disabling caching per
+ * feature - Thread-safe concurrent access - Supports in-memory (dev) and Redis
+ * (production) providers
  *
- * <p>For risk analysis with change detection, TTL=0 (infinite) is recommended since cache is
- * automatically invalidated when data changes.
+ * <p>
+ * For risk analysis with change detection, TTL=0 (infinite) is recommended
+ * since cache is automatically invalidated when data changes.
  */
 @Service
 @Slf4j
-@ConditionalOnProperty(
-    name = "app.ai.risk-analysis.enabled",
-    havingValue = "true",
-    matchIfMissing = false)
+@ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 public class AICacheService {
 
   private final AICacheConfig cacheConfig;
 
   // In-memory cache storage - thread-safe maps
-  private final ConcurrentHashMap<String, CacheEntry<PitchRiskDTO>> pitchRiskCache =
-      new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, CacheEntry<CycleRiskOverviewDTO>> cycleRiskCache =
-      new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, CacheEntry<QAResponse>> qaCache =
-      new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, CacheEntry<PitchRiskDTO>> pitchRiskCache = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, CacheEntry<CycleRiskOverviewDTO>> cycleRiskCache = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, CacheEntry<QAResponse>> qaCache = new ConcurrentHashMap<>();
 
   // Track data versions for change detection
   private final ConcurrentHashMap<Long, DataVersion> pitchDataVersions = new ConcurrentHashMap<>();
@@ -78,8 +75,8 @@ public class AICacheService {
   }
 
   /**
-   * Initialize Redis connection if configured. Note: This is a placeholder - actual implementation
-   * would use Jedis or Lettuce.
+   * Initialize Redis connection if configured. Note: This is a placeholder -
+   * actual implementation would use Jedis or Lettuce.
    */
   private void initializeRedis() {
     try {
@@ -108,7 +105,9 @@ public class AICacheService {
     private String dataHash; // For change detection
     private int hitCount; // Track cache hits for metrics
 
-    /** Check if entry is expired. Returns false if expiresAt is null (infinite TTL). */
+    /**
+     * Check if entry is expired. Returns false if expiresAt is null (infinite TTL).
+     */
     public boolean isExpired() {
       if (expiresAt == null) {
         return false; // Infinite TTL - never expires by time
@@ -148,8 +147,10 @@ public class AICacheService {
   /**
    * Get cached pitch risk analysis
    *
-   * @param pitchId The pitch ID
-   * @param withAI Whether this is AI-enhanced analysis
+   * @param pitchId
+   *            The pitch ID
+   * @param withAI
+   *            Whether this is AI-enhanced analysis
    * @return Optional containing cached data if valid cache exists
    */
   public Optional<PitchRiskDTO> getCachedPitchRisk(Long pitchId, boolean withAI) {
@@ -182,8 +183,7 @@ public class AICacheService {
     }
 
     entry.incrementHitCount();
-    log.debug(
-        "Cache hit: pitch risk {} (withAI={}, hits={})", pitchId, withAI, entry.getHitCount());
+    log.debug("Cache hit: pitch risk {} (withAI={}, hits={})", pitchId, withAI, entry.getHitCount());
     return Optional.of(entry.getData());
   }
 
@@ -199,24 +199,15 @@ public class AICacheService {
     // TTL = 0 means infinite (null expiresAt)
     LocalDateTime expiresAt = ttlMinutes > 0 ? LocalDateTime.now().plusMinutes(ttlMinutes) : null;
 
-    CacheEntry<PitchRiskDTO> entry =
-        CacheEntry.<PitchRiskDTO>builder()
-            .data(riskData)
-            .createdAt(LocalDateTime.now())
-            .expiresAt(expiresAt)
-            .dataHash(dataHash)
-            .hitCount(0)
-            .build();
+    CacheEntry<PitchRiskDTO> entry = CacheEntry.<PitchRiskDTO>builder().data(riskData)
+        .createdAt(LocalDateTime.now()).expiresAt(expiresAt).dataHash(dataHash).hitCount(0).build();
 
     pitchRiskCache.put(cacheKey, entry);
 
     // Store data version for change detection
     pitchDataVersions.put(pitchId, new DataVersion(dataHash, LocalDateTime.now()));
 
-    log.debug(
-        "Cached pitch risk {} (withAI={}, TTL={})",
-        pitchId,
-        withAI,
+    log.debug("Cached pitch risk {} (withAI={}, TTL={})", pitchId, withAI,
         ttlMinutes == 0 ? "infinite" : ttlMinutes + " min");
   }
 
@@ -259,8 +250,7 @@ public class AICacheService {
     }
 
     entry.incrementHitCount();
-    log.debug(
-        "Cache hit: cycle risk {} (withAI={}, hits={})", cycleId, withAI, entry.getHitCount());
+    log.debug("Cache hit: cycle risk {} (withAI={}, hits={})", cycleId, withAI, entry.getHitCount());
     return Optional.of(entry.getData());
   }
 
@@ -276,19 +266,11 @@ public class AICacheService {
     // TTL = 0 means infinite (null expiresAt)
     LocalDateTime expiresAt = ttlMinutes > 0 ? LocalDateTime.now().plusMinutes(ttlMinutes) : null;
 
-    CacheEntry<CycleRiskOverviewDTO> entry =
-        CacheEntry.<CycleRiskOverviewDTO>builder()
-            .data(riskData)
-            .createdAt(LocalDateTime.now())
-            .expiresAt(expiresAt)
-            .hitCount(0)
-            .build();
+    CacheEntry<CycleRiskOverviewDTO> entry = CacheEntry.<CycleRiskOverviewDTO>builder().data(riskData)
+        .createdAt(LocalDateTime.now()).expiresAt(expiresAt).hitCount(0).build();
 
     cycleRiskCache.put(cacheKey, entry);
-    log.debug(
-        "Cached cycle risk {} (withAI={}, TTL={})",
-        cycleId,
-        withAI,
+    log.debug("Cached cycle risk {} (withAI={}, TTL={})", cycleId, withAI,
         ttlMinutes == 0 ? "infinite" : ttlMinutes + " min");
   }
 
@@ -310,15 +292,21 @@ public class AICacheService {
   /**
    * Get cached Q&A response with fuzzy matching support
    *
-   * @param question The question being asked
-   * @param contextType Context type (pitch, cycle, team, etc.)
-   * @param contextId Optional context ID
-   * @param cycleId Optional cycle ID
-   * @param teamId Optional team ID
-   * @return Optional containing cached response if similar question was asked recently
+   * @param question
+   *            The question being asked
+   * @param contextType
+   *            Context type (pitch, cycle, team, etc.)
+   * @param contextId
+   *            Optional context ID
+   * @param cycleId
+   *            Optional cycle ID
+   * @param teamId
+   *            Optional team ID
+   * @return Optional containing cached response if similar question was asked
+   *         recently
    */
-  public Optional<QAResponse> getCachedQAResponse(
-      String question, String contextType, Long contextId, Long cycleId, Long teamId) {
+  public Optional<QAResponse> getCachedQAResponse(String question, String contextType, Long contextId, Long cycleId,
+      Long teamId) {
 
     if (!cacheConfig.isQACacheEnabled()) {
       return Optional.empty();
@@ -351,16 +339,14 @@ public class AICacheService {
 
         // Extract cached question from the response
         String cachedQuestion = cacheEntry.getData().getQuestion();
-        if (cachedQuestion == null) continue;
+        if (cachedQuestion == null)
+          continue;
 
         double similarity = calculateSimilarity(question, cachedQuestion);
         if (similarity >= threshold) {
           cacheEntry.incrementHitCount();
-          log.debug(
-              "Q&A cache fuzzy hit (similarity={}, threshold={}, hits={})",
-              String.format("%.2f", similarity),
-              threshold,
-              cacheEntry.getHitCount());
+          log.debug("Q&A cache fuzzy hit (similarity={}, threshold={}, hits={})",
+              String.format("%.2f", similarity), threshold, cacheEntry.getHitCount());
           return Optional.of(cacheEntry.getData());
         }
       }
@@ -371,12 +357,7 @@ public class AICacheService {
   }
 
   /** Cache Q&A response */
-  public void cacheQAResponse(
-      String question,
-      String contextType,
-      Long contextId,
-      Long cycleId,
-      Long teamId,
+  public void cacheQAResponse(String question, String contextType, Long contextId, Long cycleId, Long teamId,
       QAResponse response) {
 
     if (!cacheConfig.isQACacheEnabled()) {
@@ -392,22 +373,15 @@ public class AICacheService {
     // TTL = 0 means infinite (null expiresAt)
     LocalDateTime expiresAt = ttlHours > 0 ? LocalDateTime.now().plusHours(ttlHours) : null;
 
-    CacheEntry<QAResponse> entry =
-        CacheEntry.<QAResponse>builder()
-            .data(response)
-            .createdAt(LocalDateTime.now())
-            .expiresAt(expiresAt)
-            .hitCount(0)
-            .build();
+    CacheEntry<QAResponse> entry = CacheEntry.<QAResponse>builder().data(response).createdAt(LocalDateTime.now())
+        .expiresAt(expiresAt).hitCount(0).build();
 
     qaCache.put(cacheKey, entry);
 
     // Enforce max entries per context
     enforceQAContextLimit(contextKey);
 
-    log.debug(
-        "Cached Q&A response (context={}, TTL={})",
-        contextKey,
+    log.debug("Cached Q&A response (context={}, TTL={})", contextKey,
         ttlHours == 0 ? "infinite" : ttlHours + " hours");
   }
 
@@ -419,12 +393,8 @@ public class AICacheService {
   }
 
   private String buildQAContextKey(String contextType, Long contextId, Long cycleId, Long teamId) {
-    return String.format(
-        "%s_%d_%d_%d",
-        contextType != null ? contextType : "global",
-        contextId != null ? contextId : 0,
-        cycleId != null ? cycleId : 0,
-        teamId != null ? teamId : 0);
+    return String.format("%s_%d_%d_%d", contextType != null ? contextType : "global",
+        contextId != null ? contextId : 0, cycleId != null ? cycleId : 0, teamId != null ? teamId : 0);
   }
 
   private String buildQACacheKey(String normalizedQuestion, String contextKey) {
@@ -433,7 +403,8 @@ public class AICacheService {
 
   /** Normalize question for comparison */
   private String normalizeQuestion(String question) {
-    if (question == null) return "";
+    if (question == null)
+      return "";
     return question.toLowerCase().replaceAll("[^a-z0-9\\s]", "").replaceAll("\\s+", " ").trim();
   }
 
@@ -442,7 +413,8 @@ public class AICacheService {
     String norm1 = normalizeQuestion(q1);
     String norm2 = normalizeQuestion(q2);
 
-    if (norm1.equals(norm2)) return 1.0;
+    if (norm1.equals(norm2))
+      return 1.0;
 
     Set<String> words1 = new HashSet<>(Arrays.asList(norm1.split(" ")));
     Set<String> words2 = new HashSet<>(Arrays.asList(norm2.split(" ")));
@@ -453,7 +425,8 @@ public class AICacheService {
     Set<String> union = new HashSet<>(words1);
     union.addAll(words2);
 
-    if (union.isEmpty()) return 0.0;
+    if (union.isEmpty())
+      return 0.0;
     return (double) intersection.size() / union.size();
   }
 
@@ -471,11 +444,9 @@ public class AICacheService {
   private void enforceQAContextLimit(String contextKey) {
     int maxEntries = cacheConfig.getQa().getMaxEntriesPerContext();
 
-    List<Map.Entry<String, CacheEntry<QAResponse>>> contextEntries =
-        qaCache.entrySet().stream()
-            .filter(e -> e.getKey().endsWith(contextKey))
-            .sorted(Comparator.comparing(e -> e.getValue().getCreatedAt()))
-            .collect(Collectors.toList());
+    List<Map.Entry<String, CacheEntry<QAResponse>>> contextEntries = qaCache.entrySet().stream()
+        .filter(e -> e.getKey().endsWith(contextKey))
+        .sorted(Comparator.comparing(e -> e.getValue().getCreatedAt())).collect(Collectors.toList());
 
     if (contextEntries.size() > maxEntries) {
       int toRemove = contextEntries.size() - maxEntries;
@@ -495,26 +466,23 @@ public class AICacheService {
   public void cleanupExpiredEntries() {
     int pitchRemoved = 0, cycleRemoved = 0, qaRemoved = 0;
 
-    for (Iterator<Map.Entry<String, CacheEntry<PitchRiskDTO>>> it =
-            pitchRiskCache.entrySet().iterator();
-        it.hasNext(); ) {
+    for (Iterator<Map.Entry<String, CacheEntry<PitchRiskDTO>>> it = pitchRiskCache.entrySet().iterator(); it
+        .hasNext();) {
       if (it.next().getValue().isExpired()) {
         it.remove();
         pitchRemoved++;
       }
     }
 
-    for (Iterator<Map.Entry<String, CacheEntry<CycleRiskOverviewDTO>>> it =
-            cycleRiskCache.entrySet().iterator();
-        it.hasNext(); ) {
+    for (Iterator<Map.Entry<String, CacheEntry<CycleRiskOverviewDTO>>> it = cycleRiskCache.entrySet().iterator(); it
+        .hasNext();) {
       if (it.next().getValue().isExpired()) {
         it.remove();
         cycleRemoved++;
       }
     }
 
-    for (Iterator<Map.Entry<String, CacheEntry<QAResponse>>> it = qaCache.entrySet().iterator();
-        it.hasNext(); ) {
+    for (Iterator<Map.Entry<String, CacheEntry<QAResponse>>> it = qaCache.entrySet().iterator(); it.hasNext();) {
       if (it.next().getValue().isExpired()) {
         it.remove();
         qaRemoved++;
@@ -522,10 +490,7 @@ public class AICacheService {
     }
 
     if (pitchRemoved + cycleRemoved + qaRemoved > 0) {
-      log.info(
-          "Cache cleanup: removed {} pitch, {} cycle, {} Q&A expired entries",
-          pitchRemoved,
-          cycleRemoved,
+      log.info("Cache cleanup: removed {} pitch, {} cycle, {} Q&A expired entries", pitchRemoved, cycleRemoved,
           qaRemoved);
     }
   }
@@ -541,20 +506,14 @@ public class AICacheService {
 
   /** Get cache statistics */
   public CacheStats getCacheStats() {
-    long totalHits =
-        pitchRiskCache.values().stream().mapToInt(CacheEntry::getHitCount).sum()
-            + cycleRiskCache.values().stream().mapToInt(CacheEntry::getHitCount).sum()
-            + qaCache.values().stream().mapToInt(CacheEntry::getHitCount).sum();
+    long totalHits = pitchRiskCache.values().stream().mapToInt(CacheEntry::getHitCount).sum()
+        + cycleRiskCache.values().stream().mapToInt(CacheEntry::getHitCount).sum()
+        + qaCache.values().stream().mapToInt(CacheEntry::getHitCount).sum();
 
-    return CacheStats.builder()
-        .totalEntries(pitchRiskCache.size() + cycleRiskCache.size() + qaCache.size())
-        .pitchRiskEntries(pitchRiskCache.size())
-        .cycleRiskEntries(cycleRiskCache.size())
-        .qaEntries(qaCache.size())
-        .totalHits(totalHits)
-        .provider(cacheConfig.getProvider())
-        .riskCacheEnabled(cacheConfig.isRiskCacheEnabled())
-        .qaCacheEnabled(cacheConfig.isQACacheEnabled())
+    return CacheStats.builder().totalEntries(pitchRiskCache.size() + cycleRiskCache.size() + qaCache.size())
+        .pitchRiskEntries(pitchRiskCache.size()).cycleRiskEntries(cycleRiskCache.size())
+        .qaEntries(qaCache.size()).totalHits(totalHits).provider(cacheConfig.getProvider())
+        .riskCacheEnabled(cacheConfig.isRiskCacheEnabled()).qaCacheEnabled(cacheConfig.isQACacheEnabled())
         .build();
   }
 }

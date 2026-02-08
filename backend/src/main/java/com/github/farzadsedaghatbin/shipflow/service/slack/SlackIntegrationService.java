@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Service for managing Slack integration. Handles configuration, sending notifications, and
- * tracking history.
+ * Service for managing Slack integration. Handles configuration, sending
+ * notifications, and tracking history.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,10 +35,8 @@ public class SlackIntegrationService {
   private final LocalizationService localizationService;
 
   /** Create or update Slack workspace configuration */
-  public SlackConfigurationDTO createOrUpdateConfiguration(
-      CreateSlackConfigurationRequest request) {
-    Optional<SlackConfiguration> existing =
-        slackConfigRepository.findByWorkspaceName(request.getWorkspaceName());
+  public SlackConfigurationDTO createOrUpdateConfiguration(CreateSlackConfigurationRequest request) {
+    Optional<SlackConfiguration> existing = slackConfigRepository.findByWorkspaceName(request.getWorkspaceName());
 
     SlackConfiguration config;
     if (existing.isPresent()) {
@@ -51,13 +49,9 @@ public class SlackIntegrationService {
         config.setIsEnabled(request.getIsEnabled());
       }
     } else {
-      config =
-          SlackConfiguration.builder()
-              .workspaceName(request.getWorkspaceName())
-              .webhookUrl(request.getWebhookUrl())
-              .defaultChannel(request.getDefaultChannel())
-              .isEnabled(request.getIsEnabled() != null ? request.getIsEnabled() : true)
-              .build();
+      config = SlackConfiguration.builder().workspaceName(request.getWorkspaceName())
+          .webhookUrl(request.getWebhookUrl()).defaultChannel(request.getDefaultChannel())
+          .isEnabled(request.getIsEnabled() != null ? request.getIsEnabled() : true).build();
     }
 
     SlackConfiguration saved = slackConfigRepository.save(config);
@@ -85,61 +79,40 @@ public class SlackIntegrationService {
   }
 
   /** Create or update channel configuration */
-  public SlackChannelConfigDTO createOrUpdateChannelConfig(
-      Long slackConfigId, CreateSlackChannelConfigRequest request) {
-    SlackConfiguration slackConfig =
-        slackConfigRepository
-            .findById(slackConfigId)
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Slack configuration not found with id: " + slackConfigId));
+  public SlackChannelConfigDTO createOrUpdateChannelConfig(Long slackConfigId,
+      CreateSlackChannelConfigRequest request) {
+    SlackConfiguration slackConfig = slackConfigRepository.findById(slackConfigId)
+        .orElseThrow(() -> new RuntimeException("Slack configuration not found with id: " + slackConfigId));
 
-    Optional<SlackChannelConfig> existing =
-        channelConfigRepository.findBySlackConfigurationIdAndChannelName(
-            slackConfigId, request.getChannelName());
+    Optional<SlackChannelConfig> existing = channelConfigRepository
+        .findBySlackConfigurationIdAndChannelName(slackConfigId, request.getChannelName());
 
     SlackChannelConfig channelConfig;
     if (existing.isPresent()) {
       channelConfig = existing.get();
       updateChannelConfig(channelConfig, request);
     } else {
-      channelConfig =
-          SlackChannelConfig.builder()
-              .slackConfiguration(slackConfig)
-              .channelName(request.getChannelName())
-              .channelWebhookUrl(request.getChannelWebhookUrl())
-              .notifyTaskAssigned(
-                  request.getNotifyTaskAssigned() != null ? request.getNotifyTaskAssigned() : true)
-              .notifyTaskCompleted(
-                  request.getNotifyTaskCompleted() != null
-                      ? request.getNotifyTaskCompleted()
-                      : true)
-              .notifyTaskBlocked(
-                  request.getNotifyTaskBlocked() != null ? request.getNotifyTaskBlocked() : false)
-              .notifyPitchShaped(
-                  request.getNotifyPitchShaped() != null ? request.getNotifyPitchShaped() : true)
-              .notifyCycleStarted(
-                  request.getNotifyCycleStarted() != null ? request.getNotifyCycleStarted() : true)
-              .notifyCycleCooldown(
-                  request.getNotifyCycleCooldown() != null
-                      ? request.getNotifyCycleCooldown()
-                      : true)
-              .notifyBettingCompleted(
-                  request.getNotifyBettingCompleted() != null
-                      ? request.getNotifyBettingCompleted()
-                      : false)
-              .notifySprintStarted(
-                  request.getNotifySprintStarted() != null
-                      ? request.getNotifySprintStarted()
-                      : false)
-              .build();
+      channelConfig = SlackChannelConfig.builder().slackConfiguration(slackConfig)
+          .channelName(request.getChannelName()).channelWebhookUrl(request.getChannelWebhookUrl())
+          .notifyTaskAssigned(
+              request.getNotifyTaskAssigned() != null ? request.getNotifyTaskAssigned() : true)
+          .notifyTaskCompleted(
+              request.getNotifyTaskCompleted() != null ? request.getNotifyTaskCompleted() : true)
+          .notifyTaskBlocked(request.getNotifyTaskBlocked() != null ? request.getNotifyTaskBlocked() : false)
+          .notifyPitchShaped(request.getNotifyPitchShaped() != null ? request.getNotifyPitchShaped() : true)
+          .notifyCycleStarted(
+              request.getNotifyCycleStarted() != null ? request.getNotifyCycleStarted() : true)
+          .notifyCycleCooldown(
+              request.getNotifyCycleCooldown() != null ? request.getNotifyCycleCooldown() : true)
+          .notifyBettingCompleted(
+              request.getNotifyBettingCompleted() != null ? request.getNotifyBettingCompleted() : false)
+          .notifySprintStarted(
+              request.getNotifySprintStarted() != null ? request.getNotifySprintStarted() : false)
+          .build();
     }
 
     SlackChannelConfig saved = channelConfigRepository.save(channelConfig);
-    log.info(
-        "Created/updated channel configuration: {} for Slack config: {}",
-        saved.getChannelName(),
+    log.info("Created/updated channel configuration: {} for Slack config: {}", saved.getChannelName(),
         slackConfigId);
 
     return toChannelDTO(saved);
@@ -148,8 +121,7 @@ public class SlackIntegrationService {
   /** Get all channel configurations for a Slack workspace */
   @Transactional(readOnly = true)
   public List<SlackChannelConfigDTO> getChannelConfigs(Long slackConfigId) {
-    return channelConfigRepository.findBySlackConfigurationId(slackConfigId).stream()
-        .map(this::toChannelDTO)
+    return channelConfigRepository.findBySlackConfigurationId(slackConfigId).stream().map(this::toChannelDTO)
         .collect(Collectors.toList());
   }
 
@@ -160,8 +132,8 @@ public class SlackIntegrationService {
   }
 
   /** Send a Slack notification */
-  public void sendNotification(
-      String notificationType, String message, String channel, String entityType, Long entityId) {
+  public void sendNotification(String notificationType, String message, String channel, String entityType,
+      Long entityId) {
     Optional<SlackConfiguration> configOpt = slackConfigRepository.findFirstByIsEnabledTrue();
 
     if (configOpt.isEmpty()) {
@@ -177,15 +149,13 @@ public class SlackIntegrationService {
 
     // Check if there's a channel-specific configuration
     if (targetChannel != null) {
-      Optional<SlackChannelConfig> channelConfig =
-          channelConfigRepository.findBySlackConfigurationIdAndChannelName(
-              config.getId(), targetChannel);
+      Optional<SlackChannelConfig> channelConfig = channelConfigRepository
+          .findBySlackConfigurationIdAndChannelName(config.getId(), targetChannel);
 
       if (channelConfig.isPresent()) {
         // Check if this notification type is enabled for this channel
         if (!isNotificationEnabled(channelConfig.get(), notificationType)) {
-          log.debug(
-              "Notification type {} is disabled for channel {}", notificationType, targetChannel);
+          log.debug("Notification type {} is disabled for channel {}", notificationType, targetChannel);
           return;
         }
 
@@ -218,38 +188,25 @@ public class SlackIntegrationService {
     }
 
     // Record in history
-    SlackNotificationHistory history =
-        SlackNotificationHistory.builder()
-            .slackConfiguration(config)
-            .channelName(targetChannel)
-            .notificationType(notificationType)
-            .messageText(message)
-            .entityType(entityType)
-            .entityId(entityId)
-            .success(success)
-            .errorMessage(errorMessage)
-            .build();
+    SlackNotificationHistory history = SlackNotificationHistory.builder().slackConfiguration(config)
+        .channelName(targetChannel).notificationType(notificationType).messageText(message)
+        .entityType(entityType).entityId(entityId).success(success).errorMessage(errorMessage).build();
 
     historyRepository.save(history);
   }
 
   /** Send a test notification */
   private SlackConfiguration getSlackConfigurationOrThrow(Long configId) {
-    return slackConfigRepository
-        .findById(configId)
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException("Slack configuration not found with id: " + configId));
+    return slackConfigRepository.findById(configId)
+        .orElseThrow(() -> new IllegalArgumentException("Slack configuration not found with id: " + configId));
   }
 
   public void sendTestNotification(Long configId, TestSlackNotificationRequest request) {
     SlackConfiguration config = getSlackConfigurationOrThrow(configId);
 
     String webhookUrl = config.getWebhookUrl();
-    String channel =
-        request.getChannel() != null ? request.getChannel() : config.getDefaultChannel();
-    String message =
-        request.getMessage() != null ? request.getMessage() : "Test notification from ShipFlow";
+    String channel = request.getChannel() != null ? request.getChannel() : config.getDefaultChannel();
+    String message = request.getMessage() != null ? request.getMessage() : "Test notification from ShipFlow";
 
     try {
       Map<String, Object> payload = buildSlackPayload(message, channel);
@@ -262,8 +219,7 @@ public class SlackIntegrationService {
       log.info("Sent test notification to Slack workspace: {}", config.getWorkspaceName());
     } catch (Exception e) {
       log.error("Failed to send test notification: {}", e.getMessage(), e);
-      throw new RuntimeException(
-          localizationService.getMessage("slack.test.failed", e.getMessage()));
+      throw new RuntimeException(localizationService.getMessage("slack.test.failed", e.getMessage()));
     }
   }
 
@@ -275,8 +231,7 @@ public class SlackIntegrationService {
 
   // Helper methods
 
-  private void updateChannelConfig(
-      SlackChannelConfig config, CreateSlackChannelConfigRequest request) {
+  private void updateChannelConfig(SlackChannelConfig config, CreateSlackChannelConfigRequest request) {
     if (request.getChannelWebhookUrl() != null) {
       config.setChannelWebhookUrl(request.getChannelWebhookUrl());
     }
@@ -332,33 +287,20 @@ public class SlackIntegrationService {
   }
 
   private SlackConfigurationDTO toDTO(SlackConfiguration config) {
-    return SlackConfigurationDTO.builder()
-        .id(config.getId())
-        .workspaceName(config.getWorkspaceName())
-        .webhookUrl(config.getWebhookUrl())
-        .defaultChannel(config.getDefaultChannel())
-        .isEnabled(config.getIsEnabled())
-        .createdAt(config.getCreatedAt())
-        .updatedAt(config.getUpdatedAt())
+    return SlackConfigurationDTO.builder().id(config.getId()).workspaceName(config.getWorkspaceName())
+        .webhookUrl(config.getWebhookUrl()).defaultChannel(config.getDefaultChannel())
+        .isEnabled(config.getIsEnabled()).createdAt(config.getCreatedAt()).updatedAt(config.getUpdatedAt())
         .build();
   }
 
   private SlackChannelConfigDTO toChannelDTO(SlackChannelConfig config) {
-    return SlackChannelConfigDTO.builder()
-        .id(config.getId())
-        .slackConfigId(config.getSlackConfiguration().getId())
-        .channelName(config.getChannelName())
-        .channelWebhookUrl(config.getChannelWebhookUrl())
-        .notifyTaskAssigned(config.getNotifyTaskAssigned())
-        .notifyTaskCompleted(config.getNotifyTaskCompleted())
-        .notifyTaskBlocked(config.getNotifyTaskBlocked())
-        .notifyPitchShaped(config.getNotifyPitchShaped())
-        .notifyCycleStarted(config.getNotifyCycleStarted())
-        .notifyCycleCooldown(config.getNotifyCycleCooldown())
+    return SlackChannelConfigDTO.builder().id(config.getId()).slackConfigId(config.getSlackConfiguration().getId())
+        .channelName(config.getChannelName()).channelWebhookUrl(config.getChannelWebhookUrl())
+        .notifyTaskAssigned(config.getNotifyTaskAssigned()).notifyTaskCompleted(config.getNotifyTaskCompleted())
+        .notifyTaskBlocked(config.getNotifyTaskBlocked()).notifyPitchShaped(config.getNotifyPitchShaped())
+        .notifyCycleStarted(config.getNotifyCycleStarted()).notifyCycleCooldown(config.getNotifyCycleCooldown())
         .notifyBettingCompleted(config.getNotifyBettingCompleted())
-        .notifySprintStarted(config.getNotifySprintStarted())
-        .createdAt(config.getCreatedAt())
-        .updatedAt(config.getUpdatedAt())
-        .build();
+        .notifySprintStarted(config.getNotifySprintStarted()).createdAt(config.getCreatedAt())
+        .updatedAt(config.getUpdatedAt()).build();
   }
 }

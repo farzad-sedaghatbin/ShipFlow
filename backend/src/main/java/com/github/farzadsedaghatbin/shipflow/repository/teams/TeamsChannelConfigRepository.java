@@ -11,6 +11,5 @@ public interface TeamsChannelConfigRepository extends JpaRepository<TeamsChannel
 
   List<TeamsChannelConfig> findByTeamsConfigurationId(Long teamsConfigId);
 
-  Optional<TeamsChannelConfig> findByTeamsConfigurationIdAndChannelName(
-      Long teamsConfigId, String channelName);
+  Optional<TeamsChannelConfig> findByTeamsConfigurationIdAndChannelName(Long teamsConfigId, String channelName);
 }

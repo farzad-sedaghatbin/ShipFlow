@@ -11,10 +11,12 @@ import org.springframework.stereotype.Component;
 /**
  * Factory for creating LLM ChatLanguageModel instances based on provider type.
  *
- * <p>This factory automatically discovers all registered {@link LLMProvider} implementations and
- * creates the appropriate model based on configuration.
+ * <p>
+ * This factory automatically discovers all registered {@link LLMProvider}
+ * implementations and creates the appropriate model based on configuration.
  *
- * <p>Usage:
+ * <p>
+ * Usage:
  *
  * <pre>{@code
  * @Autowired
@@ -23,12 +25,13 @@ import org.springframework.stereotype.Component;
  * ChatLanguageModel model = factory.createModel(LLMProviderType.OPENAI, config);
  * }</pre>
  *
- * <p>To add a new provider:
+ * <p>
+ * To add a new provider:
  *
  * <ol>
- *   <li>Add the provider type to {@link LLMProviderType}
- *   <li>Create a provider implementation of {@link LLMProvider}
- *   <li>Annotate with @Component for auto-discovery
+ * <li>Add the provider type to {@link LLMProviderType}
+ * <li>Create a provider implementation of {@link LLMProvider}
+ * <li>Annotate with @Component for auto-discovery
  * </ol>
  */
 @Component
@@ -38,8 +41,8 @@ public class LLMProviderFactory {
   private final Map<LLMProviderType, LLMProvider> providers;
 
   /**
-   * Constructor with auto-discovery of all LLMProvider implementations. Spring will inject all
-   * beans implementing LLMProvider.
+   * Constructor with auto-discovery of all LLMProvider implementations. Spring
+   * will inject all beans implementing LLMProvider.
    */
   public LLMProviderFactory(List<LLMProvider> providerList) {
     this.providers = new HashMap<>();
@@ -47,48 +50,38 @@ public class LLMProviderFactory {
     for (LLMProvider provider : providerList) {
       LLMProviderType type = provider.getProviderType();
       if (providers.containsKey(type)) {
-        log.warn(
-            "Duplicate LLM provider registration for type {}: {} will be overwritten by {}",
-            type,
-            providers.get(type).getClass().getSimpleName(),
-            provider.getClass().getSimpleName());
+        log.warn("Duplicate LLM provider registration for type {}: {} will be overwritten by {}", type,
+            providers.get(type).getClass().getSimpleName(), provider.getClass().getSimpleName());
       }
       providers.put(type, provider);
-      log.info(
-          "Registered LLM provider: {} -> {}",
-          type.getConfigValue(),
-          provider.getClass().getSimpleName());
+      log.info("Registered LLM provider: {} -> {}", type.getConfigValue(), provider.getClass().getSimpleName());
     }
 
-    log.info(
-        "LLM Provider Factory initialized with {} providers: {}",
-        providers.size(),
-        providers.keySet());
+    log.info("LLM Provider Factory initialized with {} providers: {}", providers.size(), providers.keySet());
   }
 
   /**
    * Create a ChatLanguageModel for the specified provider type.
    *
-   * @param providerType the type of provider to create
-   * @param config the configuration for the provider
+   * @param providerType
+   *            the type of provider to create
+   * @param config
+   *            the configuration for the provider
    * @return a configured ChatLanguageModel instance
-   * @throws IllegalArgumentException if the provider type is not supported
-   * @throws RuntimeException if model creation fails
+   * @throws IllegalArgumentException
+   *             if the provider type is not supported
+   * @throws RuntimeException
+   *             if model creation fails
    */
   public ChatLanguageModel createModel(LLMProviderType providerType, LLMProviderConfig config) {
     LLMProvider provider = providers.get(providerType);
 
     if (provider == null) {
-      throw new IllegalArgumentException(
-          "No provider registered for type: "
-              + providerType
-              + ". Available providers: "
-              + getAvailableProviders());
+      throw new IllegalArgumentException("No provider registered for type: " + providerType
+          + ". Available providers: " + getAvailableProviders());
     }
 
-    log.info(
-        "Creating ChatLanguageModel using provider: {} ({})",
-        providerType.getConfigValue(),
+    log.info("Creating ChatLanguageModel using provider: {} ({})", providerType.getConfigValue(),
         provider.getDisplayName());
 
     // Validate configuration before creating model
@@ -100,8 +93,11 @@ public class LLMProviderFactory {
   /**
    * Create a ChatLanguageModel using provider type string from configuration.
    *
-   * @param providerTypeStr the provider type as configuration string (e.g., "openai", "ollama")
-   * @param config the configuration for the provider
+   * @param providerTypeStr
+   *            the provider type as configuration string (e.g., "openai",
+   *            "ollama")
+   * @param config
+   *            the configuration for the provider
    * @return a configured ChatLanguageModel instance
    */
   public ChatLanguageModel createModel(String providerTypeStr, LLMProviderConfig config) {
@@ -112,7 +108,8 @@ public class LLMProviderFactory {
   /**
    * Check if a provider type is available.
    *
-   * @param providerType the type to check
+   * @param providerType
+   *            the type to check
    * @return true if the provider is registered
    */
   public boolean isProviderAvailable(LLMProviderType providerType) {
@@ -122,7 +119,8 @@ public class LLMProviderFactory {
   /**
    * Check if a provider type string is available.
    *
-   * @param providerTypeStr the type string to check
+   * @param providerTypeStr
+   *            the type string to check
    * @return true if the provider is registered
    */
   public boolean isProviderAvailable(String providerTypeStr) {
@@ -146,7 +144,8 @@ public class LLMProviderFactory {
   /**
    * Get a specific provider instance.
    *
-   * @param providerType the type of provider
+   * @param providerType
+   *            the type of provider
    * @return the provider instance, or null if not available
    */
   public LLMProvider getProvider(LLMProviderType providerType) {
@@ -164,9 +163,7 @@ public class LLMProviderFactory {
 
     for (Map.Entry<LLMProviderType, LLMProvider> entry : providers.entrySet()) {
       LLMProvider provider = entry.getValue();
-      sb.append(
-          String.format(
-              "  - %s (%s)%n", entry.getKey().getConfigValue(), provider.getDisplayName()));
+      sb.append(String.format("  - %s (%s)%n", entry.getKey().getConfigValue(), provider.getDisplayName()));
       sb.append(String.format("    Requires API Key: %s%n", provider.requiresApiKey()));
       sb.append(String.format("    Requires Base URL: %s%n", provider.requiresBaseUrl()));
     }

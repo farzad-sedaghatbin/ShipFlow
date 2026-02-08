@@ -3,38 +3,40 @@ package com.github.farzadsedaghatbin.shipflow.config.llm;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
 /**
- * Interface for LLM provider plugins. Implement this interface to add support for a new LLM
- * provider.
+ * Interface for LLM provider plugins. Implement this interface to add support
+ * for a new LLM provider.
  *
- * <p>Each provider implementation should:
+ * <p>
+ * Each provider implementation should:
  *
  * <ul>
- *   <li>Return its supported provider type via {@link #getProviderType()}
- *   <li>Create and return a properly configured ChatLanguageModel via {@link
- *       #createModel(LLMProviderConfig)}
- *   <li>Validate that required configuration parameters are present
+ * <li>Return its supported provider type via {@link #getProviderType()}
+ * <li>Create and return a properly configured ChatLanguageModel via
+ * {@link #createModel(LLMProviderConfig)}
+ * <li>Validate that required configuration parameters are present
  * </ul>
  *
- * <p>Example implementation:
+ * <p>
+ * Example implementation:
  *
- * <pre>{@code
- * @Component
- * public class MyLLMProvider implements LLMProvider {
- *     @Override
- *     public LLMProviderType getProviderType() {
- *         return LLMProviderType.MY_PROVIDER;
- *     }
+ * <pre>
+ * {
+ * 	&#64;code
+ * 	&#64;Component
+ * 	public class MyLLMProvider implements LLMProvider {
+ * 		&#64;Override
+ * 		public LLMProviderType getProviderType() {
+ * 			return LLMProviderType.MY_PROVIDER;
+ * 		}
  *
- *     @Override
- *     public ChatLanguageModel createModel(LLMProviderConfig config) {
- *         validateConfig(config);
- *         return MyModel.builder()
- *             .apiKey(config.getApiKey())
- *             .modelName(config.getModelName())
- *             .build();
- *     }
+ * 		@Override
+ * 		public ChatLanguageModel createModel(LLMProviderConfig config) {
+ * 			validateConfig(config);
+ * 			return MyModel.builder().apiKey(config.getApiKey()).modelName(config.getModelName()).build();
+ * 		}
+ * 	}
  * }
- * }</pre>
+ * </pre>
  */
 public interface LLMProvider {
 
@@ -48,19 +50,24 @@ public interface LLMProvider {
   /**
    * Create a ChatLanguageModel instance configured with the given settings.
    *
-   * @param config the provider configuration
+   * @param config
+   *            the provider configuration
    * @return a configured ChatLanguageModel instance
-   * @throws IllegalArgumentException if required configuration is missing
-   * @throws RuntimeException if the model cannot be created
+   * @throws IllegalArgumentException
+   *             if required configuration is missing
+   * @throws RuntimeException
+   *             if the model cannot be created
    */
   ChatLanguageModel createModel(LLMProviderConfig config);
 
   /**
-   * Validate that the configuration contains all required parameters for this provider. Called
-   * automatically by the factory before creating the model.
+   * Validate that the configuration contains all required parameters for this
+   * provider. Called automatically by the factory before creating the model.
    *
-   * @param config the provider configuration to validate
-   * @throws IllegalArgumentException if validation fails
+   * @param config
+   *            the provider configuration to validate
+   * @throws IllegalArgumentException
+   *             if validation fails
    */
   default void validateConfig(LLMProviderConfig config) {
     // Default implementation - providers can override for specific validation

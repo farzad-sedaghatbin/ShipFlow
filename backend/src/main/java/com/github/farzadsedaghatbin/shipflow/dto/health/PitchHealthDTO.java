@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import lombok.*;
 
 /**
- * Lightweight pitch health summary DTO for non-technical stakeholders. Shows a simplified snapshot
- * of pitch status.
+ * Lightweight pitch health summary DTO for non-technical stakeholders. Shows a
+ * simplified snapshot of pitch status.
  */
 @Data
 @NoArgsConstructor
@@ -25,7 +25,10 @@ public class PitchHealthDTO {
 
   private String riskColor;
 
-  /** Risk trend indicator: IMPROVING, STABLE, WORSENING Based on recent changes in risk factors */
+  /**
+   * Risk trend indicator: IMPROVING, STABLE, WORSENING Based on recent changes in
+   * risk factors
+   */
   private String riskTrend;
 
   /** Percentage of appetite hours used (0-100+) */

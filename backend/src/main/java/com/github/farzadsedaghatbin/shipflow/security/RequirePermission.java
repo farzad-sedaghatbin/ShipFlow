@@ -10,12 +10,13 @@ import java.lang.annotation.Target;
 /**
  * Annotation for declarative permission checking on controller methods.
  *
- * <p>Example usage:
+ * <p>
+ * Example usage:
  *
  * <pre>{@code
  * @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.CREATE)
  * public ResponseEntity<CycleDTO> createCycle(@RequestBody CreateCycleRequest request) {
- *     // ...
+ * 	// ...
  * }
  * }</pre>
  */

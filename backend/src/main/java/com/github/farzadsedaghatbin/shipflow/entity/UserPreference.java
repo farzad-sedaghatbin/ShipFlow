@@ -63,8 +63,6 @@ public class UserPreference {
   }
 
   public enum ThemeMode {
-    LIGHT,
-    DARK,
-    SYSTEM
+    LIGHT, DARK, SYSTEM
   }
 }

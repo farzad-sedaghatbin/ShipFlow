@@ -26,25 +26,35 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class WorkLogTimerServiceTest {
 
-  @Mock private WorkLogTimerRepository timerRepository;
+  @Mock
+  private WorkLogTimerRepository timerRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private SecurityContext securityContext;
+  @Mock
+  private SecurityContext securityContext;
 
-  @Mock private Authentication authentication;
+  @Mock
+  private Authentication authentication;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private WorkLogTimerService timerService;
+  @InjectMocks
+  private WorkLogTimerService timerService;
 
   private User user;
   private Person person;
@@ -72,20 +82,13 @@ class WorkLogTimerServiceTest {
   @Test
   void shouldStartTimerForPitch() {
     // Given
-    StartTimerRequest request =
-        StartTimerRequest.builder().pitchId(1L).note("Working on feature").build();
+    StartTimerRequest request = StartTimerRequest.builder().pitchId(1L).note("Working on feature").build();
 
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(pitch));
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.empty());
 
-    WorkLogTimer savedTimer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now())
-            .note("Working on feature")
-            .build();
+    WorkLogTimer savedTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now()).note("Working on feature").build();
 
     when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(savedTimer);
 
@@ -105,20 +108,13 @@ class WorkLogTimerServiceTest {
   @Test
   void shouldStartTimerForTask() {
     // Given
-    StartTimerRequest request =
-        StartTimerRequest.builder().taskId(1L).note("Working on task").build();
+    StartTimerRequest request = StartTimerRequest.builder().taskId(1L).note("Working on task").build();
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.empty());
 
-    WorkLogTimer savedTimer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .task(task)
-            .startTime(LocalDateTime.now())
-            .note("Working on task")
-            .build();
+    WorkLogTimer savedTimer = WorkLogTimer.builder().id(1L).person(person).task(task).startTime(LocalDateTime.now())
+        .note("Working on task").build();
 
     when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(savedTimer);
 
@@ -142,21 +138,18 @@ class WorkLogTimerServiceTest {
         .thenReturn("Either pitchId or taskId must be provided");
 
     // When / Then
-    assertThatThrownBy(() -> timerService.startTimer(request))
-        .isInstanceOf(BadRequestException.class)
+    assertThatThrownBy(() -> timerService.startTimer(request)).isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Either pitchId or taskId must be provided");
   }
 
   @Test
   void shouldFailWhenBothPitchAndTask() {
     // Given
-    StartTimerRequest request =
-        StartTimerRequest.builder().pitchId(1L).taskId(1L).note("Invalid request").build();
+    StartTimerRequest request = StartTimerRequest.builder().pitchId(1L).taskId(1L).note("Invalid request").build();
     when(localizationService.getMessage("timer.invalid.params"))
         .thenReturn("Either pitchId or taskId must be provided, but not both");
     // When / Then
-    assertThatThrownBy(() -> timerService.startTimer(request))
-        .isInstanceOf(BadRequestException.class)
+    assertThatThrownBy(() -> timerService.startTimer(request)).isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Either pitchId or taskId must be provided");
   }
 
@@ -165,36 +158,23 @@ class WorkLogTimerServiceTest {
     // Given
     StartTimerRequest request = StartTimerRequest.builder().pitchId(1L).build();
 
-    WorkLogTimer existingTimer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now().minusHours(1))
-            .build();
+    WorkLogTimer existingTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusHours(1)).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(existingTimer));
 
-    when(localizationService.getMessage("timer.already.active"))
-        .thenReturn("You already have an active timer");
+    when(localizationService.getMessage("timer.already.active")).thenReturn("You already have an active timer");
 
     // When / Then
-    assertThatThrownBy(() -> timerService.startTimer(request))
-        .isInstanceOf(BadRequestException.class)
+    assertThatThrownBy(() -> timerService.startTimer(request)).isInstanceOf(BadRequestException.class)
         .hasMessageContaining("already have an active timer");
   }
 
   @Test
   void shouldStopTimerAndCreateWorkLog() {
     // Given
-    WorkLogTimer timer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now().minusMinutes(45))
-            .note("Working on feature")
-            .build();
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(45)).note("Working on feature").build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -217,13 +197,8 @@ class WorkLogTimerServiceTest {
   @Test
   void shouldRoundTimeToQuarterHours() {
     // Given - 17 minutes should round to 0.25 hours (15 minutes minimum)
-    WorkLogTimer timer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now().minusMinutes(17))
-            .build();
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(17)).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -241,14 +216,8 @@ class WorkLogTimerServiceTest {
   @Test
   void shouldGetActiveTimer() {
     // Given
-    WorkLogTimer timer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now().minusMinutes(30))
-            .note("Active work")
-            .build();
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(30)).note("Active work").build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -276,13 +245,8 @@ class WorkLogTimerServiceTest {
   @Test
   void shouldCancelTimer() {
     // Given
-    WorkLogTimer timer =
-        WorkLogTimer.builder()
-            .id(1L)
-            .person(person)
-            .pitch(pitch)
-            .startTime(LocalDateTime.now().minusMinutes(10))
-            .build();
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(10)).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -300,8 +264,7 @@ class WorkLogTimerServiceTest {
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.empty());
 
     // When / Then
-    assertThatThrownBy(() -> timerService.cancelTimer())
-        .isInstanceOf(BadRequestException.class)
+    assertThatThrownBy(() -> timerService.cancelTimer()).isInstanceOf(BadRequestException.class)
         .hasMessageContaining("No active timer found");
   }
 }

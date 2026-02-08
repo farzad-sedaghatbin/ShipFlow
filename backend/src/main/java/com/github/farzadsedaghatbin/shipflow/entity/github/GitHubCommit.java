@@ -39,7 +39,8 @@ public class GitHubCommit {
   @Column(name = "commit_date", nullable = false)
   private LocalDateTime commitDate;
 
-  @Column private String branch;
+  @Column
+  private String branch;
 
   @Column(length = 1000)
   private String url;

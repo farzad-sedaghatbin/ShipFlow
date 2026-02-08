@@ -19,13 +19,15 @@ import {
   Edit2,
   Save,
   Loader2,
+  History,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
 import { meetingService } from '../services/meetingService';
-import { personService } from '../services/personService';
 import { documentService, UploadedDocument } from '../services/documentService';
-import { Pitch, WorkLog, Meeting, Person, CreateWorkLogRequest, CreateMeetingRequest, MeetingType, PitchStatus } from '../types';
+import { organizationSettingsService } from '../services/organizationSettingsService';
+import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem } from '../types';
+import { MeetingTypeConfig } from '../types/organizationSettings';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
@@ -34,6 +36,7 @@ import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { DocumentDropZone } from '../components/DocumentDropZone';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
 import { useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
@@ -44,6 +47,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
+import { Checkbox } from '../components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -82,10 +86,11 @@ export default function PitchDetail() {
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [persons, setPersons] = useState<Person[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   
   // Shape Up editing state
   const [editingShapeUp, setEditingShapeUp] = useState(false);
@@ -101,10 +106,11 @@ export default function PitchDetail() {
 
   const [workLogDialog, setWorkLogDialog] = useState(false);
   const [meetingDialog, setMeetingDialog] = useState(false);
+  const [viewMeetingDialog, setViewMeetingDialog] = useState(false);
+  const [viewMeeting, setViewMeeting] = useState<Meeting | null>(null);
   const [meetingPendingDocs, setMeetingPendingDocs] = useState<File[]>([]);
   const [showMeetingDocUpload, setShowMeetingDocUpload] = useState(false);
-  const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogRequest>({
-    personId: 0,
+  const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
     pitchId: 0,
     date: dayjs().format('YYYY-MM-DD'),
     hoursSpent: 0,
@@ -117,9 +123,17 @@ export default function PitchDetail() {
     dateHeld: dayjs().format('YYYY-MM-DD'),
     dorReady: false,
     dodReady: false,
+    dorItems: [],
+    dodItems: [],
     notes: '',
   });
   const [meetingDate, setMeetingDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+
+  // Get meeting type display name from configurations or fallback to formatted name
+  const getMeetingTypeDisplayName = (type: MeetingType): string => {
+    const config = meetingTypeConfigs.find(mt => mt.name.toLowerCase() === type.toLowerCase());
+    return config?.displayName || type.replace(/_/g, ' ');
+  };
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -131,19 +145,19 @@ export default function PitchDetail() {
 
   const loadData = async (pitchId: number) => {
     try {
-      const [pitchRes, workLogsRes, meetingsRes, personsData, docsRes] = await Promise.all([
+      const [pitchRes, workLogsRes, meetingsRes, docsRes, orgSettingsRes] = await Promise.all([
         pitchService.getById(pitchId),
         workLogService.getByPitchId(pitchId),
         meetingService.getByPitchId(pitchId),
-        personService.getAll(true),
         documentService.getDocumentsForPitch(pitchId),
+        organizationSettingsService.getSettings(),
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
       setWorkLogs(workLogsRes.data);
       setMeetings(meetingsRes.data);
-      setPersons(personsData);
       setDocuments(docsRes.data);
+      setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
       
       // Sync Shape Up fields
       setShapeUpFields({
@@ -225,7 +239,7 @@ export default function PitchDetail() {
     if (!pitch || !workLogDate) return;
     try {
       setSaving(true);
-      await workLogService.create({
+      await workLogService.createMy({
         ...newWorkLog,
         pitchId: pitch.id,
         date: workLogDate,
@@ -233,7 +247,6 @@ export default function PitchDetail() {
       showSuccess(t('pitchDetailPage.workLogAdded'));
       setWorkLogDialog(false);
       setNewWorkLog({
-        personId: 0,
         pitchId: 0,
         date: dayjs().format('YYYY-MM-DD'),
         hoursSpent: 0,
@@ -289,6 +302,8 @@ export default function PitchDetail() {
         dateHeld: dayjs().format('YYYY-MM-DD'),
         dorReady: false,
         dodReady: false,
+        dorItems: [],
+        dodItems: [],
         notes: '',
       });
       setMeetingDate(dayjs().format('YYYY-MM-DD'));
@@ -302,12 +317,97 @@ export default function PitchDetail() {
     }
   };
 
+  const handleViewMeeting = async (meetingId: number) => {
+    try {
+      const response = await meetingService.getByIdForView(meetingId);
+      setViewMeeting(response.data);
+      setViewMeetingDialog(true);
+    } catch (error) {
+      console.error('Failed to load meeting for view:', error);
+      showError(t('pitchDetailPage.error'));
+    }
+  };
+
   const handleMeetingPendingFileSelect = (files: FileList) => {
     setMeetingPendingDocs(prev => [...prev, ...Array.from(files)]);
   };
 
   const handleRemoveMeetingPendingDoc = (index: number) => {
     setMeetingPendingDocs(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Helper function to map checklist items from config to meeting format
+  const mapChecklistItems = (items?: typeof meetingTypeConfigs[0]['dorItems']): MeetingChecklistItem[] => {
+    return items?.map((item, index) => ({
+      id: item.id ?? index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+  };
+
+  const handleMeetingTypeChange = (type: MeetingType) => {
+    const config = meetingTypeConfigs.find(c => c.name === type);
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
+
+    setNewMeeting(prev => ({
+      ...prev,
+      type,
+      dorItems,
+      dodItems,
+      dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
+      dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
+    }));
+  };
+
+  const resetMeetingForm = () => {
+    const defaultType = 'STANDUP';
+    const config = meetingTypeConfigs.find(c => c.name === defaultType);
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
+
+    setNewMeeting({
+      pitchId: pitch?.id || 0,
+      type: defaultType,
+      dateHeld: dayjs().format('YYYY-MM-DD'),
+      dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
+      dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
+      dorItems,
+      dodItems,
+      notes: '',
+    });
+    setMeetingDate(dayjs().format('YYYY-MM-DD'));
+    setMeetingPendingDocs([]);
+    setShowMeetingDocUpload(false);
+  };
+
+  const handleOpenMeetingDialog = () => {
+    resetMeetingForm();
+    setMeetingDialog(true);
+  };
+
+  /**
+   * Toggle the completion status of a checklist item.
+   * @param listType - 'dor' or 'dod' to specify which checklist
+   * @param itemId - The unique ID of the item to toggle
+   */
+  const toggleChecklistItem = (listType: 'dor' | 'dod', itemId: number) => {
+    const items = listType === 'dor' ? [...(newMeeting.dorItems || [])] : [...(newMeeting.dodItems || [])];
+    const itemIndex = items.findIndex(i => i.id === itemId);
+    if (itemIndex >= 0) {
+      items[itemIndex] = { ...items[itemIndex], isCompleted: !items[itemIndex].isCompleted };
+      
+      // Check if all required items are completed
+      const allRequiredCompleted = items.filter(i => i.isRequired).every(i => i.isCompleted);
+      
+      if (listType === 'dor') {
+        setNewMeeting(prev => ({ ...prev, dorItems: items, dorReady: allRequiredCompleted }));
+      } else {
+        setNewMeeting(prev => ({ ...prev, dodItems: items, dodReady: allRequiredCompleted }));
+      }
+    }
   };
 
   if (id === null) {
@@ -357,6 +457,14 @@ export default function PitchDetail() {
         <div className="flex gap-2 items-center flex-wrap">
           <Button variant="outline" size="sm" asChild>
             <Link to={`/pitches/${pitch.id}/hill-chart`}>{t('pitchDetailPage.hillChart')}</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setHistoryDialogOpen(true)}
+          >
+            <History className="h-4 w-4 mr-2" />
+            {t('history.viewHistory')}
           </Button>
           <SoftDeleteButton
             entityType="pitch"
@@ -740,7 +848,7 @@ export default function PitchDetail() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>{t('pitchDetailPage.meetings')}</CardTitle>
-                <Button size="sm" onClick={() => setMeetingDialog(true)}>
+                <Button size="sm" onClick={handleOpenMeetingDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   {t('pitchDetailPage.add')}
                 </Button>
@@ -751,11 +859,17 @@ export default function PitchDetail() {
                 <p className="text-muted-foreground">{t('pitchDetailPage.noMeetings')}</p>
               ) : (
                 <div className="space-y-1">
-                  {meetings.map((m, index) => (
+                  {[...meetings].sort((a, b) => new Date(b.dateHeld).getTime() - new Date(a.dateHeld).getTime()).map((m, index) => (
                     <div key={m.id}>
                       <div className="py-3">
                         <div className="flex gap-2 items-center mb-2">
-                          <Badge variant="outline">{m.type}</Badge>
+                          <Badge 
+                            variant="outline"
+                            className="cursor-pointer hover:opacity-80"
+                            onClick={() => handleViewMeeting(m.id)}
+                          >
+                            {getMeetingTypeDisplayName(m.type)}
+                          </Badge>
                           <span className="text-sm text-muted-foreground">
                             {formatLocalizedDate(new Date(m.dateHeld), i18n.language)}
                           </span>
@@ -797,26 +911,6 @@ export default function PitchDetail() {
             <DialogTitle>{t('pitchDetailPage.addWorkLog')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="person">{t('pitchDetailPage.person')} *</Label>
-              <Select
-                value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
-                onValueChange={(value) =>
-                  setNewWorkLog({ ...newWorkLog, personId: parseInt(value) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('pitchDetailPage.selectPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} ({p.email || 'no email'})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="worklog-date">{t('pitchDetailPage.date')} *</Label>
@@ -863,7 +957,7 @@ export default function PitchDetail() {
             </Button>
             <Button
               onClick={handleCreateWorkLog}
-              disabled={!newWorkLog.personId || !newWorkLog.hoursSpent}
+              disabled={!newWorkLog.hoursSpent}
             >
               {t('pitchDetailPage.add')}
             </Button>
@@ -883,21 +977,17 @@ export default function PitchDetail() {
                 <Label htmlFor="meeting-type">{t('pitchDetailPage.type')} *</Label>
                 <Select
                   value={newMeeting.type}
-                  onValueChange={(value) =>
-                    setNewMeeting({ ...newMeeting, type: value as MeetingType })
-                  }
+                  onValueChange={(value) => handleMeetingTypeChange(value as MeetingType)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('pitchDetailPage.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SHAPING">{t('meetings.type.shaping')}</SelectItem>
-                    <SelectItem value="BETTING">{t('meetings.type.betting')}</SelectItem>
-                    <SelectItem value="KICKOFF">{t('meetings.type.kickoff')}</SelectItem>
-                    <SelectItem value="STANDUP">{t('meetings.type.standup')}</SelectItem>
-                    <SelectItem value="DEMO">{t('meetings.type.demo')}</SelectItem>
-                    <SelectItem value="RETROSPECTIVE">{t('meetings.type.retrospective')}</SelectItem>
-                    <SelectItem value="HILL_CHART_REVIEW">{t('meetings.type.hillChartReview')}</SelectItem>
+                    {meetingTypeConfigs.filter(c => c.isActive).map(config => (
+                      <SelectItem key={config.name} value={config.name}>
+                        {config.displayName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -911,40 +1001,75 @@ export default function PitchDetail() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="dor">{t('pitchDetailPage.dor')}</Label>
-              <Select
-                value={newMeeting.dorReady ? 'yes' : 'no'}
-                onValueChange={(value) =>
-                  setNewMeeting({ ...newMeeting, dorReady: value === 'yes' })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
-                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dod">{t('pitchDetailPage.dod')}</Label>
-              <Select
-                value={newMeeting.dodReady ? 'yes' : 'no'}
-                onValueChange={(value) =>
-                  setNewMeeting({ ...newMeeting, dodReady: value === 'yes' })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">{t('pitchDetailPage.yes')}</SelectItem>
-                  <SelectItem value="no">{t('pitchDetailPage.no')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            
+            {/* DOR Checklist */}
+            {(newMeeting.dorItems && newMeeting.dorItems.length > 0) && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  {t('pitchDetailPage.dor')}
+                  {newMeeting.dorReady ? (
+                    <span className="text-xs text-green-600 font-medium">✓ {t('pitchDetailPage.ready')}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600 font-medium">({t('pitchDetailPage.pending')})</span>
+                  )}
+                </Label>
+                <div className="border rounded-md p-2 space-y-1 max-h-32 overflow-y-auto">
+                  {newMeeting.dorItems.map((item, index) => (
+                    <div key={item.id ?? index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`dor-${item.id ?? index}`}
+                        checked={item.isCompleted}
+                        onChange={() => toggleChecklistItem('dor', item.id ?? index)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label 
+                        htmlFor={`dor-${item.id ?? index}`}
+                        className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                      >
+                        {item.name}
+                        {item.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DOD Checklist */}
+            {(newMeeting.dodItems && newMeeting.dodItems.length > 0) && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  {t('pitchDetailPage.dod')}
+                  {newMeeting.dodReady ? (
+                    <span className="text-xs text-green-600 font-medium">✓ {t('pitchDetailPage.ready')}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600 font-medium">({t('pitchDetailPage.pending')})</span>
+                  )}
+                </Label>
+                <div className="border rounded-md p-2 space-y-1 max-h-32 overflow-y-auto">
+                  {newMeeting.dodItems.map((item, index) => (
+                    <div key={item.id ?? index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`dod-${item.id ?? index}`}
+                        checked={item.isCompleted}
+                        onChange={() => toggleChecklistItem('dod', item.id ?? index)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label 
+                        htmlFor={`dod-${item.id ?? index}`}
+                        className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                      >
+                        {item.name}
+                        {item.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="meeting-notes">{t('pitchDetailPage.meetingNotes')}</Label>
               <Textarea
@@ -1035,6 +1160,146 @@ export default function PitchDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Meeting Dialog (Read-only, shows only completed items) */}
+      {viewMeeting && (
+        <Dialog open={viewMeetingDialog} onOpenChange={setViewMeetingDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('meetingList.dialog.viewTitle')}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {/* Meeting Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.type')}</Label>
+                  <div className="text-sm font-medium">{getMeetingTypeDisplayName(viewMeeting.type)}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.date')}</Label>
+                  <div className="text-sm">{formatLocalizedDate(new Date(viewMeeting.dateHeld), i18n.language)}</div>
+                </div>
+              </div>
+
+              {viewMeeting.attendees && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.attendees')}</Label>
+                  <div className="text-sm whitespace-pre-wrap">{viewMeeting.attendees}</div>
+                </div>
+              )}
+
+              {/* DOR Items (only completed) */}
+              {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dor')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dorItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* DOD Items (only completed) */}
+              {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.dod')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.dodItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked disabled className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewMeeting.notes && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.notes')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.notes}</div>
+                </div>
+              )}
+
+              {viewMeeting.decisions && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.dialog.decisions')}</Label>
+                  <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{viewMeeting.decisions}</div>
+                </div>
+              )}
+
+              {/* Action Items */}
+              {viewMeeting.actions && viewMeeting.actions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{t('meetingList.actionItems.title')}</Label>
+                  <div className="space-y-2">
+                    {viewMeeting.actions.map((action, index) => (
+                      <Card key={index}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="text-sm flex-1">{action.description}</div>
+                              <Badge variant={action.status === 'COMPLETED' ? 'success' : action.status === 'IN_PROGRESS' ? 'warning' : 'outline'}>
+                                {action.status === 'COMPLETED' ? t('meetingList.actionItems.completed') : 
+                                 action.status === 'IN_PROGRESS' ? t('meetingList.actionItems.inProgress') : 
+                                 t('meetingList.actionItems.open')}
+                              </Badge>
+                            </div>
+                            {action.assignedToName && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.assignedTo')}: {action.assignedToName}
+                              </div>
+                            )}
+                            {action.dueDate && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('meetingList.actionItems.dueDate')}: {formatLocalizedDate(new Date(action.dueDate), i18n.language)}
+                              </div>
+                            )}
+                            {action.notes && (
+                              <div className="text-xs text-muted-foreground mt-1">{action.notes}</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewMeetingDialog(false)}>
+                {t('meetingList.dialog.close')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* History Dialog */}
+      <EntityHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        entityName={t('pitchDetailPage.pitch')}
+        entityId={String(pitch.id)}
+        fetchHistory={async (page, size) => {
+          const response = await pitchService.getHistory(pitch.id, page, size);
+          return response.data;
+        }}
+      />
 
       {/* Q&A Floating Button */}
       <QAFloatingButton

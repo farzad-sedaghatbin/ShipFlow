@@ -22,25 +22,20 @@ public interface RiskFeedbackRepository extends JpaRepository<RiskFeedback, Long
   @Query("SELECT COUNT(rf) FROM RiskFeedback rf WHERE rf.rating = :rating")
   Long countByRating(@Param("rating") FeedbackRating rating);
 
-  @Query(
-      "SELECT AVG(rf.originalRiskScore - rf.suggestedRiskScore) FROM RiskFeedback rf WHERE rf.suggestedRiskScore IS NOT NULL")
+  @Query("SELECT AVG(rf.originalRiskScore - rf.suggestedRiskScore) FROM RiskFeedback rf WHERE rf.suggestedRiskScore IS NOT NULL")
   Double getAverageScoreDelta();
 
-  @Query(
-      "SELECT rf FROM RiskFeedback rf WHERE rf.createdAt >= :startDate ORDER BY rf.createdAt DESC")
+  @Query("SELECT rf FROM RiskFeedback rf WHERE rf.createdAt >= :startDate ORDER BY rf.createdAt DESC")
   List<RiskFeedback> findRecentFeedback(@Param("startDate") LocalDateTime startDate);
 
-  @Query(
-      "SELECT rf FROM RiskFeedback rf WHERE rf.pitch.cycle.id = :cycleId ORDER BY rf.createdAt DESC")
+  @Query("SELECT rf FROM RiskFeedback rf WHERE rf.pitch.cycle.id = :cycleId ORDER BY rf.createdAt DESC")
   List<RiskFeedback> findByCycleId(@Param("cycleId") Long cycleId);
 
-  @Query(
-      "SELECT rf.missedFactors FROM RiskFeedback rf WHERE rf.missedFactors IS NOT NULL AND rf.missedFactors <> ''")
+  @Query("SELECT rf.missedFactors FROM RiskFeedback rf WHERE rf.missedFactors IS NOT NULL AND rf.missedFactors <> ''")
   List<String> findAllMissedFactors();
 
-  @Query(
-      "SELECT FUNCTION('DATE_FORMAT', rf.createdAt, '%Y-%m') as month, COUNT(rf) "
-          + "FROM RiskFeedback rf GROUP BY FUNCTION('DATE_FORMAT', rf.createdAt, '%Y-%m') ORDER BY month")
+  @Query("SELECT FUNCTION('DATE_FORMAT', rf.createdAt, '%Y-%m') as month, COUNT(rf) "
+      + "FROM RiskFeedback rf GROUP BY FUNCTION('DATE_FORMAT', rf.createdAt, '%Y-%m') ORDER BY month")
   List<Object[]> countByMonth();
 
   boolean existsByPitchIdAndUserId(Long pitchId, Long userId);

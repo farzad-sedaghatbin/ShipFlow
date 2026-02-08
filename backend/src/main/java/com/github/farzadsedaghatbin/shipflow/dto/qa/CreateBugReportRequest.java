@@ -30,6 +30,9 @@ public class CreateBugReportRequest {
 
   private String environment;
 
+  /** Direct project association - required for Kanban, optional for Shape Up. */
+  private Long projectId;
+
   private Long pitchId;
 
   private Long cycleId;

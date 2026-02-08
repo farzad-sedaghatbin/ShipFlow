@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.*;
 
-/** Aggregated statistics for risk feedback. Useful for analyzing AI accuracy over time. */
+/**
+ * Aggregated statistics for risk feedback. Useful for analyzing AI accuracy
+ * over time.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

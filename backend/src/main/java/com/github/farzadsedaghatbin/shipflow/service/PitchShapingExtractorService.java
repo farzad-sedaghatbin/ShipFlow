@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for extracting Shape Up pitch narrative elements from documents using AI.
+ * Service for extracting Shape Up pitch narrative elements from documents using
+ * AI.
  *
- * <p>This service uses LLM to analyze pitch documents and extract: - Problem Statement: What
- * problem is being solved - Solution: The proposed solution (hatched solution / fat-marker
- * sketches) - Rabbit Holes: Edge cases and areas to avoid - Risks: Known risks and unknowns -
- * No-Gos: Things explicitly out of scope - Wireframe/Prototype links: Visual references
+ * <p>
+ * This service uses LLM to analyze pitch documents and extract: - Problem
+ * Statement: What problem is being solved - Solution: The proposed solution
+ * (hatched solution / fat-marker sketches) - Rabbit Holes: Edge cases and areas
+ * to avoid - Risks: Known risks and unknowns - No-Gos: Things explicitly out of
+ * scope - Wireframe/Prototype links: Visual references
  */
 @Service
 @Slf4j
@@ -26,56 +29,46 @@ public class PitchShapingExtractorService {
 
   private final ObjectMapper objectMapper;
 
-  private static final String EXTRACTION_PROMPT =
-      """
-        You are an expert at analyzing Shape Up methodology pitch documents.
+  private static final String EXTRACTION_PROMPT = """
+      You are an expert at analyzing Shape Up methodology pitch documents.
 
-        Analyze the following document and extract the key pitch elements according to Shape Up methodology.
+      Analyze the following document and extract the key pitch elements according to Shape Up methodology.
 
-        Extract the following elements (use null if not found in the document):
+      Extract the following elements (use null if not found in the document):
 
-        1. **title**: A concise title for the pitch (extract or generate from content)
-        2. **problemStatement**: The problem being solved. What is the pain point? Why does this matter?
-        3. **solution**: The proposed solution. What is being built? Include any described approach or fat-marker sketch ideas.
-        4. **rabbitHoles**: Areas to avoid, edge cases that should be out of scope, potential time sinks.
-        5. **risks**: Known risks, technical challenges, unknowns, or dependencies.
-        6. **noGos**: Things explicitly out of scope. What we are NOT building.
-        7. **appetiteDays**: Estimated time appetite in days (if mentioned). Default to null if not specified.
-        8. **wireframeLinks**: Any mentioned links to wireframes, prototypes, Figma, or visual references.
+      1. **title**: A concise title for the pitch (extract or generate from content)
+      2. **problemStatement**: The problem being solved. What is the pain point? Why does this matter?
+      3. **solution**: The proposed solution. What is being built? Include any described approach or fat-marker sketch ideas.
+      4. **rabbitHoles**: Areas to avoid, edge cases that should be out of scope, potential time sinks.
+      5. **risks**: Known risks, technical challenges, unknowns, or dependencies.
+      6. **noGos**: Things explicitly out of scope. What we are NOT building.
+      7. **appetiteDays**: Estimated time appetite in days (if mentioned). Default to null if not specified.
+      8. **wireframeLinks**: Any mentioned links to wireframes, prototypes, Figma, or visual references.
 
-        DOCUMENT CONTENT:
-        ---
-        %s
-        ---
+      DOCUMENT CONTENT:
+      ---
+      %s
+      ---
 
-        Respond ONLY with a valid JSON object in this exact format (no markdown, no explanation):
-        {
-            "title": "string or null",
-            "problemStatement": "string or null",
-            "solution": "string or null",
-            "rabbitHoles": "string or null",
-            "risks": "string or null",
-            "noGos": "string or null",
-            "appetiteDays": number or null,
-            "wireframeLinks": "string or null"
-        }
-        """;
+      Respond ONLY with a valid JSON object in this exact format (no markdown, no explanation):
+      {
+          "title": "string or null",
+          "problemStatement": "string or null",
+          "solution": "string or null",
+          "rabbitHoles": "string or null",
+          "risks": "string or null",
+          "noGos": "string or null",
+          "appetiteDays": number or null,
+          "wireframeLinks": "string or null"
+      }
+      """;
 
   /** DTO for extracted pitch data from documents. */
-  public record ExtractedPitchData(
-      String title,
-      String problemStatement,
-      String solution,
-      String rabbitHoles,
-      String risks,
-      String noGos,
-      Integer appetiteDays,
-      String wireframeLinks,
-      boolean extractionSuccessful,
+  public record ExtractedPitchData(String title, String problemStatement, String solution, String rabbitHoles,
+      String risks, String noGos, Integer appetiteDays, String wireframeLinks, boolean extractionSuccessful,
       String errorMessage) {
     public static ExtractedPitchData empty() {
-      return new ExtractedPitchData(
-          null, null, null, null, null, null, null, null, false, "No data extracted");
+      return new ExtractedPitchData(null, null, null, null, null, null, null, null, false, "No data extracted");
     }
 
     public static ExtractedPitchData error(String message) {
@@ -86,14 +79,14 @@ public class PitchShapingExtractorService {
   /**
    * Extract pitch shaping data from document text using AI.
    *
-   * @param documentText The extracted text from the uploaded document
+   * @param documentText
+   *            The extracted text from the uploaded document
    * @return ExtractedPitchData containing the parsed pitch elements
    */
   public ExtractedPitchData extractFromDocument(String documentText) {
     if (chatLanguageModel == null) {
       log.warn("AI model not available - pitch extraction disabled");
-      return ExtractedPitchData.error(
-          "AI extraction is not enabled. Please configure AI settings.");
+      return ExtractedPitchData.error("AI extraction is not enabled. Please configure AI settings.");
     }
 
     if (documentText == null || documentText.trim().isEmpty()) {
@@ -122,8 +115,8 @@ public class PitchShapingExtractorService {
   }
 
   /**
-   * Extract pitch data from multiple document texts. Combines content from all documents before
-   * extraction.
+   * Extract pitch data from multiple document texts. Combines content from all
+   * documents before extraction.
    */
   public ExtractedPitchData extractFromMultipleDocuments(java.util.List<String> documentTexts) {
     if (documentTexts == null || documentTexts.isEmpty()) {
@@ -156,17 +149,10 @@ public class PitchShapingExtractorService {
 
       JsonNode node = objectMapper.readTree(cleanedResponse);
 
-      return new ExtractedPitchData(
-          getTextOrNull(node, "title"),
-          getTextOrNull(node, "problemStatement"),
-          getTextOrNull(node, "solution"),
-          getTextOrNull(node, "rabbitHoles"),
-          getTextOrNull(node, "risks"),
-          getTextOrNull(node, "noGos"),
-          getIntOrNull(node, "appetiteDays"),
-          getTextOrNull(node, "wireframeLinks"),
-          true,
-          null);
+      return new ExtractedPitchData(getTextOrNull(node, "title"), getTextOrNull(node, "problemStatement"),
+          getTextOrNull(node, "solution"), getTextOrNull(node, "rabbitHoles"), getTextOrNull(node, "risks"),
+          getTextOrNull(node, "noGos"), getIntOrNull(node, "appetiteDays"),
+          getTextOrNull(node, "wireframeLinks"), true, null);
 
     } catch (Exception e) {
       log.error("Failed to parse AI response: {}", e.getMessage());

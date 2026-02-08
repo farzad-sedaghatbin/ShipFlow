@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,9 +23,8 @@ public class Meeting {
   @JoinColumn(name = "pitch_id")
   private Pitch pitch;
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private MeetingType type;
+  private String type;
 
   @Column(nullable = false)
   private LocalDate dateHeld;
@@ -36,6 +34,14 @@ public class Meeting {
 
   @Column(nullable = false)
   private Boolean dodReady;
+
+  // DOR checklist items (stored as JSON)
+  @Column(columnDefinition = "TEXT")
+  private String dorItemsJson;
+
+  // DOD checklist items (stored as JSON)
+  @Column(columnDefinition = "TEXT")
+  private String dodItemsJson;
 
   @Column(columnDefinition = "TEXT")
   private String notes;

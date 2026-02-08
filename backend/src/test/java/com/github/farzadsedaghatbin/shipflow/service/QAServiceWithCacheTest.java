@@ -25,28 +25,37 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Tests for QAService with caching integration. Tests cover: - Cache hit scenarios - Cache miss
- * scenarios - Fuzzy matching for similar questions - Cache invalidation
+ * Tests for QAService with caching integration. Tests cover: - Cache hit
+ * scenarios - Cache miss scenarios - Fuzzy matching for similar questions -
+ * Cache invalidation
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("QAService Tests with Caching")
 class QAServiceWithCacheTest {
 
-  @Mock private KnowledgeItemRepository knowledgeItemRepository;
+  @Mock
+  private KnowledgeItemRepository knowledgeItemRepository;
 
-  @Mock private QAInteractionRepository qaInteractionRepository;
+  @Mock
+  private QAInteractionRepository qaInteractionRepository;
 
-  @Mock private EmbeddingModel embeddingModel;
+  @Mock
+  private EmbeddingModel embeddingModel;
 
-  @Mock private EmbeddingStore<TextSegment> embeddingStore;
+  @Mock
+  private EmbeddingStore<TextSegment> embeddingStore;
 
-  @Mock private ChatLanguageModel chatLanguageModel;
+  @Mock
+  private ChatLanguageModel chatLanguageModel;
 
-  @Mock private KnowledgeIngestionService knowledgeIngestionService;
+  @Mock
+  private KnowledgeIngestionService knowledgeIngestionService;
 
-  @Mock private QAConfig qaConfig;
+  @Mock
+  private QAConfig qaConfig;
 
-  @Mock private AIConfig aiConfig;
+  @Mock
+  private AIConfig aiConfig;
 
   private AICacheConfig cacheConfig;
   private AICacheService cacheService;
@@ -82,21 +91,14 @@ class QAServiceWithCacheTest {
     void shouldReturnCachedResponseForExactQuestion() {
       // Given
       String question = "What is the progress of pitch 1?";
-      QAResponse cachedResponse =
-          QAResponse.builder()
-              .question(question)
-              .answer("The pitch is 50% complete")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse cachedResponse = QAResponse.builder().question(question).answer("The pitch is 50% complete")
+          .confidenceScore(90).cached(false).answeredAt(LocalDateTime.now()).build();
 
       // Cache the response
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, cachedResponse);
 
       // When
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isPresent();
@@ -110,21 +112,15 @@ class QAServiceWithCacheTest {
       String originalQuestion = "What is the progress of this pitch?";
       String similarQuestion = "What is the current progress of this pitch?";
 
-      QAResponse cachedResponse =
-          QAResponse.builder()
-              .question(originalQuestion)
-              .answer("The pitch is making good progress")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse cachedResponse = QAResponse.builder().question(originalQuestion)
+          .answer("The pitch is making good progress").confidenceScore(90).cached(false)
+          .answeredAt(LocalDateTime.now()).build();
 
       // Cache the response
       cacheService.cacheQAResponse(originalQuestion, "pitch", 1L, null, null, cachedResponse);
 
       // When
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(similarQuestion, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(similarQuestion, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isPresent();
@@ -138,20 +134,13 @@ class QAServiceWithCacheTest {
       String originalQuestion = "What is the progress?";
       String differentQuestion = "How many team members are assigned?";
 
-      QAResponse cachedResponse =
-          QAResponse.builder()
-              .question(originalQuestion)
-              .answer("Progress is good")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse cachedResponse = QAResponse.builder().question(originalQuestion).answer("Progress is good")
+          .confidenceScore(90).cached(false).answeredAt(LocalDateTime.now()).build();
 
       cacheService.cacheQAResponse(originalQuestion, "pitch", 1L, null, null, cachedResponse);
 
       // When
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(differentQuestion, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(differentQuestion, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isEmpty();
@@ -168,33 +157,19 @@ class QAServiceWithCacheTest {
       // Given
       String question = "What is the status?";
 
-      QAResponse pitch1Response =
-          QAResponse.builder()
-              .question(question)
-              .answer("Pitch 1 is in progress")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse pitch1Response = QAResponse.builder().question(question).answer("Pitch 1 is in progress")
+          .confidenceScore(90).cached(false).answeredAt(LocalDateTime.now()).build();
 
-      QAResponse pitch2Response =
-          QAResponse.builder()
-              .question(question)
-              .answer("Pitch 2 is completed")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse pitch2Response = QAResponse.builder().question(question).answer("Pitch 2 is completed")
+          .confidenceScore(90).cached(false).answeredAt(LocalDateTime.now()).build();
 
       // Cache responses for different pitches
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, pitch1Response);
       cacheService.cacheQAResponse(question, "pitch", 2L, null, null, pitch2Response);
 
       // When
-      Optional<QAResponse> result1 =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
-      Optional<QAResponse> result2 =
-          cacheService.getCachedQAResponse(question, "pitch", 2L, null, null);
+      Optional<QAResponse> result1 = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result2 = cacheService.getCachedQAResponse(question, "pitch", 2L, null, null);
 
       // Then
       assertThat(result1).isPresent();
@@ -210,21 +185,14 @@ class QAServiceWithCacheTest {
       // Given
       String question = "What are the risks?";
 
-      QAResponse cycle1Response =
-          QAResponse.builder()
-              .question(question)
-              .answer("Cycle 1 has low risks")
-              .confidenceScore(90)
-              .cached(false)
-              .answeredAt(LocalDateTime.now())
-              .build();
+      QAResponse cycle1Response = QAResponse.builder().question(question).answer("Cycle 1 has low risks")
+          .confidenceScore(90).cached(false).answeredAt(LocalDateTime.now()).build();
 
       // Cache response for cycle 1
       cacheService.cacheQAResponse(question, "cycle", 1L, 1L, null, cycle1Response);
 
       // When - Ask for different cycle
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "cycle", 2L, 2L, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "cycle", 2L, 2L, null);
 
       // Then - Should not find cached response for different cycle
       assertThat(result).isEmpty();
@@ -258,8 +226,7 @@ class QAServiceWithCacheTest {
       assertThat(cacheService.getCachedQAResponse(question2, "pitch", 1L, null, null)).isEmpty();
 
       // Pitch 2 should still be cached
-      assertThat(cacheService.getCachedQAResponse("Question 3", "pitch", 2L, null, null))
-          .isPresent();
+      assertThat(cacheService.getCachedQAResponse("Question 3", "pitch", 2L, null, null)).isPresent();
     }
 
     @Test
@@ -294,8 +261,7 @@ class QAServiceWithCacheTest {
 
       // When
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, response);
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isEmpty();
@@ -312,8 +278,7 @@ class QAServiceWithCacheTest {
 
       // When
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, response);
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isEmpty();
@@ -321,12 +286,7 @@ class QAServiceWithCacheTest {
   }
 
   private QAResponse createTestResponse(String question) {
-    return QAResponse.builder()
-        .question(question)
-        .answer("Test answer for: " + question)
-        .confidenceScore(90)
-        .cached(false)
-        .answeredAt(LocalDateTime.now())
-        .build();
+    return QAResponse.builder().question(question).answer("Test answer for: " + question).confidenceScore(90)
+        .cached(false).answeredAt(LocalDateTime.now()).build();
   }
 }

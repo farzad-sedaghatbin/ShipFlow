@@ -32,17 +32,23 @@ import org.springframework.web.client.RestTemplate;
 /**
  * Service for handling GitHub App OAuth flow and installation management.
  *
- * <p>This service enables organization-wide repository access through GitHub App installation,
- * eliminating the need to add repositories one by one. When an admin authorizes the GitHub App for
- * their organization, all repositories (or selected ones) become accessible automatically.
+ * <p>
+ * This service enables organization-wide repository access through GitHub App
+ * installation, eliminating the need to add repositories one by one. When an
+ * admin authorizes the GitHub App for their organization, all repositories (or
+ * selected ones) become accessible automatically.
  *
- * <p>Flow: 1. Admin clicks "Connect GitHub" in ShipFlow 2. ShipFlow redirects to GitHub App
- * installation URL 3. Admin authorizes the app for their organization 4. GitHub redirects back with
- * installation_id 5. ShipFlow fetches all repositories and syncs them
+ * <p>
+ * Flow: 1. Admin clicks "Connect GitHub" in ShipFlow 2. ShipFlow redirects to
+ * GitHub App installation URL 3. Admin authorizes the app for their
+ * organization 4. GitHub redirects back with installation_id 5. ShipFlow
+ * fetches all repositories and syncs them
  *
- * <p>Benefits: - Single authorization grants access to all organization repositories - New
- * repositories automatically become accessible (if "all" is selected) - Webhooks are automatically
- * configured for all repositories - No need to add repositories one by one
+ * <p>
+ * Benefits: - Single authorization grants access to all organization
+ * repositories - New repositories automatically become accessible (if "all" is
+ * selected) - Webhooks are automatically configured for all repositories - No
+ * need to add repositories one by one
  */
 @Service
 @Slf4j
@@ -83,8 +89,9 @@ public class GitHubAppOAuthService {
   private final Map<String, OAuthState> oauthStates = new ConcurrentHashMap<>();
 
   /**
-   * Get the base URL - uses configured value or provided request base URL The base URL is needed
-   * for OAuth callbacks where GitHub redirects back to ShipFlow
+   * Get the base URL - uses configured value or provided request base URL The
+   * base URL is needed for OAuth callbacks where GitHub redirects back to
+   * ShipFlow
    */
   public String getBaseUrl(String requestBaseUrl) {
     // Priority: 1) Configured value, 2) Request-provided value, 3) Default
@@ -100,7 +107,8 @@ public class GitHubAppOAuthService {
   /**
    * Generate the GitHub App installation URL for organization-wide authorization
    *
-   * @param request OAuth initialization request
+   * @param request
+   *            OAuth initialization request
    * @return Response with authorization URL
    */
   public GitHubOAuthUrlResponse generateAuthorizationUrl(GitHubOAuthInitRequest request) {
@@ -109,14 +117,10 @@ public class GitHubAppOAuthService {
     String state = request.getState() != null ? request.getState() : UUID.randomUUID().toString();
 
     // Store state with redirect URL for verification
-    OAuthState oauthState =
-        new OAuthState(
-            state,
-            request.getRedirectUrl() != null
-                ? request.getRedirectUrl()
-                : baseUrl + "/settings/integrations",
-            LocalDateTime.now().plusMinutes(10) // 10-minute expiry
-            );
+    OAuthState oauthState = new OAuthState(state,
+        request.getRedirectUrl() != null ? request.getRedirectUrl() : baseUrl + "/settings/integrations",
+        LocalDateTime.now().plusMinutes(10) // 10-minute expiry
+    );
     oauthStates.put(state, oauthState);
 
     // Build the GitHub App installation URL
@@ -129,47 +133,39 @@ public class GitHubAppOAuthService {
     authUrl.append("?state=").append(state);
 
     // Suggest specific organization if provided
-    if (request.getSuggestedOrganization() != null
-        && !request.getSuggestedOrganization().isEmpty()) {
+    if (request.getSuggestedOrganization() != null && !request.getSuggestedOrganization().isEmpty()) {
       authUrl.append("&suggested_target_id=").append(request.getSuggestedOrganization());
     }
 
     String callbackUrl = baseUrl + "/api/github/app/callback";
 
-    return GitHubOAuthUrlResponse.builder()
-        .authorizationUrl(authUrl.toString())
-        .state(state)
+    return GitHubOAuthUrlResponse.builder().authorizationUrl(authUrl.toString()).state(state)
         .callbackUrl(callbackUrl)
-        .instructions(
-            "Click the authorization URL to install the ShipFlow GitHub App for your organization. "
-                + "You can choose to grant access to all repositories or select specific ones. "
-                + "This is a one-time setup that will automatically sync all authorized repositories.")
+        .instructions("Click the authorization URL to install the ShipFlow GitHub App for your organization. "
+            + "You can choose to grant access to all repositories or select specific ones. "
+            + "This is a one-time setup that will automatically sync all authorized repositories.")
         .build();
   }
 
   /**
    * Process the OAuth callback from GitHub after app installation
    *
-   * @param installationId GitHub App installation ID
-   * @param state State parameter for CSRF verification
-   * @param setupAction Action taken (install, update, etc.)
+   * @param installationId
+   *            GitHub App installation ID
+   * @param state
+   *            State parameter for CSRF verification
+   * @param setupAction
+   *            Action taken (install, update, etc.)
    * @return Result of the callback processing
    */
-  public GitHubOAuthCallbackResult processCallback(
-      Long installationId, String state, String setupAction) {
-    log.info(
-        "Processing GitHub App callback: installationId={}, setupAction={}",
-        installationId,
-        setupAction);
+  public GitHubOAuthCallbackResult processCallback(Long installationId, String state, String setupAction) {
+    log.info("Processing GitHub App callback: installationId={}, setupAction={}", installationId, setupAction);
 
     // Verify state to prevent CSRF attacks
     OAuthState oauthState = oauthStates.remove(state);
     if (oauthState == null || oauthState.expiresAt.isBefore(LocalDateTime.now())) {
-      return GitHubOAuthCallbackResult.builder()
-          .success(false)
-          .error("invalid_state")
-          .errorDescription("The authorization state is invalid or expired. Please try again.")
-          .build();
+      return GitHubOAuthCallbackResult.builder().success(false).error("invalid_state")
+          .errorDescription("The authorization state is invalid or expired. Please try again.").build();
     }
 
     try {
@@ -184,26 +180,17 @@ public class GitHubAppOAuthService {
 
       List<String> repoNames = repos.stream().map(GitHubRepository::getFullName).toList();
 
-      return GitHubOAuthCallbackResult.builder()
-          .success(true)
-          .installation(mapToDTO(installation))
-          .repositoriesSynced(repos.size())
-          .repositoryNames(repoNames)
-          .redirectUrl(oauthState.redirectUrl)
-          .message(
-              String.format(
-                  "Successfully connected %s with access to %d repositories!",
-                  installation.getAccountLogin(), repos.size()))
+      return GitHubOAuthCallbackResult.builder().success(true).installation(mapToDTO(installation))
+          .repositoriesSynced(repos.size()).repositoryNames(repoNames).redirectUrl(oauthState.redirectUrl)
+          .message(String.format("Successfully connected %s with access to %d repositories!",
+              installation.getAccountLogin(), repos.size()))
           .build();
 
     } catch (Exception e) {
       log.error("Failed to process GitHub App callback", e);
-      return GitHubOAuthCallbackResult.builder()
-          .success(false)
-          .error("processing_failed")
+      return GitHubOAuthCallbackResult.builder().success(false).error("processing_failed")
           .errorDescription("Failed to complete GitHub App installation: " + e.getMessage())
-          .redirectUrl(oauthState.redirectUrl)
-          .build();
+          .redirectUrl(oauthState.redirectUrl).build();
     }
   }
 
@@ -216,21 +203,15 @@ public class GitHubAppOAuthService {
 
     HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-    ResponseEntity<String> response =
-        restTemplate.exchange(
-            GITHUB_API_URL + "/app/installations/" + installationId,
-            HttpMethod.GET,
-            entity,
-            String.class);
+    ResponseEntity<String> response = restTemplate.exchange(GITHUB_API_URL + "/app/installations/" + installationId,
+        HttpMethod.GET, entity, String.class);
 
     try {
       JsonNode installationNode = objectMapper.readTree(response.getBody());
 
       // Check if installation already exists
-      GitHubAppInstallation installation =
-          installationRepository
-              .findByInstallationId(installationId)
-              .orElse(new GitHubAppInstallation());
+      GitHubAppInstallation installation = installationRepository.findByInstallationId(installationId)
+          .orElse(new GitHubAppInstallation());
 
       // Update installation details
       installation.setInstallationId(installationId);
@@ -276,15 +257,9 @@ public class GitHubAppOAuthService {
 
     HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-    ResponseEntity<String> response =
-        restTemplate.exchange(
-            GITHUB_API_URL
-                + "/app/installations/"
-                + installation.getInstallationId()
-                + "/access_tokens",
-            HttpMethod.POST,
-            entity,
-            String.class);
+    ResponseEntity<String> response = restTemplate.exchange(
+        GITHUB_API_URL + "/app/installations/" + installation.getInstallationId() + "/access_tokens",
+        HttpMethod.POST, entity, String.class);
 
     try {
       JsonNode tokenNode = objectMapper.readTree(response.getBody());
@@ -301,8 +276,7 @@ public class GitHubAppOAuthService {
   }
 
   /** Sync all repositories accessible through an installation */
-  public List<GitHubRepository> syncRepositoriesForInstallation(
-      GitHubAppInstallation installation) {
+  public List<GitHubRepository> syncRepositoriesForInstallation(GitHubAppInstallation installation) {
     log.info("Syncing repositories for installation: {}", installation.getAccountLogin());
 
     // Ensure token is valid
@@ -327,8 +301,7 @@ public class GitHubAppOAuthService {
       // Sanitize and validate URL to prevent SSRF attacks
       String validatedUrl = sanitizeGitHubApiUrl(url);
 
-      ResponseEntity<String> response =
-          restTemplate.exchange(validatedUrl, HttpMethod.GET, entity, String.class);
+      ResponseEntity<String> response = restTemplate.exchange(validatedUrl, HttpMethod.GET, entity, String.class);
 
       try {
         JsonNode rootNode = objectMapper.readTree(response.getBody());
@@ -352,10 +325,7 @@ public class GitHubAppOAuthService {
     installation.setLastSyncAt(LocalDateTime.now());
     installationRepository.save(installation);
 
-    log.info(
-        "Synced {} repositories for installation: {}",
-        syncedRepos.size(),
-        installation.getAccountLogin());
+    log.info("Synced {} repositories for installation: {}", syncedRepos.size(), installation.getAccountLogin());
     return syncedRepos;
   }
 
@@ -384,8 +354,8 @@ public class GitHubAppOAuthService {
   }
 
   /**
-   * Get next page URL from GitHub API pagination headers. Validates the URL to prevent SSRF attacks
-   * by ensuring it points to the legitimate GitHub API.
+   * Get next page URL from GitHub API pagination headers. Validates the URL to
+   * prevent SSRF attacks by ensuring it points to the legitimate GitHub API.
    */
   private String getNextPageUrl(HttpHeaders headers) {
     List<String> linkHeaders = headers.get("Link");
@@ -418,8 +388,9 @@ public class GitHubAppOAuthService {
   }
 
   /**
-   * Validate that a URL points to the legitimate GitHub API to prevent SSRF attacks. Only allows
-   * HTTPS URLs pointing to api.github.com with paths starting with expected prefixes.
+   * Validate that a URL points to the legitimate GitHub API to prevent SSRF
+   * attacks. Only allows HTTPS URLs pointing to api.github.com with paths
+   * starting with expected prefixes.
    */
   private boolean isValidGitHubApiUrl(String urlString) {
     try {
@@ -433,8 +404,7 @@ public class GitHubAppOAuthService {
 
       // Disallow embedded credentials (user info) in the URL
       if (uri.getUserInfo() != null) {
-        log.warn(
-            "URL validation failed: user info is not allowed in GitHub API URLs: {}", urlString);
+        log.warn("URL validation failed: user info is not allowed in GitHub API URLs: {}", urlString);
         return false;
       }
 
@@ -452,17 +422,14 @@ public class GitHubAppOAuthService {
 
       // Disallow URL fragments
       if (uri.getFragment() != null) {
-        log.warn(
-            "URL validation failed: fragments are not allowed in GitHub API URLs: {}", urlString);
+        log.warn("URL validation failed: fragments are not allowed in GitHub API URLs: {}", urlString);
         return false;
       }
 
       // Path must start with expected GitHub API prefixes
       String path = uri.getPath();
-      if (path == null
-          || (!path.startsWith("/installation/")
-              && !path.startsWith("/app/")
-              && !path.startsWith("/repos/"))) {
+      if (path == null || (!path.startsWith("/installation/") && !path.startsWith("/app/")
+          && !path.startsWith("/repos/"))) {
         log.warn("URL validation failed: path does not start with expected prefix: {}", urlString);
         return false;
       }
@@ -476,13 +443,16 @@ public class GitHubAppOAuthService {
   }
 
   /**
-   * Sanitize and validate GitHub API URL to prevent SSRF attacks. This method validates the URL and
-   * returns it if valid, or throws SecurityException if invalid. The explicit return value helps
-   * static analysis tools track the sanitized data flow.
+   * Sanitize and validate GitHub API URL to prevent SSRF attacks. This method
+   * validates the URL and returns it if valid, or throws SecurityException if
+   * invalid. The explicit return value helps static analysis tools track the
+   * sanitized data flow.
    *
-   * @param url URL to validate
+   * @param url
+   *            URL to validate
    * @return The same URL if valid
-   * @throws SecurityException if URL is invalid or points to non-GitHub domain
+   * @throws SecurityException
+   *             if URL is invalid or points to non-GitHub domain
    */
   private String sanitizeGitHubApiUrl(String url) {
     if (!isValidGitHubApiUrl(url)) {
@@ -500,18 +470,17 @@ public class GitHubAppOAuthService {
 
     try {
       PrivateKey privateKeyObj;
-      
-      // Check if it's PKCS#1 format (BEGIN RSA PRIVATE KEY) or PKCS#8 format (BEGIN PRIVATE KEY)
+
+      // Check if it's PKCS#1 format (BEGIN RSA PRIVATE KEY) or PKCS#8 format (BEGIN
+      // PRIVATE KEY)
       if (privateKey.contains("BEGIN RSA PRIVATE KEY")) {
         // PKCS#1 format - GitHub generates keys in this format
         privateKeyObj = parsePkcs1PrivateKey(privateKey);
       } else {
         // PKCS#8 format
-        String pkcs8Key = privateKey
-            .replace("-----BEGIN PRIVATE KEY-----", "")
-            .replace("-----END PRIVATE KEY-----", "")
-            .replaceAll("\\s", "");
-        
+        String pkcs8Key = privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "").replaceAll("\\s", "");
+
         byte[] keyBytes = Base64.getDecoder().decode(pkcs8Key);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -521,12 +490,9 @@ public class GitHubAppOAuthService {
       // Generate JWT
       long nowSeconds = System.currentTimeMillis() / 1000;
 
-      return Jwts.builder()
-          .setIssuer(appId)
-          .setIssuedAt(new Date((nowSeconds - 60) * 1000))
+      return Jwts.builder().setIssuer(appId).setIssuedAt(new Date((nowSeconds - 60) * 1000))
           .setExpiration(new Date((nowSeconds + 600) * 1000)) // 10 minutes max
-          .signWith(privateKeyObj, SignatureAlgorithm.RS256)
-          .compact();
+          .signWith(privateKeyObj, SignatureAlgorithm.RS256).compact();
 
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate GitHub App JWT", e);
@@ -534,69 +500,66 @@ public class GitHubAppOAuthService {
   }
 
   /**
-   * Parse a PKCS#1 formatted RSA private key.
-   * GitHub App private keys are in PKCS#1 format (BEGIN RSA PRIVATE KEY).
+   * Parse a PKCS#1 formatted RSA private key. GitHub App private keys are in
+   * PKCS#1 format (BEGIN RSA PRIVATE KEY).
    */
   private PrivateKey parsePkcs1PrivateKey(String pem) throws Exception {
-    String base64Key = pem
-        .replace("-----BEGIN RSA PRIVATE KEY-----", "")
-        .replace("-----END RSA PRIVATE KEY-----", "")
-        .replaceAll("\\s", "");
-    
+    String base64Key = pem.replace("-----BEGIN RSA PRIVATE KEY-----", "")
+        .replace("-----END RSA PRIVATE KEY-----", "").replaceAll("\\s", "");
+
     byte[] keyBytes = Base64.getDecoder().decode(base64Key);
-    
+
     // Parse the ASN.1 DER encoded PKCS#1 RSAPrivateKey structure
     // RSAPrivateKey ::= SEQUENCE {
-    //   version           Version,
-    //   modulus           INTEGER,  -- n
-    //   publicExponent    INTEGER,  -- e
-    //   privateExponent   INTEGER,  -- d
-    //   prime1            INTEGER,  -- p
-    //   prime2            INTEGER,  -- q
-    //   exponent1         INTEGER,  -- d mod (p-1)
-    //   exponent2         INTEGER,  -- d mod (q-1)
-    //   coefficient       INTEGER,  -- (inverse of q) mod p
+    // version Version,
+    // modulus INTEGER, -- n
+    // publicExponent INTEGER, -- e
+    // privateExponent INTEGER, -- d
+    // prime1 INTEGER, -- p
+    // prime2 INTEGER, -- q
+    // exponent1 INTEGER, -- d mod (p-1)
+    // exponent2 INTEGER, -- d mod (q-1)
+    // coefficient INTEGER, -- (inverse of q) mod p
     // }
-    
+
     int[] pos = {0};
-    
+
     // Read SEQUENCE
     readTag(keyBytes, pos, 0x30);
     readLength(keyBytes, pos);
-    
+
     // Read version (should be 0)
     readTag(keyBytes, pos, 0x02);
     int versionLength = readLength(keyBytes, pos);
     pos[0] += versionLength;
-    
+
     // Read modulus (n)
     BigInteger modulus = readBigInteger(keyBytes, pos);
-    
+
     // Read public exponent (e)
     BigInteger publicExponent = readBigInteger(keyBytes, pos);
-    
+
     // Read private exponent (d)
     BigInteger privateExponent = readBigInteger(keyBytes, pos);
-    
+
     // Read prime1 (p)
     BigInteger primeP = readBigInteger(keyBytes, pos);
-    
+
     // Read prime2 (q)
     BigInteger primeQ = readBigInteger(keyBytes, pos);
-    
+
     // Read exponent1 (dP = d mod p-1)
     BigInteger primeExponentP = readBigInteger(keyBytes, pos);
-    
+
     // Read exponent2 (dQ = d mod q-1)
     BigInteger primeExponentQ = readBigInteger(keyBytes, pos);
-    
+
     // Read coefficient (qInv = q^-1 mod p)
     BigInteger crtCoefficient = readBigInteger(keyBytes, pos);
-    
-    RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(
-        modulus, publicExponent, privateExponent,
-        primeP, primeQ, primeExponentP, primeExponentQ, crtCoefficient);
-    
+
+    RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(modulus, publicExponent, privateExponent, primeP,
+        primeQ, primeExponentP, primeExponentQ, crtCoefficient);
+
     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
     return keyFactory.generatePrivate(keySpec);
   }
@@ -642,14 +605,11 @@ public class GitHubAppOAuthService {
 
   /** Remove an installation */
   public void removeInstallation(Long id) {
-    installationRepository
-        .findById(id)
-        .ifPresent(
-            installation -> {
-              installation.setIsActive(false);
-              installationRepository.save(installation);
-              log.info("Deactivated GitHub App installation: {}", installation.getAccountLogin());
-            });
+    installationRepository.findById(id).ifPresent(installation -> {
+      installation.setIsActive(false);
+      installationRepository.save(installation);
+      log.info("Deactivated GitHub App installation: {}", installation.getAccountLogin());
+    });
   }
 
   /** Sync all repositories from all active installations */
@@ -673,42 +633,30 @@ public class GitHubAppOAuthService {
         totalUpdated += (repos.size() - (afterCount - beforeCount));
 
       } catch (Exception e) {
-        log.error(
-            "Failed to sync repositories for installation: {}", installation.getAccountLogin(), e);
+        log.error("Failed to sync repositories for installation: {}", installation.getAccountLogin(), e);
         errors.add("Failed to sync " + installation.getAccountLogin() + ": " + e.getMessage());
         totalFailed++;
       }
     }
 
-    return GitHubBulkSyncResultDTO.builder()
-        .installationsProcessed(installations.size())
-        .repositoriesDiscovered(totalDiscovered)
-        .repositoriesAdded(totalAdded)
-        .repositoriesUpdated(totalUpdated)
-        .repositoriesFailed(totalFailed)
-        .errors(errors)
-        .success(errors.isEmpty())
-        .message(
-            String.format(
-                "Synced %d repositories from %d installations",
-                totalDiscovered, installations.size()))
+    return GitHubBulkSyncResultDTO.builder().installationsProcessed(installations.size())
+        .repositoriesDiscovered(totalDiscovered).repositoriesAdded(totalAdded).repositoriesUpdated(totalUpdated)
+        .repositoriesFailed(totalFailed).errors(errors).success(errors.isEmpty()).message(String
+            .format("Synced %d repositories from %d installations", totalDiscovered, installations.size()))
         .build();
   }
 
   /**
-   * Discover and sync all existing GitHub App installations. This is useful when the app was
-   * installed directly on GitHub (not through ShipFlow OAuth flow), allowing ShipFlow to detect and
-   * register existing installations.
+   * Discover and sync all existing GitHub App installations. This is useful when
+   * the app was installed directly on GitHub (not through ShipFlow OAuth flow),
+   * allowing ShipFlow to detect and register existing installations.
    *
    * @return Result containing discovered installations and synced repositories
    */
   public GitHubBulkSyncResultDTO discoverInstallations() {
     if (!isAppConfigured()) {
-      return GitHubBulkSyncResultDTO.builder()
-          .success(false)
-          .message("GitHub App is not configured")
-          .errors(List.of("Missing GitHub App configuration (app ID, private key, or app name)"))
-          .build();
+      return GitHubBulkSyncResultDTO.builder().success(false).message("GitHub App is not configured")
+          .errors(List.of("Missing GitHub App configuration (app ID, private key, or app name)")).build();
     }
 
     log.info("Discovering existing GitHub App installations...");
@@ -734,8 +682,8 @@ public class GitHubAppOAuthService {
       while (url != null) {
         String validatedUrl = sanitizeGitHubApiUrl(url);
 
-        ResponseEntity<String> response =
-            restTemplate.exchange(validatedUrl, HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(validatedUrl, HttpMethod.GET, entity,
+            String.class);
 
         JsonNode installationsNode = objectMapper.readTree(response.getBody());
 
@@ -765,40 +713,27 @@ public class GitHubAppOAuthService {
         url = getNextPageUrl(response.getHeaders());
       }
 
-      String message =
-          String.format(
-              "Discovered %d installations with %d total repositories",
-              syncedInstallations.size(), totalReposSynced);
+      String message = String.format("Discovered %d installations with %d total repositories",
+          syncedInstallations.size(), totalReposSynced);
 
       log.info(message);
 
-      return GitHubBulkSyncResultDTO.builder()
-          .success(errors.isEmpty())
-          .installationsProcessed(syncedInstallations.size())
-          .repositoriesDiscovered(totalReposSynced)
-          .repositoriesAdded(totalReposSynced)
-          .syncedInstallations(syncedInstallations)
-          .errors(errors)
-          .message(message)
-          .build();
+      return GitHubBulkSyncResultDTO.builder().success(errors.isEmpty())
+          .installationsProcessed(syncedInstallations.size()).repositoriesDiscovered(totalReposSynced)
+          .repositoriesAdded(totalReposSynced).syncedInstallations(syncedInstallations).errors(errors)
+          .message(message).build();
 
     } catch (Exception e) {
       log.error("Failed to discover GitHub App installations", e);
-      return GitHubBulkSyncResultDTO.builder()
-          .success(false)
-          .message("Failed to discover installations: " + e.getMessage())
-          .errors(List.of(e.getMessage()))
+      return GitHubBulkSyncResultDTO.builder().success(false)
+          .message("Failed to discover installations: " + e.getMessage()).errors(List.of(e.getMessage()))
           .build();
     }
   }
 
   /** Check if GitHub App is properly configured */
   public boolean isAppConfigured() {
-    return appId != null
-        && !appId.isEmpty()
-        && privateKey != null
-        && !privateKey.isEmpty()
-        && appName != null
+    return appId != null && !appId.isEmpty() && privateKey != null && !privateKey.isEmpty() && appName != null
         && !appName.isEmpty();
   }
 
@@ -826,37 +761,27 @@ public class GitHubAppOAuthService {
     if (installation.getPermissions() != null) {
       try {
         JsonNode permsNode = objectMapper.readTree(installation.getPermissions());
-        permissions =
-            GitHubPermissionsDTO.builder()
-                .contents(permsNode.path("contents").asText(null))
-                .issues(permsNode.path("issues").asText(null))
-                .pullRequests(permsNode.path("pull_requests").asText(null))
-                .metadata(permsNode.path("metadata").asText(null))
-                .webhooks(permsNode.path("webhooks").asText(null))
-                .checks(permsNode.path("checks").asText(null))
-                .statuses(permsNode.path("statuses").asText(null))
-                .build();
+        permissions = GitHubPermissionsDTO.builder().contents(permsNode.path("contents").asText(null))
+            .issues(permsNode.path("issues").asText(null))
+            .pullRequests(permsNode.path("pull_requests").asText(null))
+            .metadata(permsNode.path("metadata").asText(null))
+            .webhooks(permsNode.path("webhooks").asText(null)).checks(permsNode.path("checks").asText(null))
+            .statuses(permsNode.path("statuses").asText(null)).build();
       } catch (JsonProcessingException e) {
         log.warn("Failed to parse permissions JSON", e);
       }
     }
 
-    return GitHubAppInstallationDTO.builder()
-        .id(installation.getId())
-        .installationId(installation.getInstallationId())
-        .accountType(installation.getAccountType())
-        .accountLogin(installation.getAccountLogin())
-        .repositorySelection(installation.getRepositorySelection())
-        .isActive(installation.getIsActive())
-        .webhooksConfigured(installation.getWebhooksConfigured())
-        .lastSyncAt(installation.getLastSyncAt())
-        .repositoryCount(installation.getRepositoryCount())
-        .createdAt(installation.getCreatedAt())
-        .installedByLogin(installation.getInstalledByLogin())
-        .permissions(permissions)
-        .build();
+    return GitHubAppInstallationDTO.builder().id(installation.getId())
+        .installationId(installation.getInstallationId()).accountType(installation.getAccountType())
+        .accountLogin(installation.getAccountLogin()).repositorySelection(installation.getRepositorySelection())
+        .isActive(installation.getIsActive()).webhooksConfigured(installation.getWebhooksConfigured())
+        .lastSyncAt(installation.getLastSyncAt()).repositoryCount(installation.getRepositoryCount())
+        .createdAt(installation.getCreatedAt()).installedByLogin(installation.getInstalledByLogin())
+        .permissions(permissions).build();
   }
 
   /** Internal class for storing OAuth state */
-  private record OAuthState(String state, String redirectUrl, LocalDateTime expiresAt) {}
+  private record OAuthState(String state, String redirectUrl, LocalDateTime expiresAt) {
+  }
 }

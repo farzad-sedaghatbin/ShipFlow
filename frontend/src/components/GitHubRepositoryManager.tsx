@@ -16,6 +16,7 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { ConfirmDialog } from './ui/confirm-dialog';
 import { Plus, Github, Copy, CheckCircle2, Building2, RefreshCw, Trash2 } from 'lucide-react';
 import { githubService, GitHubAppStatus, GitHubAppInstallation } from '../services/githubService';
 import { GitHubRepository, CreateGitHubRepositoryRequest } from '../types/github';
@@ -33,6 +34,8 @@ export default function GitHubRepositoryManager() {
   const [installations, setInstallations] = useState<GitHubAppInstallation[]>([]);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState<number | 'all' | 'discover' | null>(null);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [installationToRemove, setInstallationToRemove] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<CreateGitHubRepositoryRequest>({
     owner: '',
@@ -137,11 +140,18 @@ export default function GitHubRepositoryManager() {
     }
   };
 
-  const handleRemoveInstallation = async (installationId: number) => {
-    if (!confirm(t('githubApp.confirmRemove'))) return;
+  const openRemoveConfirm = (installationId: number) => {
+    setInstallationToRemove(installationId);
+    setRemoveConfirmOpen(true);
+  };
+
+  const handleRemoveInstallation = async () => {
+    if (installationToRemove === null) return;
     try {
-      await githubService.removeInstallation(installationId);
+      await githubService.removeInstallation(installationToRemove);
       await loadInstallations();
+      setRemoveConfirmOpen(false);
+      setInstallationToRemove(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('githubApp.removeError'));
     }
@@ -272,7 +282,7 @@ export default function GitHubRepositoryManager() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRemoveInstallation(installation.installationId)}
+                        onClick={() => openRemoveConfirm(installation.installationId)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -512,6 +522,18 @@ export default function GitHubRepositoryManager() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Installation Confirmation Dialog */}
+      <ConfirmDialog
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        title={t('githubApp.removeTitle')}
+        description={t('githubApp.confirmRemove')}
+        confirmLabel={t('common.remove')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleRemoveInstallation}
+        variant="destructive"
+      />
     </div>
   );
 }

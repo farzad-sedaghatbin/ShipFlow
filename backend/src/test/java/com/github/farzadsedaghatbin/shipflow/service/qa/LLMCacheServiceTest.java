@@ -13,13 +13,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class LLMCacheServiceTest {
 
-  @Mock private AICacheConfig cacheConfig;
+  @Mock
+  private AICacheConfig cacheConfig;
 
   private LLMCacheService llmCacheService;
 
   @BeforeEach
   void setUp() {
-    // Configure mock to use in-memory provider (avoid Redis initialization in tests)
+    // Configure mock to use in-memory provider (avoid Redis initialization in
+    // tests)
     lenient().when(cacheConfig.isRedisProvider()).thenReturn(false);
     llmCacheService = new LLMCacheService(cacheConfig);
   }
@@ -141,7 +143,8 @@ class LLMCacheServiceTest {
     llmCacheService.getCachedResponse(prompt);
 
     // Then
-    // Hit count should be tracked internally (can verify through logs or expose getter)
+    // Hit count should be tracked internally (can verify through logs or expose
+    // getter)
     // This test validates that multiple calls don't break caching
     assertThat(llmCacheService.getCachedResponse(prompt)).isEqualTo(response);
   }

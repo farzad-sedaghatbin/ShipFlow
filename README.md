@@ -7,7 +7,7 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## 📸 Screenshots & Demo
 
-![ShipFlow Demo](screenshots/demo.webp)
+<img src="screenshots/demo.webp" alt="ShipFlow Demo" width="100%" />
 
 | Dashboard | Hill Charts | Pitch Board |
 |-----------|-------------|-------------|
@@ -75,18 +75,51 @@ A modern project management application implementing the [Shape Up](https://base
   - PDF and CSV export functionality
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
-    - Optional traceability to scopes and related tasks
+    - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)
+    - Optional traceability to cycles, pitches, scopes, and related tasks
+    - Auto-derives project from cycle/pitch when not explicitly set
     - Server-side search for finding related scopes/tasks (min 3 chars, 300ms debounce)
     - Context-aware dropdowns (pitch → scopes, cycle → tasks)
   - **Test Cases**: Structured test case management
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
+- **Help & Guides**: Built-in comprehensive documentation and interactive tour
+  - **Interactive Tour**: Step-by-step walkthrough for new users
+  - **Rich Guides**: Detailed guides for Getting Started, Cycle Setup, Betting Meetings, Hill Charts, and AI Risk Advisor
+  - **Context-Aware**: Access relevant guides directly from related pages
+- **Comments & Collaboration**: Full commenting system for tasks and bug reports
+  - **@Mentions**: Type `@` to mention users with autocomplete suggestions
+  - **Mention Notifications**: Mentioned users receive in-app and Slack notifications
+  - **Emoji Reactions**: 8 emoji reactions (👍, 👎, ❤️, 😄, 😮, 😢, 🚀, 👀) with toggle behavior
+  - **CRUD Operations**: Create, edit, delete comments with permission checks
+  - **Edit Tracking**: Comments show "edited" badge when modified
+  - **Author Controls**: Only authors can edit; authors and admins can delete
 - **Retrospectives**: Team retros with voting and merging
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+- **Meetings**: Comprehensive meeting management with customizable types
+  - **Configurable Meeting Types**: Manage 7+ meeting types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
+  - **DOR/DOD Checklists**: Definition of Ready (DOR) and Definition of Done (DOD) checklist items per meeting type
+  - **View Mode**: Click meeting type badge to view read-only summary showing only completed checklist items
+  - **Edit Mode**: Full editing with all DOR/DOD items visible and editable
+  - **Smart Filtering**: Deleted checklist items automatically filtered from new meetings
+  - **Action Items**: Track meeting decisions with assignees, due dates, and status tracking
+  - **Meeting Documents**: Attach and manage meeting-related documents
+  - **Meeting History**: Full audit trail of all meeting changes
+- **Entity Change History (Audit Trail)**: Complete change tracking with Hibernate Envers
+  - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
+  - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more
+  - **User Attribution**: Every change records who made it and when
+  - **Jira-Style Activity Timeline**: Embedded activity view showing all changes inline (no popup required)
+    - Bug View: Tabbed interface with Details, Activity, and Comments tabs
+    - Task Detail Page: Activity timeline card showing complete change history
+  - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
+  - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
+  - **Field Change Display**: Color-coded old → new value comparisons with strikethrough
+  - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
   - **Color-Coded Severity**: Visual indicators (blue/yellow/orange/red) based on appetite utilization
@@ -138,6 +171,11 @@ A modern project management application implementing the [Shape Up](https://base
   - Source citation tracking
   - RAG evaluation metrics (faithfulness, relevance)
   - Semantic caching for faster responses
+  - **Async AI Advisor**: Non-blocking AI analysis with cache-first optimization
+    - Cache-first pattern: Returns instantly if result is already cached
+    - Job-based async execution: Long-running AI analysis runs in background
+    - Polling API: Frontend polls for completion with exponential backoff
+    - Dedicated thread pool: Prevents AI operations from blocking main threads
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)

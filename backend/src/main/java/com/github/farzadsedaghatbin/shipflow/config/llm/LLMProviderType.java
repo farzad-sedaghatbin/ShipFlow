@@ -1,13 +1,13 @@
 package com.github.farzadsedaghatbin.shipflow.config.llm;
 
-/** Enumeration of supported LLM providers. Add new providers here to extend the system. */
+/**
+ * Enumeration of supported LLM providers. Add new providers here to extend the
+ * system.
+ */
 public enum LLMProviderType {
-  OLLAMA("ollama", "Ollama (Local/Self-hosted)"),
-  RUNPOD("runpod", "RunPod Serverless GPU"),
-  OPENAI("openai", "OpenAI ChatGPT"),
-  ANTHROPIC("anthropic", "Anthropic Claude"),
-  GOOGLE("google", "Google Gemini"),
-  AZURE_OPENAI("azure-openai", "Azure OpenAI");
+  OLLAMA("ollama", "Ollama (Local/Self-hosted)"), RUNPOD("runpod", "RunPod Serverless GPU"), OPENAI("openai",
+      "OpenAI ChatGPT"), ANTHROPIC("anthropic", "Anthropic Claude"), GOOGLE("google",
+          "Google Gemini"), AZURE_OPENAI("azure-openai", "Azure OpenAI");
 
   private final String configValue;
   private final String displayName;
@@ -28,9 +28,11 @@ public enum LLMProviderType {
   /**
    * Parse provider type from configuration string.
    *
-   * @param value the configuration value
+   * @param value
+   *            the configuration value
    * @return the matching provider type
-   * @throws IllegalArgumentException if no matching provider is found
+   * @throws IllegalArgumentException
+   *             if no matching provider is found
    */
   public static LLMProviderType fromConfigValue(String value) {
     if (value == null || value.trim().isEmpty()) {
