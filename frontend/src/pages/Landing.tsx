@@ -369,9 +369,11 @@ export default function Landing() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 {/* Author Avatar */}
                 <div className="flex-shrink-0">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-4xl font-bold">
-                    FS
-                  </div>
+                  <img 
+                    src="https://media.licdn.com/dms/image/v2/D4E03AQEr4IZ0OrttkA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1715346862132?e=1772064000&v=beta&t=j2ylrKyVYfQGhbGFloCUyXG6lWxMKxlSe_hHxtr8RTk"
+                    alt="Farzad Sedaghatbin"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+                  />
                 </div>
 
                 {/* Author Info */}
