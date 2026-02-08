@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-02-15 - Insight, Not Metrics
+## [0.5.0] - 2026-02-08 - Insight, Not Metrics
 
 ### Theme
 > "Help teams think, not measure velocity."
