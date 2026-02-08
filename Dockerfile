@@ -17,7 +17,7 @@ COPY --from=frontend-builder /app/frontend/dist ./src/main/resources/static
 RUN mvn clean package -DskipTests -B
 
 # Runtime stage (glibc-based for onnxruntime)
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17.0.18_8-jre-jammy
 WORKDIR /app
 
 # Install runtime deps needed by onnxruntime-java (and healthcheck tool)
