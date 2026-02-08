@@ -15,24 +15,28 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Configuration for AI-powered features using LangChain4j.
  *
- * <p>Supports pluggable AI providers through the LLM Provider Plugin System:
+ * <p>
+ * Supports pluggable AI providers through the LLM Provider Plugin System:
  *
  * <ul>
- *   <li>ollama - Local/self-hosted using Ollama
- *   <li>runpod - RunPod Serverless GPU (cloud)
- *   <li>openai - OpenAI ChatGPT
- *   <li>anthropic - Anthropic Claude (future)
- *   <li>google - Google Gemini (future)
+ * <li>ollama - Local/self-hosted using Ollama
+ * <li>runpod - RunPod Serverless GPU (cloud)
+ * <li>openai - OpenAI ChatGPT
+ * <li>anthropic - Anthropic Claude (future)
+ * <li>google - Google Gemini (future)
  * </ul>
  *
- * <p>Switch between providers using: app.ai.provider=openai (or ollama, runpod, etc.)
+ * <p>
+ * Switch between providers using: app.ai.provider=openai (or ollama, runpod,
+ * etc.)
  *
- * <p>To add a new provider:
+ * <p>
+ * To add a new provider:
  *
  * <ol>
- *   <li>Add provider type to LLMProviderType enum
- *   <li>Create implementation of LLMProvider interface
- *   <li>Add configuration properties for the new provider
+ * <li>Add provider type to LLMProviderType enum
+ * <li>Create implementation of LLMProvider interface
+ * <li>Add configuration properties for the new provider
  * </ol>
  */
 @Configuration
@@ -93,17 +97,15 @@ public class AIConfig {
   @Value("${app.ai.openai.organization-id:}")
   private String openaiOrganizationId;
 
-  @Autowired private LLMProviderFactory llmProviderFactory;
+  @Autowired
+  private LLMProviderFactory llmProviderFactory;
 
   /**
-   * Creates the AI chat model bean when AI is enabled. Uses the pluggable LLM Provider system to
-   * create the appropriate model.
+   * Creates the AI chat model bean when AI is enabled. Uses the pluggable LLM
+   * Provider system to create the appropriate model.
    */
   @Bean
-  @ConditionalOnProperty(
-      name = "app.ai.risk-analysis.enabled",
-      havingValue = "true",
-      matchIfMissing = false)
+  @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
   public ChatLanguageModel chatLanguageModel() {
     log.info("Creating ChatLanguageModel with provider: {}", aiProvider);
 
@@ -111,9 +113,7 @@ public class AIConfig {
     try {
       providerType = LLMProviderType.fromConfigValue(aiProvider);
     } catch (IllegalArgumentException e) {
-      log.error(
-          "Invalid AI provider '{}'. Available providers: {}",
-          aiProvider,
+      log.error("Invalid AI provider '{}'. Available providers: {}", aiProvider,
           LLMProviderType.getSupportedProviders());
       throw e;
     }
@@ -121,44 +121,33 @@ public class AIConfig {
     LLMProviderConfig config = buildProviderConfig(providerType);
 
     if (!llmProviderFactory.isProviderAvailable(providerType)) {
-      throw new IllegalStateException(
-          "Provider "
-              + providerType
-              + " is not available. "
-              + "Available providers: "
-              + llmProviderFactory.getAvailableProviders());
+      throw new IllegalStateException("Provider " + providerType + " is not available. " + "Available providers: "
+          + llmProviderFactory.getAvailableProviders());
     }
 
     return llmProviderFactory.createModel(providerType, config);
   }
 
-  /** Build provider-specific configuration based on the selected provider type. */
+  /**
+   * Build provider-specific configuration based on the selected provider type.
+   */
   private LLMProviderConfig buildProviderConfig(LLMProviderType providerType) {
-    LLMProviderConfig.Builder configBuilder =
-        LLMProviderConfig.builder().temperature(temperature).maxTokens(maxTokens);
+    LLMProviderConfig.Builder configBuilder = LLMProviderConfig.builder().temperature(temperature)
+        .maxTokens(maxTokens);
 
     switch (providerType) {
-      case OLLAMA:
-        configBuilder
-            .baseUrl(ollamaBaseUrl)
-            .modelName(ollamaModel)
-            .timeout(Duration.ofSeconds(ollamaTimeout));
+      case OLLAMA :
+        configBuilder.baseUrl(ollamaBaseUrl).modelName(ollamaModel).timeout(Duration.ofSeconds(ollamaTimeout));
         break;
 
-      case RUNPOD:
-        configBuilder
-            .baseUrl(runpodBaseUrl)
-            .apiKey(runpodApiKey)
-            .modelName(runpodModel)
+      case RUNPOD :
+        configBuilder.baseUrl(runpodBaseUrl).apiKey(runpodApiKey).modelName(runpodModel)
             .timeout(Duration.ofSeconds(runpodTimeout))
             .extraParam("pollInterval", Duration.ofSeconds(runpodPollInterval));
         break;
 
-      case OPENAI:
-        configBuilder
-            .apiKey(openaiApiKey)
-            .modelName(openaiModel)
-            .timeout(Duration.ofSeconds(openaiTimeout));
+      case OPENAI :
+        configBuilder.apiKey(openaiApiKey).modelName(openaiModel).timeout(Duration.ofSeconds(openaiTimeout));
 
         if (openaiBaseUrl != null && !openaiBaseUrl.trim().isEmpty()) {
           configBuilder.baseUrl(openaiBaseUrl);
@@ -168,16 +157,14 @@ public class AIConfig {
         }
         break;
 
-      case ANTHROPIC:
-      case GOOGLE:
-      case AZURE_OPENAI:
-        log.warn(
-            "Provider {} is defined but not yet fully implemented. "
-                + "Using default configuration.",
+      case ANTHROPIC :
+      case GOOGLE :
+      case AZURE_OPENAI :
+        log.warn("Provider {} is defined but not yet fully implemented. " + "Using default configuration.",
             providerType);
         break;
 
-      default:
+      default :
         log.warn("Unknown provider type: {}. Using default configuration.", providerType);
     }
 
@@ -196,13 +183,13 @@ public class AIConfig {
     try {
       LLMProviderType providerType = LLMProviderType.fromConfigValue(aiProvider);
       switch (providerType) {
-        case OLLAMA:
+        case OLLAMA :
           return ollamaModel;
-        case RUNPOD:
+        case RUNPOD :
           return runpodModel;
-        case OPENAI:
+        case OPENAI :
           return openaiModel;
-        default:
+        default :
           return ollamaModel;
       }
     } catch (IllegalArgumentException e) {

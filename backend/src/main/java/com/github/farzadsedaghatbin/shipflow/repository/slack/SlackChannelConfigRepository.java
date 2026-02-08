@@ -10,6 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface SlackChannelConfigRepository extends JpaRepository<SlackChannelConfig, Long> {
   List<SlackChannelConfig> findBySlackConfigurationId(Long slackConfigId);
 
-  Optional<SlackChannelConfig> findBySlackConfigurationIdAndChannelName(
-      Long slackConfigId, String channelName);
+  Optional<SlackChannelConfig> findBySlackConfigurationIdAndChannelName(Long slackConfigId, String channelName);
 }

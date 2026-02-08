@@ -8,17 +8,13 @@ import java.util.List;
 import lombok.*;
 
 /**
- * Entity representing a comment on a task or bug report.
- * Supports soft delete and tracks edit history.
+ * Entity representing a comment on a task or bug report. Supports soft delete
+ * and tracks edit history.
  */
 @Entity
-@Table(
-    name = "comments",
-    indexes = {
-        @Index(name = "idx_comments_entity", columnList = "entity_type, entity_id"),
-        @Index(name = "idx_comments_author", columnList = "author_id"),
-        @Index(name = "idx_comments_created_at", columnList = "created_at")
-    })
+@Table(name = "comments", indexes = {@Index(name = "idx_comments_entity", columnList = "entity_type, entity_id"),
+    @Index(name = "idx_comments_author", columnList = "author_id"),
+    @Index(name = "idx_comments_created_at", columnList = "created_at")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,60 +22,60 @@ import lombok.*;
 @Builder
 public class Comment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String content;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "entity_type", nullable = false, length = 20)
-    private CommentEntityType entityType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "entity_type", nullable = false, length = 20)
+  private CommentEntityType entityType;
 
-    @Column(name = "entity_id", nullable = false)
-    private Long entityId;
+  @Column(name = "entity_id", nullable = false)
+  private Long entityId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "author_id", nullable = false)
+  private User author;
 
-    @Column(name = "is_edited", nullable = false)
-    @Builder.Default
-    private Boolean isEdited = false;
+  @Column(name = "is_edited", nullable = false)
+  @Builder.Default
+  private Boolean isEdited = false;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
 
-    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<CommentReactionEntity> reactions = new ArrayList<>();
+  @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  private List<CommentReactionEntity> reactions = new ArrayList<>();
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+  @PrePersist
+  protected void onCreate() {
+    createdAt = LocalDateTime.now();
+  }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = LocalDateTime.now();
+  }
 
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
+  public boolean isDeleted() {
+    return deletedAt != null;
+  }
 
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
-    }
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 
-    public void restore() {
-        this.deletedAt = null;
-    }
+  public void restore() {
+    this.deletedAt = null;
+  }
 }

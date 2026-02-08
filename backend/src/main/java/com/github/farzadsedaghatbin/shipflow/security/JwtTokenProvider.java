@@ -33,17 +33,12 @@ public class JwtTokenProvider {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-    return Jwts.builder()
-        .subject(username)
-        .issuedAt(now)
-        .expiration(expiryDate)
-        .signWith(getSigningKey())
+    return Jwts.builder().subject(username).issuedAt(now).expiration(expiryDate).signWith(getSigningKey())
         .compact();
   }
 
   public String getUsernameFromToken(String token) {
-    Claims claims =
-        Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
+    Claims claims = Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
 
     return claims.getSubject();
   }

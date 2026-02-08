@@ -30,50 +30,28 @@ public class EvidenceService {
   }
 
   public List<EvidenceDTO> getEvidencesByPitchId(Long pitchId) {
-    return evidenceRepository.findByPitchId(pitchId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return evidenceRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public List<EvidenceDTO> getEvidencesByPersonId(Long personId) {
-    return evidenceRepository.findByPersonId(personId).stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return evidenceRepository.findByPersonId(personId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public EvidenceDTO getEvidenceById(Long id) {
-    Evidence evidence =
-        evidenceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Evidence not found with id: " + id));
+    Evidence evidence = evidenceRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Evidence not found with id: " + id));
     return toDTO(evidence);
   }
 
   public EvidenceDTO createEvidence(CreateEvidenceRequest request) {
-    Pitch pitch =
-        pitchRepository
-            .findById(request.getPitchId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Pitch not found with id: " + request.getPitchId()));
+    Pitch pitch = pitchRepository.findById(request.getPitchId())
+        .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
 
-    Person person =
-        personRepository
-            .findById(request.getPersonId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Person not found with id: " + request.getPersonId()));
+    Person person = personRepository.findById(request.getPersonId())
+        .orElseThrow(() -> new IllegalArgumentException("Person not found with id: " + request.getPersonId()));
 
-    Evidence evidence =
-        Evidence.builder()
-            .pitch(pitch)
-            .person(person)
-            .date(request.getDate())
-            .description(request.getDescription())
-            .fileUrl(request.getFileUrl())
-            .build();
+    Evidence evidence = Evidence.builder().pitch(pitch).person(person).date(request.getDate())
+        .description(request.getDescription()).fileUrl(request.getFileUrl()).build();
 
     Evidence saved = evidenceRepository.save(evidence);
 
@@ -84,10 +62,8 @@ public class EvidenceService {
   }
 
   public EvidenceDTO updateEvidence(Long id, CreateEvidenceRequest request) {
-    Evidence evidence =
-        evidenceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Evidence not found with id: " + id));
+    Evidence evidence = evidenceRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Evidence not found with id: " + id));
 
     evidence.setDate(request.getDate());
     evidence.setDescription(request.getDescription());
@@ -102,36 +78,22 @@ public class EvidenceService {
   }
 
   private EvidenceDTO toDTO(Evidence evidence) {
-    return EvidenceDTO.builder()
-        .id(evidence.getId())
-        .pitchId(evidence.getPitch().getId())
+    return EvidenceDTO.builder().id(evidence.getId()).pitchId(evidence.getPitch().getId())
         .pitchTitle(evidence.getPitch().getTitle())
-        .cycleId(
-            evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getId() : null)
-        .cycleName(
-            evidence.getPitch().getCycle() != null
-                ? evidence.getPitch().getCycle().getName()
-                : null)
-        .projectId(
-            evidence.getPitch().getCycle() != null
-                    && evidence.getPitch().getCycle().getProject() != null
-                ? evidence.getPitch().getCycle().getProject().getId()
-                : null)
+        .cycleId(evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getId() : null)
+        .cycleName(evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getName() : null)
+        .projectId(evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
+            ? evidence.getPitch().getCycle().getProject().getId()
+            : null)
         .projectName(
-            evidence.getPitch().getCycle() != null
-                    && evidence.getPitch().getCycle().getProject() != null
+            evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
                 ? evidence.getPitch().getCycle().getProject().getName()
                 : null)
         .projectKey(
-            evidence.getPitch().getCycle() != null
-                    && evidence.getPitch().getCycle().getProject() != null
+            evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
                 ? evidence.getPitch().getCycle().getProject().getProjectKey()
                 : null)
-        .personId(evidence.getPerson().getId())
-        .personName(evidence.getPerson().getName())
-        .date(evidence.getDate())
-        .description(evidence.getDescription())
-        .fileUrl(evidence.getFileUrl())
-        .build();
+        .personId(evidence.getPerson().getId()).personName(evidence.getPerson().getName())
+        .date(evidence.getDate()).description(evidence.getDescription()).fileUrl(evidence.getFileUrl()).build();
   }
 }

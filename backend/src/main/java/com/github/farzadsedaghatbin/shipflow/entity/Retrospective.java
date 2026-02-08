@@ -45,9 +45,11 @@ public class Retrospective {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
-  @Column private LocalDateTime updatedAt;
+  @Column
+  private LocalDateTime updatedAt;
 
-  @Column private LocalDateTime closedAt;
+  @Column
+  private LocalDateTime closedAt;
 
   @OneToMany(mappedBy = "retrospective", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default

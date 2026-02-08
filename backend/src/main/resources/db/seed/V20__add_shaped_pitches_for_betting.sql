@@ -2,11 +2,11 @@
 -- These pitches are ready to be "bet on" and assigned to teams during the betting ceremony
 
 -- Add Cycle 4 for betting demo
-INSERT INTO cycles OVERRIDING SYSTEM VALUE (id, name, start_date, end_date, phase, project_id, is_active) VALUES
+INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) OVERRIDING SYSTEM VALUE VALUES
 (4, 'Cycle 4 - Betting Demo', '2025-12-01', '2026-02-28', 'SHAPING', 1, true);
 
 -- Add teams to Cycle 4
-INSERT INTO teams OVERRIDING SYSTEM VALUE (id, name, cycle_id) VALUES
+INSERT INTO teams (id, name, cycle_id) OVERRIDING SYSTEM VALUE VALUES
 (1, 'Alpha Team', 4),
 (2, 'Beta Team', 4),
 (3, 'Gamma Team', 4);
@@ -23,7 +23,7 @@ INSERT INTO team_assignments (person_id, team_id, role, start_date, is_active) V
 -- 10 SHAPED Pitches for Cycle 4
 -- ===========================================
 
-INSERT INTO pitches OVERRIDING SYSTEM VALUE (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) VALUES
+INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 -- Small batches (1 week)
 (1, 'Password Reset Flow', 'Implement secure password reset with email verification and expiring tokens', 7, 4, NULL, 'SHAPED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, 'User Profile Settings', 'Allow users to update their profile information, avatar, and preferences', 5, 4, NULL, 'SHAPED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -44,17 +44,17 @@ INSERT INTO pitches OVERRIDING SYSTEM VALUE (id, title, description, appetite_da
 -- Generate initial betting slots for all teams in Cycle 4
 -- ===========================================
 
-INSERT INTO betting_slots OVERRIDING SYSTEM VALUE (id, cycle_id, team_id, position, start_date, end_date, pitch_id, notes, created_at, updated_at) VALUES
+INSERT INTO betting_slots (id, cycle_id, team_id, position, start_date, end_date, pitch_id, notes, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 (1, 4, 1, 0, '2025-12-01', '2026-02-28', NULL, 'Alpha Team capacity for betting cycle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, 4, 2, 0, '2025-12-01', '2026-02-28', NULL, 'Beta Team capacity for betting cycle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, 4, 3, 0, '2025-12-01', '2026-02-28', NULL, 'Gamma Team capacity for betting cycle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- Reset sequences to avoid primary key conflicts
--- H2 uses ALTER TABLE to restart identity columns
+-- PostgreSQL uses setval to reset sequences
 -- ===========================================
 
-ALTER TABLE betting_slots ALTER COLUMN id RESTART WITH 100;
-ALTER TABLE pitches ALTER COLUMN id RESTART WITH 100;
-ALTER TABLE teams ALTER COLUMN id RESTART WITH 100;
-ALTER TABLE cycles ALTER COLUMN id RESTART WITH 100;
+SELECT setval(pg_get_serial_sequence('betting_slots', 'id'), 100, false);
+SELECT setval(pg_get_serial_sequence('pitches', 'id'), 100, false);
+SELECT setval(pg_get_serial_sequence('teams', 'id'), 100, false);
+SELECT setval(pg_get_serial_sequence('cycles', 'id'), 100, false);

@@ -44,6 +44,7 @@ import CycleQADashboardPage from './pages/CycleQADashboardPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
 import CircuitBreakerMonitor from './pages/CircuitBreakerMonitor';
+import CooldownActivities from './pages/CooldownActivities';
 import CustomMetrics from './pages/CustomMetrics';
 import MetricBuilder from './pages/MetricBuilder';
 import DashboardManager from './pages/DashboardManager';
@@ -58,6 +59,7 @@ import ProjectTypesGuide from './pages/guides/ProjectTypesGuide';
 import QATestingGuide from './pages/guides/QATestingGuide';
 import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
+import CooldownActivitiesGuide from './pages/guides/CooldownActivitiesGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
@@ -114,6 +116,7 @@ function App() {
                     <Route path="cycles/:id/edit" element={<CycleForm />} />
                     <Route path="cycles/:cycleId/hill-chart" element={<CycleHillChart />} />
                     <Route path="cycles/:cycleId/circuit-breaker" element={<CircuitBreakerMonitor />} />
+                    <Route path="cycles/:cycleId/cooldown" element={<CooldownActivities />} />
 
                     {/* Cycle Workspace */}
                     <Route path="pitches" element={<PitchBoard />} />
@@ -189,6 +192,7 @@ function App() {
                     <Route path="help/qa-testing" element={<QATestingGuide />} />
                     <Route path="help/retrospectives" element={<RetrospectivesGuide />} />
                     <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />
+                    <Route path="help/cooldown-activities" element={<CooldownActivitiesGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
 
 

@@ -17,8 +17,7 @@ public interface DashboardWidgetRepository extends JpaRepository<DashboardWidget
   Optional<DashboardWidget> findByUserIdAndWidgetType(Long userId, String widgetType);
 
   /** Find all visible widgets for a user */
-  List<DashboardWidget> findByUserIdAndIsVisibleOrderByDisplayOrderAsc(
-      Long userId, Boolean isVisible);
+  List<DashboardWidget> findByUserIdAndIsVisibleOrderByDisplayOrderAsc(Long userId, Boolean isVisible);
 
   /** Delete all widgets for a user */
   void deleteByUserId(Long userId);

@@ -31,15 +31,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class AuthControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-  @Autowired private PersonRepository personRepository;
+  @Autowired
+  private PersonRepository personRepository;
 
-  @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired
+  private PasswordEncoder passwordEncoder;
 
   private Person testPerson;
   private User testUser;
@@ -49,24 +54,12 @@ class AuthControllerIntegrationTest {
     userRepository.deleteAll();
     personRepository.deleteAll();
 
-    testPerson =
-        Person.builder()
-            .name("Test User")
-            .email("test@example.com")
-            .skills("Testing")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPerson = Person.builder().name("Test User").email("test@example.com").skills("Testing").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
     testPerson = personRepository.save(testPerson);
 
-    testUser =
-        User.builder()
-            .username("auth-test-user")
-            .password(passwordEncoder.encode("password123"))
-            .role(UserRole.MEMBER)
-            .person(testPerson)
-            .isActive(true)
-            .build();
+    testUser = User.builder().username("auth-test-user").password(passwordEncoder.encode("password123"))
+        .role(UserRole.MEMBER).person(testPerson).isActive(true).build();
     testUser = userRepository.save(testUser);
   }
 
@@ -74,82 +67,56 @@ class AuthControllerIntegrationTest {
   void login_WithValidCredentials_ShouldReturnToken() throws Exception {
     LoginRequest request = new LoginRequest("auth-test-user", "password123");
 
-    mockMvc
-        .perform(
-            post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.token", notNullValue()))
-        .andExpect(jsonPath("$.type", is("Bearer")))
-        .andExpect(jsonPath("$.username", is("auth-test-user")))
-        .andExpect(jsonPath("$.role", is("MEMBER")));
+    mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.token", notNullValue())).andExpect(jsonPath("$.type", is("Bearer")))
+        .andExpect(jsonPath("$.username", is("auth-test-user"))).andExpect(jsonPath("$.role", is("MEMBER")));
   }
 
   @Test
   void login_WithInvalidCredentials_ShouldReturn401() throws Exception {
     LoginRequest request = new LoginRequest("testuser", "wrongpassword");
 
-    mockMvc
-        .perform(
-            post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isUnauthorized());
   }
 
   @Test
   void login_WithNonExistentUser_ShouldReturn401() throws Exception {
     LoginRequest request = new LoginRequest("nonexistent", "password");
 
-    mockMvc
-        .perform(
-            post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isUnauthorized());
   }
 
   @Test
   void register_WithValidData_ShouldCreateUser() throws Exception {
     RegisterRequest request = new RegisterRequest("newuser", "newpassword", UserRole.MEMBER, null);
 
-    mockMvc
-        .perform(
-            post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.username", is("newuser")))
-        .andExpect(jsonPath("$.role", is("MEMBER")));
+    mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.username", is("newuser"))).andExpect(jsonPath("$.role", is("MEMBER")));
   }
 
   @Test
   void register_WithExistingUsername_ShouldReturn400() throws Exception {
-    RegisterRequest request =
-        new RegisterRequest("auth-test-user", "somepassword", UserRole.MEMBER, null);
+    RegisterRequest request = new RegisterRequest("auth-test-user", "somepassword", UserRole.MEMBER, null);
 
-    mockMvc
-        .perform(
-            post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isBadRequest());
+    mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isBadRequest());
   }
 
   @Test
   @WithMockUser(username = "auth-test-user")
   void getCurrentUser_WhenAuthenticated_ShouldReturnUserInfo() throws Exception {
-    mockMvc
-        .perform(get("/api/auth/me"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.username", is("auth-test-user")))
-        .andExpect(jsonPath("$.role", is("MEMBER")));
+    mockMvc.perform(get("/api/auth/me")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.username", is("auth-test-user"))).andExpect(jsonPath("$.role", is("MEMBER")));
   }
 
   @Test
   void getCurrentUser_WhenNotAuthenticated_ShouldReturnError() throws Exception {
-    // When calling /api/auth/me without authentication, the endpoint tries to get the user
+    // When calling /api/auth/me without authentication, the endpoint tries to get
+    // the user
     // but there is no authenticated user, so it returns an error
     mockMvc.perform(get("/api/auth/me")).andExpect(status().is4xxClientError());
   }

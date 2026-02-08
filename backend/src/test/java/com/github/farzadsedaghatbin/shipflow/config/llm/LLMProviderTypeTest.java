@@ -39,10 +39,8 @@ class LLMProviderTypeTest {
 
   @Test
   void fromConfigValue_shouldThrowExceptionForUnknownProvider() {
-    IllegalArgumentException ex =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> LLMProviderType.fromConfigValue("unknown-provider"));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> LLMProviderType.fromConfigValue("unknown-provider"));
     assertTrue(ex.getMessage().contains("Unknown LLM provider"));
     assertTrue(ex.getMessage().contains("ollama"));
   }

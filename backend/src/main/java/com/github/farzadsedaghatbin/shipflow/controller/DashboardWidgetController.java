@@ -28,9 +28,7 @@ public class DashboardWidgetController {
 
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'READ')")
-  @Operation(
-      summary = "Get user's dashboard widgets",
-      description = "Get all widget configurations for the current user")
+  @Operation(summary = "Get user's dashboard widgets", description = "Get all widget configurations for the current user")
   public ResponseEntity<List<DashboardWidgetDTO>> getUserWidgets() {
     Long userId = getCurrentUserId();
     List<DashboardWidgetDTO> widgets = dashboardWidgetService.getUserWidgets(userId);
@@ -39,9 +37,7 @@ public class DashboardWidgetController {
 
   @GetMapping("/visible")
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'READ')")
-  @Operation(
-      summary = "Get visible widgets",
-      description = "Get only visible widgets for the current user")
+  @Operation(summary = "Get visible widgets", description = "Get only visible widgets for the current user")
   public ResponseEntity<List<DashboardWidgetDTO>> getVisibleWidgets() {
     Long userId = getCurrentUserId();
     List<DashboardWidgetDTO> widgets = dashboardWidgetService.getVisibleWidgets(userId);
@@ -50,11 +46,8 @@ public class DashboardWidgetController {
 
   @PostMapping
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
-  @Operation(
-      summary = "Create a new widget",
-      description = "Add a new widget to the user's dashboard")
-  public ResponseEntity<DashboardWidgetDTO> createWidget(
-      @Valid @RequestBody CreateDashboardWidgetRequest request) {
+  @Operation(summary = "Create a new widget", description = "Add a new widget to the user's dashboard")
+  public ResponseEntity<DashboardWidgetDTO> createWidget(@Valid @RequestBody CreateDashboardWidgetRequest request) {
     Long userId = getCurrentUserId();
     DashboardWidgetDTO widget = dashboardWidgetService.createWidget(userId, request);
     return ResponseEntity.ok(widget);
@@ -62,20 +55,16 @@ public class DashboardWidgetController {
 
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
-  @Operation(
-      summary = "Update a widget",
-      description = "Update widget visibility, order, or settings")
-  public ResponseEntity<DashboardWidgetDTO> updateWidget(
-      @PathVariable Long id, @Valid @RequestBody UpdateDashboardWidgetRequest request) {
+  @Operation(summary = "Update a widget", description = "Update widget visibility, order, or settings")
+  public ResponseEntity<DashboardWidgetDTO> updateWidget(@PathVariable Long id,
+      @Valid @RequestBody UpdateDashboardWidgetRequest request) {
     DashboardWidgetDTO widget = dashboardWidgetService.updateWidget(id, request);
     return ResponseEntity.ok(widget);
   }
 
   @PutMapping("/bulk")
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
-  @Operation(
-      summary = "Bulk update widgets",
-      description = "Update multiple widgets at once (useful for reordering)")
+  @Operation(summary = "Bulk update widgets", description = "Update multiple widgets at once (useful for reordering)")
   public ResponseEntity<List<DashboardWidgetDTO>> bulkUpdateWidgets(
       @Valid @RequestBody List<DashboardWidgetDTO> updates) {
     Long userId = getCurrentUserId();
@@ -93,9 +82,7 @@ public class DashboardWidgetController {
 
   @PostMapping("/reset")
   @PreAuthorize("@permissionService.hasPermission('DASHBOARD', 'UPDATE')")
-  @Operation(
-      summary = "Reset to defaults",
-      description = "Reset all widgets to default configuration")
+  @Operation(summary = "Reset to defaults", description = "Reset all widgets to default configuration")
   public ResponseEntity<List<DashboardWidgetDTO>> resetToDefaults() {
     Long userId = getCurrentUserId();
     List<DashboardWidgetDTO> widgets = dashboardWidgetService.resetToDefaults(userId);

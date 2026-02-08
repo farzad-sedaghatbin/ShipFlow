@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Shield,
   Plus,
+  Settings,
+  EyeOff,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +24,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Tooltip,
   TooltipContent,
@@ -48,6 +56,9 @@ const priorityColors: Record<TaskPriority, string> = {
   URGENT: 'bg-red-600',
 };
 
+// Essential columns that should always remain visible when using "hide optional"
+const ESSENTIAL_COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
+
 interface KanbanBoardProps {
   tasks: Task[];
   onStatusChange: (taskId: number, newStatus: TaskStatus) => Promise<void>;
@@ -57,6 +68,8 @@ interface KanbanBoardProps {
   onAddSubtask?: (task: Task) => void;
   onStartTimer?: (task: Task) => void;
   loading?: boolean;
+  visibleColumns?: TaskStatus[];
+  onToggleColumn?: (status: TaskStatus) => void;
 }
 
 interface KanbanCardProps {
@@ -318,8 +331,11 @@ export default function KanbanBoard({
   onDeleteTask,
   onAddSubtask,
   onStartTimer,
-  loading 
+  loading,
+  visibleColumns = KANBAN_COLUMNS.map(col => col.status),
+  onToggleColumn
 }: KanbanBoardProps) {
+  const { t } = useTranslation();
 
   if (loading) {
     return (
@@ -329,23 +345,111 @@ export default function KanbanBoard({
     );
   }
 
+  const visibleColumnsSet = new Set(visibleColumns);
+  const hiddenColumnsCount = KANBAN_COLUMNS.length - visibleColumns.length;
+
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {KANBAN_COLUMNS.map(column => (
-        <KanbanColumn
-          key={column.status}
-          status={column.status}
-          labelKey={column.labelKey}
-          color={column.color}
-          tasks={tasks}
-          onStatusChange={onStatusChange}
-          onViewTask={onViewTask}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-          onAddSubtask={onAddSubtask}
-          onStartTimer={onStartTimer}
-        />
-      ))}
+    <div className="space-y-4">
+      {/* Column Visibility Controls */}
+      {onToggleColumn && (
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="h-4 w-4" />
+                {t('backlogPage.kanban.manageColumns')}
+                {hiddenColumnsCount > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    {hiddenColumnsCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" align="start">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">{t('backlogPage.kanban.columnVisibility')}</h4>
+                <div className="space-y-2">
+                  {KANBAN_COLUMNS.map(column => (
+                    <div key={column.status} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`column-${column.status}`}
+                        checked={visibleColumnsSet.has(column.status)}
+                        onCheckedChange={() => {
+                          onToggleColumn(column.status);
+                        }}
+                      />
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className={cn("w-3 h-3 rounded-full", column.color)} />
+                        <label
+                          htmlFor={`column-${column.status}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          {t(column.labelKey)}
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        KANBAN_COLUMNS.forEach(col => {
+                          if (!visibleColumnsSet.has(col.status)) {
+                            onToggleColumn(col.status);
+                          }
+                        });
+                      }}
+                    >
+                      {t('backlogPage.kanban.showAll')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        // Keep at least TODO, IN_PROGRESS, and DONE visible
+                        KANBAN_COLUMNS.forEach(col => {
+                          if (visibleColumnsSet.has(col.status) && !ESSENTIAL_COLUMNS.includes(col.status)) {
+                            onToggleColumn(col.status);
+                          }
+                        });
+                      }}
+                    >
+                      {t('backlogPage.kanban.hideOptional')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {/* Kanban Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {KANBAN_COLUMNS
+          .filter(column => visibleColumnsSet.has(column.status))
+          .map(column => (
+            <KanbanColumn
+              key={column.status}
+              status={column.status}
+              labelKey={column.labelKey}
+              color={column.color}
+              tasks={tasks}
+              onStatusChange={onStatusChange}
+              onViewTask={onViewTask}
+              onEditTask={onEditTask}
+              onDeleteTask={onDeleteTask}
+              onAddSubtask={onAddSubtask}
+              onStartTimer={onStartTimer}
+            />
+          ))}
+      </div>
     </div>
   );
 }

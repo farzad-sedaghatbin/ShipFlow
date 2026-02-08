@@ -7,11 +7,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardNotificationDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.slack.SlackConfigurationDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.teams.TeamsConfigurationDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,21 +32,32 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class DashboardNotificationServiceTest {
 
-  @Mock private DashboardNotificationRepository notificationRepository;
+  @Mock
+  private DashboardNotificationRepository notificationRepository;
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private SlackIntegrationService slackService;
+  @Mock
+  private SlackIntegrationService slackService;
 
-  @InjectMocks private DashboardNotificationService notificationService;
+  @Mock
+  private TeamsIntegrationService teamsService;
+
+  @InjectMocks
+  private DashboardNotificationService notificationService;
 
   private User testUser;
   private DashboardNotification testNotification;
@@ -53,28 +67,19 @@ class DashboardNotificationServiceTest {
   void setUp() {
     testUser = User.builder().id(1L).username("testuser").build();
 
-    testNotification =
-        DashboardNotification.builder()
-            .id(1L)
-            .user(testUser)
-            .type("OVERDUE_TASK")
-            .title("Test Notification")
-            .message("Test message")
-            .severity("WARNING")
-            .isRead(false)
-            .build();
+    testNotification = DashboardNotification.builder().id(1L).user(testUser).type("OVERDUE_TASK")
+        .title("Test Notification").message("Test message").severity("WARNING").isRead(false).build();
 
     Person assignee = Person.builder().id(1L).name("Test Person").build();
     assignee.setUser(testUser);
 
-    testTask =
-        Task.builder()
-            .id(1L)
-            .title("Test Task")
-            .status(TaskStatus.TODO)
-            .assignee(assignee)
-            .dueDate(LocalDate.now().minusDays(1))
-            .build();
+    testTask = Task.builder().id(1L).title("Test Task").status(TaskStatus.TODO).assignee(assignee)
+        .dueDate(LocalDate.now().minusDays(1)).build();
+
+    // Mock both services to return empty configuration (simulating no external integration)
+    // Use lenient() to avoid UnnecessaryStubbingException for tests that don't use these mocks
+    lenient().when(slackService.getActiveConfiguration()).thenReturn(Optional.empty());
+    lenient().when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty());
   }
 
   @Test
@@ -124,8 +129,7 @@ class DashboardNotificationServiceTest {
   void markAsRead_WhenExists_ShouldMarkNotificationAsRead() {
     // Arrange
     when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
-    when(notificationRepository.save(any(DashboardNotification.class)))
-        .thenReturn(testNotification);
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
     // Act
     DashboardNotificationDTO result = notificationService.markAsRead(1L);
@@ -149,30 +153,15 @@ class DashboardNotificationServiceTest {
   @Test
   void markAllAsRead_ShouldMarkAllUnreadNotifications() {
     // Arrange
-    DashboardNotification notification1 =
-        DashboardNotification.builder()
-            .id(1L)
-            .user(testUser)
-            .type("TEST")
-            .title("Test 1")
-            .severity("INFO")
-            .isRead(false)
-            .build();
+    DashboardNotification notification1 = DashboardNotification.builder().id(1L).user(testUser).type("TEST")
+        .title("Test 1").severity("INFO").isRead(false).build();
 
-    DashboardNotification notification2 =
-        DashboardNotification.builder()
-            .id(2L)
-            .user(testUser)
-            .type("TEST")
-            .title("Test 2")
-            .severity("INFO")
-            .isRead(false)
-            .build();
+    DashboardNotification notification2 = DashboardNotification.builder().id(2L).user(testUser).type("TEST")
+        .title("Test 2").severity("INFO").isRead(false).build();
 
     when(notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(1L, false))
         .thenReturn(Arrays.asList(notification1, notification2));
-    when(notificationRepository.saveAll(anyList()))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
     // Act
     notificationService.markAllAsRead(1L);
@@ -228,16 +217,8 @@ class DashboardNotificationServiceTest {
   @Test
   void cleanupOldNotifications_ShouldDeleteExpiredNotifications() {
     // Arrange
-    DashboardNotification expiredNotification =
-        DashboardNotification.builder()
-            .id(1L)
-            .user(testUser)
-            .type("TEST")
-            .title("Expired")
-            .severity("INFO")
-            .isRead(true)
-            .expiresAt(LocalDateTime.now().minusDays(1))
-            .build();
+    DashboardNotification expiredNotification = DashboardNotification.builder().id(1L).user(testUser).type("TEST")
+        .title("Expired").severity("INFO").isRead(true).expiresAt(LocalDateTime.now().minusDays(1)).build();
 
     when(notificationRepository.findExpiredNotifications(any(LocalDateTime.class)))
         .thenReturn(Arrays.asList(expiredNotification));
@@ -289,46 +270,29 @@ class DashboardNotificationServiceTest {
     TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
     TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
 
-    Team team =
-        Team.builder()
-            .id(1L)
-            .name("Test Team")
-            .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-            .build();
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
 
-    Cycle cycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .teams(new ArrayList<>(Arrays.asList(team)))
-            .pitches(new ArrayList<>())
-            .build();
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD)
+        .teams(new ArrayList<>(Arrays.asList(team))).pitches(new ArrayList<>()).build();
 
-    when(notificationRepository.save(any(DashboardNotification.class)))
-        .thenReturn(testNotification);
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
     // Act
     notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
 
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(
-            eq("CYCLE_PHASE_CHANGED"), any(String.class), eq(null), eq("CYCLE"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
   void notifyCyclePhaseChange_ShouldNotCreateNotificationsWhenPhaseUnchanged() {
     // Arrange
-    Cycle cycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .teams(new ArrayList<>())
-            .pitches(new ArrayList<>())
-            .build();
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD).teams(new ArrayList<>())
+        .pitches(new ArrayList<>()).build();
 
     // Act
     notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.BUILD);
@@ -341,23 +305,17 @@ class DashboardNotificationServiceTest {
   @Test
   void notifyCyclePhaseChange_ShouldHandleCycleWithNoUsers() {
     // Arrange
-    Cycle cycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .phase(CyclePhase.BUILD)
-            .teams(new ArrayList<>())
-            .pitches(new ArrayList<>())
-            .build();
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD).teams(new ArrayList<>())
+        .pitches(new ArrayList<>()).build();
 
     // Act
     notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(
-            eq("CYCLE_PHASE_CHANGED"), any(String.class), eq(null), eq("CYCLE"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -374,55 +332,38 @@ class DashboardNotificationServiceTest {
     TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
     TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
 
-    Team team =
-        Team.builder()
-            .id(1L)
-            .name("Test Team")
-            .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-            .build();
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
 
-    Pitch pitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Overflowing Pitch")
-            .team(team)
-            .isCircuitBreakerTriggered(true)
-            .circuitBreakerReason("Exceeded appetite by 50%")
-            .build();
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(team).isCircuitBreakerTriggered(true)
+        .circuitBreakerReason("Exceeded appetite by 50%").build();
 
-    when(notificationRepository.save(any(DashboardNotification.class)))
-        .thenReturn(testNotification);
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
     // Act
     notificationService.notifyCircuitBreakerTriggered(pitch);
 
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(
-            eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null), eq("PITCH"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
   void notifyCircuitBreakerTriggered_ShouldHandlePitchWithNoTeam() {
     // Arrange
-    Pitch pitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Overflowing Pitch")
-            .team(null)
-            .isCircuitBreakerTriggered(true)
-            .circuitBreakerReason("Exceeded appetite")
-            .build();
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).isCircuitBreakerTriggered(true)
+        .circuitBreakerReason("Exceeded appetite").build();
 
     // Act
     notificationService.notifyCircuitBreakerTriggered(pitch);
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(
-            eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null), eq("PITCH"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -439,27 +380,23 @@ class DashboardNotificationServiceTest {
     TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
     TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
 
-    Team team =
-        Team.builder()
-            .id(1L)
-            .name("Test Team")
-            .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-            .build();
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
 
     Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(team).build();
 
     String reason = "Could not fit in time box";
 
-    when(notificationRepository.save(any(DashboardNotification.class)))
-        .thenReturn(testNotification);
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
     // Act
     notificationService.notifyPitchKilled(pitch, reason);
 
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -474,7 +411,123 @@ class DashboardNotificationServiceTest {
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
-    verify(slackService, times(1))
-        .sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"), eq(1L));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToSlackWhenConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
+        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Simulate Slack is configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty()); // Teams not configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToTeamsWhenConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.empty()); // Slack not configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
+        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Simulate Teams is configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToBothWhenBothConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
+        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Slack configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
+        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Teams configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+    verify(teamsService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToSlackWhenConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
+        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Simulate Slack is configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty()); // Teams not configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToTeamsWhenConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.empty()); // Slack not configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
+        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Simulate Teams is configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToBothWhenBothConfigured() {
+    // Arrange
+    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
+        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Slack configured
+    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
+        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Teams configured
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+    verify(teamsService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
   }
 }

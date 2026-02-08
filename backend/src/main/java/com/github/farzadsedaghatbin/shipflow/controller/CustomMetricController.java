@@ -28,8 +28,7 @@ public class CustomMetricController {
 
   /** Create a new custom metric */
   @PostMapping
-  public ResponseEntity<CustomMetricDTO> createMetric(
-      @AuthenticationPrincipal UserDetails userDetails,
+  public ResponseEntity<CustomMetricDTO> createMetric(@AuthenticationPrincipal UserDetails userDetails,
       @Valid @RequestBody CreateCustomMetricRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Creating custom metric for user: {}", userId);
@@ -39,8 +38,7 @@ public class CustomMetricController {
 
   /** Get all custom metrics for the current user */
   @GetMapping
-  public ResponseEntity<List<CustomMetricDTO>> getUserMetrics(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<List<CustomMetricDTO>> getUserMetrics(@AuthenticationPrincipal UserDetails userDetails) {
     Long userId = getUserId(userDetails);
     log.info("Fetching custom metrics for user: {}", userId);
     List<CustomMetricDTO> metrics = customMetricService.getUserMetrics(userId);
@@ -49,8 +47,8 @@ public class CustomMetricController {
 
   /** Get a specific metric by ID */
   @GetMapping("/{id}")
-  public ResponseEntity<CustomMetricDTO> getMetric(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<CustomMetricDTO> getMetric(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Fetching metric {} for user: {}", id, userId);
     CustomMetricDTO metric = customMetricService.getMetric(userId, id);
@@ -59,10 +57,8 @@ public class CustomMetricController {
 
   /** Update an existing custom metric */
   @PutMapping("/{id}")
-  public ResponseEntity<CustomMetricDTO> updateMetric(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long id,
-      @Valid @RequestBody UpdateCustomMetricRequest request) {
+  public ResponseEntity<CustomMetricDTO> updateMetric(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id, @Valid @RequestBody UpdateCustomMetricRequest request) {
     Long userId = getUserId(userDetails);
     log.info("Updating metric {} for user: {}", id, userId);
     CustomMetricDTO metric = customMetricService.updateMetric(userId, id, request);
@@ -71,8 +67,7 @@ public class CustomMetricController {
 
   /** Delete a custom metric */
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteMetric(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<Void> deleteMetric(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Deleting metric {} for user: {}", id, userId);
     customMetricService.deleteMetric(userId, id);
@@ -81,8 +76,8 @@ public class CustomMetricController {
 
   /** Calculate the current value of a metric */
   @PostMapping("/{id}/calculate")
-  public ResponseEntity<MetricValueDTO> calculateMetricValue(
-      @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+  public ResponseEntity<MetricValueDTO> calculateMetricValue(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Calculating value for metric {} (user: {})", id, userId);
     MetricValueDTO value = customMetricService.calculateMetricValue(userId, id);
@@ -91,10 +86,8 @@ public class CustomMetricController {
 
   /** Get historical values for a metric */
   @GetMapping("/{id}/history")
-  public ResponseEntity<List<MetricValueDTO>> getMetricHistory(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @PathVariable Long id,
-      @RequestParam(defaultValue = "30") int limit) {
+  public ResponseEntity<List<MetricValueDTO>> getMetricHistory(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable Long id, @RequestParam(defaultValue = "30") int limit) {
     Long userId = getUserId(userDetails);
     log.info("Fetching history for metric {} (user: {}, limit: {})", id, userId, limit);
     List<MetricValueDTO> history = customMetricService.getMetricHistory(userId, id, limit);
@@ -103,19 +96,14 @@ public class CustomMetricController {
 
   /** Validate a formula without saving */
   @PostMapping("/validate")
-  public ResponseEntity<Map<String, Object>> validateFormula(
-      @RequestBody Map<String, String> request) {
+  public ResponseEntity<Map<String, Object>> validateFormula(@RequestBody Map<String, String> request) {
     String formula = request.get("formula");
     log.info("Validating formula");
 
     MetricFormulaParser.ValidationResult result = customMetricService.validateFormula(formula);
 
-    return ResponseEntity.ok(
-        Map.of(
-            "valid",
-            result.isValid(),
-            "errorMessage",
-            result.getErrorMessage() != null ? result.getErrorMessage() : ""));
+    return ResponseEntity.ok(Map.of("valid", result.isValid(), "errorMessage",
+        result.getErrorMessage() != null ? result.getErrorMessage() : ""));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
@@ -131,9 +119,7 @@ public class CustomMetricController {
   }
 
   private Long getUserId(UserDetails userDetails) {
-    return userRepository
-        .findByUsername(userDetails.getUsername())
-        .map(User::getId)
+    return userRepository.findByUsername(userDetails.getUsername()).map(User::getId)
         .orElseThrow(() -> new RuntimeException("User not found"));
   }
 }

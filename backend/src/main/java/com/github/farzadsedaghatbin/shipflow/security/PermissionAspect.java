@@ -13,9 +13,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 /**
- * AOP Aspect for enforcing @RequirePermission annotations. Intercepts method calls annotated
- * with @RequirePermission and checks if the current user has the required permission before
- * allowing the method to execute.
+ * AOP Aspect for enforcing @RequirePermission annotations. Intercepts method
+ * calls annotated with @RequirePermission and checks if the current user has
+ * the required permission before allowing the method to execute.
  */
 @Aspect
 @Component
@@ -45,26 +45,19 @@ public class PermissionAspect {
       return;
     }
 
-    log.debug(
-        "Checking permission for method: {}.{}",
-        joinPoint.getTarget().getClass().getSimpleName(),
+    log.debug("Checking permission for method: {}.{}", joinPoint.getTarget().getClass().getSimpleName(),
         method.getName());
 
     // Check if user has the required permission
     if (!permissionService.hasPermission(annotation.resource(), annotation.permission())) {
-      log.warn(
-          "Permission denied for method: {}.{} - Required: {} on {}",
-          joinPoint.getTarget().getClass().getSimpleName(),
-          method.getName(),
-          annotation.permission(),
+      log.warn("Permission denied for method: {}.{} - Required: {} on {}",
+          joinPoint.getTarget().getClass().getSimpleName(), method.getName(), annotation.permission(),
           annotation.resource());
 
       throw new AccessDeniedException(annotation.message());
     }
 
-    log.debug(
-        "Permission granted for method: {}.{}",
-        joinPoint.getTarget().getClass().getSimpleName(),
+    log.debug("Permission granted for method: {}.{}", joinPoint.getTarget().getClass().getSimpleName(),
         method.getName());
   }
 }

@@ -1,6 +1,7 @@
 import { ReactNode, Children, HTMLAttributes } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface StaggeredListProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -25,6 +26,19 @@ const itemVariants: Variants = {
   },
 };
 
+// Reduced motion variants - instant appearance without movement
+const reducedMotionItemVariants: Variants = {
+  hidden: { 
+    opacity: 0, 
+  },
+  visible: { 
+    opacity: 1, 
+    transition: {
+      duration: 0.01,
+    },
+  },
+};
+
 export function StaggeredList({
   children,
   staggerDelay = 0.08,
@@ -32,6 +46,9 @@ export function StaggeredList({
   className,
   ...props
 }: StaggeredListProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const currentItemVariants = prefersReducedMotion ? reducedMotionItemVariants : itemVariants;
+  
   return (
     <div className={cn(className)} {...props}>
       <motion.div
@@ -40,8 +57,8 @@ export function StaggeredList({
           visible: {
             opacity: 1,
             transition: {
-              staggerChildren: staggerDelay,
-              delayChildren: initialDelay,
+              staggerChildren: prefersReducedMotion ? 0 : staggerDelay,
+              delayChildren: prefersReducedMotion ? 0 : initialDelay,
             },
           },
         }}
@@ -49,7 +66,7 @@ export function StaggeredList({
         animate="visible"
       >
         {Children.map(children, (child) => (
-          <motion.div variants={itemVariants}>
+          <motion.div variants={currentItemVariants}>
             {child}
           </motion.div>
         ))}
@@ -59,8 +76,11 @@ export function StaggeredList({
 }
 
 export function StaggeredItem({ children }: { children: ReactNode }) {
+  const prefersReducedMotion = useReducedMotion();
+  const currentItemVariants = prefersReducedMotion ? reducedMotionItemVariants : itemVariants;
+  
   return (
-    <motion.div variants={itemVariants}>
+    <motion.div variants={currentItemVariants}>
       {children}
     </motion.div>
   );

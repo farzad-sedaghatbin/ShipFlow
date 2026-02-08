@@ -38,18 +38,11 @@ public class AdminController {
       }
 
       // Add sample hill chart points
-      addSamplePoint(
-          pitch, "Backend API Development", "Build RESTful API endpoints and business logic", 75);
-      addSamplePoint(
-          pitch, "Database Schema", "Design and implement database tables and relationships", 95);
+      addSamplePoint(pitch, "Backend API Development", "Build RESTful API endpoints and business logic", 75);
+      addSamplePoint(pitch, "Database Schema", "Design and implement database tables and relationships", 95);
       addSamplePoint(pitch, "Frontend Components", "Create reusable UI components and pages", 45);
-      addSamplePoint(
-          pitch,
-          "Authentication & Security",
-          "Implement JWT auth and role-based access control",
-          60);
-      addSamplePoint(
-          pitch, "Testing & Documentation", "Write unit tests and API documentation", 25);
+      addSamplePoint(pitch, "Authentication & Security", "Implement JWT auth and role-based access control", 60);
+      addSamplePoint(pitch, "Testing & Documentation", "Write unit tests and API documentation", 25);
 
       count++;
     }

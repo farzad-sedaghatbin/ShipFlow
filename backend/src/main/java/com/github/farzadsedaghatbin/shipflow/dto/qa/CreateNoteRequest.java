@@ -30,5 +30,6 @@ public class CreateNoteRequest {
   private Long contextId;
 
   /** Whether to include this note in the knowledge base. */
-  @Builder.Default private Boolean includeInKnowledge = true;
+  @Builder.Default
+  private Boolean includeInKnowledge = true;
 }

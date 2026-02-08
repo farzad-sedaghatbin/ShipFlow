@@ -22,17 +22,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Unit tests for GitHubAppOAuthService Tests OAuth flow, installation management, and bulk
- * repository sync
+ * Unit tests for GitHubAppOAuthService Tests OAuth flow, installation
+ * management, and bulk repository sync
  */
 @ExtendWith(MockitoExtension.class)
 class GitHubAppOAuthServiceTest {
 
-  @Mock private GitHubAppInstallationRepository installationRepository;
+  @Mock
+  private GitHubAppInstallationRepository installationRepository;
 
-  @Mock private GitHubRepositoryRepository repositoryRepository;
+  @Mock
+  private GitHubRepositoryRepository repositoryRepository;
 
-  @Mock private RestTemplate restTemplate;
+  @Mock
+  private RestTemplate restTemplate;
 
   private GitHubAppOAuthService service;
   private ObjectMapper objectMapper;
@@ -40,9 +43,7 @@ class GitHubAppOAuthServiceTest {
   @BeforeEach
   void setUp() {
     objectMapper = new ObjectMapper();
-    service =
-        new GitHubAppOAuthService(
-            installationRepository, repositoryRepository, objectMapper, restTemplate);
+    service = new GitHubAppOAuthService(installationRepository, repositoryRepository, objectMapper, restTemplate);
 
     // Set configuration values using reflection
     ReflectionTestUtils.setField(service, "appId", "123456");
@@ -53,9 +54,7 @@ class GitHubAppOAuthServiceTest {
   @Test
   void isAppConfigured_withAllConfig_returnsTrue() {
     // Given - configured in setUp with appId and appName
-    ReflectionTestUtils.setField(
-        service,
-        "privateKey",
+    ReflectionTestUtils.setField(service, "privateKey",
         "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----");
 
     // When
@@ -101,11 +100,9 @@ class GitHubAppOAuthServiceTest {
 
     // Then
     assertThat(response).isNotNull();
-    assertThat(response.getAuthorizationUrl())
-        .contains("github.com/apps/test-shipflow/installations/new");
+    assertThat(response.getAuthorizationUrl()).contains("github.com/apps/test-shipflow/installations/new");
     assertThat(response.getState()).isNotNull();
-    assertThat(response.getCallbackUrl())
-        .isEqualTo("https://shipflow.example.com/api/github/app/callback");
+    assertThat(response.getCallbackUrl()).isEqualTo("https://shipflow.example.com/api/github/app/callback");
     assertThat(response.getInstructions()).isNotEmpty();
   }
 
@@ -145,8 +142,7 @@ class GitHubAppOAuthServiceTest {
     String invalidState = "invalid-state";
 
     // When
-    GitHubOAuthCallbackResult result =
-        service.processCallback(installationId, invalidState, "install");
+    GitHubOAuthCallbackResult result = service.processCallback(installationId, invalidState, "install");
 
     // Then
     assertThat(result.isSuccess()).isFalse();
@@ -159,8 +155,7 @@ class GitHubAppOAuthServiceTest {
     // Given
     GitHubAppInstallation installation1 = createTestInstallation(1L, "org1", "Organization");
     GitHubAppInstallation installation2 = createTestInstallation(2L, "org2", "Organization");
-    when(installationRepository.findByIsActiveTrue())
-        .thenReturn(Arrays.asList(installation1, installation2));
+    when(installationRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(installation1, installation2));
 
     // When
     List<GitHubAppInstallationDTO> result = service.getAllInstallations();
@@ -231,8 +226,7 @@ class GitHubAppOAuthServiceTest {
     assertThat(status.get("appName")).isEqualTo("test-shipflow");
     assertThat(status.get("totalInstallations")).isEqualTo(1);
     assertThat(status.get("totalRepositories")).isEqualTo(50L);
-    assertThat(status.get("installationUrl"))
-        .isEqualTo("https://github.com/apps/test-shipflow/installations/new");
+    assertThat(status.get("installationUrl")).isEqualTo("https://github.com/apps/test-shipflow/installations/new");
   }
 
   @Test
@@ -278,8 +272,7 @@ class GitHubAppOAuthServiceTest {
 
   // Helper methods
 
-  private GitHubAppInstallation createTestInstallation(
-      Long id, String accountLogin, String accountType) {
+  private GitHubAppInstallation createTestInstallation(Long id, String accountLogin, String accountType) {
     GitHubAppInstallation installation = new GitHubAppInstallation();
     installation.setId(id);
     installation.setInstallationId(1000L + id);

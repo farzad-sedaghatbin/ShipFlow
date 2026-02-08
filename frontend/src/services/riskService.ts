@@ -156,7 +156,260 @@ export const riskService = {
     const response = await api.get<PitchRiskDTO>(`/risk/pitch/${pitchId}`);
     return response.data;
   },
+
+  // ===========================================
+  // ASYNC AI ADVISOR (Non-blocking)
+  // ===========================================
+
+  /**
+   * Start async pitch risk analysis with AI
+   * Returns immediately with a jobId for polling
+   */
+  startAsyncPitchRiskAnalysis: (pitchId: number) =>
+    api.post<AsyncJobResponse>(`/risk/async/pitch/${pitchId}/analyze`),
+
+  /**
+   * Start async cycle risk analysis with AI
+   * Returns immediately with a jobId for polling
+   */
+  startAsyncCycleRiskAnalysis: (cycleId: number) =>
+    api.post<AsyncJobResponse>(`/risk/async/cycle/${cycleId}/analyze`),
+
+  /**
+   * Start async Q&A question
+   * Returns immediately with a jobId for polling
+   */
+  startAsyncQuestion: (pitchId: number, question: string) =>
+    api.post<AsyncJobResponse>(`/risk/async/pitch/${pitchId}/ask`, { question }),
+
+  /**
+   * Get job status (for polling)
+   */
+  getJobStatus: (jobId: string) =>
+    api.get<JobStatusResponse>(`/risk/async/jobs/${jobId}/status`),
+
+  /**
+   * Get pitch risk result from completed job
+   */
+  getAsyncPitchRiskResult: (jobId: string) =>
+    api.get<PitchRiskDTO>(`/risk/async/jobs/${jobId}/pitch-risk`),
+
+  /**
+   * Get cycle risk result from completed job
+   */
+  getAsyncCycleRiskResult: (jobId: string) =>
+    api.get<CycleRiskOverviewDTO>(`/risk/async/jobs/${jobId}/cycle-risk`),
+
+  /**
+   * Get Q&A result from completed job
+   */
+  getAsyncQAResult: (jobId: string) =>
+    api.get<RiskQuestionResponse>(`/risk/async/jobs/${jobId}/qa`),
+
+  /**
+   * Cancel an async job
+   */
+  cancelAsyncJob: (jobId: string) =>
+    api.delete<{ jobId: string; cancelled: boolean; message: string }>(`/risk/async/jobs/${jobId}`),
 };
+
+// ===========================================
+// ASYNC JOB TYPES
+// ===========================================
+
+export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export interface AsyncJobResponse {
+  cached?: boolean;
+  jobId?: string;
+  status?: string;
+  message?: string;
+  result?: PitchRiskDTO | CycleRiskOverviewDTO;
+}
+
+export interface JobStatusResponse {
+  jobId: string;
+  status: JobStatus;
+  jobType: 'pitch_risk' | 'cycle_risk' | 'qa';
+  contextId: number;
+  createdAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+  hasResult: boolean;
+}
+
+// ===========================================
+// ASYNC POLLING UTILITY
+// ===========================================
+
+/**
+ * Poll for async AI job completion with exponential backoff
+ * 
+ * @param jobId - The job ID to poll
+ * @param maxAttempts - Maximum polling attempts (default: 30 = ~2 minutes)
+ * @param initialDelayMs - Initial delay in ms (default: 1000)
+ * @param onStatusChange - Callback when status changes (for UI updates)
+ * @returns Final job status when completed or failed
+ */
+export async function pollJobStatus(
+  jobId: string,
+  maxAttempts = 30,
+  initialDelayMs = 1000,
+  onStatusChange?: (status: JobStatusResponse) => void
+): Promise<JobStatusResponse> {
+  let delay = initialDelayMs;
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    try {
+      const response = await riskService.getJobStatus(jobId);
+      const status = response.data;
+      
+      onStatusChange?.(status);
+      
+      if (status.status === 'COMPLETED' || status.status === 'FAILED') {
+        return status;
+      }
+      
+      // Wait before next poll (exponential backoff, max 5 seconds)
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay = Math.min(delay * 1.5, 5000);
+      attempts++;
+    } catch (error) {
+      console.error('Error polling job status:', error);
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  // Timeout - return a failed status
+  return {
+    jobId,
+    status: 'FAILED',
+    jobType: 'pitch_risk',
+    contextId: 0,
+    createdAt: new Date().toISOString(),
+    errorMessage: 'Polling timeout - job took too long',
+    hasResult: false,
+  };
+}
+
+/**
+ * Convenience function: Start async pitch risk analysis and poll until complete
+ * CACHE-FIRST: Returns immediately if result is cached (no polling needed)
+ */
+export async function fetchPitchRiskAsync(
+  pitchId: number,
+  onStatusChange?: (status: JobStatusResponse) => void
+): Promise<PitchRiskDTO | null> {
+  try {
+    // Start the async job (or get cached result)
+    const startResponse = await riskService.startAsyncPitchRiskAnalysis(pitchId);
+    const data = startResponse.data as AsyncJobResponse;
+    
+    // CACHE HIT: Return immediately
+    if (data.cached && data.result) {
+      onStatusChange?.({
+        jobId: 'cached',
+        status: 'COMPLETED',
+        jobType: 'pitch_risk',
+        contextId: pitchId,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        hasResult: true,
+      });
+      return data.result as PitchRiskDTO;
+    }
+    
+    // CACHE MISS: Poll for result
+    const jobId = data.jobId!;
+    const finalStatus = await pollJobStatus(jobId, 30, 1000, onStatusChange);
+    
+    if (finalStatus.status === 'COMPLETED' && finalStatus.hasResult) {
+      const result = await riskService.getAsyncPitchRiskResult(jobId);
+      return result.data;
+    }
+    
+    console.error('Async pitch risk analysis failed:', finalStatus.errorMessage);
+    return null;
+  } catch (error) {
+    console.error('Error in async pitch risk analysis:', error);
+    return null;
+  }
+}
+
+/**
+ * Convenience function: Start async cycle risk analysis and poll until complete
+ * CACHE-FIRST: Returns immediately if result is cached (no polling needed)
+ */
+export async function fetchCycleRiskAsync(
+  cycleId: number,
+  onStatusChange?: (status: JobStatusResponse) => void
+): Promise<CycleRiskOverviewDTO | null> {
+  try {
+    // Start the async job (or get cached result)
+    const startResponse = await riskService.startAsyncCycleRiskAnalysis(cycleId);
+    const data = startResponse.data as AsyncJobResponse;
+    
+    // CACHE HIT: Return immediately
+    if (data.cached && data.result) {
+      onStatusChange?.({
+        jobId: 'cached',
+        status: 'COMPLETED',
+        jobType: 'cycle_risk',
+        contextId: cycleId,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        hasResult: true,
+      });
+      return data.result as CycleRiskOverviewDTO;
+    }
+    
+    // CACHE MISS: Poll for result
+    const jobId = data.jobId!;
+    const finalStatus = await pollJobStatus(jobId, 30, 1000, onStatusChange);
+    
+    if (finalStatus.status === 'COMPLETED' && finalStatus.hasResult) {
+      const result = await riskService.getAsyncCycleRiskResult(jobId);
+      return result.data;
+    }
+    
+    console.error('Async cycle risk analysis failed:', finalStatus.errorMessage);
+    return null;
+  } catch (error) {
+    console.error('Error in async cycle risk analysis:', error);
+    return null;
+  }
+}
+
+/**
+ * Convenience function: Start async Q&A and poll until complete
+ */
+export async function askQuestionAsync(
+  pitchId: number,
+  question: string,
+  onStatusChange?: (status: JobStatusResponse) => void
+): Promise<RiskQuestionResponse | null> {
+  try {
+    // Start the async job (Q&A is not cached, always goes async)
+    const startResponse = await riskService.startAsyncQuestion(pitchId, question);
+    const jobId = startResponse.data.jobId!; // Q&A always returns jobId
+    
+    // Poll until complete
+    const finalStatus = await pollJobStatus(jobId, 60, 1000, onStatusChange); // Q&A may take longer
+    
+    if (finalStatus.status === 'COMPLETED' && finalStatus.hasResult) {
+      const result = await riskService.getAsyncQAResult(jobId);
+      return result.data;
+    }
+    
+    console.error('Async Q&A failed:', finalStatus.errorMessage);
+    return null;
+  } catch (error) {
+    console.error('Error in async Q&A:', error);
+    return null;
+  }
+}
 
 // Helper functions for risk display
 export const getRiskLevelColor = (level: RiskLevel): 'success' | 'warning' | 'error' | 'info' => {

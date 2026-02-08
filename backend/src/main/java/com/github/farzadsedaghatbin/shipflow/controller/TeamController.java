@@ -52,8 +52,7 @@ public class TeamController {
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('TEAM', 'UPDATE')")
   @Operation(summary = "Update a team")
-  public ResponseEntity<TeamDTO> updateTeam(
-      @PathVariable Long id, @Valid @RequestBody CreateTeamRequest request) {
+  public ResponseEntity<TeamDTO> updateTeam(@PathVariable Long id, @Valid @RequestBody CreateTeamRequest request) {
     return ResponseEntity.ok(teamService.updateTeam(id, request));
   }
 

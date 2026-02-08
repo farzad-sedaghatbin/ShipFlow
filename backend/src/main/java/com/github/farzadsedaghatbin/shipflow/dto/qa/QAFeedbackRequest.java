@@ -21,7 +21,10 @@ public class QAFeedbackRequest {
   @NotNull(message = "Feedback type is required")
   private QAFeedbackType feedbackType;
 
-  /** User's correction or additional notes. Required when feedbackType is CORRECTED. */
+  /**
+   * User's correction or additional notes. Required when feedbackType is
+   * CORRECTED.
+   */
   @Size(max = 5000, message = "Correction must be at most 5000 characters")
   private String correction;
 }

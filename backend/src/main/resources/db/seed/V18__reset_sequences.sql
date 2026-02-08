@@ -2,55 +2,55 @@
 -- This ensures auto-generated IDs don't conflict with manually inserted seed data
 
 -- Reset projects sequence to max(id) + 1
-ALTER TABLE projects ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM projects);
+SELECT setval(pg_get_serial_sequence('projects', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM projects), false);
 
 -- Reset persons sequence
-ALTER TABLE persons ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM persons);
+SELECT setval(pg_get_serial_sequence('persons', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM persons), false);
 
 -- Reset users sequence
-ALTER TABLE users ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM users);
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM users), false);
 
 -- Reset cycles sequence
-ALTER TABLE cycles ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM cycles);
+SELECT setval(pg_get_serial_sequence('cycles', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM cycles), false);
 
 -- Reset teams sequence
-ALTER TABLE teams ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM teams);
+SELECT setval(pg_get_serial_sequence('teams', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM teams), false);
 
 -- Reset pitches sequence
-ALTER TABLE pitches ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM pitches);
+SELECT setval(pg_get_serial_sequence('pitches', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM pitches), false);
 
 -- Reset hill_chart_points sequence
-ALTER TABLE hill_chart_points ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM hill_chart_points);
+SELECT setval(pg_get_serial_sequence('hill_chart_points', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM hill_chart_points), false);
 
 -- Reset work_logs sequence
-ALTER TABLE work_logs ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM work_logs);
+SELECT setval(pg_get_serial_sequence('work_logs', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM work_logs), false);
 
 -- Reset meetings sequence
-ALTER TABLE meetings ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM meetings);
+SELECT setval(pg_get_serial_sequence('meetings', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM meetings), false);
 
 -- Reset tasks sequence
-ALTER TABLE tasks ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM tasks);
+SELECT setval(pg_get_serial_sequence('tasks', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM tasks), false);
 
 -- Reset uploaded_documents sequence
-ALTER TABLE uploaded_documents ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM uploaded_documents);
+SELECT setval(pg_get_serial_sequence('uploaded_documents', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM uploaded_documents), false);
 
 -- Reset knowledge_items sequence
-ALTER TABLE knowledge_items ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM knowledge_items);
+SELECT setval(pg_get_serial_sequence('knowledge_items', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM knowledge_items), false);
 
 -- Reset qa_interactions sequence
-ALTER TABLE qa_interactions ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM qa_interactions);
+SELECT setval(pg_get_serial_sequence('qa_interactions', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM qa_interactions), false);
 
 -- Reset manual_notes sequence
-ALTER TABLE manual_notes ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM manual_notes);
+SELECT setval(pg_get_serial_sequence('manual_notes', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM manual_notes), false);
 
 -- Reset test_cases sequence
-ALTER TABLE test_cases ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM test_cases);
+SELECT setval(pg_get_serial_sequence('test_cases', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM test_cases), false);
 
 -- Reset bug_reports sequence
-ALTER TABLE bug_reports ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM bug_reports);
+SELECT setval(pg_get_serial_sequence('bug_reports', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM bug_reports), false);
 
 -- Reset test_runs sequence
-ALTER TABLE test_runs ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM test_runs);
+SELECT setval(pg_get_serial_sequence('test_runs', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM test_runs), false);
 
 -- Reset evidences table sequence
-ALTER TABLE evidences ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM evidences);
+SELECT setval(pg_get_serial_sequence('evidences', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM evidences), false);

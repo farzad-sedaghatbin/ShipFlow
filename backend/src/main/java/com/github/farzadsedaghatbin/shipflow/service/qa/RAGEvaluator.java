@@ -18,8 +18,8 @@ public class RAGEvaluator {
   private static final Pattern SOURCE_CITATION_PATTERN = Pattern.compile("\\[Source \\d+");
 
   /** Evaluate RAG quality for a Q&A interaction. */
-  public RAGEvaluationMetrics evaluate(
-      String question, String answer, List<EmbeddingMatch<TextSegment>> retrievedDocs) {
+  public RAGEvaluationMetrics evaluate(String question, String answer,
+      List<EmbeddingMatch<TextSegment>> retrievedDocs) {
 
     // Calculate retrieval relevance
     double retrievalRelevance = calculateRetrievalRelevance(retrievedDocs);
@@ -38,30 +38,24 @@ public class RAGEvaluator {
     int docsCited = countCitations(answer);
 
     // Average similarity score
-    double avgSimilarity =
-        retrievedDocs.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0.0);
+    double avgSimilarity = retrievedDocs.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0.0);
 
-    return RAGEvaluationMetrics.builder()
-        .retrievalRelevance(retrievalRelevance)
-        .faithfulness(faithfulness)
-        .answerRelevance(answerRelevance)
-        .contextUtilization(contextUtilization)
-        .documentsRetrieved(docsRetrieved)
-        .documentsCited(docsCited)
-        .averageSimilarityScore(avgSimilarity * 100)
+    return RAGEvaluationMetrics.builder().retrievalRelevance(retrievalRelevance).faithfulness(faithfulness)
+        .answerRelevance(answerRelevance).contextUtilization(contextUtilization)
+        .documentsRetrieved(docsRetrieved).documentsCited(docsCited).averageSimilarityScore(avgSimilarity * 100)
         .build();
   }
 
   /**
-   * Calculate how relevant the retrieved documents are. Based on similarity scores and document
-   * count.
+   * Calculate how relevant the retrieved documents are. Based on similarity
+   * scores and document count.
    */
   private double calculateRetrievalRelevance(List<EmbeddingMatch<TextSegment>> retrievedDocs) {
-    if (retrievedDocs.isEmpty()) return 0.0;
+    if (retrievedDocs.isEmpty())
+      return 0.0;
 
     // Average similarity score
-    double avgScore =
-        retrievedDocs.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0.0);
+    double avgScore = retrievedDocs.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0.0);
 
     // Bonus for having multiple relevant sources (up to 5)
     double diversityBonus = Math.min(retrievedDocs.size() / 5.0, 1.0) * 10;
@@ -70,17 +64,17 @@ public class RAGEvaluator {
   }
 
   /**
-   * Calculate faithfulness - whether answer stays grounded in sources. Low score indicates
-   * potential hallucination.
+   * Calculate faithfulness - whether answer stays grounded in sources. Low score
+   * indicates potential hallucination.
    */
-  private double calculateFaithfulness(
-      String answer, List<EmbeddingMatch<TextSegment>> retrievedDocs) {
-    if (answer == null || answer.isEmpty()) return 0.0;
-    if (retrievedDocs.isEmpty()) return 50.0; // Neutral if no sources
+  private double calculateFaithfulness(String answer, List<EmbeddingMatch<TextSegment>> retrievedDocs) {
+    if (answer == null || answer.isEmpty())
+      return 0.0;
+    if (retrievedDocs.isEmpty())
+      return 50.0; // Neutral if no sources
 
     // Check for explicit statements that indicate no information found
-    if (answer.toLowerCase().contains("couldn't find")
-        || answer.toLowerCase().contains("no relevant information")
+    if (answer.toLowerCase().contains("couldn't find") || answer.toLowerCase().contains("no relevant information")
         || answer.toLowerCase().contains("don't have enough information")) {
       return 100.0; // Honest about limitations = high faithfulness
     }
@@ -113,7 +107,8 @@ public class RAGEvaluator {
 
   /** Calculate how well the answer addresses the question. */
   private double calculateAnswerRelevance(String question, String answer) {
-    if (question == null || answer == null) return 0.0;
+    if (question == null || answer == null)
+      return 0.0;
 
     String questionLower = question.toLowerCase();
     String answerLower = answer.toLowerCase();
@@ -125,7 +120,8 @@ public class RAGEvaluator {
 
     for (String word : questionWords) {
       // Skip common words
-      if (word.length() <= 3 || isCommonWord(word)) continue;
+      if (word.length() <= 3 || isCommonWord(word))
+        continue;
 
       totalKeyTerms++;
       if (answerLower.contains(word)) {
@@ -133,7 +129,8 @@ public class RAGEvaluator {
       }
     }
 
-    if (totalKeyTerms == 0) return 70.0; // Default for short questions
+    if (totalKeyTerms == 0)
+      return 70.0; // Default for short questions
 
     double termCoverage = (double) keyTermsFound / totalKeyTerms;
 
@@ -145,9 +142,9 @@ public class RAGEvaluator {
   }
 
   /** Calculate what percentage of retrieved context was actually used. */
-  private double calculateContextUtilization(
-      String answer, List<EmbeddingMatch<TextSegment>> retrievedDocs) {
-    if (retrievedDocs.isEmpty()) return 0.0;
+  private double calculateContextUtilization(String answer, List<EmbeddingMatch<TextSegment>> retrievedDocs) {
+    if (retrievedDocs.isEmpty())
+      return 0.0;
 
     int totalSources = retrievedDocs.size();
     int citedSources = countCitations(answer);
@@ -157,7 +154,8 @@ public class RAGEvaluator {
 
   /** Count number of source citations in the answer. */
   private int countCitations(String answer) {
-    if (answer == null) return 0;
+    if (answer == null)
+      return 0;
 
     Matcher matcher = SOURCE_CITATION_PATTERN.matcher(answer);
     int count = 0;
@@ -169,11 +167,9 @@ public class RAGEvaluator {
 
   /** Check if a word is too common to be meaningful. */
   private boolean isCommonWord(String word) {
-    Set<String> commonWords =
-        Set.of(
-            "the", "is", "are", "was", "were", "has", "have", "had", "what", "when", "where", "who",
-            "why", "how", "which", "this", "that", "these", "those", "and", "or", "but", "for",
-            "with", "about", "from", "into", "during", "before", "after");
+    Set<String> commonWords = Set.of("the", "is", "are", "was", "were", "has", "have", "had", "what", "when",
+        "where", "who", "why", "how", "which", "this", "that", "these", "those", "and", "or", "but", "for",
+        "with", "about", "from", "into", "during", "before", "after");
     return commonWords.contains(word);
   }
 }

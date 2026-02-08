@@ -33,8 +33,7 @@ public class ReportController {
 
   @GetMapping("/cycle/{cycleId}/enhanced")
   @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
-  @Operation(
-      summary = "Get enhanced cycle report with comprehensive metrics including risk distribution")
+  @Operation(summary = "Get enhanced cycle report with comprehensive metrics including risk distribution")
   public ResponseEntity<EnhancedCycleReportDTO> getEnhancedCycleReport(@PathVariable Long cycleId) {
     return ResponseEntity.ok(reportService.getEnhancedCycleReport(cycleId));
   }
@@ -59,11 +58,8 @@ public class ReportController {
   public ResponseEntity<String> exportCycleReportCsv(@PathVariable Long cycleId) {
     String csv = reportService.exportCycleReportCsv(cycleId);
     return ResponseEntity.ok()
-        .header(
-            HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"cycle_report_" + cycleId + ".csv\"")
-        .contentType(MediaType.parseMediaType("text/csv"))
-        .body(csv);
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cycle_report_" + cycleId + ".csv\"")
+        .contentType(MediaType.parseMediaType("text/csv")).body(csv);
   }
 
   @GetMapping("/cycle/{cycleId}/export/pdf")
@@ -71,10 +67,7 @@ public class ReportController {
   public ResponseEntity<byte[]> exportCycleReportPdf(@PathVariable Long cycleId) {
     byte[] pdf = reportService.exportCycleReportPdf(cycleId);
     return ResponseEntity.ok()
-        .header(
-            HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"cycle_report_" + cycleId + ".pdf\"")
-        .contentType(Objects.requireNonNull(MediaType.APPLICATION_PDF))
-        .body(pdf);
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cycle_report_" + cycleId + ".pdf\"")
+        .contentType(Objects.requireNonNull(MediaType.APPLICATION_PDF)).body(pdf);
   }
 }

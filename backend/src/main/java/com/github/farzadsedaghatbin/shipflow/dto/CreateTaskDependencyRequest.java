@@ -19,5 +19,6 @@ public class CreateTaskDependencyRequest {
   private Long targetTaskId;
 
   /** Type of dependency relationship. Defaults to BLOCKS if not specified. */
-  @Builder.Default private DependencyType dependencyType = DependencyType.BLOCKS;
+  @Builder.Default
+  private DependencyType dependencyType = DependencyType.BLOCKS;
 }

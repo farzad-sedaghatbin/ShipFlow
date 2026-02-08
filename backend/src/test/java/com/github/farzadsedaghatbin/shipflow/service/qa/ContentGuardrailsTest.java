@@ -47,8 +47,7 @@ class ContentGuardrailsTest {
   @Test
   void validate_biasedContent_flagsBias() {
     // Given
-    String biasedAnswer =
-        "This is always the best approach and obviously better than alternatives.";
+    String biasedAnswer = "This is always the best approach and obviously better than alternatives.";
     double confidence = 0.9;
 
     // When
@@ -61,13 +60,11 @@ class ContentGuardrailsTest {
   @Test
   void validate_hallucinationIndicators_flagsLowConfidence() {
     // Given
-    String uncertainAnswer =
-        "I think the payment feature might work, but I'm not sure. Probably it does.";
+    String uncertainAnswer = "I think the payment feature might work, but I'm not sure. Probably it does.";
     double confidence = 0.9;
 
     // When
-    ContentGuardrails.GuardrailResult result =
-        contentGuardrails.validate(uncertainAnswer, confidence);
+    ContentGuardrails.GuardrailResult result = contentGuardrails.validate(uncertainAnswer, confidence);
 
     // Then
     assertThat(result.getViolations()).contains("LOW_CONFIDENCE_HALLUCINATION");

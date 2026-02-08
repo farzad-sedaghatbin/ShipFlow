@@ -9,16 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Re-ranks retrieved documents for better relevance ordering. Uses score-based and metadata-based
- * re-ranking since we don't have a cross-encoder.
+ * Re-ranks retrieved documents for better relevance ordering. Uses score-based
+ * and metadata-based re-ranking since we don't have a cross-encoder.
  */
 @Component
 @Slf4j
 public class DocumentReranker {
 
   /** Re-rank documents based on query and additional signals. */
-  public List<EmbeddingMatch<TextSegment>> rerank(
-      String query, List<EmbeddingMatch<TextSegment>> matches, int topK) {
+  public List<EmbeddingMatch<TextSegment>> rerank(String query, List<EmbeddingMatch<TextSegment>> matches, int topK) {
 
     if (matches == null || matches.isEmpty()) {
       return matches;
@@ -27,19 +26,17 @@ public class DocumentReranker {
     log.debug("Re-ranking {} documents to top {}", matches.size(), topK);
 
     // Calculate composite scores combining multiple signals
-    List<ScoredMatch> scoredMatches =
-        matches.stream().map(match -> scoreMatch(match, query)).collect(Collectors.toList());
+    List<ScoredMatch> scoredMatches = matches.stream().map(match -> scoreMatch(match, query))
+        .collect(Collectors.toList());
 
     // Sort by composite score (descending)
     scoredMatches.sort(Comparator.comparingDouble(ScoredMatch::getCompositeScore).reversed());
 
     // Return top K
-    List<EmbeddingMatch<TextSegment>> reranked =
-        scoredMatches.stream().limit(topK).map(ScoredMatch::getMatch).collect(Collectors.toList());
+    List<EmbeddingMatch<TextSegment>> reranked = scoredMatches.stream().limit(topK).map(ScoredMatch::getMatch)
+        .collect(Collectors.toList());
 
-    log.debug(
-        "Re-ranking improved avg score from {:.3f} to {:.3f}",
-        calculateAvgScore(matches),
+    log.debug("Re-ranking improved avg score from {:.3f} to {:.3f}", calculateAvgScore(matches),
         calculateAvgScore(reranked));
 
     return reranked;
@@ -55,14 +52,10 @@ public class DocumentReranker {
     double lengthPenalty = calculateLengthPenalty(match);
 
     // Composite score: weighted combination
-    double compositeScore =
-        embeddingScore * 0.70
-            + // Embedding similarity is most important
-            recencyBoost * 0.15
-            + // Recent docs are more relevant
-            entityTypeBoost * 0.10
-            + // Some entity types are more authoritative
-            lengthPenalty * 0.05; // Penalize very short/long docs
+    double compositeScore = embeddingScore * 0.70 + // Embedding similarity is most important
+        recencyBoost * 0.15 + // Recent docs are more relevant
+        entityTypeBoost * 0.10 + // Some entity types are more authoritative
+        lengthPenalty * 0.05; // Penalize very short/long docs
 
     return new ScoredMatch(match, compositeScore, embeddingScore);
   }
@@ -109,7 +102,10 @@ public class DocumentReranker {
     };
   }
 
-  /** Penalize documents that are too short or too long. Sweet spot: 100-1000 characters. */
+  /**
+   * Penalize documents that are too short or too long. Sweet spot: 100-1000
+   * characters.
+   */
   private double calculateLengthPenalty(EmbeddingMatch<TextSegment> match) {
     if (match.embedded() == null) {
       return 0.5;
@@ -140,8 +136,7 @@ public class DocumentReranker {
     private final double compositeScore;
     private final double originalScore;
 
-    public ScoredMatch(
-        EmbeddingMatch<TextSegment> match, double compositeScore, double originalScore) {
+    public ScoredMatch(EmbeddingMatch<TextSegment> match, double compositeScore, double originalScore) {
       this.match = match;
       this.compositeScore = compositeScore;
       this.originalScore = originalScore;

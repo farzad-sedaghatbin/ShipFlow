@@ -41,14 +41,9 @@ class OllamaLLMProviderTest {
 
   @Test
   void createModel_shouldCreateWithAllConfig() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mistral:instruct")
-            .timeout(Duration.ofSeconds(180))
-            .temperature(0.3)
-            .extraParam("numCtx", 4096)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").timeout(Duration.ofSeconds(180)).temperature(0.3)
+        .extraParam("numCtx", 4096).build();
 
     ChatLanguageModel model = provider.createModel(config);
     assertNotNull(model);
@@ -64,11 +59,8 @@ class OllamaLLMProviderTest {
 
   @Test
   void validateConfig_shouldNotThrowForValidConfig() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .baseUrl("http://localhost:11434")
-            .modelName("mistral:instruct")
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").build();
 
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }

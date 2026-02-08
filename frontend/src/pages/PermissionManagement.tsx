@@ -42,6 +42,7 @@ import {
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { PermissionEditDialog } from '../components/PermissionEditDialog';
 import { AllPermissionsView } from '../components/AllPermissionsView';
 
@@ -82,11 +83,33 @@ export default function PermissionManagement() {
   const [selectedPermIds, setSelectedPermIds] = useState<Set<number>>(new Set());
   const [groupBy, setGroupBy] = useState<'none' | 'role' | 'resource'>('role');
   
-  const { hasPermissionSync } = usePermission();
-  const canManagePermissions = hasPermissionSync('SYSTEM', 'MANAGE');
+  // Delete confirmation dialogs
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState<number | null>(null);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  
+  const { hasPermission } = usePermission();
+  const [canManagePermissions, setCanManagePermissions] = useState(false);
   const roles = permissionService.getUserRoles();
   const resources = permissionService.getResourceTypes();
   const permissionTypes = permissionService.getPermissionTypes();
+
+  // Pre-load the SYSTEM:MANAGE permission
+  useEffect(() => {
+    const checkSystemManagePermission = async () => {
+      try {
+        const hasSystemManage = await hasPermission('SYSTEM', 'MANAGE');
+        setCanManagePermissions(hasSystemManage);
+      } catch (error) {
+        console.error('Failed to check SYSTEM:MANAGE permission:', error);
+        setCanManagePermissions(false);
+      }
+    };
+
+    if (currentUser) {
+      checkSystemManagePermission();
+    }
+  }, [hasPermission, currentUser]);
 
   useEffect(() => {
     loadData();
@@ -112,7 +135,7 @@ export default function PermissionManagement() {
         setRoleFilter(currentUser!.role as UserRole);
       }
     } catch (error) {
-      showToast('Failed to load permissions', 'error');
+      showToast(t('errors.loadPermissionsFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -130,27 +153,37 @@ export default function PermissionManagement() {
     setEditDialogOpen(true);
   };
 
-  const handleDeletePermission = async (id: number) => {
-    if (!confirm(t('permissions.confirmDelete'))) return;
+  const openDeleteConfirm = (id: number) => {
+    setPermissionToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeletePermission = async () => {
+    if (permissionToDelete === null) return;
     
     try {
-      await permissionService.deletePermission(id);
+      await permissionService.deletePermission(permissionToDelete);
       showToast(t('permissions.toast.deleteSuccess'), 'success');
       loadData();
+      setDeleteConfirmOpen(false);
+      setPermissionToDelete(null);
     } catch (error) {
       showToast(t('permissions.toast.deleteFailed'), 'error');
     }
   };
 
-  const handleBulkDelete = async () => {
+  const openBulkDeleteConfirm = () => {
     if (selectedPermIds.size === 0) return;
-    if (!confirm(t('permissions.confirmBulkDelete', { count: selectedPermIds.size }))) return;
-    
+    setBulkDeleteConfirmOpen(true);
+  };
+
+  const handleBulkDelete = async () => {
     try {
       await permissionService.deleteBulkPermissions(Array.from(selectedPermIds));
       showToast(t('permissions.toast.bulkDeleteSuccess', { count: selectedPermIds.size }), 'success');
       setSelectedPermIds(new Set());
       loadData();
+      setBulkDeleteConfirmOpen(false);
     } catch (error) {
       showToast(t('permissions.toast.bulkDeleteFailed'), 'error');
     }
@@ -398,8 +431,8 @@ export default function PermissionManagement() {
             groupBy={groupBy}
             setGroupBy={setGroupBy}
             handleEditPermission={handleEditPermission}
-            handleDeletePermission={handleDeletePermission}
-            handleBulkDelete={handleBulkDelete}
+            handleDeletePermission={openDeleteConfirm}
+            handleBulkDelete={openBulkDeleteConfirm}
           />
         </TabsContent>
 
@@ -429,6 +462,30 @@ export default function PermissionManagement() {
         onSave={handleDialogSave}
         mode={editMode}
         permission={selectedPermission}
+      />
+
+      {/* Delete Permission Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('permissions.deleteTitle')}
+        description={t('permissions.confirmDelete')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeletePermission}
+        variant="destructive"
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={setBulkDeleteConfirmOpen}
+        title={t('permissions.bulkDeleteTitle')}
+        description={t('permissions.confirmBulkDelete', { count: selectedPermIds.size })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleBulkDelete}
+        variant="destructive"
       />
     </div>
   );

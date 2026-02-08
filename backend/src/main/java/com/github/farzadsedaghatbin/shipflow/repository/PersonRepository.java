@@ -19,16 +19,13 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
 
   List<Person> findByIsActiveFalse();
 
-  @Query(
-      "SELECT p FROM Person p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.email) LIKE LOWER(CONCAT('%', :query, '%'))")
+  @Query("SELECT p FROM Person p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.email) LIKE LOWER(CONCAT('%', :query, '%'))")
   List<Person> searchByNameOrEmail(@Param("query") String query);
 
-  @Query(
-      "SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.id = :teamId AND a.isActive = true")
+  @Query("SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.id = :teamId AND a.isActive = true")
   List<Person> findByCurrentTeam(@Param("teamId") Long teamId);
 
-  @Query(
-      "SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.cycle.id = :cycleId AND a.isActive = true")
+  @Query("SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.cycle.id = :cycleId AND a.isActive = true")
   List<Person> findByCurrentCycle(@Param("cycleId") Long cycleId);
 
   @Query("SELECT p FROM Person p WHERE p.skills LIKE %:skill%")

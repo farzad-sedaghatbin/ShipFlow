@@ -7,19 +7,15 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing a test run execution in the QA system. Tracks the execution of a test case
- * with its results.
+ * Entity representing a test run execution in the QA system. Tracks the
+ * execution of a test case with its results.
  */
 @Entity
-@Table(
-    name = "test_runs",
-    indexes = {
-      @Index(name = "idx_test_run_test_case", columnList = "test_case_id"),
-      @Index(name = "idx_test_run_cycle", columnList = "cycle_id"),
-      @Index(name = "idx_test_run_status", columnList = "status"),
-      @Index(name = "idx_test_run_executed_by", columnList = "executed_by_id"),
-      @Index(name = "idx_test_run_executed_at", columnList = "executed_at")
-    })
+@Table(name = "test_runs", indexes = {@Index(name = "idx_test_run_test_case", columnList = "test_case_id"),
+    @Index(name = "idx_test_run_cycle", columnList = "cycle_id"),
+    @Index(name = "idx_test_run_status", columnList = "status"),
+    @Index(name = "idx_test_run_executed_by", columnList = "executed_by_id"),
+    @Index(name = "idx_test_run_executed_at", columnList = "executed_at")})
 @Getter
 @Setter
 @NoArgsConstructor

@@ -3,7 +3,10 @@ package com.github.farzadsedaghatbin.shipflow.dto.hillchart;
 import java.util.List;
 import lombok.*;
 
-/** DTO for hill chart confidence analysis. Compares user confidence vs actual progress. */
+/**
+ * DTO for hill chart confidence analysis. Compares user confidence vs actual
+ * progress.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,7 +23,8 @@ public class ConfidenceAnalysisDTO {
   private Double actualProgress;
 
   /**
-   * Difference between confidence and reality Positive = overconfident, Negative = underconfident
+   * Difference between confidence and reality Positive = overconfident, Negative
+   * = underconfident
    */
   private Double confidenceDelta;
 

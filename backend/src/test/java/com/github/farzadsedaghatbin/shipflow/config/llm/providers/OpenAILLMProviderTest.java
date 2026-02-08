@@ -42,16 +42,9 @@ class OpenAILLMProviderTest {
 
   @Test
   void createModel_shouldCreateWithFullConfig() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .apiKey("sk-test-key-12345")
-            .modelName("gpt-4o-mini")
-            .timeout(Duration.ofSeconds(120))
-            .temperature(0.3)
-            .maxTokens(2048)
-            .extraParam("organizationId", "org-123")
-            .extraParam("topP", 0.9)
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().apiKey("sk-test-key-12345").modelName("gpt-4o-mini")
+        .timeout(Duration.ofSeconds(120)).temperature(0.3).maxTokens(2048)
+        .extraParam("organizationId", "org-123").extraParam("topP", 0.9).build();
 
     ChatLanguageModel model = provider.createModel(config);
     assertNotNull(model);
@@ -67,12 +60,8 @@ class OpenAILLMProviderTest {
 
   @Test
   void createModel_shouldSupportCustomBaseUrl() {
-    LLMProviderConfig config =
-        LLMProviderConfig.builder()
-            .apiKey("sk-test-key-12345")
-            .baseUrl("https://custom-openai-proxy.com/v1")
-            .modelName("gpt-4o")
-            .build();
+    LLMProviderConfig config = LLMProviderConfig.builder().apiKey("sk-test-key-12345")
+        .baseUrl("https://custom-openai-proxy.com/v1").modelName("gpt-4o").build();
 
     ChatLanguageModel model = provider.createModel(config);
     assertNotNull(model);
@@ -82,8 +71,8 @@ class OpenAILLMProviderTest {
   void validateConfig_shouldThrowWithoutApiKey() {
     LLMProviderConfig config = LLMProviderConfig.builder().modelName("gpt-4o-mini").build();
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> provider.validateConfig(config));
     assertTrue(ex.getMessage().contains("API key"));
   }
 

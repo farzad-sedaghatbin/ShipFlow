@@ -29,15 +29,20 @@ import org.springframework.context.ApplicationEventPublisher;
 @ExtendWith(MockitoExtension.class)
 class EvidenceServiceTest {
 
-  @Mock private EvidenceRepository evidenceRepository;
+  @Mock
+  private EvidenceRepository evidenceRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @InjectMocks private EvidenceService evidenceService;
+  @InjectMocks
+  private EvidenceService evidenceService;
 
   private Evidence testEvidence;
   private Pitch testPitch;
@@ -48,24 +53,11 @@ class EvidenceServiceTest {
   void setUp() {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
-    testPerson =
-        Person.builder()
-            .id(1L)
-            .name("John Doe")
-            .email("john@example.com")
-            .isActive(true)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testPerson = Person.builder().id(1L).name("John Doe").email("john@example.com").isActive(true)
+        .createdAt(LocalDateTime.now()).build();
 
-    testEvidence =
-        Evidence.builder()
-            .id(1L)
-            .pitch(testPitch)
-            .person(testPerson)
-            .date(LocalDate.now())
-            .description("Test evidence description")
-            .fileUrl("https://example.com/file.pdf")
-            .build();
+    testEvidence = Evidence.builder().id(1L).pitch(testPitch).person(testPerson).date(LocalDate.now())
+        .description("Test evidence description").fileUrl("https://example.com/file.pdf").build();
 
     testRequest = new CreateEvidenceRequest();
     testRequest.setPitchId(1L);
@@ -97,8 +89,7 @@ class EvidenceServiceTest {
   void getEvidenceById_WhenNotExists_ShouldThrowException() {
     when(evidenceRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> evidenceService.getEvidenceById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> evidenceService.getEvidenceById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Evidence not found");
   }
 

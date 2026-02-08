@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 /**
  * Compresses prompts to reduce token usage while preserving meaning.
  *
- * <p>Techniques: - Remove redundant whitespace - Deduplicate repeated phrases - Remove filler words
- * - Compress verbose formatting
+ * <p>
+ * Techniques: - Remove redundant whitespace - Deduplicate repeated phrases -
+ * Remove filler words - Compress verbose formatting
  */
 @Slf4j
 @Component
@@ -19,19 +20,8 @@ public class PromptCompressor {
   private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s+");
   private static final Pattern MULTIPLE_NEWLINES = Pattern.compile("\\n{3,}");
 
-  private static final Set<String> FILLER_WORDS =
-      Set.of(
-          "actually",
-          "basically",
-          "really",
-          "very",
-          "quite",
-          "rather",
-          "somewhat",
-          "simply",
-          "just",
-          "literally",
-          "essentially");
+  private static final Set<String> FILLER_WORDS = Set.of("actually", "basically", "really", "very", "quite", "rather",
+      "somewhat", "simply", "just", "literally", "essentially");
 
   /** Compresses a prompt to reduce token count. */
   public String compress(String prompt) {
@@ -53,20 +43,15 @@ public class PromptCompressor {
     compressed = deduplicateSentences(compressed);
 
     // Trim each line
-    compressed =
-        compressed
-            .lines()
-            .map(String::trim)
-            .filter(line -> !line.isEmpty())
-            .collect(java.util.stream.Collectors.joining("\n"));
+    compressed = compressed.lines().map(String::trim).filter(line -> !line.isEmpty())
+        .collect(java.util.stream.Collectors.joining("\n"));
 
     int compressedLength = compressed.length();
     double savings = ((double) (originalLength - compressedLength) / originalLength) * 100;
 
     if (savings > 5) {
-      log.debug(
-          "Compressed prompt: {} chars → {} chars ({:.1f}% reduction)",
-          originalLength, compressedLength, savings);
+      log.debug("Compressed prompt: {} chars → {} chars ({:.1f}% reduction)", originalLength, compressedLength,
+          savings);
     }
 
     return compressed;
@@ -155,8 +140,7 @@ public class PromptCompressor {
     // Estimate token savings (rough: 4 chars per token)
     int savedTokens = savedChars / 4;
 
-    return new CompressionStats(
-        originalLength, compressedLength, savedChars, percentSaved, savedTokens);
+    return new CompressionStats(originalLength, compressedLength, savedChars, percentSaved, savedTokens);
   }
 
   /** Compression statistics. */
@@ -167,11 +151,7 @@ public class PromptCompressor {
     private final double percentSaved;
     private final int estimatedTokensSaved;
 
-    public CompressionStats(
-        int originalLength,
-        int compressedLength,
-        int savedChars,
-        double percentSaved,
+    public CompressionStats(int originalLength, int compressedLength, int savedChars, double percentSaved,
         int estimatedTokensSaved) {
       this.originalLength = originalLength;
       this.compressedLength = compressedLength;

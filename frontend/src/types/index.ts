@@ -165,6 +165,11 @@ export interface CreatePersonRequest {
   email: string;
   skills?: string;
   avatarUrl?: string;
+  // Optional user account creation
+  createUser?: boolean;
+  username?: string;
+  password?: string;
+  userRole?: UserRole;
 }
 
 // TeamAssignment - links Person to Team with role and date range
@@ -309,6 +314,8 @@ export interface Meeting {
   dateHeld: string;
   dorReady: boolean;
   dodReady: boolean;
+  dorItems?: MeetingChecklistItem[];
+  dodItems?: MeetingChecklistItem[];
   notes?: string;
   retrospectiveId?: number;
   retrospectiveTitle?: string;
@@ -317,12 +324,22 @@ export interface Meeting {
   actions?: MeetingAction[];
 }
 
+export interface MeetingChecklistItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  isCompleted: boolean;
+}
+
 export interface CreateMeetingRequest {
   pitchId?: number;
   type: MeetingType;
   dateHeld: string;
   dorReady?: boolean;
   dodReady?: boolean;
+  dorItems?: MeetingChecklistItem[];
+  dodItems?: MeetingChecklistItem[];
   notes?: string;
   retrospectiveId?: number;
   decisions?: string;
@@ -741,6 +758,12 @@ export interface BugReport {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  
+  // Direct project association
+  projectId?: number;
+  projectName?: string;
+  projectKey?: string;
+  
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -778,6 +801,7 @@ export interface CreateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
@@ -798,6 +822,7 @@ export interface UpdateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
@@ -1062,5 +1087,37 @@ export interface CycleRetroStatus {
   canCloseCycle: boolean;
   message: string;
 }
+
+// Audit History Types
+export type RevisionType = 'CREATED' | 'MODIFIED' | 'DELETED';
+
+/**
+ * Represents a single field change in an entity revision.
+ */
+export interface FieldChange {
+  /** The name of the field that was changed (e.g., "status", "priority", "assignee") */
+  fieldName: string;
+  /** The previous value of the field before the change (null for creation) */
+  oldValue: string | null;
+  /** The new value of the field after the change */
+  newValue: string | null;
+}
+
+/**
+ * Represents a single revision entry in the entity's change history.
+ */
+export interface EntityHistory {
+  /** The revision number (sequential identifier) */
+  revisionNumber: number;
+  /** The timestamp when this revision was created */
+  revisionDate: string;
+  /** The username of the user who made this change ("system" for automated changes) */
+  modifiedBy: string;
+  /** The type of revision: CREATED, MODIFIED, or DELETED */
+  revisionType: RevisionType;
+  /** The list of individual field changes in this revision */
+  changes: FieldChange[];
+}
+
 export * from './betting-analytics';
 export * from './circuit-breaker';

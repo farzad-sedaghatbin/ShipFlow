@@ -15,11 +15,8 @@ import org.springframework.stereotype.Component;
 public class SecurityDocumentFilter {
 
   /** Filter documents based on user access permissions. */
-  public List<EmbeddingMatch<TextSegment>> filterByUserAccess(
-      List<EmbeddingMatch<TextSegment>> matches,
-      Long userId,
-      Set<Long> userTeamIds,
-      Set<Long> userProjectIds) {
+  public List<EmbeddingMatch<TextSegment>> filterByUserAccess(List<EmbeddingMatch<TextSegment>> matches, Long userId,
+      Set<Long> userTeamIds, Set<Long> userProjectIds) {
 
     if (matches == null || matches.isEmpty()) {
       return matches;
@@ -37,18 +34,14 @@ public class SecurityDocumentFilter {
     }
 
     if (blockedCount > 0) {
-      log.debug(
-          "Filtered out {} documents due to access control for user {}", blockedCount, userId);
+      log.debug("Filtered out {} documents due to access control for user {}", blockedCount, userId);
     }
 
     return filtered;
   }
 
   /** Check if user can access a document. */
-  private boolean canUserAccess(
-      EmbeddingMatch<TextSegment> match,
-      Long userId,
-      Set<Long> userTeamIds,
+  private boolean canUserAccess(EmbeddingMatch<TextSegment> match, Long userId, Set<Long> userTeamIds,
       Set<Long> userProjectIds) {
 
     if (match.embedded() == null || match.embedded().metadata() == null) {
@@ -110,7 +103,8 @@ public class SecurityDocumentFilter {
   }
 
   /**
-   * Build security filter for embedding search. Returns metadata filter string for vector store.
+   * Build security filter for embedding search. Returns metadata filter string
+   * for vector store.
    */
   public String buildSecurityFilter(Set<Long> userTeamIds, Set<Long> userProjectIds) {
     List<String> conditions = new ArrayList<>();
@@ -121,8 +115,7 @@ public class SecurityDocumentFilter {
     }
 
     if (userProjectIds != null && !userProjectIds.isEmpty()) {
-      String projectIds =
-          userProjectIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+      String projectIds = userProjectIds.stream().map(String::valueOf).collect(Collectors.joining(","));
       conditions.add("projectId IN (" + projectIds + ")");
     }
 

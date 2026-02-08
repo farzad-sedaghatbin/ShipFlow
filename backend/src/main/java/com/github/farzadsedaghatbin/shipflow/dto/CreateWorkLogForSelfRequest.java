@@ -7,8 +7,8 @@ import java.time.LocalDate;
 import lombok.*;
 
 /**
- * DTO for users creating work logs for themselves. Does not require personId - the current user's
- * linked person will be used.
+ * DTO for users creating work logs for themselves. Does not require personId -
+ * the current user's linked person will be used.
  */
 @Data
 @NoArgsConstructor
