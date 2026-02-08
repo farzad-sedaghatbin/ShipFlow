@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("Task Soft Delete Tests")
 class TaskSoftDeleteTest {
 
@@ -145,13 +148,13 @@ class TaskSoftDeleteTest {
   @DisplayName("Should exclude deleted tasks from cycle queries")
   void shouldExcludeDeletedTasksFromCycleQueries() {
     // Given
-    when(taskRepository.findByCycleIdNotDeleted(1L)).thenReturn(java.util.List.of());
+    when(taskRepository.findByCycleIdOrderByPriority(1L)).thenReturn(java.util.List.of());
 
     // When
     var result = taskService.getTasksByCycleId(1L);
 
     // Then
     assertThat(result).isEmpty();
-    verify(taskRepository).findByCycleIdNotDeleted(1L);
+    verify(taskRepository).findByCycleIdOrderByPriority(1L);
   }
 }

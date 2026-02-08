@@ -36,11 +36,14 @@ public class BettingDecisionService {
 
   /**
    * Record a new betting decision for a pitch in a cycle.
+   * If a decision already exists for this pitch+cycle, it will be updated instead of creating a duplicate.
+   * Uses database unique constraint (pitch_id, cycle_id) to ensure data integrity.
    *
    * @param request the decision details
    * @param decidedByUserId the user making the decision
    * @return the recorded decision
    */
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public BettingDecisionDTO recordDecision(RecordBettingDecisionRequest request, Long decidedByUserId) {
     log.info("Recording betting decision for pitch {} in cycle {} by user {}",
         request.getPitchId(), request.getCycleId(), decidedByUserId);
@@ -65,21 +68,44 @@ public class BettingDecisionService {
               messageService.getMessage("error.team.not.found", request.getConsideredTeamId())));
     }
 
-    // Build the decision entity
-    BettingDecision decision = BettingDecision.builder()
-        .pitch(pitch)
-        .cycle(cycle)
-        .decision(request.getDecision())
-        .reason(request.getReason())
-        .decidedBy(decidedBy)
-        .decidedAt(LocalDateTime.now())
-        .requestedAppetiteDays(pitch.getAppetiteDays())
-        .availableCapacityDays(request.getAvailableCapacityDays())
-        .appetiteComparisonNotes(request.getAppetiteComparisonNotes())
-        .consideredTeam(consideredTeam)
-        .priorityScore(request.getPriorityScore())
-        .strategicAlignmentNotes(request.getStrategicAlignmentNotes())
-        .build();
+    // Check if a decision already exists for this pitch+cycle combination
+    // Using the optimized method that expects at most one result due to unique constraint
+    Optional<BettingDecision> existingDecision = bettingDecisionRepository
+        .findByPitchIdAndCycleId(request.getPitchId(), request.getCycleId());
+    
+    BettingDecision decision;
+    if (existingDecision.isPresent()) {
+      // Update the existing decision instead of creating a new one
+      decision = existingDecision.get();
+      log.info("Updating existing betting decision {} for pitch {}", decision.getId(), pitch.getTitle());
+      
+      decision.setDecision(request.getDecision());
+      decision.setReason(request.getReason());
+      decision.setDecidedBy(decidedBy);
+      decision.setDecidedAt(LocalDateTime.now());
+      decision.setRequestedAppetiteDays(pitch.getAppetiteDays());
+      decision.setAvailableCapacityDays(request.getAvailableCapacityDays());
+      decision.setAppetiteComparisonNotes(request.getAppetiteComparisonNotes());
+      decision.setConsideredTeam(consideredTeam);
+      decision.setPriorityScore(request.getPriorityScore());
+      decision.setStrategicAlignmentNotes(request.getStrategicAlignmentNotes());
+    } else {
+      // Build a new decision entity
+      decision = BettingDecision.builder()
+          .pitch(pitch)
+          .cycle(cycle)
+          .decision(request.getDecision())
+          .reason(request.getReason())
+          .decidedBy(decidedBy)
+          .decidedAt(LocalDateTime.now())
+          .requestedAppetiteDays(pitch.getAppetiteDays())
+          .availableCapacityDays(request.getAvailableCapacityDays())
+          .appetiteComparisonNotes(request.getAppetiteComparisonNotes())
+          .consideredTeam(consideredTeam)
+          .priorityScore(request.getPriorityScore())
+          .strategicAlignmentNotes(request.getStrategicAlignmentNotes())
+          .build();
+    }
 
     BettingDecision saved = bettingDecisionRepository.save(decision);
     log.info("Recorded betting decision {} for pitch {}: {}",

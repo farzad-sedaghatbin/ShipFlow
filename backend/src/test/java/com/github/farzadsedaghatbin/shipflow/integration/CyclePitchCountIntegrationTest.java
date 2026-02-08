@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 class CyclePitchCountIntegrationTest {
@@ -68,7 +68,13 @@ class CyclePitchCountIntegrationTest {
     userRepository.deleteAll();
 
     // Create test user
-    testUser = User.builder().username("testuser").email("test@example.com").role(UserRole.ADMIN).build();
+    testUser = User.builder()
+        .username("testuser")
+        .email("test@example.com")
+        .password("testpassword")
+        .role(UserRole.ADMIN)
+        .isActive(true)
+        .build();
     testUser = userRepository.save(testUser);
 
     // Create test project

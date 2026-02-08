@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.farzadsedaghatbin.shipflow.config.TestAIConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.SlackNotificationHistory;
 import com.github.farzadsedaghatbin.shipflow.service.MessageService;
@@ -18,22 +17,23 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for SlackIntegrationController Tests REST API endpoints for Slack
- * integration using MockMvc
+ * Integration tests for SlackIntegrationController Tests REST API endpoints for Slack
+ * integration using MockMvc with full Spring context
  */
-@WebMvcTest(SlackIntegrationController.class)
-@Import(TestAIConfig.class)
-@TestPropertySource(properties = {"spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-    "spring.security.oauth2.resourceserver.jwt.jwk-set-uri="})
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
+@Transactional
 class SlackIntegrationControllerTest {
 
   @Autowired

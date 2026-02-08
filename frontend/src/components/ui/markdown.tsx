@@ -122,12 +122,13 @@ export const MarkdownInline: React.FC<MarkdownInlineProps> = ({
 }) => {
   // Convert basic markdown to HTML
   const htmlContent = content
-    // Bold: **text** or __text__
+    // Bold: **text** or __text__ (process first to avoid conflicts)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
-    // Italic: *text* or _text_ (but not inside ** or __)
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+    // Italic: *text* or _text_ (single asterisk/underscore not part of double)
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
+    .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
   
   return (
     <Component 
@@ -143,10 +144,11 @@ export const MarkdownInline: React.FC<MarkdownInlineProps> = ({
  */
 export function parseInlineMarkdown(content: string): string {
   return content
-    // Bold: **text** or __text__
+    // Bold: **text** or __text__ (process first to avoid conflicts)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
-    // Italic: *text* or _text_
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+    // Italic: *text* or _text_ (single asterisk/underscore not part of double)
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
+    .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
 }
