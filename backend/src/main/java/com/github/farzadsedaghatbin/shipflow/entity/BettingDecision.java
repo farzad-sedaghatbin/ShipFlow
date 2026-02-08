@@ -16,11 +16,16 @@ import lombok.*;
  * - Building institutional knowledge about betting decisions
  */
 @Entity
-@Table(name = "betting_decisions", indexes = {
-    @Index(name = "idx_betting_decision_pitch", columnList = "pitch_id"),
-    @Index(name = "idx_betting_decision_cycle", columnList = "cycle_id"),
-    @Index(name = "idx_betting_decision_decided_at", columnList = "decided_at")
-})
+@Table(name = "betting_decisions", 
+    indexes = {
+        @Index(name = "idx_betting_decision_pitch", columnList = "pitch_id"),
+        @Index(name = "idx_betting_decision_cycle", columnList = "cycle_id"),
+        @Index(name = "idx_betting_decision_decided_at", columnList = "decided_at")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_betting_decision_pitch_cycle", columnNames = {"pitch_id", "cycle_id"})
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

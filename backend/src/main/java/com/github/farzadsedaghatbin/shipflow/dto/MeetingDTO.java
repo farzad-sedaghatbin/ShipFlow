@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +18,7 @@ public class MeetingDTO {
   private Long projectId;
   private String projectName;
   private String projectKey;
-  private MeetingType type;
+  private String type;
   private LocalDate dateHeld;
   private Boolean dorReady;
   private Boolean dodReady;
