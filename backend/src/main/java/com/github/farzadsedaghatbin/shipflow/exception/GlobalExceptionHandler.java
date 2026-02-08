@@ -163,9 +163,7 @@ public class GlobalExceptionHandler {
     if (message != null && (message.contains("Connection reset by peer") || message.contains("Broken pipe")
         || message.contains("An established connection was aborted"))) {
       log.debug("Client connection issue: {}", message);
-      // Return null to indicate no response should be sent (client already
-      // disconnected)
-      return null;
+      return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).build();
     }
 
     // For other IO exceptions, treat as server error
@@ -194,7 +192,7 @@ public class GlobalExceptionHandler {
     // Check if this is a wrapped client disconnection issue
     if (isClientDisconnectionException(ex)) {
       log.debug("Client disconnection detected in generic exception: {}", ex.getMessage());
-      return null; // No response - client already disconnected
+      return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).build();
     }
 
     log.error("Unexpected exception: {}", ex.getMessage(), ex);
@@ -328,7 +326,7 @@ public class GlobalExceptionHandler {
     // Check if client disconnected during upload
     if (isClientDisconnectionException(ex)) {
       log.debug("Client disconnected during file upload: {}", ex.getMessage());
-      return null; // No response - client already disconnected
+      return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).build();
     }
 
     // Check for malformed stream (incomplete upload)

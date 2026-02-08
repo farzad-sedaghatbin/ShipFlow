@@ -129,6 +129,12 @@ export default function PitchDetail() {
   });
   const [meetingDate, setMeetingDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
 
+  // Get meeting type display name from configurations or fallback to formatted name
+  const getMeetingTypeDisplayName = (type: MeetingType): string => {
+    const config = meetingTypeConfigs.find(mt => mt.name.toLowerCase() === type.toLowerCase());
+    return config?.displayName || type.replace(/_/g, ' ');
+  };
+
   useEffect(() => {
     const abortController = new AbortController();
     if (id) {
@@ -330,22 +336,21 @@ export default function PitchDetail() {
     setMeetingPendingDocs(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Helper function to map checklist items from config to meeting format
+  const mapChecklistItems = (items?: typeof meetingTypeConfigs[0]['dorItems']): MeetingChecklistItem[] => {
+    return items?.map((item, index) => ({
+      id: item.id ?? index + 1,
+      name: item.name,
+      description: item.description || '',
+      isRequired: item.isRequired,
+      isCompleted: false,
+    })) || [];
+  };
+
   const handleMeetingTypeChange = (type: MeetingType) => {
     const config = meetingTypeConfigs.find(c => c.name === type);
-    const dorItems: MeetingChecklistItem[] = config?.dorItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
-    const dodItems: MeetingChecklistItem[] = config?.dodItems?.map((item, index) => ({
-      id: item.id ?? index + 1,
-      name: item.name,
-      description: item.description || '',
-      isRequired: item.isRequired,
-      isCompleted: false,
-    })) || [];
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
 
     setNewMeeting(prev => ({
       ...prev,
@@ -355,6 +360,32 @@ export default function PitchDetail() {
       dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
       dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
     }));
+  };
+
+  const resetMeetingForm = () => {
+    const defaultType = 'STANDUP';
+    const config = meetingTypeConfigs.find(c => c.name === defaultType);
+    const dorItems = mapChecklistItems(config?.dorItems);
+    const dodItems = mapChecklistItems(config?.dodItems);
+
+    setNewMeeting({
+      pitchId: pitch?.id || 0,
+      type: defaultType,
+      dateHeld: dayjs().format('YYYY-MM-DD'),
+      dorReady: dorItems.length === 0 || !dorItems.some(item => item.isRequired),
+      dodReady: dodItems.length === 0 || !dodItems.some(item => item.isRequired),
+      dorItems,
+      dodItems,
+      notes: '',
+    });
+    setMeetingDate(dayjs().format('YYYY-MM-DD'));
+    setMeetingPendingDocs([]);
+    setShowMeetingDocUpload(false);
+  };
+
+  const handleOpenMeetingDialog = () => {
+    resetMeetingForm();
+    setMeetingDialog(true);
   };
 
   /**
@@ -817,7 +848,7 @@ export default function PitchDetail() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>{t('pitchDetailPage.meetings')}</CardTitle>
-                <Button size="sm" onClick={() => setMeetingDialog(true)}>
+                <Button size="sm" onClick={handleOpenMeetingDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   {t('pitchDetailPage.add')}
                 </Button>
@@ -828,7 +859,7 @@ export default function PitchDetail() {
                 <p className="text-muted-foreground">{t('pitchDetailPage.noMeetings')}</p>
               ) : (
                 <div className="space-y-1">
-                  {meetings.map((m, index) => (
+                  {[...meetings].sort((a, b) => new Date(b.dateHeld).getTime() - new Date(a.dateHeld).getTime()).map((m, index) => (
                     <div key={m.id}>
                       <div className="py-3">
                         <div className="flex gap-2 items-center mb-2">
@@ -837,7 +868,7 @@ export default function PitchDetail() {
                             className="cursor-pointer hover:opacity-80"
                             onClick={() => handleViewMeeting(m.id)}
                           >
-                            {m.type}
+                            {getMeetingTypeDisplayName(m.type)}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
                             {formatLocalizedDate(new Date(m.dateHeld), i18n.language)}
@@ -1142,7 +1173,7 @@ export default function PitchDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.type')}</Label>
-                  <div className="text-sm font-medium">{viewMeeting.type}</div>
+                  <div className="text-sm font-medium">{getMeetingTypeDisplayName(viewMeeting.type)}</div>
                 </div>
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.date')}</Label>
