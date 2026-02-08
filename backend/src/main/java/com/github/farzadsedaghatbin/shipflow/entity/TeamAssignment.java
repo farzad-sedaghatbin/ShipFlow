@@ -33,7 +33,8 @@ public class TeamAssignment {
   @Column(nullable = false)
   private LocalDate startDate;
 
-  @Column private LocalDate endDate;
+  @Column
+  private LocalDate endDate;
 
   @Column(nullable = false)
   private Boolean isActive;

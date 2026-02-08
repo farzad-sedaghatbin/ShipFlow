@@ -24,8 +24,8 @@ public class ProjectDTO {
   private Boolean isActive;
 
   /**
-   * Project methodology type. SHAPE_UP: 6-week cycles with betting, pitches, and cooldown KANBAN:
-   * Continuous flow with visual board, no cycles
+   * Project methodology type. SHAPE_UP: 6-week cycles with betting, pitches, and
+   * cooldown KANBAN: Continuous flow with visual board, no cycles
    */
   private ProjectType projectType;
 
@@ -35,8 +35,8 @@ public class ProjectDTO {
   private Integer activeCycleCount;
 
   /**
-   * The current user's role within this project. VIEWER, CONTRIBUTOR, or MANAGER. Null if user has
-   * access via ADMIN role or team membership only.
+   * The current user's role within this project. VIEWER, CONTRIBUTOR, or MANAGER.
+   * Null if user has access via ADMIN role or team membership only.
    */
   private String userProjectRole;
 }

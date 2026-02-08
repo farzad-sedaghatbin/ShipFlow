@@ -84,7 +84,7 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
       };
       
       await riskFeedbackService.submitFeedback(request);
-      showToast('Feedback submitted successfully. Thank you!', 'success');
+      showToast(t('feedback.submitSuccess'), 'success');
       setOpen(false);
       setAlreadySubmitted(true);
       onFeedbackSubmitted?.();
@@ -102,12 +102,12 @@ export const RiskFeedbackForm: React.FC<RiskFeedbackFormProps> = ({
     <>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">
-          Was this assessment helpful?
+          {t('feedback.wasHelpful')}
         </span>
         
         {alreadySubmitted ? (
           <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
-            Feedback submitted
+            {t('feedback.submitted')}
           </Badge>
         ) : (
           <TooltipProvider>

@@ -1,24 +1,23 @@
 package com.github.farzadsedaghatbin.shipflow.config.vectorstore;
 
 /**
- * Enumeration of supported vector store providers. Add new providers here to extend the system.
+ * Enumeration of supported vector store providers. Add new providers here to
+ * extend the system.
  *
- * <p>To add a new vector store:
+ * <p>
+ * To add a new vector store:
  *
  * <ol>
- *   <li>Add the type to this enum
- *   <li>Create a provider implementation of {@link VectorStoreProvider}
- *   <li>Add the required dependency to pom.xml
- *   <li>Annotate with @Component for auto-discovery
+ * <li>Add the type to this enum
+ * <li>Create a provider implementation of {@link VectorStoreProvider}
+ * <li>Add the required dependency to pom.xml
+ * <li>Annotate with @Component for auto-discovery
  * </ol>
  */
 public enum VectorStoreProviderType {
-  IN_MEMORY("in-memory", "In-Memory (Development/Testing)"),
-  QDRANT("qdrant", "Qdrant (Production Recommended)"),
-  CHROMA("chroma", "ChromaDB"),
-  MILVUS("milvus", "Milvus"),
-  PINECONE("pinecone", "Pinecone (Managed Cloud)"),
-  WEAVIATE("weaviate", "Weaviate");
+  IN_MEMORY("in-memory", "In-Memory (Development/Testing)"), QDRANT("qdrant",
+      "Qdrant (Production Recommended)"), CHROMA("chroma", "ChromaDB"), MILVUS("milvus",
+          "Milvus"), PINECONE("pinecone", "Pinecone (Managed Cloud)"), WEAVIATE("weaviate", "Weaviate");
 
   private final String configValue;
   private final String displayName;
@@ -39,9 +38,11 @@ public enum VectorStoreProviderType {
   /**
    * Parse provider type from configuration string.
    *
-   * @param value the configuration value
+   * @param value
+   *            the configuration value
    * @return the matching provider type
-   * @throws IllegalArgumentException if no matching provider is found
+   * @throws IllegalArgumentException
+   *             if no matching provider is found
    */
   public static VectorStoreProviderType fromConfigValue(String value) {
     if (value == null || value.trim().isEmpty()) {

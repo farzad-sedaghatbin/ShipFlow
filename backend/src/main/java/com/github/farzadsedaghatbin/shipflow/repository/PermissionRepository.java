@@ -21,15 +21,15 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
   List<Permission> findByResourceType(ResourceType resourceType);
 
   /** Check if a permission exists for a role, resource, and permission type */
-  Optional<Permission> findByRoleAndResourceTypeAndPermissionType(
-      UserRole role, ResourceType resourceType, PermissionType permissionType);
+  Optional<Permission> findByRoleAndResourceTypeAndPermissionType(UserRole role, ResourceType resourceType,
+      PermissionType permissionType);
 
   /** Check if a specific permission exists */
-  boolean existsByRoleAndResourceTypeAndPermissionType(
-      UserRole role, ResourceType resourceType, PermissionType permissionType);
+  boolean existsByRoleAndResourceTypeAndPermissionType(UserRole role, ResourceType resourceType,
+      PermissionType permissionType);
 
   /** Get all permissions for a role and resource combination */
   @Query("SELECT p FROM Permission p WHERE p.role = :role AND p.resourceType = :resourceType")
-  List<Permission> findPermissionsForRoleAndResource(
-      @Param("role") UserRole role, @Param("resourceType") ResourceType resourceType);
+  List<Permission> findPermissionsForRoleAndResource(@Param("role") UserRole role,
+      @Param("resourceType") ResourceType resourceType);
 }

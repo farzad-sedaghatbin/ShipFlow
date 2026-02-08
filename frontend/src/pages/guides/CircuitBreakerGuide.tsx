@@ -4,6 +4,7 @@ import { ArrowLeft, Zap, AlertTriangle, XCircle, TrendingUp, CheckCircle2, Shiel
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function CircuitBreakerGuide() {
     const { t } = useTranslation();
@@ -36,7 +37,7 @@ export default function CircuitBreakerGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>{t('guides.circuitBreaker.principleDesc')}</p>
+                    <p><MarkdownInline content={t('guides.circuitBreaker.principleDesc')} /></p>
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
                         <p className="text-sm text-amber-900 dark:text-amber-100">
                             <strong>{t('guides.circuitBreaker.wisdom')}</strong> {t('guides.circuitBreaker.wisdomDesc')}
@@ -129,8 +130,8 @@ export default function CircuitBreakerGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>{t('guides.circuitBreaker.accessStep1')}</li>
-                        <li>{t('guides.circuitBreaker.accessStep2')}</li>
+                        <li><MarkdownInline content={t('guides.circuitBreaker.accessStep1')} /></li>
+                        <li><MarkdownInline content={t('guides.circuitBreaker.accessStep2')} /></li>
                         <li>{t('guides.circuitBreaker.accessStep3')}</li>
                     </ol>
 
@@ -153,7 +154,7 @@ export default function CircuitBreakerGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        {t('guides.circuitBreaker.triggerDesc')}
+                        <MarkdownInline content={t('guides.circuitBreaker.triggerDesc')} />
                     </p>
                     <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
                         <li>{t('guides.circuitBreaker.triggerItem1')}</li>
@@ -175,7 +176,7 @@ export default function CircuitBreakerGuide() {
                     </div>
 
                     <p className="text-sm text-muted-foreground">
-                        {t('guides.circuitBreaker.triggerAfter')}
+                        <MarkdownInline content={t('guides.circuitBreaker.triggerAfter')} />
                     </p>
                 </CardContent>
             </Card>
@@ -191,7 +192,7 @@ export default function CircuitBreakerGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        {t('guides.circuitBreaker.killDesc')}
+                        <MarkdownInline content={t('guides.circuitBreaker.killDesc')} />
                     </p>
 
                     <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-4">
@@ -235,7 +236,7 @@ export default function CircuitBreakerGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        {t('guides.circuitBreaker.resolveDesc')}
+                        <MarkdownInline content={t('guides.circuitBreaker.resolveDesc')} />
                     </p>
                     <ol className="list-decimal list-inside space-y-2">
                         <li>{t('guides.circuitBreaker.resolveStep1')}</li>

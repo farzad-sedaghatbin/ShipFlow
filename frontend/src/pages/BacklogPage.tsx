@@ -126,6 +126,8 @@ export default function BacklogPage() {
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   // View mode: Kanban projects default to kanban view, Shape Up defaults to list
   const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
+  // Kanban column visibility - default to showing essential columns
+  const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']);
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
@@ -778,6 +780,19 @@ export default function BacklogPage() {
     }
   };
 
+  const handleToggleColumn = (status: TaskStatus) => {
+    setVisibleColumns(prev => {
+      const isVisible = prev.includes(status);
+      if (isVisible) {
+        // Don't allow hiding all columns, keep at least one
+        if (prev.length === 1) return prev;
+        return prev.filter(s => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+  };
+
   const getStatusBadgeVariant = (status: TaskStatus) => {
     return statusOptions.find(s => s.value === status)?.variant || 'secondary';
   };
@@ -1118,6 +1133,8 @@ export default function BacklogPage() {
               onAddSubtask={handleAddSubTask}
               onStartTimer={handleStartTimer}
               loading={tasksLoading}
+              visibleColumns={visibleColumns}
+              onToggleColumn={handleToggleColumn}
             />
           ) : (
             <TaskTable />
@@ -1134,6 +1151,8 @@ export default function BacklogPage() {
               onAddSubtask={handleAddSubTask}
               onStartTimer={handleStartTimer}
               loading={tasksLoading}
+              visibleColumns={visibleColumns}
+              onToggleColumn={handleToggleColumn}
             />
           ) : (
             <TaskTable />

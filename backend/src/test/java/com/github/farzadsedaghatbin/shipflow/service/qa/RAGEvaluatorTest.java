@@ -25,16 +25,13 @@ class RAGEvaluatorTest {
   @Test
   void testEvaluateHighQualityRAG() {
     String question = "What is the current status of the payment feature?";
-    String answer =
-        "Based on the meeting notes [Source 1], the payment feature is currently in development. "
-            + "The team completed the integration with the payment gateway [Source 2].";
+    String answer = "Based on the meeting notes [Source 1], the payment feature is currently in development. "
+        + "The team completed the integration with the payment gateway [Source 2].";
 
-    List<EmbeddingMatch<TextSegment>> retrievedDocs =
-        createMockDocuments(
-            List.of(
-                "Meeting notes: Payment feature is in development with 60% completion.",
-                "Technical doc: Payment gateway integration completed last week."),
-            List.of(0.85, 0.80));
+    List<EmbeddingMatch<TextSegment>> retrievedDocs = createMockDocuments(
+        List.of("Meeting notes: Payment feature is in development with 60% completion.",
+            "Technical doc: Payment gateway integration completed last week."),
+        List.of(0.85, 0.80));
 
     RAGEvaluationMetrics metrics = evaluator.evaluate(question, answer, retrievedDocs);
 
@@ -50,8 +47,8 @@ class RAGEvaluatorTest {
     String question = "What is the deployment schedule?";
     String answer = "I couldn't find relevant information to answer your question.";
 
-    List<EmbeddingMatch<TextSegment>> retrievedDocs =
-        createMockDocuments(List.of("Unrelated document about testing"), List.of(0.45));
+    List<EmbeddingMatch<TextSegment>> retrievedDocs = createMockDocuments(
+        List.of("Unrelated document about testing"), List.of(0.45));
 
     RAGEvaluationMetrics metrics = evaluator.evaluate(question, answer, retrievedDocs);
 
@@ -65,10 +62,9 @@ class RAGEvaluatorTest {
     String question = "When is the next cycle starting?";
     String answer = "The next cycle will start on Monday.";
 
-    List<EmbeddingMatch<TextSegment>> retrievedDocs =
-        createMockDocuments(
-            List.of("Meeting notes about design discussions"), List.of(0.30) // Low relevance
-            );
+    List<EmbeddingMatch<TextSegment>> retrievedDocs = createMockDocuments(
+        List.of("Meeting notes about design discussions"), List.of(0.30) // Low relevance
+    );
 
     RAGEvaluationMetrics metrics = evaluator.evaluate(question, answer, retrievedDocs);
 
@@ -91,22 +87,20 @@ class RAGEvaluatorTest {
   @Test
   void testAnswerRelevanceWithKeyTerms() {
     String question = "What are the risks in the authentication feature?";
-    String answer =
-        "The authentication feature has several risks: "
-            + "1. Security vulnerabilities in password storage "
-            + "2. Performance issues with token validation";
+    String answer = "The authentication feature has several risks: "
+        + "1. Security vulnerabilities in password storage " + "2. Performance issues with token validation";
 
-    List<EmbeddingMatch<TextSegment>> retrievedDocs =
-        createMockDocuments(List.of("Risk assessment doc"), List.of(0.75));
+    List<EmbeddingMatch<TextSegment>> retrievedDocs = createMockDocuments(List.of("Risk assessment doc"),
+        List.of(0.75));
 
     RAGEvaluationMetrics metrics = evaluator.evaluate(question, answer, retrievedDocs);
 
-    // Should have high relevance since key terms (risks, authentication, feature) are present
+    // Should have high relevance since key terms (risks, authentication, feature)
+    // are present
     assertThat(metrics.getAnswerRelevance()).isGreaterThanOrEqualTo(60.0);
   }
 
-  private List<EmbeddingMatch<TextSegment>> createMockDocuments(
-      List<String> texts, List<Double> scores) {
+  private List<EmbeddingMatch<TextSegment>> createMockDocuments(List<String> texts, List<Double> scores) {
     List<EmbeddingMatch<TextSegment>> matches = new ArrayList<>();
 
     for (int i = 0; i < texts.size(); i++) {

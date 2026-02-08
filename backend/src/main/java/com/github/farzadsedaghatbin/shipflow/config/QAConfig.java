@@ -16,13 +16,14 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Configuration for the Q&A feature including embeddings and vector store.
  *
- * <p>The vector store is now pluggable - supports multiple providers:
+ * <p>
+ * The vector store is now pluggable - supports multiple providers:
  *
  * <ul>
- *   <li>in-memory: For development and testing (default in dev profile)
- *   <li>qdrant: Production recommended (default in prod profile)
- *   <li>chroma: Alternative option
- *   <li>milvus, pinecone, weaviate: Future/optional support
+ * <li>in-memory: For development and testing (default in dev profile)
+ * <li>qdrant: Production recommended (default in prod profile)
+ * <li>chroma: Alternative option
+ * <li>milvus, pinecone, weaviate: Future/optional support
  * </ul>
  *
  * @see VectorStoreProviderFactory
@@ -74,8 +75,8 @@ public class QAConfig {
   }
 
   /**
-   * Creates the embedding model bean using all-MiniLM-L6-v2. This model is fast, accurate, and
-   * lightweight for local inference. Output dimension: 384
+   * Creates the embedding model bean using all-MiniLM-L6-v2. This model is fast,
+   * accurate, and lightweight for local inference. Output dimension: 384
    */
   @Bean
   public EmbeddingModel embeddingModel() {
@@ -84,15 +85,14 @@ public class QAConfig {
   }
 
   /**
-   * Creates the embedding store bean using the configured provider. Uses pluggable vector store
-   * architecture - provider is selected via configuration.
+   * Creates the embedding store bean using the configured provider. Uses
+   * pluggable vector store architecture - provider is selected via configuration.
    */
   @Bean
   public EmbeddingStore<TextSegment> embeddingStore() {
     log.info("Creating vector store with provider: {}", vectorStoreProvider);
 
-    VectorStoreProviderType providerType =
-        VectorStoreProviderType.fromConfigValue(vectorStoreProvider);
+    VectorStoreProviderType providerType = VectorStoreProviderType.fromConfigValue(vectorStoreProvider);
     VectorStoreProviderConfig config = buildProviderConfig(providerType);
 
     return vectorStoreProviderFactory.createStore(providerType, config);
@@ -100,28 +100,26 @@ public class QAConfig {
 
   /** Builds the configuration for the selected provider. */
   private VectorStoreProviderConfig buildProviderConfig(VectorStoreProviderType providerType) {
-    VectorStoreProviderConfig.Builder builder =
-        VectorStoreProviderConfig.builder()
-            .collectionName(collectionName)
-            .dimension(vectorDimension);
+    VectorStoreProviderConfig.Builder builder = VectorStoreProviderConfig.builder().collectionName(collectionName)
+        .dimension(vectorDimension);
 
     switch (providerType) {
-      case QDRANT:
+      case QDRANT :
         builder.host(qdrantHost).port(qdrantPort);
         if (qdrantApiKey != null && !qdrantApiKey.trim().isEmpty()) {
           builder.apiKey(qdrantApiKey);
         }
         break;
 
-      case CHROMA:
+      case CHROMA :
         builder.url(chromaUrl);
         break;
 
-      case IN_MEMORY:
+      case IN_MEMORY :
         // No additional config needed
         break;
 
-      default:
+      default :
         log.warn("Using default configuration for provider: {}", providerType);
     }
 

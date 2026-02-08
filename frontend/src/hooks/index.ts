@@ -3,6 +3,8 @@ export type { KeyboardShortcut } from './useKeyboardShortcuts';
 
 export { useDebounce } from './useDebounce';
 
+export { useReducedMotion } from './useReducedMotion';
+
 // React Query hooks
 export {
   // Project hooks

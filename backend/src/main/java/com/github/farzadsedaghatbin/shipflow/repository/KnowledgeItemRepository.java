@@ -38,8 +38,8 @@ public interface KnowledgeItemRepository extends JpaRepository<KnowledgeItem, Lo
   List<KnowledgeItem> findByEntityType(KnowledgeEntityType entityType);
 
   /** Find knowledge item by entity type, entity ID, and chunk index. */
-  Optional<KnowledgeItem> findByEntityTypeAndEntityIdAndChunkIndex(
-      KnowledgeEntityType entityType, Long entityId, Integer chunkIndex);
+  Optional<KnowledgeItem> findByEntityTypeAndEntityIdAndChunkIndex(KnowledgeEntityType entityType, Long entityId,
+      Integer chunkIndex);
 
   /** Delete knowledge items by entity type and entity ID. */
   void deleteByEntityTypeAndEntityId(KnowledgeEntityType entityType, Long entityId);
@@ -48,8 +48,6 @@ public interface KnowledgeItemRepository extends JpaRepository<KnowledgeItem, Lo
   List<KnowledgeItem> findByContentHash(String contentHash);
 
   /** Find all embedding IDs for a given entity. */
-  @Query(
-      "SELECT k.embeddingId FROM KnowledgeItem k WHERE k.entityType = :type AND k.entityId = :entityId AND k.embeddingId IS NOT NULL")
-  List<String> findEmbeddingIdsByEntity(
-      @Param("type") KnowledgeEntityType type, @Param("entityId") Long entityId);
+  @Query("SELECT k.embeddingId FROM KnowledgeItem k WHERE k.entityType = :type AND k.entityId = :entityId AND k.embeddingId IS NOT NULL")
+  List<String> findEmbeddingIdsByEntity(@Param("type") KnowledgeEntityType type, @Param("entityId") Long entityId);
 }

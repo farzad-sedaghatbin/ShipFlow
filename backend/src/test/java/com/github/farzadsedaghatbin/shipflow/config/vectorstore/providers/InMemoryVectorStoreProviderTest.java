@@ -48,11 +48,8 @@ class InMemoryVectorStoreProviderTest {
 
   @Test
   void createStore_shouldCreateStore() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().collectionName("test_collection")
+        .dimension(384).build();
 
     EmbeddingStore<TextSegment> store = provider.createStore(config);
     assertNotNull(store);
@@ -75,8 +72,7 @@ class InMemoryVectorStoreProviderTest {
 
   @Test
   void validateConfig_shouldNotThrowForEmptyConfig() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().collectionName("").build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().collectionName("").build();
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }
 }

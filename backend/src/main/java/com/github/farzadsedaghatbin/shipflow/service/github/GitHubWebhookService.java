@@ -39,8 +39,7 @@ public class GitHubWebhookService {
 
     try {
       Mac mac = Mac.getInstance(HMAC_SHA256);
-      SecretKeySpec secretKeySpec =
-          new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256);
+      SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256);
       mac.init(secretKeySpec);
 
       byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
@@ -56,8 +55,8 @@ public class GitHubWebhookService {
   /** Process a webhook event */
   public void processWebhook(String eventType, String payload) {
     // Store the event
-    GitHubWebhookEvent event =
-        GitHubWebhookEvent.builder().eventType(eventType).payload(payload).processed(false).build();
+    GitHubWebhookEvent event = GitHubWebhookEvent.builder().eventType(eventType).payload(payload).processed(false)
+        .build();
 
     try {
       JsonNode root = objectMapper.readTree(payload);
@@ -73,17 +72,17 @@ public class GitHubWebhookService {
 
       // Process based on event type
       switch (eventType) {
-        case "push":
+        case "push" :
           processPushEvent(root, event);
           break;
-        case "pull_request":
+        case "pull_request" :
           processPullRequestEvent(root, event);
           break;
-        case "create":
-        case "delete":
+        case "create" :
+        case "delete" :
           processBranchEvent(root, event, eventType);
           break;
-        default:
+        default :
           log.info("Unhandled webhook event type: {}", eventType);
       }
 
@@ -118,21 +117,12 @@ public class GitHubWebhookService {
           JsonNode authorNode = commitNode.get("author");
           String authorName = authorNode.get("name").asText();
           String authorEmail = authorNode.get("email").asText();
-          String authorUsername =
-              authorNode.has("username") ? authorNode.get("username").asText() : null;
+          String authorUsername = authorNode.has("username") ? authorNode.get("username").asText() : null;
 
           LocalDateTime commitDate = ZonedDateTime.parse(timestamp).toLocalDateTime();
 
-          integrationService.processCommit(
-              repoFullName,
-              sha,
-              message,
-              authorName,
-              authorEmail,
-              authorUsername,
-              commitDate,
-              branch,
-              url);
+          integrationService.processCommit(repoFullName, sha, message, authorName, authorEmail,
+              authorUsername, commitDate, branch, url);
 
           log.info("Processed commit {} from push event", sha);
         }
@@ -153,8 +143,9 @@ public class GitHubWebhookService {
       String repoFullName = repoNode.get("full_name").asText();
       Integer prNumber = prNode.get("number").asInt();
       String title = prNode.get("title").asText();
-      String description =
-          prNode.has("body") && !prNode.get("body").isNull() ? prNode.get("body").asText() : null;
+      String description = prNode.has("body") && !prNode.get("body").isNull()
+          ? prNode.get("body").asText()
+          : null;
       String state = prNode.get("state").asText(); // open or closed
 
       JsonNode headNode = prNode.get("head");
@@ -184,20 +175,8 @@ public class GitHubWebhookService {
         mergedByUsername = prNode.get("merged_by").get("login").asText();
       }
 
-      integrationService.processPullRequest(
-          repoFullName,
-          prNumber,
-          title,
-          description,
-          state,
-          headBranch,
-          baseBranch,
-          authorUsername,
-          url,
-          openedAt,
-          closedAt,
-          mergedAt,
-          mergedByUsername);
+      integrationService.processPullRequest(repoFullName, prNumber, title, description, state, headBranch,
+          baseBranch, authorUsername, url, openedAt, closedAt, mergedAt, mergedByUsername);
 
       log.info("Processed PR #{} ({}) from webhook", prNumber, action);
     } catch (Exception e) {

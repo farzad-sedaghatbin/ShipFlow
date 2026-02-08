@@ -5,16 +5,12 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity for storing manual notes added by users. These can be associated with pitches, meetings,
- * teams, or cycles.
+ * Entity for storing manual notes added by users. These can be associated with
+ * pitches, meetings, teams, or cycles.
  */
 @Entity
-@Table(
-    name = "manual_notes",
-    indexes = {
-      @Index(name = "idx_note_context", columnList = "contextType, contextId"),
-      @Index(name = "idx_note_author", columnList = "authorId")
-    })
+@Table(name = "manual_notes", indexes = {@Index(name = "idx_note_context", columnList = "contextType, contextId"),
+    @Index(name = "idx_note_author", columnList = "authorId")})
 @Getter
 @Setter
 @NoArgsConstructor

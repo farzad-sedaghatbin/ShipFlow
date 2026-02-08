@@ -10,9 +10,7 @@ import org.springframework.stereotype.Repository;
 public interface GitHubWebhookEventRepository extends JpaRepository<GitHubWebhookEvent, Long> {
   List<GitHubWebhookEvent> findByProcessed(Boolean processed);
 
-  List<GitHubWebhookEvent> findByProcessedAndCreatedAtBefore(
-      Boolean processed, LocalDateTime before);
+  List<GitHubWebhookEvent> findByProcessedAndCreatedAtBefore(Boolean processed, LocalDateTime before);
 
-  List<GitHubWebhookEvent> findByRepositoryFullNameAndProcessed(
-      String repositoryFullName, Boolean processed);
+  List<GitHubWebhookEvent> findByRepositoryFullNameAndProcessed(String repositoryFullName, Boolean processed);
 }

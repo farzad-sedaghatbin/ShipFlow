@@ -7,14 +7,12 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing a permission in the RBAC system. Links roles to specific actions on specific
- * resource types.
+ * Entity representing a permission in the RBAC system. Links roles to specific
+ * actions on specific resource types.
  */
 @Entity
-@Table(
-    name = "permissions",
-    uniqueConstraints =
-        @UniqueConstraint(columnNames = {"role", "resource_type", "permission_type"}))
+@Table(name = "permissions", uniqueConstraints = @UniqueConstraint(columnNames = {"role", "resource_type",
+    "permission_type"}))
 @Getter
 @Setter
 @NoArgsConstructor

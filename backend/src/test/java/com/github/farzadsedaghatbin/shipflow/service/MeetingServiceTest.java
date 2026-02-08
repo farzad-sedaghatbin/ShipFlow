@@ -5,12 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
@@ -30,17 +31,26 @@ import org.springframework.data.jpa.domain.Specification;
 @ExtendWith(MockitoExtension.class)
 class MeetingServiceTest {
 
-  @Mock private MeetingRepository meetingRepository;
+  @Mock
+  private MeetingRepository meetingRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private RetrospectiveRepository retrospectiveRepository;
+  @Mock
+  private RetrospectiveRepository retrospectiveRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
-  @InjectMocks private MeetingService meetingService;
+  @Spy
+  private ObjectMapper objectMapper = new ObjectMapper();
+
+  @InjectMocks
+  private MeetingService meetingService;
 
   private Meeting testMeeting;
   private Pitch testPitch;
@@ -50,20 +60,12 @@ class MeetingServiceTest {
   void setUp() {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
-    testMeeting =
-        Meeting.builder()
-            .id(1L)
-            .pitch(testPitch)
-            .type(MeetingType.KICKOFF)
-            .dateHeld(LocalDate.now())
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Test meeting notes")
-            .build();
+    testMeeting = Meeting.builder().id(1L).pitch(testPitch).type("KICKOFF").dateHeld(LocalDate.now())
+        .dorReady(true).dodReady(false).notes("Test meeting notes").build();
 
     testRequest = new CreateMeetingRequest();
     testRequest.setPitchId(1L);
-    testRequest.setType(MeetingType.KICKOFF);
+    testRequest.setType("KICKOFF");
     testRequest.setDateHeld(LocalDate.now());
     testRequest.setDorReady(true);
     testRequest.setDodReady(false);
@@ -92,8 +94,7 @@ class MeetingServiceTest {
   void getMeetingById_WhenNotExists_ShouldThrowException() {
     when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.getMeetingById(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> meetingService.getMeetingById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Meeting not found");
   }
 
@@ -142,12 +143,12 @@ class MeetingServiceTest {
 
   @Test
   void getMeetingsByType_ShouldReturnMeetings() {
-    when(meetingRepository.findByType(MeetingType.KICKOFF)).thenReturn(Arrays.asList(testMeeting));
+    when(meetingRepository.findByType("KICKOFF")).thenReturn(Arrays.asList(testMeeting));
 
-    List<MeetingDTO> result = meetingService.getMeetingsByType(MeetingType.KICKOFF);
+    List<MeetingDTO> result = meetingService.getMeetingsByType("KICKOFF");
 
     assertThat(result).hasSize(1);
-    verify(meetingRepository).findByType(MeetingType.KICKOFF);
+    verify(meetingRepository).findByType("KICKOFF");
   }
 
   @Test
@@ -171,9 +172,8 @@ class MeetingServiceTest {
 
     when(meetingRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-    Page<MeetingDTO> result =
-        meetingService.getMeetingsWithFilters(
-            null, null, 1L, Arrays.asList(MeetingType.KICKOFF), null, null, null, null, pageable);
+    Page<MeetingDTO> result = meetingService.getMeetingsWithFilters(null, null, 1L,
+        Arrays.asList("KICKOFF"), null, null, null, null, pageable);
 
     assertThat(result.getContent()).hasSize(1);
     verify(meetingRepository).findAll(any(Specification.class), any(Pageable.class));
@@ -183,13 +183,8 @@ class MeetingServiceTest {
   void createMeeting_WithActionItems_ShouldSaveMeetingWithActions() {
     Person testPerson = Person.builder().id(1L).name("Test Person").build();
     List<MeetingActionDTO> actions = new ArrayList<>();
-    actions.add(
-        MeetingActionDTO.builder()
-            .description("Test action")
-            .assignedToId(1L)
-            .status(ActionStatus.OPEN)
-            .dueDate(LocalDate.now().plusDays(7))
-            .build());
+    actions.add(MeetingActionDTO.builder().description("Test action").assignedToId(1L).status(ActionStatus.OPEN)
+        .dueDate(LocalDate.now().plusDays(7)).build());
 
     testRequest.setActions(actions);
     testRequest.setDecisions("Test decisions");
@@ -224,26 +219,14 @@ class MeetingServiceTest {
 
   @Test
   void updateMeeting_WithActionItems_ShouldReplaceActions() {
-    Meeting meetingWithActions =
-        Meeting.builder()
-            .id(1L)
-            .pitch(testPitch)
-            .type(MeetingType.KICKOFF)
-            .dateHeld(LocalDate.now())
-            .dorReady(true)
-            .dodReady(false)
-            .notes("Test notes")
-            .actions(new ArrayList<>())
-            .build();
+    Meeting meetingWithActions = Meeting.builder().id(1L).pitch(testPitch).type("KICKOFF")
+        .dateHeld(LocalDate.now()).dorReady(true).dodReady(false).notes("Test notes").actions(new ArrayList<>())
+        .build();
 
     Person testPerson = Person.builder().id(1L).name("Test Person").build();
     List<MeetingActionDTO> newActions = new ArrayList<>();
-    newActions.add(
-        MeetingActionDTO.builder()
-            .description("Updated action")
-            .assignedToId(1L)
-            .status(ActionStatus.IN_PROGRESS)
-            .build());
+    newActions.add(MeetingActionDTO.builder().description("Updated action").assignedToId(1L)
+        .status(ActionStatus.IN_PROGRESS).build());
 
     testRequest.setActions(newActions);
     testRequest.setDecisions("Updated decisions");
@@ -264,8 +247,7 @@ class MeetingServiceTest {
     testRequest.setPitchId(999L);
     when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Pitch not found");
   }
 
@@ -275,28 +257,166 @@ class MeetingServiceTest {
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(retrospectiveRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Retrospective not found");
   }
 
   @Test
   void createMeeting_WithInvalidAssignee_ShouldThrowException() {
     List<MeetingActionDTO> actions = new ArrayList<>();
-    actions.add(
-        MeetingActionDTO.builder()
-            .description("Test action")
-            .assignedToId(999L)
-            .status(ActionStatus.OPEN)
-            .build());
+    actions.add(MeetingActionDTO.builder().description("Test action").assignedToId(999L).status(ActionStatus.OPEN)
+        .build());
 
     testRequest.setActions(actions);
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(personRepository.findById(999L)).thenReturn(Optional.empty());
     when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
 
-    assertThatThrownBy(() -> meetingService.createMeeting(testRequest))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> meetingService.createMeeting(testRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Person not found");
+  }
+
+  @Test
+  void createMeeting_WithDorDodItems_ShouldSaveWithChecklistItems() {
+    // Create DOR/DOD checklist items
+    List<MeetingDTO.MeetingChecklistItem> dorItems = List.of(
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Problem Statement Defined")
+            .description("Clear problem statement is documented")
+            .isRequired(true)
+            .isCompleted(true)
+            .build(),
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Stakeholders Identified")
+            .description("All relevant stakeholders are identified")
+            .isRequired(false)
+            .isCompleted(false)
+            .build()
+    );
+    
+    List<MeetingDTO.MeetingChecklistItem> dodItems = List.of(
+        MeetingDTO.MeetingChecklistItem.builder()
+            .name("Solution Outlined")
+            .description("High-level solution approach documented")
+            .isRequired(true)
+            .isCompleted(true)
+            .build()
+    );
+
+    testRequest.setDorItems(dorItems);
+    testRequest.setDodItems(dodItems);
+
+    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+    MeetingDTO result = meetingService.createMeeting(testRequest);
+
+    assertThat(result).isNotNull();
+    verify(meetingRepository).save(any(Meeting.class));
+  }
+
+  @Test
+  void getMeetingById_WithDorDodItems_ShouldReturnChecklistItems() {
+    // Create meeting with DOR/DOD JSON
+    String dorItemsJson = "[{\"name\":\"Test DOR\",\"description\":\"Test desc\",\"isRequired\":true,\"isCompleted\":true}]";
+    String dodItemsJson = "[{\"name\":\"Test DOD\",\"description\":\"Test desc\",\"isRequired\":true,\"isCompleted\":false}]";
+    
+    Meeting meetingWithChecklist = Meeting.builder()
+        .id(1L)
+        .pitch(testPitch)
+        .type("SHAPING")
+        .dateHeld(LocalDate.now())
+        .dorReady(true)
+        .dodReady(false)
+        .dorItemsJson(dorItemsJson)
+        .dodItemsJson(dodItemsJson)
+        .notes("Test notes")
+        .build();
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(meetingWithChecklist));
+
+    MeetingDTO result = meetingService.getMeetingById(1L);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).isNotNull();
+    assertThat(result.getDodItems()).isNotNull();
+    assertThat(result.getDorItems()).hasSize(1);
+    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems().get(0).getName()).isEqualTo("Test DOR");
+    assertThat(result.getDodItems().get(0).getName()).isEqualTo("Test DOD");
+  }
+
+  @Test
+  void getMeetingForView_ShouldReturnOnlyCompletedItems() {
+    // Given - meeting with mixed completed/uncompleted items
+    MeetingDTO.MeetingChecklistItem completedDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(1L).name("Completed DOR").isRequired(true).isCompleted(true).build();
+    MeetingDTO.MeetingChecklistItem incompleteDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(2L).name("Incomplete DOR").isRequired(false).isCompleted(false).build();
+    MeetingDTO.MeetingChecklistItem completedDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(3L).name("Completed DOD").isRequired(true).isCompleted(true).build();
+    MeetingDTO.MeetingChecklistItem incompleteDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(4L).name("Incomplete DOD").isRequired(false).isCompleted(false).build();
+
+    List<MeetingDTO.MeetingChecklistItem> dorItems = Arrays.asList(completedDor, incompleteDor);
+    List<MeetingDTO.MeetingChecklistItem> dodItems = Arrays.asList(completedDod, incompleteDod);
+
+    try {
+      testMeeting.setDorItemsJson(objectMapper.writeValueAsString(dorItems));
+      testMeeting.setDodItemsJson(objectMapper.writeValueAsString(dodItems));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+    // When
+    MeetingDTO result = meetingService.getMeetingForView(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).hasSize(1);
+    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems().get(0).getName()).isEqualTo("Completed DOR");
+    assertThat(result.getDorItems().get(0).getIsCompleted()).isTrue();
+    assertThat(result.getDodItems().get(0).getName()).isEqualTo("Completed DOD");
+    assertThat(result.getDodItems().get(0).getIsCompleted()).isTrue();
+  }
+
+  @Test
+  void getMeetingForView_WhenNoCompletedItems_ShouldReturnEmptyLists() {
+    // Given - meeting with only incomplete items
+    MeetingDTO.MeetingChecklistItem incompleteDor = MeetingDTO.MeetingChecklistItem.builder()
+        .id(1L).name("Incomplete DOR").isCompleted(false).build();
+    MeetingDTO.MeetingChecklistItem incompleteDod = MeetingDTO.MeetingChecklistItem.builder()
+        .id(2L).name("Incomplete DOD").isCompleted(false).build();
+
+    try {
+      testMeeting.setDorItemsJson(objectMapper.writeValueAsString(List.of(incompleteDor)));
+      testMeeting.setDodItemsJson(objectMapper.writeValueAsString(List.of(incompleteDod)));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+    // When
+    MeetingDTO result = meetingService.getMeetingForView(1L);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getDorItems()).isEmpty();
+    assertThat(result.getDodItems()).isEmpty();
+  }
+
+  @Test
+  void getMeetingForView_WhenNotExists_ShouldThrowException() {
+    // Given
+    when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+    // When/Then
+    assertThatThrownBy(() -> meetingService.getMeetingForView(999L))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Meeting not found");
   }
 }

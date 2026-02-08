@@ -70,8 +70,8 @@ public class UserController {
   @PutMapping("/{id}/password")
   @Operation(summary = "Change user password (admin can change any, user can change own)")
   @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")
-  public ResponseEntity<Void> changePassword(
-      @PathVariable Long id, @Valid @RequestBody ChangePasswordRequest request) {
+  public ResponseEntity<Void> changePassword(@PathVariable Long id,
+      @Valid @RequestBody ChangePasswordRequest request) {
     userService.changePassword(id, request);
     return ResponseEntity.ok().build();
   }
@@ -94,15 +94,14 @@ public class UserController {
   @PutMapping("/{id}/profile")
   @Operation(summary = "Update user profile (avatar, bio, skills, etc.)")
   @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")
-  public ResponseEntity<UserProfileDTO> updateProfile(
-      @PathVariable Long id, @Valid @RequestBody UpdateProfileRequest request) {
+  public ResponseEntity<UserProfileDTO> updateProfile(@PathVariable Long id,
+      @Valid @RequestBody UpdateProfileRequest request) {
     return ResponseEntity.ok(userService.updateProfile(id, request));
   }
 
   @PutMapping("/me/profile")
   @Operation(summary = "Update current user's profile")
-  public ResponseEntity<UserProfileDTO> updateCurrentUserProfile(
-      @Valid @RequestBody UpdateProfileRequest request) {
+  public ResponseEntity<UserProfileDTO> updateCurrentUserProfile(@Valid @RequestBody UpdateProfileRequest request) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String username = authentication.getName();
     UserProfileDTO profile = userService.getProfileByUsername(username);

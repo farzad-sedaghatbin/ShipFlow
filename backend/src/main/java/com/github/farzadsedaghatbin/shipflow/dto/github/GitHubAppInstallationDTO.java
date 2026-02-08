@@ -27,8 +27,8 @@ public class GitHubAppInstallationDTO {
   private String installedByLogin;
 
   /**
-   * List of repositories accessible through this installation Only populated when full details are
-   * requested
+   * List of repositories accessible through this installation Only populated when
+   * full details are requested
    */
   private List<GitHubRepositoryDTO> repositories;
 

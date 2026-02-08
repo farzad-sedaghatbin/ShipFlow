@@ -90,8 +90,8 @@ export default function CycleDetail() {
             const statusRes = await retroService.getCycleStatus(cycleId);
             setRetroStatus(statusRes.data);
           }
-        } catch (retroError) {
-          console.log('Retro status unavailable:', retroError);
+        } catch {
+          // Retro status unavailable - feature may not be enabled
         }
       }
     } catch (error: any) {
@@ -190,6 +190,14 @@ export default function CycleDetail() {
               {t('cycleDetailPage.circuitBreaker')}
             </Link>
           </Button>
+          {cycle.phase === 'COOLDOWN' && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/cycles/${cycle.id}/cooldown`}>
+                <Clock className="h-4 w-4 mr-2" />
+                {t('cycleDetailPage.cooldownActivities')}
+              </Link>
+            </Button>
+          )}
           <Button variant="outline" size="sm" asChild>
             <Link to={`/cycles/${cycle.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />

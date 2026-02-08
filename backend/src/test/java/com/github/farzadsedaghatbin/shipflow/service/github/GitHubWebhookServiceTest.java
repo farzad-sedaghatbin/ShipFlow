@@ -14,17 +14,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/** Unit tests for GitHubWebhookService Tests webhook signature validation and event processing */
+/**
+ * Unit tests for GitHubWebhookService Tests webhook signature validation and
+ * event processing
+ */
 @ExtendWith(MockitoExtension.class)
 class GitHubWebhookServiceTest {
 
-  @Mock private GitHubWebhookEventRepository webhookEventRepository;
+  @Mock
+  private GitHubWebhookEventRepository webhookEventRepository;
 
-  @Mock private GitHubIntegrationService integrationService;
+  @Mock
+  private GitHubIntegrationService integrationService;
 
-  @Mock private ObjectMapper objectMapper;
+  @Mock
+  private ObjectMapper objectMapper;
 
-  @InjectMocks private GitHubWebhookService service;
+  @InjectMocks
+  private GitHubWebhookService service;
 
   private String testSecret;
 
@@ -79,23 +86,18 @@ class GitHubWebhookServiceTest {
     String payload = "{\"repository\":{\"full_name\":\"test/repo\"},\"commits\":[]}";
 
     when(objectMapper.readTree(payload)).thenReturn(new ObjectMapper().readTree(payload));
-    when(webhookEventRepository.save(any(GitHubWebhookEvent.class)))
-        .thenAnswer(
-            invocation -> {
-              GitHubWebhookEvent event = invocation.getArgument(0);
-              event.setId(1L);
-              return event;
-            });
+    when(webhookEventRepository.save(any(GitHubWebhookEvent.class))).thenAnswer(invocation -> {
+      GitHubWebhookEvent event = invocation.getArgument(0);
+      event.setId(1L);
+      return event;
+    });
 
     // When
     service.processWebhook(eventType, payload);
 
     // Then
     verify(webhookEventRepository, atLeastOnce())
-        .save(
-            argThat(
-                event ->
-                    event.getEventType().equals(eventType) && event.getPayload().equals(payload)));
+        .save(argThat(event -> event.getEventType().equals(eventType) && event.getPayload().equals(payload)));
   }
 
   @Test

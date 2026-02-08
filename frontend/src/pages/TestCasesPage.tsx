@@ -96,6 +96,12 @@ const TestCasesPage: React.FC = () => {
     return pitches.filter(p => projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
+  // Reset cycle and pitch filters when project changes to ensure clean filtering
+  useEffect(() => {
+    setCycleFilter('all');
+    setPitchFilter('all');
+  }, [currentProject?.id, isAllProjectsSelected]);
+
   useEffect(() => {
     loadTestCases();
   }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, currentProject?.id]);

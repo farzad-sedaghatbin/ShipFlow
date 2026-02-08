@@ -12,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Manages conversation contexts for multi-turn Q&A. Uses Redis when configured via
- * app.ai.cache.provider=redis, otherwise in-memory.
+ * Manages conversation contexts for multi-turn Q&A. Uses Redis when configured
+ * via app.ai.cache.provider=redis, otherwise in-memory.
  */
 @Component
 @Slf4j
@@ -32,9 +32,7 @@ public class ConversationManager {
   public void init() {
     if (cacheConfig.isRedisProvider()) {
       initializeRedis();
-      log.info(
-          "ConversationManager initialized with Redis provider ({}:{})",
-          cacheConfig.getRedis().getHost(),
+      log.info("ConversationManager initialized with Redis provider ({}:{})", cacheConfig.getRedis().getHost(),
           cacheConfig.getRedis().getPort());
     } else {
       log.info("ConversationManager initialized with in-memory provider");
@@ -42,25 +40,20 @@ public class ConversationManager {
   }
 
   /**
-   * Initialize Redis connection for distributed conversation management. In production, this would
-   * use Spring Data Redis or Jedis/Lettuce client.
+   * Initialize Redis connection for distributed conversation management. In
+   * production, this would use Spring Data Redis or Jedis/Lettuce client.
    */
   private void initializeRedis() {
     try {
       AICacheConfig.RedisConfig redis = cacheConfig.getRedis();
-      log.info(
-          "Initializing Redis for conversation management at {}:{}",
-          redis.getHost(),
-          redis.getPort());
+      log.info("Initializing Redis for conversation management at {}:{}", redis.getHost(), redis.getPort());
       // In production implementation:
-      // RedisTemplate<String, ConversationContext> redisTemplate = new RedisTemplate<>();
+      // RedisTemplate<String, ConversationContext> redisTemplate = new
+      // RedisTemplate<>();
       // redisTemplate.setConnectionFactory(redisConnectionFactory);
-      log.warn(
-          "Redis provider configured but full Redis integration pending - using in-memory for now");
+      log.warn("Redis provider configured but full Redis integration pending - using in-memory for now");
     } catch (Exception e) {
-      log.error(
-          "Failed to initialize Redis for conversation management, using in-memory: {}",
-          e.getMessage());
+      log.error("Failed to initialize Redis for conversation management, using in-memory: {}", e.getMessage());
     }
   }
 
@@ -68,16 +61,9 @@ public class ConversationManager {
   public ConversationContext createConversation(Long userId, String contextType, Long contextId) {
     String conversationId = UUID.randomUUID().toString();
 
-    ConversationContext context =
-        ConversationContext.builder()
-            .conversationId(conversationId)
-            .userId(userId)
-            .contextType(contextType)
-            .contextId(contextId)
-            .startedAt(LocalDateTime.now())
-            .lastInteractionAt(LocalDateTime.now())
-            .isActive(true)
-            .build();
+    ConversationContext context = ConversationContext.builder().conversationId(conversationId).userId(userId)
+        .contextType(contextType).contextId(contextId).startedAt(LocalDateTime.now())
+        .lastInteractionAt(LocalDateTime.now()).isActive(true).build();
 
     conversations.put(conversationId, context);
     log.debug("Created conversation {} for user {}", conversationId, userId);
@@ -89,8 +75,8 @@ public class ConversationManager {
   }
 
   /** Get existing conversation or create new one. */
-  public ConversationContext getOrCreateConversation(
-      String conversationId, Long userId, String contextType, Long contextId) {
+  public ConversationContext getOrCreateConversation(String conversationId, Long userId, String contextType,
+      Long contextId) {
 
     if (conversationId != null) {
       ConversationContext existing = conversations.get(conversationId);
@@ -107,10 +93,7 @@ public class ConversationManager {
     ConversationContext context = conversations.get(conversationId);
     if (context != null) {
       context.addTurn(question, answer);
-      log.debug(
-          "Added turn to conversation {}, total turns: {}",
-          conversationId,
-          context.getHistory().size());
+      log.debug("Added turn to conversation {}, total turns: {}", conversationId, context.getHistory().size());
     }
   }
 
@@ -142,8 +125,8 @@ public class ConversationManager {
   }
 
   /**
-   * Get the most recent context (contextType and contextId) from conversation history. Useful for
-   * inferring context when user asks follow-up questions.
+   * Get the most recent context (contextType and contextId) from conversation
+   * history. Useful for inferring context when user asks follow-up questions.
    */
   public ConversationContext.ContextInfo getMostRecentContext(String conversationId) {
     ConversationContext context = conversations.get(conversationId);
@@ -170,7 +153,6 @@ public class ConversationManager {
 
   /** Get conversation count (for monitoring). */
   public int getActiveConversationCount() {
-    return (int)
-        conversations.values().stream().filter(c -> c.getIsActive() && !c.isExpired()).count();
+    return (int) conversations.values().stream().filter(c -> c.getIsActive() && !c.isExpired()).count();
   }
 }

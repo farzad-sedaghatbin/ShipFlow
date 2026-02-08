@@ -10,10 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(
-    name = "spring.flyway.repair.enabled",
-    havingValue = "true",
-    matchIfMissing = false)
+@ConditionalOnProperty(name = "spring.flyway.repair.enabled", havingValue = "true", matchIfMissing = false)
 public class FlywayRepair implements CommandLineRunner {
 
   private final Flyway flyway;

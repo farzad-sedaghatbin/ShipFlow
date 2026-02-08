@@ -1,8 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.entity.enums;
 
 /**
- * Enumeration of resources that can have permission controls. Each resource type represents a
- * domain entity in the system.
+ * Enumeration of resources that can have permission controls. Each resource
+ * type represents a domain entity in the system.
  */
 public enum ResourceType {
   /** Cycle management resource */

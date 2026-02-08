@@ -16,7 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class CycleRepositoryTest {
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
   private Cycle testCycle;
 
@@ -24,27 +25,15 @@ class CycleRepositoryTest {
   void setUp() {
     cycleRepository.deleteAll();
 
-    testCycle =
-        Cycle.builder()
-            .name("Test Cycle")
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.BUILD).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
   }
 
   @Test
   void findAllByOrderByStartDateDesc_ShouldReturnCyclesOrdered() {
-    Cycle olderCycle =
-        Cycle.builder()
-            .name("Older Cycle")
-            .startDate(LocalDate.now().minusWeeks(8))
-            .endDate(LocalDate.now().minusWeeks(2))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle olderCycle = Cycle.builder().name("Older Cycle").startDate(LocalDate.now().minusWeeks(8))
+        .endDate(LocalDate.now().minusWeeks(2)).phase(CyclePhase.COOLDOWN).isActive(false).build();
     cycleRepository.save(olderCycle);
 
     List<Cycle> cycles = cycleRepository.findAllByOrderByStartDateDesc();
@@ -55,14 +44,8 @@ class CycleRepositoryTest {
 
   @Test
   void findByIsActiveTrue_ShouldReturnActiveCycles() {
-    Cycle inactiveCycle =
-        Cycle.builder()
-            .name("Inactive Cycle")
-            .startDate(LocalDate.now().minusWeeks(8))
-            .endDate(LocalDate.now().minusWeeks(2))
-            .phase(CyclePhase.COOLDOWN)
-            .isActive(false)
-            .build();
+    Cycle inactiveCycle = Cycle.builder().name("Inactive Cycle").startDate(LocalDate.now().minusWeeks(8))
+        .endDate(LocalDate.now().minusWeeks(2)).phase(CyclePhase.COOLDOWN).isActive(false).build();
     cycleRepository.save(inactiveCycle);
 
     List<Cycle> activeCycles = cycleRepository.findByIsActiveTrue();
@@ -73,14 +56,8 @@ class CycleRepositoryTest {
 
   @Test
   void save_ShouldPersistCycle() {
-    Cycle newCycle =
-        Cycle.builder()
-            .name("New Cycle")
-            .startDate(LocalDate.now().plusMonths(1))
-            .endDate(LocalDate.now().plusMonths(2))
-            .phase(CyclePhase.BUILD)
-            .isActive(false)
-            .build();
+    Cycle newCycle = Cycle.builder().name("New Cycle").startDate(LocalDate.now().plusMonths(1))
+        .endDate(LocalDate.now().plusMonths(2)).phase(CyclePhase.BUILD).isActive(false).build();
 
     Cycle saved = cycleRepository.save(newCycle);
 

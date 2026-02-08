@@ -10,8 +10,7 @@ public interface UploadedDocumentRepository extends JpaRepository<UploadedDocume
 
   List<UploadedDocument> findByEntityTypeAndEntityId(String entityType, Long entityId);
 
-  List<UploadedDocument> findByEntityTypeAndEntityIdAndIndexedForQAFalse(
-      String entityType, Long entityId);
+  List<UploadedDocument> findByEntityTypeAndEntityIdAndIndexedForQAFalse(String entityType, Long entityId);
 
   List<UploadedDocument> findByIndexedForQAFalse();
 

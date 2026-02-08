@@ -21,9 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/worklogs")
 @RequiredArgsConstructor
-@Tag(
-    name = "Work Logs",
-    description = "Work log management APIs for tracking time spent on pitches and tasks")
+@Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches and tasks")
 public class WorkLogController {
 
   private final WorkLogService workLogService;
@@ -31,80 +29,51 @@ public class WorkLogController {
   // ========== Current User's Own Work Logs ==========
 
   @GetMapping("/my")
-  @Operation(
-      summary = "Get current user's work logs",
-      description =
-          "Returns all work logs created by the currently authenticated user. User must be linked to a Person profile.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Work logs retrieved successfully"),
-    @ApiResponse(responseCode = "401", description = "User not authenticated"),
-    @ApiResponse(responseCode = "400", description = "User not linked to a person profile")
-  })
+  @Operation(summary = "Get current user's work logs", description = "Returns all work logs created by the currently authenticated user. User must be linked to a Person profile.")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Work logs retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User not authenticated"),
+      @ApiResponse(responseCode = "400", description = "User not linked to a person profile")})
   public ResponseEntity<List<WorkLogDTO>> getMyWorkLogs() {
     return ResponseEntity.ok(workLogService.getMyWorkLogs());
   }
 
   @GetMapping("/my/cycle/{cycleId}")
-  @Operation(
-      summary = "Get current user's work logs by cycle",
-      description = "Returns work logs for the current user filtered by cycle ID")
+  @Operation(summary = "Get current user's work logs by cycle", description = "Returns work logs for the current user filtered by cycle ID")
   public ResponseEntity<List<WorkLogDTO>> getMyWorkLogsByCycle(@PathVariable Long cycleId) {
     return ResponseEntity.ok(workLogService.getMyWorkLogsByCycle(cycleId));
   }
 
   @GetMapping("/my/date/{date}")
-  @Operation(
-      summary = "Get current user's work logs by date",
-      description = "Returns work logs for the current user on a specific date")
+  @Operation(summary = "Get current user's work logs by date", description = "Returns work logs for the current user on a specific date")
   public ResponseEntity<List<WorkLogDTO>> getMyWorkLogsByDate(
       @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
     return ResponseEntity.ok(workLogService.getMyWorkLogsByDate(date));
   }
 
   @PostMapping("/my")
-  @Operation(
-      summary = "Create a work log for yourself",
-      description =
-          "Creates a new work log for the currently authenticated user. The personId is automatically set to the user's linked Person profile.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Work log created successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Invalid data or user not linked to a person profile"),
-    @ApiResponse(responseCode = "401", description = "User not authenticated")
-  })
-  public ResponseEntity<WorkLogDTO> createMyWorkLog(
-      @Valid @RequestBody CreateWorkLogForSelfRequest request) {
+  @Operation(summary = "Create a work log for yourself", description = "Creates a new work log for the currently authenticated user. The personId is automatically set to the user's linked Person profile.")
+  @ApiResponses({@ApiResponse(responseCode = "201", description = "Work log created successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid data or user not linked to a person profile"),
+      @ApiResponse(responseCode = "401", description = "User not authenticated")})
+  public ResponseEntity<WorkLogDTO> createMyWorkLog(@Valid @RequestBody CreateWorkLogForSelfRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(workLogService.createMyWorkLog(request));
   }
 
   @PutMapping("/my/{id}")
-  @Operation(
-      summary = "Update your own work log",
-      description = "Updates an existing work log. Only the owner can update their own work logs.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Work log updated successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Work log not found or not owned by current user"),
-    @ApiResponse(responseCode = "401", description = "User not authenticated")
-  })
-  public ResponseEntity<WorkLogDTO> updateMyWorkLog(
-      @PathVariable Long id, @Valid @RequestBody CreateWorkLogForSelfRequest request) {
+  @Operation(summary = "Update your own work log", description = "Updates an existing work log. Only the owner can update their own work logs.")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Work log updated successfully"),
+      @ApiResponse(responseCode = "400", description = "Work log not found or not owned by current user"),
+      @ApiResponse(responseCode = "401", description = "User not authenticated")})
+  public ResponseEntity<WorkLogDTO> updateMyWorkLog(@PathVariable Long id,
+      @Valid @RequestBody CreateWorkLogForSelfRequest request) {
     return ResponseEntity.ok(workLogService.updateMyWorkLog(id, request));
   }
 
   @DeleteMapping("/my/{id}")
-  @Operation(
-      summary = "Delete your own work log",
-      description = "Deletes an existing work log. Only the owner can delete their own work logs.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Work log deleted successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Work log not found or not owned by current user"),
-    @ApiResponse(responseCode = "401", description = "User not authenticated")
-  })
+  @Operation(summary = "Delete your own work log", description = "Deletes an existing work log. Only the owner can delete their own work logs.")
+  @ApiResponses({@ApiResponse(responseCode = "204", description = "Work log deleted successfully"),
+      @ApiResponse(responseCode = "400", description = "Work log not found or not owned by current user"),
+      @ApiResponse(responseCode = "401", description = "User not authenticated")})
   public ResponseEntity<Void> deleteMyWorkLog(@PathVariable Long id) {
     workLogService.deleteMyWorkLog(id);
     return ResponseEntity.noContent().build();
@@ -114,9 +83,7 @@ public class WorkLogController {
 
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
-  @Operation(
-      summary = "Get all work logs",
-      description = "Returns all work logs in the system (admin/manager use)")
+  @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use)")
   public ResponseEntity<List<WorkLogDTO>> getAllWorkLogs() {
     return ResponseEntity.ok(workLogService.getAllWorkLogs());
   }
@@ -145,8 +112,7 @@ public class WorkLogController {
   @GetMapping("/person/{personId}/date/{date}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by person and date")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonAndDate(
-      @PathVariable Long personId,
+  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonAndDate(@PathVariable Long personId,
       @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
     return ResponseEntity.ok(workLogService.getWorkLogsByPersonAndDate(personId, date));
   }
@@ -168,16 +134,15 @@ public class WorkLogController {
   @PostMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Create a new work log")
-  public ResponseEntity<WorkLogDTO> createWorkLog(
-      @Valid @RequestBody CreateWorkLogRequest request) {
+  public ResponseEntity<WorkLogDTO> createWorkLog(@Valid @RequestBody CreateWorkLogRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(workLogService.createWorkLog(request));
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'UPDATE')")
   @Operation(summary = "Update a work log")
-  public ResponseEntity<WorkLogDTO> updateWorkLog(
-      @PathVariable Long id, @Valid @RequestBody CreateWorkLogRequest request) {
+  public ResponseEntity<WorkLogDTO> updateWorkLog(@PathVariable Long id,
+      @Valid @RequestBody CreateWorkLogRequest request) {
     return ResponseEntity.ok(workLogService.updateWorkLog(id, request));
   }
 

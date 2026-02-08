@@ -16,8 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Creates a default admin user if one doesn't exist. This runs before SampleDataInitializer
- * (Order=1 vs default Order). Disabled in test profile via property.
+ * Creates a default admin user if one doesn't exist. This runs before
+ * SampleDataInitializer (Order=1 vs default Order). Disabled in test profile
+ * via property.
  */
 @Component
 @RequiredArgsConstructor
@@ -35,25 +36,13 @@ public class DefaultAdminInitializer implements CommandLineRunner {
   public void run(String... args) {
     if (!userRepository.existsByUsername("admin")) {
       // Create admin person
-      Person adminPerson =
-          Person.builder()
-              .name("System Administrator")
-              .email("admin@shipflow.local")
-              .skills("Administration, System Management")
-              .isActive(true)
-              .createdAt(LocalDateTime.now())
-              .build();
+      Person adminPerson = Person.builder().name("System Administrator").email("admin@shipflow.local")
+          .skills("Administration, System Management").isActive(true).createdAt(LocalDateTime.now()).build();
       adminPerson = personRepository.save(adminPerson);
 
       // Create admin user
-      User admin =
-          User.builder()
-              .username("admin")
-              .password(passwordEncoder.encode("admin123"))
-              .role(UserRole.ADMIN)
-              .person(adminPerson)
-              .isActive(true)
-              .build();
+      User admin = User.builder().username("admin").password(passwordEncoder.encode("admin123"))
+          .role(UserRole.ADMIN).person(adminPerson).isActive(true).build();
       userRepository.save(admin);
       log.info("===========================================");
       log.info("Default admin user created:");

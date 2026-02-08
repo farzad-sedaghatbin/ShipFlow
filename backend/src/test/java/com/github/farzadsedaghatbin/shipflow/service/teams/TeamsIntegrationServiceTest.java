@@ -29,15 +29,20 @@ import org.springframework.web.client.RestTemplate;
 @ExtendWith(MockitoExtension.class)
 class TeamsIntegrationServiceTest {
 
-  @Mock private TeamsConfigurationRepository teamsConfigRepository;
+  @Mock
+  private TeamsConfigurationRepository teamsConfigRepository;
 
-  @Mock private TeamsChannelConfigRepository channelConfigRepository;
+  @Mock
+  private TeamsChannelConfigRepository channelConfigRepository;
 
-  @Mock private TeamsNotificationHistoryRepository historyRepository;
+  @Mock
+  private TeamsNotificationHistoryRepository historyRepository;
 
-  @Mock private RestTemplate restTemplate;
+  @Mock
+  private RestTemplate restTemplate;
 
-  @Mock private RestTemplate webhookRestTemplate;
+  @Mock
+  private RestTemplate webhookRestTemplate;
 
   private TeamsIntegrationService teamsService;
 
@@ -47,54 +52,25 @@ class TeamsIntegrationServiceTest {
   @BeforeEach
   void setUp() {
     // Manually create service with both RestTemplate mocks
-    teamsService =
-        new TeamsIntegrationService(
-            teamsConfigRepository,
-            channelConfigRepository,
-            historyRepository,
-            restTemplate,
-            webhookRestTemplate);
+    teamsService = new TeamsIntegrationService(teamsConfigRepository, channelConfigRepository, historyRepository,
+        restTemplate, webhookRestTemplate);
 
-    testConfig =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Test Tenant")
-            .webhookUrl("https://outlook.office.com/webhook/test")
-            .defaultChannel("General")
-            .isEnabled(true)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testConfig = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
+        .webhookUrl("https://outlook.office.com/webhook/test").defaultChannel("General").isEnabled(true)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
-    testChannelConfig =
-        TeamsChannelConfig.builder()
-            .id(1L)
-            .teamsConfiguration(testConfig)
-            .channelName("dev-team")
-            .flowType(FlowType.WEBHOOK)
-            .notifyTaskAssigned(true)
-            .notifyTaskCompleted(true)
-            .notifyTaskBlocked(false)
-            .notifyPitchShaped(true)
-            .notifyCycleStarted(true)
-            .notifyCycleCooldown(true)
-            .notifyBettingCompleted(false)
-            .notifySprintStarted(false)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testChannelConfig = TeamsChannelConfig.builder().id(1L).teamsConfiguration(testConfig).channelName("dev-team")
+        .flowType(FlowType.WEBHOOK).notifyTaskAssigned(true).notifyTaskCompleted(true).notifyTaskBlocked(false)
+        .notifyPitchShaped(true).notifyCycleStarted(true).notifyCycleCooldown(true)
+        .notifyBettingCompleted(false).notifySprintStarted(false).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
   }
 
   @Test
   void createConfiguration_NewConfiguration_ShouldCreateSuccessfully() {
     // Given
-    CreateTeamsConfigurationRequest request =
-        CreateTeamsConfigurationRequest.builder()
-            .tenantName("New Tenant")
-            .webhookUrl("https://outlook.office.com/webhook/new")
-            .defaultChannel("General")
-            .isEnabled(true)
-            .build();
+    CreateTeamsConfigurationRequest request = CreateTeamsConfigurationRequest.builder().tenantName("New Tenant")
+        .webhookUrl("https://outlook.office.com/webhook/new").defaultChannel("General").isEnabled(true).build();
 
     when(teamsConfigRepository.findByTenantName("New Tenant")).thenReturn(Optional.empty());
     when(teamsConfigRepository.save(any(TeamsConfiguration.class))).thenReturn(testConfig);
@@ -111,12 +87,8 @@ class TeamsIntegrationServiceTest {
   @Test
   void createConfiguration_ExistingConfiguration_ShouldUpdate() {
     // Given
-    CreateTeamsConfigurationRequest request =
-        CreateTeamsConfigurationRequest.builder()
-            .tenantName("Test Tenant")
-            .webhookUrl("https://outlook.office.com/webhook/updated")
-            .isEnabled(false)
-            .build();
+    CreateTeamsConfigurationRequest request = CreateTeamsConfigurationRequest.builder().tenantName("Test Tenant")
+        .webhookUrl("https://outlook.office.com/webhook/updated").isEnabled(false).build();
 
     when(teamsConfigRepository.findByTenantName("Test Tenant")).thenReturn(Optional.of(testConfig));
     when(teamsConfigRepository.save(any(TeamsConfiguration.class))).thenReturn(testConfig);
@@ -179,12 +151,8 @@ class TeamsIntegrationServiceTest {
   @Test
   void createChannelConfig_NewChannel_ShouldCreateSuccessfully() {
     // Given
-    CreateTeamsChannelConfigRequest request =
-        CreateTeamsChannelConfigRequest.builder()
-            .channelName("new-channel")
-            .flowType(FlowType.POWER_AUTOMATE_POST)
-            .notifyTaskAssigned(true)
-            .build();
+    CreateTeamsChannelConfigRequest request = CreateTeamsChannelConfigRequest.builder().channelName("new-channel")
+        .flowType(FlowType.POWER_AUTOMATE_POST).notifyTaskAssigned(true).build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
     when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(1L, "new-channel"))
@@ -202,22 +170,20 @@ class TeamsIntegrationServiceTest {
   @Test
   void createChannelConfig_ConfigNotFound_ShouldThrowException() {
     // Given
-    CreateTeamsChannelConfigRequest request =
-        CreateTeamsChannelConfigRequest.builder().channelName("test-channel").build();
+    CreateTeamsChannelConfigRequest request = CreateTeamsChannelConfigRequest.builder().channelName("test-channel")
+        .build();
 
     when(teamsConfigRepository.findById(999L)).thenReturn(Optional.empty());
 
     // When/Then
     assertThatThrownBy(() -> teamsService.createOrUpdateChannelConfig(999L, request))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Teams configuration not found");
+        .isInstanceOf(RuntimeException.class).hasMessageContaining("Teams configuration not found");
   }
 
   @Test
   void getChannelConfigs_ShouldReturnAllChannels() {
     // Given
-    when(channelConfigRepository.findByTeamsConfigurationId(1L))
-        .thenReturn(List.of(testChannelConfig));
+    when(channelConfigRepository.findByTeamsConfigurationId(1L)).thenReturn(List.of(testChannelConfig));
 
     // When
     List<TeamsChannelConfigDTO> results = teamsService.getChannelConfigs(1L);
@@ -242,8 +208,7 @@ class TeamsIntegrationServiceTest {
     when(teamsConfigRepository.findFirstByIsEnabledTrue()).thenReturn(Optional.of(testConfig));
     when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(1L, "General"))
         .thenReturn(Optional.of(testChannelConfig));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
     when(historyRepository.save(any(TeamsNotificationHistory.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -252,8 +217,7 @@ class TeamsIntegrationServiceTest {
     teamsService.sendNotification("TASK_ASSIGNED", "Test message", "General", "TASK", 123L);
 
     // Then
-    verify(webhookRestTemplate)
-        .postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
+    verify(webhookRestTemplate).postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
     verify(historyRepository).save(any(TeamsNotificationHistory.class));
   }
 
@@ -289,8 +253,7 @@ class TeamsIntegrationServiceTest {
   void sendNotification_RestTemplateFails_ShouldRecordFailure() {
     // Given
     when(teamsConfigRepository.findFirstByIsEnabledTrue()).thenReturn(Optional.of(testConfig));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenThrow(new RuntimeException("Network error"));
     when(historyRepository.save(any(TeamsNotificationHistory.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -299,59 +262,46 @@ class TeamsIntegrationServiceTest {
     teamsService.sendNotification("TASK_ASSIGNED", "Test message", null, null, null);
 
     // Then
-    verify(historyRepository)
-        .save(argThat(history -> !history.getSuccess() && history.getErrorMessage() != null));
+    verify(historyRepository).save(argThat(history -> !history.getSuccess() && history.getErrorMessage() != null));
   }
 
   @Test
   void sendTestNotification_ShouldSendSuccessfully() {
     // Given
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test notification").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test notification")
+        .build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
 
     // When
     teamsService.sendTestNotification(1L, request);
 
     // Then
-    verify(webhookRestTemplate)
-        .postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
+    verify(webhookRestTemplate).postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class));
   }
 
   @Test
   void sendTestNotification_ConfigNotFound_ShouldThrowException() {
     // Given
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test").build();
 
     when(teamsConfigRepository.findById(999L)).thenReturn(Optional.empty());
 
     // When/Then
     assertThatThrownBy(() -> teamsService.sendTestNotification(999L, request))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Teams configuration not found");
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Teams configuration not found");
   }
 
   @Test
   void getNotificationHistory_ShouldReturnHistory() {
     // Given
-    TeamsNotificationHistory history =
-        TeamsNotificationHistory.builder()
-            .id(1L)
-            .teamsConfiguration(testConfig)
-            .channelName("General")
-            .notificationType("TASK_ASSIGNED")
-            .messageText("Test message")
-            .sentAt(LocalDateTime.now())
-            .success(true)
-            .build();
+    TeamsNotificationHistory history = TeamsNotificationHistory.builder().id(1L).teamsConfiguration(testConfig)
+        .channelName("General").notificationType("TASK_ASSIGNED").messageText("Test message")
+        .sentAt(LocalDateTime.now()).success(true).build();
 
-    when(historyRepository.findTop50ByTeamsConfigurationIdOrderBySentAtDesc(1L))
-        .thenReturn(List.of(history));
+    when(historyRepository.findTop50ByTeamsConfigurationIdOrderBySentAtDesc(1L)).thenReturn(List.of(history));
 
     // When
     List<TeamsNotificationHistoryDTO> results = teamsService.getNotificationHistory(1L);
@@ -364,34 +314,18 @@ class TeamsIntegrationServiceTest {
   @Test
   void createChannelConfig_WithFlowType_ShouldSetCorrectFlowType() {
     // Given
-    CreateTeamsChannelConfigRequest request =
-        CreateTeamsChannelConfigRequest.builder()
-            .channelName("power-automate-channel")
-            .flowType(FlowType.POWER_AUTOMATE_THREAD)
-            .notifyTaskAssigned(true)
-            .build();
+    CreateTeamsChannelConfigRequest request = CreateTeamsChannelConfigRequest.builder()
+        .channelName("power-automate-channel").flowType(FlowType.POWER_AUTOMATE_THREAD).notifyTaskAssigned(true)
+        .build();
 
-    TeamsChannelConfig savedConfig =
-        TeamsChannelConfig.builder()
-            .id(2L)
-            .teamsConfiguration(testConfig)
-            .channelName("power-automate-channel")
-            .flowType(FlowType.POWER_AUTOMATE_THREAD)
-            .notifyTaskAssigned(true)
-            .notifyTaskCompleted(false)
-            .notifyTaskBlocked(false)
-            .notifyPitchShaped(false)
-            .notifyCycleStarted(false)
-            .notifyCycleCooldown(false)
-            .notifyBettingCompleted(false)
-            .notifySprintStarted(false)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    TeamsChannelConfig savedConfig = TeamsChannelConfig.builder().id(2L).teamsConfiguration(testConfig)
+        .channelName("power-automate-channel").flowType(FlowType.POWER_AUTOMATE_THREAD).notifyTaskAssigned(true)
+        .notifyTaskCompleted(false).notifyTaskBlocked(false).notifyPitchShaped(false).notifyCycleStarted(false)
+        .notifyCycleCooldown(false).notifyBettingCompleted(false).notifySprintStarted(false)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(testConfig));
-    when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(
-            1L, "power-automate-channel"))
+    when(channelConfigRepository.findByTeamsConfigurationIdAndChannelName(1L, "power-automate-channel"))
         .thenReturn(Optional.empty());
     when(channelConfigRepository.save(any(TeamsChannelConfig.class))).thenReturn(savedConfig);
 
@@ -407,26 +341,16 @@ class TeamsIntegrationServiceTest {
   @Test
   void sendTestNotification_PowerAutomate_ShouldSendAdaptiveCard() {
     // Given - Power Automate URL
-    String powerAutomateUrl =
-        "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/7c0029b148734b5981552a0d53a30348/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qsqEJmEOgq_ELpcPu3sPxVnhO0aAASIQbYi4s2tgb6A";
+    String powerAutomateUrl = "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/7c0029b148734b5981552a0d53a30348/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qsqEJmEOgq_ELpcPu3sPxVnhO0aAASIQbYi4s2tgb6A";
 
-    TeamsConfiguration powerAutomateConfig =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Power Automate Tenant")
-            .webhookUrl(powerAutomateUrl)
-            .defaultChannel("General")
-            .isEnabled(true)
-            .build();
+    TeamsConfiguration powerAutomateConfig = TeamsConfiguration.builder().id(1L).tenantName("Power Automate Tenant")
+        .webhookUrl(powerAutomateUrl).defaultChannel("General").isEnabled(true).build();
 
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder()
-            .message("🚀 Test notification from ShipFlow - Your Teams integration is working!")
-            .build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder()
+        .message("🚀 Test notification from ShipFlow - Your Teams integration is working!").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(powerAutomateConfig));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("OK"));
 
     // When
@@ -436,15 +360,13 @@ class TeamsIntegrationServiceTest {
     ArgumentCaptor<HttpEntity> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
     ArgumentCaptor<java.net.URI> uriCaptor = ArgumentCaptor.forClass(java.net.URI.class);
 
-    verify(webhookRestTemplate)
-        .postForEntity(uriCaptor.capture(), entityCaptor.capture(), eq(String.class));
+    verify(webhookRestTemplate).postForEntity(uriCaptor.capture(), entityCaptor.capture(), eq(String.class));
 
     // Verify URL (URI now, not String)
     assertThat(uriCaptor.getValue().toString()).isEqualTo(powerAutomateUrl);
 
     // Verify payload structure - Power Automate requires Adaptive Card format
-    HttpEntity<Map<String, Object>> capturedEntity =
-        (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
+    HttpEntity<Map<String, Object>> capturedEntity = (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
     Map<String, Object> payload = capturedEntity.getBody();
 
     assertThat(payload).isNotNull();
@@ -453,51 +375,33 @@ class TeamsIntegrationServiceTest {
     assertThat(payload.get("body")).isInstanceOf(java.util.List.class);
 
     // Verify headers
-    assertThat(capturedEntity.getHeaders().getContentType().toString())
-        .contains("application/json");
-    assertThat(capturedEntity.getHeaders().get("User-Agent"))
-        .contains("ShipFlow-Teams-Integration/1.0");
+    assertThat(capturedEntity.getHeaders().getContentType().toString()).contains("application/json");
+    assertThat(capturedEntity.getHeaders().get("User-Agent")).contains("ShipFlow-Teams-Integration/1.0");
   }
 
   @Test
   void sendTestNotification_PowerAutomate401_ShouldThrowHelpfulError() {
     // Given - Power Automate URL returning 401
-    String powerAutomateUrl =
-        "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/workflows/test";
+    String powerAutomateUrl = "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/workflows/test";
 
-    TeamsConfiguration config =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Test Tenant")
-            .webhookUrl(powerAutomateUrl)
-            .isEnabled(true)
-            .build();
+    TeamsConfiguration config = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
+        .webhookUrl(powerAutomateUrl).isEnabled(true).build();
 
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
 
     // Simulate 401 Unauthorized with AuthorizationFailed error
-    String errorBody =
-        "{\"error\":{\"code\":\"AuthorizationFailed\",\"message\":\"You do not have permissions to perform action 'run' on scope '/triggers/manual/paths/'\"}}";
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
-        .thenThrow(
-            HttpClientErrorException.create(
-                HttpStatus.UNAUTHORIZED,
-                "Unauthorized",
-                org.springframework.http.HttpHeaders.EMPTY,
-                errorBody.getBytes(),
-                null));
+    String errorBody = "{\"error\":{\"code\":\"AuthorizationFailed\",\"message\":\"You do not have permissions to perform action 'run' on scope '/triggers/manual/paths/'\"}}";
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+        .thenThrow(HttpClientErrorException.create(HttpStatus.UNAUTHORIZED, "Unauthorized",
+            org.springframework.http.HttpHeaders.EMPTY, errorBody.getBytes(), null));
 
     // When/Then - Should throw with helpful message
-    assertThatThrownBy(() -> teamsService.sendTestNotification(1L, request))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> teamsService.sendTestNotification(1L, request)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("POWER AUTOMATE SECURITY")
         .hasMessageContaining("flow is rejecting anonymous requests")
-        .hasMessageContaining("Who can trigger the flow")
-        .hasMessageContaining("Select 'Anyone'");
+        .hasMessageContaining("Who can trigger the flow").hasMessageContaining("Select 'Anyone'");
   }
 
   @Test
@@ -505,31 +409,18 @@ class TeamsIntegrationServiceTest {
     // Given - Power Automate URL returning 404
     String powerAutomateUrl = "https://prod-123.powerplatform.com/workflows/deleted-flow";
 
-    TeamsConfiguration config =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Test Tenant")
-            .webhookUrl(powerAutomateUrl)
-            .isEnabled(true)
-            .build();
+    TeamsConfiguration config = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
+        .webhookUrl(powerAutomateUrl).isEnabled(true).build();
 
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
-        .thenThrow(
-            HttpClientErrorException.create(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                org.springframework.http.HttpHeaders.EMPTY,
-                "".getBytes(),
-                null));
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+        .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found",
+            org.springframework.http.HttpHeaders.EMPTY, "".getBytes(), null));
 
     // When/Then
-    assertThatThrownBy(() -> teamsService.sendTestNotification(1L, request))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> teamsService.sendTestNotification(1L, request)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("POWER AUTOMATE FLOW")
         .hasMessageContaining("URL appears to be invalid or the flow was deleted");
   }
@@ -539,20 +430,14 @@ class TeamsIntegrationServiceTest {
     // Given - Traditional Teams webhook URL
     String webhookUrl = "https://outlook.office.com/webhook/abc123/IncomingWebhook/xyz789";
 
-    TeamsConfiguration config =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Test Tenant")
-            .webhookUrl(webhookUrl)
-            .isEnabled(true)
-            .build();
+    TeamsConfiguration config = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant").webhookUrl(webhookUrl)
+        .isEnabled(true).build();
 
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test notification").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test notification")
+        .build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
-    when(webhookRestTemplate.postForEntity(
-            any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
+    when(webhookRestTemplate.postForEntity(any(java.net.URI.class), any(HttpEntity.class), eq(String.class)))
         .thenReturn(ResponseEntity.ok("1"));
 
     // When
@@ -560,11 +445,9 @@ class TeamsIntegrationServiceTest {
 
     // Then
     ArgumentCaptor<HttpEntity> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
-    verify(webhookRestTemplate)
-        .postForEntity(any(java.net.URI.class), entityCaptor.capture(), eq(String.class));
+    verify(webhookRestTemplate).postForEntity(any(java.net.URI.class), entityCaptor.capture(), eq(String.class));
 
-    HttpEntity<Map<String, Object>> capturedEntity =
-        (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
+    HttpEntity<Map<String, Object>> capturedEntity = (HttpEntity<Map<String, Object>>) entityCaptor.getValue();
     Map<String, Object> payload = capturedEntity.getBody();
 
     // Traditional webhook should use MessageCard format
@@ -576,16 +459,10 @@ class TeamsIntegrationServiceTest {
   @Test
   void sendTestNotification_InvalidWebhookUrl_ShouldThrowError() {
     // Given - Invalid URL
-    TeamsConfiguration config =
-        TeamsConfiguration.builder()
-            .id(1L)
-            .tenantName("Test Tenant")
-            .webhookUrl("not-a-valid-url")
-            .isEnabled(true)
-            .build();
+    TeamsConfiguration config = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
+        .webhookUrl("not-a-valid-url").isEnabled(true).build();
 
-    TestTeamsNotificationRequest request =
-        TestTeamsNotificationRequest.builder().message("Test").build();
+    TestTeamsNotificationRequest request = TestTeamsNotificationRequest.builder().message("Test").build();
 
     when(teamsConfigRepository.findById(1L)).thenReturn(Optional.of(config));
 

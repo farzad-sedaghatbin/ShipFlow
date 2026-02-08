@@ -16,12 +16,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReactionSummaryDTO {
 
-    /** Map of reaction type to count */
-    private Map<CommentReaction, Integer> reactionCounts;
+  /** Map of reaction type to count */
+  private Map<CommentReaction, Integer> reactionCounts;
 
-    /** Map of reaction type to whether current user has reacted */
-    private Map<CommentReaction, Boolean> userReactions;
+  /** Map of reaction type to whether current user has reacted */
+  private Map<CommentReaction, Boolean> userReactions;
 
-    /** Total number of reactions */
-    private Integer totalReactions;
+  /** Total number of reactions */
+  private Integer totalReactions;
 }

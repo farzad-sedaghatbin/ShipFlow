@@ -108,9 +108,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             }
           }
         }
-      } catch (error) {
-        // Use localStorage fallback
-        console.log('Using local theme preferences');
+      } catch {
+        // Use localStorage fallback on API error
       } finally {
         setIsLoading(false);
       }

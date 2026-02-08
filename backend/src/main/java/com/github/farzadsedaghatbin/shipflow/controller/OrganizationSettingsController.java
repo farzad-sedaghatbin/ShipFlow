@@ -14,7 +14,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-/** REST controller for organization settings management. Only accessible by ADMIN role. */
+/**
+ * REST controller for organization settings management. Only accessible by
+ * ADMIN role.
+ */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -35,8 +38,7 @@ public class OrganizationSettingsController {
   @PutMapping("/settings")
   @Operation(summary = "Update organization settings")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<OrganizationSettingsDTO> updateSettings(
-      @AuthenticationPrincipal UserDetails userDetails,
+  public ResponseEntity<OrganizationSettingsDTO> updateSettings(@AuthenticationPrincipal UserDetails userDetails,
       @RequestBody UpdateOrganizationSettingsRequest request) {
     log.info("Updating organization settings by user: {}", userDetails.getUsername());
     return ResponseEntity.ok(settingsService.updateSettings(request, userDetails.getUsername()));
@@ -45,8 +47,7 @@ public class OrganizationSettingsController {
   @PostMapping("/settings/reset")
   @Operation(summary = "Reset organization settings to defaults")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<OrganizationSettingsDTO> resetSettings(
-      @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<OrganizationSettingsDTO> resetSettings(@AuthenticationPrincipal UserDetails userDetails) {
     log.info("Resetting organization settings to defaults by user: {}", userDetails.getUsername());
     return ResponseEntity.ok(settingsService.resetToDefaults(userDetails.getUsername()));
   }

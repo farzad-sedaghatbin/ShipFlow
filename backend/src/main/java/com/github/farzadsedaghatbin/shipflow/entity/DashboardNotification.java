@@ -5,17 +5,13 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity representing dashboard notifications for users. Tracks overdue tasks, blocked scopes,
- * cycle deadlines, and other important events.
+ * Entity representing dashboard notifications for users. Tracks overdue tasks,
+ * blocked scopes, cycle deadlines, and other important events.
  */
 @Entity
-@Table(
-    name = "dashboard_notifications",
-    indexes = {
-      @Index(name = "idx_notification_user", columnList = "user_id"),
-      @Index(name = "idx_notification_read", columnList = "is_read"),
-      @Index(name = "idx_notification_created", columnList = "created_at")
-    })
+@Table(name = "dashboard_notifications", indexes = {@Index(name = "idx_notification_user", columnList = "user_id"),
+    @Index(name = "idx_notification_read", columnList = "is_read"),
+    @Index(name = "idx_notification_created", columnList = "created_at")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,8 +28,8 @@ public class DashboardNotification {
   private User user;
 
   /**
-   * Type of notification: OVERDUE_TASK, BLOCKED_SCOPE, CYCLE_DEADLINE, PITCH_AT_RISK,
-   * HILL_CHART_STALLED, CYCLE_ENDING_SOON, etc.
+   * Type of notification: OVERDUE_TASK, BLOCKED_SCOPE, CYCLE_DEADLINE,
+   * PITCH_AT_RISK, HILL_CHART_STALLED, CYCLE_ENDING_SOON, etc.
    */
   @Column(name = "type", nullable = false, length = 50)
   private String type;

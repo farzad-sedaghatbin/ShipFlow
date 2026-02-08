@@ -25,7 +25,8 @@ public class CreatePitchRequest {
 
   private Long teamId;
 
-  @Builder.Default private PitchStatus status = PitchStatus.PENDING;
+  @Builder.Default
+  private PitchStatus status = PitchStatus.PENDING;
 
   // Shape Up Methodology Fields
   private String problemStatement;

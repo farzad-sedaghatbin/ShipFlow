@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity linking custom dashboards to widgets with position and configuration. Enables flexible
- * dashboard layouts with drag-and-drop positioning.
+ * Entity linking custom dashboards to widgets with position and configuration.
+ * Enables flexible dashboard layouts with drag-and-drop positioning.
  */
 @Entity
 @Table(name = "dashboard_widget_configs")
@@ -60,15 +60,15 @@ public class DashboardWidgetConfig {
   private Integer height;
 
   /**
-   * Data filtering configuration (JSON) Example: {"teamIds": [1,2], "cycleIds": [3], "dateRange":
-   * {"start": "2026-01-01", "end": "2026-01-31"}}
+   * Data filtering configuration (JSON) Example: {"teamIds": [1,2], "cycleIds":
+   * [3], "dateRange": {"start": "2026-01-01", "end": "2026-01-31"}}
    */
   @Column(name = "data_filters", columnDefinition = "TEXT")
   private String dataFilters;
 
   /**
-   * Chart configuration (JSON) Example: {"chartType": "BAR", "colors": ["#2563eb", "#7c3aed"],
-   * "legend": {"position": "bottom"}}
+   * Chart configuration (JSON) Example: {"chartType": "BAR", "colors":
+   * ["#2563eb", "#7c3aed"], "legend": {"position": "bottom"}}
    */
   @Column(name = "chart_config", columnDefinition = "TEXT")
   private String chartConfig;
@@ -99,11 +99,16 @@ public class DashboardWidgetConfig {
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = LocalDateTime.now();
-    if (positionX == null) positionX = 0;
-    if (positionY == null) positionY = 0;
-    if (width == null) width = 1;
-    if (height == null) height = 1;
-    if (displayOrder == null) displayOrder = 0;
+    if (positionX == null)
+      positionX = 0;
+    if (positionY == null)
+      positionY = 0;
+    if (width == null)
+      width = 1;
+    if (height == null)
+      height = 1;
+    if (displayOrder == null)
+      displayOrder = 0;
   }
 
   @PreUpdate

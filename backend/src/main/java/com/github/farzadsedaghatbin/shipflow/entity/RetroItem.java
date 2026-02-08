@@ -58,7 +58,8 @@ public class RetroItem {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
-  @Column private LocalDateTime updatedAt;
+  @Column
+  private LocalDateTime updatedAt;
 
   @PrePersist
   protected void onCreate() {

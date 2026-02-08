@@ -16,8 +16,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 /**
- * Seeds the knowledge base with sample data for Q&A feature. Runs after SampleDataInitializer
- * (Order 2) to ensure data exists.
+ * Seeds the knowledge base with sample data for Q&A feature. Runs after
+ * SampleDataInitializer (Order 2) to ensure data exists.
  */
 @Component
 @Slf4j
@@ -34,11 +34,8 @@ public class KnowledgeSeeder implements CommandLineRunner {
   @Autowired(required = false)
   private KnowledgeIngestionService knowledgeIngestionService;
 
-  public KnowledgeSeeder(
-      PitchRepository pitchRepository,
-      MeetingRepository meetingRepository,
-      WorkLogRepository workLogRepository,
-      EvidenceRepository evidenceRepository,
+  public KnowledgeSeeder(PitchRepository pitchRepository, MeetingRepository meetingRepository,
+      WorkLogRepository workLogRepository, EvidenceRepository evidenceRepository,
       KnowledgeItemRepository knowledgeItemRepository) {
     this.pitchRepository = pitchRepository;
     this.meetingRepository = meetingRepository;
@@ -120,8 +117,8 @@ public class KnowledgeSeeder implements CommandLineRunner {
   }
 
   /**
-   * Ingest the Shape Up methodology PDF into the knowledge base. This provides the AI Q&A system
-   * with authoritative knowledge about Shape Up practices.
+   * Ingest the Shape Up methodology PDF into the knowledge base. This provides
+   * the AI Q&A system with authoritative knowledge about Shape Up practices.
    */
   private void ingestShapeUpMethodology() {
     final String SOURCE_ID = "shape-up-methodology";
@@ -137,8 +134,7 @@ public class KnowledgeSeeder implements CommandLineRunner {
     try {
       ClassPathResource resource = new ClassPathResource(PDF_PATH);
       if (!resource.exists()) {
-        log.warn(
-            "Shape Up PDF not found at classpath:{}, skipping methodology ingestion", PDF_PATH);
+        log.warn("Shape Up PDF not found at classpath:{}, skipping methodology ingestion", PDF_PATH);
         return;
       }
 
@@ -151,8 +147,7 @@ public class KnowledgeSeeder implements CommandLineRunner {
       }
 
       log.info("Ingesting Shape Up methodology ({} characters)...", extractedText.length());
-      int chunkCount =
-          knowledgeIngestionService.ingestReferenceDocument(SOURCE_ID, TITLE, extractedText);
+      int chunkCount = knowledgeIngestionService.ingestReferenceDocument(SOURCE_ID, TITLE, extractedText);
 
       log.info("Shape Up methodology ingested successfully ({} knowledge chunks)", chunkCount);
 
@@ -166,9 +161,11 @@ public class KnowledgeSeeder implements CommandLineRunner {
   /**
    * Extract text content from a PDF file.
    *
-   * <p>NOTE: Loads entire PDF into memory. The Shape Up PDF is ~7.3 MB which is acceptable. For
-   * very large reference documents (>50 MB), this could cause memory pressure. PDFBox
-   * Loader.loadPDF() requires byte array for reliable parsing.
+   * <p>
+   * NOTE: Loads entire PDF into memory. The Shape Up PDF is ~7.3 MB which is
+   * acceptable. For very large reference documents (>50 MB), this could cause
+   * memory pressure. PDFBox Loader.loadPDF() requires byte array for reliable
+   * parsing.
    */
   private String extractTextFromPdf(InputStream inputStream) throws IOException {
     byte[] bytes = inputStream.readAllBytes();
