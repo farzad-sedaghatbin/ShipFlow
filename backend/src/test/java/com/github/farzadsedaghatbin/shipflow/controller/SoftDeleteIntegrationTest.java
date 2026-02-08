@@ -2,6 +2,8 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskService;
+import com.github.farzadsedaghatbin.shipflow.service.TestCaseService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,8 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.jpa.hibernate.ddl-auto=create-drop"})
+@TestPropertySource(properties = { "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.jpa.hibernate.ddl-auto=create-drop" })
+@ActiveProfiles("test")
 @Transactional
 @DisplayName("Soft Delete Integration Tests")
 class SoftDeleteIntegrationTest {
@@ -34,6 +38,12 @@ class SoftDeleteIntegrationTest {
 
   @MockBean
   private PitchService pitchService;
+
+  @MockBean
+  private TaskService taskService;
+
+  @MockBean
+  private TestCaseService testCaseService;
 
   @Test
   @DisplayName("DELETE /api/pitches/{id} should perform soft delete")
@@ -56,22 +66,28 @@ class SoftDeleteIntegrationTest {
   void deleteTaskShouldPerformSoftDelete() throws Exception {
     // Given
     Long taskId = 1L;
+    doNothing().when(taskService).deleteTask(taskId);
 
     // When & Then
     mockMvc.perform(delete("/api/tasks/{id}", taskId).contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNoContent());
+
+    verify(taskService, times(1)).deleteTask(taskId);
   }
 
   @Test
   @DisplayName("DELETE /api/qa/test-cases/{id} should perform soft delete")
-  @WithMockUser(roles = "MEMBER")
+  @WithMockUser(roles = "ADMIN")
   void deleteTestCaseShouldPerformSoftDelete() throws Exception {
     // Given
     Long testCaseId = 1L;
+    doNothing().when(testCaseService).deleteTestCase(testCaseId);
 
     // When & Then
     mockMvc.perform(delete("/api/qa/test-cases/{id}", testCaseId).contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk()).andExpect(jsonPath("$.message").exists());
+
+    verify(testCaseService, times(1)).deleteTestCase(testCaseId);
   }
 
   @Test

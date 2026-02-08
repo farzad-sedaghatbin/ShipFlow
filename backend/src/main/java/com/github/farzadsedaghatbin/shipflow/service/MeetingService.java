@@ -8,7 +8,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.repository.MeetingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -48,7 +47,7 @@ public class MeetingService {
     return meetingRepository.findAll(pageable).map(this::toDTO);
   }
 
-  public Page<MeetingDTO> getMeetingsWithFilters(Long cycleId, Long projectId, Long pitchId, List<MeetingType> types,
+  public Page<MeetingDTO> getMeetingsWithFilters(Long cycleId, Long projectId, Long pitchId, List<String> types,
       LocalDate startDate, LocalDate endDate, Boolean dorReady, Boolean dodReady, Pageable pageable) {
 
     Specification<Meeting> spec = (root, query, cb) -> {
@@ -96,7 +95,7 @@ public class MeetingService {
     return meetingRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
-  public List<MeetingDTO> getMeetingsByType(MeetingType type) {
+  public List<MeetingDTO> getMeetingsByType(String type) {
     return meetingRepository.findByType(type).stream().map(this::toDTO).collect(Collectors.toList());
   }
 

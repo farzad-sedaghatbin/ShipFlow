@@ -11,7 +11,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -61,12 +60,12 @@ class MeetingServiceTest {
   void setUp() {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").build();
 
-    testMeeting = Meeting.builder().id(1L).pitch(testPitch).type(MeetingType.KICKOFF).dateHeld(LocalDate.now())
+    testMeeting = Meeting.builder().id(1L).pitch(testPitch).type("KICKOFF").dateHeld(LocalDate.now())
         .dorReady(true).dodReady(false).notes("Test meeting notes").build();
 
     testRequest = new CreateMeetingRequest();
     testRequest.setPitchId(1L);
-    testRequest.setType(MeetingType.KICKOFF);
+    testRequest.setType("KICKOFF");
     testRequest.setDateHeld(LocalDate.now());
     testRequest.setDorReady(true);
     testRequest.setDodReady(false);
@@ -144,12 +143,12 @@ class MeetingServiceTest {
 
   @Test
   void getMeetingsByType_ShouldReturnMeetings() {
-    when(meetingRepository.findByType(MeetingType.KICKOFF)).thenReturn(Arrays.asList(testMeeting));
+    when(meetingRepository.findByType("KICKOFF")).thenReturn(Arrays.asList(testMeeting));
 
-    List<MeetingDTO> result = meetingService.getMeetingsByType(MeetingType.KICKOFF);
+    List<MeetingDTO> result = meetingService.getMeetingsByType("KICKOFF");
 
     assertThat(result).hasSize(1);
-    verify(meetingRepository).findByType(MeetingType.KICKOFF);
+    verify(meetingRepository).findByType("KICKOFF");
   }
 
   @Test
@@ -174,7 +173,7 @@ class MeetingServiceTest {
     when(meetingRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
     Page<MeetingDTO> result = meetingService.getMeetingsWithFilters(null, null, 1L,
-        Arrays.asList(MeetingType.KICKOFF), null, null, null, null, pageable);
+        Arrays.asList("KICKOFF"), null, null, null, null, pageable);
 
     assertThat(result.getContent()).hasSize(1);
     verify(meetingRepository).findAll(any(Specification.class), any(Pageable.class));
@@ -220,7 +219,7 @@ class MeetingServiceTest {
 
   @Test
   void updateMeeting_WithActionItems_ShouldReplaceActions() {
-    Meeting meetingWithActions = Meeting.builder().id(1L).pitch(testPitch).type(MeetingType.KICKOFF)
+    Meeting meetingWithActions = Meeting.builder().id(1L).pitch(testPitch).type("KICKOFF")
         .dateHeld(LocalDate.now()).dorReady(true).dodReady(false).notes("Test notes").actions(new ArrayList<>())
         .build();
 
@@ -325,7 +324,7 @@ class MeetingServiceTest {
     Meeting meetingWithChecklist = Meeting.builder()
         .id(1L)
         .pitch(testPitch)
-        .type(MeetingType.SHAPING)
+        .type("SHAPING")
         .dateHeld(LocalDate.now())
         .dorReady(true)
         .dodReady(false)

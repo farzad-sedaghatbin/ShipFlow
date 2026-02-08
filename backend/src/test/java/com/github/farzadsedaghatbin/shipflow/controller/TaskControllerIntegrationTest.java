@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
@@ -30,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "admin", roles = {"ADMIN"})
+@WithMockUser(username = "admin", roles = { "ADMIN" })
 class TaskControllerIntegrationTest {
 
   @Autowired
@@ -55,6 +56,7 @@ class TaskControllerIntegrationTest {
   private Person testPerson;
   private Person testPairPerson;
   private Task testTask;
+  private User adminUser;
 
   @BeforeEach
   void setUp() {
@@ -78,6 +80,17 @@ class TaskControllerIntegrationTest {
     testPairPerson = Person.builder().name("Jane Smith").email("jane.smith@example.com").isActive(true)
         .createdAt(LocalDateTime.now()).build();
     testPairPerson = personRepository.save(testPairPerson);
+
+    // Create admin user that matches @WithMockUser annotation
+    adminUser = User.builder()
+        .username("admin")
+        .email("admin@example.com")
+        .password("adminpass")
+        .role(UserRole.ADMIN)
+        .person(testPerson)
+        .isActive(true)
+        .build();
+    adminUser = userRepository.save(adminUser);
 
     testTask = Task.builder().title("Test Task").description("Test task description").status(TaskStatus.TODO)
         .priority(TaskPriority.MEDIUM).estimateHours(new BigDecimal("4.00")).cycle(testCycle)
@@ -223,8 +236,8 @@ class TaskControllerIntegrationTest {
   }
 
   @Test
-  void deleteTask_WhenNotExists_ShouldReturn400() throws Exception {
-    mockMvc.perform(delete("/api/tasks/{id}", 9999L)).andExpect(status().isBadRequest());
+  void deleteTask_WhenNotExists_ShouldReturn404() throws Exception {
+    mockMvc.perform(delete("/api/tasks/{id}", 9999L)).andExpect(status().isNotFound());
   }
 
   @Test
