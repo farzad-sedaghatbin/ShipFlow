@@ -20,12 +20,12 @@ export interface CycleAccuracyData {
 
 export interface AppetiteAccuracySignal {
   trend: TrendDirection;
-  averageVariancePercent: number;
-  varianceStdDev: number;
+  averageVariancePercent: number | null;
+  varianceStdDev: number | null;
   cyclesAnalyzed: number;
-  cycleData: CycleAccuracyData[];
+  cycleData: CycleAccuracyData[] | null;
   interpretation: string;
-  recommendations: string[];
+  recommendations: string[] | null;
 }
 
 export interface ShapingPatternPitch {
