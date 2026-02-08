@@ -219,8 +219,12 @@ public class CycleSignalService {
     if (cycleData.isEmpty()) {
       return AppetiteAccuracySignalDTO.builder()
           .trend(TrendDirection.INSUFFICIENT_DATA)
+          .averageVariancePercent(0.0)
+          .varianceStdDev(0.0)
           .cyclesAnalyzed(0)
+          .cycleData(List.of())
           .interpretation("No completed work found in analyzed cycles.")
+          .recommendations(List.of())
           .build();
     }
 
@@ -408,6 +412,8 @@ public class CycleSignalService {
         .falseAlarmDetails(falseAlarmDetails.stream().limit(5).collect(Collectors.toList()))
         .interpretation(interpretation)
         .recommendations(recommendations)
+        .mostPredictiveFactors(Collections.emptyList())
+        .leastPredictiveFactors(Collections.emptyList())
         .build();
   }
 
