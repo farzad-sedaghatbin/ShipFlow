@@ -5,7 +5,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
@@ -120,6 +122,16 @@ public class Pitch {
   @OneToMany(mappedBy = "pitch", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<Evidence> evidences = new ArrayList<>();
+
+  // v0.5 - Tag-based correlation for linking to retro items
+  @NotAudited
+  @Builder.Default
+  @ManyToMany
+  @JoinTable(
+      name = "pitch_tags",
+      joinColumns = @JoinColumn(name = "pitch_id"),
+      inverseJoinColumns = @JoinColumn(name = "tag_id"))
+  private Set<Tag> tags = new HashSet<>();
 
   @PrePersist
   protected void onCreate() {

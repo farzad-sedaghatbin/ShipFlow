@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.signal.CycleSignalsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.narrative.CycleSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
@@ -57,6 +59,12 @@ class ReportServiceTest {
   @Mock
   private RiskAnalysisService riskAnalysisService;
 
+  @Mock
+  private CycleSignalService cycleSignalService;
+
+  @Mock
+  private CycleNarrativeService cycleNarrativeService;
+
   @InjectMocks
   private ReportService reportService;
 
@@ -105,6 +113,21 @@ class ReportServiceTest {
     workLogs.add(createWorkLog(4L, pitch2, person2, 12.0, LocalDate.of(2026, 1, 11)));
 
     // pitch3: 0 hours (not started)
+
+    // Mock v0.5 services with empty/default responses
+    when(cycleSignalService.getCycleSignals(anyLong())).thenReturn(CycleSignalsDTO.builder()
+        .projectId(1L)
+        .cycleId(1L)
+        .cyclesAnalyzed(1)
+        .overallHealthScore(75)
+        .analyzedAt(LocalDateTime.now())
+        .build());
+    
+    when(cycleNarrativeService.getCycleSummary(anyLong())).thenReturn(CycleSummaryDTO.builder()
+        .cycleId(1L)
+        .cycleName("Q1 2026")
+        .projectName("Test Project")
+        .build());
   }
 
   private WorkLog createWorkLog(Long id, Pitch pitch, Person person, Double hours, LocalDate date) {

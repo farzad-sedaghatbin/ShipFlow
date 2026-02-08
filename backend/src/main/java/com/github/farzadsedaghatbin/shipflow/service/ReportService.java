@@ -47,6 +47,8 @@ public class ReportService {
   private final TaskRepository taskRepository;
   private final RiskAnalysisService riskAnalysisService;
   private final LocalizationService localizationService;
+  private final CycleSignalService cycleSignalService;
+  private final CycleNarrativeService cycleNarrativeService;
 
   @SuppressWarnings("null")
   public CycleReportDTO getCycleReport(Long cycleId) {
@@ -416,6 +418,10 @@ public class ReportService {
     List<String> overBudgetPitches = pitchReports.stream().filter(PitchReportDTO::getIsOverBudget)
         .map(PitchReportDTO::getPitchTitle).collect(Collectors.toList());
 
+    // v0.5 - Add signals and narrative summary
+    var signals = cycleSignalService.getCycleSignals(cycleId);
+    var narrativeSummary = cycleNarrativeService.getCycleSummary(cycleId);
+
     return EnhancedCycleReportDTO.builder().cycleId(cycle.getId()).cycleName(cycle.getName())
         .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).totalPitches(pitches.size())
@@ -428,7 +434,8 @@ public class ReportService {
         .riskDistribution(riskDistribution).totalTeamMembers(totalTeamMembers)
         .averageHoursPerMember(averageHoursPerMember).maxHoursPerMember(maxHoursPerMember)
         .minHoursPerMember(minHoursPerMember).pitchReports(pitchReports).memberReports(memberReports)
-        .topPerformers(topPerformers).overBudgetPitches(overBudgetPitches).build();
+        .topPerformers(topPerformers).overBudgetPitches(overBudgetPitches)
+        .signals(signals).narrativeSummary(narrativeSummary).build();
   }
 
   /** Calculate risk distribution for pitches in a cycle. */

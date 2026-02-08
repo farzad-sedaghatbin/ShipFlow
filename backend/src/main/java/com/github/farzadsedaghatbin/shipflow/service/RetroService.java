@@ -476,6 +476,78 @@ public class RetroService {
         .collect(Collectors.toList());
     builder.mergedItemIds(mergedItemIds);
 
+    // Include action tracking fields (v0.5)
+    builder.actedOn(item.getActedOn() != null ? item.getActedOn() : false);
+    builder.actedOnNotes(item.getActedOnNotes());
+    builder.actedOnAt(item.getActedOnAt());
+    if (item.getActedOnBy() != null) {
+      builder.actedOnById(item.getActedOnBy().getId());
+      builder.actedOnByName(item.getActedOnBy().getUsername());
+    }
+
     return builder.build();
+  }
+
+  // ==================== ACTION TRACKING (v0.5) ====================
+
+  /**
+   * Mark a retro item as acted upon (or not).
+   * Part of v0.5 "Insight, Not Metrics" - tracks whether teams follow through on retro decisions.
+   */
+  public RetroItemDTO markActedOn(Long itemId, Boolean actedOn, String notes) {
+    RetroItem item = retroItemRepository.findById(itemId)
+        .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
+
+    User currentUser = getCurrentUser();
+
+    item.setActedOn(actedOn);
+    if (Boolean.TRUE.equals(actedOn)) {
+      item.setActedOnNotes(notes);
+      item.setActedOnAt(LocalDateTime.now());
+      item.setActedOnBy(currentUser);
+    } else {
+      item.setActedOnNotes(null);
+      item.setActedOnAt(null);
+      item.setActedOnBy(null);
+    }
+
+    RetroItem saved = retroItemRepository.save(item);
+    return toItemDTO(saved);
+  }
+
+  /**
+   * Get action tracking statistics for a retrospective.
+   */
+  public RetroActionStatsDTO getActionStats(Long retroId) {
+    Retrospective retro = retroRepository.findById(retroId)
+        .orElseThrow(() -> new ResourceNotFoundException("Retrospective not found with id: " + retroId));
+
+    // Count action items (things that should be acted on)
+    List<RetroItem> actionItems = retroItemRepository.findByRetrospectiveIdAndColumnType(
+        retroId, com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType.ACTIONS);
+
+    long totalActions = actionItems.size();
+    long actedOnCount = retroItemRepository.countActedOnByRetrospectiveId(retroId);
+
+    double followThroughRate = totalActions > 0 ? (double) actedOnCount / totalActions * 100 : 0;
+
+    return RetroActionStatsDTO.builder()
+        .retrospectiveId(retroId)
+        .totalActionItems(totalActions)
+        .actedOnCount(actedOnCount)
+        .pendingCount(totalActions - actedOnCount)
+        .followThroughRate(Math.round(followThroughRate * 10) / 10.0)
+        .build();
+  }
+
+  /**
+   * Get pending action items across all retros in a project.
+   */
+  public List<RetroItemDTO> getPendingActionItems(Long projectId) {
+    validateRetrospectivesEnabled(projectId);
+    return retroItemRepository.findUnactedActionItemsByProjectId(projectId)
+        .stream()
+        .map(this::toItemDTO)
+        .collect(Collectors.toList());
   }
 }

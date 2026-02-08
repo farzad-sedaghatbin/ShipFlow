@@ -35,6 +35,13 @@ public interface PitchRiskHistoryRepository extends JpaRepository<PitchRiskHisto
   @Query("SELECT h FROM PitchRiskHistory h LEFT JOIN FETCH h.pitch p LEFT JOIN FETCH p.deletedBy WHERE p.id = :pitchId ORDER BY h.recordedAt DESC LIMIT 1")
   Optional<PitchRiskHistory> findFirstByPitchIdOrderByRecordedAtDesc(@Param("pitchId") Long pitchId);
 
+  /**
+   * Batch load risk histories for multiple pitches (avoid N+1 queries).
+   * Returns all histories ordered by pitch ID and recorded date descending.
+   */
+  @Query("SELECT h FROM PitchRiskHistory h LEFT JOIN FETCH h.pitch p LEFT JOIN FETCH p.deletedBy WHERE p.id IN :pitchIds ORDER BY p.id, h.recordedAt DESC")
+  List<PitchRiskHistory> findByPitchIdInOrderByRecordedAtDesc(@Param("pitchIds") List<Long> pitchIds);
+
   /** Find all pitches with risk history recorded today. */
   @Query("SELECT DISTINCT h.pitch.id FROM PitchRiskHistory h "
       + "WHERE h.recordedAt >= :startOfDay AND h.recordedAt < :endOfDay")
