@@ -429,7 +429,7 @@ export default function Landing() {
                   {t('landing.authorExpertise')}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {['Digital Banking', 'Fintech', 'Java', 'Java EE', 'Spring Boot', 'Quarkus', 'React', 'React Native', 'Cloud-Native', 'Solution Architecture', 'Nexus/Scrum', 'Shape Up'].map((skill) => (
+                  {['Digital Banking', 'Fintech', 'AI', 'Java', 'Java EE', 'Spring Boot', 'Quarkus', 'React', 'React Native', 'Cloud-Native', 'Solution Architecture', 'Nexus/Scrum', 'Shape Up'].map((skill) => (
                     <Badge key={skill} variant="secondary">
                       {skill}
                     </Badge>
