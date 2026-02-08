@@ -400,7 +400,7 @@ export default function Landing() {
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <a
-                        href="https://linkedin.com/in/farzadsedaghatbin"
+                        href="https://www.linkedin.com/in/farzad-sedaghatbin"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
