@@ -22,14 +22,11 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
 
   List<WorkLog> findByTaskIdAndPersonId(Long taskId, Long personId);
 
-  @Query(
-      "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  @Query("SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
   List<WorkLog> findByCycleId(@Param("cycleId") Long cycleId);
 
-  @Query(
-      "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
-  List<WorkLog> findByPersonIdAndCycleId(
-      @Param("personId") Long personId, @Param("cycleId") Long cycleId);
+  @Query("SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  List<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
 
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);
@@ -41,26 +38,23 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   Double getTotalHoursByPersonId(@Param("personId") Long personId);
 
   /**
-   * Batch query to get total hours for multiple pitches at once. Returns a list of Object[] where
-   * [0] is pitchId and [1] is total hours.
+   * Batch query to get total hours for multiple pitches at once. Returns a list
+   * of Object[] where [0] is pitchId and [1] is total hours.
    */
-  @Query(
-      "SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id IN :pitchIds GROUP BY w.pitch.id")
+  @Query("SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id IN :pitchIds GROUP BY w.pitch.id")
   List<Object[]> getTotalHoursByPitchIds(@Param("pitchIds") List<Long> pitchIds);
 
   /**
-   * Batch query to get total hours for multiple tasks at once. Returns a list of Object[] where [0]
-   * is taskId and [1] is total hours.
+   * Batch query to get total hours for multiple tasks at once. Returns a list of
+   * Object[] where [0] is taskId and [1] is total hours.
    */
-  @Query(
-      "SELECT w.task.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.task.id IN :taskIds GROUP BY w.task.id")
+  @Query("SELECT w.task.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.task.id IN :taskIds GROUP BY w.task.id")
   List<Object[]> getTotalHoursByTaskIds(@Param("taskIds") List<Long> taskIds);
 
   /**
-   * Get total hours for all pitches in a cycle. Returns a list of Object[] where [0] is pitchId and
-   * [1] is total hours.
+   * Get total hours for all pitches in a cycle. Returns a list of Object[] where
+   * [0] is pitchId and [1] is total hours.
    */
-  @Query(
-      "SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.cycle.id = :cycleId GROUP BY w.pitch.id")
+  @Query("SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.cycle.id = :cycleId GROUP BY w.pitch.id")
   List<Object[]> getTotalHoursByCycleId(@Param("cycleId") Long cycleId);
 }

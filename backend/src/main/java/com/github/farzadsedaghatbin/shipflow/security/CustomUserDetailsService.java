@@ -20,21 +20,15 @@ public class CustomUserDetailsService implements UserDetailsService {
   @Override
   @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(
-                () -> new UsernameNotFoundException("User not found with username: " + username));
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
     if (!user.getIsActive()) {
       throw new UsernameNotFoundException("User account is disabled: " + username);
     }
 
-    return new org.springframework.security.core.userdetails.User(
-        user.getUsername(),
-        user.getPassword(),
-        user.getIsActive(),
-        true, // accountNonExpired
+    return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
+        user.getIsActive(), true, // accountNonExpired
         true, // credentialsNonExpired
         true, // accountNonLocked
         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));

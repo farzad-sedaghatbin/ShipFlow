@@ -15,7 +15,6 @@ public interface HillChartPointRepository extends JpaRepository<HillChartPoint, 
 
   void deleteByPitchId(Long pitchId);
 
-  @Query(
-      "SELECT h FROM HillChartPoint h WHERE LOWER(h.scope) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(h.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+  @Query("SELECT h FROM HillChartPoint h WHERE LOWER(h.scope) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(h.description) LIKE LOWER(CONCAT('%', :query, '%'))")
   List<HillChartPoint> searchHillChartPoints(@Param("query") String query);
 }

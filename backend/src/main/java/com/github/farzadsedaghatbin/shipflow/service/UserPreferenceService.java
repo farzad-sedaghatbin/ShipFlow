@@ -24,19 +24,15 @@ public class UserPreferenceService {
 
   /** Get user preferences, creating defaults if not exists. */
   public UserPreferenceDTO getPreferences(Long userId) {
-    UserPreference preference =
-        userPreferenceRepository
-            .findByUserId(userId)
-            .orElseGet(() -> createDefaultPreferences(userId));
+    UserPreference preference = userPreferenceRepository.findByUserId(userId)
+        .orElseGet(() -> createDefaultPreferences(userId));
     return toDTO(preference);
   }
 
   /** Update user preferences. */
   public UserPreferenceDTO updatePreferences(Long userId, UpdatePreferenceRequest request) {
-    UserPreference preference =
-        userPreferenceRepository
-            .findByUserId(userId)
-            .orElseGet(() -> createDefaultPreferences(userId));
+    UserPreference preference = userPreferenceRepository.findByUserId(userId)
+        .orElseGet(() -> createDefaultPreferences(userId));
 
     if (request.getThemeMode() != null) {
       preference.setThemeMode(request.getThemeMode());
@@ -61,10 +57,8 @@ public class UserPreferenceService {
 
   /** Update just the theme mode. */
   public UserPreferenceDTO updateThemeMode(Long userId, ThemeMode themeMode) {
-    UserPreference preference =
-        userPreferenceRepository
-            .findByUserId(userId)
-            .orElseGet(() -> createDefaultPreferences(userId));
+    UserPreference preference = userPreferenceRepository.findByUserId(userId)
+        .orElseGet(() -> createDefaultPreferences(userId));
 
     preference.setThemeMode(themeMode);
     UserPreference saved = userPreferenceRepository.save(preference);
@@ -74,10 +68,8 @@ public class UserPreferenceService {
 
   /** Reset preferences to defaults. */
   public UserPreferenceDTO resetToDefaults(Long userId) {
-    UserPreference preference =
-        userPreferenceRepository
-            .findByUserId(userId)
-            .orElseGet(() -> createDefaultPreferences(userId));
+    UserPreference preference = userPreferenceRepository.findByUserId(userId)
+        .orElseGet(() -> createDefaultPreferences(userId));
 
     preference.setThemeMode(ThemeMode.SYSTEM);
     preference.setPrimaryColor(null);
@@ -91,34 +83,20 @@ public class UserPreferenceService {
   }
 
   private UserPreference createDefaultPreferences(Long userId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-    UserPreference preference =
-        UserPreference.builder()
-            .user(user)
-            .themeMode(ThemeMode.SYSTEM)
-            .compactView(false)
-            .enableAnimations(true)
-            .build();
+    UserPreference preference = UserPreference.builder().user(user).themeMode(ThemeMode.SYSTEM).compactView(false)
+        .enableAnimations(true).build();
 
     return userPreferenceRepository.save(preference);
   }
 
   private UserPreferenceDTO toDTO(UserPreference preference) {
-    return UserPreferenceDTO.builder()
-        .id(preference.getId())
-        .userId(preference.getUser().getId())
-        .username(preference.getUser().getUsername())
-        .themeMode(preference.getThemeMode())
-        .primaryColor(preference.getPrimaryColor())
-        .secondaryColor(preference.getSecondaryColor())
-        .compactView(preference.getCompactView())
-        .enableAnimations(preference.getEnableAnimations())
-        .createdAt(preference.getCreatedAt())
-        .updatedAt(preference.getUpdatedAt())
-        .build();
+    return UserPreferenceDTO.builder().id(preference.getId()).userId(preference.getUser().getId())
+        .username(preference.getUser().getUsername()).themeMode(preference.getThemeMode())
+        .primaryColor(preference.getPrimaryColor()).secondaryColor(preference.getSecondaryColor())
+        .compactView(preference.getCompactView()).enableAnimations(preference.getEnableAnimations())
+        .createdAt(preference.getCreatedAt()).updatedAt(preference.getUpdatedAt()).build();
   }
 }

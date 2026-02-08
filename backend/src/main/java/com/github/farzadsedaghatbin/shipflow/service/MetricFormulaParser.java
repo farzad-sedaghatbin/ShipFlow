@@ -11,20 +11,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for parsing and evaluating custom metric formulas. Supports: - Mathematical operations:
- * +, -, *, /, (, ) - Functions: SUM, AVG, COUNT, MIN, MAX - Field references: pitch.appetiteDays,
- * workLog.hours, etc. - Simple WHERE clauses
+ * Service for parsing and evaluating custom metric formulas. Supports: -
+ * Mathematical operations: +, -, *, /, (, ) - Functions: SUM, AVG, COUNT, MIN,
+ * MAX - Field references: pitch.appetiteDays, workLog.hours, etc. - Simple
+ * WHERE clauses
  */
 @Service
 @Slf4j
 public class MetricFormulaParser {
 
-  private static final Pattern FUNCTION_PATTERN =
-      Pattern.compile("(SUM|AVG|COUNT|MIN|MAX)\\(([^)]++)\\)");
-  private static final Pattern WHERE_PATTERN =
-      Pattern.compile("WHERE\\s+([^)]+)$", Pattern.CASE_INSENSITIVE);
-  private static final Pattern FIELD_PATTERN =
-      Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]++)\\.([a-zA-Z_][a-zA-Z0-9_]++)");
+  private static final Pattern FUNCTION_PATTERN = Pattern.compile("(SUM|AVG|COUNT|MIN|MAX)\\(([^)]++)\\)");
+  private static final Pattern WHERE_PATTERN = Pattern.compile("WHERE\\s+([^)]+)$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern FIELD_PATTERN = Pattern
+      .compile("([a-zA-Z_][a-zA-Z0-9_]++)\\.([a-zA-Z_][a-zA-Z0-9_]++)");
 
   /** Validates a metric formula for syntax errors */
   public ValidationResult validateFormula(String formula) {
@@ -67,9 +66,11 @@ public class MetricFormulaParser {
   /**
    * Evaluates a metric formula with provided data context
    *
-   * @param formula The formula to evaluate
-   * @param dataContext Map containing aggregated data (e.g., {"totalPitches": 10,
-   *     "completedPitches": 8})
+   * @param formula
+   *            The formula to evaluate
+   * @param dataContext
+   *            Map containing aggregated data (e.g., {"totalPitches": 10,
+   *            "completedPitches": 8})
    * @return Calculated value
    */
   public BigDecimal evaluateFormula(String formula, Map<String, Object> dataContext) {
@@ -114,9 +115,12 @@ public class MetricFormulaParser {
   private boolean hasBalancedParentheses(String formula) {
     int count = 0;
     for (char c : formula.toCharArray()) {
-      if (c == '(') count++;
-      if (c == ')') count--;
-      if (count < 0) return false;
+      if (c == '(')
+        count++;
+      if (c == ')')
+        count--;
+      if (count < 0)
+        return false;
     }
     return count == 0;
   }
@@ -127,17 +131,14 @@ public class MetricFormulaParser {
 
   private boolean isValidFieldReference(String entity, String field) {
     // Define valid entity.field combinations
-    Map<String, List<String>> validFields =
-        Map.of(
-            "pitch", List.of("id", "appetiteDays", "actualHours", "status", "title"),
-            "cycle", List.of("id", "name", "startDate", "endDate", "status"),
-            "workLog", List.of("id", "hours", "hoursSpent", "date"),
-            "task", List.of("id", "status", "estimateHours", "actualHours"),
-            "team", List.of("id", "name", "memberCount"),
-            "person", List.of("id", "name", "email"));
+    Map<String, List<String>> validFields = Map.of("pitch",
+        List.of("id", "appetiteDays", "actualHours", "status", "title"), "cycle",
+        List.of("id", "name", "startDate", "endDate", "status"), "workLog",
+        List.of("id", "hours", "hoursSpent", "date"), "task",
+        List.of("id", "status", "estimateHours", "actualHours"), "team", List.of("id", "name", "memberCount"),
+        "person", List.of("id", "name", "email"));
 
-    return validFields.containsKey(entity.toLowerCase())
-        && validFields.get(entity.toLowerCase()).contains(field);
+    return validFields.containsKey(entity.toLowerCase()) && validFields.get(entity.toLowerCase()).contains(field);
   }
 
   private String replaceFieldReferences(String formula, Map<String, Object> dataContext) {
@@ -167,8 +168,7 @@ public class MetricFormulaParser {
     while (matcher.find()) {
       String function = matcher.group(1);
       String argument = matcher.group(2);
-      String contextKey =
-          function.toLowerCase() + "_" + argument.replace(".", "_").replace(" ", "_");
+      String contextKey = function.toLowerCase() + "_" + argument.replace(".", "_").replace(" ", "_");
 
       Object value = dataContext.get(contextKey);
       if (value != null) {
@@ -206,7 +206,8 @@ public class MetricFormulaParser {
     }
 
     boolean eat(int charToEat) {
-      while (ch == ' ') nextChar();
+      while (ch == ' ')
+        nextChar();
       if (ch == charToEat) {
         nextChar();
         return true;
@@ -216,23 +217,28 @@ public class MetricFormulaParser {
 
     BigDecimal evaluate() {
       BigDecimal x = parseExpression();
-      if (pos < expression.length()) throw new RuntimeException("Unexpected: " + (char) ch);
+      if (pos < expression.length())
+        throw new RuntimeException("Unexpected: " + (char) ch);
       return x;
     }
 
     BigDecimal parseExpression() {
       BigDecimal x = parseTerm();
-      for (; ; ) {
-        if (eat('+')) x = x.add(parseTerm());
-        else if (eat('-')) x = x.subtract(parseTerm());
-        else return x;
+      for (;;) {
+        if (eat('+'))
+          x = x.add(parseTerm());
+        else if (eat('-'))
+          x = x.subtract(parseTerm());
+        else
+          return x;
       }
     }
 
     BigDecimal parseTerm() {
       BigDecimal x = parseFactor();
-      for (; ; ) {
-        if (eat('*')) x = x.multiply(parseFactor());
+      for (;;) {
+        if (eat('*'))
+          x = x.multiply(parseFactor());
         else if (eat('/')) {
           BigDecimal divisor = parseFactor();
           if (divisor.compareTo(BigDecimal.ZERO) == 0) {
@@ -240,13 +246,16 @@ public class MetricFormulaParser {
             return BigDecimal.ZERO;
           }
           x = x.divide(divisor, 4, RoundingMode.HALF_UP);
-        } else return x;
+        } else
+          return x;
       }
     }
 
     BigDecimal parseFactor() {
-      if (eat('+')) return parseFactor();
-      if (eat('-')) return parseFactor().negate();
+      if (eat('+'))
+        return parseFactor();
+      if (eat('-'))
+        return parseFactor().negate();
 
       BigDecimal x;
       int startPos = this.pos;
@@ -254,7 +263,8 @@ public class MetricFormulaParser {
         x = parseExpression();
         eat(')');
       } else if ((ch >= '0' && ch <= '9') || ch == '.') {
-        while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
+        while ((ch >= '0' && ch <= '9') || ch == '.')
+          nextChar();
         x = new BigDecimal(expression.substring(startPos, this.pos));
       } else {
         throw new RuntimeException("Unexpected: " + (char) ch);

@@ -25,27 +25,40 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-/** Comprehensive tests for ReportService with focus on enhanced reporting features. */
+/**
+ * Comprehensive tests for ReportService with focus on enhanced reporting
+ * features.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReportService Tests")
 class ReportServiceTest {
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private PersonRepository personRepository;
+  @Mock
+  private PersonRepository personRepository;
 
-  @Mock private TeamAssignmentRepository teamAssignmentRepository;
+  @Mock
+  private TeamAssignmentRepository teamAssignmentRepository;
 
-  @Mock private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-  @Mock private RiskAnalysisService riskAnalysisService;
+  @Mock
+  private RiskAnalysisService riskAnalysisService;
 
-  @InjectMocks private ReportService reportService;
+  @InjectMocks
+  private ReportService reportService;
 
   private Cycle cycle;
   private Project project;
@@ -60,14 +73,8 @@ class ReportServiceTest {
     project = Project.builder().id(1L).name("Test Project").projectKey("TEST").build();
 
     // Setup cycle
-    cycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Q1 2026")
-            .startDate(LocalDate.of(2026, 1, 1))
-            .endDate(LocalDate.of(2026, 2, 12))
-            .project(project)
-            .build();
+    cycle = Cycle.builder().id(1L).name("Q1 2026").startDate(LocalDate.of(2026, 1, 1))
+        .endDate(LocalDate.of(2026, 2, 12)).project(project).build();
 
     // Setup team
     team = Team.builder().id(1L).name("Alpha Team").build();
@@ -78,35 +85,14 @@ class ReportServiceTest {
     person2 = Person.builder().id(2L).name("Bob Smith").build();
 
     // Setup pitches with different statuses
-    pitch1 =
-        Pitch.builder()
-            .id(1L)
-            .title("User Dashboard")
-            .appetiteDays(5)
-            .cycle(cycle)
-            .team(team)
-            .status(PitchStatus.DONE)
-            .build();
+    pitch1 = Pitch.builder().id(1L).title("User Dashboard").appetiteDays(5).cycle(cycle).team(team)
+        .status(PitchStatus.DONE).build();
 
-    pitch2 =
-        Pitch.builder()
-            .id(2L)
-            .title("API Integration")
-            .appetiteDays(3)
-            .cycle(cycle)
-            .team(team)
-            .status(PitchStatus.IN_PROGRESS)
-            .build();
+    pitch2 = Pitch.builder().id(2L).title("API Integration").appetiteDays(3).cycle(cycle).team(team)
+        .status(PitchStatus.IN_PROGRESS).build();
 
-    pitch3 =
-        Pitch.builder()
-            .id(3L)
-            .title("Mobile App")
-            .appetiteDays(4)
-            .cycle(cycle)
-            .team(team)
-            .status(PitchStatus.PENDING)
-            .build();
+    pitch3 = Pitch.builder().id(3L).title("Mobile App").appetiteDays(4).cycle(cycle).team(team)
+        .status(PitchStatus.PENDING).build();
 
     // Setup work logs
     workLogs = new ArrayList<>();
@@ -122,18 +108,13 @@ class ReportServiceTest {
   }
 
   private WorkLog createWorkLog(Long id, Pitch pitch, Person person, Double hours, LocalDate date) {
-    return WorkLog.builder()
-        .id(id)
-        .pitch(pitch)
-        .person(person)
-        .hoursSpent(BigDecimal.valueOf(hours))
-        .date(date)
-        .note("Work on " + pitch.getTitle())
-        .build();
+    return WorkLog.builder().id(id).pitch(pitch).person(person).hoursSpent(BigDecimal.valueOf(hours)).date(date)
+        .note("Work on " + pitch.getTitle()).build();
   }
 
   @Nested
   @DisplayName("Enhanced Cycle Report Tests")
+  @MockitoSettings(strictness = Strictness.LENIENT)
   class EnhancedCycleReportTests {
 
     @Test
@@ -143,7 +124,7 @@ class ReportServiceTest {
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
 
       // Mock person repository
@@ -151,16 +132,11 @@ class ReportServiceTest {
       when(personRepository.findById(2L)).thenReturn(Optional.of(person2));
 
       // Mock team assignments
-      TeamAssignment assignment1 =
-          TeamAssignment.builder()
-              .person(person1)
-              .team(team)
-              .role(TeamMemberRole.FULLSTACK)
-              .build();
+      TeamAssignment assignment1 = TeamAssignment.builder().person(person1).team(team)
+          .role(TeamMemberRole.FULLSTACK).build();
       when(teamAssignmentRepository.findByPersonAndCycle(1L, 1L))
           .thenReturn(Collections.singletonList(assignment1));
-      when(teamAssignmentRepository.findByPersonAndCycle(2L, 1L))
-          .thenReturn(Collections.emptyList());
+      when(teamAssignmentRepository.findByPersonAndCycle(2L, 1L)).thenReturn(Collections.emptyList());
 
       // Mock task statistics
       when(taskRepository.countByCycleId(1L)).thenReturn(10);
@@ -192,7 +168,8 @@ class ReportServiceTest {
       assertThat(report.getInProgressPitches()).isEqualTo(1);
       assertThat(report.getNotStartedPitches()).isEqualTo(1);
 
-      // Verify hours and efficiency (pitch1: 40h appetite, 35h actual; pitch2: 24h, 30h; pitch3:
+      // Verify hours and efficiency (pitch1: 40h appetite, 35h actual; pitch2: 24h,
+      // 30h; pitch3:
       // 32h, 0h)
       assertThat(report.getTotalAppetiteHours()).isEqualTo(96.0); // (5+3+4) * 8
       assertThat(report.getTotalActualHours()).isEqualTo(65.0); // 35 + 30
@@ -226,7 +203,7 @@ class ReportServiceTest {
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -262,7 +239,7 @@ class ReportServiceTest {
     void shouldHandleEmptyCycle() {
       // Given
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(Collections.emptyList());
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Collections.emptyList());
       when(workLogRepository.findByCycleId(1L)).thenReturn(Collections.emptyList());
       when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
       when(taskRepository.countByCycleIdAndStatus(anyLong(), any())).thenReturn(0);
@@ -299,17 +276,18 @@ class ReportServiceTest {
       allLogs.add(log6);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(allLogs);
-      when(personRepository.findById(anyLong()))
-          .thenAnswer(
-              inv -> {
-                Long id = inv.getArgument(0);
-                if (id == 1L) return Optional.of(person1);
-                if (id == 2L) return Optional.of(person2);
-                if (id == 3L) return Optional.of(person3);
-                return Optional.empty();
-              });
+      when(personRepository.findById(anyLong())).thenAnswer(inv -> {
+        Long id = inv.getArgument(0);
+        if (id == 1L)
+          return Optional.of(person1);
+        if (id == 2L)
+          return Optional.of(person2);
+        if (id == 3L)
+          return Optional.of(person3);
+        return Optional.empty();
+      });
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
           .thenReturn(Collections.emptyList());
       when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
@@ -334,19 +312,13 @@ class ReportServiceTest {
     @DisplayName("Should calculate risk distribution with all risk levels")
     void shouldCalculateAllRiskLevels() {
       // Given
-      Pitch pitch4 =
-          Pitch.builder()
-              .id(4L)
-              .title("Critical Feature")
-              .appetiteDays(2)
-              .cycle(cycle)
-              .status(PitchStatus.IN_PROGRESS)
-              .build();
+      Pitch pitch4 = Pitch.builder().id(4L).title("Critical Feature").appetiteDays(2).cycle(cycle)
+          .status(PitchStatus.IN_PROGRESS).build();
 
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3, pitch4);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -388,11 +360,10 @@ class ReportServiceTest {
     void shouldCalculatePositiveVariance() {
       // Given - pitch2 is over budget (30h actual vs 24h appetite)
       List<Pitch> pitches = Collections.singletonList(pitch2);
-      List<WorkLog> pitch2Logs =
-          workLogs.stream().filter(wl -> wl.getPitch().getId().equals(2L)).toList();
+      List<WorkLog> pitch2Logs = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(2L)).toList();
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(pitch2Logs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -418,11 +389,10 @@ class ReportServiceTest {
     void shouldCalculateNegativeVariance() {
       // Given - pitch1 is under budget (35h actual vs 40h appetite)
       List<Pitch> pitches = Collections.singletonList(pitch1);
-      List<WorkLog> pitch1Logs =
-          workLogs.stream().filter(wl -> wl.getPitch().getId().equals(1L)).toList();
+      List<WorkLog> pitch1Logs = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(1L)).toList();
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(pitch1Logs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -446,18 +416,10 @@ class ReportServiceTest {
 
   // Helper method
   private PitchRiskDTO createPitchRisk(Long pitchId, RiskLevel level, int score) {
-    return PitchRiskDTO.builder()
-        .pitchId(pitchId)
-        .pitchTitle("Pitch " + pitchId)
-        .riskLevel(level)
-        .riskScore(score)
-        .riskFactors(Collections.emptyList())
-        .insights(Collections.emptyList())
-        .recommendations(Collections.emptyList())
-        .confidenceScore(85)
-        .analyzedAt(LocalDateTime.now())
-        .aiEnabled(false)
-        .build();
+    return PitchRiskDTO.builder().pitchId(pitchId).pitchTitle("Pitch " + pitchId).riskLevel(level).riskScore(score)
+        .riskFactors(Collections.emptyList()).insights(Collections.emptyList())
+        .recommendations(Collections.emptyList()).confidenceScore(85).analyzedAt(LocalDateTime.now())
+        .aiEnabled(false).build();
   }
 
   private org.assertj.core.data.Offset<Double> within(double offset) {

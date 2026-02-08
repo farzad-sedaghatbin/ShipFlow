@@ -23,14 +23,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Unit tests for PitchRiskHistory entity and repository interactions. Tests cover: - Risk history
- * retrieval with date filtering - Risk factor serialization - Repository query verification
+ * Unit tests for PitchRiskHistory entity and repository interactions. Tests
+ * cover: - Risk history retrieval with date filtering - Risk factor
+ * serialization - Repository query verification
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Pitch Risk History Tests")
 class PitchRiskHistoryTest {
 
-  @Mock private PitchRiskHistoryRepository riskHistoryRepository;
+  @Mock
+  private PitchRiskHistoryRepository riskHistoryRepository;
 
   private Pitch testPitch;
   private Cycle testCycle;
@@ -70,13 +72,12 @@ class PitchRiskHistoryTest {
       LocalDateTime endDate = LocalDateTime.now();
       List<PitchRiskHistory> historyRecords = createTestHistoryRecords(pitchId, 10);
 
-      when(riskHistoryRepository.findByPitchIdAndDateRange(
-              eq(pitchId), any(LocalDateTime.class), any(LocalDateTime.class)))
-          .thenReturn(historyRecords);
+      when(riskHistoryRepository.findByPitchIdAndDateRange(eq(pitchId), any(LocalDateTime.class),
+          any(LocalDateTime.class))).thenReturn(historyRecords);
 
       // When
-      List<PitchRiskHistory> result =
-          riskHistoryRepository.findByPitchIdAndDateRange(pitchId, startDate, endDate);
+      List<PitchRiskHistory> result = riskHistoryRepository.findByPitchIdAndDateRange(pitchId, startDate,
+          endDate);
 
       // Then
       assertThat(result).hasSize(10);
@@ -89,14 +90,12 @@ class PitchRiskHistoryTest {
       // Given
       Long pitchId = 999L;
 
-      when(riskHistoryRepository.findByPitchIdAndDateRange(
-              eq(pitchId), any(LocalDateTime.class), any(LocalDateTime.class)))
-          .thenReturn(Collections.emptyList());
+      when(riskHistoryRepository.findByPitchIdAndDateRange(eq(pitchId), any(LocalDateTime.class),
+          any(LocalDateTime.class))).thenReturn(Collections.emptyList());
 
       // When
-      List<PitchRiskHistory> result =
-          riskHistoryRepository.findByPitchIdAndDateRange(
-              pitchId, LocalDateTime.now().minusDays(30), LocalDateTime.now());
+      List<PitchRiskHistory> result = riskHistoryRepository.findByPitchIdAndDateRange(pitchId,
+          LocalDateTime.now().minusDays(30), LocalDateTime.now());
 
       // Then
       assertThat(result).isEmpty();
@@ -110,8 +109,7 @@ class PitchRiskHistoryTest {
       LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
       List<Long> pitchIdsWithHistory = Arrays.asList(1L, 2L, 3L);
 
-      when(riskHistoryRepository.findPitchIdsWithHistoryToday(
-              any(LocalDateTime.class), any(LocalDateTime.class)))
+      when(riskHistoryRepository.findPitchIdsWithHistoryToday(any(LocalDateTime.class), any(LocalDateTime.class)))
           .thenReturn(pitchIdsWithHistory);
 
       // When
@@ -130,17 +128,10 @@ class PitchRiskHistoryTest {
     @DisplayName("Should create history with all fields")
     void shouldCreateHistoryWithAllFields() {
       // Given & When
-      PitchRiskHistory history =
-          PitchRiskHistory.builder()
-              .id(1L)
-              .pitch(testPitch)
-              .recordedAt(LocalDateTime.now())
-              .riskScore(75)
-              .riskLevel(RiskLevel.HIGH)
-              .triggerType(PitchRiskHistory.TriggerType.MANUAL)
-              .riskFactorsJson(
-                  "[{\"category\":\"TIME_OVERRUN\",\"description\":\"Behind schedule\"}]")
-              .build();
+      PitchRiskHistory history = PitchRiskHistory.builder().id(1L).pitch(testPitch)
+          .recordedAt(LocalDateTime.now()).riskScore(75).riskLevel(RiskLevel.HIGH)
+          .triggerType(PitchRiskHistory.TriggerType.MANUAL)
+          .riskFactorsJson("[{\"category\":\"TIME_OVERRUN\",\"description\":\"Behind schedule\"}]").build();
 
       // Then
       assertThat(history.getId()).isEqualTo(1L);
@@ -154,13 +145,10 @@ class PitchRiskHistoryTest {
     @DisplayName("Should support different trigger types")
     void shouldSupportDifferentTriggerTypes() {
       // Verify all trigger types exist
-      assertThat(PitchRiskHistory.TriggerType.values())
-          .containsExactlyInAnyOrder(
-              PitchRiskHistory.TriggerType.MANUAL,
-              PitchRiskHistory.TriggerType.SCHEDULED,
-              PitchRiskHistory.TriggerType.STATUS_CHANGE,
-              PitchRiskHistory.TriggerType.WORK_LOG_ADDED,
-              PitchRiskHistory.TriggerType.CIRCUIT_BREAKER);
+      assertThat(PitchRiskHistory.TriggerType.values()).containsExactlyInAnyOrder(
+          PitchRiskHistory.TriggerType.MANUAL, PitchRiskHistory.TriggerType.SCHEDULED,
+          PitchRiskHistory.TriggerType.STATUS_CHANGE, PitchRiskHistory.TriggerType.WORK_LOG_ADDED,
+          PitchRiskHistory.TriggerType.CIRCUIT_BREAKER);
     }
   }
 
@@ -172,20 +160,11 @@ class PitchRiskHistoryTest {
     @DisplayName("Should properly serialize risk factors to JSON")
     void shouldSerializeRiskFactors() throws JsonProcessingException {
       // Given
-      List<RiskFactor> riskFactors =
-          Arrays.asList(
-              RiskFactor.builder()
-                  .category(RiskFactor.RiskCategory.TIME_OVERRUN)
-                  .description("Project is behind schedule")
-                  .impactLevel(8)
-                  .probability(7)
-                  .build(),
-              RiskFactor.builder()
-                  .category(RiskFactor.RiskCategory.SCOPE_CREEP)
-                  .description("Scope creep detected")
-                  .impactLevel(6)
-                  .probability(5)
-                  .build());
+      List<RiskFactor> riskFactors = Arrays.asList(
+          RiskFactor.builder().category(RiskFactor.RiskCategory.TIME_OVERRUN)
+              .description("Project is behind schedule").impactLevel(8).probability(7).build(),
+          RiskFactor.builder().category(RiskFactor.RiskCategory.SCOPE_CREEP)
+              .description("Scope creep detected").impactLevel(6).probability(5).build());
 
       // When
       String json = objectMapper.writeValueAsString(riskFactors);
@@ -201,14 +180,11 @@ class PitchRiskHistoryTest {
     @DisplayName("Should properly deserialize risk factors from JSON")
     void shouldDeserializeRiskFactors() throws JsonProcessingException {
       // Given
-      String json =
-          "[{\"category\":\"TIME_OVERRUN\",\"description\":\"Behind schedule\",\"impactLevel\":8,\"probability\":7}]";
+      String json = "[{\"category\":\"TIME_OVERRUN\",\"description\":\"Behind schedule\",\"impactLevel\":8,\"probability\":7}]";
 
       // When
-      List<RiskFactor> factors =
-          objectMapper.readValue(
-              json,
-              objectMapper.getTypeFactory().constructCollectionType(List.class, RiskFactor.class));
+      List<RiskFactor> factors = objectMapper.readValue(json,
+          objectMapper.getTypeFactory().constructCollectionType(List.class, RiskFactor.class));
 
       // Then
       assertThat(factors).hasSize(1);
@@ -223,10 +199,8 @@ class PitchRiskHistoryTest {
       String emptyJson = "[]";
 
       // When
-      List<RiskFactor> factors =
-          objectMapper.readValue(
-              emptyJson,
-              objectMapper.getTypeFactory().constructCollectionType(List.class, RiskFactor.class));
+      List<RiskFactor> factors = objectMapper.readValue(emptyJson,
+          objectMapper.getTypeFactory().constructCollectionType(List.class, RiskFactor.class));
 
       // Then
       assertThat(factors).isEmpty();
@@ -241,21 +215,16 @@ class PitchRiskHistoryTest {
     @DisplayName("Should have all expected risk levels")
     void shouldHaveAllExpectedRiskLevels() {
       // Verify all risk levels exist
-      assertThat(RiskLevel.values())
-          .containsExactlyInAnyOrder(
-              RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL);
+      assertThat(RiskLevel.values()).containsExactlyInAnyOrder(RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH,
+          RiskLevel.CRITICAL);
     }
 
     @Test
     @DisplayName("Should create history with each risk level")
     void shouldCreateHistoryWithEachRiskLevel() {
       for (RiskLevel level : RiskLevel.values()) {
-        PitchRiskHistory history =
-            PitchRiskHistory.builder()
-                .pitch(testPitch)
-                .riskLevel(level)
-                .riskScore(getScoreForLevel(level))
-                .build();
+        PitchRiskHistory history = PitchRiskHistory.builder().pitch(testPitch).riskLevel(level)
+            .riskScore(getScoreForLevel(level)).build();
 
         assertThat(history.getRiskLevel()).isEqualTo(level);
       }
@@ -267,19 +236,11 @@ class PitchRiskHistoryTest {
   private List<PitchRiskHistory> createTestHistoryRecords(Long pitchId, int count) {
     List<PitchRiskHistory> records = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      PitchRiskHistory history =
-          PitchRiskHistory.builder()
-              .id((long) (i + 1))
-              .pitch(testPitch)
-              .recordedAt(LocalDateTime.now().minusDays(i))
-              .riskScore(40 + i * 5) // Varying scores
-              .riskLevel(i < 3 ? RiskLevel.MEDIUM : RiskLevel.HIGH)
-              .triggerType(
-                  i == 0
-                      ? PitchRiskHistory.TriggerType.MANUAL
-                      : PitchRiskHistory.TriggerType.SCHEDULED)
-              .riskFactorsJson("[]")
-              .build();
+      PitchRiskHistory history = PitchRiskHistory.builder().id((long) (i + 1)).pitch(testPitch)
+          .recordedAt(LocalDateTime.now().minusDays(i)).riskScore(40 + i * 5) // Varying scores
+          .riskLevel(i < 3 ? RiskLevel.MEDIUM : RiskLevel.HIGH)
+          .triggerType(i == 0 ? PitchRiskHistory.TriggerType.MANUAL : PitchRiskHistory.TriggerType.SCHEDULED)
+          .riskFactorsJson("[]").build();
       records.add(history);
     }
     return records;

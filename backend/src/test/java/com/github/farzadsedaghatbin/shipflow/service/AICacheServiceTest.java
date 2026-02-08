@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Comprehensive tests for AICacheService. Tests cover: - Pitch risk caching with TTL and
- * invalidation - Cycle risk caching - Q&A caching with fuzzy matching - Feature flags
- * (enable/disable) - Cache statistics - Cache cleanup
+ * Comprehensive tests for AICacheService. Tests cover: - Pitch risk caching
+ * with TTL and invalidation - Cycle risk caching - Q&A caching with fuzzy
+ * matching - Feature flags (enable/disable) - Cache statistics - Cache cleanup
  */
 @DisplayName("AICacheService Tests")
 class AICacheServiceTest {
@@ -98,7 +98,8 @@ class AICacheServiceTest {
       PitchRiskDTO ruleRisk = createTestPitchRiskDTO(pitchId);
       ruleRisk.setRiskLevel(RiskLevel.MEDIUM);
 
-      // When - Use same hash since it's the same pitch data, just different analysis modes
+      // When - Use same hash since it's the same pitch data, just different analysis
+      // modes
       String dataHash = "same_pitch_data_hash";
       cacheService.cachePitchRisk(pitchId, true, aiRisk, dataHash);
       cacheService.cachePitchRisk(pitchId, false, ruleRisk, dataHash);
@@ -237,8 +238,7 @@ class AICacheServiceTest {
 
       // When
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, response);
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isPresent();
@@ -250,7 +250,8 @@ class AICacheServiceTest {
     void shouldFindSimilarQuestionsWithFuzzyMatching() {
       // Given - Questions with Jaccard similarity >= 0.85
       // Original words: {what, is, the, progress, of, this, pitch} = 7 words
-      // Similar words: {what, is, the, progress, of, this, pitch, currently} = 8 words
+      // Similar words: {what, is, the, progress, of, this, pitch, currently} = 8
+      // words
       // Intersection = 7, Union = 8, Jaccard = 7/8 = 0.875 >= 0.85
       String originalQuestion = "What is the progress of this pitch?";
       String similarQuestion = "What is the progress of this pitch currently?";
@@ -258,8 +259,7 @@ class AICacheServiceTest {
 
       // When
       cacheService.cacheQAResponse(originalQuestion, "pitch", 1L, null, null, response);
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(similarQuestion, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(similarQuestion, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isPresent();
@@ -275,8 +275,7 @@ class AICacheServiceTest {
 
       // When
       cacheService.cacheQAResponse(originalQuestion, "pitch", 1L, null, null, response);
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(differentQuestion, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(differentQuestion, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isEmpty();
@@ -296,10 +295,8 @@ class AICacheServiceTest {
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, pitch1Response);
       cacheService.cacheQAResponse(question, "pitch", 2L, null, null, pitch2Response);
 
-      Optional<QAResponse> result1 =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
-      Optional<QAResponse> result2 =
-          cacheService.getCachedQAResponse(question, "pitch", 2L, null, null);
+      Optional<QAResponse> result1 = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result2 = cacheService.getCachedQAResponse(question, "pitch", 2L, null, null);
 
       // Then
       assertThat(result1).isPresent();
@@ -312,12 +309,9 @@ class AICacheServiceTest {
     @DisplayName("Should invalidate Q&A cache by context")
     void shouldInvalidateQACacheByContext() {
       // Given
-      cacheService.cacheQAResponse(
-          "Question 1", "pitch", 1L, null, null, createTestQAResponse("Q1"));
-      cacheService.cacheQAResponse(
-          "Question 2", "pitch", 1L, null, null, createTestQAResponse("Q2"));
-      cacheService.cacheQAResponse(
-          "Question 3", "pitch", 2L, null, null, createTestQAResponse("Q3"));
+      cacheService.cacheQAResponse("Question 1", "pitch", 1L, null, null, createTestQAResponse("Q1"));
+      cacheService.cacheQAResponse("Question 2", "pitch", 1L, null, null, createTestQAResponse("Q2"));
+      cacheService.cacheQAResponse("Question 3", "pitch", 2L, null, null, createTestQAResponse("Q3"));
 
       // When
       cacheService.invalidateQACache("pitch", 1L);
@@ -326,8 +320,7 @@ class AICacheServiceTest {
       assertThat(cacheService.getCachedQAResponse("Question 1", "pitch", 1L, null, null)).isEmpty();
       assertThat(cacheService.getCachedQAResponse("Question 2", "pitch", 1L, null, null)).isEmpty();
       // Pitch 2 should still be cached
-      assertThat(cacheService.getCachedQAResponse("Question 3", "pitch", 2L, null, null))
-          .isPresent();
+      assertThat(cacheService.getCachedQAResponse("Question 3", "pitch", 2L, null, null)).isPresent();
     }
 
     @Test
@@ -338,10 +331,8 @@ class AICacheServiceTest {
       String question = "Test question";
 
       // When
-      cacheService.cacheQAResponse(
-          question, "pitch", 1L, null, null, createTestQAResponse(question));
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      cacheService.cacheQAResponse(question, "pitch", 1L, null, null, createTestQAResponse(question));
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
 
       // Then
       assertThat(result).isEmpty();
@@ -358,8 +349,7 @@ class AICacheServiceTest {
       cacheService.cacheQAResponse(question, "pitch", 1L, null, null, response);
 
       // Then - Exact same question should always hit
-      Optional<QAResponse> result =
-          cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
+      Optional<QAResponse> result = cacheService.getCachedQAResponse(question, "pitch", 1L, null, null);
       assertThat(result).isPresent();
     }
   }

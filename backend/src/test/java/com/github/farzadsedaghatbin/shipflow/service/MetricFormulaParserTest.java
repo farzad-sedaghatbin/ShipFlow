@@ -45,16 +45,16 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should validate formula with field references")
     void validateFieldReferences() {
-      MetricFormulaParser.ValidationResult result =
-          parser.validateFormula("pitch.appetiteDays + pitch.actualHours");
+      MetricFormulaParser.ValidationResult result = parser
+          .validateFormula("pitch.appetiteDays + pitch.actualHours");
       assertTrue(result.isValid());
     }
 
     @Test
     @DisplayName("Should validate formula with functions")
     void validateFunctions() {
-      MetricFormulaParser.ValidationResult result =
-          parser.validateFormula("SUM(pitch.actualHours) / COUNT(pitch.id)");
+      MetricFormulaParser.ValidationResult result = parser
+          .validateFormula("SUM(pitch.actualHours) / COUNT(pitch.id)");
       assertTrue(result.isValid());
     }
 
@@ -206,10 +206,7 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should evaluate formula with field references")
     void evaluateWithFieldReferences() {
-      Map<String, Object> context =
-          Map.of(
-              "pitch_appetiteDays", 10,
-              "workLog_hours", 20);
+      Map<String, Object> context = Map.of("pitch_appetiteDays", 10, "workLog_hours", 20);
       BigDecimal result = parser.evaluateFormula("pitch.appetiteDays + workLog.hours", context);
       assertEquals(new BigDecimal("30"), result);
     }
@@ -225,10 +222,7 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should evaluate formula with function calls")
     void evaluateWithFunctions() {
-      Map<String, Object> context =
-          Map.of(
-              "sum_hours", 100,
-              "count_items", 5);
+      Map<String, Object> context = Map.of("sum_hours", 100, "count_items", 5);
       // Test with simple function names (not actual field references)
       BigDecimal result = parser.evaluateFormula("SUM(hours) / COUNT(items)", context);
       assertEquals(new BigDecimal("20.0000"), result);
@@ -237,10 +231,7 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should evaluate complex formula with multiple operations")
     void evaluateComplexFormula() {
-      Map<String, Object> context =
-          Map.of(
-              "avg_hours", 8,
-              "count_items", 4);
+      Map<String, Object> context = Map.of("avg_hours", 8, "count_items", 4);
       // 8 * 4 = 32
       String formula = "AVG(hours) * COUNT(items)";
       BigDecimal result = parser.evaluateFormula(formula, context);
@@ -248,14 +239,7 @@ class MetricFormulaParserTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
-      "5 + 3, 8",
-      "10 - 4, 6",
-      "3 * 7, 21",
-      "100 / 5, 20.0000",
-      "2 + 3 * 4, 14",
-      "(2 + 3) * 4, 20"
-    })
+    @CsvSource({"5 + 3, 8", "10 - 4, 6", "3 * 7, 21", "100 / 5, 20.0000", "2 + 3 * 4, 14", "(2 + 3) * 4, 20"})
     @DisplayName("Should evaluate various arithmetic expressions")
     void evaluateVariousExpressions(String formula, String expected) {
       BigDecimal result = parser.evaluateFormula(formula, Map.of());
@@ -270,8 +254,7 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should extract single field reference")
     void extractSingleFieldReference() {
-      List<MetricFormulaParser.FieldReference> refs =
-          parser.extractFieldReferences("pitch.appetiteDays");
+      List<MetricFormulaParser.FieldReference> refs = parser.extractFieldReferences("pitch.appetiteDays");
       assertEquals(1, refs.size());
       assertEquals("pitch", refs.get(0).entity());
       assertEquals("appetiteDays", refs.get(0).field());
@@ -348,8 +331,7 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should extract complex WHERE clause")
     void extractComplexWhereClause() {
-      String formula =
-          "COUNT(pitch.id) WHERE pitch.status = 'COMPLETED' AND cycle.name = 'Cycle 1'";
+      String formula = "COUNT(pitch.id) WHERE pitch.status = 'COMPLETED' AND cycle.name = 'Cycle 1'";
       String whereClause = parser.extractWhereClause(formula);
       assertNotNull(whereClause);
       assertEquals("pitch.status = 'COMPLETED' AND cycle.name = 'Cycle 1'", whereClause);
@@ -398,11 +380,9 @@ class MetricFormulaParserTest {
     @Test
     @DisplayName("Should throw exception for invalid characters")
     void throwExceptionForInvalidCharacters() {
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> {
-            parser.evaluateFormula("10 + $20", Map.of());
-          });
+      assertThrows(IllegalArgumentException.class, () -> {
+        parser.evaluateFormula("10 + $20", Map.of());
+      });
     }
 
     @Test
@@ -432,28 +412,10 @@ class MetricFormulaParserTest {
   class ValidFieldReferenceTests {
 
     @ParameterizedTest
-    @CsvSource({
-      "pitch, id",
-      "pitch, appetiteDays",
-      "pitch, actualHours",
-      "pitch, status",
-      "pitch, title",
-      "cycle, id",
-      "cycle, name",
-      "cycle, startDate",
-      "cycle, endDate",
-      "cycle, status",
-      "task, id",
-      "task, status",
-      "task, estimateHours",
-      "task, actualHours",
-      "team, id",
-      "team, name",
-      "team, memberCount",
-      "person, id",
-      "person, name",
-      "person, email"
-    })
+    @CsvSource({"pitch, id", "pitch, appetiteDays", "pitch, actualHours", "pitch, status", "pitch, title",
+        "cycle, id", "cycle, name", "cycle, startDate", "cycle, endDate", "cycle, status", "task, id",
+        "task, status", "task, estimateHours", "task, actualHours", "team, id", "team, name",
+        "team, memberCount", "person, id", "person, name", "person, email"})
     @DisplayName("Should validate all supported field references")
     void validateSupportedFieldReferences(String entity, String field) {
       String formula = entity + "." + field;

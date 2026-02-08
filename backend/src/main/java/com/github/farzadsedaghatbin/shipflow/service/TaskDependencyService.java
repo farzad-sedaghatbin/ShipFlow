@@ -15,8 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service for managing task dependencies. Handles creating, deleting, and querying task
- * dependencies with circular dependency detection.
+ * Service for managing task dependencies. Handles creating, deleting, and
+ * querying task dependencies with circular dependency detection.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,30 +29,20 @@ public class TaskDependencyService {
   private final MessageService messageService;
 
   /**
-   * Add a dependency between tasks. Validates that the dependency doesn't create a circular
-   * reference.
+   * Add a dependency between tasks. Validates that the dependency doesn't create
+   * a circular reference.
    */
   public TaskDependencyDTO addDependency(Long sourceTaskId, CreateTaskDependencyRequest request) {
     // Validate both tasks exist
-    Task sourceTask =
-        taskRepository
-            .findById(sourceTaskId)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException("Source task not found with id: " + sourceTaskId));
+    Task sourceTask = taskRepository.findById(sourceTaskId)
+        .orElseThrow(() -> new IllegalArgumentException("Source task not found with id: " + sourceTaskId));
 
-    Task targetTask =
-        taskRepository
-            .findById(request.getTargetTaskId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Target task not found with id: " + request.getTargetTaskId()));
+    Task targetTask = taskRepository.findById(request.getTargetTaskId()).orElseThrow(
+        () -> new IllegalArgumentException("Target task not found with id: " + request.getTargetTaskId()));
 
     // Validate tasks are in the same cycle
     if (!sourceTask.getCycle().getId().equals(targetTask.getCycle().getId())) {
-      throw new BadRequestException(
-          localizationService.getMessage("dependency.same.cycle.required"));
+      throw new BadRequestException(localizationService.getMessage("dependency.same.cycle.required"));
     }
 
     // Prevent self-dependencies
@@ -61,28 +51,21 @@ public class TaskDependencyService {
     }
 
     // Check if dependency already exists
-    if (taskDependencyRepository
-        .findBySourceTaskIdAndTargetTaskId(sourceTaskId, request.getTargetTaskId())
+    if (taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(sourceTaskId, request.getTargetTaskId())
         .isPresent()) {
       throw new BadRequestException(localizationService.getMessage("dependency.already.exists"));
     }
 
     // Check for circular dependencies
     if (wouldCreateCircularDependency(sourceTaskId, request.getTargetTaskId())) {
-      throw new BadRequestException(
-          localizationService.getMessage("dependency.circular.reference"));
+      throw new BadRequestException(localizationService.getMessage("dependency.circular.reference"));
     }
 
     // Create the dependency
-    TaskDependency dependency =
-        TaskDependency.builder()
-            .sourceTask(sourceTask)
-            .targetTask(targetTask)
-            .dependencyType(
-                request.getDependencyType() != null
-                    ? request.getDependencyType()
-                    : DependencyType.BLOCKS)
-            .build();
+    TaskDependency dependency = TaskDependency.builder().sourceTask(sourceTask).targetTask(targetTask)
+        .dependencyType(
+            request.getDependencyType() != null ? request.getDependencyType() : DependencyType.BLOCKS)
+        .build();
 
     TaskDependency saved = taskDependencyRepository.save(dependency);
     return toDTO(saved);
@@ -91,8 +74,7 @@ public class TaskDependencyService {
   /** Remove a dependency between tasks. */
   public void removeDependency(Long dependencyId) {
     if (!taskDependencyRepository.existsById(dependencyId)) {
-      throw new IllegalArgumentException(
-          localizationService.getMessage("dependency.not.found", dependencyId));
+      throw new IllegalArgumentException(localizationService.getMessage("dependency.not.found", dependencyId));
     }
     taskDependencyRepository.deleteById(dependencyId);
   }
@@ -119,8 +101,7 @@ public class TaskDependencyService {
       throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
     }
 
-    return taskDependencyRepository.findBlockingDependenciesByTaskId(taskId).stream()
-        .map(this::toDTO)
+    return taskDependencyRepository.findBlockingDependenciesByTaskId(taskId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
@@ -130,17 +111,17 @@ public class TaskDependencyService {
       throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
     }
 
-    return taskDependencyRepository.findBlockedByDependenciesByTaskId(taskId).stream()
-        .map(this::toDTO)
+    return taskDependencyRepository.findBlockedByDependenciesByTaskId(taskId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   /**
-   * Check if adding a dependency would create a circular reference. Uses depth-first search to
-   * detect cycles.
+   * Check if adding a dependency would create a circular reference. Uses
+   * depth-first search to detect cycles.
    */
   private boolean wouldCreateCircularDependency(Long sourceTaskId, Long targetTaskId) {
-    // If target already depends on source (directly or indirectly), adding source->target would
+    // If target already depends on source (directly or indirectly), adding
+    // source->target would
     // create a cycle
     return hasPathBetweenTasks(targetTaskId, sourceTaskId, new HashSet<>());
   }
@@ -170,14 +151,9 @@ public class TaskDependencyService {
 
   /** Convert entity to DTO. */
   private TaskDependencyDTO toDTO(TaskDependency dependency) {
-    return TaskDependencyDTO.builder()
-        .id(dependency.getId())
-        .sourceTaskId(dependency.getSourceTask().getId())
-        .sourceTaskTitle(dependency.getSourceTask().getTitle())
-        .targetTaskId(dependency.getTargetTask().getId())
-        .targetTaskTitle(dependency.getTargetTask().getTitle())
-        .dependencyType(dependency.getDependencyType())
-        .createdAt(dependency.getCreatedAt())
-        .build();
+    return TaskDependencyDTO.builder().id(dependency.getId()).sourceTaskId(dependency.getSourceTask().getId())
+        .sourceTaskTitle(dependency.getSourceTask().getTitle()).targetTaskId(dependency.getTargetTask().getId())
+        .targetTaskTitle(dependency.getTargetTask().getTitle()).dependencyType(dependency.getDependencyType())
+        .createdAt(dependency.getCreatedAt()).build();
   }
 }

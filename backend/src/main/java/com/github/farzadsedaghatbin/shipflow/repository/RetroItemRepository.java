@@ -14,8 +14,8 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
 
   List<RetroItem> findByRetrospectiveIdOrderByCreatedAtAsc(Long retrospectiveId);
 
-  List<RetroItem> findByRetrospectiveIdAndColumnTypeOrderByCreatedAtAsc(
-      Long retrospectiveId, RetroColumnType columnType);
+  List<RetroItem> findByRetrospectiveIdAndColumnTypeOrderByCreatedAtAsc(Long retrospectiveId,
+      RetroColumnType columnType);
 
   @Query("SELECT COUNT(i) FROM RetroItem i WHERE i.retrospective.id = :retrospectiveId")
   long countByRetrospectiveId(@Param("retrospectiveId") Long retrospectiveId);
@@ -24,8 +24,7 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
   Optional<RetroItem> findByIdWithAuthor(@Param("id") Long id);
 
   // Find items that are not merged (for display)
-  @Query(
-      "SELECT i FROM RetroItem i WHERE i.retrospective.id = :retrospectiveId AND i.mergedInto IS NULL ORDER BY i.voteCount DESC, i.createdAt ASC")
+  @Query("SELECT i FROM RetroItem i WHERE i.retrospective.id = :retrospectiveId AND i.mergedInto IS NULL ORDER BY i.voteCount DESC, i.createdAt ASC")
   List<RetroItem> findActiveItemsByRetrospectiveId(@Param("retrospectiveId") Long retrospectiveId);
 
   // Find items merged into a specific item

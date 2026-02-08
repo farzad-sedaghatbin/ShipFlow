@@ -28,26 +28,37 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-/** Unit tests for PitchHealthService - Automated Risk Detection and Health Monitoring */
+/**
+ * Unit tests for PitchHealthService - Automated Risk Detection and Health
+ * Monitoring
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PitchHealthServiceTest {
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private MeetingRepository meetingRepository;
+  @Mock
+  private MeetingRepository meetingRepository;
 
-  @Mock private BugReportRepository bugReportRepository;
+  @Mock
+  private BugReportRepository bugReportRepository;
 
-  @Mock private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-  @Mock private RiskAnalysisService riskAnalysisService;
+  @Mock
+  private RiskAnalysisService riskAnalysisService;
 
-  @InjectMocks private PitchHealthService pitchHealthService;
+  @InjectMocks
+  private PitchHealthService pitchHealthService;
 
   private Pitch testPitch;
   private Cycle testCycle;
@@ -60,36 +71,20 @@ class PitchHealthServiceTest {
 
     testProject = Project.builder().id(1L).name("Test Project").projectKey("TEST").build();
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .startDate(today.minusDays(7))
-            .endDate(today.plusDays(7))
-            .project(testProject)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").startDate(today.minusDays(7)).endDate(today.plusDays(7))
+        .project(testProject).isActive(true).build();
 
     testTeam = Team.builder().id(1L).name("Test Team").build();
 
-    testPitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Test Pitch")
-            .description("Test Description")
-            .appetiteDays(14)
-            .cycle(testCycle)
-            .team(testTeam)
-            .status(PitchStatus.IN_PROGRESS)
-            .createdAt(LocalDateTime.now().minusDays(7))
-            .updatedAt(LocalDateTime.now())
-            .build();
+    testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS)
+        .createdAt(LocalDateTime.now().minusDays(7)).updatedAt(LocalDateTime.now()).build();
   }
 
   @Test
   void getPitchHealth_ShouldReturnHealthSummary_WhenPitchExists() {
     // Given
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -105,33 +100,30 @@ class PitchHealthServiceTest {
     assertThat(result.getRiskLevel()).isNotNull();
     assertThat(result.getRiskTrend()).isNotNull();
     assertThat(result.getAppetiteUsedPercent()).isGreaterThanOrEqualTo(0.0);
-    verify(pitchRepository).findById(1L);
+    verify(pitchRepository).findByIdNotDeleted(1L);
   }
 
   @Test
   void getPitchHealth_ShouldThrowException_WhenPitchNotFound() {
     // Given
-    when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
+    when(pitchRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
 
     // When / Then
-    assertThatThrownBy(() -> pitchHealthService.getPitchHealth(999L))
-        .isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> pitchHealthService.getPitchHealth(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Pitch not found");
   }
 
   @Test
   void calculateRiskLevel_ShouldReturnCritical_WhenMultipleCriticalBugs() {
     // Given - Pitch with 3 critical bugs
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
-    List<BugReport> criticalBugs =
-        Arrays.asList(
-            createBug(1L, BugSeverity.CRITICAL, BugStatus.OPEN),
-            createBug(2L, BugSeverity.BLOCKER, BugStatus.OPEN),
-            createBug(3L, BugSeverity.CRITICAL, BugStatus.OPEN));
+    List<BugReport> criticalBugs = Arrays.asList(createBug(1L, BugSeverity.CRITICAL, BugStatus.OPEN),
+        createBug(2L, BugSeverity.BLOCKER, BugStatus.OPEN),
+        createBug(3L, BugSeverity.CRITICAL, BugStatus.OPEN));
     when(bugReportRepository.findByPitchId(1L)).thenReturn(criticalBugs);
 
     // When
@@ -145,7 +137,7 @@ class PitchHealthServiceTest {
   void calculateRiskLevel_ShouldReturnHigh_WhenOverBudget() {
     // Given - Pitch using 130% of budget
     testPitch.setAppetiteDays(10); // 80 hours budget
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(104.0); // 130% usage
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -166,16 +158,15 @@ class PitchHealthServiceTest {
     testCycle.setStartDate(today.minusDays(21)); // 3 weeks ago
     testCycle.setEndDate(today.plusDays(7)); // 1 week left (75% through cycle)
 
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
     // Scopes at position 20 (early uphill) updated 8 days ago
-    List<HillChartPoint> stagnantScopes =
-        Arrays.asList(
-            createHillChartPoint(1L, 20, LocalDateTime.now().minusDays(8)),
-            createHillChartPoint(2L, 15, LocalDateTime.now().minusDays(10)));
+    List<HillChartPoint> stagnantScopes = Arrays.asList(
+        createHillChartPoint(1L, 20, LocalDateTime.now().minusDays(8)),
+        createHillChartPoint(2L, 15, LocalDateTime.now().minusDays(10)));
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(stagnantScopes);
     when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(stagnantScopes);
 
@@ -193,14 +184,14 @@ class PitchHealthServiceTest {
     testCycle.setEndDate(LocalDate.now().plusDays(21)); // Plenty of time
     testPitch.setStatus(PitchStatus.IN_PROGRESS);
 
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(30.0); // ~27% of 112 hours
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
     // Good progress - scopes in downhill phase
-    List<HillChartPoint> goodScopes =
-        Arrays.asList(createHillChartPoint(1L, 70, LocalDateTime.now().minusHours(2)));
+    List<HillChartPoint> goodScopes = Arrays
+        .asList(createHillChartPoint(1L, 70, LocalDateTime.now().minusHours(2)));
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(goodScopes);
     when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(goodScopes);
 
@@ -214,17 +205,14 @@ class PitchHealthServiceTest {
   @Test
   void calculateRiskTrend_ShouldReturnWorsening_WhenNewCriticalBugs() {
     // Given - Recent critical bugs filed
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L))
-        .thenReturn(Arrays.asList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(Arrays.asList());
 
-    List<BugReport> recentCriticalBugs =
-        Arrays.asList(
-            createRecentBug(
-                1L, BugSeverity.CRITICAL, BugStatus.OPEN, LocalDateTime.now().minusHours(12)));
+    List<BugReport> recentCriticalBugs = Arrays
+        .asList(createRecentBug(1L, BugSeverity.CRITICAL, BugStatus.OPEN, LocalDateTime.now().minusHours(12)));
     when(bugReportRepository.findByPitchId(1L)).thenReturn(recentCriticalBugs);
     when(workLogRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
@@ -238,14 +226,14 @@ class PitchHealthServiceTest {
   @Test
   void calculateRiskTrend_ShouldReturnImproving_WhenRecentProgress() {
     // Given - Recent hill chart updates showing progress
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(workLogRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
-    List<HillChartPoint> recentProgress =
-        Arrays.asList(createHillChartPoint(1L, 65, LocalDateTime.now().minusHours(6)));
+    List<HillChartPoint> recentProgress = Arrays
+        .asList(createHillChartPoint(1L, 65, LocalDateTime.now().minusHours(6)));
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(recentProgress);
     when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(recentProgress);
 
@@ -259,29 +247,18 @@ class PitchHealthServiceTest {
   @Test
   void getCycleHealthSummary_ShouldAggregateAllPitches() {
     // Given
-    Pitch pitch2 =
-        Pitch.builder()
-            .id(2L)
-            .title("Pitch 2")
-            .appetiteDays(10)
-            .cycle(testCycle)
-            .team(testTeam)
-            .status(PitchStatus.DONE)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .build();
+    Pitch pitch2 = Pitch.builder().id(2L).title("Pitch 2").appetiteDays(10).cycle(testCycle).team(testTeam)
+        .status(PitchStatus.DONE).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testPitch, pitch2));
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch, pitch2));
 
-    when(workLogRepository.getTotalHoursByPitchIds(any()))
-        .thenAnswer(
-            invocation -> {
-              List<Object[]> result = new java.util.ArrayList<>();
-              result.add(new Object[] {1L, 56.0});
-              result.add(new Object[] {2L, 40.0});
-              return result;
-            });
+    when(workLogRepository.getTotalHoursByPitchIds(any())).thenAnswer(invocation -> {
+      List<Object[]> result = new java.util.ArrayList<>();
+      result.add(new Object[] { 1L, 56.0 });
+      result.add(new Object[] { 2L, 40.0 });
+      return result;
+    });
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(bugReportRepository.findByPitchId(2L)).thenReturn(Arrays.asList());
 
@@ -301,14 +278,12 @@ class PitchHealthServiceTest {
   void getCycleHealthSummary_ShouldCalculateRiskBreakdown() {
     // Given - Mix of healthy and at-risk pitches
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testPitch));
-    when(workLogRepository.getTotalHoursByPitchIds(any()))
-        .thenAnswer(
-            invocation -> {
-              List<Object[]> result = new java.util.ArrayList<>();
-              result.add(new Object[] {1L, 50.0});
-              return result;
-            });
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch));
+    when(workLogRepository.getTotalHoursByPitchIds(any())).thenAnswer(invocation -> {
+      List<Object[]> result = new java.util.ArrayList<>();
+      result.add(new Object[] { 1L, 50.0 });
+      return result;
+    });
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
 
     // When
@@ -325,19 +300,12 @@ class PitchHealthServiceTest {
   @Test
   void getAllActiveCycleHealth_ShouldReturnAllActiveCycles() {
     // Given
-    Cycle cycle2 =
-        Cycle.builder()
-            .id(2L)
-            .name("Cycle 2")
-            .startDate(LocalDate.now().minusDays(14))
-            .endDate(LocalDate.now().plusDays(14))
-            .project(testProject)
-            .isActive(true)
-            .build();
+    Cycle cycle2 = Cycle.builder().id(2L).name("Cycle 2").startDate(LocalDate.now().minusDays(14))
+        .endDate(LocalDate.now().plusDays(14)).project(testProject).isActive(true).build();
 
     when(cycleRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(testCycle));
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList());
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList());
     when(workLogRepository.getTotalHoursByPitchIds(any()))
         .thenAnswer(invocation -> new java.util.ArrayList<Object[]>());
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Arrays.asList());
@@ -352,37 +320,18 @@ class PitchHealthServiceTest {
 
   // Helper methods
   private BugReport createBug(Long id, BugSeverity severity, BugStatus status) {
-    return BugReport.builder()
-        .id(id)
-        .severity(severity)
-        .status(status)
-        .title("Test Bug " + id)
-        .description("Test bug description")
-        .createdAt(LocalDateTime.now().minusDays(5))
-        .build();
+    return BugReport.builder().id(id).severity(severity).status(status).title("Test Bug " + id)
+        .description("Test bug description").createdAt(LocalDateTime.now().minusDays(5)).build();
   }
 
-  private BugReport createRecentBug(
-      Long id, BugSeverity severity, BugStatus status, LocalDateTime createdAt) {
-    return BugReport.builder()
-        .id(id)
-        .severity(severity)
-        .status(status)
-        .title("Test Bug " + id)
-        .description("Test bug description")
-        .createdAt(createdAt)
-        .build();
+  private BugReport createRecentBug(Long id, BugSeverity severity, BugStatus status, LocalDateTime createdAt) {
+    return BugReport.builder().id(id).severity(severity).status(status).title("Test Bug " + id)
+        .description("Test bug description").createdAt(createdAt).build();
   }
 
   private HillChartPoint createHillChartPoint(Long id, int position, LocalDateTime updatedAt) {
-    return HillChartPoint.builder()
-        .id(id)
-        .pitch(testPitch)
-        .scope("Test Scope " + id)
-        .description("Test scope description")
-        .position(position)
-        .createdAt(LocalDateTime.now().minusDays(7))
-        .updatedAt(updatedAt)
-        .build();
+    return HillChartPoint.builder().id(id).pitch(testPitch).scope("Test Scope " + id)
+        .description("Test scope description").position(position).createdAt(LocalDateTime.now().minusDays(7))
+        .updatedAt(updatedAt).build();
   }
 }

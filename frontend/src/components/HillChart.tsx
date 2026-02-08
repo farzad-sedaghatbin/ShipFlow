@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../contexts';
 import { Card, CardContent } from './ui/card';
 import { HillChartPoint } from '../types';
+import ScopeNarrative from './ScopeNarrative';
 
 // Sound effects for tactile feedback - uses lazy initialization to comply with browser autoplay policy
 const createSoundEffect = () => {
@@ -129,6 +130,7 @@ export const HillChart: React.FC<HillChartProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<HillChartPoint | null>(null);
   const [contextMenuPoint, setContextMenuPoint] = useState<HillChartPoint | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoverCardPosition, setHoverCardPosition] = useState<{ x: number; y: number } | null>(null);
   
   const [animatedPositions, setAnimatedPositions] = useState<Map<number, SpringAnimation>>(new Map());
   const [pulsePhase, setPulsePhase] = useState(0);
@@ -475,6 +477,30 @@ export const HillChart: React.FC<HillChartProps> = ({
     } else {
       const point = getPointAtPosition(x, y);
       setHoveredPoint(point);
+      
+      // Calculate hover card position relative to the canvas
+      if (point) {
+        const spring = animatedPositions.get(point.id);
+        const position = spring?.current ?? point.position;
+        const pointX = getXFromPosition(position);
+        const pointY = getYFromPosition(position);
+        
+        // Convert canvas coordinates to viewport coordinates
+        const viewportX = rect.left + pointX;
+        const viewportY = rect.top + pointY;
+        
+        // Position the card below the point, or above if there's not enough space
+        const cardHeight = 200; // Approximate height of ScopeNarrative
+        const spaceBelow = window.innerHeight - viewportY;
+        const shouldShowAbove = spaceBelow < cardHeight + 40;
+        
+        setHoverCardPosition({
+          x: viewportX,
+          y: shouldShowAbove ? viewportY - cardHeight - 20 : viewportY + 30
+        });
+      } else {
+        setHoverCardPosition(null);
+      }
     }
   };
 
@@ -658,19 +684,22 @@ export const HillChart: React.FC<HillChartProps> = ({
           />
         </div>
 
-        {/* Hover info card - absolute positioned to prevent layout shift */}
-        {hoveredPoint && !draggingPoint && (
-          <div className="absolute left-1/2 -translate-x-1/2 mt-4 p-4 bg-card border-2 border-primary/30 rounded-xl shadow-xl transition-all animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none z-10 max-w-md w-full mx-4">
-            <p className="font-bold text-base text-primary">{hoveredPoint.scope}</p>
-            <p className="text-sm text-foreground mt-2 leading-relaxed">{hoveredPoint.description}</p>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-sm font-bold bg-primary text-primary-foreground px-3 py-1 rounded-md">
-                {hoveredPoint.position}%
-              </span>
-              <span className="text-sm font-medium text-foreground">
-                {hoveredPoint.position < 50 ? '🔍 Figuring things out' : '🚀 Making it happen'}
-              </span>
-            </div>
+        {/* Hover info card with narrative - positioned absolutely at calculated position */}
+        {hoveredPoint && !draggingPoint && hoverCardPosition && (
+          <div 
+            className="fixed z-50 transition-all animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none"
+            style={{ 
+              left: hoverCardPosition.x,
+              top: hoverCardPosition.y,
+              transform: 'translateX(-50%)',
+              maxWidth: 'min(400px, calc(100vw - 32px))'
+            }}
+          >
+            <ScopeNarrative 
+              point={hoveredPoint} 
+              daysSinceUpdate={Math.floor((Date.now() - new Date(hoveredPoint.updatedAt).getTime()) / (1000 * 60 * 60 * 24))}
+              showNarrative={true}
+            />
           </div>
         )}
 

@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 /**
- * Entity storing historical calculated values for custom metrics. Enables trend analysis and
- * historical comparisons.
+ * Entity storing historical calculated values for custom metrics. Enables trend
+ * analysis and historical comparisons.
  */
 @Entity
 @Table(name = "metric_data_points")
@@ -35,8 +35,8 @@ public class MetricDataPoint {
   private LocalDateTime calculationDate;
 
   /**
-   * Additional context about the calculation Example: {"cycleId": 1, "pitchCount": 10,
-   * "workLogCount": 150}
+   * Additional context about the calculation Example: {"cycleId": 1,
+   * "pitchCount": 10, "workLogCount": 150}
    */
   @Column(name = "metadata", columnDefinition = "TEXT")
   private String metadata;

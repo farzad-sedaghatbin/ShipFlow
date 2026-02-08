@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useToast } from '../contexts';
 import { customDashboardService } from '../services/customDashboardService';
 import { cycleService } from '../services/cycleService';
@@ -47,6 +48,8 @@ export default function DashboardManager() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState<CustomDashboard | null>(null);
   const [savingDashboard, setSavingDashboard] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [dashboardToDelete, setDashboardToDelete] = useState<CustomDashboard | null>(null);
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
 
@@ -138,18 +141,24 @@ export default function DashboardManager() {
     }
   };
 
-  const handleDelete = async (dashboard: CustomDashboard) => {
+  const openDeleteConfirm = (dashboard: CustomDashboard) => {
     if (dashboard.isDefault) {
       showError(t('common.cannotDeleteDefault'));
       return;
     }
+    setDashboardToDelete(dashboard);
+    setDeleteConfirmOpen(true);
+  };
 
-    if (!confirm(t('common.confirmDelete', { name: dashboard.name }))) return;
+  const handleDelete = async () => {
+    if (!dashboardToDelete) return;
 
     try {
-      await customDashboardService.delete(dashboard.id);
+      await customDashboardService.delete(dashboardToDelete.id);
       showSuccess(t('common.deleteSuccess'));
       loadDashboards();
+      setDeleteConfirmOpen(false);
+      setDashboardToDelete(null);
     } catch (err) {
       showError(getUserFriendlyError(err, t('common.deleteFailed')));
     }
@@ -338,7 +347,7 @@ export default function DashboardManager() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(dashboard)}
+                        onClick={() => openDeleteConfirm(dashboard)}
                       >
                         <Trash2 className="me-2 h-4 w-4" />
                         {t('dashboardManager.delete')}
@@ -520,6 +529,18 @@ export default function DashboardManager() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('dashboardManager.deleteTitle')}
+        description={t('common.confirmDelete', { name: dashboardToDelete?.name || '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 }

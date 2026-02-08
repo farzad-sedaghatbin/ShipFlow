@@ -2,6 +2,7 @@ import { ReactNode, HTMLAttributes } from 'react';
 import { motion, Variants, TargetAndTransition } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface AnimatedCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -37,6 +38,34 @@ const animations: Record<string, Variants> = {
   },
 };
 
+// Reduced motion variants - instant transitions
+const reducedMotionAnimations: Record<string, Variants> = {
+  fadeUp: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+  fadeIn: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+  slideLeft: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+  slideRight: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+  scale: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+  stagger: {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  },
+};
+
 const hoverAnimation: TargetAndTransition = {
   scale: 1.02,
   transition: { duration: 0.2 },
@@ -50,15 +79,18 @@ export function AnimatedCard({
   className,
   ...props
 }: AnimatedCardProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const selectedAnimations = prefersReducedMotion ? reducedMotionAnimations : animations;
+  
   return (
     <motion.div
-      variants={animations[animation]}
+      variants={selectedAnimations[animation]}
       initial="hidden"
       animate="visible"
-      whileHover={hoverEffect ? hoverAnimation : undefined}
+      whileHover={hoverEffect && !prefersReducedMotion ? hoverAnimation : undefined}
       transition={{
-        duration: 0.4,
-        delay,
+        duration: prefersReducedMotion ? 0 : 0.4,
+        delay: prefersReducedMotion ? 0 : delay,
         ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
       }}
       style={{ cursor: hoverEffect ? 'pointer' : 'default' }}

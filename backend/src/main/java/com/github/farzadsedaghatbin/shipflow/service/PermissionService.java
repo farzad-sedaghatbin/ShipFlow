@@ -30,14 +30,16 @@ public class PermissionService {
   /**
    * Check if a user has a specific permission on a resource
    *
-   * @param username The username to check
-   * @param resourceType The type of resource
-   * @param permissionType The type of permission
+   * @param username
+   *            The username to check
+   * @param resourceType
+   *            The type of resource
+   * @param permissionType
+   *            The type of permission
    * @return true if the user has the permission, false otherwise
    */
   @Transactional(readOnly = true)
-  public boolean hasPermission(
-      String username, ResourceType resourceType, PermissionType permissionType) {
+  public boolean hasPermission(String username, ResourceType resourceType, PermissionType permissionType) {
     try {
       Optional<User> userOpt = userRepository.findByUsername(username);
       if (userOpt.isEmpty()) {
@@ -52,17 +54,11 @@ public class PermissionService {
       }
 
       UserRole role = user.getRole();
-      boolean hasPermission =
-          permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-              role, resourceType, permissionType);
+      boolean hasPermission = permissionRepository.existsByRoleAndResourceTypeAndPermissionType(role,
+          resourceType, permissionType);
 
-      log.debug(
-          "Permission check - User: {}, Role: {}, Resource: {}, Permission: {}, Result: {}",
-          username,
-          role,
-          resourceType,
-          permissionType,
-          hasPermission);
+      log.debug("Permission check - User: {}, Role: {}, Resource: {}, Permission: {}, Result: {}", username, role,
+          resourceType, permissionType, hasPermission);
 
       return hasPermission;
     } catch (Exception e) {
@@ -76,23 +72,26 @@ public class PermissionService {
   /**
    * Check if a role has a specific permission on a resource
    *
-   * @param role The user role to check
-   * @param resourceType The type of resource
-   * @param permissionType The type of permission
+   * @param role
+   *            The user role to check
+   * @param resourceType
+   *            The type of resource
+   * @param permissionType
+   *            The type of permission
    * @return true if the role has the permission, false otherwise
    */
   @Transactional(readOnly = true)
-  public boolean hasPermission(
-      UserRole role, ResourceType resourceType, PermissionType permissionType) {
-    return permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-        role, resourceType, permissionType);
+  public boolean hasPermission(UserRole role, ResourceType resourceType, PermissionType permissionType) {
+    return permissionRepository.existsByRoleAndResourceTypeAndPermissionType(role, resourceType, permissionType);
   }
 
   /**
    * Check if the currently authenticated user has a specific permission
    *
-   * @param resourceType The type of resource
-   * @param permissionType The type of permission
+   * @param resourceType
+   *            The type of resource
+   * @param permissionType
+   *            The type of permission
    * @return true if the user has the permission, false otherwise
    */
   @Transactional(readOnly = true)
@@ -110,32 +109,30 @@ public class PermissionService {
   /**
    * Require a specific permission or throw AccessDeniedException
    *
-   * @param resourceType The type of resource
-   * @param permissionType The type of permission
-   * @throws AccessDeniedException if the user doesn't have the permission
+   * @param resourceType
+   *            The type of resource
+   * @param permissionType
+   *            The type of permission
+   * @throws AccessDeniedException
+   *             if the user doesn't have the permission
    */
   public void requirePermission(ResourceType resourceType, PermissionType permissionType) {
     if (!hasPermission(resourceType, permissionType)) {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       String username = authentication != null ? authentication.getName() : "anonymous";
 
-      log.warn(
-          "Access denied - User: {}, Resource: {}, Permission: {}",
-          username,
-          resourceType,
-          permissionType);
+      log.warn("Access denied - User: {}, Resource: {}, Permission: {}", username, resourceType, permissionType);
 
-      throw new AccessDeniedException(
-          String.format(
-              "Access denied: User '%s' does not have %s permission on %s",
-              username, permissionType, resourceType));
+      throw new AccessDeniedException(String.format("Access denied: User '%s' does not have %s permission on %s",
+          username, permissionType, resourceType));
     }
   }
 
   /**
    * Get all permissions for a specific role
    *
-   * @param role The user role
+   * @param role
+   *            The user role
    * @return List of permissions
    */
   @Transactional(readOnly = true)
@@ -146,7 +143,8 @@ public class PermissionService {
   /**
    * Get all permissions for a specific resource type
    *
-   * @param resourceType The resource type
+   * @param resourceType
+   *            The resource type
    * @return List of permissions
    */
   @Transactional(readOnly = true)
@@ -185,33 +183,30 @@ public class PermissionService {
   /**
    * Create a new permission (admin only)
    *
-   * @param role The role to grant permission to
-   * @param resourceType The resource type
-   * @param permissionType The permission type
-   * @param description Optional description
+   * @param role
+   *            The role to grant permission to
+   * @param resourceType
+   *            The resource type
+   * @param permissionType
+   *            The permission type
+   * @param description
+   *            Optional description
    * @return The created permission
    */
   @Transactional
-  public Permission createPermission(
-      UserRole role, ResourceType resourceType, PermissionType permissionType, String description) {
+  public Permission createPermission(UserRole role, ResourceType resourceType, PermissionType permissionType,
+      String description) {
     // Check if permission already exists
-    Optional<Permission> existing =
-        permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            role, resourceType, permissionType);
+    Optional<Permission> existing = permissionRepository.findByRoleAndResourceTypeAndPermissionType(role,
+        resourceType, permissionType);
 
     if (existing.isPresent()) {
       throw new IllegalArgumentException(
-          localizationService.getMessage(
-              "permission.already.exists", role, resourceType, permissionType));
+          localizationService.getMessage("permission.already.exists", role, resourceType, permissionType));
     }
 
-    Permission permission =
-        Permission.builder()
-            .role(role)
-            .resourceType(resourceType)
-            .permissionType(permissionType)
-            .description(description)
-            .build();
+    Permission permission = Permission.builder().role(role).resourceType(resourceType)
+        .permissionType(permissionType).description(description).build();
 
     permission = permissionRepository.save(permission);
     log.info("Created permission: {} - {} - {}", role, resourceType, permissionType);
@@ -222,19 +217,16 @@ public class PermissionService {
   /**
    * Update a permission's description (admin only)
    *
-   * @param id The permission ID
-   * @param description New description
+   * @param id
+   *            The permission ID
+   * @param description
+   *            New description
    * @return The updated permission
    */
   @Transactional
   public Permission updatePermission(Long id, String description) {
-    Permission permission =
-        permissionRepository
-            .findById(id)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        localizationService.getMessage("permission.not.found", id)));
+    Permission permission = permissionRepository.findById(id).orElseThrow(
+        () -> new IllegalArgumentException(localizationService.getMessage("permission.not.found", id)));
 
     permission.setDescription(description);
     permission = permissionRepository.save(permission);
@@ -246,13 +238,13 @@ public class PermissionService {
   /**
    * Delete a permission (admin only)
    *
-   * @param id The permission ID
+   * @param id
+   *            The permission ID
    */
   @Transactional
   public void deletePermission(Long id) {
     if (!permissionRepository.existsById(id)) {
-      throw new IllegalArgumentException(
-          localizationService.getMessage("permission.not.found", id));
+      throw new IllegalArgumentException(localizationService.getMessage("permission.not.found", id));
     }
     permissionRepository.deleteById(id);
     log.info("Deleted permission with ID: {}", id);
@@ -261,20 +253,21 @@ public class PermissionService {
   /**
    * Create multiple permissions at once (admin only)
    *
-   * @param requests List of permission requests
+   * @param requests
+   *            List of permission requests
    * @return List of created permissions
    */
   @Transactional
   public List<Permission> createBulkPermissions(List<PermissionRequest> requests) {
-    return requests.stream()
-        .map(r -> createPermission(r.role, r.resourceType, r.permissionType, r.description))
+    return requests.stream().map(r -> createPermission(r.role, r.resourceType, r.permissionType, r.description))
         .collect(java.util.stream.Collectors.toList());
   }
 
   /**
    * Delete multiple permissions at once (admin only)
    *
-   * @param ids List of permission IDs
+   * @param ids
+   *            List of permission IDs
    */
   @Transactional
   public void deleteBulkPermissions(List<Long> ids) {

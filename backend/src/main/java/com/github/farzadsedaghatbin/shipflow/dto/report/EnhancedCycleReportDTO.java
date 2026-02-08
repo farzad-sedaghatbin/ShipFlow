@@ -5,8 +5,8 @@ import java.util.List;
 import lombok.*;
 
 /**
- * Enhanced cycle report with comprehensive metrics including risk analysis, efficiency ratios, and
- * detailed breakdowns.
+ * Enhanced cycle report with comprehensive metrics including risk analysis,
+ * efficiency ratios, and detailed breakdowns.
  */
 @Data
 @NoArgsConstructor

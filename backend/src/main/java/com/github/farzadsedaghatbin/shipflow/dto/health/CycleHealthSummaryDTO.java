@@ -5,7 +5,10 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.*;
 
-/** Cycle-level health summary for stakeholders. Aggregates pitch health data for quick overview. */
+/**
+ * Cycle-level health summary for stakeholders. Aggregates pitch health data for
+ * quick overview.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

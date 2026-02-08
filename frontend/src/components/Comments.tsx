@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDateTime } from '../utils/dateLocalization';
-import { Send, MessageSquare, Pencil, Trash2, Loader2, MoreHorizontal } from 'lucide-react';
+import { Send, MessageSquare, Pencil, Trash2, Loader2, MoreHorizontal, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
@@ -34,8 +34,10 @@ import commentService, {
   Comment, 
   CommentEntityType, 
   CommentReaction,
+  MentionUser,
   REACTION_EMOJIS 
 } from '../services/commentService';
+import UserProfilePopover from './UserProfilePopover';
 
 interface CommentsProps {
   entityType: 'task' | 'bug';
@@ -54,6 +56,57 @@ const AVAILABLE_REACTIONS: CommentReaction[] = [
   'EYES',
 ];
 
+/**
+ * MentionLink component - renders a clickable @mention with user profile popover
+ */
+interface MentionLinkProps {
+  name: string;
+  cachedUser?: MentionUser;
+  onFetchUser: (name: string) => Promise<MentionUser | null>;
+}
+
+const MentionLink: React.FC<MentionLinkProps> = ({ name, cachedUser, onFetchUser }) => {
+  const [user, setUser] = useState<MentionUser | null>(cachedUser || null);
+  const [loading, setLoading] = useState(false);
+  
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user && !loading) {
+      setLoading(true);
+      const fetchedUser = await onFetchUser(name);
+      setUser(fetchedUser);
+      setLoading(false);
+    }
+  };
+
+  // If we have user data, render with popover
+  if (user) {
+    return (
+      <UserProfilePopover userId={user.id} displayName={user.displayName}>
+        <button
+          type="button"
+          className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{name}
+        </button>
+      </UserProfilePopover>
+    );
+  }
+
+  // If no user data yet, render clickable mention that fetches on click
+  return (
+    <button
+      type="button"
+      className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
+      onClick={handleClick}
+      disabled={loading}
+    >
+      @{name}
+    </button>
+  );
+};
+
 const Comments: React.FC<CommentsProps> = ({
   entityType,
   entityId,
@@ -69,6 +122,16 @@ const Comments: React.FC<CommentsProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
+  
+  // Mention state
+  const [mentionSuggestions, setMentionSuggestions] = useState<MentionUser[]>([]);
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [mentionUserCache, setMentionUserCache] = useState<Map<string, MentionUser>>(new Map());
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionDropdownRef = useRef<HTMLDivElement>(null);
 
   const apiEntityType: CommentEntityType = entityType === 'task' ? 'TASK' : 'BUG_REPORT';
 
@@ -87,6 +150,168 @@ const Comments: React.FC<CommentsProps> = ({
   useEffect(() => {
     loadComments();
   }, [loadComments]);
+
+  // Search for users when mention query changes
+  useEffect(() => {
+    const searchMentions = async () => {
+      if (mentionQuery.length > 0) {
+        try {
+          const response = await commentService.searchUsersForMention(mentionQuery);
+          setMentionSuggestions(response.data);
+          setSelectedMentionIndex(0);
+        } catch (error) {
+          console.error('Failed to search users:', error);
+          setMentionSuggestions([]);
+        }
+      } else if (showMentionSuggestions) {
+        // Show default suggestions when @ is typed
+        try {
+          const response = await commentService.searchUsersForMention('');
+          setMentionSuggestions(response.data);
+          setSelectedMentionIndex(0);
+        } catch (error) {
+          console.error('Failed to load users:', error);
+          setMentionSuggestions([]);
+        }
+      }
+    };
+
+    const debounce = setTimeout(searchMentions, 150);
+    return () => clearTimeout(debounce);
+  }, [mentionQuery, showMentionSuggestions]);
+
+  // Handle text input changes with mention detection
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart || 0;
+    setNewComment(value);
+
+    // Check for @ symbol to trigger mention suggestions
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      // Check if there's a space after @ (which would end the mention)
+      if (!textAfterAt.includes(' ')) {
+        setMentionStartIndex(lastAtIndex);
+        setMentionQuery(textAfterAt);
+        setShowMentionSuggestions(true);
+        return;
+      }
+    }
+
+    setShowMentionSuggestions(false);
+    setMentionQuery('');
+    setMentionStartIndex(-1);
+  };
+
+  // Handle keyboard navigation in mention suggestions
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showMentionSuggestions || mentionSuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedMentionIndex((prev) => 
+        prev < mentionSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedMentionIndex((prev) => 
+        prev > 0 ? prev - 1 : mentionSuggestions.length - 1
+      );
+    } else if (e.key === 'Enter' && showMentionSuggestions) {
+      e.preventDefault();
+      insertMention(mentionSuggestions[selectedMentionIndex]);
+    } else if (e.key === 'Escape') {
+      setShowMentionSuggestions(false);
+    }
+  };
+
+  // Insert selected mention into the text
+  const insertMention = (user: MentionUser) => {
+    if (mentionStartIndex === -1) return;
+
+    const beforeMention = newComment.substring(0, mentionStartIndex);
+    const afterMention = newComment.substring(
+      mentionStartIndex + mentionQuery.length + 1
+    );
+    // Use displayName (person's name) for the mention
+    // If name has spaces, wrap in quotes for proper parsing
+    const mentionText = user.displayName.includes(' ') 
+      ? `@"${user.displayName}"` 
+      : `@${user.displayName}`;
+    const newValue = `${beforeMention}${mentionText} ${afterMention}`;
+    
+    setNewComment(newValue);
+    setShowMentionSuggestions(false);
+    setMentionQuery('');
+    setMentionStartIndex(-1);
+    
+    // Focus back on textarea
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPos = beforeMention.length + mentionText.length + 1;
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  // Fetch and cache user profile for mention
+  const fetchMentionUser = useCallback(async (name: string): Promise<MentionUser | null> => {
+    // Check cache first
+    if (mentionUserCache.has(name)) {
+      return mentionUserCache.get(name) || null;
+    }
+    
+    try {
+      const response = await commentService.getUserByDisplayName(name);
+      const user = response.data;
+      setMentionUserCache(prev => new Map(prev).set(name, user));
+      return user;
+    } catch {
+      return null;
+    }
+  }, [mentionUserCache]);
+
+  // Render comment content with highlighted and clickable mentions
+  const renderCommentContent = (content: string) => {
+    // Match both @"Full Name" and @SingleWord formats.
+    // Unquoted names may contain letters/numbers with dots/underscores only between segments (no trailing punctuation).
+    const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}]+(?:[._][\p{L}\p{N}]+)*)/gu;
+    const result: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex, match.index)}</span>);
+      }
+      // Add the highlighted mention (group 1 for quoted, group 2 for unquoted)
+      const name = match[1] || match[2];
+      const cachedUser = mentionUserCache.get(name);
+      
+      // Create clickable mention with profile popover
+      result.push(
+        <MentionLink 
+          key={`mention-${match.index}`}
+          name={name}
+          cachedUser={cachedUser}
+          onFetchUser={fetchMentionUser}
+        />
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after last match
+    if (lastIndex < content.length) {
+      result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>);
+    }
+    
+    return result.length > 0 ? result : content;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,14 +418,58 @@ const Comments: React.FC<CommentsProps> = ({
       <CardContent className="space-y-4">
         {/* Add Comment Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Textarea
-            placeholder={t('comments.placeholder', { entityType })}
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            rows={3}
-            disabled={submitting}
-          />
-          <div className="flex justify-end">
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              placeholder={t('comments.placeholder', { entityType })}
+              value={newComment}
+              onChange={handleCommentChange}
+              onKeyDown={handleKeyDown}
+              rows={3}
+              disabled={submitting}
+            />
+            
+            {/* Mention Suggestions Dropdown */}
+            {showMentionSuggestions && mentionSuggestions.length > 0 && (
+              <div 
+                ref={mentionDropdownRef}
+                className="absolute left-0 right-0 mt-1 bg-popover border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto"
+              >
+                <div className="p-1">
+                  <div className="px-2 py-1 text-xs text-muted-foreground flex items-center gap-1">
+                    <AtSign className="h-3 w-3" />
+                    {t('comments.mentionSuggestions')}
+                  </div>
+                  {mentionSuggestions.map((user, index) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      className={cn(
+                        "w-full text-left px-2 py-2 rounded flex items-center gap-2 hover:bg-accent",
+                        index === selectedMentionIndex && "bg-accent"
+                      )}
+                      onClick={() => insertMention(user)}
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {getAuthorInitials(user.displayName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{user.displayName}</span>
+                        <span className="text-xs text-muted-foreground">@{user.username}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <AtSign className="h-3 w-3" />
+              {t('comments.mentionHint')}
+            </span>
             <Button
               type="submit"
               size="sm"
@@ -316,7 +585,7 @@ const Comments: React.FC<CommentsProps> = ({
                       </div>
                     ) : (
                       <div className="text-sm whitespace-pre-wrap">
-                        {comment.content}
+                        {renderCommentContent(comment.content)}
                       </div>
                     )}
 

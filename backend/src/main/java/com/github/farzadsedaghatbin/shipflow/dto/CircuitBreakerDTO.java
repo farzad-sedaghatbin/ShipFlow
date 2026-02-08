@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for Circuit Breaker information - Shape Up safety valve Tracks pitches that have overflowed
- * their time budget
+ * DTO for Circuit Breaker information - Shape Up safety valve Tracks pitches
+ * that have overflowed their time budget
  */
 @Data
 @NoArgsConstructor

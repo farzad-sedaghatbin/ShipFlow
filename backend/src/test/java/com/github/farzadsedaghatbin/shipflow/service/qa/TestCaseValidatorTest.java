@@ -22,17 +22,12 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateCompleteTestCase() {
-    TestCaseSuggestion testCase =
-        TestCaseSuggestion.builder()
-            .title("User can successfully login")
-            .description("Verify that a valid user can login with correct credentials")
-            .preconditions("User account exists, User is on login page")
-            .steps("1. Enter username\n2. Enter password\n3. Click login button")
-            .expectedResult("User is redirected to dashboard")
-            .suggestedType("FUNCTIONAL")
-            .suggestedPriority("HIGH")
-            .suggestedTags(Arrays.asList("login", "authentication"))
-            .build();
+    TestCaseSuggestion testCase = TestCaseSuggestion.builder().title("User can successfully login")
+        .description("Verify that a valid user can login with correct credentials")
+        .preconditions("User account exists, User is on login page")
+        .steps("1. Enter username\n2. Enter password\n3. Click login button")
+        .expectedResult("User is redirected to dashboard").suggestedType("FUNCTIONAL").suggestedPriority("HIGH")
+        .suggestedTags(Arrays.asList("login", "authentication")).build();
 
     TestCaseValidationResult result = validator.validate(testCase, TestType.FUNCTIONAL);
 
@@ -58,13 +53,9 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateVagueSteps() {
-    TestCaseSuggestion testCase =
-        TestCaseSuggestion.builder()
-            .title("Check login functionality")
-            .description("Verify login works")
-            .steps("Check that login works properly")
-            .expectedResult("Login should work")
-            .build();
+    TestCaseSuggestion testCase = TestCaseSuggestion.builder().title("Check login functionality")
+        .description("Verify login works").steps("Check that login works properly")
+        .expectedResult("Login should work").build();
 
     TestCaseValidationResult result = validator.validate(testCase, TestType.FUNCTIONAL);
 
@@ -75,13 +66,8 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateSmokeTestSuite() {
-    List<TestCaseSuggestion> suite =
-        Arrays.asList(
-            createTestCase("Smoke 1", 3),
-            createTestCase("Smoke 2", 4),
-            createTestCase("Smoke 3", 5),
-            createTestCase("Smoke 4", 3),
-            createTestCase("Smoke 5", 4));
+    List<TestCaseSuggestion> suite = Arrays.asList(createTestCase("Smoke 1", 3), createTestCase("Smoke 2", 4),
+        createTestCase("Smoke 3", 5), createTestCase("Smoke 4", 3), createTestCase("Smoke 5", 4));
 
     TestCaseValidationResult result = validator.validateSuite(suite, TestType.SMOKE);
 
@@ -91,8 +77,7 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateSmokeTestTooFewTests() {
-    List<TestCaseSuggestion> suite =
-        Arrays.asList(createTestCase("Smoke 1", 3), createTestCase("Smoke 2", 4));
+    List<TestCaseSuggestion> suite = Arrays.asList(createTestCase("Smoke 1", 3), createTestCase("Smoke 2", 4));
 
     TestCaseValidationResult result = validator.validateSuite(suite, TestType.SMOKE);
 
@@ -102,11 +87,9 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateDuplicateScenarios() {
-    List<TestCaseSuggestion> suite =
-        Arrays.asList(
-            createTestCase("User Login Test", 3),
-            createTestCase("User login test", 3), // Duplicate (case-insensitive)
-            createTestCase("Dashboard Load", 3));
+    List<TestCaseSuggestion> suite = Arrays.asList(createTestCase("User Login Test", 3),
+        createTestCase("User login test", 3), // Duplicate (case-insensitive)
+        createTestCase("Dashboard Load", 3));
 
     TestCaseValidationResult result = validator.validateSuite(suite, TestType.FUNCTIONAL);
 
@@ -116,14 +99,9 @@ class TestCaseValidatorTest {
 
   @Test
   void testValidateE2ETestTooFewSteps() {
-    TestCaseSuggestion testCase =
-        TestCaseSuggestion.builder()
-            .title("E2E: User completes purchase")
-            .description("Complete purchase workflow")
-            .steps("1. Login\n2. Buy item")
-            .expectedResult("Order confirmed")
-            .suggestedType("E2E")
-            .build();
+    TestCaseSuggestion testCase = TestCaseSuggestion.builder().title("E2E: User completes purchase")
+        .description("Complete purchase workflow").steps("1. Login\n2. Buy item")
+        .expectedResult("Order confirmed").suggestedType("E2E").build();
 
     TestCaseValidationResult result = validator.validate(testCase, TestType.E2E);
 
@@ -137,13 +115,7 @@ class TestCaseValidatorTest {
       steps.append(i).append(". Navigate to page ").append(i).append("\n");
     }
 
-    return TestCaseSuggestion.builder()
-        .title(title)
-        .description("Test description")
-        .steps(steps.toString())
-        .expectedResult("Expected result")
-        .suggestedType("SMOKE")
-        .suggestedPriority("HIGH")
-        .build();
+    return TestCaseSuggestion.builder().title(title).description("Test description").steps(steps.toString())
+        .expectedResult("Expected result").suggestedType("SMOKE").suggestedPriority("HIGH").build();
   }
 }

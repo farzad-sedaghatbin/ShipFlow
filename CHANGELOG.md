@@ -4,6 +4,219 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-07 - Bug Fixes & Improvements
+
+### Fixed
+- **Meeting List Sorting**: Fixed meeting list to show newest meetings first in pitch detail view
+- **Meeting Type Display**: Fixed case-sensitive UUID matching for meeting type display
+- **Meeting Type Names**: Display meeting type names instead of UUIDs throughout the application
+- **Test Suite Improvements**: Fixed backend and frontend tests for improved reliability
+
+## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
+
+### Added
+- **Betting Decision Tracking**
+  - **BettingDecision Entity**: Record commit/reject/defer/needs-shaping decisions for pitches
+  - **Decision History**: Full audit trail of betting decisions across cycles
+  - **Commitment Levels**: Track confidence (50-100%) for committed pitches
+  - **Deferral Tracking**: Link deferred pitches to future cycles with reasons
+  - **Decision Statistics**: View committed/rejected/deferred counts per cycle
+
+- **Cooldown Activity Tracking**
+  - **CooldownActivity Entity**: Track activities during Shape Up cooldown periods
+  - **Activity Types**: Bug fixes, tech debt, research, experiments, training, documentation
+  - **Activity Status**: Track pending, in-progress, completed, cancelled activities
+  - **Cooldown Summary**: View activity counts and completion rates per cycle
+
+- **Stagnation Detection & Notifications**
+  - **Pitch Stagnation Detection**: Automatically detect pitches with no progress
+  - **Stagnation Types**: HILL_CHART_STALLED, STUCK_AT_PEAK, NO_RECENT_WORK, COMPOUND_STAGNATION
+  - **Severity Calculation**: LOW, MEDIUM, HIGH, CRITICAL based on days and cycle progress
+  - **Dashboard Notifications**: Generate notifications for stagnating pitches
+  - **Multi-Channel Integration**: Send critical stagnation alerts to configured external channels
+    - Supports Slack, Microsoft Teams, or both simultaneously
+    - Automatically detects which channels are configured and active
+    - Gracefully handles cases where no external channels are configured
+    - Sends notifications only to configured and enabled integrations
+
+- **Frontend: Betting Decisions UI**
+  - **BettingDecisionDialog**: Record betting decisions with rationale and options
+  - **BettingDecisionBadge**: Display decision status with color-coded badges
+  - **BettingTable Integration**: Show decisions on pitch cards with quick actions
+  - **Cycle Summary**: Display decision counts in betting table header
+
+- **Frontend: Hill Chart Narrative**
+  - **ScopeNarrative Component**: Show scope progress with health indicators
+  - **Stagnation Warnings**: Visual indicators for stalled and stuck-at-peak scopes
+  - **Health Status**: Healthy, warning, critical, stalled status badges
+  - **Contextual Narratives**: Phase-appropriate descriptions of scope progress
+
+- **Async AI Advisor Pattern**
+  - **Cache-First Optimization**: AI analysis returns instantly if cached, avoiding unnecessary async jobs
+  - **Job-Based Async Execution**: Long-running AI operations execute in background with job tracking
+  - **Dedicated Thread Pool**: `aiTaskExecutor` with configurable pool size (2-5 threads)
+  - **Polling API**: Frontend polls for job completion with exponential backoff (1-5 seconds)
+  - **Job Status Tracking**: PENDING → PROCESSING → COMPLETED/FAILED with error messages
+  - **API Endpoints**: `/api/risk/async/pitch/{id}/analyze`, `/api/risk/async/cycle/{id}/analyze`
+  - **Comprehensive Tests**: Unit tests for cache-first pattern, job lifecycle, and statistics
+
+- **Semantic Search Improvements**
+  - **Recency Boost**: Recently updated documents score higher in search results
+    - 15% boost for documents updated within 7 days
+    - 10% boost for documents updated within 30 days
+    - 5% boost for documents updated within 90 days
+  - **Keyword Fallback**: Database keyword search when semantic search returns no results
+
+- **Phase Transition Validation**
+  - Enforce betting decisions before cycle transition to BUILD phase
+  - Validate all shaped pitches have decisions recorded
+  - Prevent premature phase transitions
+
+### Changed
+- Enhanced PitchHealthService with comprehensive stagnation analysis
+- Updated DashboardNotificationService to generate stagnation alerts
+- Removed debug console.log statements from frontend code
+
+### Database
+- **V69**: Added `betting_decisions` table for decision tracking
+- **V70**: Added `cooldown_activities` table for cooldown period tracking
+
+### Added
+- **Meeting View Mode with Smart Filtering**
+  - **View-Only Dialog**: Click on meeting type badge to open read-only view showing only completed checklist items
+  - **Backend Filtering**: New `/api/meetings/{id}/view` endpoint returns only completed DOR/DOD items
+  - **Deleted Items Filter**: Organization Settings automatically filters out deleted DOR/DOD items when loading meeting types
+  - **Consistent Behavior**: View mode works identically in both Meeting List and Pitch Detail pages
+  - **Edit from View**: Seamlessly switch from view mode to edit mode with dedicated button
+  - **Test Coverage**: Comprehensive unit and integration tests for all filtering logic
+  - **Better UX**: View completed items without clutter, edit when needed with full context
+
+- **Dynamic Meeting Types with DOR/DOD Checklists**
+  - **Configurable Meeting Types**: Manage meeting types through Organization Settings instead of hardcoded enum
+  - **DOR/DOD Checklists**: Each meeting type can have its own Definition of Ready (DOR) and Definition of Done (DOD) checklist items
+  - **Per-Meeting Tracking**: When creating/editing meetings, check off DOR/DOD items as they are completed
+  - **Auto-Ready Status**: DOR/DOD Ready status automatically calculated based on required item completion
+  - **Default Meeting Types**: Initialized with 7 default types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
+  - **Default Checklists**: Each default meeting type comes with sensible DOR/DOD checklist items
+  - **Organization Settings UI**: New "Meeting Types" tab for managing types, colors, and checklist items
+  - **Visual Checklist UI**: Interactive checkbox-based checklist in meeting creation/edit dialog
+  - **Database Migration**: V68 adds `meeting_types_json` to organization_settings and `dor_items_json`/`dod_items_json` to meetings
+  - **Backwards Compatible**: Existing meetings continue to work with legacy `dorReady`/`dodReady` boolean fields
+  - **Internationalization**: Full i18n support (English/Persian) for new meeting type configuration
+
+- **Jira-Style Activity Timeline**
+  - **Embedded Activity View**: View change history directly inline without opening a dialog
+  - **Bug View Dialog**: New tabbed interface with Details, Activity, and Comments tabs
+  - **Task Detail Page**: Activity Timeline card showing complete change history
+  - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
+  - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
+  - **Field-Level Changes**: See exactly what changed with old → new value comparisons
+  - **Reusable Component**: New `ActivityTimeline` component for consistent UX across entities
+  - **Pagination Support**: Navigate through history with Previous/Next controls
+  - **Internationalization**: Full i18n support (English/Persian) for activity labels
+
+- **@Mention Support in Comments**
+  - **User Mentions**: Type `@` to mention users in comments with autocomplete suggestions
+  - **Person Name Search**: Search by person's display name (e.g., `@r.jahani`, `@"John Doe"`)
+  - **Clickable Mentions**: Click on @mentions to view comprehensive user profile popover
+  - **User Profile Popover**: Shows avatar, name, role, email, department, and skills
+  - **Real-time Search**: Debounced user search as you type (150ms delay)
+  - **Keyboard Navigation**: Arrow Up/Down to navigate, Enter to select, Escape to close
+  - **Mention Highlighting**: Mentioned names displayed in primary color with hover underline
+  - **Notification System**: Mentioned users receive in-app dashboard notifications
+  - **Slack Integration**: Mention notifications sent to Slack channels
+  - **Self-mention Prevention**: Users don't receive notifications for mentioning themselves
+  - **API Endpoints**: `/api/comments/users/search` for autocomplete, `/api/comments/users/by-name` for profile lookup
+  - **Internationalization**: Full i18n support (English/Persian) for mention UI
+
+### Fixed
+- **Pitch Count Accuracy in Cycle Display**
+  - **Soft Delete Exclusion**: Cycle pitch count now correctly excludes deleted (soft-deleted) pitches
+  - **Database Query Optimization**: Added `countByCycleIdNotDeleted()` method for efficient counting
+  - **API Consistency**: All cycle endpoints (list, active, by-project) now return accurate pitch counts
+  - **Test Coverage**: Comprehensive unit and integration tests for pitch count functionality
+  - **Data Integrity**: Ensures UI displays reflect actual active pitch numbers
+
+## [0.3.11] - 2026-02-03
+
+### Added
+- **Entity Change History with Hibernate Envers**
+  - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
+  - **Selective Field Auditing**: Only audit important fields (status, priority, severity, assignee, title, description, etc.)
+  - **User Attribution**: Every change records who made it and when
+  - **Computed Diffs**: Server-side computation of field changes between revisions
+  - **History API**: RESTful endpoints (`GET /api/tasks/{id}/history`, etc.) with pagination
+  - **Timeline UI**: Interactive dialog showing change history with expandable revision details
+  - **Field Change Display**: Visual old → new value display with color-coded badges
+  - **Internationalization**: Full i18n support (English/Persian) for history labels and field names
+  - **Database**: Automatic audit table creation via Hibernate Envers (`*_AUD` tables)
+  - **Unit Tests**: Comprehensive tests for AuditService with mocked AuditReader
+
+<<<<<<< HEAD
+=======
+- **Direct Project Association for Bug Reports**
+  - **Kanban Support**: Bug reports can now be directly associated with projects
+  - **Flexible Workflow**: Support both Shape Up (cycle-based) and Kanban (project-only) methodologies
+  - **Database Migration**: Automatic migration to handle nullable cycle field in bug reports
+  - **UI Enhancement**: Add Bug button relocated to the right side with view toggle
+
+- **Enhanced Task Management**
+  - **Task Assignee Fields**: Added assignee and pair assignee fields to Task entity with full auditing
+  - **Improved UI**: Better assignee selector with clean dropdown and avatars for bug reports
+  - **Inline Status Changes**: Enhanced bug report inline status/severity changes to match task patterns
+
+- **Kanban Board Improvements**
+  - **Column Visibility Control**: Show/hide individual columns to reduce scrolling
+  - **Quick Actions**: Show/hide all columns and hide optional columns functionality
+  - **Session Storage**: Column visibility state persists per session
+  - **Visual Indicators**: Display count of hidden columns
+  - **Essential Columns**: Preserve TODO, IN_PROGRESS, DONE columns in hide optional action
+  - **Internationalization**: Full i18n support for English and Persian languages
+
+- **Modern Password Reset Modal**
+  - **Enhanced UX**: Replaced HTTP basic auth prompt with modern modal interface
+  - **Better Security**: Improved password validation for user creation
+  - **Bug Kanban Board**: New specialized Kanban board component for bug management
+
+- **Enhanced Comments System**
+  - **Bug Reports Integration**: Added Comments section to BugReportsPage for enhanced user feedback
+  - **Comprehensive UI**: Full commenting functionality integrated across entity detail pages
+
+### Fixed
+- **Permission System Stability**
+  - **Infinite Loop Prevention**: Fixed infinite loops in usePermission hook and PermissionGate
+  - **React Error #310**: Resolved hook count changes between renders
+  - **Stable Dependencies**: Proper useEffect dependency management for permission checks
+  - **Request Deduplication**: Prevent race conditions in permission loading
+  - **ADMIN Permission**: Fixed SYSTEM:MANAGE permission check issue for admin users
+
+- **Database Query Improvements**
+  - **Null Cycle Handling**: Fixed JPQL query for direct project association in bug reports
+  - **LEFT JOIN Optimization**: Use LEFT JOIN for nullable relationships in bug report filters
+  - **Lazy Loading**: Resolved LazyInitializationException in audit queries
+  - **Comprehensive Logging**: Added detailed logging to bug report filter API for debugging
+
+- **Bug Report Enhancement**
+  - **Assignee Field Alignment**: Fixed frontend assigneeId to match backend field naming
+  - **User to Person Migration**: Changed bug report assignee from User to Person entity
+  - **Optimistic Updates**: Restored optimistic updates for better UX after fixing underlying issues
+
+- **Project Type Conversion**
+  - **Auto Cycle Creation**: Automatically create default cycle when converting from Shape Up to Kanban
+  - **Smooth Migration**: Seamless project methodology transitions with proper data setup
+
+- **Audit System Enhancements**
+  - **Serializable Entity**: Updated AuditRevisionEntity to implement Serializable
+  - **Custom Fields**: Define custom revision fields for better audit tracking
+  - **Team Association**: Added proper auditing for team association in Pitch entity
+
+### Technical Improvements
+- **Code Quality**: Improved permission hook architecture with better state management
+- **Database Consistency**: Enhanced soft delete behavior across all services
+- **Frontend Stability**: Resolved React hooks violations and rendering issues
+- **API Robustness**: Better error handling and logging throughout the application
+
+>>>>>>> release/v0.3.11
 ## [0.3.10] - 2026-02-02
 
 ### Added

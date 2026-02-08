@@ -6,29 +6,34 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.github.farzadsedaghatbin.shipflow.config.TestAIConfig;
 import com.github.farzadsedaghatbin.shipflow.service.github.GitHubWebhookService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for GitHubWebhookController Tests webhook endpoint and signature validation using
- * MockMvc
+ * Integration tests for GitHubWebhookController Tests webhook endpoint and signature
+ * validation using MockMvc with full Spring context
  */
-@WebMvcTest(GitHubWebhookController.class)
-@Import(TestAIConfig.class)
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 @TestPropertySource(properties = {"github.webhook.secret=test-secret"})
+@Transactional
 class GitHubWebhookControllerTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @MockBean private GitHubWebhookService webhookService;
+  @MockBean
+  private GitHubWebhookService webhookService;
 
   @Test
   void handleWebhook_WithValidSignature_ShouldReturn200() throws Exception {
@@ -41,16 +46,9 @@ class GitHubWebhookControllerTest {
     doNothing().when(webhookService).processWebhook(eventType, payload);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-Hub-Signature-256", signature)
-                .header("X-GitHub-Event", eventType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("success"));
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-Hub-Signature-256", signature)
+        .header("X-GitHub-Event", eventType).contentType(MediaType.APPLICATION_JSON).content(payload))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("success"));
 
     verify(webhookService).processWebhook(eventType, payload);
   }
@@ -65,16 +63,9 @@ class GitHubWebhookControllerTest {
     when(webhookService.validateSignature(anyString(), anyString(), anyString())).thenReturn(false);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-Hub-Signature-256", signature)
-                .header("X-GitHub-Event", eventType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.error").value("Invalid signature"));
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-Hub-Signature-256", signature)
+        .header("X-GitHub-Event", eventType).contentType(MediaType.APPLICATION_JSON).content(payload))
+        .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("Invalid signature"));
 
     verify(webhookService, never()).processWebhook(anyString(), anyString());
   }
@@ -86,14 +77,8 @@ class GitHubWebhookControllerTest {
     String eventType = "push";
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-GitHub-Event", eventType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-GitHub-Event", eventType)
+        .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isUnauthorized());
 
     verify(webhookService, never()).processWebhook(anyString(), anyString());
   }
@@ -105,14 +90,8 @@ class GitHubWebhookControllerTest {
     String signature = "sha256=test-signature";
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-Hub-Signature-256", signature)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isBadRequest());
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-Hub-Signature-256", signature)
+        .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isBadRequest());
   }
 
   @Test
@@ -125,16 +104,9 @@ class GitHubWebhookControllerTest {
     when(webhookService.validateSignature(anyString(), anyString(), anyString())).thenReturn(true);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-Hub-Signature-256", signature)
-                .header("X-GitHub-Event", eventType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("success"));
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-Hub-Signature-256", signature)
+        .header("X-GitHub-Event", eventType).contentType(MediaType.APPLICATION_JSON).content(payload))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("success"));
 
     verify(webhookService).processWebhook(eventType, payload);
   }
@@ -147,20 +119,11 @@ class GitHubWebhookControllerTest {
     String eventType = "push";
 
     when(webhookService.validateSignature(anyString(), anyString(), anyString())).thenReturn(true);
-    doThrow(new RuntimeException("Processing failed"))
-        .when(webhookService)
-        .processWebhook(eventType, payload);
+    doThrow(new RuntimeException("Processing failed")).when(webhookService).processWebhook(eventType, payload);
 
     // When & Then
-    mockMvc
-        .perform(
-            post("/api/github/webhook")
-                .with(csrf())
-                .header("X-Hub-Signature-256", signature)
-                .header("X-GitHub-Event", eventType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(payload))
-        .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("$.error").exists());
+    mockMvc.perform(post("/api/github/webhook").with(csrf()).header("X-Hub-Signature-256", signature)
+        .header("X-GitHub-Event", eventType).contentType(MediaType.APPLICATION_JSON).content(payload))
+        .andExpect(status().isInternalServerError()).andExpect(jsonPath("$.error").exists());
   }
 }

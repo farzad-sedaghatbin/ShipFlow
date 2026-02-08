@@ -6,8 +6,9 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for retrieving internationalized messages. This service provides a convenient way to
- * access localized messages throughout the application, respecting the user's locale settings.
+ * Service for retrieving internationalized messages. This service provides a
+ * convenient way to access localized messages throughout the application,
+ * respecting the user's locale settings.
  */
 @Service
 public class MessageService {
@@ -21,7 +22,8 @@ public class MessageService {
   /**
    * Get a localized message for the given key using the current locale.
    *
-   * @param key the message key
+   * @param key
+   *            the message key
    * @return the localized message, or the key itself if not found
    */
   public String getMessage(String key) {
@@ -29,10 +31,13 @@ public class MessageService {
   }
 
   /**
-   * Get a localized message for the given key with arguments using the current locale.
+   * Get a localized message for the given key with arguments using the current
+   * locale.
    *
-   * @param key the message key
-   * @param args optional arguments to be interpolated in the message
+   * @param key
+   *            the message key
+   * @param args
+   *            optional arguments to be interpolated in the message
    * @return the localized message, or the key itself if not found
    */
   public String getMessage(String key, Object... args) {
@@ -43,8 +48,10 @@ public class MessageService {
   /**
    * Get a localized message for the given key using a specific locale.
    *
-   * @param key the message key
-   * @param locale the locale to use
+   * @param key
+   *            the message key
+   * @param locale
+   *            the locale to use
    * @return the localized message, or the key itself if not found
    */
   public String getMessage(String key, Locale locale) {
@@ -52,11 +59,15 @@ public class MessageService {
   }
 
   /**
-   * Get a localized message for the given key with arguments using a specific locale.
+   * Get a localized message for the given key with arguments using a specific
+   * locale.
    *
-   * @param key the message key
-   * @param locale the locale to use
-   * @param args optional arguments to be interpolated in the message
+   * @param key
+   *            the message key
+   * @param locale
+   *            the locale to use
+   * @param args
+   *            optional arguments to be interpolated in the message
    * @return the localized message, or the key itself if not found
    */
   public String getMessage(String key, Locale locale, Object... args) {

@@ -15,7 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class QueryDecomposerTest {
 
-  @Mock private ChatLanguageModel chatLanguageModel;
+  @Mock
+  private ChatLanguageModel chatLanguageModel;
 
   private QueryDecomposer queryDecomposer;
 
@@ -101,8 +102,7 @@ class QueryDecomposerTest {
   void decompose_complexQuestion_returnsSubQueries() {
     // Given
     String complexQuestion = "Compare payment feature risks versus checkout redesign risks";
-    String llmResponse =
-        "1. What are the payment feature risks?\n2. What are the checkout redesign risks?";
+    String llmResponse = "1. What are the payment feature risks?\n2. What are the checkout redesign risks?";
     when(chatLanguageModel.generate(anyString())).thenReturn(llmResponse);
 
     // When
@@ -161,12 +161,11 @@ class QueryDecomposerTest {
   void decompose_multipleNumberedQuestions_extractsAll() {
     // Given
     String complexQuestion = "Compare features and analyze risks and identify teams";
-    String llmResponse =
-        """
-            1. What are the features to compare?
-            2. What are the associated risks?
-            3. Which teams are involved?
-            """;
+    String llmResponse = """
+        1. What are the features to compare?
+        2. What are the associated risks?
+        3. Which teams are involved?
+        """;
     when(chatLanguageModel.generate(anyString())).thenReturn(llmResponse);
 
     // When
@@ -185,8 +184,7 @@ class QueryDecomposerTest {
     String simpleQuestion = "What are the payment risks?";
 
     // When
-    QueryDecomposer.DecompositionResult result =
-        queryDecomposer.decomposeWithMetadata(simpleQuestion);
+    QueryDecomposer.DecompositionResult result = queryDecomposer.decomposeWithMetadata(simpleQuestion);
 
     // Then
     assertThat(result.wasDecomposed()).isFalse();
@@ -203,8 +201,7 @@ class QueryDecomposerTest {
     when(chatLanguageModel.generate(anyString())).thenReturn(llmResponse);
 
     // When
-    QueryDecomposer.DecompositionResult result =
-        queryDecomposer.decomposeWithMetadata(complexQuestion);
+    QueryDecomposer.DecompositionResult result = queryDecomposer.decomposeWithMetadata(complexQuestion);
 
     // Then
     assertThat(result.wasDecomposed()).isTrue();

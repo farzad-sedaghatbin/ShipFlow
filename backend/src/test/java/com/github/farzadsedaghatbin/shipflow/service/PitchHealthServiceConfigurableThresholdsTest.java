@@ -28,30 +28,39 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 /**
- * Unit tests for PitchHealthService configurable thresholds feature. Tests that organization
- * settings properly override default thresholds.
+ * Unit tests for PitchHealthService configurable thresholds feature. Tests that
+ * organization settings properly override default thresholds.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PitchHealthServiceConfigurableThresholdsTest {
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private WorkLogRepository workLogRepository;
+  @Mock
+  private WorkLogRepository workLogRepository;
 
-  @Mock private MeetingRepository meetingRepository;
+  @Mock
+  private MeetingRepository meetingRepository;
 
-  @Mock private BugReportRepository bugReportRepository;
+  @Mock
+  private BugReportRepository bugReportRepository;
 
-  @Mock private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-  @Mock private RiskAnalysisService riskAnalysisService;
+  @Mock
+  private RiskAnalysisService riskAnalysisService;
 
-  @Mock private OrganizationSettingsService organizationSettingsService;
+  @Mock
+  private OrganizationSettingsService organizationSettingsService;
 
-  @InjectMocks private PitchHealthService pitchHealthService;
+  @InjectMocks
+  private PitchHealthService pitchHealthService;
 
   private Pitch testPitch;
   private Cycle testCycle;
@@ -64,28 +73,13 @@ class PitchHealthServiceConfigurableThresholdsTest {
 
     testProject = Project.builder().id(1L).name("Test Project").projectKey("TEST").build();
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .startDate(today.minusDays(7))
-            .endDate(today.plusDays(7))
-            .project(testProject)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").startDate(today.minusDays(7)).endDate(today.plusDays(7))
+        .project(testProject).isActive(true).build();
 
     testTeam = Team.builder().id(1L).name("Test Team").build();
 
-    testPitch =
-        Pitch.builder()
-            .id(1L)
-            .title("Test Pitch")
-            .description("Test Description")
-            .appetiteDays(14)
-            .cycle(testCycle)
-            .team(testTeam)
-            .status(PitchStatus.IN_PROGRESS)
-            .build();
+    testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS).build();
   }
 
   @Test
@@ -97,17 +91,14 @@ class PitchHealthServiceConfigurableThresholdsTest {
     customThresholds.setBudgetOverrun(80); // Lower than default 100
     customThresholds.setBudgetCritical(100); // Lower than default 120
 
-    OrganizationSettingsDTO settings =
-        OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
+    OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
-    when(workLogRepository.getTotalHoursByPitchId(1L))
-        .thenReturn(84.0); // 75% of appetite (112 hours)
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+    when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(84.0); // 75% of appetite (112 hours)
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -129,11 +120,10 @@ class PitchHealthServiceConfigurableThresholdsTest {
     customThresholds.setCriticalBugsModerate(2); // Lower than default 3
     customThresholds.setCriticalBugsSevere(3); // Lower than default 5
 
-    OrganizationSettingsDTO settings =
-        OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
+    OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
 
     // 2 critical bugs - should trigger moderate risk with custom threshold
@@ -142,8 +132,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Arrays.asList(bug1, bug2));
 
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -164,19 +153,18 @@ class PitchHealthServiceConfigurableThresholdsTest {
     customThresholds.setCycleFinalQuarter(70); // Earlier than default 75
     customThresholds.setScopeExpectedProgressRate(0.9); // Higher than default 0.8
 
-    OrganizationSettingsDTO settings =
-        OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
+    OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
-    // Scope at position 35 - acceptable with custom threshold but would be risky with default
+    // Scope at position 35 - acceptable with custom threshold but would be risky
+    // with default
     HillChartPoint scope = createHillChartPoint(1L, 35, LocalDateTime.now());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Arrays.asList(scope));
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Arrays.asList(scope));
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Arrays.asList(scope));
 
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -198,18 +186,16 @@ class PitchHealthServiceConfigurableThresholdsTest {
     customThresholds.setMediumMax(35); // Lower than default 49
     customThresholds.setHighMax(55); // Lower than default 69
 
-    OrganizationSettingsDTO settings =
-        OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
+    OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
 
     // 95% budget usage - should score medium-high risk points
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(106.4); // 95%
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -226,12 +212,11 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldFallBackToDefaultsWhenSettingsUnavailable() {
     // Given: No organization settings available
     when(organizationSettingsService.getSettings()).thenReturn(null);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -247,14 +232,12 @@ class PitchHealthServiceConfigurableThresholdsTest {
   @DisplayName("Should handle organization settings service exception gracefully")
   void shouldHandleOrganizationSettingsException() {
     // Given: Organization settings service throws exception
-    when(organizationSettingsService.getSettings())
-        .thenThrow(new RuntimeException("Database error"));
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(organizationSettingsService.getSettings()).thenThrow(new RuntimeException("Database error"));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -271,41 +254,27 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldUseCustomTimeThresholds() {
     // Given: Custom settings with different urgency thresholds
     LocalDate today = LocalDate.now();
-    Cycle urgentCycle =
-        Cycle.builder()
-            .id(2L)
-            .name("Urgent Cycle")
-            .startDate(today.minusDays(10))
-            .endDate(today.plusDays(2)) // 2 days left
-            .project(testProject)
-            .isActive(true)
-            .build();
+    Cycle urgentCycle = Cycle.builder().id(2L).name("Urgent Cycle").startDate(today.minusDays(10))
+        .endDate(today.plusDays(2)) // 2 days left
+        .project(testProject).isActive(true).build();
 
-    Pitch urgentPitch =
-        Pitch.builder()
-            .id(2L)
-            .title("Urgent Pitch")
-            .appetiteDays(10)
-            .cycle(urgentCycle)
-            .team(testTeam)
-            .status(PitchStatus.IN_PROGRESS) // Not done yet!
-            .build();
+    Pitch urgentPitch = Pitch.builder().id(2L).title("Urgent Pitch").appetiteDays(10).cycle(urgentCycle)
+        .team(testTeam).status(PitchStatus.IN_PROGRESS) // Not done yet!
+        .build();
 
     OrganizationSettingsDTO.RiskThresholds customThresholds = createDefaultThresholds();
     customThresholds.setDaysUrgent(2); // Same as default 3
     customThresholds.setDaysWarning(5); // Lower than default 7
     customThresholds.setDaysConcern(10); // Lower than default 14
 
-    OrganizationSettingsDTO settings =
-        OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
+    OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(2L)).thenReturn(Optional.of(urgentPitch));
+    when(pitchRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(urgentPitch));
     when(workLogRepository.getTotalHoursByPitchId(2L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong()))
-        .thenReturn(Collections.emptyList());
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
     when(workLogRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(meetingRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -323,75 +292,37 @@ class PitchHealthServiceConfigurableThresholdsTest {
   private OrganizationSettingsDTO.RiskThresholds createDefaultThresholds() {
     return OrganizationSettingsDTO.RiskThresholds.builder()
         // Risk Score Boundaries
-        .lowMax(24)
-        .mediumMax(49)
-        .highMax(69)
+        .lowMax(24).mediumMax(49).highMax(69)
         // Budget Thresholds
-        .budgetWarning(80)
-        .budgetOverrun(100)
-        .budgetCritical(120)
+        .budgetWarning(80).budgetOverrun(100).budgetCritical(120)
         // Schedule Variance Thresholds
-        .scheduleModerateGap(15)
-        .scheduleSignificantGap(30)
+        .scheduleModerateGap(15).scheduleSignificantGap(30)
         // Bug Count Thresholds
-        .criticalBugsMinor(1)
-        .criticalBugsModerate(3)
-        .criticalBugsSevere(5)
-        .majorBugsThreshold(3)
-        .majorBugsHigh(5)
-        .openBugsModerate(5)
-        .openBugsHigh(10)
-        .openBugsCritical(15)
-        .recentBugInflux(5)
+        .criticalBugsMinor(1).criticalBugsModerate(3).criticalBugsSevere(5).majorBugsThreshold(3)
+        .majorBugsHigh(5).openBugsModerate(5).openBugsHigh(10).openBugsCritical(15).recentBugInflux(5)
         // Bug Resolution Rate
         .bugResolutionRateMin(50)
         // Scope Progress Thresholds
-        .scopeEarlyPhase(25)
-        .scopeUphillMax(30)
-        .scopeMidPhase(40)
-        .scopePeakMin(45)
-        .scopePeakMax(55)
-        .scopeExpectedProgressRate(0.8)
-        .scopeLagSignificant(30)
+        .scopeEarlyPhase(25).scopeUphillMax(30).scopeMidPhase(40).scopePeakMin(45).scopePeakMax(55)
+        .scopeExpectedProgressRate(0.8).scopeLagSignificant(30)
         // Time-based Thresholds
-        .daysUrgent(3)
-        .daysWarning(7)
-        .daysConcern(14)
+        .daysUrgent(3).daysWarning(7).daysConcern(14)
         // Cycle Progress Thresholds
-        .cycleMidpoint(50)
-        .cycleLatePhase(60)
-        .cycleFinalQuarter(75)
-        .cycleMinForScopes(30)
+        .cycleMidpoint(50).cycleLatePhase(60).cycleFinalQuarter(75).cycleMinForScopes(30)
         // Stagnation Thresholds
-        .scopeStagnationDays(7)
-        .peakStuckDays(5)
-        .noProgressDays(7)
+        .scopeStagnationDays(7).peakStuckDays(5).noProgressDays(7)
         // Work Rate Thresholds
-        .recentWorkHighHours(15)
-        .appetiteHighUsage(90)
-        .build();
+        .recentWorkHighHours(15).appetiteHighUsage(90).build();
   }
 
   private BugReport createBug(Long id, BugSeverity severity, BugStatus status) {
-    return BugReport.builder()
-        .id(id)
-        .severity(severity)
-        .status(status)
-        .title("Test Bug " + id)
-        .description("Test bug description")
-        .createdAt(LocalDateTime.now().minusDays(5))
-        .build();
+    return BugReport.builder().id(id).severity(severity).status(status).title("Test Bug " + id)
+        .description("Test bug description").createdAt(LocalDateTime.now().minusDays(5)).build();
   }
 
   private HillChartPoint createHillChartPoint(Long id, int position, LocalDateTime updatedAt) {
-    return HillChartPoint.builder()
-        .id(id)
-        .pitch(testPitch)
-        .scope("Test Scope " + id)
-        .description("Test scope description")
-        .position(position)
-        .createdAt(LocalDateTime.now().minusDays(7))
-        .updatedAt(updatedAt)
-        .build();
+    return HillChartPoint.builder().id(id).pitch(testPitch).scope("Test Scope " + id)
+        .description("Test scope description").position(position).createdAt(LocalDateTime.now().minusDays(7))
+        .updatedAt(updatedAt).build();
   }
 }

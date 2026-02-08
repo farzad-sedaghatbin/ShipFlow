@@ -45,30 +45,24 @@ class ChromaVectorStoreProviderTest {
 
   @Test
   void validateConfig_shouldNotThrowForValidConfig() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .url("http://localhost:8000")
-            .collectionName("test_collection")
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().url("http://localhost:8000")
+        .collectionName("test_collection").build();
 
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForMissingCollectionName() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder().url("http://localhost:8000").collectionName("").build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().url("http://localhost:8000")
+        .collectionName("").build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForNullCollectionName() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .url("http://localhost:8000")
-            .collectionName(null)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().url("http://localhost:8000")
+        .collectionName(null).build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }

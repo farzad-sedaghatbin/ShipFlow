@@ -46,14 +46,8 @@ class QdrantVectorStoreProviderTest {
 
   @Test
   void validateConfig_shouldNotThrowForValidConfig() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .apiKey("test-api-key")
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .apiKey("test-api-key").collectionName("test_collection").dimension(384).build();
 
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }
@@ -61,65 +55,40 @@ class QdrantVectorStoreProviderTest {
   @Test
   void validateConfig_shouldNotThrowWithoutApiKey() {
     // Should warn but not throw - API key is recommended but not required
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .collectionName("test_collection")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .collectionName("test_collection").dimension(384).build();
 
     assertDoesNotThrow(() -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForMissingCollectionName() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .collectionName("")
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .collectionName("").dimension(384).build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForNullCollectionName() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .collectionName(null)
-            .dimension(384)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .collectionName(null).dimension(384).build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForInvalidDimension() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .collectionName("test")
-            .dimension(0)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .collectionName("test").dimension(0).build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }
 
   @Test
   void validateConfig_shouldThrowForNegativeDimension() {
-    VectorStoreProviderConfig config =
-        VectorStoreProviderConfig.builder()
-            .host("localhost")
-            .port(6334)
-            .collectionName("test")
-            .dimension(-1)
-            .build();
+    VectorStoreProviderConfig config = VectorStoreProviderConfig.builder().host("localhost").port(6334)
+        .collectionName("test").dimension(-1).build();
 
     assertThrows(IllegalArgumentException.class, () -> provider.validateConfig(config));
   }

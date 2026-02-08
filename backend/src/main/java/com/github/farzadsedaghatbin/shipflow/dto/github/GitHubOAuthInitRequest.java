@@ -18,13 +18,17 @@ public class GitHubOAuthInitRequest {
   /** Optional: Frontend URL to redirect after OAuth completion */
   private String redirectUrl;
 
-  /** Optional: State parameter for CSRF protection (auto-generated if not provided) */
+  /**
+   * Optional: State parameter for CSRF protection (auto-generated if not
+   * provided)
+   */
   private String state;
 
   /**
-   * Optional: Base URL of the ShipFlow instance (auto-detected from request if not set in config)
-   * This is used for OAuth callback URLs. Example: https://shipflow.mycompany.com If APP_BASE_URL
-   * is configured in environment, this is ignored.
+   * Optional: Base URL of the ShipFlow instance (auto-detected from request if
+   * not set in config) This is used for OAuth callback URLs. Example:
+   * https://shipflow.mycompany.com If APP_BASE_URL is configured in environment,
+   * this is ignored.
    */
   private String baseUrl;
 }

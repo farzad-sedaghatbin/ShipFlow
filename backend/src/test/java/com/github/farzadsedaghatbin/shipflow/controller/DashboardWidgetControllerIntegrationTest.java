@@ -38,17 +38,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class DashboardWidgetControllerIntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  @Autowired private DashboardWidgetRepository dashboardWidgetRepository;
+  @Autowired
+  private DashboardWidgetRepository dashboardWidgetRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-  @Autowired private PersonRepository personRepository;
+  @Autowired
+  private PersonRepository personRepository;
 
-  @Autowired private PermissionRepository permissionRepository;
+  @Autowired
+  private PermissionRepository permissionRepository;
 
   private User testUser;
   private DashboardWidget testWidget;
@@ -61,58 +67,31 @@ class DashboardWidgetControllerIntegrationTest {
     personRepository.deleteAll();
 
     // Create test person and user
-    Person testPerson =
-        Person.builder().name("Test User").email("test@example.com").isActive(true).build();
+    Person testPerson = Person.builder().name("Test User").email("test@example.com").isActive(true).build();
     testPerson = personRepository.save(testPerson);
 
-    testUser =
-        User.builder()
-            .username("dashboard-test-user")
-            .password("password")
-            .role(UserRole.MEMBER)
-            .person(testPerson)
-            .isActive(true)
-            .build();
+    testUser = User.builder().username("dashboard-test-user").password("password").role(UserRole.MEMBER)
+        .person(testPerson).isActive(true).build();
     testUser = userRepository.save(testUser);
 
     // Grant DASHBOARD permissions for MEMBER role
-    permissionRepository.save(
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.DASHBOARD)
-            .permissionType(PermissionType.READ)
-            .build());
-    permissionRepository.save(
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.DASHBOARD)
-            .permissionType(PermissionType.UPDATE)
-            .build());
-    permissionRepository.save(
-        Permission.builder()
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.DASHBOARD)
-            .permissionType(PermissionType.DELETE)
-            .build());
+    permissionRepository.save(Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.DASHBOARD)
+        .permissionType(PermissionType.READ).build());
+    permissionRepository.save(Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.DASHBOARD)
+        .permissionType(PermissionType.UPDATE).build());
+    permissionRepository.save(Permission.builder().role(UserRole.MEMBER).resourceType(ResourceType.DASHBOARD)
+        .permissionType(PermissionType.DELETE).build());
 
     // Create test widget
-    testWidget =
-        DashboardWidget.builder()
-            .user(testUser)
-            .widgetType("STATS_CARDS")
-            .isVisible(true)
-            .displayOrder(0)
-            .build();
+    testWidget = DashboardWidget.builder().user(testUser).widgetType("STATS_CARDS").isVisible(true).displayOrder(0)
+        .build();
     testWidget = dashboardWidgetRepository.save(testWidget);
   }
 
   @Test
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void getUserWidgets_ShouldReturnWidgets() throws Exception {
-    mockMvc
-        .perform(get("/api/dashboard/widgets"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
+    mockMvc.perform(get("/api/dashboard/widgets")).andExpect(status().isOk()).andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$[0].widgetType").value("STATS_CARDS"))
         .andExpect(jsonPath("$[0].isVisible").value(true));
   }
@@ -121,108 +100,62 @@ class DashboardWidgetControllerIntegrationTest {
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void getVisibleWidgets_ShouldReturnOnlyVisibleWidgets() throws Exception {
     // Create hidden widget
-    DashboardWidget hiddenWidget =
-        DashboardWidget.builder()
-            .user(testUser)
-            .widgetType("HIDDEN_WIDGET")
-            .isVisible(false)
-            .displayOrder(1)
-            .build();
+    DashboardWidget hiddenWidget = DashboardWidget.builder().user(testUser).widgetType("HIDDEN_WIDGET")
+        .isVisible(false).displayOrder(1).build();
     dashboardWidgetRepository.save(hiddenWidget);
 
-    mockMvc
-        .perform(get("/api/dashboard/widgets/visible"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$", hasSize(1)))
+    mockMvc.perform(get("/api/dashboard/widgets/visible")).andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$", hasSize(1)))
         .andExpect(jsonPath("$[0].isVisible").value(true));
   }
 
   @Test
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void createWidget_WithValidData_ShouldCreateWidget() throws Exception {
-    CreateDashboardWidgetRequest request =
-        CreateDashboardWidgetRequest.builder()
-            .widgetType("NEW_WIDGET")
-            .isVisible(true)
-            .displayOrder(5)
-            .build();
+    CreateDashboardWidgetRequest request = CreateDashboardWidgetRequest.builder().widgetType("NEW_WIDGET")
+        .isVisible(true).displayOrder(5).build();
 
-    mockMvc
-        .perform(
-            post("/api/dashboard/widgets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.widgetType").value("NEW_WIDGET"))
-        .andExpect(jsonPath("$.isVisible").value(true))
+    mockMvc.perform(post("/api/dashboard/widgets").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.widgetType").value("NEW_WIDGET")).andExpect(jsonPath("$.isVisible").value(true))
         .andExpect(jsonPath("$.displayOrder").value(5));
   }
 
   @Test
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void updateWidget_WhenExists_ShouldUpdateWidget() throws Exception {
-    UpdateDashboardWidgetRequest request =
-        UpdateDashboardWidgetRequest.builder().isVisible(false).displayOrder(10).build();
+    UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder().isVisible(false).displayOrder(10)
+        .build();
 
-    mockMvc
-        .perform(
-            put("/api/dashboard/widgets/" + testWidget.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.isVisible").value(false))
-        .andExpect(jsonPath("$.displayOrder").value(10));
+    mockMvc.perform(put("/api/dashboard/widgets/" + testWidget.getId()).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.isVisible").value(false)).andExpect(jsonPath("$.displayOrder").value(10));
   }
 
   @Test
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void bulkUpdateWidgets_ShouldUpdateMultipleWidgets() throws Exception {
-    DashboardWidget widget2 =
-        DashboardWidget.builder()
-            .user(testUser)
-            .widgetType("WIDGET_2")
-            .isVisible(true)
-            .displayOrder(1)
-            .build();
+    DashboardWidget widget2 = DashboardWidget.builder().user(testUser).widgetType("WIDGET_2").isVisible(true)
+        .displayOrder(1).build();
     widget2 = dashboardWidgetRepository.save(widget2);
 
-    DashboardWidgetDTO dto1 =
-        DashboardWidgetDTO.builder()
-            .id(testWidget.getId())
-            .userId(testUser.getId())
-            .widgetType("STATS_CARDS")
-            .isVisible(false)
-            .displayOrder(5)
-            .build();
+    DashboardWidgetDTO dto1 = DashboardWidgetDTO.builder().id(testWidget.getId()).userId(testUser.getId())
+        .widgetType("STATS_CARDS").isVisible(false).displayOrder(5).build();
 
-    DashboardWidgetDTO dto2 =
-        DashboardWidgetDTO.builder()
-            .id(widget2.getId())
-            .userId(testUser.getId())
-            .widgetType("WIDGET_2")
-            .isVisible(true)
-            .displayOrder(1)
-            .build();
+    DashboardWidgetDTO dto2 = DashboardWidgetDTO.builder().id(widget2.getId()).userId(testUser.getId())
+        .widgetType("WIDGET_2").isVisible(true).displayOrder(1).build();
 
     List<DashboardWidgetDTO> updates = Arrays.asList(dto1, dto2);
 
-    mockMvc
-        .perform(
-            put("/api/dashboard/widgets/bulk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updates)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$", hasSize(2)));
+    mockMvc.perform(put("/api/dashboard/widgets/bulk").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(updates))).andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$", hasSize(2)));
   }
 
   @Test
   @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
   void deleteWidget_WhenExists_ShouldDeleteWidget() throws Exception {
-    mockMvc
-        .perform(delete("/api/dashboard/widgets/" + testWidget.getId()))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/dashboard/widgets/" + testWidget.getId())).andExpect(status().isNoContent());
   }
 
   @Test
@@ -231,17 +164,13 @@ class DashboardWidgetControllerIntegrationTest {
     // First delete existing widgets to avoid conflict
     dashboardWidgetRepository.deleteByUserId(testUser.getId());
 
-    mockMvc
-        .perform(post("/api/dashboard/widgets/reset"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$", hasSize(greaterThan(0))));
+    mockMvc.perform(post("/api/dashboard/widgets/reset")).andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$", hasSize(greaterThan(0))));
   }
 
   @Test
   void getUserWidgets_WithoutAuth_ShouldReturn401() throws Exception {
-    mockMvc
-        .perform(get("/api/dashboard/widgets"))
-        .andExpect(status().is3xxRedirection()); // Spring Security redirects to login
+    mockMvc.perform(get("/api/dashboard/widgets")).andExpect(status().is3xxRedirection()); // Spring Security
+    // redirects to login
   }
 }

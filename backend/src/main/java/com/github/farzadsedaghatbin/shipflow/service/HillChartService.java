@@ -39,62 +39,46 @@ public class HillChartService {
   private final MessageService messageService;
 
   public List<HillChartPointDTO> getAllHillChartPoints() {
-    return hillChartPointRepository.findAll().stream()
-        .map(this::toDTO)
-        .collect(Collectors.toList());
+    return hillChartPointRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public List<HillChartPointDTO> getHillChartPointsByPitch(Long pitchId) {
-    return hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(pitchId).stream()
-        .map(this::toDTO)
+    return hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(pitchId).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   /**
-   * Search hill chart points (scopes) by name or description. Minimum 3 characters required to
-   * prevent performance issues with large datasets.
+   * Search hill chart points (scopes) by name or description. Minimum 3
+   * characters required to prevent performance issues with large datasets.
    */
   public List<HillChartPointDTO> searchHillChartPoints(String query) {
     if (query == null || query.trim().length() < 3) {
       return List.of();
     }
-    return hillChartPointRepository.searchHillChartPoints(query.trim()).stream()
-        .map(this::toDTO)
+    return hillChartPointRepository.searchHillChartPoints(query.trim()).stream().map(this::toDTO)
         .collect(Collectors.toList());
   }
 
   public HillChartPointDTO getHillChartPointById(Long id) {
-    HillChartPoint point =
-        hillChartPointRepository
-            .findById(id)
-            .orElseThrow(() -> new RuntimeException("Hill chart point not found with id: " + id));
+    HillChartPoint point = hillChartPointRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Hill chart point not found with id: " + id));
     return toDTO(point);
   }
 
   public HillChartPointDTO createHillChartPoint(CreateHillChartPointRequest request) {
-    Pitch pitch =
-        pitchRepository
-            .findById(request.getPitchId())
-            .orElseThrow(
-                () -> new RuntimeException("Pitch not found with id: " + request.getPitchId()));
+    Pitch pitch = pitchRepository.findById(request.getPitchId())
+        .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + request.getPitchId()));
 
-    HillChartPoint point =
-        HillChartPoint.builder()
-            .pitch(pitch)
-            .scope(request.getScope())
-            .description(request.getDescription())
-            .position(request.getPosition())
-            .build();
+    HillChartPoint point = HillChartPoint.builder().pitch(pitch).scope(request.getScope())
+        .description(request.getDescription()).position(request.getPosition()).build();
 
     HillChartPoint saved = hillChartPointRepository.save(point);
     return toDTO(saved);
   }
 
   public HillChartPointDTO updateHillChartPoint(Long id, UpdateHillChartPointRequest request) {
-    HillChartPoint point =
-        hillChartPointRepository
-            .findById(id)
-            .orElseThrow(() -> new RuntimeException("Hill chart point not found with id: " + id));
+    HillChartPoint point = hillChartPointRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Hill chart point not found with id: " + id));
 
     if (request.getScope() != null) {
       point.setScope(request.getScope());
@@ -118,16 +102,13 @@ public class HillChartService {
   }
 
   /**
-   * Update hill chart point position with history tracking. Stores the move for confidence
-   * analysis.
+   * Update hill chart point position with history tracking. Stores the move for
+   * confidence analysis.
    */
-  public HillChartPointDTO updatePositionWithHistory(
-      Long pointId, UpdateHillChartPositionRequest request, Long userId) {
-    HillChartPoint point =
-        hillChartPointRepository
-            .findById(pointId)
-            .orElseThrow(
-                () -> new RuntimeException("Hill chart point not found with id: " + pointId));
+  public HillChartPointDTO updatePositionWithHistory(Long pointId, UpdateHillChartPositionRequest request,
+      Long userId) {
+    HillChartPoint point = hillChartPointRepository.findById(pointId)
+        .orElseThrow(() -> new RuntimeException("Hill chart point not found with id: " + pointId));
 
     User user = null;
     if (userId != null) {
@@ -139,31 +120,20 @@ public class HillChartService {
     // Get current progress metrics
     Pitch pitch = point.getPitch();
     Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
-    if (totalHours == null) totalHours = 0.0;
+    if (totalHours == null)
+      totalHours = 0.0;
     double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
     double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
     // Create history entry
-    HillChartHistory history =
-        HillChartHistory.builder()
-            .hillChartPoint(point)
-            .pitch(pitch)
-            .movedBy(user)
-            .previousPosition(previousPosition)
-            .newPosition(request.getNewPosition())
-            .confidenceLevel(request.getConfidenceLevel())
-            .note(request.getNote())
-            .actualHoursAtMove(totalHours)
-            .progressAtMove(progress)
-            .build();
+    HillChartHistory history = HillChartHistory.builder().hillChartPoint(point).pitch(pitch).movedBy(user)
+        .previousPosition(previousPosition).newPosition(request.getNewPosition())
+        .confidenceLevel(request.getConfidenceLevel()).note(request.getNote()).actualHoursAtMove(totalHours)
+        .progressAtMove(progress).build();
 
     hillChartHistoryRepository.save(history);
-    log.info(
-        "Hill chart position updated: point {} moved from {} to {} by user {}",
-        pointId,
-        previousPosition,
-        request.getNewPosition(),
-        userId);
+    log.info("Hill chart position updated: point {} moved from {} to {} by user {}", pointId, previousPosition,
+        request.getNewPosition(), userId);
 
     // Update the point position
     point.setPosition(request.getNewPosition());
@@ -176,33 +146,34 @@ public class HillChartService {
   @Transactional(readOnly = true)
   public List<HillChartHistoryDTO> getPointHistory(Long pointId) {
     return hillChartHistoryRepository.findByHillChartPointIdOrderByCreatedAtDesc(pointId).stream()
-        .map(this::toHistoryDTO)
-        .collect(Collectors.toList());
+        .map(this::toHistoryDTO).collect(Collectors.toList());
   }
 
   /** Get all position history for a pitch. */
   @Transactional(readOnly = true)
   public List<HillChartHistoryDTO> getPitchHistory(Long pitchId) {
-    return hillChartHistoryRepository.findByPitchIdOrderByCreatedAtDesc(pitchId).stream()
-        .map(this::toHistoryDTO)
+    return hillChartHistoryRepository.findByPitchIdOrderByCreatedAtDesc(pitchId).stream().map(this::toHistoryDTO)
         .collect(Collectors.toList());
   }
 
-  /** Get confidence analysis for a pitch. Compares user confidence vs actual progress. */
+  /**
+   * Get confidence analysis for a pitch. Compares user confidence vs actual
+   * progress.
+   */
   @Transactional(readOnly = true)
   public ConfidenceAnalysisDTO getConfidenceAnalysis(Long pitchId) {
-    Pitch pitch =
-        pitchRepository
-            .findById(pitchId)
-            .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
 
     // Get average confidence from history
     Double avgConfidence = hillChartHistoryRepository.getAverageConfidenceByPitch(pitchId);
-    if (avgConfidence == null) avgConfidence = 50.0;
+    if (avgConfidence == null)
+      avgConfidence = 50.0;
 
     // Calculate actual progress
     Double totalHours = workLogRepository.getTotalHoursByPitchId(pitchId);
-    if (totalHours == null) totalHours = 0.0;
+    if (totalHours == null)
+      totalHours = 0.0;
     double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
     double actualProgress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
@@ -227,25 +198,16 @@ public class HillChartService {
     List<HillChartHistoryDTO> history = getPitchHistory(pitchId);
 
     // Generate insights
-    List<String> insights =
-        generateConfidenceInsights(avgConfidence, actualProgress, confidenceDelta, history);
+    List<String> insights = generateConfidenceInsights(avgConfidence, actualProgress, confidenceDelta, history);
 
-    return ConfidenceAnalysisDTO.builder()
-        .pitchId(pitchId)
-        .pitchTitle(pitch.getTitle())
+    return ConfidenceAnalysisDTO.builder().pitchId(pitchId).pitchTitle(pitch.getTitle())
         .averageConfidence(Math.round(avgConfidence * 10.0) / 10.0)
         .actualProgress(Math.round(actualProgress * 10.0) / 10.0)
-        .confidenceDelta(Math.round(confidenceDelta * 10.0) / 10.0)
-        .accuracyAssessment(assessment)
-        .history(history)
-        .insights(insights)
-        .build();
+        .confidenceDelta(Math.round(confidenceDelta * 10.0) / 10.0).accuracyAssessment(assessment)
+        .history(history).insights(insights).build();
   }
 
-  private List<String> generateConfidenceInsights(
-      double avgConfidence,
-      double actualProgress,
-      double confidenceDelta,
+  private List<String> generateConfidenceInsights(double avgConfidence, double actualProgress, double confidenceDelta,
       List<HillChartHistoryDTO> history) {
     List<String> insights = new ArrayList<>();
 
@@ -260,67 +222,47 @@ public class HillChartService {
     }
 
     if (history.size() > 5) {
-      long frequentMoves =
-          history.stream()
-              .filter(h -> Math.abs(h.getNewPosition() - h.getPreviousPosition()) > 10)
-              .count();
+      long frequentMoves = history.stream()
+          .filter(h -> Math.abs(h.getNewPosition() - h.getPreviousPosition()) > 10).count();
       if (frequentMoves > history.size() / 2) {
         insights.add("Frequent large position changes may indicate uncertainty in scope");
       }
     }
 
     if (actualProgress > 80 && avgConfidence < 60) {
-      insights.add(
-          "High progress with low confidence - team may be more accomplished than they realize");
+      insights.add("High progress with low confidence - team may be more accomplished than they realize");
     }
 
     return insights;
   }
 
   private HillChartHistoryDTO toHistoryDTO(HillChartHistory history) {
-    return HillChartHistoryDTO.builder()
-        .id(history.getId())
-        .hillChartPointId(history.getHillChartPoint().getId())
-        .scope(history.getHillChartPoint().getScope())
-        .pitchId(history.getPitch().getId())
+    return HillChartHistoryDTO.builder().id(history.getId()).hillChartPointId(history.getHillChartPoint().getId())
+        .scope(history.getHillChartPoint().getScope()).pitchId(history.getPitch().getId())
         .pitchTitle(history.getPitch().getTitle())
         .userId(history.getMovedBy() != null ? history.getMovedBy().getId() : null)
         .userName(history.getMovedBy() != null ? history.getMovedBy().getUsername() : null)
-        .previousPosition(history.getPreviousPosition())
-        .newPosition(history.getNewPosition())
-        .confidenceLevel(history.getConfidenceLevel())
-        .note(history.getNote())
-        .actualHoursAtMove(history.getActualHoursAtMove())
-        .progressAtMove(history.getProgressAtMove())
-        .createdAt(history.getCreatedAt())
-        .build();
+        .previousPosition(history.getPreviousPosition()).newPosition(history.getNewPosition())
+        .confidenceLevel(history.getConfidenceLevel()).note(history.getNote())
+        .actualHoursAtMove(history.getActualHoursAtMove()).progressAtMove(history.getProgressAtMove())
+        .createdAt(history.getCreatedAt()).build();
   }
 
   private HillChartPointDTO toDTO(HillChartPoint point) {
-    return HillChartPointDTO.builder()
-        .id(point.getId())
-        .pitchId(point.getPitch().getId())
+    return HillChartPointDTO.builder().id(point.getId()).pitchId(point.getPitch().getId())
         .pitchTitle(point.getPitch().getTitle())
         .cycleId(point.getPitch().getCycle() != null ? point.getPitch().getCycle().getId() : null)
-        .cycleName(
-            point.getPitch().getCycle() != null ? point.getPitch().getCycle().getName() : null)
-        .projectId(
-            point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
-                ? point.getPitch().getCycle().getProject().getId()
-                : null)
-        .projectName(
-            point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
-                ? point.getPitch().getCycle().getProject().getName()
-                : null)
-        .projectKey(
-            point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
-                ? point.getPitch().getCycle().getProject().getProjectKey()
-                : null)
-        .scope(point.getScope())
-        .description(point.getDescription())
-        .position(point.getPosition())
-        .createdAt(point.getCreatedAt())
-        .updatedAt(point.getUpdatedAt())
-        .build();
+        .cycleName(point.getPitch().getCycle() != null ? point.getPitch().getCycle().getName() : null)
+        .projectId(point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
+            ? point.getPitch().getCycle().getProject().getId()
+            : null)
+        .projectName(point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
+            ? point.getPitch().getCycle().getProject().getName()
+            : null)
+        .projectKey(point.getPitch().getCycle() != null && point.getPitch().getCycle().getProject() != null
+            ? point.getPitch().getCycle().getProject().getProjectKey()
+            : null)
+        .scope(point.getScope()).description(point.getDescription()).position(point.getPosition())
+        .createdAt(point.getCreatedAt()).updatedAt(point.getUpdatedAt()).build();
   }
 }

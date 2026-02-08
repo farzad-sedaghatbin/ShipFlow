@@ -1,6 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.entity.enums;
 
-/** Enumeration of permission types for RBAC. Defines what actions can be performed on resources. */
+/**
+ * Enumeration of permission types for RBAC. Defines what actions can be
+ * performed on resources.
+ */
 public enum PermissionType {
   /** Create new resources */
   CREATE,

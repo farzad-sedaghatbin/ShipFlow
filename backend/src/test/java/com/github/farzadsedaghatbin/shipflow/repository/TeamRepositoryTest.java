@@ -17,9 +17,11 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class TeamRepositoryTest {
 
-  @Autowired private TeamRepository teamRepository;
+  @Autowired
+  private TeamRepository teamRepository;
 
-  @Autowired private CycleRepository cycleRepository;
+  @Autowired
+  private CycleRepository cycleRepository;
 
   private Cycle testCycle;
   private Team testTeam;
@@ -29,14 +31,8 @@ class TeamRepositoryTest {
     teamRepository.deleteAll();
     cycleRepository.deleteAll();
 
-    testCycle =
-        Cycle.builder()
-            .name("Test Cycle")
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.BUILD).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
     testTeam = Team.builder().name("Test Team").cycle(testCycle).build();

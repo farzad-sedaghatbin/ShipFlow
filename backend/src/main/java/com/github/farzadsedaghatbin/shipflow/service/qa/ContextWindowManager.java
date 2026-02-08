@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Manages context window to prevent token limit exceeded errors. Estimates tokens and truncates
- * context intelligently.
+ * Manages context window to prevent token limit exceeded errors. Estimates
+ * tokens and truncates context intelligently.
  */
 @Component
 @Slf4j
@@ -20,8 +20,8 @@ public class ContextWindowManager {
   private static final double CHARS_PER_TOKEN = 4.0; // Rough estimate: 1 token ≈ 4 chars
 
   /** Build context from matches while respecting token limits. */
-  public ContextResult buildManagedContext(
-      List<EmbeddingMatch<TextSegment>> matches, String question, int maxTokens) {
+  public ContextResult buildManagedContext(List<EmbeddingMatch<TextSegment>> matches, String question,
+      int maxTokens) {
 
     if (matches == null || matches.isEmpty()) {
       return new ContextResult("", 0, 0, false);
@@ -29,15 +29,11 @@ public class ContextWindowManager {
 
     // Calculate available tokens for context
     int questionTokens = estimateTokens(question);
-    int availableTokens =
-        (maxTokens > 0 ? maxTokens : DEFAULT_MAX_TOKENS) - PROMPT_OVERHEAD_TOKENS - questionTokens;
+    int availableTokens = (maxTokens > 0 ? maxTokens : DEFAULT_MAX_TOKENS) - PROMPT_OVERHEAD_TOKENS
+        - questionTokens;
 
-    log.debug(
-        "Building context with {} available tokens (max: {}, question: {}, overhead: {})",
-        availableTokens,
-        maxTokens,
-        questionTokens,
-        PROMPT_OVERHEAD_TOKENS);
+    log.debug("Building context with {} available tokens (max: {}, question: {}, overhead: {})", availableTokens,
+        maxTokens, questionTokens, PROMPT_OVERHEAD_TOKENS);
 
     StringBuilder context = new StringBuilder();
     int usedTokens = 0;
@@ -60,10 +56,8 @@ public class ContextWindowManager {
         // Try to add a truncated version
         int remainingTokens = availableTokens - usedTokens;
         if (remainingTokens > 100) { // Only truncate if we have meaningful space
-          String truncated =
-              truncateToTokens(docText, remainingTokens - 50); // Reserve tokens for formatting
-          formattedDoc =
-              String.format("[Source %d: %s] (truncated)\n%s...\n\n", i + 1, title, truncated);
+          String truncated = truncateToTokens(docText, remainingTokens - 50); // Reserve tokens for formatting
+          formattedDoc = String.format("[Source %d: %s] (truncated)\n%s...\n\n", i + 1, title, truncated);
           context.append(formattedDoc);
           usedTokens += estimateTokens(formattedDoc);
           documentsIncluded++;
@@ -81,27 +75,19 @@ public class ContextWindowManager {
     }
 
     if (wasTruncated) {
-      log.warn(
-          "Context truncated: included {}/{} documents, {} tokens used of {} available",
-          documentsIncluded,
-          matches.size(),
-          usedTokens,
-          availableTokens);
+      log.warn("Context truncated: included {}/{} documents, {} tokens used of {} available", documentsIncluded,
+          matches.size(), usedTokens, availableTokens);
     } else {
-      log.debug(
-          "Context built: {}/{} documents, {} tokens used of {} available",
-          documentsIncluded,
-          matches.size(),
-          usedTokens,
-          availableTokens);
+      log.debug("Context built: {}/{} documents, {} tokens used of {} available", documentsIncluded,
+          matches.size(), usedTokens, availableTokens);
     }
 
     return new ContextResult(context.toString(), usedTokens, documentsIncluded, wasTruncated);
   }
 
   /**
-   * Estimate token count from text. This is a rough approximation. For production, use proper
-   * tokenizer.
+   * Estimate token count from text. This is a rough approximation. For
+   * production, use proper tokenizer.
    */
   public int estimateTokens(String text) {
     if (text == null || text.isEmpty()) {
@@ -151,8 +137,7 @@ public class ContextWindowManager {
     private final int documentsIncluded;
     private final boolean wasTruncated;
 
-    public ContextResult(
-        String context, int tokensUsed, int documentsIncluded, boolean wasTruncated) {
+    public ContextResult(String context, int tokensUsed, int documentsIncluded, boolean wasTruncated) {
       this.context = context;
       this.tokensUsed = tokensUsed;
       this.documentsIncluded = documentsIncluded;

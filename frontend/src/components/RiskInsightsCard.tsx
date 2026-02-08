@@ -18,6 +18,8 @@ import {
   RiskLevel,
   getRiskScoreColor,
   formatRiskCategory,
+  fetchPitchRiskAsync,
+  JobStatusResponse,
 } from '../services/riskService';
 import { RiskFeedbackForm } from './RiskFeedbackForm';
 import { RiskQA } from './RiskQA';
@@ -52,6 +54,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
   const [riskData, setRiskData] = useState<PitchRiskDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiJobStatus, setAiJobStatus] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>('insights');
 
@@ -62,18 +65,35 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
   const loadRiskAnalysis = async () => {
     try {
       setLoading(true);
-      // First load fast data (rule-based)
+      // First load fast data (rule-based) - immediate response
       const fastResponse = await riskService.getPitchRisk(pitchId);
       setRiskData(fastResponse.data);
       setLoading(false);
       
-      // Then load AI-enhanced data in background
+      // Then load AI-enhanced data asynchronously with polling
+      // This prevents blocking if AI is slow or not cached
       setAiLoading(true);
+      setAiJobStatus('Starting AI analysis...');
       try {
-        const aiResponse = await riskService.getPitchRiskWithAI(pitchId);
-        setRiskData(aiResponse.data);
+        const aiResult = await fetchPitchRiskAsync(pitchId, (status: JobStatusResponse) => {
+          // Update UI with job progress
+          if (status.status === 'PENDING') {
+            setAiJobStatus('Queued for AI analysis...');
+          } else if (status.status === 'PROCESSING') {
+            setAiJobStatus('AI analyzing pitch risks...');
+          }
+        });
+        
+        if (aiResult) {
+          setRiskData(aiResult);
+          setAiJobStatus(null);
+        } else {
+          console.warn('AI risk analysis unavailable, using rule-based analysis');
+          setAiJobStatus(null);
+        }
       } catch (aiError) {
-        console.warn('AI risk analysis unavailable, using rule-based analysis');
+        console.warn('AI risk analysis failed, using rule-based analysis');
+        setAiJobStatus(null);
       } finally {
         setAiLoading(false);
       }
@@ -87,11 +107,23 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const response = await riskService.refreshPitchRisk(pitchId);
-      setRiskData(response.data);
+      setAiJobStatus('Refreshing AI analysis...');
+      
+      // Use async refresh for non-blocking behavior
+      const aiResult = await fetchPitchRiskAsync(pitchId, (status: JobStatusResponse) => {
+        if (status.status === 'PROCESSING') {
+          setAiJobStatus('AI re-analyzing pitch...');
+        }
+      });
+      
+      if (aiResult) {
+        setRiskData(aiResult);
+      }
+      setAiJobStatus(null);
     } catch (error: any) {
       console.error('Failed to refresh risk analysis:', error);
       onError?.(t('errors.refreshRiskAnalysisFailed'));
+      setAiJobStatus(null);
     } finally {
       setRefreshing(false);
     }
@@ -207,7 +239,7 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
               )}
               {aiLoading && (
                 <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">
-                  Loading AI insights...
+                  {aiJobStatus || 'Loading AI insights...'}
                 </Badge>
               )}
             </div>

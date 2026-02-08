@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { ResourceType, PermissionType, permissionService } from '@/services/permissionService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PermissionCache {
   [key: string]: boolean;
+}
+
+interface PendingRequest {
+  promise: Promise<boolean>;
+  resolve: (value: boolean) => void;
+  reject: (error: any) => void;
 }
 
 /**
@@ -32,12 +38,14 @@ interface PermissionCache {
  */
 export function usePermission() {
   const { user } = useAuth();
-  const [cache, setCache] = useState<PermissionCache>({});
+  const cacheRef = useRef<PermissionCache>({});
+  const pendingRequestsRef = useRef<Map<string, PendingRequest>>(new Map());
   const [loading, setLoading] = useState(false);
 
   /**
    * Check if user has permission for a resource and action.
    * Results are cached for the session.
+   * Handles concurrent requests to prevent race conditions.
    */
   const hasPermission = useCallback(
     async (resource: ResourceType, permission: PermissionType): Promise<boolean> => {
@@ -48,27 +56,62 @@ export function usePermission() {
       const cacheKey = `${resource}:${permission}`;
 
       // Return cached result if available
-      if (cacheKey in cache) {
-        return cache[cacheKey];
+      if (cacheKey in cacheRef.current) {
+        return cacheRef.current[cacheKey];
       }
+
+      // If there's already a pending request for this permission, return that promise
+      const existingRequest = pendingRequestsRef.current.get(cacheKey);
+      if (existingRequest) {
+        return existingRequest.promise;
+      }
+
+      // Create a new request
+      let resolve: (value: boolean) => void;
+      let reject: (error: any) => void;
+      
+      const promise = new Promise<boolean>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+
+      const pendingRequest: PendingRequest = {
+        promise,
+        resolve: resolve!,
+        reject: reject!
+      };
+
+      // Store the pending request
+      pendingRequestsRef.current.set(cacheKey, pendingRequest);
 
       try {
         setLoading(true);
         const result = await permissionService.hasPermission(resource, permission);
         
-        // Update cache
-        setCache(prev => ({ ...prev, [cacheKey]: result }));
+        // Update cache safely - check if key still doesn't exist to prevent overwriting
+        if (!(cacheKey in cacheRef.current)) {
+          cacheRef.current[cacheKey] = result;
+        }
+        
+        // Resolve the pending request
+        pendingRequest.resolve(result);
         
         return result;
       } catch (error) {
         console.error('Permission check failed:', error);
+        
+        // Reject the pending request
+        pendingRequest.reject(error);
+        
         // Fail closed - deny permission on error
         return false;
       } finally {
+        // Clean up the pending request
+        pendingRequestsRef.current.delete(cacheKey);
         setLoading(false);
       }
     },
-    [user, cache]
+    [user?.userId] // Only depend on user ID, not entire user object
   );
 
   /**
@@ -81,9 +124,9 @@ export function usePermission() {
       if (!user) return false;
       
       const cacheKey = `${resource}:${permission}`;
-      return cache[cacheKey] ?? false;
+      return cacheRef.current[cacheKey] ?? false;
     },
-    [user, cache]
+    [user?.userId] // Only depend on user ID, not entire user object
   );
 
   /**
@@ -116,7 +159,9 @@ export function usePermission() {
    * Clear permission cache (e.g., on logout or role change).
    */
   const clearCache = useCallback(() => {
-    setCache({});
+    cacheRef.current = {};
+    // Also clear any pending requests
+    pendingRequestsRef.current.clear();
   }, []);
 
   // Clear cache when user changes or logs out
@@ -124,7 +169,7 @@ export function usePermission() {
     if (!user) {
       clearCache();
     }
-  }, [user, clearCache]);
+  }, [user?.userId, clearCache]);
 
   return {
     hasPermission,
@@ -160,13 +205,23 @@ export function PermissionGate({
 }) {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const { hasPermission } = usePermission();
+  const checkKeyRef = useRef<string>('');
 
   useEffect(() => {
     let mounted = true;
+    const checkKey = `${resource}:${permission}`;
+    
+    // Avoid unnecessary re-checks if same resource:permission
+    if (checkKeyRef.current === checkKey) {
+      return;
+    }
+    
+    checkKeyRef.current = checkKey;
+    setHasAccess(null); // Reset to loading state
 
     const checkPermission = async () => {
       const result = await hasPermission(resource, permission);
-      if (mounted) {
+      if (mounted && checkKeyRef.current === checkKey) {
         setHasAccess(result);
       }
     };
@@ -176,7 +231,7 @@ export function PermissionGate({
     return () => {
       mounted = false;
     };
-  }, [resource, permission, hasPermission]);
+  }, [resource, permission, hasPermission]); // hasPermission is now stable, safe to include
 
   // Loading state
   if (hasAccess === null) {

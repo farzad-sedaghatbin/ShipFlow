@@ -31,71 +31,64 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class PermissionServiceTest {
 
-  @Mock private PermissionRepository permissionRepository;
+  @Mock
+  private PermissionRepository permissionRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private SecurityContext securityContext;
+  @Mock
+  private SecurityContext securityContext;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private PermissionService permissionService;
+  @InjectMocks
+  private PermissionService permissionService;
 
   private User testUser;
   private Permission testPermission;
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("permission.already.exists")) return "Permission already exists";
-              if (key.contains("permission.not.found")) return "Permission not found";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("permission.already.exists")) return "Permission already exists";
-              if (key.contains("permission.not.found")) return "Permission not found";
-              return key;
-            });
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("permission.already.exists"))
+        return "Permission already exists";
+      if (key.contains("permission.not.found"))
+        return "Permission not found";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("permission.already.exists"))
+        return "Permission already exists";
+      if (key.contains("permission.not.found"))
+        return "Permission not found";
+      return key;
+    });
 
-    testUser =
-        User.builder().id(1L).username("testuser").role(UserRole.MEMBER).isActive(true).build();
+    testUser = User.builder().id(1L).username("testuser").role(UserRole.MEMBER).isActive(true).build();
 
-    testPermission =
-        Permission.builder()
-            .id(1L)
-            .role(UserRole.MEMBER)
-            .resourceType(ResourceType.BUG)
-            .permissionType(PermissionType.CREATE)
-            .description("Developer can create bugs")
-            .build();
+    testPermission = Permission.builder().id(1L).role(UserRole.MEMBER).resourceType(ResourceType.BUG)
+        .permissionType(PermissionType.CREATE).description("Developer can create bugs").build();
   }
 
   @Test
   void hasPermission_WithValidUserAndPermission_ShouldReturnTrue() {
     // Given
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE))
-        .thenReturn(true);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE)).thenReturn(true);
 
     // When
-    boolean result =
-        permissionService.hasPermission("testuser", ResourceType.BUG, PermissionType.CREATE);
+    boolean result = permissionService.hasPermission("testuser", ResourceType.BUG, PermissionType.CREATE);
 
     // Then
     assertThat(result).isTrue();
     verify(userRepository).findByUsername("testuser");
-    verify(permissionRepository)
-        .existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE);
+    verify(permissionRepository).existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE);
   }
 
   @Test
@@ -104,14 +97,12 @@ class PermissionServiceTest {
     when(userRepository.findByUsername("unknownuser")).thenReturn(Optional.empty());
 
     // When
-    boolean result =
-        permissionService.hasPermission("unknownuser", ResourceType.BUG, PermissionType.CREATE);
+    boolean result = permissionService.hasPermission("unknownuser", ResourceType.BUG, PermissionType.CREATE);
 
     // Then
     assertThat(result).isFalse();
     verify(userRepository).findByUsername("unknownuser");
-    verify(permissionRepository, never())
-        .existsByRoleAndResourceTypeAndPermissionType(any(), any(), any());
+    verify(permissionRepository, never()).existsByRoleAndResourceTypeAndPermissionType(any(), any(), any());
   }
 
   @Test
@@ -121,27 +112,23 @@ class PermissionServiceTest {
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
     // When
-    boolean result =
-        permissionService.hasPermission("testuser", ResourceType.BUG, PermissionType.CREATE);
+    boolean result = permissionService.hasPermission("testuser", ResourceType.BUG, PermissionType.CREATE);
 
     // Then
     assertThat(result).isFalse();
     verify(userRepository).findByUsername("testuser");
-    verify(permissionRepository, never())
-        .existsByRoleAndResourceTypeAndPermissionType(any(), any(), any());
+    verify(permissionRepository, never()).existsByRoleAndResourceTypeAndPermissionType(any(), any(), any());
   }
 
   @Test
   void hasPermission_WithNoPermission_ShouldReturnFalse() {
     // Given
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.CYCLE, PermissionType.DELETE))
-        .thenReturn(false);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.CYCLE,
+        PermissionType.DELETE)).thenReturn(false);
 
     // When
-    boolean result =
-        permissionService.hasPermission("testuser", ResourceType.CYCLE, PermissionType.DELETE);
+    boolean result = permissionService.hasPermission("testuser", ResourceType.CYCLE, PermissionType.DELETE);
 
     // Then
     assertThat(result).isFalse();
@@ -150,13 +137,11 @@ class PermissionServiceTest {
   @Test
   void hasPermission_WithRole_ShouldReturnTrue() {
     // Given
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.ADMIN, ResourceType.USER, PermissionType.MANAGE))
-        .thenReturn(true);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.ADMIN, ResourceType.USER,
+        PermissionType.MANAGE)).thenReturn(true);
 
     // When
-    boolean result =
-        permissionService.hasPermission(UserRole.ADMIN, ResourceType.USER, PermissionType.MANAGE);
+    boolean result = permissionService.hasPermission(UserRole.ADMIN, ResourceType.USER, PermissionType.MANAGE);
 
     // Then
     assertThat(result).isTrue();
@@ -165,17 +150,13 @@ class PermissionServiceTest {
   @Test
   void hasPermission_WithCurrentUser_ShouldReturnTrue() {
     // Given
-    Authentication authentication =
-        new UsernamePasswordAuthenticationToken(
-            "testuser",
-            "password",
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
+    Authentication authentication = new UsernamePasswordAuthenticationToken("testuser", "password",
+        Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
     SecurityContextHolder.setContext(securityContext);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.READ))
-        .thenReturn(true);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.READ)).thenReturn(true);
 
     // When
     boolean result = permissionService.hasPermission(ResourceType.BUG, PermissionType.READ);
@@ -188,17 +169,13 @@ class PermissionServiceTest {
   @Test
   void requirePermission_WithPermission_ShouldNotThrowException() {
     // Given
-    Authentication authentication =
-        new UsernamePasswordAuthenticationToken(
-            "testuser",
-            "password",
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
+    Authentication authentication = new UsernamePasswordAuthenticationToken("testuser", "password",
+        Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
     SecurityContextHolder.setContext(securityContext);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.READ))
-        .thenReturn(true);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.READ)).thenReturn(true);
 
     // When/Then - should not throw
     permissionService.requirePermission(ResourceType.BUG, PermissionType.READ);
@@ -209,23 +186,17 @@ class PermissionServiceTest {
   @Test
   void requirePermission_WithoutPermission_ShouldThrowAccessDeniedException() {
     // Given
-    Authentication authentication =
-        new UsernamePasswordAuthenticationToken(
-            "testuser",
-            "password",
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
+    Authentication authentication = new UsernamePasswordAuthenticationToken("testuser", "password",
+        Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
     SecurityContextHolder.setContext(securityContext);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.USER, PermissionType.DELETE))
-        .thenReturn(false);
+    when(permissionRepository.existsByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.USER,
+        PermissionType.DELETE)).thenReturn(false);
 
     // When/Then
-    assertThatThrownBy(
-            () -> permissionService.requirePermission(ResourceType.USER, PermissionType.DELETE))
-        .isInstanceOf(AccessDeniedException.class)
-        .hasMessageContaining("Access denied");
+    assertThatThrownBy(() -> permissionService.requirePermission(ResourceType.USER, PermissionType.DELETE))
+        .isInstanceOf(AccessDeniedException.class).hasMessageContaining("Access denied");
 
     SecurityContextHolder.clearContext();
   }
@@ -261,11 +232,8 @@ class PermissionServiceTest {
   @Test
   void getCurrentUserPermissions_WithAuthenticatedUser_ShouldReturnPermissions() {
     // Given
-    Authentication authentication =
-        new UsernamePasswordAuthenticationToken(
-            "testuser",
-            "password",
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
+    Authentication authentication = new UsernamePasswordAuthenticationToken("testuser", "password",
+        Collections.singletonList(new SimpleGrantedAuthority("ROLE_DEVELOPER")));
     SecurityContextHolder.setContext(securityContext);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
@@ -284,21 +252,17 @@ class PermissionServiceTest {
   @Test
   void createPermission_WhenNew_ShouldCreatePermission() {
     // Given
-    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.REPORT, PermissionType.CREATE))
-        .thenReturn(Optional.empty());
-    when(permissionRepository.save(any(Permission.class)))
-        .thenAnswer(
-            invocation -> {
-              Permission p = invocation.getArgument(0);
-              p.setId(2L);
-              return p;
-            });
+    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.REPORT,
+        PermissionType.CREATE)).thenReturn(Optional.empty());
+    when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> {
+      Permission p = invocation.getArgument(0);
+      p.setId(2L);
+      return p;
+    });
 
     // When
-    Permission result =
-        permissionService.createPermission(
-            UserRole.MEMBER, ResourceType.REPORT, PermissionType.CREATE, "QA can create reports");
+    Permission result = permissionService.createPermission(UserRole.MEMBER, ResourceType.REPORT,
+        PermissionType.CREATE, "QA can create reports");
 
     // Then
     assertThat(result).isNotNull();
@@ -312,16 +276,12 @@ class PermissionServiceTest {
   @Test
   void createPermission_WhenExists_ShouldThrowException() {
     // Given
-    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE))
-        .thenReturn(Optional.of(testPermission));
+    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE)).thenReturn(Optional.of(testPermission));
 
     // When/Then
-    assertThatThrownBy(
-            () ->
-                permissionService.createPermission(
-                    UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE, "Already exists"))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> permissionService.createPermission(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE, "Already exists")).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("already exists");
 
     verify(permissionRepository, never()).save(any());
@@ -359,8 +319,7 @@ class PermissionServiceTest {
   void updatePermission_WithValidId_ShouldUpdateDescription() {
     // Given
     when(permissionRepository.findById(1L)).thenReturn(Optional.of(testPermission));
-    when(permissionRepository.save(any(Permission.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     // When
     Permission result = permissionService.updatePermission(1L, "Updated description");
@@ -379,8 +338,7 @@ class PermissionServiceTest {
 
     // When/Then
     assertThatThrownBy(() -> permissionService.updatePermission(99L, "New description"))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Permission not found");
+        .isInstanceOf(RuntimeException.class).hasMessageContaining("Permission not found");
 
     verify(permissionRepository).findById(99L);
     verify(permissionRepository, never()).save(any());
@@ -389,16 +347,12 @@ class PermissionServiceTest {
   @Test
   void createPermission_WhenAlreadyExists_ShouldThrowException() {
     // Given
-    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE))
-        .thenReturn(Optional.of(testPermission));
+    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE)).thenReturn(Optional.of(testPermission));
 
     // When/Then
-    assertThatThrownBy(
-            () ->
-                permissionService.createPermission(
-                    UserRole.MEMBER, ResourceType.BUG, PermissionType.CREATE, "Duplicate"))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> permissionService.createPermission(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.CREATE, "Duplicate")).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("already exists");
 
     verify(permissionRepository, never()).save(any());
@@ -410,8 +364,7 @@ class PermissionServiceTest {
     when(permissionRepository.existsById(99L)).thenReturn(false);
 
     // When/Then
-    assertThatThrownBy(() -> permissionService.deletePermission(99L))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> permissionService.deletePermission(99L)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Permission not found");
 
     verify(permissionRepository).existsById(99L);
@@ -421,26 +374,21 @@ class PermissionServiceTest {
   @Test
   void createBulkPermissions_ShouldCreateMultiple() {
     // Given
-    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.READ))
-        .thenReturn(Optional.empty());
-    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(
-            UserRole.MEMBER, ResourceType.BUG, PermissionType.UPDATE))
-        .thenReturn(Optional.empty());
-    when(permissionRepository.save(any(Permission.class)))
-        .thenAnswer(
-            invocation -> {
-              Permission p = invocation.getArgument(0);
-              p.setId(1L);
-              return p;
-            });
+    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.READ)).thenReturn(Optional.empty());
+    when(permissionRepository.findByRoleAndResourceTypeAndPermissionType(UserRole.MEMBER, ResourceType.BUG,
+        PermissionType.UPDATE)).thenReturn(Optional.empty());
+    when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> {
+      Permission p = invocation.getArgument(0);
+      p.setId(1L);
+      return p;
+    });
 
-    List<PermissionService.PermissionRequest> requests =
-        List.of(
-            new PermissionService.PermissionRequest(
-                UserRole.MEMBER, ResourceType.BUG, PermissionType.READ, "QA read bugs"),
-            new PermissionService.PermissionRequest(
-                UserRole.MEMBER, ResourceType.BUG, PermissionType.UPDATE, "QA update bugs"));
+    List<PermissionService.PermissionRequest> requests = List.of(
+        new PermissionService.PermissionRequest(UserRole.MEMBER, ResourceType.BUG, PermissionType.READ,
+            "QA read bugs"),
+        new PermissionService.PermissionRequest(UserRole.MEMBER, ResourceType.BUG, PermissionType.UPDATE,
+            "QA update bugs"));
 
     // When
     List<Permission> result = permissionService.createBulkPermissions(requests);

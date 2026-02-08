@@ -27,11 +27,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class HillChartServiceTest {
 
-  @Mock private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-  @Mock private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-  @InjectMocks private HillChartService hillChartService;
+  @InjectMocks
+  private HillChartService hillChartService;
 
   private Pitch testPitch;
   private HillChartPoint testPoint;
@@ -101,8 +104,7 @@ class HillChartServiceTest {
   @Test
   void getHillChartPointsByPitch_ShouldReturnPointsForPitch() {
     // Arrange
-    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L))
-        .thenReturn(Arrays.asList(testPoint));
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(Arrays.asList(testPoint));
 
     // Act
     List<HillChartPointDTO> result = hillChartService.getHillChartPointsByPitch(1L);
@@ -117,13 +119,8 @@ class HillChartServiceTest {
   @Test
   void createHillChartPoint_ShouldSavePoint() {
     // Arrange
-    CreateHillChartPointRequest request =
-        CreateHillChartPointRequest.builder()
-            .pitchId(1L)
-            .scope("Feature B")
-            .description("New feature")
-            .position(50)
-            .build();
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(1L).scope("Feature B")
+        .description("New feature").position(50).build();
 
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
@@ -140,13 +137,8 @@ class HillChartServiceTest {
   @Test
   void createHillChartPoint_WhenPitchNotExists_ShouldThrowException() {
     // Arrange
-    CreateHillChartPointRequest request =
-        CreateHillChartPointRequest.builder()
-            .pitchId(999L)
-            .scope("Feature B")
-            .description("New feature")
-            .position(50)
-            .build();
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(999L).scope("Feature B")
+        .description("New feature").position(50).build();
 
     when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -157,8 +149,7 @@ class HillChartServiceTest {
   @Test
   void updateHillChartPoint_WhenExists_ShouldUpdatePoint() {
     // Arrange
-    UpdateHillChartPointRequest request =
-        UpdateHillChartPointRequest.builder().position(75).build();
+    UpdateHillChartPointRequest request = UpdateHillChartPointRequest.builder().position(75).build();
 
     when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
     when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);

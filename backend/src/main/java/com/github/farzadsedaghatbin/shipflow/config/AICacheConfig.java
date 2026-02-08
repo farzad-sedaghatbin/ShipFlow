@@ -8,18 +8,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for AI response caching with feature flags. Allows fine-grained control over
- * caching behavior for different AI features.
+ * Configuration for AI response caching with feature flags. Allows fine-grained
+ * control over caching behavior for different AI features.
  *
- * <p>Supports two cache providers: - in-memory: Simple ConcurrentHashMap, data lost on restart
- * (good for dev) - redis: Persistent cache across restarts (recommended for production)
+ * <p>
+ * Supports two cache providers: - in-memory: Simple ConcurrentHashMap, data
+ * lost on restart (good for dev) - redis: Persistent cache across restarts
+ * (recommended for production)
  */
 @Configuration
 @ConfigurationProperties(prefix = "app.ai.cache")
-@ConditionalOnProperty(
-    name = "app.ai.risk-analysis.enabled",
-    havingValue = "true",
-    matchIfMissing = false)
+@ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 @Getter
 @Setter
 @Slf4j
@@ -56,14 +55,15 @@ public class AICacheConfig {
     private boolean enabled = true;
 
     /**
-     * Cache TTL in minutes for pitch risk analysis. 0 = infinite (until data changes or server
-     * restart) Since we have automatic invalidation on data changes, 0 is recommended.
+     * Cache TTL in minutes for pitch risk analysis. 0 = infinite (until data
+     * changes or server restart) Since we have automatic invalidation on data
+     * changes, 0 is recommended.
      */
     private int pitchTtlMinutes = 0;
 
     /**
-     * Cache TTL in minutes for cycle risk overview. 0 = infinite (until data changes or server
-     * restart)
+     * Cache TTL in minutes for cycle risk overview. 0 = infinite (until data
+     * changes or server restart)
      */
     private int cycleTtlMinutes = 0;
 
@@ -78,14 +78,14 @@ public class AICacheConfig {
     private boolean enabled = true;
 
     /**
-     * Cache TTL in hours for Q&A responses. 0 = infinite, >0 = hours For Q&A, some TTL is
-     * recommended (2-3 hours) as knowledge base may be updated.
+     * Cache TTL in hours for Q&A responses. 0 = infinite, >0 = hours For Q&A, some
+     * TTL is recommended (2-3 hours) as knowledge base may be updated.
      */
     private int ttlHours = 3;
 
     /**
-     * Similarity threshold (0.0-1.0) for matching similar questions Higher values require more
-     * exact matches
+     * Similarity threshold (0.0-1.0) for matching similar questions Higher values
+     * require more exact matches
      */
     private double similarityThreshold = 0.85;
 
@@ -103,11 +103,9 @@ public class AICacheConfig {
     }
     log.info("  Risk Analysis Cache:");
     log.info("    - Enabled: {}", risk.enabled);
-    log.info(
-        "    - Pitch TTL: {} (0=infinite)",
+    log.info("    - Pitch TTL: {} (0=infinite)",
         risk.pitchTtlMinutes == 0 ? "infinite" : risk.pitchTtlMinutes + " minutes");
-    log.info(
-        "    - Cycle TTL: {} (0=infinite)",
+    log.info("    - Cycle TTL: {} (0=infinite)",
         risk.cycleTtlMinutes == 0 ? "infinite" : risk.cycleTtlMinutes + " minutes");
     log.info("    - Invalidate on data change: {}", risk.invalidateOnDataChange);
     log.info("  Q&A Cache:");

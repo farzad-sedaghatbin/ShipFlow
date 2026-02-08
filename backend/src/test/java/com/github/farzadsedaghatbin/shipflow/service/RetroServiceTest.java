@@ -33,23 +33,32 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ExtendWith(MockitoExtension.class)
 class RetroServiceTest {
 
-  @Mock private RetroRepository retroRepository;
+  @Mock
+  private RetroRepository retroRepository;
 
-  @Mock private RetroItemRepository retroItemRepository;
+  @Mock
+  private RetroItemRepository retroItemRepository;
 
-  @Mock private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-  @Mock private ProjectRepository projectRepository;
+  @Mock
+  private ProjectRepository projectRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private RetroItemVoteRepository retroItemVoteRepository;
+  @Mock
+  private RetroItemVoteRepository retroItemVoteRepository;
 
-  @Mock private MessageService messageService;
+  @Mock
+  private MessageService messageService;
 
-  @Mock private LocalizationService localizationService;
+  @Mock
+  private LocalizationService localizationService;
 
-  @InjectMocks private RetroService retroService;
+  @InjectMocks
+  private RetroService retroService;
 
   private Project testProject;
   private Cycle testCycle;
@@ -59,109 +68,73 @@ class RetroServiceTest {
 
   @BeforeEach
   void setUp() {
-    lenient()
-        .when(messageService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("retro.feature.disabled"))
-                return "Retrospectives feature is disabled";
-              return key;
-            });
-    lenient()
-        .when(messageService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("retro.feature.disabled"))
-                return "Retrospectives feature is disabled";
-              return key;
-            });
+    lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("retro.feature.disabled"))
+        return "Retrospectives feature is disabled";
+      return key;
+    });
+    lenient().when(messageService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("retro.feature.disabled"))
+        return "Retrospectives feature is disabled";
+      return key;
+    });
 
-    lenient()
-        .when(localizationService.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("retro.closed")) return "Retrospective is closed";
-              if (key.contains("retro.not.found")) return "Retrospective not found";
-              if (key.contains("retro.item.not.found")) return "Retrospective item not found";
-              if (key.contains("retro.cannot.update.closed"))
-                return "Cannot update a closed retrospective";
-              if (key.contains("retro.cannot.open.closed"))
-                return "Cannot open a closed retrospective";
-              if (key.contains("retro.cannot.add.items.closed"))
-                return "Cannot add items to a closed retrospective";
-              if (key.contains("retro.cannot.update.items.closed"))
-                return "Cannot update items in a closed retrospective";
-              if (key.contains("retro.cannot.delete.items.closed"))
-                return "Cannot delete items from a closed retrospective";
-              return key;
-            });
-    lenient()
-        .when(localizationService.getMessage(anyString()))
-        .thenAnswer(
-            i -> {
-              String key = i.getArgument(0);
-              if (key.contains("retro.closed")) return "Retrospective is closed";
-              if (key.contains("retro.not.found")) return "Retrospective not found";
-              if (key.contains("retro.item.not.found")) return "Retrospective item not found";
-              if (key.contains("retro.cannot.update.closed"))
-                return "Cannot update a closed retrospective";
-              if (key.contains("retro.cannot.open.closed"))
-                return "Cannot open a closed retrospective";
-              if (key.contains("retro.cannot.add.items.closed"))
-                return "Cannot add items to a closed retrospective";
-              if (key.contains("retro.cannot.update.items.closed"))
-                return "Cannot update items in a closed retrospective";
-              if (key.contains("retro.cannot.delete.items.closed"))
-                return "Cannot delete items from a closed retrospective";
-              return key;
-            });
+    lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("retro.closed"))
+        return "Retrospective is closed";
+      if (key.contains("retro.not.found"))
+        return "Retrospective not found";
+      if (key.contains("retro.item.not.found"))
+        return "Retrospective item not found";
+      if (key.contains("retro.cannot.update.closed"))
+        return "Cannot update a closed retrospective";
+      if (key.contains("retro.cannot.open.closed"))
+        return "Cannot open a closed retrospective";
+      if (key.contains("retro.cannot.add.items.closed"))
+        return "Cannot add items to a closed retrospective";
+      if (key.contains("retro.cannot.update.items.closed"))
+        return "Cannot update items in a closed retrospective";
+      if (key.contains("retro.cannot.delete.items.closed"))
+        return "Cannot delete items from a closed retrospective";
+      return key;
+    });
+    lenient().when(localizationService.getMessage(anyString())).thenAnswer(i -> {
+      String key = i.getArgument(0);
+      if (key.contains("retro.closed"))
+        return "Retrospective is closed";
+      if (key.contains("retro.not.found"))
+        return "Retrospective not found";
+      if (key.contains("retro.item.not.found"))
+        return "Retrospective item not found";
+      if (key.contains("retro.cannot.update.closed"))
+        return "Cannot update a closed retrospective";
+      if (key.contains("retro.cannot.open.closed"))
+        return "Cannot open a closed retrospective";
+      if (key.contains("retro.cannot.add.items.closed"))
+        return "Cannot add items to a closed retrospective";
+      if (key.contains("retro.cannot.update.items.closed"))
+        return "Cannot update items in a closed retrospective";
+      if (key.contains("retro.cannot.delete.items.closed"))
+        return "Cannot delete items from a closed retrospective";
+      return key;
+    });
 
-    testProject =
-        Project.builder()
-            .id(1L)
-            .name("Test Project")
-            .projectKey("TST")
-            .isActive(true)
-            .enableRetrospectives(true)
-            .build();
+    testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true)
+        .enableRetrospectives(true).build();
 
-    testCycle =
-        Cycle.builder()
-            .id(1L)
-            .name("Test Cycle")
-            .project(testProject)
-            .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusWeeks(6))
-            .phase(CyclePhase.BUILD)
-            .isActive(true)
-            .build();
+    testCycle = Cycle.builder().id(1L).name("Test Cycle").project(testProject).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
 
     testUser = User.builder().id(1L).username("testuser").build();
 
-    testRetro =
-        Retrospective.builder()
-            .id(1L)
-            .title("Test Retro")
-            .notes("Test notes")
-            .status(RetroStatus.DRAFT)
-            .cycle(testCycle)
-            .project(testProject)
-            .createdBy(testUser)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testRetro = Retrospective.builder().id(1L).title("Test Retro").notes("Test notes").status(RetroStatus.DRAFT)
+        .cycle(testCycle).project(testProject).createdBy(testUser).createdAt(LocalDateTime.now()).build();
 
-    testItem =
-        RetroItem.builder()
-            .id(1L)
-            .content("Test item")
-            .columnType(RetroColumnType.WENT_WELL)
-            .retrospective(testRetro)
-            .author(testUser)
-            .createdAt(LocalDateTime.now())
-            .build();
+    testItem = RetroItem.builder().id(1L).content("Test item").columnType(RetroColumnType.WENT_WELL)
+        .retrospective(testRetro).author(testUser).createdAt(LocalDateTime.now()).build();
 
     // Mock SecurityContext
     SecurityContext securityContext = mock(SecurityContext.class);
@@ -202,8 +175,7 @@ class RetroServiceTest {
       testProject.setEnableRetrospectives(false);
       when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
-      assertThatThrownBy(() -> retroService.getAllRetrosByProject(1L))
-          .isInstanceOf(IllegalStateException.class)
+      assertThatThrownBy(() -> retroService.getAllRetrosByProject(1L)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Retrospectives feature is disabled");
     }
   }
@@ -221,13 +193,8 @@ class RetroServiceTest {
       when(retroRepository.save(any(Retrospective.class))).thenReturn(testRetro);
       when(retroItemRepository.countByRetrospectiveId(1L)).thenReturn(0L);
 
-      CreateRetroRequest request =
-          CreateRetroRequest.builder()
-              .title("Test Retro")
-              .notes("Notes")
-              .cycleId(1L)
-              .projectId(1L)
-              .build();
+      CreateRetroRequest request = CreateRetroRequest.builder().title("Test Retro").notes("Notes").cycleId(1L)
+          .projectId(1L).build();
 
       RetroDTO result = retroService.createRetro(request);
 
@@ -244,12 +211,8 @@ class RetroServiceTest {
       when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
       when(retroItemRepository.save(any(RetroItem.class))).thenReturn(testItem);
 
-      CreateRetroItemRequest request =
-          CreateRetroItemRequest.builder()
-              .content("Test item")
-              .columnType(RetroColumnType.WENT_WELL)
-              .retrospectiveId(1L)
-              .build();
+      CreateRetroItemRequest request = CreateRetroItemRequest.builder().content("Test item")
+          .columnType(RetroColumnType.WENT_WELL).retrospectiveId(1L).build();
 
       RetroItemDTO result = retroService.createRetroItem(request);
 
@@ -264,12 +227,10 @@ class RetroServiceTest {
       testRetro.setStatus(RetroStatus.OPEN);
       when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
-      when(retroRepository.save(any(Retrospective.class)))
-          .thenAnswer(
-              invocation -> {
-                Retrospective saved = invocation.getArgument(0);
-                return saved;
-              });
+      when(retroRepository.save(any(Retrospective.class))).thenAnswer(invocation -> {
+        Retrospective saved = invocation.getArgument(0);
+        return saved;
+      });
       when(retroItemRepository.countByRetrospectiveId(1L)).thenReturn(3L);
 
       RetroDTO result = retroService.closeRetro(1L);
@@ -285,15 +246,10 @@ class RetroServiceTest {
       testRetro.setStatus(RetroStatus.CLOSED);
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
 
-      CreateRetroItemRequest request =
-          CreateRetroItemRequest.builder()
-              .content("New item")
-              .columnType(RetroColumnType.TRY_NEXT)
-              .retrospectiveId(1L)
-              .build();
+      CreateRetroItemRequest request = CreateRetroItemRequest.builder().content("New item")
+          .columnType(RetroColumnType.TRY_NEXT).retrospectiveId(1L).build();
 
-      assertThatThrownBy(() -> retroService.createRetroItem(request))
-          .isInstanceOf(IllegalStateException.class)
+      assertThatThrownBy(() -> retroService.createRetroItem(request)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Cannot add items to a closed retrospective");
     }
 
@@ -389,8 +345,7 @@ class RetroServiceTest {
     void getNonExistentRetroThrows() {
       when(retroRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> retroService.getRetroById(999L))
-          .isInstanceOf(ResourceNotFoundException.class)
+      assertThatThrownBy(() -> retroService.getRetroById(999L)).isInstanceOf(ResourceNotFoundException.class)
           .hasMessageContaining("Retrospective not found");
     }
 
@@ -399,8 +354,7 @@ class RetroServiceTest {
     void deleteNonExistentRetroThrows() {
       when(retroRepository.existsById(999L)).thenReturn(false);
 
-      assertThatThrownBy(() -> retroService.deleteRetro(999L))
-          .isInstanceOf(ResourceNotFoundException.class)
+      assertThatThrownBy(() -> retroService.deleteRetro(999L)).isInstanceOf(ResourceNotFoundException.class)
           .hasMessageContaining("Retrospective not found");
     }
 
@@ -413,8 +367,7 @@ class RetroServiceTest {
 
       UpdateRetroRequest request = UpdateRetroRequest.builder().title("Updated title").build();
 
-      assertThatThrownBy(() -> retroService.updateRetro(1L, request))
-          .isInstanceOf(IllegalStateException.class)
+      assertThatThrownBy(() -> retroService.updateRetro(1L, request)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Cannot update a closed retrospective");
     }
 
@@ -425,8 +378,7 @@ class RetroServiceTest {
       when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
 
-      assertThatThrownBy(() -> retroService.openRetro(1L))
-          .isInstanceOf(IllegalStateException.class)
+      assertThatThrownBy(() -> retroService.openRetro(1L)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Cannot open a closed retrospective");
     }
   }
@@ -440,8 +392,7 @@ class RetroServiceTest {
     void getItemsByRetroReturnsAllItems() {
       when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
-      when(retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(1L))
-          .thenReturn(Arrays.asList(testItem));
+      when(retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(1L)).thenReturn(Arrays.asList(testItem));
 
       List<RetroItemDTO> items = retroService.getItemsByRetro(1L);
 
@@ -493,8 +444,7 @@ class RetroServiceTest {
       testRetro.setStatus(RetroStatus.CLOSED);
       when(retroItemRepository.findById(1L)).thenReturn(Optional.of(testItem));
 
-      assertThatThrownBy(() -> retroService.deleteRetroItem(1L))
-          .isInstanceOf(IllegalStateException.class)
+      assertThatThrownBy(() -> retroService.deleteRetroItem(1L)).isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("Cannot delete items from a closed retrospective");
     }
   }

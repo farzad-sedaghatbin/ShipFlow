@@ -54,6 +54,19 @@ export interface ReactionInfo {
   emoji: string;
 }
 
+/**
+ * User info for @mention suggestions and profile popover
+ */
+export interface MentionUser {
+  id: number;
+  username: string;
+  displayName: string;
+  email?: string;
+  avatarUrl?: string;
+  department?: string;
+  skills?: string;
+}
+
 // Emoji mapping for reactions
 export const REACTION_EMOJIS: Record<CommentReaction, string> = {
   THUMBS_UP: '👍',
@@ -131,6 +144,18 @@ export const commentService = {
    */
   getAvailableReactions: () =>
     api.get<ReactionInfo[]>('/comments/reactions/available'),
+
+  /**
+   * Search users for @mention autocomplete
+   */
+  searchUsersForMention: (query: string) =>
+    api.get<MentionUser[]>('/comments/users/search', { params: { query } }),
+
+  /**
+   * Get user by display name for @mention profile lookup
+   */
+  getUserByDisplayName: (name: string) =>
+    api.get<MentionUser>('/comments/users/by-name', { params: { name } }),
 };
 
 export default commentService;
