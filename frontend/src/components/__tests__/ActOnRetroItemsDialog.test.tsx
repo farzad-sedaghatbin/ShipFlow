@@ -89,7 +89,7 @@ describe('ActOnRetroItemsDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(cycleService.getByProject).mockResolvedValue(mockCycles as any);
+    vi.mocked(cycleService.getByProject).mockResolvedValue({ data: mockCycles } as any);
   });
 
   it('should render dialog with action type selection', async () => {

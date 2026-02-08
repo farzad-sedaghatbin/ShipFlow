@@ -193,9 +193,9 @@ export default function WorkLogsPage() {
       }
       
       setWorkLogs(logs);
-      notifyProjectSwitchComplete();
     } catch (error) {
       console.error('Failed to load work logs:', error);
+    } finally {
       notifyProjectSwitchComplete();
     }
   };

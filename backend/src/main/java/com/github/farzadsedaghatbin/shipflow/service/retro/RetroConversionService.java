@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
@@ -170,7 +171,8 @@ public class RetroConversionService {
               "Target cycle not found with id: " + targetCycleId));
     } else {
       // Find next upcoming cycle in the same project
-      return cycleRepository.findNextUpcomingCycle(retro.getProject().getId())
+      return cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(
+          retro.getProject().getId(), LocalDate.now())
           .orElseThrow(() -> new ResourceNotFoundException(
               localizationService.getMessageWithDefault(
                   "retro.convert.no.target.cycle",

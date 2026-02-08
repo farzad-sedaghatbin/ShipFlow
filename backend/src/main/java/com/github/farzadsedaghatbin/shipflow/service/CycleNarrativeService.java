@@ -216,7 +216,7 @@ public class CycleNarrativeService {
   /**
    * Export cycle summary as Markdown.
    */
-  @Transactional
+  @Transactional(readOnly = true)
   public String exportAsMarkdown(Long cycleId) {
     CycleSummaryDTO summary = getCycleSummary(cycleId);
     StringBuilder md = new StringBuilder();

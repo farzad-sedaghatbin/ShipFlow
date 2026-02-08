@@ -19,6 +19,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -135,7 +136,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -160,7 +161,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -223,7 +224,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -322,7 +323,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).cycleId(2L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -355,7 +356,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -387,7 +388,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).title("Custom Title").build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -414,7 +415,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);
@@ -441,7 +442,7 @@ class RetroConversionServiceTest {
       PitchDTO expectedDto = PitchDTO.builder().id(10L).build();
 
       when(retroCrudService.getRetroEntityWithItems(1L)).thenReturn(testRetro);
-      when(cycleRepository.findNextUpcomingCycle(testProject.getId()))
+      when(cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(testProject.getId(), any(LocalDate.class)))
           .thenReturn(Optional.of(nextCycle));
       when(pitchRepository.save(any())).thenReturn(savedPitch);
       when(retroMapper.toPitchDTO(savedPitch)).thenReturn(expectedDto);

@@ -145,11 +145,18 @@ class WidgetDataService {
         // Get current user info from auth context (stored in localStorage)
         const userStr = localStorage.getItem('user');
         if (userStr) {
-          const user = JSON.parse(userStr);
-          // Filter to tasks assigned to current user
-          filteredTasks = tasks.filter((task: any) => 
-            task.assigneeId === user.id || task.createdById === user.id
-          );
+          let user: any;
+          try {
+            user = JSON.parse(userStr);
+          } catch (e) {
+            console.warn('Invalid user data in localStorage, skipping user context filter', e);
+          }
+          if (user && user.id !== undefined && user.id !== null) {
+            // Filter to tasks assigned to or created by current user
+            filteredTasks = tasks.filter((task: any) => 
+              task.assigneeId === user.id || task.createdById === user.id
+            );
+          }
         }
       }
       
@@ -206,11 +213,18 @@ class WidgetDataService {
         // Get current user info from auth context (stored in localStorage)
         const userStr = localStorage.getItem('user');
         if (userStr) {
-          const user = JSON.parse(userStr);
-          // Filter to bug reports assigned to or reported by current user
-          filteredBugs = bugReports.filter((bug: any) => 
-            bug.assigneeId === user.id || bug.reportedById === user.id
-          );
+          let user: any;
+          try {
+            user = JSON.parse(userStr);
+          } catch (e) {
+            console.warn('Invalid user data in localStorage, skipping user context filter', e);
+          }
+          if (user && user.id !== undefined && user.id !== null) {
+            // Filter to bug reports assigned to or reported by current user
+            filteredBugs = bugReports.filter((bug: any) => 
+              bug.assigneeId === user.id || bug.reportedById === user.id
+            );
+          }
         }
       }
       
@@ -300,11 +314,18 @@ class WidgetDataService {
       if (userContextFilter) {
         const userStr = localStorage.getItem('user');
         if (userStr) {
-          const user = JSON.parse(userStr);
-          // Filter to teams where user is assigned
-          teams = teams.filter((team: any) => 
-            team.assignments?.some((assignment: any) => assignment.userId === user.id)
-          );
+          let user: any;
+          try {
+            user = JSON.parse(userStr);
+          } catch (e) {
+            console.warn('Invalid user data in localStorage, skipping user context filter', e);
+          }
+          if (user && user.id !== undefined && user.id !== null) {
+            // Filter to teams where user is assigned
+            teams = teams.filter((team: any) => 
+              team.assignments?.some((assignment: any) => assignment.userId === user.id)
+            );
+          }
         }
       }
       

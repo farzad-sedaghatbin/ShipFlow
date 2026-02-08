@@ -56,16 +56,12 @@ export function useBreakpoint(): Breakpoint {
       setBreakpoint(current => current !== newBreakpoint ? newBreakpoint : current);
     };
 
-    // Use ResizeObserver for better performance if available
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(handleResize);
-      observer.observe(document.body);
-      return () => observer.disconnect();
-    }
-    
-    // Fallback to window resize event
+    // Listen to window resize events, since breakpoint is based on viewport width
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   return breakpoint;

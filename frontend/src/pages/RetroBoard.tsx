@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -90,6 +90,11 @@ export default function RetroBoard() {
   const { hasPermissionSync } = usePermission();
   const canManageRetro = hasPermissionSync('RETROSPECTIVE', 'MANAGE');
   const isReadOnly = retro?.status === 'CLOSED';
+
+  // Memoize actionable items to avoid repeated filtering
+  const actionableItems = useMemo(() => {
+    return items.filter(i => (i.columnType === 'TRY_NEXT' || i.columnType === 'ACTIONS') && !i.mergedIntoId);
+  }, [items]);
 
   const getColumnTitle = (type: RetroColumnType) => {
     const map: Record<RetroColumnType, string> = {
@@ -326,7 +331,7 @@ export default function RetroBoard() {
                 {t('retroBoardPage.closeRetro')}
               </Button>
             )}
-            {retro.status === 'CLOSED' && items.filter(i => (i.columnType === 'TRY_NEXT' || i.columnType === 'ACTIONS') && !i.mergedIntoId).length > 0 && (
+            {retro.status === 'CLOSED' && actionableItems.length > 0 && (
               <Button variant="default" onClick={() => setActOnItemsDialog(true)}>
                 <Rocket className="mr-2 h-4 w-4" />
                 {t('retroBoardPage.actOnItems', 'Act on Items')}
