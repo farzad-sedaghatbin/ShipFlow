@@ -189,23 +189,38 @@ export default function CooldownActivityDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={CooldownActivityType.TECH_DEBT}>
+                    {t('cooldownActivity.types.techDebt')}
+                  </SelectItem>
                   <SelectItem value={CooldownActivityType.BUG_FIX}>
                     {t('cooldownActivity.types.bugFix')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.TECH_DEBT}>
-                    {t('cooldownActivity.types.techDebt')}
+                  <SelectItem value={CooldownActivityType.REFACTORING}>
+                    {t('cooldownActivity.types.refactoring')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.KICKOFF_PREP}>
+                    {t('cooldownActivity.types.kickoffPrep')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.LEARNING}>
+                    {t('cooldownActivity.types.learning')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.QA}>
+                    {t('cooldownActivity.types.qa')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.DOCUMENTATION}>
+                    {t('cooldownActivity.types.documentation')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.INFRASTRUCTURE}>
+                    {t('cooldownActivity.types.infrastructure')}
                   </SelectItem>
                   <SelectItem value={CooldownActivityType.RESEARCH}>
                     {t('cooldownActivity.types.research')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.EXPERIMENT}>
-                    {t('cooldownActivity.types.experiment')}
+                  <SelectItem value={CooldownActivityType.PLANNING}>
+                    {t('cooldownActivity.types.planning')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.TRAINING}>
-                    {t('cooldownActivity.types.training')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.DOCUMENTATION}>
-                    {t('cooldownActivity.types.documentation')}
+                  <SelectItem value={CooldownActivityType.OTHER}>
+                    {t('cooldownActivity.types.other')}
                   </SelectItem>
                 </SelectContent>
               </Select>

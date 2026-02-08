@@ -13,6 +13,7 @@ import { useProject, useToast } from '../contexts';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
+import { TeamsSkeleton } from '../components/Skeletons';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -56,7 +57,7 @@ const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'QA', 'DESIGNER', 'FULLS
 
 export default function Teams() {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { showToast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -122,6 +123,7 @@ export default function Teams() {
       console.error(t('teams.loadFailed'), error);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -284,12 +286,8 @@ export default function Teams() {
       }
     });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <TeamsSkeleton />;
   }
 
   return (

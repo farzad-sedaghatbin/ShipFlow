@@ -161,7 +161,7 @@ export default function WorkLogForm() {
               value={selectedCycle ? String(selectedCycle) : ''}
               onValueChange={(value) => setSelectedCycle(Number(value))}
             >
-              <SelectTrigger id="cycle-select" className="w-[300px]">
+              <SelectTrigger id="cycle-select" className="w-full sm:w-[300px]">
                 <SelectValue placeholder={t('workLogForm.selectCycle')} />
               </SelectTrigger>
               <SelectContent>

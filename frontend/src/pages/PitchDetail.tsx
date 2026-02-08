@@ -482,7 +482,7 @@ export default function PitchDetail() {
             value={pitch.status}
             onValueChange={(value) => handleStatusChange(value as PitchStatus)}
           >
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder={t('pitchDetailPage.status')} />
             </SelectTrigger>
             <SelectContent>

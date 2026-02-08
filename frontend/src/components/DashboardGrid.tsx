@@ -11,6 +11,21 @@ import { widgetDataService, WidgetData } from '../services/widgetDataService';
 import { Button } from './ui/button';
 import { Settings, Trash2, GripVertical } from 'lucide-react';
 
+// Responsive breakpoints for column count
+const GRID_BREAKPOINTS = {
+  lg: 1200,  // 12 columns
+  md: 996,   // 8 columns  
+  sm: 768,   // 4 columns
+  xs: 480,   // 2 columns
+} as const;
+
+const getColumnsForWidth = (width: number): number => {
+  if (width >= GRID_BREAKPOINTS.lg) return 12;
+  if (width >= GRID_BREAKPOINTS.md) return 8;
+  if (width >= GRID_BREAKPOINTS.sm) return 4;
+  return 2;
+};
+
 export interface DashboardGridProps {
   widgets: DashboardWidgetConfig[];
   editable?: boolean;
@@ -34,6 +49,9 @@ export default function DashboardGrid({
   const [layout, setLayout] = useState<Layout>([]);
   const [widgetDataMap, setWidgetDataMap] = useState<Map<number, WidgetData>>(new Map());
   const [loadingWidgets, setLoadingWidgets] = useState<Set<number>>(new Set());
+
+  // Calculate responsive column count based on container width
+  const cols = useMemo(() => getColumnsForWidth(containerWidth), [containerWidth]);
 
   // Update container width on mount and resize
   useEffect(() => {
@@ -66,17 +84,28 @@ export default function DashboardGrid({
 
   useEffect(() => {
     // Initialize layout from widget configurations
-    const initialLayout = widgets.map((widget, index) => ({
-      i: widget.id?.toString() || `widget-${index}`,
-      x: Number(widget.positionX) || 0,
-      y: Number(widget.positionY) || 0,
-      w: Number(widget.width) || 4,
-      h: Number(widget.height) || 2,
-      minW: 2,
-      minH: 1,
-    }));
+    // Scale widget widths based on responsive column count
+    const initialLayout = widgets.map((widget, index) => {
+      const baseWidth = Number(widget.width) || 4;
+      const baseX = Number(widget.positionX) || 0;
+      
+      // Scale width and position proportionally for smaller screens
+      const scaleFactor = cols / 12;
+      const scaledWidth = Math.max(Math.round(baseWidth * scaleFactor), 2);
+      const scaledX = Math.min(Math.round(baseX * scaleFactor), cols - scaledWidth);
+      
+      return {
+        i: widget.id?.toString() || `widget-${index}`,
+        x: scaledX,
+        y: Number(widget.positionY) || 0,
+        w: scaledWidth,
+        h: Number(widget.height) || 2,
+        minW: cols <= 4 ? 2 : 2, // Keep minW at 2 for small screens
+        minH: 1,
+      };
+    });
     setLayout(initialLayout);
-  }, [widgetIds]);
+  }, [widgetIds, cols]);
 
   useEffect(() => {
     // Load data for all widgets when widgets or user context filter changes
@@ -216,7 +245,7 @@ export default function DashboardGrid({
           width={containerWidth}
           gridConfig={{
             rowHeight: 100,
-            cols: 12
+            cols: cols
           }}
           dragConfig={{
             enabled: editable,

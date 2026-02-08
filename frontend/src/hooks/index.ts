@@ -5,6 +5,11 @@ export { useDebounce } from './useDebounce';
 
 export { useReducedMotion } from './useReducedMotion';
 
+export { useMediaQuery } from './useMediaQuery';
+
+export { useBreakpoint, useBreakpointHelpers, BREAKPOINTS } from './useBreakpoint';
+export type { Breakpoint } from './useBreakpoint';
+
 // React Query hooks
 export {
   // Project hooks

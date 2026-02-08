@@ -11,6 +11,8 @@ interface ProjectContextType {
   loading: boolean;
   error: string | null;
   isAllProjectsSelected: boolean;
+  /** Returns true when project is being switched (for loading indicators) */
+  isSwitchingProject: boolean;
   /** Returns true if current project uses Kanban methodology */
   isKanbanProject: boolean;
   /** Returns true if current project uses Shape Up methodology */
@@ -20,6 +22,8 @@ interface ProjectContextType {
   selectProject: (project: Project | null) => void;
   selectAllProjects: () => void;
   refreshProjects: () => Promise<void>;
+  /** Call when data has finished loading after project switch */
+  notifyProjectSwitchComplete: () => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -32,6 +36,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSwitchingProject, setIsSwitchingProject] = useState(false);
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -76,6 +81,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, [refreshProjects]);
 
   const selectProject = useCallback((project: Project | null) => {
+    setIsSwitchingProject(true);
     setCurrentProject(project);
     if (project) {
       localStorage.setItem(SELECTED_PROJECT_KEY, project.id.toString());
@@ -85,8 +91,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const selectAllProjects = useCallback(() => {
+    setIsSwitchingProject(true);
     setCurrentProject(null);
     localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
+  }, []);
+
+  const notifyProjectSwitchComplete = useCallback(() => {
+    setIsSwitchingProject(false);
   }, []);
 
   const isAllProjectsSelected = currentProject === null;
@@ -115,12 +126,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         isAllProjectsSelected,
+        isSwitchingProject,
         isKanbanProject,
         isShapeUpProject,
         currentProjectType,
         selectProject,
         selectAllProjects,
         refreshProjects,
+        notifyProjectSwitchComplete,
       }}
     >
       {children}

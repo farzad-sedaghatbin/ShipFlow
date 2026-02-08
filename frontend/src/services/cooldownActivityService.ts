@@ -1,12 +1,17 @@
 import api from './api';
 
 export enum CooldownActivityType {
-  BUG_FIX = 'BUG_FIX',
   TECH_DEBT = 'TECH_DEBT',
-  RESEARCH = 'RESEARCH',
-  EXPERIMENT = 'EXPERIMENT',
-  TRAINING = 'TRAINING',
+  BUG_FIX = 'BUG_FIX',
+  REFACTORING = 'REFACTORING',
+  KICKOFF_PREP = 'KICKOFF_PREP',
+  LEARNING = 'LEARNING',
+  QA = 'QA',
   DOCUMENTATION = 'DOCUMENTATION',
+  INFRASTRUCTURE = 'INFRASTRUCTURE',
+  RESEARCH = 'RESEARCH',
+  PLANNING = 'PLANNING',
+  OTHER = 'OTHER',
 }
 
 export enum CooldownActivityStatus {
@@ -58,9 +63,9 @@ export interface CooldownSummaryDTO {
   inProgressCount: number;
   completedCount: number;
   cancelledCount: number;
-  completionRate: number;
-  totalEstimatedHours: number;
-  totalActualHours: number;
+  completionPercentage?: number;
+  totalEstimatedHours?: number;
+  totalActualHours?: number;
   byType: {
     [key in CooldownActivityType]: number;
   };

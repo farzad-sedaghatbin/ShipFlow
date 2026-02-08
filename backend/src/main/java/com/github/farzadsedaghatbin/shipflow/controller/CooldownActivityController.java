@@ -18,7 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/cooldown-activities")
+@RequestMapping("/api/cooldown-activities")
 @RequiredArgsConstructor
 @Tag(name = "Cooldown Activities", description = "Manage cooldown phase activities")
 public class CooldownActivityController {

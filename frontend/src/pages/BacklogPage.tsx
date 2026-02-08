@@ -84,6 +84,7 @@ import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import KanbanBoard from '../components/KanbanBoard';
 import { useProject, useAuth } from '../contexts';
+import { BacklogSkeleton } from '../components/Skeletons';
 
 // View mode type
 type ViewMode = 'list' | 'kanban';
@@ -109,7 +110,7 @@ export default function BacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
-  const { isKanbanProject, currentProject } = useProject();
+  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { user } = useAuth();
   
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -260,6 +261,7 @@ export default function BacklogPage() {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -811,12 +813,8 @@ export default function BacklogPage() {
     ? (isKanbanProject ? t('backlogPage.categoryDescription.featureScope') : t('backlogPage.categoryDescription.pitchScope'))
     : t('backlogPage.categoryDescription.debtImprovement');
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <BacklogSkeleton />;
   }
 
   return (

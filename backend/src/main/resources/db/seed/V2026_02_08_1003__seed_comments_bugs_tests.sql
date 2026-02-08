@@ -154,7 +154,7 @@ VALUES
  'Should find the audit event with exact match',
  'Returns 0 results. Searching "User" alone works.',
  'Elasticsearch 8.10',
- 18, 6, 7, NULL, 'MINOR', 'RESOLVED', 'audit,search,elasticsearch',
+ 18, 6, 7, NULL, 'LOW', 'RESOLVED', 'audit,search,elasticsearch',
  6, 5, 'Added query string escaping for special Elasticsearch characters. Updated search analyzer settings.', 
  '2025-11-06 10:00:00', '2025-11-03 11:00:00', '2025-11-06 10:00:00'),
 
@@ -168,7 +168,7 @@ VALUES
  'Setting should remain disabled',
  'Setting shows as enabled again after refresh',
  'Chrome 120, Safari 17',
- 15, 6, 6, NULL, 'MINOR', 'IN_PROGRESS', 'notifications,settings,frontend',
+ 15, 6, 6, NULL, 'LOW', 'IN_PROGRESS', 'notifications,settings,frontend',
  3, 2, NULL, 
  NULL, '2025-11-12 09:00:00', '2025-11-12 09:00:00'),
 
@@ -180,7 +180,7 @@ VALUES
  'Widgets should stack vertically in single column for narrow viewports',
  'Widgets overlap and some content is cut off on the right side',
  'iPad Pro 11", iPadOS 17, Safari',
- 16, 6, 6, NULL, 'MINOR', 'OPEN', 'dashboard,mobile,responsive',
+ 16, 6, 6, NULL, 'LOW', 'OPEN', 'dashboard,mobile,responsive',
  4, 2, NULL, 
  NULL, '2025-11-15 14:00:00', '2025-11-15 14:00:00'),
 
@@ -192,7 +192,7 @@ VALUES
  'Message should say "Rate limit exceeded"',
  'Message says "Rate limit exceed"',
  'All environments',
- 17, 6, 7, NULL, 'MINOR', 'RESOLVED', 'rate-limiting,typo,ux',
+ 17, 6, 7, NULL, 'LOW', 'RESOLVED', 'rate-limiting,typo,ux',
  6, 3, 'Fixed typo in error message constant.', 
  '2025-10-21 09:00:00', '2025-10-21 08:00:00', '2025-10-21 09:00:00'),
 
@@ -204,7 +204,7 @@ VALUES
  'Timestamps should display in user''s local timezone',
  'Timestamps display in UTC regardless of user timezone setting',
  'All browsers',
- 18, 6, 7, NULL, 'MINOR', 'OPEN', 'audit,ux,timezone',
+ 18, 6, 7, NULL, 'LOW', 'OPEN', 'audit,ux,timezone',
  2, 5, NULL, 
  NULL, '2025-11-14 16:00:00', '2025-11-14 16:00:00'),
 
@@ -218,7 +218,7 @@ VALUES
  'Autocomplete should close immediately when search is submitted',
  'Autocomplete remains visible for 200-300ms after search',
  'Chrome, Firefox',
- 12, 5, 4, NULL, 'MINOR', 'IN_PROGRESS', 'search,frontend,ux',
+ 12, 5, 4, NULL, 'LOW', 'IN_PROGRESS', 'search,frontend,ux',
  2, 2, NULL, 
  NULL, '2026-01-11 10:00:00', '2026-01-11 10:00:00'),
 
@@ -267,7 +267,7 @@ VALUES
 2. Verify each email uses correct template
 3. Check branding and formatting consistency',
  'Each notification type uses correct template. Consistent branding. All dynamic content renders.',
- 15, 6, 6, 'FUNCTIONAL', 'MINOR', 'APPROVED', false, 'email,template,notification',
+ 15, 6, 6, 'FUNCTIONAL', 'LOW', 'APPROVED', false, 'email,template,notification',
  20, 6, NULL, '2025-10-10 10:30:00', '2025-11-08 15:30:00'),
 
 ('TC-003', 'Verify email preference toggles work correctly',
@@ -302,7 +302,7 @@ VALUES
 3. Wait for refresh interval
 4. Verify widget shows updated data',
  'Widget data updates automatically without page refresh.',
- 16, 6, 6, 'FUNCTIONAL', 'MINOR', 'APPROVED', false, 'dashboard,refresh,widget',
+ 16, 6, 6, 'FUNCTIONAL', 'LOW', 'APPROVED', false, 'dashboard,refresh,widget',
  15, 6, NULL, '2025-10-12 10:00:00', '2025-11-05 15:00:00'),
 
 ('TC-006', 'Dashboard accessibility - keyboard navigation',
@@ -370,7 +370,7 @@ VALUES
 4. Combine multiple filters
 5. Verify results match criteria',
  'Search returns only matching results. Filters can be combined. Performance acceptable (<2s).',
- 18, 6, 7, 'FUNCTIONAL', 'MINOR', 'APPROVED', false, 'audit,search,filter',
+ 18, 6, 7, 'FUNCTIONAL', 'LOW', 'APPROVED', false, 'audit,search,filter',
  20, 6, NULL, '2025-10-15 10:00:00', '2025-11-10 11:00:00'),
 
 ('TC-012', 'Verify audit log export in CSV format',
@@ -381,7 +381,7 @@ VALUES
 3. Download file
 4. Open in spreadsheet application',
  'CSV file downloads successfully. All filtered records included. Proper column headers. UTF-8 encoding.',
- 18, 6, 7, 'FUNCTIONAL', 'MINOR', 'APPROVED', false, 'audit,export,csv',
+ 18, 6, 7, 'FUNCTIONAL', 'LOW', 'APPROVED', false, 'audit,export,csv',
  15, 6, NULL, '2025-10-15 11:00:00', '2025-11-10 12:00:00'),
 
 -- Current cycle (Cycle 5) test cases - some not yet run

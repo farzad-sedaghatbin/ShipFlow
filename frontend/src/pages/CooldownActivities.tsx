@@ -40,24 +40,34 @@ import { safeParseId } from '../utils/validation';
 
 const getActivityTypeIcon = (type: CooldownActivityType) => {
   const icons = {
-    BUG_FIX: '🐛',
     TECH_DEBT: '🔧',
-    RESEARCH: '🔬',
-    EXPERIMENT: '🧪',
-    TRAINING: '📚',
+    BUG_FIX: '🐛',
+    REFACTORING: '♻️',
+    KICKOFF_PREP: '🚀',
+    LEARNING: '📚',
+    QA: '✅',
     DOCUMENTATION: '📝',
+    INFRASTRUCTURE: '🏗️',
+    RESEARCH: '🔬',
+    PLANNING: '📅',
+    OTHER: '📋',
   };
   return icons[type] || '📋';
 };
 
 const getActivityTypeBadgeColor = (type: CooldownActivityType) => {
   const colors = {
-    BUG_FIX: 'bg-red-100 text-red-800 border-red-200',
     TECH_DEBT: 'bg-orange-100 text-orange-800 border-orange-200',
-    RESEARCH: 'bg-purple-100 text-purple-800 border-purple-200',
-    EXPERIMENT: 'bg-blue-100 text-blue-800 border-blue-200',
-    TRAINING: 'bg-green-100 text-green-800 border-green-200',
+    BUG_FIX: 'bg-red-100 text-red-800 border-red-200',
+    REFACTORING: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    KICKOFF_PREP: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    LEARNING: 'bg-green-100 text-green-800 border-green-200',
+    QA: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     DOCUMENTATION: 'bg-slate-100 text-slate-800 border-slate-200',
+    INFRASTRUCTURE: 'bg-amber-100 text-amber-800 border-amber-200',
+    RESEARCH: 'bg-purple-100 text-purple-800 border-purple-200',
+    PLANNING: 'bg-violet-100 text-violet-800 border-violet-200',
+    OTHER: 'bg-gray-100 text-gray-800 border-gray-200',
   };
   return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200';
 };
@@ -214,7 +224,7 @@ export default function CooldownActivitiesPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{summary.completionRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">{(summary.completionPercentage || 0).toFixed(1)}%</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {summary.completedCount} / {summary.totalActivities} {t('cooldownActivity.completed')}
               </div>
@@ -227,7 +237,7 @@ export default function CooldownActivitiesPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{summary.totalEstimatedHours.toFixed(1)}</div>
+              <div className="text-2xl font-bold">{(summary.totalEstimatedHours || 0).toFixed(1)}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {t('cooldownActivity.hoursPlanned')}
               </div>
@@ -240,7 +250,7 @@ export default function CooldownActivitiesPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{summary.totalActualHours.toFixed(1)}</div>
+              <div className="text-2xl font-bold">{(summary.totalActualHours || 0).toFixed(1)}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {t('cooldownActivity.hoursSpent')}
               </div>
@@ -261,12 +271,17 @@ export default function CooldownActivitiesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('cooldownActivity.allTypes')}</SelectItem>
-                  <SelectItem value={CooldownActivityType.BUG_FIX}>{t('cooldownActivity.types.bugFix')}</SelectItem>
                   <SelectItem value={CooldownActivityType.TECH_DEBT}>{t('cooldownActivity.types.techDebt')}</SelectItem>
-                  <SelectItem value={CooldownActivityType.RESEARCH}>{t('cooldownActivity.types.research')}</SelectItem>
-                  <SelectItem value={CooldownActivityType.EXPERIMENT}>{t('cooldownActivity.types.experiment')}</SelectItem>
-                  <SelectItem value={CooldownActivityType.TRAINING}>{t('cooldownActivity.types.training')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.BUG_FIX}>{t('cooldownActivity.types.bugFix')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.REFACTORING}>{t('cooldownActivity.types.refactoring')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.KICKOFF_PREP}>{t('cooldownActivity.types.kickoffPrep')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.LEARNING}>{t('cooldownActivity.types.learning')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.QA}>{t('cooldownActivity.types.qa')}</SelectItem>
                   <SelectItem value={CooldownActivityType.DOCUMENTATION}>{t('cooldownActivity.types.documentation')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.INFRASTRUCTURE}>{t('cooldownActivity.types.infrastructure')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.RESEARCH}>{t('cooldownActivity.types.research')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.PLANNING}>{t('cooldownActivity.types.planning')}</SelectItem>
+                  <SelectItem value={CooldownActivityType.OTHER}>{t('cooldownActivity.types.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

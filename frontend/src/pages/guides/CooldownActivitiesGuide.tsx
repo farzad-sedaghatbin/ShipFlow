@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Coffee, Bug, Wrench, Lightbulb, FlaskConical, GraduationCap, FileText, Repeat, Users, BookOpen } from 'lucide-react';
+import { ArrowLeft, Coffee, Bug, Wrench, Lightbulb, FileText, Repeat, Users, BookOpen, RefreshCw, Rocket, CheckCircle, Server, Calendar, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -118,57 +118,102 @@ export default function CooldownActivitiesGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid gap-4">
-                        {/* Bug Fixes */}
-                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                            <Bug className="h-5 w-5 text-red-500 mt-0.5" />
-                            <div className="space-y-1">
-                                <h4 className="font-semibold">{t('cooldownActivity.types.bug_fix')}</h4>
-                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.bugFixDesc')}</p>
-                            </div>
-                        </div>
-
                         {/* Tech Debt */}
                         <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
                             <Wrench className="h-5 w-5 text-orange-500 mt-0.5" />
                             <div className="space-y-1">
-                                <h4 className="font-semibold">{t('cooldownActivity.types.tech_debt')}</h4>
+                                <h4 className="font-semibold">{t('cooldownActivity.types.techDebt')}</h4>
                                 <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.techDebtDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Bug Fixes */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <Bug className="h-5 w-5 text-red-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.bugFix')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.bugFixDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Refactoring */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <RefreshCw className="h-5 w-5 text-cyan-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.refactoring')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.refactoringDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Kickoff Prep */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <Rocket className="h-5 w-5 text-indigo-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.kickoffPrep')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.kickoffPrepDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Learning */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <BookOpen className="h-5 w-5 text-green-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.learning')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.learningDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* QA */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.qa')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.qaDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Documentation */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <FileText className="h-5 w-5 text-slate-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.documentation')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.documentationDesc')}</p>
+                            </div>
+                        </div>
+
+                        {/* Infrastructure */}
+                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                            <Server className="h-5 w-5 text-amber-500 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold">{t('cooldownActivity.types.infrastructure')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.infrastructureDesc')}</p>
                             </div>
                         </div>
 
                         {/* Research */}
                         <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                            <Lightbulb className="h-5 w-5 text-yellow-500 mt-0.5" />
+                            <Lightbulb className="h-5 w-5 text-purple-500 mt-0.5" />
                             <div className="space-y-1">
                                 <h4 className="font-semibold">{t('cooldownActivity.types.research')}</h4>
                                 <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.researchDesc')}</p>
                             </div>
                         </div>
 
-                        {/* Experiments */}
+                        {/* Planning */}
                         <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                            <FlaskConical className="h-5 w-5 text-purple-500 mt-0.5" />
+                            <Calendar className="h-5 w-5 text-violet-500 mt-0.5" />
                             <div className="space-y-1">
-                                <h4 className="font-semibold">{t('cooldownActivity.types.experiment')}</h4>
-                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.experimentDesc')}</p>
+                                <h4 className="font-semibold">{t('cooldownActivity.types.planning')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.planningDesc')}</p>
                             </div>
                         </div>
 
-                        {/* Training */}
+                        {/* Other */}
                         <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                            <GraduationCap className="h-5 w-5 text-blue-500 mt-0.5" />
+                            <MoreHorizontal className="h-5 w-5 text-gray-500 mt-0.5" />
                             <div className="space-y-1">
-                                <h4 className="font-semibold">{t('cooldownActivity.types.training')}</h4>
-                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.trainingDesc')}</p>
-                            </div>
-                        </div>
-
-                        {/* Documentation */}
-                        <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                            <FileText className="h-5 w-5 text-green-500 mt-0.5" />
-                            <div className="space-y-1">
-                                <h4 className="font-semibold">{t('cooldownActivity.types.documentation')}</h4>
-                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.documentationDesc')}</p>
+                                <h4 className="font-semibold">{t('cooldownActivity.types.other')}</h4>
+                                <p className="text-sm text-muted-foreground">{t('guides.cooldownActivities.otherDesc')}</p>
                             </div>
                         </div>
                     </div>
