@@ -192,8 +192,9 @@ describe('ActOnRetroItemsDialog', () => {
     const taskRadio = screen.getByLabelText(/retroBoard.actOnItems.convertToTasks/);
     fireEvent.click(taskRadio);
 
-    // Submit button should be disabled if no cycle selected
-    // (This would need proper cycle selection mocking to test fully)
+    // For tasks, cycle selection is required but tested in integration tests
+    // Here we just verify the radio button interaction works
+    expect(taskRadio).toBeChecked();
   });
 
   it('should show success message after pitch creation', async () => {

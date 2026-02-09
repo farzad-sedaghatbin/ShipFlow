@@ -36,6 +36,14 @@ export interface TableWidgetProps<T extends TableRow = TableRow> {
   searchable?: boolean;
   /** Optional key extractor for row identity. Defaults to row.id */
   getRowKey?: (row: T, index: number) => string | number;
+  /** i18n strings for UI labels */
+  labels?: {
+    searchPlaceholder?: string;
+    noData?: string;
+    yes?: string;
+    no?: string;
+    items?: string;
+  };
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -131,7 +139,7 @@ function clampPage(page: number, totalPages: number): number {
 /**
  * Render cell value safely with proper type handling
  */
-function renderCellValue(value: unknown): React.ReactNode {
+function renderCellValue(value: unknown, labels?: TableWidgetProps['labels']): React.ReactNode {
   if (value === null || value === undefined) {
     return '-';
   }
@@ -139,7 +147,7 @@ function renderCellValue(value: unknown): React.ReactNode {
   if (Array.isArray(value)) {
     if (value.length === 0) return '-';
     if (typeof value[0] === 'object') {
-      return `${value.length} items`;
+      return `${value.length} ${labels?.items || 'items'}`;
     }
     return value.join(', ');
   }
@@ -156,7 +164,7 @@ function renderCellValue(value: unknown): React.ReactNode {
   }
   
   if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
+    return value ? (labels?.yes || 'Yes') : (labels?.no || 'No');
   }
   
   return String(value);
@@ -187,6 +195,7 @@ export default function TableWidget<T extends TableRow = TableRow>({
   pageSize = 10,
   searchable = true,
   getRowKey,
+  labels,
 }: TableWidgetProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -276,7 +285,7 @@ export default function TableWidget<T extends TableRow = TableRow>({
         {searchable && (
           <Input
             type="text"
-            placeholder="Search..."
+            placeholder={labels?.searchPlaceholder || 'Search...'}
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-48 h-8 text-sm"
@@ -288,7 +297,7 @@ export default function TableWidget<T extends TableRow = TableRow>({
       <div className="flex-1 overflow-auto border rounded-md">
         {effectiveColumns.length === 0 || paginatedData.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-            No data available
+            {labels?.noData || 'No data available'}
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -324,7 +333,7 @@ export default function TableWidget<T extends TableRow = TableRow>({
                     <td key={col.key} className="p-2">
                       {col.render
                         ? col.render(row[col.key], row)
-                        : renderCellValue(row[col.key])}
+                        : renderCellValue(row[col.key], labels)}
                     </td>
                   ))}
                 </tr>

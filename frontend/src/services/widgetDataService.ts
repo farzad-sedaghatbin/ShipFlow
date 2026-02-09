@@ -165,11 +165,13 @@ class WidgetDataService {
         filteredTasks = this.applyFilters(filteredTasks, filters);
       }
 
+      // Use filtered count when client-side filtering is applied
+      const hasClientFiltering = userContextFilter || (filters && filters.length > 0);
       return {
         type: 'TABLE',
         data: filteredTasks,
         metadata: {
-          total: response.data.totalElements || filteredTasks.length,
+          total: hasClientFiltering ? filteredTasks.length : (response.data.totalElements || filteredTasks.length),
           lastUpdated: new Date().toISOString()
         }
       };
@@ -233,11 +235,13 @@ class WidgetDataService {
         filteredBugs = this.applyFilters(filteredBugs, filters);
       }
 
+      // Use filtered count when client-side filtering is applied
+      const hasClientFiltering = userContextFilter || (filters && filters.length > 0);
       return {
         type: 'TABLE',
         data: filteredBugs,
         metadata: {
-          total: response.data.totalElements || filteredBugs.length,
+          total: hasClientFiltering ? filteredBugs.length : (response.data.totalElements || filteredBugs.length),
           lastUpdated: new Date().toISOString()
         }
       };

@@ -226,11 +226,8 @@ export default function RetroBoard() {
       const res = await retroService.close(retro.id);
       setRetro(res.data);
       showSuccess(t('retroBoardPage.retroClosed'));
-      // After closing, offer to act on action items
-      const actionItems = items.filter(
-        (item) => (item.columnType === 'TRY_NEXT' || item.columnType === 'ACTIONS') && !item.mergedIntoId
-      );
-      if (actionItems.length > 0) {
+      // After closing, offer to act on action items (use memoized value)
+      if (actionableItems.length > 0) {
         setActOnItemsDialog(true);
       }
     } catch (error) {
