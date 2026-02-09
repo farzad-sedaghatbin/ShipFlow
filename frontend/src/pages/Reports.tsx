@@ -40,12 +40,14 @@ import EmptyState from '../components/EmptyState';
 import { EmptyReportsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
 import { useProject } from '../contexts';
+import { CycleSignalsPanel } from '../components/CycleSignalsPanel';
+import { CycleSummaryPanel } from '../components/CycleSummaryPanel';
 
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function Reports() {
   const { t } = useTranslation();
-  const { isKanbanProject } = useProject();
+  const { isKanbanProject, currentProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
@@ -390,6 +392,21 @@ export default function Reports() {
               </div>
             </CardContent>
           </Card>
+
+          {/* v0.5 - Decision Support Signals */}
+          {selectedCycle && report.cycleId && currentProject && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <CycleSignalsPanel 
+                cycleId={report.cycleId} 
+                projectId={currentProject.id} 
+                className="h-full"
+              />
+              <CycleSummaryPanel 
+                cycleId={report.cycleId}
+                className="h-full"
+              />
+            </div>
+          )}
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

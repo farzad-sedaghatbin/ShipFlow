@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.signal.ShapingPatternSignalDTO.
 import com.github.farzadsedaghatbin.shipflow.dto.signal.ShapingPatternSignalDTO.ShapingQuality;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.time.LocalDateTime;
@@ -75,7 +76,7 @@ public class CycleSignalService {
    */
   public CycleSignalsDTO getProjectSignals(Long projectId, int cycleCount) {
     Project project = projectRepository.findById(projectId)
-        .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
 
     List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(projectId)
         .stream()
@@ -116,7 +117,7 @@ public class CycleSignalService {
    */
   public CycleSignalsDTO getCycleSignals(Long cycleId) {
     Cycle cycle = cycleRepository.findById(cycleId)
-        .orElseThrow(() -> new RuntimeException("Cycle not found: " + cycleId));
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
 
     // Get this cycle plus previous cycles for trend context
     List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(cycle.getProject().getId())
@@ -230,7 +231,10 @@ public class CycleSignalService {
 
     // Calculate statistics (use absolute values for std dev but keep signed average)
     double avgVariance = variancePercents.stream().mapToDouble(Double::doubleValue).average().orElse(0);
-    List<Double> absVariances = variancePercents.stream().map(Math::abs).collect(Collectors.toList());
+    List<Double> absVariances = variancePercents.stream()
+        .filter(Objects::nonNull)
+        .map(v -> Math.abs(v))
+        .collect(Collectors.toList());
     double avgAbsVariance = absVariances.stream().mapToDouble(Double::doubleValue).average().orElse(0);
     double stdDev = calculateStdDev(absVariances, avgAbsVariance);
     // Reverse list before trend calculation - cycles loaded DESC but regression needs oldest-to-newest
@@ -334,10 +338,16 @@ public class CycleSignalService {
     // Batch prefetch all risk histories for all pitches (avoid N+1 query)
     List<Long> allPitchIds = new ArrayList<>();
     Map<Long, List<Pitch>> pitchesByCycle = new HashMap<>();
+    Map<Long, Double> workHoursMap = new HashMap<>();
+    
     for (Cycle cycle : cycles) {
       List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycle.getId());
       pitchesByCycle.put(cycle.getId(), pitches);
       pitches.forEach(p -> allPitchIds.add(p.getId()));
+      
+      // Load work hours for this cycle and merge into the overall map
+      Map<Long, Double> cycleHours = batchLoadWorkHoursForCycle(cycle.getId());
+      workHoursMap.putAll(cycleHours);
     }
 
     List<PitchRiskHistory> allHistories = allPitchIds.isEmpty() ? Collections.emptyList() 
@@ -363,10 +373,10 @@ public class CycleSignalService {
         RiskLevel initialRisk = initialRiskByPitch.getOrDefault(pitch.getId(), RiskLevel.LOW);
         boolean wasHighRisk = initialRisk == RiskLevel.HIGH || initialRisk == RiskLevel.CRITICAL;
 
-        // Determine outcome
+        // Determine outcome using preloaded work hours
         boolean hadProblems = pitch.getIsCircuitBreakerTriggered() ||
             pitch.getStatus() == PitchStatus.CANCELLED ||
-            isSignificantlyOverBudget(pitch);
+            isSignificantlyOverBudget(pitch, workHoursMap);
 
         if (wasHighRisk && hadProblems) {
           truePositives++;
@@ -387,7 +397,7 @@ public class CycleSignalService {
               .cycleName(cycle.getName())
               .initialRiskLevel(initialRisk.name())
               .finalOutcome(pitch.getStatus().name())
-              .whatWentWrong(determineWhatWentWrong(pitch))
+              .whatWentWrong(determineWhatWentWrong(pitch, workHoursMap))
               .build());
         } else {
           trueNegatives++;
@@ -553,21 +563,21 @@ public class CycleSignalService {
     return calculateTrend(rates);
   }
 
-  private boolean isSignificantlyOverBudget(Pitch pitch) {
-    Double actual = workLogRepository.getTotalHoursByPitchId(pitch.getId());
+  private boolean isSignificantlyOverBudget(Pitch pitch, Map<Long, Double> workHoursMap) {
+    Double actual = workHoursMap.get(pitch.getId());
     if (actual == null) return false;
     double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
     return appetite > 0 && actual > appetite * 1.3; // 30% over
   }
 
-  private String determineWhatWentWrong(Pitch pitch) {
+  private String determineWhatWentWrong(Pitch pitch, Map<Long, Double> workHoursMap) {
     if (pitch.getIsCircuitBreakerTriggered()) {
       return "Circuit breaker triggered: " + pitch.getCircuitBreakerReason();
     }
     if (pitch.getStatus() == PitchStatus.CANCELLED) {
       return "Pitch was cancelled";
     }
-    if (isSignificantlyOverBudget(pitch)) {
+    if (isSignificantlyOverBudget(pitch, workHoursMap)) {
       return "Significantly over budget";
     }
     return "Unknown issue";
@@ -915,7 +925,10 @@ public class CycleSignalService {
       return hoursMap;
     }
     for (Object[] row : results) {
-      Long pitchId = (Long) row[0];
+      if (row[0] == null) {
+        continue;
+      }
+      Long pitchId = ((Number) row[0]).longValue();
       Double hours = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
       hoursMap.put(pitchId, hours);
     }

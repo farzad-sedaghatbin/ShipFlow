@@ -195,4 +195,18 @@ public class RetroController {
   public ResponseEntity<List<RetroItemDTO>> getPendingActionItems(@PathVariable Long projectId) {
     return ResponseEntity.ok(retroService.getPendingActionItems(projectId));
   }
+
+  // ==================== RETRO → PITCH CONVERSION (v0.5) ====================
+
+  @PostMapping("/{id}/convert-to-pitch")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'MANAGER')")
+  @Operation(summary = "Convert closed retro action items into a pitch draft",
+      description = "Part of v0.5 - enables closed retro insights to feed into next cycle's shaping")
+  public ResponseEntity<PitchDTO> convertToPitchDraft(
+      @PathVariable Long id,
+      @Valid @RequestBody ConvertRetroToPitchRequest request) {
+    // Override the request's retrospectiveId with the path parameter for security
+    request.setRetrospectiveId(id);
+    return ResponseEntity.status(HttpStatus.CREATED).body(retroService.convertToPitchDraft(request));
+  }
 }

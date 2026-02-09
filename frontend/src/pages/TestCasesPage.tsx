@@ -8,7 +8,6 @@ import {
   Play,
   Eye,
   Sparkles,
-  Loader2,
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -43,6 +42,7 @@ import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
+import { TestCasesSkeleton } from '../components/Skeletons';
 import {
   TestCase,
   TestCaseStatus,
@@ -70,7 +70,7 @@ const statusVariants: Record<TestCaseStatus, string> = {
 const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +161,7 @@ const TestCasesPage: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -174,12 +175,8 @@ const TestCasesPage: React.FC = () => {
     return matchesSearch;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <TestCasesSkeleton />;
   }
 
   return (

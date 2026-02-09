@@ -4,6 +4,69 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Mobile Optimization**
+  - New responsive hooks: `useMediaQuery` and `useBreakpoint` with `useBreakpointHelpers`
+  - Page-specific loading skeletons: `WorkLogsSkeleton`, `BugReportsSkeleton`, `TestCasesSkeleton`, `MeetingListSkeleton`, `RetroListSkeleton`, `TeamsSkeleton`, `BacklogSkeleton`
+  - Responsive DashboardGrid with adaptive column counts (12→8→4→2 based on viewport width)
+  - Mobile-optimized KanbanBoard with horizontal scroll snap points and touch-friendly navigation
+  - Responsive breakpoints for better mobile experience across all pages
+
+- **Micro-Interaction Improvements**
+  - Project-switching loading states with skeletons on all major list pages
+  - `isSwitchingProject` state in ProjectContext for smooth transitions
+  - Visual feedback during data refresh when changing projects
+  - Skeleton screens replace spinners for better perceived performance
+
+- **Flexible Retro Action Conversion**
+  - New `ActOnRetroItemsDialog` component with multiple action options:
+    - Convert to Pitch Draft: Create a pitch for the next betting table
+    - Convert to Tasks: Generate individual tasks that can be worked on immediately  
+    - Just Mark as Acted On: Record completion without creating new work items
+  - Required cycle selection for task creation
+  - Optional cycle selection for pitch creation
+  - Support for batch processing of multiple retro items
+  - Automatic marking of retro items as "acted on" with notes
+
+- **UI Components**
+  - `ActOnRetroItemsDialog.tsx` - Flexible action selection dialog
+  - `RadioGroup.tsx` - Radio button group component for UI controls
+  - Action type selection with visual descriptions
+  - Success confirmations for all action types
+
+- **Seed Data**
+  - Added comprehensive examples of acted-on retrospective items demonstrating all three action types
+  - Example pitch converted from retro items: "Infrastructure Improvements for Safer & More Thoughtful Development"
+  - Example tasks converted from ACTION items: Feature flag setup and performance testing integration
+  - Example marked-only items with detailed notes explaining decisions
+
+- **Test Coverage**
+  - Frontend: `ActOnRetroItemsDialog.test.tsx` with 8 test cases covering all action workflows
+  - Backend: `RetroServiceTest` with 7 new test cases for `markActedOn` and `convertToPitchDraft` methods
+  - Coverage for edge cases, validation, and error handling
+
+### Changed
+- **Mobile Responsiveness**
+  - Updated WorkLogsPage, BugReportsPage, TestCasesPage, BacklogPage, MeetingList, RetroList, and Teams pages to show skeletons during project switching
+  - Converted fixed-width components to responsive: WorkLogForm, PitchDetail, BettingTable selects now use `w-full sm:w-[Xpx]` pattern
+  - KanbanBoard columns now use responsive widths with scroll snap for mobile navigation
+  - DashboardGrid automatically adjusts column count based on screen size
+
+- Replaced `ConvertRetroToPitchDialog` with more flexible `ActOnRetroItemsDialog`
+- Updated `RetroBoard` to use new action dialog
+- Made retro-to-pitch conversion optional rather than automatic
+- Enhanced translation keys in en.json and fa.json for new dialog options
+
+### Fixed
+- **UX Improvements**
+  - Missing loading indicators when switching projects - now shows page-specific skeletons
+  - Data appearing to "flash" during project changes - smooth skeleton transitions prevent layout shift
+  - Fixed-width components breaking mobile layouts
+  - Horizontal overflow on mobile for select components and drag overlays
+
+- Translation inconsistencies between en.json and fa.json
+- Added missing Persian translation placeholders for new features
+
 ## [0.5.0] - 2026-02-08 - Insight, Not Metrics
 
 ### Theme

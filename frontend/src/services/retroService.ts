@@ -6,7 +6,30 @@ import {
   CreateRetroItemRequest,
   UpdateRetroRequest,
   CycleRetroStatus,
+  Pitch,
 } from '../types';
+
+// v0.5 - Action tracking types
+export interface MarkActedOnRequest {
+  actedOn: boolean;
+  notes?: string;
+}
+
+export interface RetroActionStats {
+  retrospectiveId: number;
+  totalActionItems: number;
+  actedOnCount: number;
+  pendingCount: number;
+  followThroughRate: number;
+}
+
+export interface ConvertToPitchRequest {
+  retroItemIds?: number[];
+  targetCycleId?: number;
+  customTitle?: string;
+  additionalNotes?: string;
+  appetiteDays?: number;
+}
 
 export const retroService = {
   // Retro CRUD
@@ -42,4 +65,19 @@ export const retroService = {
   isEnabled: (projectId: number) => api.get<{ enabled: boolean }>(`/retros/project/${projectId}/enabled`),
   setEnabled: (projectId: number, enabled: boolean) =>
     api.put<{ enabled: boolean }>(`/retros/project/${projectId}/enabled`, { enabled }),
+
+  // v0.5 - Action tracking
+  markActedOn: (itemId: number, request: MarkActedOnRequest) =>
+    api.post<RetroItem>(`/retros/items/${itemId}/acted-on`, request),
+  getActionStats: (retroId: number) => 
+    api.get<RetroActionStats>(`/retros/${retroId}/action-stats`),
+  getPendingActions: (projectId: number) =>
+    api.get<RetroItem[]>(`/retros/project/${projectId}/pending-actions`),
+
+  // v0.5 - Convert to pitch draft
+  convertToPitchDraft: (retroId: number, request: ConvertToPitchRequest) =>
+    api.post<Pitch>(`/retros/${retroId}/convert-to-pitch`, { 
+      retrospectiveId: retroId,
+      ...request 
+    }),
 };

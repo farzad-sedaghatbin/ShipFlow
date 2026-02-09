@@ -103,9 +103,14 @@ export const AppetiteAccuracyCard: React.FC<AppetiteAccuracyCardProps> = ({ sign
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span className="text-muted-foreground">{t('signals.appetiteAccuracy.avgVariance')}</span>
-              <span className="font-medium">{absVariance.toFixed(1)}% {isOverBudget ? t('signals.appetiteAccuracy.over') : t('signals.appetiteAccuracy.under')}</span>
+              <span className="font-medium">
+                {absVariance != null
+                  ? `${absVariance.toFixed(1)}% ${isOverBudget ? t('signals.appetiteAccuracy.over') : t('signals.appetiteAccuracy.under')}`
+                  : '—'
+                }
+              </span>
             </div>
-            <Progress value={Math.min(absVariance, 100)} className="h-2" />
+            <Progress value={absVariance != null ? Math.min(absVariance, 100) : 0} className="h-2" />
             <p className="text-xs text-muted-foreground mt-1">
               {t('signals.appetiteAccuracy.cyclesAnalyzed')}: {signal.cyclesAnalyzed}
             </p>

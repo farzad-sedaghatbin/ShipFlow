@@ -3,7 +3,9 @@ package com.github.farzadsedaghatbin.shipflow.repository;
 import com.github.farzadsedaghatbin.shipflow.entity.RetroItem;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -46,4 +48,36 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
   long countActedOnByRetrospectiveId(@Param("retroId") Long retrospectiveId);
 
   void deleteAllByRetrospectiveId(Long retrospectiveId);
+
+  // ==================== BATCH QUERY METHODS ====================
+
+  /**
+   * Batch count items by retrospective IDs.
+   * Fixes N+1 pattern in toDTO mapping.
+   */
+  @Query("SELECT i.retrospective.id as retroId, COUNT(i) as itemCount FROM RetroItem i WHERE i.retrospective.id IN :retroIds GROUP BY i.retrospective.id")
+  List<Object[]> countByRetrospectiveIdsRaw(@Param("retroIds") List<Long> retroIds);
+
+  default Map<Long, Long> countByRetrospectiveIds(List<Long> retroIds) {
+    return countByRetrospectiveIdsRaw(retroIds).stream()
+        .collect(Collectors.toMap(
+            row -> (Long) row[0],
+            row -> (Long) row[1]
+        ));
+  }
+
+  /**
+   * Batch find merged item IDs grouped by target item ID.
+   * Fixes N+1 pattern in toItemDTO mapping.
+   */
+  @Query("SELECT i.mergedInto.id as targetId, i.id as sourceId FROM RetroItem i WHERE i.mergedInto.id IN :targetIds")
+  List<Object[]> findMergedItemIdsByTargetIdsRaw(@Param("targetIds") List<Long> targetIds);
+
+  default Map<Long, List<Long>> findMergedItemIdsByTargetIds(List<Long> targetIds) {
+    return findMergedItemIdsByTargetIdsRaw(targetIds).stream()
+        .collect(Collectors.groupingBy(
+            row -> (Long) row[0],
+            Collectors.mapping(row -> (Long) row[1], Collectors.toList())
+        ));
+  }
 }

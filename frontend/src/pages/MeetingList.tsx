@@ -5,7 +5,6 @@ import {
   Pencil,
   Trash2,
   Paperclip,
-  Loader2,
   CalendarDays,
   Filter,
   X,
@@ -27,6 +26,7 @@ import { useToast, useProject } from '../contexts';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { Checkbox } from '../components/ui/checkbox';
+import { MeetingListSkeleton } from '../components/Skeletons';
 
 
 import { Card, CardContent } from '../components/ui/card';
@@ -67,7 +67,7 @@ import {
 export default function MeetingList() {
   const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -192,6 +192,7 @@ export default function MeetingList() {
       }
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -368,12 +369,8 @@ export default function MeetingList() {
     setFormData({ ...formData, actions: updatedActions });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <MeetingListSkeleton />;
   }
 
   const getMeetingTypeBadgeVariant = (type: MeetingType): 'default' | 'secondary' | 'success' | 'warning' | 'info' | 'outline' => {

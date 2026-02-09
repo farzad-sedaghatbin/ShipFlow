@@ -112,8 +112,10 @@ export default function PermissionManagement() {
   }, [hasPermission, currentUser]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (currentUser && canManagePermissions) {
+      loadData();
+    }
+  }, [currentUser, canManagePermissions]);
 
   const loadData = async () => {
     setLoading(true);

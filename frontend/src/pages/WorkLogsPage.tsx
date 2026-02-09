@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, Users, User } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, CalendarDays, AlertTriangle, Users, User } from 'lucide-react';
 import dayjs from 'dayjs';
 import { workLogService } from '../services/workLogService';
 import { pitchService } from '../services/pitchService';
@@ -13,6 +13,7 @@ import EmptyState from '../components/EmptyState';
 import { EmptyWorkLogsIllustration } from '../components/illustrations';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
+import { WorkLogsSkeleton } from '../components/Skeletons';
 
 
 import { Button } from '../components/ui/button';
@@ -51,7 +52,7 @@ export default function WorkLogsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -194,6 +195,8 @@ export default function WorkLogsPage() {
       setWorkLogs(logs);
     } catch (error) {
       console.error('Failed to load work logs:', error);
+    } finally {
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -403,12 +406,8 @@ export default function WorkLogsPage() {
     hasPermission('TEAM', 'MANAGE').then(setCanManageLogs).catch(() => setCanManageLogs(false));
   }, [hasPermission]); // Include hasPermission since it's now stable
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <WorkLogsSkeleton />;
   }
 
   const totalHours = workLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);

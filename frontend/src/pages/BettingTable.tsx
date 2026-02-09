@@ -679,7 +679,7 @@ export default function BettingTablePage() {
           {/* Drag Overlay */}
           <DragOverlay>
             {activePitch ? (
-              <Card className="w-[250px] shadow-lg opacity-90">
+              <Card className="w-full max-w-[250px] shadow-lg opacity-90">
                 <CardContent className="py-3 px-4">
                   <p className="font-semibold text-sm">{activePitch.title}</p>
                   <Badge variant="secondary" className="mt-1">
