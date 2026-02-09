@@ -71,6 +71,7 @@ import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
+import packageJson from '../../package.json';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -379,7 +380,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       {/* Footer with version */}
       <div className="border-t border-sidebar-border px-3 py-2">
         <div className="text-xs text-muted-foreground text-center">
-          v0.4.0
+          v{packageJson.version}
         </div>
       </div>
     </div>
