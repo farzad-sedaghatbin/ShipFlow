@@ -35,7 +35,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import CooldownActivityDialog from '../components/CooldownActivityDialog';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, CheckCircle, Clock, PlayCircle, XCircle, TrendingUp, ListChecks } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, CheckCircle, Clock, PlayCircle, Ban, SkipForward, TrendingUp, ListChecks } from 'lucide-react';
 import { safeParseId } from '../utils/validation';
 
 const getActivityTypeIcon = (type: CooldownActivityType) => {
@@ -73,21 +73,23 @@ const getActivityTypeBadgeColor = (type: CooldownActivityType) => {
 };
 
 const getStatusBadgeColor = (status: CooldownActivityStatus) => {
-  const colors = {
+  const colors: Record<CooldownActivityStatus, string> = {
     PLANNED: 'bg-slate-100 text-slate-700 border-slate-300',
     IN_PROGRESS: 'bg-blue-100 text-blue-700 border-blue-300',
     COMPLETED: 'bg-green-100 text-green-700 border-green-300',
-    CANCELLED: 'bg-red-100 text-red-700 border-red-300',
+    SKIPPED: 'bg-amber-100 text-amber-700 border-amber-300',
+    BLOCKED: 'bg-red-100 text-red-700 border-red-300',
   };
   return colors[status] || 'bg-gray-100 text-gray-700 border-gray-300';
 };
 
 const getStatusIcon = (status: CooldownActivityStatus) => {
-  const icons = {
+  const icons: Record<CooldownActivityStatus, JSX.Element> = {
     PLANNED: <Clock className="h-4 w-4" />,
     IN_PROGRESS: <PlayCircle className="h-4 w-4" />,
     COMPLETED: <CheckCircle className="h-4 w-4" />,
-    CANCELLED: <XCircle className="h-4 w-4" />,
+    SKIPPED: <SkipForward className="h-4 w-4" />,
+    BLOCKED: <Ban className="h-4 w-4" />,
   };
   return icons[status] || <Clock className="h-4 w-4" />;
 };
@@ -193,7 +195,7 @@ export default function CooldownActivitiesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('cooldownActivity.title')}</h1>
+          <h1 className="text-3xl font-bold">{t('cooldownActivity.pageTitle')}</h1>
           <p className="text-muted-foreground mt-1">{t('cooldownActivity.subtitle')}</p>
         </div>
         <Button onClick={handleCreate}>
@@ -297,7 +299,8 @@ export default function CooldownActivitiesPage() {
                   <SelectItem value={CooldownActivityStatus.PLANNED}>{t('cooldownActivity.statuses.planned')}</SelectItem>
                   <SelectItem value={CooldownActivityStatus.IN_PROGRESS}>{t('cooldownActivity.statuses.inProgress')}</SelectItem>
                   <SelectItem value={CooldownActivityStatus.COMPLETED}>{t('cooldownActivity.statuses.completed')}</SelectItem>
-                  <SelectItem value={CooldownActivityStatus.CANCELLED}>{t('cooldownActivity.statuses.cancelled')}</SelectItem>
+                  <SelectItem value={CooldownActivityStatus.SKIPPED}>{t('cooldownActivity.statuses.skipped')}</SelectItem>
+                  <SelectItem value={CooldownActivityStatus.BLOCKED}>{t('cooldownActivity.statuses.blocked')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,7 +360,7 @@ export default function CooldownActivitiesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {activity.assigneeName || (
+                      {activity.assigneeUsername || (
                         <span className="text-muted-foreground">{t('cooldownActivity.unassigned')}</span>
                       )}
                     </TableCell>

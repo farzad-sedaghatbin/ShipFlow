@@ -377,10 +377,9 @@ class CooldownActivityServiceTest {
   class UpdateActivityTests {
 
     @Test
-    @DisplayName("should update activity details")
+    @DisplayName("should update activity details with partial update")
     void shouldUpdateActivityDetails() {
-      CreateCooldownActivityRequest request = CreateCooldownActivityRequest.builder()
-          .cycleId(1L)
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
           .activityType(CooldownActivityType.REFACTORING)
           .title("Updated Title")
           .description("Updated description")
@@ -397,6 +396,74 @@ class CooldownActivityServiceTest {
       assertThat(result.getActivityType()).isEqualTo(CooldownActivityType.REFACTORING);
       assertThat(result.getEstimatedHours()).isEqualTo(8);
       assertThat(result.getPriority()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("should not modify fields that are not provided")
+    void shouldNotModifyFieldsNotProvided() {
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
+          .title("Only Title Updated")
+          .build();
+
+      when(cooldownActivityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+      when(cooldownActivityRepository.save(any(CooldownActivity.class))).thenAnswer(i -> i.getArgument(0));
+
+      CooldownActivityDTO result = cooldownActivityService.updateActivity(1L, request);
+
+      assertThat(result.getTitle()).isEqualTo("Only Title Updated");
+      // Original values should be preserved
+      assertThat(result.getActivityType()).isEqualTo(CooldownActivityType.TECH_DEBT);
+      assertThat(result.getEstimatedHours()).isEqualTo(4);
+      assertThat(result.getPriority()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("should update status with timestamp handling")
+    void shouldUpdateStatusWithTimestamp() {
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
+          .status(CooldownActivityStatus.IN_PROGRESS)
+          .build();
+
+      when(cooldownActivityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+      when(cooldownActivityRepository.save(any(CooldownActivity.class))).thenAnswer(i -> i.getArgument(0));
+
+      CooldownActivityDTO result = cooldownActivityService.updateActivity(1L, request);
+
+      assertThat(result.getStatus()).isEqualTo(CooldownActivityStatus.IN_PROGRESS);
+      assertThat(result.getStartedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("should clear assignee when clearAssignee is true")
+    void shouldClearAssigneeWhenFlagSet() {
+      testActivity.setAssignee(testAssignee);
+      
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
+          .clearAssignee(true)
+          .build();
+
+      when(cooldownActivityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+      when(cooldownActivityRepository.save(any(CooldownActivity.class))).thenAnswer(i -> i.getArgument(0));
+
+      CooldownActivityDTO result = cooldownActivityService.updateActivity(1L, request);
+
+      assertThat(result.getAssigneeId()).isNull();
+    }
+
+    @Test
+    @DisplayName("should assign new user when assigneeId is provided")
+    void shouldAssignNewUser() {
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
+          .assigneeId(2L)
+          .build();
+
+      when(cooldownActivityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+      when(userRepository.findById(2L)).thenReturn(Optional.of(testAssignee));
+      when(cooldownActivityRepository.save(any(CooldownActivity.class))).thenAnswer(i -> i.getArgument(0));
+
+      CooldownActivityDTO result = cooldownActivityService.updateActivity(1L, request);
+
+      assertThat(result.getAssigneeId()).isEqualTo(2L);
     }
   }
 

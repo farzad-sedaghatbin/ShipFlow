@@ -18,23 +18,32 @@ export enum CooldownActivityStatus {
   PLANNED = 'PLANNED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  SKIPPED = 'SKIPPED',
+  BLOCKED = 'BLOCKED',
 }
 
 export interface CooldownActivityDTO {
   id: number;
   cycleId: number;
+  cycleName?: string;
   title: string;
   description?: string;
   activityType: CooldownActivityType;
   status: CooldownActivityStatus;
   assigneeId?: number;
-  assigneeName?: string;
+  assigneeUsername?: string;
+  createdById?: number;
+  createdByUsername?: string;
   estimatedHours?: number;
   actualHours?: number;
+  priority?: number;
+  relatedPitchId?: number;
+  relatedPitchTitle?: string;
+  notes?: string;
+  startedAt?: string;
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
-  completedAt?: string;
 }
 
 export interface CreateCooldownActivityRequest {
@@ -52,23 +61,30 @@ export interface UpdateCooldownActivityRequest {
   activityType?: CooldownActivityType;
   status?: CooldownActivityStatus;
   assigneeId?: number;
+  clearAssignee?: boolean;
   estimatedHours?: number;
   actualHours?: number;
+  priority?: number;
+  relatedPitchId?: number;
+  clearRelatedPitch?: boolean;
+  notes?: string;
 }
 
 export interface CooldownSummaryDTO {
   cycleId: number;
+  cycleName?: string;
+  activities?: CooldownActivityDTO[];
+  countByType?: { [key: string]: number };
+  countByStatus?: { [key: string]: number };
   totalActivities: number;
-  plannedCount: number;
-  inProgressCount: number;
   completedCount: number;
-  cancelledCount: number;
-  completionPercentage?: number;
-  totalEstimatedHours?: number;
-  totalActualHours?: number;
-  byType: {
-    [key in CooldownActivityType]: number;
-  };
+  inProgressCount: number;
+  plannedCount: number;
+  blockedCount: number;
+  skippedCount: number;
+  totalEstimatedHours: number;
+  totalActualHours: number;
+  completionPercentage: number;
 }
 
 class CooldownActivityService {

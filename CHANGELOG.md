@@ -5,28 +5,85 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Mobile Optimization**
-  - New responsive hooks: `useMediaQuery` and `useBreakpoint` with `useBreakpointHelpers`
-  - Page-specific loading skeletons: `WorkLogsSkeleton`, `BugReportsSkeleton`, `TestCasesSkeleton`, `MeetingListSkeleton`, `RetroListSkeleton`, `TeamsSkeleton`, `BacklogSkeleton`
-  - Responsive DashboardGrid with adaptive column counts (12→8→4→2 based on viewport width)
-  - Mobile-optimized KanbanBoard with horizontal scroll snap points and touch-friendly navigation
-  - Responsive breakpoints for better mobile experience across all pages
 
-- **Micro-Interaction Improvements**
-  - Project-switching loading states with skeletons on all major list pages
-  - `isSwitchingProject` state in ProjectContext for smooth transitions
-  - Visual feedback during data refresh when changing projects
-  - Skeleton screens replace spinners for better perceived performance
+### Changed
 
-- **Flexible Retro Action Conversion**
-  - New `ActOnRetroItemsDialog` component with multiple action options:
-    - Convert to Pitch Draft: Create a pitch for the next betting table
-    - Convert to Tasks: Generate individual tasks that can be worked on immediately  
-    - Just Mark as Acted On: Record completion without creating new work items
-  - Required cycle selection for task creation
-  - Optional cycle selection for pitch creation
-  - Support for batch processing of multiple retro items
-  - Automatic marking of retro items as "acted on" with notes
+### Fixed
+
+## [0.5.2] - 2026-02-09 - API Contract Alignment & Code Quality
+
+### Theme
+> "Align contracts, eliminate drift, strengthen foundations."
+
+This release focuses on API contract alignment between frontend and backend, eliminating hard mismatches, and improving code quality through better separation of concerns.
+
+### Fixed
+- **P0: Cooldown Activity API Contract Alignment**
+  - **Status Enum Mismatch**: Unified `CooldownActivityStatus` enum between frontend and backend
+    - Removed `CANCELLED` from frontend (was never in backend)
+    - Frontend now uses: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `SKIPPED`, `BLOCKED`
+    - Matches backend enum exactly for proper API communication
+  - **Summary DTO Field Mismatch**: Updated frontend `CooldownSummaryDTO` interface
+    - Added `blockedCount` and `skippedCount` fields (were missing)
+    - Removed non-existent `cancelledCount` field
+    - Added `cycleName`, `activities`, `countByType`, `countByStatus` fields for full compatibility
+  - **Assignee Field Name**: Updated frontend to use `assigneeUsername` (matching backend)
+    - Changed `assigneeName` → `assigneeUsername` in `CooldownActivityDTO`
+    - Updated `CooldownActivities.tsx` table to display correct field
+
+- **P0: i18n Duplicate Key Detection**
+  - **Fixed Duplicate Keys**: Renamed `cooldownActivity.title` to avoid collision
+    - `cooldownActivity.pageTitle` for page heading ("Cooldown Activities")
+    - `cooldownActivity.title` for form field label ("Title")
+    - Updated `CooldownActivities.tsx` to use `pageTitle` for page heading
+  - **CI Protection**: Added duplicate key detection to `validate-i18n.js`
+    - New `checkDuplicateKeys()` method with text-based JSON parsing
+    - Detects same-level duplicate keys that would be silently overwritten
+    - Reports exact line numbers of first and second occurrence
+    - Duplicate keys now cause CI validation to **fail** (exit code 1)
+
+- **P0: Separate Create/Update DTOs for Cooldown API**
+  - Created `UpdateCooldownActivityRequest.java` with partial update support
+    - All fields optional (null = no change)
+    - Added `clearAssignee` flag for explicit unassignment
+    - Added `clearRelatedPitch` flag for explicit pitch unlinking
+    - Includes `status` field for status changes
+  - Updated `CooldownActivityController.java` PUT endpoint
+  - Enhanced `CooldownActivityService.updateActivity()` with:
+    - Null-safe partial updates (only modifies provided fields)
+    - Automatic timestamp handling for status transitions
+    - Explicit clear flag support for nullable relationships
+
+### Changed
+- **Cooldown Activity UI Improvements**
+  - Updated status badge colors for `SKIPPED` (amber) and `BLOCKED` (red)
+  - Added appropriate icons: `SkipForward` for skipped, `Ban` for blocked
+  - Status filter dropdown now shows all five status options
+  - Status select in edit dialog shows correct localized labels
+
+- **i18n Translations**
+  - Added translations for new status values: `skipped`, `blocked`
+  - Persian translations: `رد شده` (skipped), `مسدود شده` (blocked)
+  - Fixed i18n key structure to prevent duplicate key issues
+
+### Test Coverage
+- **CooldownActivityServiceTest**: Extended with 5 new test cases
+  - `shouldNotModifyFieldsNotProvided` - verifies partial update behavior
+  - `shouldUpdateStatusWithTimestamp` - validates startedAt/completedAt handling
+  - `shouldClearAssigneeWhenFlagSet` - tests explicit unassignment
+  - `shouldAssignNewUser` - tests assignee update
+
+### Technical Details
+- **Frontend Contract Changes** ([cooldownActivityService.ts](frontend/src/services/cooldownActivityService.ts)):
+  - `CooldownActivityStatus`: Added `SKIPPED`, `BLOCKED`; removed `CANCELLED`
+  - `CooldownActivityDTO`: Added backend-aligned fields
+  - `UpdateCooldownActivityRequest`: Added `clearAssignee`, `clearRelatedPitch`, `priority`, `notes`
+  - `CooldownSummaryDTO`: Full alignment with backend fields
+
+- **Backend Contract Changes**:
+  - New `UpdateCooldownActivityRequest.java` DTO
+  - `CooldownActivityService.updateActivity()` signature changed
+  - Partial update pattern: null = keep existing value
 
 - **UI Components**
   - `ActOnRetroItemsDialog.tsx` - Flexible action selection dialog

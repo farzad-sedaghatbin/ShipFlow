@@ -249,8 +249,11 @@ export default function CooldownActivityDialog({
                     <SelectItem value={CooldownActivityStatus.COMPLETED}>
                       {t('cooldownActivity.statuses.completed')}
                     </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.CANCELLED}>
-                      {t('cooldownActivity.statuses.cancelled')}
+                    <SelectItem value={CooldownActivityStatus.SKIPPED}>
+                      {t('cooldownActivity.statuses.skipped')}
+                    </SelectItem>
+                    <SelectItem value={CooldownActivityStatus.BLOCKED}>
+                      {t('cooldownActivity.statuses.blocked')}
                     </SelectItem>
                   </SelectContent>
                 </Select>

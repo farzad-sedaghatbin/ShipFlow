@@ -1696,7 +1696,6 @@
     "setupStep2": "URL وب‌هوک را کپی کرده و در تنظیمات مخزن GitHub خود پیکربندی کنید",
     "setupStep3": "رویدادهای وب‌هوک را تنظیم کنید: Push، Pull Request، Create، Delete",
     "setupStep4": "به صورت اختیاری یک secret برای وب‌هوک جهت امنیت اضافه کنید",
-    "title": "یکپارچه‌سازی GitHub",
     "tokenHelp": "اختیاری: توکن دسترسی شخصی GitHub برای مخازن خصوصی",
     "urlHelp": "اختیاری: آدرس مخزن GitHub",
     "urlPlaceholder": "https://github.com/owner/repo",
@@ -3532,7 +3531,6 @@
     "meetingScheduled": "جلسه با موفقیت زمان‌بندی شد",
     "meetingType": "نوع جلسه",
     "meetings": "جلسات",
-    "no": "[TODO: Persian translation] No",
     "noDocuments": "سندی پیوست نشده است",
     "noGos": "محدودیت‌ها",
     "noGosPlaceholder": "کارهایی که صریحاً انجام نمی‌دهیم",
@@ -5487,7 +5485,7 @@
     "continue": "ادامه تور"
   },
   "cooldownActivity": {
-    "title": "فعالیت‌های دوره استراحت",
+    "pageTitle": "فعالیت‌های دوره استراحت",
     "subtitle": "پیگیری فعالیت‌ها در طول دوره استراحت",
     "createActivity": "ایجاد فعالیت",
     "editActivity": "ویرایش فعالیت",
@@ -5551,7 +5549,8 @@
       "inprogress": "در حال انجام",
       "inProgress": "در حال انجام",
       "completed": "تکمیل شده",
-      "cancelled": "لغو شده"
+      "skipped": "رد شده",
+      "blocked": "مسدود شده"
     }
   }
 }
