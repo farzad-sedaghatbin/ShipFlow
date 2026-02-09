@@ -465,6 +465,23 @@ class CooldownActivityServiceTest {
 
       assertThat(result.getAssigneeId()).isEqualTo(2L);
     }
+
+    @Test
+    @DisplayName("should clear related pitch when clearRelatedPitch is true")
+    void shouldClearRelatedPitchWhenFlagSet() {
+      testActivity.setRelatedPitch(testPitch);
+      
+      UpdateCooldownActivityRequest request = UpdateCooldownActivityRequest.builder()
+          .clearRelatedPitch(true)
+          .build();
+
+      when(cooldownActivityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
+      when(cooldownActivityRepository.save(any(CooldownActivity.class))).thenAnswer(i -> i.getArgument(0));
+
+      CooldownActivityDTO result = cooldownActivityService.updateActivity(1L, request);
+
+      assertThat(result.getRelatedPitchId()).isNull();
+    }
   }
 
   @Nested
