@@ -74,9 +74,8 @@ import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { pitchService } from '../services/pitchService';
-import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
-import { Task, Cycle, Person, Pitch, HillChartPoint, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
+import { Task, Cycle, Person, Pitch, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
@@ -166,11 +165,9 @@ export default function BacklogPage() {
     tags: '',
     category: activeCategory,
     pitchId: undefined,
-    scopeId: undefined,
   });
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
 
   // Multi-select dropdown states
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -503,23 +500,9 @@ export default function BacklogPage() {
     }
   };
 
-  const loadScopesForPitch = async (pitchId: number) => {
-    try {
-      const response = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setScopes(response);
-    } catch (error) {
-      console.error('Failed to load scopes:', error);
-      setScopes([]);
-    }
-  };
-
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
-    setFormData({ ...formData, pitchId: pitch, scopeId: undefined });
-    setScopes([]);
-    if (pitch) {
-      loadScopesForPitch(pitch);
-    }
+    setFormData({ ...formData, pitchId: pitch });
   };
 
   const handleCategoryChange = (category: TaskCategory) => {
@@ -1315,48 +1298,26 @@ export default function BacklogPage() {
                 placeholder={t('backlogPage.commaSeparated')}
               />
             </div>
-            {/* Hide pitch and scope fields for Kanban projects */}
+            {/* Hide pitch field for Kanban projects */}
             {!isKanbanProject && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.pitch')}</Label>
-                  <Select
-                    value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                    onValueChange={handlePitchChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('backlogPage.noPitch')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
-                      {pitches.map((pitch) => (
-                        <SelectItem key={pitch.id} value={String(pitch.id)}>
-                          {pitch.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.scope')}</Label>
-                  <Select
-                    value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                    onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                    disabled={!formData.pitchId || scopes.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
-                      {scopes.map((scope) => (
-                        <SelectItem key={scope.id} value={String(scope.id)}>
-                          {scope.scope}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-2">
+                <Label>{t('backlogPage.pitch')}</Label>
+                <Select
+                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                  onValueChange={handlePitchChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('backlogPage.noPitch')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
+                    {pitches.map((pitch) => (
+                      <SelectItem key={pitch.id} value={String(pitch.id)}>
+                        {pitch.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

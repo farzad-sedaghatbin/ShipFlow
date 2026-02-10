@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Task, Person, TaskStatus, TaskPriority, TaskCategory, Pitch, HillChartPoint } from '../../types';
+import { Task, Person, TaskStatus, TaskPriority, TaskCategory, Pitch } from '../../types';
 import { TaskFormData } from '../../hooks/useBacklogForm';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
@@ -29,7 +29,6 @@ export interface BacklogTaskDialogProps {
   saving: boolean;
   persons: Person[];
   pitches: Pitch[];
-  scopes: HillChartPoint[];
   isKanbanProject: boolean;
   activeCategory: TaskCategory;
   onFormDataChange: (updates: Partial<TaskFormData>) => void;
@@ -49,7 +48,6 @@ export function BacklogTaskDialog({
   saving,
   persons,
   pitches,
-  scopes,
   isKanbanProject,
   activeCategory,
   onFormDataChange,
@@ -227,53 +225,31 @@ export function BacklogTaskDialog({
             />
           </div>
 
-          {/* Pitch and Scope - Hidden for Kanban projects */}
+          {/* Pitch - Hidden for Kanban projects */}
           {!isKanbanProject && (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.pitch')}</Label>
-                  <Select
-                    value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                    onValueChange={onPitchChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('backlogPage.noPitch')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
-                      {pitches.map((pitch) => (
-                        <SelectItem key={pitch.id} value={String(pitch.id)}>
-                          {pitch.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.scope')}</Label>
-                  <Select
-                    value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                    onValueChange={(value) => onFormDataChange({ scopeId: value === 'none' ? undefined : Number(value) })}
-                    disabled={!formData.pitchId || scopes.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
-                      {scopes.map((scope) => (
-                        <SelectItem key={scope.id} value={String(scope.id)}>
-                          {scope.scope}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-2">
+                <Label>{t('backlogPage.pitch')}</Label>
+                <Select
+                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                  onValueChange={onPitchChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('backlogPage.noPitch')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
+                    {pitches.map((pitch) => (
+                      <SelectItem key={pitch.id} value={String(pitch.id)}>
+                        {pitch.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Hill Chart Indicator - shown when task will appear on hill chart */}
-              {formData.pitchId && !formData.parentTaskId && !formData.scopeId && !editingTask && (
+              {formData.pitchId && !formData.parentTaskId && !editingTask && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                   <TrendingUp className="h-4 w-4 shrink-0" />
                   <p className="text-sm">

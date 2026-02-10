@@ -32,6 +32,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shipflowdb
       SPRING_DATASOURCE_USERNAME: shipflow
       SPRING_DATASOURCE_PASSWORD: shipflow_secret
+      FLYWAY_REPAIR_ENABLED: "true"
       APP_SAMPLE_DATA_ENABLED: "true"
       # AI Provider Selection: 'ollama' (local), 'openai' (ChatGPT), or 'runpod' (cloud GPU)
       APP_AI_PROVIDER: ${APP_AI_PROVIDER:-openai}
