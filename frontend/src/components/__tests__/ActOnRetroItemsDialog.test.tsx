@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ActOnRetroItemsDialog } from '../ActOnRetroItemsDialog';
 import { RetroItem, Cycle } from '../../types';
 import { retroService } from '../../services/retroService';
@@ -230,6 +231,8 @@ describe('ActOnRetroItemsDialog', () => {
   });
 
   it('should toggle item selection', async () => {
+    const user = userEvent.setup();
+    
     render(
       <ActOnRetroItemsDialog
         open={true}
@@ -249,9 +252,9 @@ describe('ActOnRetroItemsDialog', () => {
     // Initially 2 items selected
     expect(screen.getByText('2 retroBoard.actOnItems.itemsSelected')).toBeInTheDocument();
 
-    // Click to deselect
-    const checkbox = screen.getAllByRole('checkbox')[0];
-    fireEvent.click(checkbox);
+    // Click to deselect - click the first checkbox
+    const checkboxes = screen.getAllByRole('checkbox');
+    await user.click(checkboxes[0]);
 
     // Should now show 1 item selected
     await waitFor(() => {

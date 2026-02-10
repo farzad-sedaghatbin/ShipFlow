@@ -25,9 +25,11 @@ public class OrganizationSettings {
 
   // Cycle Configuration
   @Column(nullable = false)
+  @Builder.Default
   private Integer defaultCycleLengthWeeks = 6;
 
   @Column(nullable = false)
+  @Builder.Default
   private Integer defaultCooldownWeeks = 2;
 
   // Risk Thresholds (stored as JSON in a single column for flexibility)
@@ -68,10 +70,21 @@ public class OrganizationSettings {
   private String dateFormat = "MM/DD/YYYY";
 
   @Column(nullable = false, name = "enable_notifications")
+  @Builder.Default
   private Boolean enableNotifications = true;
 
   @Column(nullable = false, name = "enable_ai_features")
+  @Builder.Default
   private Boolean enableAIFeatures = true;
+
+  // Capacity Configuration
+  @Column(nullable = false, name = "default_hours_per_day", columnDefinition = "NUMERIC")
+  @Builder.Default
+  private Double defaultHoursPerDay = 8.0;
+
+  @Column(nullable = false, name = "default_working_days_per_week")
+  @Builder.Default
+  private Integer defaultWorkingDaysPerWeek = 5;
 
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;

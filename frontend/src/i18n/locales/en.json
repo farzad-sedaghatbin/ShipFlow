@@ -349,7 +349,14 @@
     "createPitch": "Create Pitch",
     "aiRiskAnalysis": "AI Risk Analysis",
     "progress": "Progress",
-    "budgetProgress": "Budget Progress"
+    "budgetProgress": "Budget Progress",
+    "tabs": {
+      "overview": "Overview",
+      "aiInsights": "AI Insights",
+      "activity": "Activity",
+      "noAiInsights": "AI insights are available for Shape Up projects with active cycles.",
+      "noActivityWidgets": "No activity widgets are currently visible. Enable them in widget settings."
+    }
   },
   "projects": {
     "title": "Projects",
@@ -662,6 +669,13 @@
     "cancel": "Cancel",
     "update": "Update",
     "add": "Add",
+    "capacityConfiguration": "Capacity Configuration",
+    "hoursPerDay": "Hours/Day",
+    "workingDaysPerWeek": "Days/Week",
+    "inheritFromOrg": "Inherit",
+    "capacityNote": "Leave empty to inherit from organization defaults",
+    "effectiveCapacity": "Effective capacity",
+    "capacityOverride": "Capacity override",
     "roles": {
       "BACKEND": "Backend",
       "FRONTEND": "Frontend",
@@ -884,7 +898,7 @@
     }
   },
   "narratives": {
-    "title": "Cycle Summary",
+    "title": "Cycle Summary Advisor",
     "subtitle": "AI-generated narrative of cycle outcomes",
     "whatWeBet": "What We Bet On",
     "whatShipped": "What Shipped",
@@ -2424,6 +2438,30 @@
       "RECENT_ACTIVITY": {
         "label": "Recent Activity",
         "description": "Latest activity feed from the system"
+      },
+      "CYCLE_SUMMARY": {
+        "label": "Cycle Summary",
+        "description": "AI-generated narrative summary of the cycle"
+      },
+      "CYCLE_SIGNALS": {
+        "label": "Cycle Signals",
+        "description": "Key health signals and metrics for cycles"
+      },
+      "AI_RISK_ADVISORY": {
+        "label": "AI Risk Advisory",
+        "description": "AI-powered risk analysis and recommendations"
+      },
+      "ACTIVE_CYCLES": {
+        "label": "Active Cycles",
+        "description": "Overview of all currently active cycles"
+      },
+      "HILL_CHART": {
+        "label": "Hill Chart",
+        "description": "Visual progress tracking on the hill chart"
+      },
+      "RECENT_PITCHES": {
+        "label": "Recent Pitches",
+        "description": "Latest pitches with progress tracking"
       }
     },
     "saveLayout": "Save Layout",
@@ -2977,6 +3015,13 @@
     "featuresDesc": "Enable or disable features for your organization",
     "aiFeatures": "AI Features",
     "aiFeaturesDesc": "Enable AI-powered features like risk analysis and test generation",
+    "capacityConfiguration": "Capacity Configuration",
+    "capacityConfigurationDesc": "Configure default working hours and days for capacity calculations",
+    "defaultHoursPerDay": "Default Hours Per Day",
+    "defaultHoursPerDayDesc": "Organization-wide default working hours per day",
+    "defaultWorkingDaysPerWeek": "Working Days Per Week",
+    "defaultWorkingDaysPerWeekDesc": "Number of working days in a week (typically 5)",
+    "capacityInheritanceNote": "These defaults can be overridden at team, person, or assignment level",
     "lastUpdated": "Last updated: {{date}}",
     "noPermission": "You don't have permission to access organization settings",
     "failedToLoadProfiles": "Failed to load configuration profiles",
@@ -3529,6 +3574,16 @@
     "actualHours": "Actual Hours",
     "team": "Team",
     "cycle": "Cycle",
+    "teamCapacity": "Team Capacity",
+    "teamMembers": "Team Members",
+    "budgetPersonDays": "Budget (person-days)",
+    "budgetUtilization": "Budget Utilization",
+    "busiestPerson": "Busiest Person",
+    "utilizationPercent": "Utilization",
+    "hoursPerDay": "Hours/Day",
+    "capacitySource": "Source",
+    "overBudget": "Over Budget",
+    "underBudget": "Under Budget",
     "editShapeUp": "Edit Shape Up",
     "saveShapeUp": "Save Shape Up",
     "cancelEdit": "Cancel",
@@ -3997,6 +4052,8 @@
     "cycleManagementDesc": "Create and manage 6-week development cycles with betting and building phases following Shape Up methodology.",
     "hillCharts": "Hill Charts",
     "hillChartsDesc": "Visual progress tracking showing work moving from \"figuring it out\" to \"making it happen\" with drag-and-drop.",
+    "scopeTaskBridge": "Scope-Task Auto-Bridge",
+    "scopeTaskBridgeDesc": "Unified workflow where creating a root task with a pitch automatically creates a linked hill chart scope. Auto-progress syncs scope position with subtask completion (0-100%), with manual override control and real-time event-driven updates.",
     "aiRiskAnalysis": "AI Risk Analysis",
     "aiRiskAnalysisDesc": "Get AI-powered risk assessments with actionable insights and smart recommendations for your pitches.",
     "pitchHealthSummary": "Pitch Health Summary",

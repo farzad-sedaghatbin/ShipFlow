@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  CooldownActivityDTO,
-  CooldownSummaryDTO,
-  cooldownActivityService,
-} from '../services/cooldownActivityService';
+import { CooldownActivityDTO } from '../services/cooldownActivityService';
 import { useToast } from '../contexts';
 import { safeParseId } from '../utils/validation';
 import CooldownActivitiesView from '../components/CooldownActivitiesView';
+import {
+  useCooldownActivities,
+  useCooldownSummary,
+  useDeleteCooldownActivity,
+} from '../hooks/useCooldownActivities';
 
 /**
  * Container component for Cooldown Activities page
@@ -18,42 +19,28 @@ export default function CooldownActivitiesPage() {
   const { t } = useTranslation();
   const { cycleId: cycleIdParam } = useParams<{ cycleId: string }>();
   const cycleId = safeParseId(cycleIdParam);
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
 
-  const [activities, setActivities] = useState<CooldownActivityDTO[]>([]);
-  const [summary, setSummary] = useState<CooldownSummaryDTO | null>(null);
-  const [loading, setLoading] = useState(true);
+  // React Query hooks for data fetching
+  const { data: activities = [], isLoading: activitiesLoading, error: activitiesError } = useCooldownActivities(cycleId);
+  const { data: summary = null, isLoading: summaryLoading } = useCooldownSummary(cycleId);
+  const deleteMutation = useDeleteCooldownActivity();
+
+  // UI state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<CooldownActivityDTO | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState<CooldownActivityDTO | null>(null);
-
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  useEffect(() => {
-    if (cycleId) {
-      loadData();
-    }
-  }, [cycleId]);
+  // Compute loading state
+  const loading = activitiesLoading || summaryLoading;
 
-  const loadData = async () => {
-    if (!cycleId) return;
-
-    setLoading(true);
-    try {
-      const [activitiesRes, summaryRes] = await Promise.all([
-        cooldownActivityService.getActivitiesByCycle(cycleId),
-        cooldownActivityService.getCycleSummary(cycleId),
-      ]);
-      setActivities(activitiesRes.data);
-      setSummary(summaryRes.data);
-    } catch (error: any) {
-      showError(error.response?.data?.message || t('cooldownActivity.loadError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Handle query errors
+  if (activitiesError) {
+    showError((activitiesError as any).response?.data?.message || t('cooldownActivity.loadError'));
+  }
 
   const handleCreate = () => {
     setSelectedActivity(undefined);
@@ -70,18 +57,18 @@ export default function CooldownActivitiesPage() {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!activityToDelete) return;
+  const handleDeleteConfirm = () => {
+    if (!activityToDelete || !cycleId) return;
 
-    try {
-      await cooldownActivityService.deleteActivity(activityToDelete.id);
-      showSuccess(t('cooldownActivity.deleteSuccess'));
-      setDeleteDialogOpen(false);
-      setActivityToDelete(null);
-      loadData();
-    } catch (error: any) {
-      showError(error.response?.data?.message || t('cooldownActivity.deleteError'));
-    }
+    deleteMutation.mutate(
+      { id: activityToDelete.id, cycleId },
+      {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setActivityToDelete(null);
+        },
+      }
+    );
   };
 
   const filteredActivities = activities.filter((activity) => {
@@ -109,7 +96,7 @@ export default function CooldownActivitiesPage() {
       onDeleteClick={handleDeleteClick}
       onDeleteConfirm={handleDeleteConfirm}
       onDialogClose={() => setDialogOpen(false)}
-      onDialogSave={loadData}
+      onDialogSave={() => setDialogOpen(false)}
       onFilterTypeChange={setFilterType}
       onFilterStatusChange={setFilterStatus}
       onDeleteDialogChange={setDeleteDialogOpen}

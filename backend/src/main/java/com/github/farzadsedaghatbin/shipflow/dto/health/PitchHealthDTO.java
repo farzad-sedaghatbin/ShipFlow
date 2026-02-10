@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.dto.health;
 
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.*;
 
 /**
@@ -57,4 +58,53 @@ public class PitchHealthDTO {
 
   /** Cycle end date for reference */
   private LocalDate cycleEndDate;
+
+  // --- Team Capacity / Budget Fields ---
+  
+  /** Number of active team members */
+  private Integer teamMemberCount;
+  
+  /** Appetite in calendar days */
+  private Integer appetiteDays;
+  
+  /** Total budget in person-days (sum of all members' budgets) */
+  private Double totalBudgetPersonDays;
+  
+  /** Total hours spent by the team */
+  private Double totalHoursSpent;
+  
+  /** Total person-days spent (totalHoursSpent / avgHoursPerDay) */
+  private Double totalPersonDaysSpent;
+  
+  /** Budget utilization percentage based on person-days */
+  private Double budgetUtilizationPercent;
+  
+  /** Member who is closest to exhausting their individual budget */
+  private MemberBudgetSummary bottleneckMember;
+  
+  /** Individual member budget breakdowns */
+  private List<MemberBudgetSummary> memberBudgets;
+  
+  /** Whether any team member has exceeded their individual budget */
+  private Boolean hasOverBudgetMember;
+  
+  /**
+   * Summary of a team member's budget status.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class MemberBudgetSummary {
+    private Long personId;
+    private String personName;
+    private String role;
+    private Double hoursPerDay;
+    private String capacitySource; // organization, team, person, assignment
+    private Double totalBudgetHours;
+    private Double hoursSpent;
+    private Double hoursRemaining;
+    private Double utilizationPercent;
+    private Boolean isOverBudget;
+  }
 }

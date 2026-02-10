@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class CycleNarrativeService {
 
-  private static final double HOURS_PER_DAY = 8.0;
   private static final double SURPRISE_THRESHOLD = 0.25; // 25% variance
 
   private final CycleRepository cycleRepository;
@@ -36,6 +35,7 @@ public class CycleNarrativeService {
   private final AIConfig aiConfig;
   private final ChatLanguageModel chatLanguageModel;
   private final UserRepository userRepository;
+  private final CapacityConfigService capacityConfigService;
 
   @Autowired
   public CycleNarrativeService(
@@ -46,7 +46,8 @@ public class CycleNarrativeService {
       CycleNarrativeRepository narrativeRepository,
       AIConfig aiConfig,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
-      UserRepository userRepository) {
+      UserRepository userRepository,
+      CapacityConfigService capacityConfigService) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.workLogRepository = workLogRepository;
@@ -55,6 +56,7 @@ public class CycleNarrativeService {
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
     this.userRepository = userRepository;
+    this.capacityConfigService = capacityConfigService;
   }
 
   /**
@@ -115,7 +117,7 @@ public class CycleNarrativeService {
 
     // Calculate average appetite accuracy
     double totalAppetite = pitches.stream()
-        .mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY)
+        .mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p))
         .sum();
     double totalActual = getTotalHoursForCycle(cycleId);
     double accuracy = totalAppetite > 0 ? (1 - Math.abs(totalActual - totalAppetite) / totalAppetite) * 100 : 0;
@@ -317,7 +319,8 @@ public class CycleNarrativeService {
             prompt.append("- ").append(pitch.getTitle());
             prompt.append(" (appetite: ").append(pitch.getAppetiteDays()).append(" days");
             if (actual != null) {
-              prompt.append(", actual: ").append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days");
+              double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
+              prompt.append(", actual: ").append(String.format("%.1f", actual / hoursPerDay)).append(" days");
             }
             prompt.append(")\n");
           }
@@ -347,12 +350,13 @@ public class CycleNarrativeService {
         for (Pitch pitch : pitches) {
           Double actual = workHoursMap.get(pitch.getId());
           if (actual != null) {
-            double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+            double appetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
             double variance = (actual - appetite) / appetite;
             if (Math.abs(variance) > SURPRISE_THRESHOLD) {
+              double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
               prompt.append("- ").append(pitch.getTitle());
               prompt.append(": Expected ").append(pitch.getAppetiteDays()).append(" days");
-              prompt.append(", took ").append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days");
+              prompt.append(", took ").append(String.format("%.1f", actual / hoursPerDay)).append(" days");
               prompt.append(" (").append(variance > 0 ? "+" : "").append(String.format("%.0f%%", variance * 100)).append(")\n");
             }
           }
@@ -369,7 +373,8 @@ public class CycleNarrativeService {
           prompt.append(" (").append(pitch.getStatus()).append(")");
           Double actual = workHoursMap.get(pitch.getId());
           if (actual != null) {
-            prompt.append(" - ").append(String.format("%.1f", actual / HOURS_PER_DAY)).append("/").append(pitch.getAppetiteDays()).append(" days");
+            double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
+            prompt.append(" - ").append(String.format("%.1f", actual / hoursPerDay)).append("/").append(pitch.getAppetiteDays()).append(" days");
           }
           prompt.append("\n");
         }
@@ -468,9 +473,10 @@ public class CycleNarrativeService {
       sb.append("• **").append(pitch.getTitle()).append("**");
       Double actual = workHoursMap.get(pitch.getId());
       if (actual != null) {
-        double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double appetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
+        double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
         double variance = (actual - appetite) / appetite * 100;
-        sb.append(" - Completed in ").append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days");
+        sb.append(" - Completed in ").append(String.format("%.1f", actual / hoursPerDay)).append(" days");
         sb.append(" (").append(variance > 0 ? "+" : "").append(String.format("%.0f%%", variance)).append(" vs appetite)");
       }
       sb.append("\n");
@@ -517,7 +523,7 @@ public class CycleNarrativeService {
     for (Pitch pitch : pitches) {
       Double actual = workHoursMap.get(pitch.getId());
       if (actual != null && actual > 0) {
-        double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double appetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
         double variance = (actual - appetite) / appetite;
         if (variance < -SURPRISE_THRESHOLD) {
           underBudget.add(pitch);
@@ -535,8 +541,9 @@ public class CycleNarrativeService {
       sb.append("**Took longer than expected:**\n");
       for (Pitch pitch : overBudget) {
         Double actual = workHoursMap.get(pitch.getId());
+        double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
         sb.append("• ").append(pitch.getTitle()).append(" - ");
-        sb.append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days vs ");
+        sb.append(String.format("%.1f", actual / hoursPerDay)).append(" days vs ");
         sb.append(pitch.getAppetiteDays()).append(" day appetite\n");
       }
       sb.append("\n");
@@ -546,8 +553,9 @@ public class CycleNarrativeService {
       sb.append("**Finished faster than expected:**\n");
       for (Pitch pitch : underBudget) {
         Double actual = workHoursMap.get(pitch.getId());
+        double hoursPerDay = capacityConfigService.getEffectiveHoursPerDayForPitch(pitch);
         sb.append("• ").append(pitch.getTitle()).append(" - ");
-        sb.append(String.format("%.1f", actual / HOURS_PER_DAY)).append(" days vs ");
+        sb.append(String.format("%.1f", actual / hoursPerDay)).append(" days vs ");
         sb.append(pitch.getAppetiteDays()).append(" day appetite\n");
       }
     }

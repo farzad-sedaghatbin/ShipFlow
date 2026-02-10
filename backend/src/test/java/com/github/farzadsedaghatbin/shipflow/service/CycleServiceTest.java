@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -61,6 +63,9 @@ class CycleServiceTest {
 
   @Mock
   private MessageService messageService;
+
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   @Mock
   private SecurityContext securityContext;
@@ -457,6 +462,122 @@ class CycleServiceTest {
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getPitchCount()).isEqualTo(2);
     verify(pitchRepository).countByCycleIdNotDeleted(1L);
+  }
+
+  @Test
+  void getAccessibleCycles_ShouldExcludeKanbanProjectCycles() {
+    // Given: Set up a regular Shape Up project and a Kanban project
+    Project shapeUpProject = Project.builder()
+        .id(1L)
+        .name("Shape Up Project")
+        .projectKey("SUP")
+        .projectType(ProjectType.SHAPE_UP)
+        .isActive(true)
+        .build();
+
+    Project kanbanProject = Project.builder()
+        .id(2L)
+        .name("Kanban Project")
+        .projectKey("KANBAN")
+        .projectType(ProjectType.KANBAN)
+        .isActive(true)
+        .build();
+
+    Cycle shapeUpCycle = Cycle.builder()
+        .id(1L)
+        .name("Shape Up Cycle")
+        .project(shapeUpProject)
+        .startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.BUILD)
+        .isActive(true)
+        .build();
+
+    Cycle kanbanCycle = Cycle.builder()
+        .id(2L)
+        .name("Kanban Continuous Flow")
+        .project(kanbanProject)
+        .startDate(LocalDate.of(2025, 8, 1))
+        .endDate(LocalDate.of(2099, 12, 31))
+        .phase(CyclePhase.BUILD)
+        .isActive(true)
+        .build();
+
+    setupSecurityContext("developer", developerUser);
+    when(userRepository.findByUsername("developer")).thenReturn(Optional.of(developerUser));
+    
+    // Repository should return only Shape Up cycles (Kanban excluded by query)
+    when(cycleRepository.findAccessibleCyclesByUserId(developerUser.getId()))
+        .thenReturn(Arrays.asList(shapeUpCycle));
+
+    // When
+    List<CycleDTO> result = cycleService.getAccessibleCycles();
+
+    // Then: Only Shape Up cycles should be returned (no Kanban cycles)
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("Shape Up Cycle");
+    assertThat(result.get(0).getProjectId()).isEqualTo(1L);
+    // Verify that no Kanban cycles are in the result
+    assertThat(result.stream().noneMatch(c -> c.getProjectId().equals(2L))).isTrue();
+    verify(cycleRepository).findAccessibleCyclesByUserId(developerUser.getId());
+  }
+
+  @Test
+  void getAccessibleActiveCycles_ShouldExcludeKanbanProjectCycles() {
+    // Given: Set up a regular Shape Up project and a Kanban project
+    Project shapeUpProject = Project.builder()
+        .id(1L)
+        .name("Shape Up Project")
+        .projectKey("SUP")
+        .projectType(ProjectType.SHAPE_UP)
+        .isActive(true)
+        .build();
+
+    Project kanbanProject = Project.builder()
+        .id(2L)
+        .name("Kanban Project")
+        .projectKey("KANBAN")
+        .projectType(ProjectType.KANBAN)
+        .isActive(true)
+        .build();
+
+    Cycle shapeUpCycle = Cycle.builder()
+        .id(1L)
+        .name("Shape Up Active Cycle")
+        .project(shapeUpProject)
+        .startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.BUILD)
+        .isActive(true)
+        .build();
+
+    Cycle kanbanCycle = Cycle.builder()
+        .id(2L)
+        .name("Kanban Continuous Flow")
+        .project(kanbanProject)
+        .startDate(LocalDate.of(2025, 8, 1))
+        .endDate(LocalDate.of(2099, 12, 31))
+        .phase(CyclePhase.BUILD)
+        .isActive(true)
+        .build();
+
+    setupSecurityContext("developer", developerUser);
+    when(userRepository.findByUsername("developer")).thenReturn(Optional.of(developerUser));
+    
+    // Repository should return only Shape Up cycles (Kanban excluded by query)
+    when(cycleRepository.findAccessibleActiveCyclesByUserId(developerUser.getId()))
+        .thenReturn(Arrays.asList(shapeUpCycle));
+
+    // When
+    List<CycleDTO> result = cycleService.getAccessibleActiveCycles();
+
+    // Then: Only Shape Up cycles should be returned (no Kanban cycles)
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("Shape Up Active Cycle");
+    assertThat(result.get(0).getProjectId()).isEqualTo(1L);
+    // Verify that no Kanban cycles are in the result
+    assertThat(result.stream().noneMatch(c -> c.getProjectId().equals(2L))).isTrue();
+    verify(cycleRepository).findAccessibleActiveCyclesByUserId(developerUser.getId());
   }
 
   private void setupSecurityContext(String username, User user) {

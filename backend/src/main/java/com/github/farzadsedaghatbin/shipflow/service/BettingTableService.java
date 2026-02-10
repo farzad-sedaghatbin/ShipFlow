@@ -28,8 +28,7 @@ public class BettingTableService {
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
   private final MessageService messageService;
-
-  private static final double HOURS_PER_DAY = 8.0;
+  private final CapacityConfigService capacityConfigService;
 
   /** Get the full betting table view for a cycle */
   public BettingTableDTO getBettingTable(Long cycleId) {
@@ -371,7 +370,7 @@ public class BettingTableService {
     if (totalHours == null)
       totalHours = 0.0;
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
@@ -702,7 +701,7 @@ public class BettingTableService {
           continue;
 
         // Calculate appetite hours
-        double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
         if (appetiteHours == 0.0)
           continue;
 

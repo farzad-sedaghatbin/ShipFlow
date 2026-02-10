@@ -13,6 +13,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +34,15 @@ class HillChartServiceTest {
 
   @Mock
   private PitchRepository pitchRepository;
+
+  @Mock
+  private TaskRepository taskRepository;
+
+  @Mock
+  private PersonRepository personRepository;
+
+  @Mock
+  private ScopeProgressService scopeProgressService;
 
   @InjectMocks
   private HillChartService hillChartService;
@@ -181,5 +192,33 @@ class HillChartServiceTest {
 
     // Act & Assert
     assertThrows(RuntimeException.class, () -> hillChartService.deleteHillChartPoint(999L));
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldEnableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, true);
+
+    // Assert
+    assertNotNull(result);
+    verify(scopeProgressService, times(1)).enableAutoProgress(1L, true);
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldDisableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, false);
+
+    // Assert
+    assertNotNull(result);
+    verify(scopeProgressService, times(1)).disableAutoProgress(1L);
   }
 }

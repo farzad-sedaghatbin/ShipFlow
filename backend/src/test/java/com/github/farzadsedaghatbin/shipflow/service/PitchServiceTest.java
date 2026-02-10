@@ -62,6 +62,9 @@ class PitchServiceTest {
   @Mock
   private Authentication authentication;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchService pitchService;
 
@@ -93,6 +96,10 @@ class PitchServiceTest {
     testRequest.setCycleId(1L);
     testRequest.setTeamId(1L);
     testRequest.setStatus(PitchStatus.PENDING);
+
+    // Setup capacity config mock - default 8 hours/day, 14 days * 8 hours = 112 hours
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
   }
 
   @org.junit.jupiter.api.AfterEach

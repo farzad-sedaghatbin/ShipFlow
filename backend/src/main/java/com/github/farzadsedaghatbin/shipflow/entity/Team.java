@@ -25,6 +25,13 @@ public class Team {
   @JoinColumn(name = "cycle_id")
   private Cycle cycle;
 
+  // Capacity Configuration Overrides (null = inherit from organization)
+  @Column(name = "hours_per_day_override", columnDefinition = "NUMERIC")
+  private Double hoursPerDayOverride;
+
+  @Column(name = "working_days_per_week_override")
+  private Integer workingDaysPerWeekOverride;
+
   @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<TeamAssignment> assignments = new ArrayList<>();

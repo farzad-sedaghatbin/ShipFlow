@@ -49,3 +49,29 @@ export {
   usePrefetchCycleData,
   useOptimisticUpdate,
 } from './useQueries';
+
+// Backlog-specific hooks
+export {
+  backlogKeys,
+  useBacklogCycles,
+  useBacklogPersons,
+  useActiveTimer,
+  useBacklogTasks,
+  useBacklogStatistics,
+  useSubtasks,
+  useCreateTask,
+  useUpdateTask,
+  useDeleteTask,
+  useUpdateTaskStatus,
+  useUpdateTaskPriority,
+  useStartTimer,
+} from './useBacklogData';
+export type { TaskQueryParams, StatisticsQueryParams } from './useBacklogData';
+
+// Backlog filters hook
+export { useBacklogFilters } from './useBacklogFilters';
+export type { BacklogFilterState, BacklogFilterActions, UseBacklogFiltersReturn } from './useBacklogFilters';
+
+// Backlog form hook
+export { useBacklogForm } from './useBacklogForm';
+export type { TaskFormData, UseBacklogFormReturn } from './useBacklogForm';

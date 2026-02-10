@@ -79,6 +79,14 @@ public class Task {
   @JoinColumn(name = "scope_id")
   private HillChartPoint scope;
 
+  /**
+   * The scope that was auto-created when this root task was linked to a pitch.
+   * Used for bidirectional Scope-Task synchronization.
+   */
+  @NotAudited
+  @OneToOne(fetch = FetchType.LAZY, mappedBy = "linkedTask")
+  private HillChartPoint autoCreatedScope;
+
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "assignee_id")
@@ -146,6 +154,22 @@ public class Task {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "deleted_by_id")
   private User deletedBy;
+
+  /**
+   * Checks if this task is a root scope task (shows on hill chart).
+   * A task is a root scope if it has a pitch and no parent task.
+   */
+  public boolean isRootScope() {
+    return pitch != null && parentTask == null;
+  }
+
+  /**
+   * Checks if this task should be displayed on the hill chart.
+   * True if it's a root scope task with an auto-created scope.
+   */
+  public boolean showsOnHillChart() {
+    return isRootScope() && autoCreatedScope != null;
+  }
 
   @PrePersist
   protected void onCreate() {

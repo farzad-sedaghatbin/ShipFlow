@@ -26,6 +26,7 @@ import EmptyState from '../components/EmptyState';
 import { EmptyPitchesIllustration } from '../components/illustrations';
 import { useProject, useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { cn } from '../lib/utils';
 import LoadingButton from '../components/LoadingButton';
 
 import { Card, CardContent } from '../components/ui/card';
@@ -467,6 +468,18 @@ export default function PitchBoard() {
                       <p className="text-sm text-muted-foreground mb-3 mt-1">
                         {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                       </p>
+                      {pitch.busiestPerson && (
+                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                          <span className="font-medium">👤 {pitch.busiestPerson.personName}</span>
+                          <span className={cn(
+                            pitch.busiestPerson.isOverBudget ? 'text-destructive' :
+                            pitch.busiestPerson.utilizationPercent > 80 ? 'text-orange-500' :
+                            'text-green-600'
+                          )}>
+                            ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}%)
+                          </span>
+                        </div>
+                      )}
                       <ProgressBar
                         value={pitch.progressPercentage || 0}
                         label={`${pitch.totalHoursSpent?.toFixed(1) || 0}h / ${pitch.appetiteHours?.toFixed(0) || 0}h`}

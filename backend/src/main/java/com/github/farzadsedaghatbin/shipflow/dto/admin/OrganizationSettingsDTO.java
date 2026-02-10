@@ -48,6 +48,10 @@ public class OrganizationSettingsDTO {
   private Boolean enableNotifications;
   private Boolean enableAIFeatures;
 
+  // Capacity Configuration
+  private Double defaultHoursPerDay;
+  private Integer defaultWorkingDaysPerWeek;
+
   private LocalDateTime updatedAt;
   private String updatedBy;
 

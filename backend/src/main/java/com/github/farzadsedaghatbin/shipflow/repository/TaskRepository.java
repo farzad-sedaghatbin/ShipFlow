@@ -146,6 +146,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Hierarchy queries
     List<Task> findByParentTaskId(Long parentTaskId);
 
+    @Query("SELECT t FROM Task t WHERE t.parentTask.id = :parentTaskId AND t.deletedAt IS NULL")
+    List<Task> findByParentTaskIdNotDeleted(@Param("parentTaskId") Long parentTaskId);
+
     List<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId);
 
     Page<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId, Pageable pageable);

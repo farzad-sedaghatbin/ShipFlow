@@ -397,4 +397,73 @@ class TaskServiceTest {
 
     assertThat(result.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
   }
+
+  @Test
+  void createTask_WithPitchAndNoParent_ShouldAutoCreateLinkedScope() {
+    // Given: A root task with a pitch
+    CreateTaskRequest request = CreateTaskRequest.builder()
+        .title("Auto-Scope Task")
+        .description("This should create a scope")
+        .cycleId(testCycle.getId())
+        .pitchId(testTask.getPitch().getId())
+        .assigneeId(testPerson.getId())
+        .status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM)
+        .category(TaskCategory.PITCH_SCOPE)
+        .estimateHours(BigDecimal.valueOf(8.0))
+        .build();
+
+    // When: Creating the task
+    TaskDTO result = taskService.createTask(request);
+
+    // Then: Should have an auto-created scope ID
+    assertThat(result.getAutoCreatedScopeId()).isNotNull();
+    assertThat(result.getShowOnHillChart()).isTrue();
+  }
+
+  @Test
+  void createTask_WithParentTask_ShouldNotAutoCreateScope() {
+    // Given: A subtask with a parent
+    CreateTaskRequest request = CreateTaskRequest.builder()
+        .title("Subtask")
+        .description("This should NOT create a scope")
+        .cycleId(testCycle.getId())
+        .pitchId(testTask.getPitch().getId())
+        .parentTaskId(testTask.getId())
+        .assigneeId(testPerson.getId())
+        .status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM)
+        .category(TaskCategory.PITCH_SCOPE)
+        .estimateHours(BigDecimal.valueOf(4.0))
+        .build();
+
+    // When: Creating the subtask
+    TaskDTO result = taskService.createTask(request);
+
+    // Then: Should NOT have an auto-created scope
+    assertThat(result.getAutoCreatedScopeId()).isNull();
+    assertThat(result.getShowOnHillChart()).isFalse();
+  }
+
+  @Test
+  void createTask_WithoutPitch_ShouldNotAutoCreateScope() {
+    // Given: A task without a pitch (technical debt)
+    CreateTaskRequest request = CreateTaskRequest.builder()
+        .title("Tech Debt Task")
+        .description("No pitch, so no scope")
+        .cycleId(testCycle.getId())
+        .assigneeId(testPerson.getId())
+        .status(TaskStatus.TODO)
+        .priority(TaskPriority.HIGH)
+        .category(TaskCategory.DEBT_IMPROVEMENT)
+        .estimateHours(BigDecimal.valueOf(6.0))
+        .build();
+
+    // When: Creating the task
+    TaskDTO result = taskService.createTask(request);
+
+    // Then: Should NOT have an auto-created scope
+    assertThat(result.getAutoCreatedScopeId()).isNull();
+    assertThat(result.getShowOnHillChart()).isFalse();
+  }
 }

@@ -1,22 +1,19 @@
 {
-  "timestamp": "2026-02-09T00:54:56.275Z",
+  "timestamp": "2026-02-09T13:26:03.282Z",
   "stats": {
-    "totalEnKeys": 5031,
-    "totalFaKeys": 5026,
-    "totalUsedKeys": 2888,
-    "filesScanned": 288
+    "totalEnKeys": 5048,
+    "totalFaKeys": 5048,
+    "totalUsedKeys": 2894,
+    "filesScanned": 315
   },
   "issues": {
-    "missingInFa": [
-      "common.votes",
-      "common.selectAll",
-      "common.deselectAll",
-      "common.creating",
-      "signals.appetiteAccuracy.insufficientData"
-    ],
+    "missingInFa": [],
     "missingInEn": [],
     "missingInBoth": [
-      "should render dialog with action type selection"
+      "should render dialog with action type selection",
+      "should initialize with dialogs closed",
+      "cooldownActivity.createError",
+      "cooldownActivity.updateError"
     ],
     "potentialMismatches": []
   },
@@ -1022,6 +1019,18 @@
     "dashboardCustomizer.widgets.CYCLE_PROGRESS.description",
     "dashboardCustomizer.widgets.RECENT_ACTIVITY.label",
     "dashboardCustomizer.widgets.RECENT_ACTIVITY.description",
+    "dashboardCustomizer.widgets.CYCLE_SUMMARY.label",
+    "dashboardCustomizer.widgets.CYCLE_SUMMARY.description",
+    "dashboardCustomizer.widgets.CYCLE_SIGNALS.label",
+    "dashboardCustomizer.widgets.CYCLE_SIGNALS.description",
+    "dashboardCustomizer.widgets.AI_RISK_ADVISORY.label",
+    "dashboardCustomizer.widgets.AI_RISK_ADVISORY.description",
+    "dashboardCustomizer.widgets.ACTIVE_CYCLES.label",
+    "dashboardCustomizer.widgets.ACTIVE_CYCLES.description",
+    "dashboardCustomizer.widgets.HILL_CHART.label",
+    "dashboardCustomizer.widgets.HILL_CHART.description",
+    "dashboardCustomizer.widgets.RECENT_PITCHES.label",
+    "dashboardCustomizer.widgets.RECENT_PITCHES.description",
     "dashboardCustomizer.saveLayout",
     "dashboardCustomizer.quickLinks",
     "dashboardCustomizer.newCycle",
@@ -2161,6 +2170,8 @@
     "activity.hoursAgo_other",
     "activity.daysAgo",
     "activity.daysAgo_other",
+    "cooldownActivity.activities",
+    "cooldownActivity.saveError",
     "cooldownActivity.types.bug_fix",
     "cooldownActivity.types.tech_debt",
     "cooldownActivity.types.kickoff_prep",

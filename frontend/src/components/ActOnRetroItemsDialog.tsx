@@ -431,7 +431,6 @@ export function ActOnRetroItemsDialog({
                     >
                       <Checkbox
                         checked={selectedItemIds.includes(item.id)}
-                        onCheckedChange={() => handleItemToggle(item.id)}
                         className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">

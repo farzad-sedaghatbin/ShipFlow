@@ -67,6 +67,9 @@ class CycleSignalServiceTest {
   @Mock
   private ObjectMapper objectMapper;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private CycleSignalService cycleSignalService;
 
@@ -107,6 +110,14 @@ class CycleSignalServiceTest {
         .build();
 
     pitches = createSamplePitches();
+
+    // Setup capacity config mock - dynamically calculate hours based on appetite
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class)))
+        .thenAnswer(invocation -> {
+          Pitch pitch = invocation.getArgument(0);
+          return pitch.getAppetiteDays() * 8.0; // 8 hours/day default
+        });
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
   }
 
   private List<Pitch> createSamplePitches() {

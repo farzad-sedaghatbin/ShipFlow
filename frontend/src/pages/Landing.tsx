@@ -57,6 +57,11 @@ export default function Landing() {
       description: t('landing.hillChartsDesc'),
     },
     {
+      icon: <Target className="h-10 w-10" />,
+      title: t('landing.scopeTaskBridge'),
+      description: t('landing.scopeTaskBridgeDesc'),
+    },
+    {
       icon: <Brain className="h-10 w-10" />,
       title: t('landing.aiRiskAnalysis'),
       description: t('landing.aiRiskAnalysisDesc'),

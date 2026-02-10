@@ -65,6 +65,9 @@ class ReportServiceTest {
   @Mock
   private CycleNarrativeService cycleNarrativeService;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private ReportService reportService;
 
@@ -128,6 +131,14 @@ class ReportServiceTest {
         .cycleName("Q1 2026")
         .projectName("Test Project")
         .build());
+
+    // Setup capacity config mock - dynamically calculate hours based on appetite
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class)))
+        .thenAnswer(invocation -> {
+          Pitch pitch = invocation.getArgument(0);
+          return pitch.getAppetiteDays() * 8.0; // 8 hours/day default
+        });
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
   }
 
   private WorkLog createWorkLog(Long id, Pitch pitch, Person person, Double hours, LocalDate date) {

@@ -23,4 +23,16 @@ public class CreateHillChartPointRequest {
   @Min(value = 0, message = "Position must be between 0 and 100")
   @Max(value = 100, message = "Position must be between 0 and 100")
   private Integer position;
+
+  /**
+   * When true, auto-creates a Task linked to this scope.
+   * Defaults to true for unified Scope-Task workflow.
+   */
+  @Builder.Default
+  private Boolean createTaskAutomatically = true;
+
+  /**
+   * Optional assignee ID for the auto-created task.
+   */
+  private Long assigneeId;
 }

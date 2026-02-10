@@ -39,6 +39,10 @@ public class TaskDTO {
   private Long scopeId;
   private String scopeName;
 
+  // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
+  private Long autoCreatedScopeId;
+  private Boolean showOnHillChart;
+
   private Long assigneeId;
   private String assigneeName;
   private String assigneeAvatarUrl;

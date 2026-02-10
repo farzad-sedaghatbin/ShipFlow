@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   RefreshCw,
   FileText,
   Users,
   TrendingUp,
-  Plus,
   Rocket,
   Settings,
 } from 'lucide-react';
@@ -17,40 +15,22 @@ import { teamService } from '../services/teamService';
 import { dashboardWidgetApi } from '../services/dashboardApi';
 import { Cycle, Pitch, Team } from '../types';
 import { DashboardWidget } from '../types/dashboard';
-import StatusChip from '../components/StatusChip';
-import { HillChartWidget } from '../components/HillChartWidget';
-import CycleRiskOverview from '../components/CycleRiskOverview';
 import { DashboardSkeleton } from '../components/Skeletons';
 import EmptyState from '../components/EmptyState';
 import { useProject } from '../contexts';
 import {
-  EmptyCyclesIllustration,
-  EmptyPitchesIllustration,
   WelcomeIllustration,
 } from '../components/illustrations';
 import MotionContainer from '../components/MotionContainer';
 import { AnimatedCard } from '../components/animations';
 import QuickLinks from '../components/QuickLinks';
-import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import {
-  OverdueTasksWidget,
-  BlockedTasksWidget,
-  UpcomingDeadlinesWidget,
-  MyTasksWidget,
-  TeamWorkloadWidget,
-  CycleProgressWidget,
-  RecentActivityWidget,
-} from '../components/widgets';
 import { DashboardCustomizer } from '../components/DashboardCustomizer';
-import { CycleSignalsPanel } from '../components/CycleSignalsPanel';
-import { CycleSummaryPanel } from '../components/CycleSummaryPanel';
+import { DashboardTabs } from '../components/DashboardTabs';
 
 export default function Dashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
   const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
@@ -120,29 +100,6 @@ export default function Dashboard() {
       setWidgets(widgetsData);
     } catch (error) {
       console.error('Failed to refresh widgets:', error);
-    }
-  };
-
-  const renderWidget = (widget: DashboardWidget) => {
-    const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
-    
-    switch (widget.widgetType) {
-      case 'OVERDUE_TASKS':
-        return <OverdueTasksWidget key={widget.id} />;
-      case 'BLOCKED_TASKS':
-        return <BlockedTasksWidget key={widget.id} />;
-      case 'UPCOMING_DEADLINES':
-        return <UpcomingDeadlinesWidget key={widget.id} />;
-      case 'MY_TASKS':
-        return <MyTasksWidget key={widget.id} />;
-      case 'TEAM_WORKLOAD':
-        return <TeamWorkloadWidget key={widget.id} />;
-      case 'CYCLE_PROGRESS':
-        return <CycleProgressWidget key={widget.id} />;
-      case 'RECENT_ACTIVITY':
-        return <RecentActivityWidget key={widget.id} projectId={projectId} />;
-      default:
-        return null;
     }
   };
 
@@ -341,180 +298,16 @@ export default function Dashboard() {
         </MotionContainer>
       )}
 
-      {/* Customizable Widgets Grid */}
-      {widgets.filter((w) => w.isVisible).length > 0 && (
-        <MotionContainer delay={0.5} className="mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {widgets
-              .filter((widget) => widget.isVisible)
-              .sort((a, b) => a.displayOrder - b.displayOrder)
-              .map((widget) => renderWidget(widget))}
-          </div>
-        </MotionContainer>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Left Column: Active Cycles + Hill Chart */}
-        {!isKanbanProject && (
-        <MotionContainer delay={0.6} className="space-y-3">
-          {/* Active Cycles */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.activeCycles')}</h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/cycles">{t('common.viewAll')}</Link>
-                </Button>
-              </div>
-              {activeCycles.length === 0 ? (
-                <EmptyState
-                  illustration={<EmptyCyclesIllustration width={160} height={120} />}
-                  title={t('dashboard.noActiveCycles')}
-                  description={t('dashboard.noActiveCyclesDescription')}
-                  size="small"
-                  compact
-                  action={{
-                    label: t('dashboard.newCycle'),
-                    onClick: () => window.location.href = '/cycles/new',
-                    startIcon: <Plus className="w-4 h-4 mr-1" />,
-                  }}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {activeCycles.map((cycle) => (
-                    <Link
-                      key={cycle.id}
-                      to={`/cycles/${cycle.id}`}
-                      className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-foreground">{cycle.name}</span>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            cycle.phase === 'BUILD' && 'bg-primary/15 text-primary',
-                            cycle.phase === 'SHAPING' && 'bg-blue-500/15 text-blue-500',
-                            cycle.phase === 'BETTING' && 'bg-amber-500/15 text-amber-500',
-                            cycle.phase === 'COOLDOWN' && 'bg-violet-500/15 text-violet-500'
-                          )}
-                        >
-                          {cycle.phase}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatLocalizedDate(new Date(cycle.startDate), i18n.language)} - {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Hill Chart Widget */}
-          <HillChartWidget
-            maxPoints={5}
-            projectId={isAllProjectsSelected ? undefined : currentProject?.id}
-          />
-        </MotionContainer>
-        )}
-
-        {/* Right Column: Recent Pitches */}
-        {!isKanbanProject && (
-        <MotionContainer delay={0.7}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.recentPitches')}</h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/pitches">{t('common.viewAll')}</Link>
-                </Button>
-              </div>
-              {recentPitches.length === 0 ? (
-                <EmptyState
-                  illustration={<EmptyPitchesIllustration width={160} height={120} />}
-                  title={t('dashboard.noPitches')}
-                  description={t('dashboard.noPitchesDescription')}
-                  size="small"
-                  compact
-                  action={{
-                    label: t('dashboard.createPitch'),
-                    onClick: () => window.location.href = '/pitches/new',
-                    startIcon: <Plus className="w-4 h-4 mr-1" />,
-                  }}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {recentPitches.map((pitch) => (
-                    <Link
-                      key={pitch.id}
-                      to={`/pitches/${pitch.id}`}
-                      className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-foreground">{pitch.title}</span>
-                        <StatusChip status={pitch.status} />
-                      </div>
-                      <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')}</span>
-                        <span>{pitch.progressPercentage?.toFixed(0) || 0}%</span>
-                      </div>
-                      <Progress
-                        value={Math.min(pitch.progressPercentage || 0, 100)}
-                        className={cn(
-                          'h-1 mt-1',
-                          (pitch.progressPercentage || 0) > 100 && '[&>div]:bg-destructive'
-                        )}
-                      />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </MotionContainer>
-        )}
-
-        {/* Cycle Risk Overview */}
-        {!isKanbanProject && activeCycles.length > 0 && (
-          <div className="col-span-full">
-            <h2 className="text-lg font-semibold text-foreground mb-2">{t('dashboard.aiRiskAnalysis')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              {activeCycles.slice(0, 3).map((cycle) => (
-                <CycleRiskOverview
-                  key={cycle.id}
-                  cycleId={cycle.id}
-                  cycleName={cycle.name}
-                  compact
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* v0.5 - Cycle Signals for first active cycle */}
-        {!isKanbanProject && activeCycles.length > 0 && currentProject && (
-          <div className="col-span-full grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CycleSignalsPanel 
-              cycleId={activeCycles[0].id}
-              projectId={currentProject.id}
-            />
-            <CycleSummaryPanel 
-              cycleId={activeCycles[0].id}
-            />
-          </div>
-        )}
-
-        {/* Full Risk Overview for First Active Cycle */}
-        {!isKanbanProject && activeCycles.length > 0 && (
-          <div className="col-span-full">
-            <CycleRiskOverview
-              cycleId={activeCycles[0].id}
-              cycleName={activeCycles[0].name}
-            />
-          </div>
-        )}
-      </div>
+      {/* Tabbed Dashboard Content */}
+      <MotionContainer delay={0.5}>
+        <DashboardTabs
+          widgets={widgets}
+          activeCycles={activeCycles}
+          recentPitches={recentPitches}
+          projectId={isAllProjectsSelected ? undefined : currentProject?.id}
+          isKanbanProject={isKanbanProject}
+        />
+      </MotionContainer>
     </div>
   );
 }

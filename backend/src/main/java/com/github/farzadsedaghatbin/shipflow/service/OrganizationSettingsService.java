@@ -92,6 +92,20 @@ public class OrganizationSettingsService {
       settings.setEnableAIFeatures(request.getEnableAIFeatures());
     }
 
+    // Capacity Configuration
+    if (request.getDefaultHoursPerDay() != null) {
+      if (request.getDefaultHoursPerDay() < 1 || request.getDefaultHoursPerDay() > 24) {
+        throw new IllegalArgumentException("Default hours per day must be between 1 and 24");
+      }
+      settings.setDefaultHoursPerDay(request.getDefaultHoursPerDay());
+    }
+    if (request.getDefaultWorkingDaysPerWeek() != null) {
+      if (request.getDefaultWorkingDaysPerWeek() < 1 || request.getDefaultWorkingDaysPerWeek() > 7) {
+        throw new IllegalArgumentException("Default working days per week must be between 1 and 7");
+      }
+      settings.setDefaultWorkingDaysPerWeek(request.getDefaultWorkingDaysPerWeek());
+    }
+
     settings.setUpdatedBy(username);
     settings.setUpdatedAt(LocalDateTime.now());
 
@@ -150,16 +164,19 @@ public class OrganizationSettingsService {
             .color("#6B7280").isActive(true).order(5).isClosed(true).build());
 
     List<OrganizationSettingsDTO.SeverityLevelConfig> defaultSeverityLevels = List.of(
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("BLOCKER")
+            .description("Blocks release or critical functionality").color("#7C3AED").isActive(true).order(1)
+            .priority(1).build(),
         OrganizationSettingsDTO.SeverityLevelConfig.builder().name("CRITICAL")
-            .description("System down or data loss").color("#DC2626").isActive(true).order(1).priority(1)
+            .description("System down or data loss").color("#DC2626").isActive(true).order(2).priority(2)
             .build(),
-        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("HIGH").description("Major feature broken")
-            .color("#F59E0B").isActive(true).order(2).priority(2).build(),
-        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("MEDIUM")
-            .description("Feature partially broken").color("#3B82F6").isActive(true).order(3).priority(3)
-            .build(),
-        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("LOW").description("Minor issue or cosmetic")
-            .color("#10B981").isActive(true).order(4).priority(4).build());
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("MAJOR")
+            .description("Major feature broken").color("#F59E0B").isActive(true).order(3).priority(3).build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("MINOR")
+            .description("Minor feature issue").color("#3B82F6").isActive(true).order(4).priority(4).build(),
+        OrganizationSettingsDTO.SeverityLevelConfig.builder().name("TRIVIAL")
+            .description("Cosmetic or trivial issue").color("#10B981").isActive(true).order(5).priority(5)
+            .build());
 
     // Default risk weights (balanced profile)
     OrganizationSettingsDTO.RiskWeights defaultRiskWeights = OrganizationSettingsDTO.RiskWeights.builder()
@@ -362,6 +379,8 @@ public class OrganizationSettingsService {
         .meetingTypes(meetingTypes)
         .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
         .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
+        .defaultHoursPerDay(entity.getDefaultHoursPerDay())
+        .defaultWorkingDaysPerWeek(entity.getDefaultWorkingDaysPerWeek())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

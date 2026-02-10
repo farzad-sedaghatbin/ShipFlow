@@ -19,6 +19,13 @@ public class HillChartPointDTO {
   private String scope;
   private String description;
   private Integer position;
+
+  // Scope-Task Bridge fields
+  private Long linkedTaskId;
+  private String linkedTaskTitle;
+  private Boolean autoProgressEnabled;
+  private Integer suggestedPosition;
+
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 }

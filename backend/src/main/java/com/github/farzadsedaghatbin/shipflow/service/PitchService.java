@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -16,6 +17,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class PitchService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   private final PitchRepository pitchRepository;
   private final CycleRepository cycleRepository;
   private final TeamRepository teamRepository;
@@ -40,6 +40,7 @@ public class PitchService {
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
+  private final CapacityConfigService capacityConfigService;
 
   public List<PitchDTO> getAllPitches() {
     return pitchRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -153,11 +154,24 @@ public class PitchService {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
+    PitchStatus oldStatus = pitch.getStatus();
     pitch.setStatus(status);
     Pitch saved = pitchRepository.save(pitch);
 
     // Invalidate risk analysis cache since status changed
     invalidateCacheForPitch(saved);
+
+    // Publish event for narrative auto-regeneration if status changed significantly
+    if (oldStatus != status && saved.getCycle() != null) {
+      eventPublisher.publishEvent(new PitchStatusChangedEvent(
+          this,
+          saved.getId(),
+          saved.getCycle().getId(),
+          saved.getTitle(),
+          oldStatus != null ? oldStatus.name() : null,
+          status.name()
+      ));
+    }
 
     return toDTO(saved);
   }
@@ -216,8 +230,75 @@ public class PitchService {
     if (totalHours == null)
       totalHours = 0.0;
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
+
+    // Calculate team capacity and busiest person
+    Integer teamMemberCount = null;
+    Double totalBudgetPersonDays = null;
+    Double budgetUtilizationPercent = null;
+    PitchDTO.BusiestPersonDTO busiestPerson = null;
+    
+    if (pitch.getTeam() != null && pitch.getAppetiteDays() != null) {
+      var team = pitch.getTeam();
+      var teamBudget = capacityConfigService.calculateTeamBudget(team, pitch.getAppetiteDays());
+      
+      // Get hours spent per person from work logs
+      Map<Long, Double> personHoursMap = workLogRepository.findByPitchId(pitch.getId()).stream()
+          .filter(wl -> wl.getPerson() != null)
+          .collect(java.util.stream.Collectors.groupingBy(
+              wl -> wl.getPerson().getId(),
+              java.util.stream.Collectors.summingDouble(wl -> wl.getHoursSpent() != null ? wl.getHoursSpent().doubleValue() : 0.0)
+          ));
+      
+      // Calculate average hours per day for person-days conversion
+      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ? 
+          capacityConfigService.getOrganizationDefaultHoursPerDay() :
+          teamBudget.getTotalDailyCapacityHours() / teamBudget.getMemberCount();
+      
+      // Find busiest member (highest utilization)
+      var busiestMember = teamBudget.getMemberBudgets().stream()
+          .map(pb -> {
+            double hoursSpent = personHoursMap.getOrDefault(pb.getPersonId(), 0.0);
+            double utilization = pb.getTotalBudgetHours() > 0 ? 
+                (hoursSpent / pb.getTotalBudgetHours()) * 100 : 0;
+            return new Object() {
+              final Long personId = pb.getPersonId();
+              final String personName = pb.getPersonName();
+              final String role = pb.getRole() != null ? pb.getRole().name() : null;
+              final Double hoursPerDay = pb.getHoursPerDay();
+              final String capacitySource = pb.getCapacitySource();
+              final Double totalBudgetHours = pb.getTotalBudgetHours();
+              final Double spent = hoursSpent;
+              final Double util = Math.round(utilization * 10.0) / 10.0;
+              final Boolean overBudget = hoursSpent > pb.getTotalBudgetHours();
+            };
+          })
+          .max((a, b) -> Double.compare(a.util, b.util))
+          .orElse(null);
+      
+      if (busiestMember != null) {
+        busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+            .personId(busiestMember.personId)
+            .personName(busiestMember.personName)
+            .role(busiestMember.role)
+            .hoursPerDay(busiestMember.hoursPerDay)
+            .capacitySource(busiestMember.capacitySource)
+            .totalBudgetHours(busiestMember.totalBudgetHours)
+            .hoursSpent(busiestMember.spent)
+            .utilizationPercent(busiestMember.util)
+            .isOverBudget(busiestMember.overBudget)
+            .build();
+      }
+      
+      // Calculate budget metrics
+      teamMemberCount = teamBudget.getMemberCount();
+      totalBudgetPersonDays = avgHoursPerDay > 0 ? 
+          Math.round((teamBudget.getTotalBudgetHours() / avgHoursPerDay) * 10.0) / 10.0 : 0;
+      double totalPersonDaysSpent = avgHoursPerDay > 0 ? totalHours / avgHoursPerDay : 0;
+      budgetUtilizationPercent = totalBudgetPersonDays > 0 ? 
+          Math.round((totalPersonDaysSpent / totalBudgetPersonDays) * 1000.0) / 10.0 : 0;
+    }
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
         .appetiteDays(pitch.getAppetiteDays()).cycleId(pitch.getCycle().getId())
@@ -230,6 +311,11 @@ public class PitchService {
         .teamName(pitch.getTeam() != null ? pitch.getTeam().getName() : null).status(pitch.getStatus())
         .createdAt(pitch.getCreatedAt()).updatedAt(pitch.getUpdatedAt()).totalHoursSpent(totalHours)
         .appetiteHours(appetiteHours).progressPercentage(Math.min(progress, 100))
+        // Team capacity and budget
+        .teamMemberCount(teamMemberCount)
+        .totalBudgetPersonDays(totalBudgetPersonDays)
+        .budgetUtilizationPercent(budgetUtilizationPercent)
+        .busiestPerson(busiestPerson)
         // Shape Up fields
         .problemStatement(pitch.getProblemStatement()).solution(pitch.getSolution())
         .rabbitHoles(pitch.getRabbitHoles()).risks(pitch.getRisks()).noGos(pitch.getNoGos())

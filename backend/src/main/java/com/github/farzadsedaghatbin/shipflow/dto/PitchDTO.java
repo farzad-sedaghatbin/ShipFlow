@@ -37,6 +37,12 @@ public class PitchDTO {
   private Double totalHoursSpent;
   private Double appetiteHours;
   private Double progressPercentage;
+  
+  // Team Capacity and Budget
+  private Integer teamMemberCount;
+  private Double totalBudgetPersonDays;
+  private Double budgetUtilizationPercent;
+  private BusiestPersonDTO busiestPerson;
 
   // Circuit Breaker - Shape Up safety valve
   private Boolean isCircuitBreakerTriggered;
@@ -50,4 +56,23 @@ public class PitchDTO {
   private String risks;
   private String noGos;
   private String wireframeLinks;
+  
+  /**
+   * Summary of the busiest team member (closest to exhausting their budget).
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class BusiestPersonDTO {
+    private Long personId;
+    private String personName;
+    private String role;
+    private Double hoursPerDay;
+    private String capacitySource;
+    private Double totalBudgetHours;
+    private Double hoursSpent;
+    private Double utilizationPercent;
+    private Boolean isOverBudget;
+  }
 }

@@ -39,7 +39,8 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
   @Query("""
       SELECT DISTINCT c FROM Cycle c
       JOIN FETCH c.project p
-      WHERE p.id IN (
+      WHERE p.projectType != com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN
+      AND p.id IN (
           SELECT DISTINCT proj.id FROM Project proj
           WHERE proj.owner.id = :userId
           OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
@@ -62,6 +63,7 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
       SELECT DISTINCT c FROM Cycle c
       JOIN FETCH c.project p
       WHERE c.isActive = true
+      AND p.projectType != com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN
       AND p.id IN (
           SELECT DISTINCT proj.id FROM Project proj
           WHERE proj.owner.id = :userId

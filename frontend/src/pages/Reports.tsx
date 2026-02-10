@@ -297,7 +297,7 @@ export default function Reports() {
             <Card>
               <CardContent className="pt-6 text-center">
                 <p className="text-sm text-muted-foreground">{t('reportsPage.appetiteHours')}</p>
-                <p className="text-3xl font-bold">{report.totalAppetiteHours.toFixed(0)}</p>
+                <p className="text-3xl font-bold">{report.totalAppetiteHours.toFixed(0)}h</p>
               </CardContent>
             </Card>
             <Card>
@@ -307,7 +307,7 @@ export default function Reports() {
                   'text-3xl font-bold',
                   report.totalActualHours > report.totalAppetiteHours ? 'text-destructive' : 'text-green-600'
                 )}>
-                  {report.totalActualHours.toFixed(0)}
+                  {report.totalActualHours.toFixed(0)}h
                 </p>
               </CardContent>
             </Card>
@@ -395,17 +395,17 @@ export default function Reports() {
 
           {/* v0.5 - Decision Support Signals */}
           {selectedCycle && report.cycleId && currentProject && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <>
               <CycleSignalsPanel 
                 cycleId={report.cycleId} 
                 projectId={currentProject.id} 
-                className="h-full"
+                className="mb-8"
               />
               <CycleSummaryPanel 
                 cycleId={report.cycleId}
-                className="h-full"
+                className="mb-8"
               />
-            </div>
+            </>
           )}
 
           {/* Charts */}
