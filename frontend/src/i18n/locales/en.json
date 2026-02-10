@@ -4127,7 +4127,18 @@
     "subtitle": "Shape Up Your Software Development",
     "techStack": "Tech Stack",
     "viewLicense": "View License",
-    "wcag21AA": "WCAG 2.1 AA"
+    "wcag21AA": "WCAG 2.1 AA",
+    "whatsNew": "What's New"
+  },
+  "releaseNotes": {
+    "title": "Release Notes",
+    "subtitle": "Stay up to date with the latest features and improvements in ShipFlow.",
+    "latestVersion": "Latest Version",
+    "latest": "Latest",
+    "readyToTry": "Ready to Try ShipFlow?",
+    "readyToTryDesc": "Start tracking your development cycles with AI-powered insights today.",
+    "fullChangelog": "Full Technical Changelog",
+    "backToHome": "Back to Home"
   },
   "dashboardManager": {
     "title": "Reports",

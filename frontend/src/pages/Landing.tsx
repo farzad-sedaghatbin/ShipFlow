@@ -18,6 +18,7 @@ import {
   Mail,
   Code2,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -184,6 +185,14 @@ export default function Landing() {
                 >
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.compareToCompetitors')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/releases')}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {t('landing.whatsNew')}
                 </Button>
               </div>
 
@@ -479,6 +488,12 @@ export default function Landing() {
               © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
             </p>
             <nav className="flex gap-6">
+              <button
+                onClick={() => navigate('/releases')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t('landing.whatsNew')}
+              </button>
               <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
                 target="_blank"
