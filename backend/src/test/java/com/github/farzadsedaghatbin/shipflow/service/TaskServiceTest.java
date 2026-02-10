@@ -8,15 +8,18 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.math.BigDecimal;
@@ -49,6 +52,9 @@ class TaskServiceTest {
   private PersonRepository personRepository;
 
   @Autowired
+  private PitchRepository pitchRepository;
+
+  @Autowired
   private UserRepository userRepository;
 
   @Autowired
@@ -59,6 +65,7 @@ class TaskServiceTest {
 
   private Task testTask;
   private Cycle testCycle;
+  private Pitch testPitch;
   private Person testPerson;
   private Person testPairPerson;
   private User testUser;
@@ -68,6 +75,7 @@ class TaskServiceTest {
   void setUp() {
     // Clean up any existing data
     taskRepository.deleteAll();
+    pitchRepository.deleteAll();
     cycleRepository.deleteAll();
     personRepository.deleteAll();
     userRepository.deleteAll();
@@ -122,6 +130,18 @@ class TaskServiceTest {
         .build();
     testPairPerson = personRepository.save(testPairPerson);
 
+    // Create test pitch for scope auto-creation tests
+    testPitch = Pitch.builder()
+        .title("Test Pitch")
+        .description("Test pitch for auto-scope creation")
+        .cycle(testCycle)
+        .status(PitchStatus.IN_PROGRESS)
+        .appetiteDays(14)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+    testPitch = pitchRepository.save(testPitch);
+
     testTask = Task.builder()
         .title("Test Task")
         .description("Test task description")
@@ -130,6 +150,7 @@ class TaskServiceTest {
         .category(TaskCategory.PITCH_SCOPE)
         .estimateHours(BigDecimal.valueOf(4.0))
         .cycle(testCycle)
+        .pitch(testPitch)
         .assignee(testPerson)
         .createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now())
@@ -405,7 +426,7 @@ class TaskServiceTest {
         .title("Auto-Scope Task")
         .description("This should create a scope")
         .cycleId(testCycle.getId())
-        .pitchId(testTask.getPitch().getId())
+        .pitchId(testPitch.getId())
         .assigneeId(testPerson.getId())
         .status(TaskStatus.TODO)
         .priority(TaskPriority.MEDIUM)
@@ -428,7 +449,7 @@ class TaskServiceTest {
         .title("Subtask")
         .description("This should NOT create a scope")
         .cycleId(testCycle.getId())
-        .pitchId(testTask.getPitch().getId())
+        .pitchId(testPitch.getId())
         .parentTaskId(testTask.getId())
         .assigneeId(testPerson.getId())
         .status(TaskStatus.TODO)

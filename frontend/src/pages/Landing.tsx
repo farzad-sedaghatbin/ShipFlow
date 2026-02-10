@@ -19,6 +19,9 @@ import {
   Code2,
   Activity,
   Sparkles,
+  Layers,
+  Calendar,
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -43,12 +46,12 @@ export default function Landing() {
 
   const features = [
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Layers className="h-10 w-10" />,
       title: t('landing.dualProjectModes'),
       description: t('landing.dualProjectModesDesc'),
     },
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Calendar className="h-10 w-10" />,
       title: t('landing.cycleManagement'),
       description: t('landing.cycleManagementDesc'),
     },
@@ -68,7 +71,7 @@ export default function Landing() {
       description: t('landing.aiRiskAnalysisDesc'),
     },
     {
-      icon: <Target className="h-10 w-10" />,
+      icon: <Heart className="h-10 w-10" />,
       title: t('landing.pitchHealthSummary'),
       description: t('landing.pitchHealthSummaryDesc'),
     },

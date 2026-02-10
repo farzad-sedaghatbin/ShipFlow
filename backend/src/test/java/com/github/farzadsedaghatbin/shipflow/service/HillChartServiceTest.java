@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.UpdateHillChartPointRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -71,6 +72,12 @@ class HillChartServiceTest {
     testPoint.setPosition(25);
     testPoint.setCreatedAt(LocalDateTime.now());
     testPoint.setUpdatedAt(LocalDateTime.now());
+    
+    // Mock taskRepository.save() to prevent NullPointerException in createLinkedTask
+    Task mockTask = new Task();
+    mockTask.setId(1L);
+    mockTask.setTitle("Mock Task");
+    lenient().when(taskRepository.save(any(Task.class))).thenReturn(mockTask);
   }
 
   @Test

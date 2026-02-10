@@ -69,6 +69,33 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '0.5.1',
+    date: 'February 9, 2026',
+    title: 'Mobile Optimization & Micro-Interactions',
+    highlights: [
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Responsive Design Overhaul',
+        description: 'New responsive hooks and utilities for perfect mobile experience. Adaptive layouts that work beautifully on phones, tablets, and desktops.',
+      },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Smart Loading States',
+        description: 'Page-specific skeleton screens replace generic spinners. Smooth transitions prevent content flash during project switching.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Flexible Retro Actions',
+        description: 'Convert retrospective items to pitches, tasks, or just mark as acted on. Batch processing with detailed notes for better follow-through.',
+      },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'Polished Interactions',
+        description: 'Enhanced micro-interactions throughout the app. Visual feedback for every action makes the experience feel more responsive and delightful.',
+      },
+    ],
+  },
+  {
     version: '0.5.0',
     date: 'February 8, 2026',
     title: 'Insight, Not Metrics',
@@ -96,6 +123,33 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '0.4.1',
+    date: 'February 7, 2026',
+    title: 'Bug Fixes & Polish',
+    highlights: [
+      {
+        icon: <CheckCircle className="h-5 w-5" />,
+        title: 'Meeting List Improvements',
+        description: 'Fixed meeting list sorting to show newest meetings first. Meeting type names now display correctly throughout the application.',
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Test Suite Enhancements',
+        description: 'Improved reliability of backend and frontend tests. Better error messages and faster test execution.',
+      },
+      {
+        icon: <Settings className="h-5 w-5" />,
+        title: 'UI Refinements',
+        description: 'Fixed case-sensitive UUID matching and improved meeting type display consistency across all pages.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Stability Updates',
+        description: 'Various bug fixes and performance improvements for a more stable experience.',
+      },
+    ],
+  },
+  {
     version: '0.4.0',
     date: 'February 5, 2026',
     title: 'Cycle & Betting Excellence',
@@ -119,6 +173,60 @@ const releases: Release[] = [
         icon: <BarChart3 className="h-5 w-5" />,
         title: 'Custom Dashboards',
         description: 'Build your own dashboards with drag-and-drop widgets. Share views with your team.',
+      },
+    ],
+  },
+  {
+    version: '0.3.11',
+    date: 'February 3, 2026',
+    title: 'Kanban Mode & Enhanced Tracking',
+    highlights: [
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Kanban Project Support',
+        description: 'Choose between Shape Up and Kanban methodologies. Kanban projects work without cycles for continuous flow teams.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Entity Change History',
+        description: 'Full audit trail using Hibernate Envers. See who changed what and when for tasks, bugs, pitches, and test cases.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Direct Project Association',
+        description: 'Bug reports can now be directly associated with projects, supporting both cycle-based and Kanban workflows.',
+      },
+      {
+        icon: <CheckCircle className="h-5 w-5" />,
+        title: 'Soft Delete System',
+        description: 'Safe deletion with data recovery. Records are marked as deleted rather than permanently removed.',
+      },
+    ],
+  },
+  {
+    version: '0.3.10',
+    date: 'February 2, 2026',
+    title: 'Comments & Reactions',
+    highlights: [
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Commenting System',
+        description: 'Full commenting support for tasks and bug reports. Edit, delete, and track comment history with timestamps.',
+      },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'Emoji Reactions',
+        description: 'React to comments with 8 emoji options. Toggle reactions and see aggregated counts per emoji.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'RTL Text Detection',
+        description: 'Automatic right-to-left direction for Arabic, Farsi, and Hebrew content with proper Unicode support.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Permission-Based Controls',
+        description: 'Role-based permissions for commenting. Authors can edit, authors and admins can delete.',
       },
     ],
   },
