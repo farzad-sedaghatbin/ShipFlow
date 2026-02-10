@@ -18,7 +18,6 @@ export interface TaskFormData {
   tags: string;
   category: TaskCategory;
   pitchId?: number;
-  scopeId?: number;
 }
 
 export interface UseBacklogFormReturn {
@@ -80,7 +79,6 @@ const DEFAULT_FORM_DATA: TaskFormData = {
   tags: '',
   category: 'PITCH_SCOPE',
   pitchId: undefined,
-  scopeId: undefined,
 };
 
 /**
@@ -138,7 +136,6 @@ export function useBacklogForm(): UseBacklogFormReturn {
       tags: task.tags || '',
       category: task.category || 'PITCH_SCOPE',
       pitchId: task.pitchId,
-      scopeId: task.scopeId,
     });
     setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     setFieldErrors({});

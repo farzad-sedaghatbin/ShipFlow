@@ -751,7 +751,6 @@ export interface CreateTaskRequest {
   description?: string;
   cycleId: number;
   pitchId?: number;
-  scopeId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;
   category?: TaskCategory;
