@@ -149,7 +149,8 @@ class HillChartServiceTest {
     // Assert
     assertNotNull(result);
     verify(pitchRepository, times(1)).findById(1L);
-    verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
+    // Service saves twice: once initially, once after setting linkedTask
+    verify(hillChartPointRepository, times(2)).save(any(HillChartPoint.class));
   }
 
   @Test
@@ -212,7 +213,8 @@ class HillChartServiceTest {
 
     // Assert
     assertNotNull(result);
-    verify(scopeProgressService, times(1)).enableAutoProgress(1L, true);
+    // Service calls syncProgressIfEnabled when enabling auto-progress
+    verify(scopeProgressService, times(1)).syncProgressIfEnabled(1L);
   }
 
   @Test
@@ -226,6 +228,7 @@ class HillChartServiceTest {
 
     // Assert
     assertNotNull(result);
-    verify(scopeProgressService, times(1)).disableAutoProgress(1L);
+    // Service just sets the flag and saves, no service method call when disabling
+    verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
   }
 }
