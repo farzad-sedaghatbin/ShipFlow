@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-02-10 - Scope-Task Bridge & Capacity Management
+
 ### Added
 - **Scope-Task Auto-Bridge Integration**
   - Unified Scope and Task entities with automatic bidirectional synchronization
@@ -72,14 +74,8 @@ All notable changes to this project will be documented in this file.
   - Added missing EntityManager mock to DashboardWidgetServiceTest
   - All 1,475 backend tests now passing
 
-## [0.5.2] - 2026-02-09 - API Contract Alignment & Code Quality
+### API Contract Alignment & Code Quality (2026-02-09)
 
-### Theme
-> "Align contracts, eliminate drift, strengthen foundations."
-
-This release focuses on API contract alignment between frontend and backend, eliminating hard mismatches, and improving code quality through better separation of concerns.
-
-### Fixed
 - **P0: Cooldown Activity API Contract Alignment**
   - **Status Enum Mismatch**: Unified `CooldownActivityStatus` enum between frontend and backend
     - Removed `CANCELLED` from frontend (was never in backend)
