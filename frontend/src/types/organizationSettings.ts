@@ -10,6 +10,10 @@ export interface OrganizationSettings {
   defaultCycleLengthWeeks: number;
   defaultCooldownWeeks: number;
   
+  // Capacity Configuration
+  defaultHoursPerDay: number;
+  defaultWorkingDaysPerWeek: number;
+  
   // Risk Thresholds
   riskThresholds: RiskThresholds;
   

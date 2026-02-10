@@ -169,6 +169,37 @@ class DashboardWidgetControllerIntegrationTest {
   }
 
   @Test
+  @WithMockUser(username = "dashboard-test-user", roles = "MEMBER")
+  void resetToDefaults_WithExistingWidgets_ShouldReplaceAllWidgets() throws Exception {
+    // Create some existing widgets
+    DashboardWidget widget1 = DashboardWidget.builder()
+        .user(testUser)
+        .widgetType("OVERDUE_TASKS")
+        .isVisible(true)
+        .displayOrder(0)
+        .build();
+    DashboardWidget widget2 = DashboardWidget.builder()
+        .user(testUser)
+        .widgetType("MY_TASKS")
+        .isVisible(false)
+        .displayOrder(1)
+        .build();
+    dashboardWidgetRepository.saveAll(Arrays.asList(widget1, widget2));
+    dashboardWidgetRepository.flush();
+
+    // Reset to defaults should work without unique constraint violation
+    mockMvc.perform(post("/api/dashboard/widgets/reset"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$", hasSize(greaterThan(0))));
+
+    // Verify all widgets were replaced with defaults
+    List<DashboardWidget> afterReset = dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(testUser.getId());
+    // All default widgets should be visible
+    afterReset.forEach(w -> org.assertj.core.api.Assertions.assertThat(w.getIsVisible()).isTrue());
+  }
+
+  @Test
   void getUserWidgets_WithoutAuth_ShouldReturn401() throws Exception {
     mockMvc.perform(get("/api/dashboard/widgets")).andExpect(status().is3xxRedirection()); // Spring Security
     // redirects to login

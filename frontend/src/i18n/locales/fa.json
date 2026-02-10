@@ -847,7 +847,11 @@
     "createdAt": "تاریخ ایجاد",
     "updatedAt": "تاریخ به‌روزرسانی",
     "errorOccurred": "خطایی رخ داده است",
-    "active": "فعال"
+    "active": "فعال",
+    "votes": "آرا",
+    "selectAll": "انتخاب همه",
+    "deselectAll": "لغو انتخاب همه",
+    "creating": "در حال ایجاد..."
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -1236,7 +1240,14 @@
       "title": "به ShipFlow خوش آمدید! 🎉"
     },
     "progress": "پیشرفت",
-    "budgetProgress": "پیشرفت بودجه"
+    "budgetProgress": "پیشرفت بودجه",
+    "tabs": {
+      "overview": "نمای کلی",
+      "aiInsights": "بینش‌های هوش مصنوعی",
+      "activity": "فعالیت",
+      "noAiInsights": "بینش‌های هوش مصنوعی برای پروژه‌های Shape Up با سیکل‌های فعال در دسترس است.",
+      "noActivityWidgets": "هیچ ویجت فعالیتی در حال حاضر قابل مشاهده نیست. آن‌ها را در تنظیمات ویجت فعال کنید."
+    }
   },
   "dashboardCustomizer": {
     "addWidget": "افزودن ویجت",
@@ -1292,6 +1303,30 @@
       "UPCOMING_DEADLINES": {
         "description": "موعدهای چرخه در ۲ هفته آینده",
         "label": "موعدهای پیش رو"
+      },
+      "CYCLE_SUMMARY": {
+        "label": "خلاصه سیکل",
+        "description": "خلاصه توصیفی تولید شده توسط هوش مصنوعی از سیکل"
+      },
+      "CYCLE_SIGNALS": {
+        "label": "سیگنال‌های سیکل",
+        "description": "سیگنال‌های کلیدی سلامت و معیارها برای سیکل‌ها"
+      },
+      "AI_RISK_ADVISORY": {
+        "label": "مشاوره ریسک هوش مصنوعی",
+        "description": "تحلیل ریسک و توصیه‌های مبتنی بر هوش مصنوعی"
+      },
+      "ACTIVE_CYCLES": {
+        "label": "سیکل‌های فعال",
+        "description": "نمای کلی از تمام سیکل‌های فعال در حال حاضر"
+      },
+      "HILL_CHART": {
+        "label": "نمودار تپه",
+        "description": "پیگیری بصری پیشرفت در نمودار تپه"
+      },
+      "RECENT_PITCHES": {
+        "label": "پیچ‌های اخیر",
+        "description": "آخرین پیچ‌ها با پیگیری پیشرفت"
       }
     }
   },
@@ -1696,7 +1731,6 @@
     "setupStep2": "URL وب‌هوک را کپی کرده و در تنظیمات مخزن GitHub خود پیکربندی کنید",
     "setupStep3": "رویدادهای وب‌هوک را تنظیم کنید: Push، Pull Request، Create، Delete",
     "setupStep4": "به صورت اختیاری یک secret برای وب‌هوک جهت امنیت اضافه کنید",
-    "title": "یکپارچه‌سازی GitHub",
     "tokenHelp": "اختیاری: توکن دسترسی شخصی GitHub برای مخازن خصوصی",
     "urlHelp": "اختیاری: آدرس مخزن GitHub",
     "urlPlaceholder": "https://github.com/owner/repo",
@@ -2441,7 +2475,18 @@
     "authorRole": "مدیر فنی ارشد و رهبر فناوری | نوآور فین‌تک",
     "authorBio": "رهبر فناوری با بیش از یک دهه تجربه در ساخت سیستم‌های بانکداری دیجیتال و فین‌تک در مقیاس بزرگ. به عنوان CTO بنیان‌گذار بانک بلو، پلتفرم بانکداری دیجیتال با بیش از ۵ میلیون مشتری را ساختم. در حال حاضر CTO در Kixy، یک فین‌تک انگلیسی پیشرو در امور مالی اجتماعی و محصولات مالی مبتنی بر هوش مصنوعی. مدافع متدولوژی Shape Up، با دستیابی به ۴۰٪ بهبود بهره‌وری با پیاده‌سازی آن در تیم‌های مهندسی با بیش از ۱۸۰ مهندس.",
     "authorExpertise": "تخصص فنی",
-    "contact": "تماس"
+    "contact": "تماس",
+    "whatsNew": "تازه‌ها"
+  },
+  "releaseNotes": {
+    "title": "یادداشت‌های انتشار",
+    "subtitle": "با آخرین ویژگی‌ها و بهبودهای ShipFlow به‌روز بمانید.",
+    "latestVersion": "آخرین نسخه",
+    "latest": "جدید",
+    "readyToTry": "آماده امتحان ShipFlow هستید؟",
+    "readyToTryDesc": "امروز ردیابی سیکل‌های توسعه خود را با بینش‌های مبتنی بر هوش مصنوعی شروع کنید.",
+    "fullChangelog": "تغییرات کامل فنی",
+    "backToHome": "بازگشت به صفحه اصلی"
   },
   "landingPage": {
     "accessible": "قابل دسترس WCAG 2.1 AA",
@@ -2972,6 +3017,13 @@
     "jira": "[TODO: Persian translation] Jira",
     "jiraProject": "[TODO: Persian translation] Jira Project",
     "language": "[TODO: Persian translation] Language",
+    "capacityConfiguration": "پیکربندی ظرفیت",
+    "capacityConfigurationDesc": "پیکربندی ساعات کاری و روزهای کاری پیش‌فرض برای محاسبه ظرفیت",
+    "defaultHoursPerDay": "ساعات کاری روزانه پیش‌فرض",
+    "defaultHoursPerDayDesc": "ساعات کاری روزانه پیش‌فرض سازمان",
+    "defaultWorkingDaysPerWeek": "روزهای کاری در هفته",
+    "defaultWorkingDaysPerWeekDesc": "تعداد روزهای کاری در هفته (معمولاً ۵)",
+    "capacityInheritanceNote": "این پیش‌فرض‌ها می‌توانند در سطح تیم، شخص یا انتساب بازنویسی شوند",
     "lastUpdated": "آخرین به‌روزرسانی",
     "loadFailed": "بارگذاری تنظیمات سازمان ناموفق بود",
     "logo": "[TODO: Persian translation] Logo URL",
@@ -3499,8 +3551,12 @@
     "appetite": "ظرفیت",
     "attachedDocuments": "اسناد پیوست شده",
     "backToPitches": "بازگشت به پیچ‌ها",
+    "budgetPersonDays": "بودجه (روز-نفر)",
+    "budgetUtilization": "استفاده از بودجه",
+    "busiestPerson": "شلوغ‌ترین فرد",
     "cancel": "[TODO: Persian translation] Cancel",
     "cancelEdit": "لغو",
+    "capacitySource": "منبع",
     "cycle": "سیکل",
     "date": "[TODO: Persian translation] Date",
     "dateHeld": "تاریخ برگزاری",
@@ -3520,6 +3576,7 @@
     "hideDocuments": "[TODO: Persian translation] Hide",
     "hillChart": "[TODO: Persian translation] Hill Chart",
     "hours": "[TODO: Persian translation] Hours",
+    "hoursPerDay": "ساعت/روز",
     "hoursSpent": "ساعات صرف شده",
     "invalidPitchId": "شناسه پیچ نامعتبر است",
     "loadFailed": "بارگذاری جزئیات پیچ ناموفق بود",
@@ -3532,7 +3589,6 @@
     "meetingScheduled": "جلسه با موفقیت زمان‌بندی شد",
     "meetingType": "نوع جلسه",
     "meetings": "جلسات",
-    "no": "[TODO: Persian translation] No",
     "noDocuments": "سندی پیوست نشده است",
     "noGos": "محدودیت‌ها",
     "noGosPlaceholder": "کارهایی که صریحاً انجام نمی‌دهیم",
@@ -3541,6 +3597,7 @@
     "noWorkLogs": "هنوز گزارش کاری وجود ندارد",
     "note": "یادداشت",
     "notes": "یادداشت‌ها",
+    "overBudget": "بیش از بودجه",
     "overview": "نمای کلی",
     "person": "فرد",
     "pitchNotFound": "پیچ یافت نشد",
@@ -3566,9 +3623,13 @@
     "statusUpdateFailed": "[TODO: Persian translation] Failed to update status",
     "statusUpdated": "[TODO: Persian translation] Status updated successfully!",
     "team": "تیم",
+    "teamCapacity": "ظرفیت تیم",
+    "teamMembers": "اعضای تیم",
     "title": "جزئیات پیچ",
     "type": "[TODO: Persian translation] Type",
+    "underBudget": "زیر بودجه",
     "uploadFailed": "بارگذاری سند ناموفق بود",
+    "utilizationPercent": "درصد استفاده",
     "wireframeLinks": "لینک‌های وایرفریم",
     "wireframeLinksPlaceholder": "لینک به وایرفریم‌ها یا نمونه‌ها",
     "workLogAdded": "گزارش کار با موفقیت افزوده شد",
@@ -4384,6 +4445,7 @@
       "trendingUp": "در حال بهبود",
       "trendingDown": "در حال کاهش",
       "stable": "باثبات",
+      "insufficientData": "داده ناکافی",
       "avgRatio": "نسبت میانگین",
       "avgVariance": "واریانس میانگین",
       "over": "بیشتر",
@@ -4667,6 +4729,9 @@
     "assignMembers": "تخصیص اعضا",
     "assignSuccess": "فرد با موفقیت به تیم اختصاص داده شد!",
     "cancel": "لغو",
+    "capacityConfiguration": "پیکربندی ظرفیت",
+    "capacityNote": "برای ارث‌بری از پیش‌فرض‌های سازمان خالی بگذارید",
+    "capacityOverride": "بازنویسی ظرفیت",
     "close": "بستن",
     "createNewTeam": "یک تیم جدید برای سازماندهی نیروی کار خود ایجاد کنید",
     "createSuccess": "تیم با موفقیت ایجاد شد!",
@@ -4678,6 +4743,7 @@
     "deleteTeam": "حذف تیم",
     "editAssignment": "ویرایش تخصیص",
     "editTeam": "ویرایش تیم",
+    "effectiveCapacity": "ظرفیت موثر",
     "enterTeamName": "نام تیم را وارد کنید",
     "failedToDelete": "حذف تیم ناموفق بود",
     "failedToEndAssignment": "پایان دادن به تخصیص ناموفق بود",
@@ -4686,6 +4752,8 @@
     "failedToSaveAssignment": "ذخیره تخصیص ناموفق بود",
     "hasntLoggedWork": "{{name}} هیچ فعالیت کاری ثبت نکرده است",
     "hours": "ساعات",
+    "hoursPerDay": "ساعت/روز",
+    "inheritFromOrg": "ارث‌بری",
     "loadFailed": "بارگذاری تیم‌ها ناموفق بود",
     "logEntries": "ورودی‌های گزارش",
     "member": "عضو",
@@ -4745,7 +4813,8 @@
     "updateSuccess": "تیم با موفقیت به‌روزرسانی شد!",
     "updateTeamDetails": "به‌روزرسانی جزئیات تیم",
     "viewActivity": "مشاهده فعالیت",
-    "workActivity": "فعالیت کاری"
+    "workActivity": "فعالیت کاری",
+    "workingDaysPerWeek": "روز/هفته"
   },
   "teamsIntegration": {
     "actions": "عملیات‌ها",
@@ -5487,7 +5556,7 @@
     "continue": "ادامه تور"
   },
   "cooldownActivity": {
-    "title": "فعالیت‌های دوره استراحت",
+    "pageTitle": "فعالیت‌های دوره استراحت",
     "subtitle": "پیگیری فعالیت‌ها در طول دوره استراحت",
     "createActivity": "ایجاد فعالیت",
     "editActivity": "ویرایش فعالیت",
@@ -5551,7 +5620,8 @@
       "inprogress": "در حال انجام",
       "inProgress": "در حال انجام",
       "completed": "تکمیل شده",
-      "cancelled": "لغو شده"
+      "skipped": "رد شده",
+      "blocked": "مسدود شده"
     }
   }
 }

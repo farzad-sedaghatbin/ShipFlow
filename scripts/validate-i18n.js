@@ -43,6 +43,8 @@ class I18nValidator {
       missingInEn: [],
       missingInBoth: [],
       potentialMismatches: [],
+      duplicateKeysEn: [],
+      duplicateKeysFa: [],
     };
     
     this.stats = {
@@ -97,6 +99,153 @@ class I18nValidator {
     }
     
     return true;
+  }
+
+  /**
+   * Detect duplicate keys in a JSON file by parsing the raw text.
+   * JSON.parse() silently keeps only the last value for duplicate keys,
+   * so we need to parse manually to detect them.
+   */
+  detectDuplicateKeys(filePath, fileName) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const duplicates = [];
+    
+    // Track keys at each nesting level
+    // We use a stack-based approach to handle nested objects
+    const keyStack = []; // Track the current path in the JSON tree
+    const seenKeysAtLevel = [new Map()]; // Track seen keys at each depth level
+    
+    // Simple state machine to parse JSON keys
+    let inString = false;
+    let escaped = false;
+    let currentKey = '';
+    let readingKey = false;
+    let depth = 0;
+    let lineNumber = 1;
+    let lastKeyLine = 1;
+    
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      const prevChar = i > 0 ? content[i - 1] : '';
+      
+      if (char === '\n') {
+        lineNumber++;
+      }
+      
+      if (escaped) {
+        if (readingKey) currentKey += char;
+        escaped = false;
+        continue;
+      }
+      
+      if (char === '\\' && inString) {
+        escaped = true;
+        if (readingKey) currentKey += char;
+        continue;
+      }
+      
+      if (char === '"') {
+        if (!inString) {
+          // Starting a string - check if this could be a key
+          // Keys come after { or , at the current depth
+          inString = true;
+          // Look back for : or start of object
+          let j = i - 1;
+          while (j >= 0 && /[\s\n]/.test(content[j])) j--;
+          if (j >= 0 && (content[j] === '{' || content[j] === ',')) {
+            readingKey = true;
+            currentKey = '';
+            lastKeyLine = lineNumber;
+          }
+        } else {
+          // Ending a string
+          inString = false;
+          if (readingKey) {
+            // We just finished reading a key
+            // Check for colon after whitespace
+            let j = i + 1;
+            while (j < content.length && /[\s\n]/.test(content[j])) j++;
+            if (content[j] === ':') {
+              // This IS a key
+              const fullKey = keyStack.length > 0 
+                ? keyStack.join('.') + '.' + currentKey 
+                : currentKey;
+              
+              const levelMap = seenKeysAtLevel[depth] || new Map();
+              if (levelMap.has(currentKey)) {
+                duplicates.push({
+                  key: fullKey,
+                  simpleKey: currentKey,
+                  firstLine: levelMap.get(currentKey),
+                  secondLine: lastKeyLine,
+                });
+              } else {
+                levelMap.set(currentKey, lastKeyLine);
+              }
+              seenKeysAtLevel[depth] = levelMap;
+            }
+            readingKey = false;
+          }
+        }
+        continue;
+      }
+      
+      if (inString) {
+        if (readingKey) currentKey += char;
+        continue;
+      }
+      
+      // Handle structure characters outside of strings
+      if (char === '{') {
+        // Push the last key onto the stack if we just saw one
+        if (currentKey && !readingKey) {
+          keyStack.push(currentKey);
+        }
+        depth++;
+        seenKeysAtLevel[depth] = new Map();
+        currentKey = '';
+      } else if (char === '}') {
+        depth--;
+        if (keyStack.length > 0) {
+          keyStack.pop();
+        }
+        seenKeysAtLevel[depth + 1] = new Map();
+      }
+    }
+    
+    return duplicates;
+  }
+
+  /**
+   * Check both i18n files for duplicate keys
+   */
+  checkDuplicateKeys() {
+    this.logSection('🔑 Checking for Duplicate Keys');
+    
+    const enDuplicates = this.detectDuplicateKeys(this.enPath, 'en.json');
+    const faDuplicates = this.detectDuplicateKeys(this.faPath, 'fa.json');
+    
+    this.issues.duplicateKeysEn = enDuplicates;
+    this.issues.duplicateKeysFa = faDuplicates;
+    
+    if (enDuplicates.length === 0 && faDuplicates.length === 0) {
+      this.log('✓ No duplicate keys found in either file.', 'green');
+    } else {
+      if (enDuplicates.length > 0) {
+        this.log(`✗ ${enDuplicates.length} duplicate key(s) found in en.json:`, 'red');
+        enDuplicates.forEach(dup => {
+          this.log(`  - "${dup.key}" appears on lines ${dup.firstLine} and ${dup.secondLine}`, 'red');
+        });
+      }
+      if (faDuplicates.length > 0) {
+        this.log(`✗ ${faDuplicates.length} duplicate key(s) found in fa.json:`, 'red');
+        faDuplicates.forEach(dup => {
+          this.log(`  - "${dup.key}" appears on lines ${dup.firstLine} and ${dup.secondLine}`, 'red');
+        });
+      }
+    }
+    
+    return enDuplicates.length + faDuplicates.length;
   }
 
   /**
@@ -422,6 +571,7 @@ class I18nValidator {
     
     try {
       this.loadTranslations();
+      const duplicateCount = this.checkDuplicateKeys();
       this.compareTranslations();
       this.scanCodeForKeys();
       this.crossReference();
@@ -430,7 +580,8 @@ class I18nValidator {
       // Exit code based on issues
       const hasErrors = 
         this.issues.missingInBoth.length > 0 ||
-        this.issues.potentialMismatches.length > 0;
+        this.issues.potentialMismatches.length > 0 ||
+        duplicateCount > 0; // Duplicate keys are now a critical error
       
       const hasWarnings = 
         this.issues.missingInFa.length > 0 ||
@@ -440,6 +591,9 @@ class I18nValidator {
       
       if (hasErrors) {
         this.log('Status: FAILED - Critical issues found', 'red');
+        if (duplicateCount > 0) {
+          this.log(`  → ${duplicateCount} duplicate key(s) detected (JSON allows only unique keys)`, 'red');
+        }
         process.exit(1);
       } else if (hasWarnings) {
         this.log('Status: WARNING - Translation gaps detected', 'yellow');

@@ -37,16 +37,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class AsyncAIAdvisorServiceTest {
 
   @Mock
-  private RiskAnalysisService riskAnalysisService;
+  private AICacheService cacheService;
 
   @Mock
-  private AICacheService cacheService;
+  private AsyncAIExecutor asyncAIExecutor;
 
   private AsyncAIAdvisorService asyncService;
 
   @BeforeEach
   void setUp() {
-    asyncService = new AsyncAIAdvisorService(riskAnalysisService, cacheService);
+    asyncService = new AsyncAIAdvisorService(cacheService, asyncAIExecutor);
   }
 
   // ===========================================
@@ -110,7 +110,7 @@ class AsyncAIAdvisorServiceTest {
     @DisplayName("Should handle null cache service gracefully")
     void shouldHandleNullCacheServiceGracefully() {
       // Given - service with no cache
-      AsyncAIAdvisorService serviceWithoutCache = new AsyncAIAdvisorService(riskAnalysisService, null);
+      AsyncAIAdvisorService serviceWithoutCache = new AsyncAIAdvisorService(null, asyncAIExecutor);
 
       // When
       Optional<PitchRiskDTO> result = serviceWithoutCache.getCachedPitchRisk(1L);

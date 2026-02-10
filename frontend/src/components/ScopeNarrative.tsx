@@ -8,7 +8,9 @@ import {
   Clock, 
   CheckCircle2,
   Mountain,
-  Zap 
+  Zap,
+  RefreshCw,
+  Link,
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
@@ -292,7 +294,52 @@ export function ScopeNarrative({
                   {t('scopeNarrative.lastUpdated', { days: daysSinceUpdate })}
                 </span>
               )}
+              
+              {/* Auto-progress indicator */}
+              {point.autoProgressEnabled && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 gap-1">
+                        <RefreshCw className="h-3 w-3" />
+                        {t('scopeNarrative.autoProgress', 'Auto')}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('scopeNarrative.autoProgressDesc', 'Position auto-updates based on subtask completion')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              
+              {/* Linked task indicator */}
+              {point.linkedTaskId && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 gap-1">
+                        <Link className="h-3 w-3" />
+                        {t('scopeNarrative.linkedTask', 'Task')}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{point.linkedTaskTitle || t('scopeNarrative.linkedTaskDesc', 'Linked to task for tracking')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
+            
+            {/* Suggested position indicator */}
+            {point.suggestedPosition !== undefined && point.suggestedPosition !== point.position && (
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 rounded px-2 py-1">
+                <TrendingUp className="h-3 w-3 text-blue-500" />
+                <span>{t('scopeNarrative.suggestedPosition', 'Suggested')}: {point.suggestedPosition}%</span>
+                <span className="text-blue-500">
+                  ({point.suggestedPosition > point.position ? '+' : ''}{point.suggestedPosition - point.position}%)
+                </span>
+              </div>
+            )}
             
             {showNarrative && (
               <p className="text-xs text-muted-foreground mt-2">

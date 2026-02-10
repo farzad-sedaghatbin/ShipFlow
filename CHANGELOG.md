@@ -4,29 +4,203 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-02-10 - Scope-Task Bridge & Capacity Management
+
 ### Added
-- **Mobile Optimization**
-  - New responsive hooks: `useMediaQuery` and `useBreakpoint` with `useBreakpointHelpers`
-  - Page-specific loading skeletons: `WorkLogsSkeleton`, `BugReportsSkeleton`, `TestCasesSkeleton`, `MeetingListSkeleton`, `RetroListSkeleton`, `TeamsSkeleton`, `BacklogSkeleton`
-  - Responsive DashboardGrid with adaptive column counts (12→8→4→2 based on viewport width)
-  - Mobile-optimized KanbanBoard with horizontal scroll snap points and touch-friendly navigation
-  - Responsive breakpoints for better mobile experience across all pages
+- **Scope-Task Auto-Bridge Integration**
+  - Unified Scope and Task entities with automatic bidirectional synchronization
+  - Creating a root task with a pitch automatically creates a linked hill chart scope
+  - Creating a scope automatically creates a corresponding task for work assignment
+  - Auto-progress feature: scope position automatically updates based on subtask completion (0-100%)
+  - Manual override: dragging a scope on the hill chart disables auto-progress (user takes control)
+  - Re-enable auto-progress: toggle to restore automatic position synchronization
+  - New `ScopeProgressService` calculates positions from task completion percentages
+  - New `ScopeProgressListener` listens to task status changes for real-time sync
+  - Task status change events (`TaskStatusChangedEvent`) trigger scope progress updates
+  - UI indicators show auto-progress status, linked tasks, and suggested positions
+  - Hill chart displays ghost position when suggested differs from current
+  - API endpoints: `PUT /api/hill-chart/{id}/auto-progress`, `GET /api/hill-chart/{id}/suggested-position`
+  - Database migrations V73 and V79: add bidirectional linking columns (`linked_task_id`, `auto_progress_enabled` on hill_chart_points; `auto_created_scope_id` on tasks)
+  - Database migration V80: fixes invalid `COMPLETED` status values to `DONE` (TaskStatus enum compatibility)
+  - New fields in DTOs: `linkedTaskId`, `autoProgressEnabled`, `suggestedPosition`, `showOnHillChart`
+  - Simplified UX: single workflow for creating trackable work items
 
-- **Micro-Interaction Improvements**
-  - Project-switching loading states with skeletons on all major list pages
-  - `isSwitchingProject` state in ProjectContext for smooth transitions
-  - Visual feedback during data refresh when changing projects
-  - Skeleton screens replace spinners for better perceived performance
+- **Configurable Team Capacity & Budget Management**
+  - Organization-wide default hours per day (default: 8) and working days per week (default: 5)
+  - Team-level capacity overrides for working hours and days
+  - Person-level capacity overrides for individual team members
+  - Team assignment-level overrides for fine-grained control per pitch
+  - Capacity inheritance hierarchy: Organization → Team → Person → Assignment (most specific wins)
+  - Budget calculations now use team member capacity for accurate per-person budget tracking
+  - Risk calculation enhanced to detect over-budget individual team members
+  - New UI in Organization Settings for configuring default capacity
+  - New UI in Teams page for team and assignment capacity overrides
+  - PitchHealthDTO now includes team budget breakdown with member utilization
 
-- **Flexible Retro Action Conversion**
-  - New `ActOnRetroItemsDialog` component with multiple action options:
-    - Convert to Pitch Draft: Create a pitch for the next betting table
-    - Convert to Tasks: Generate individual tasks that can be worked on immediately  
-    - Just Mark as Acted On: Record completion without creating new work items
-  - Required cycle selection for task creation
-  - Optional cycle selection for pitch creation
-  - Support for batch processing of multiple retro items
-  - Automatic marking of retro items as "acted on" with notes
+- **Dashboard Tabbed Layout Redesign**
+  - Reorganized dashboard into 3 tabs: Overview, AI Insights, Activity
+  - Reduces scrolling and improves content discoverability
+  - Tab selection persisted to localStorage for user preference
+  - Overview: Quick Links, Active Cycles, Cycle Summary
+  - AI Insights: Hill Chart, AI Risk Advisory, Cycle Signals
+  - Activity: Recent Pitches, Recent Activity
+
+- **Extended Widget Management**
+  - Added 6 new manageable widgets: Cycle Summary, Cycle Signals, AI Risk Advisory, Hill Chart, Active Cycles, Recent Pitches
+  - All widgets now appear in show/hide customization panel
+  - Widget visibility preferences saved per user
+
+- **Auto-Regeneration for AI Narratives**
+  - Automatic narrative regeneration on cycle status changes (SHIPPED, COMPLETED, COOLDOWN)
+  - Auto-regeneration on pitch status changes (SHIPPED, DROPPED)
+  - 60-minute debounce interval to prevent excessive regenerations
+  - Event-driven architecture using Spring Events for decoupled processing
+  - New event classes: `CycleStatusChangedEvent`, `PitchStatusChangedEvent`, `TaskCompletedEvent`
+
+### Changed
+- **Permission Control for Regenerate Buttons**
+  - Regenerate buttons in CycleSummaryPanel now require ADMIN or MANAGER role
+  - Uses PermissionGate component with REPORT:CREATE permission check
+  - Aligns with existing permission matrix (REPORT write access for Admin/Manager only)
+
+### Fixed
+- **ActOnRetroItemsDialog checkbox double-toggle bug**
+  - Fixed issue where clicking checkbox triggered both onCheckedChange and parent div onClick
+  - Removed redundant onCheckedChange handler to prevent state toggling twice
+  - Checkbox selection now works correctly in retrospective action dialog
+
+- **Backend test failures from dashboard changes**
+  - Added missing ApplicationEventPublisher mock to CycleServiceTest
+  - Added missing EntityManager mock to DashboardWidgetServiceTest
+  - All 1,475 backend tests now passing
+
+### API Contract Alignment & Code Quality (2026-02-09)
+
+- **P0: Cooldown Activity API Contract Alignment**
+  - **Status Enum Mismatch**: Unified `CooldownActivityStatus` enum between frontend and backend
+    - Removed `CANCELLED` from frontend (was never in backend)
+    - Frontend now uses: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `SKIPPED`, `BLOCKED`
+    - Matches backend enum exactly for proper API communication
+  - **Summary DTO Field Mismatch**: Updated frontend `CooldownSummaryDTO` interface
+    - Added `blockedCount` and `skippedCount` fields (were missing)
+    - Removed non-existent `cancelledCount` field
+    - Added `cycleName`, `activities`, `countByType`, `countByStatus` fields for full compatibility
+  - **Assignee Field Name**: Updated frontend to use `assigneeUsername` (matching backend)
+    - Changed `assigneeName` → `assigneeUsername` in `CooldownActivityDTO`
+    - Updated `CooldownActivities.tsx` table to display correct field
+
+- **P0: i18n Duplicate Key Detection**
+  - **Fixed Duplicate Keys**: Renamed `cooldownActivity.title` to avoid collision
+    - `cooldownActivity.pageTitle` for page heading ("Cooldown Activities")
+    - `cooldownActivity.title` for form field label ("Title")
+    - Updated `CooldownActivities.tsx` to use `pageTitle` for page heading
+  - **CI Protection**: Added duplicate key detection to `validate-i18n.js`
+    - New `checkDuplicateKeys()` method with text-based JSON parsing
+    - Detects same-level duplicate keys that would be silently overwritten
+    - Reports exact line numbers of first and second occurrence
+    - Duplicate keys now cause CI validation to **fail** (exit code 1)
+
+- **P0: Separate Create/Update DTOs for Cooldown API**
+  - Created `UpdateCooldownActivityRequest.java` with partial update support
+    - All fields optional (null = no change)
+    - Added `clearAssignee` flag for explicit unassignment
+    - Added `clearRelatedPitch` flag for explicit pitch unlinking
+    - Includes `status` field for status changes
+  - Updated `CooldownActivityController.java` PUT endpoint
+  - Enhanced `CooldownActivityService.updateActivity()` with:
+    - Null-safe partial updates (only modifies provided fields)
+    - Automatic timestamp handling for status transitions
+    - Explicit clear flag support for nullable relationships
+
+### Changed
+- **Cooldown Activity UI Improvements**
+  - Updated status badge colors for `SKIPPED` (amber) and `BLOCKED` (red)
+  - Added appropriate icons: `SkipForward` for skipped, `Ban` for blocked
+  - Status filter dropdown now shows all five status options
+  - Status select in edit dialog shows correct localized labels
+
+- **i18n Translations**
+  - Added translations for new status values: `skipped`, `blocked`
+  - Persian translations: `رد شده` (skipped), `مسدود شده` (blocked)
+  - Fixed i18n key structure to prevent duplicate key issues
+
+- **P1: Cooldown UI Refactoring (Container/Presentational Pattern)**
+  - Decomposed monolithic `CooldownActivities.tsx` (433 lines) into focused components
+  - Created 5 new presentational components:
+    - `cooldownActivityUtils.tsx` (58 lines) - Shared utility functions for icons and badge colors
+    - `CooldownSummaryCards.tsx` (70 lines) - Metrics dashboard cards
+    - `CooldownActivityFilters.tsx` (73 lines) - Type/status filter dropdowns
+    - `CooldownActivityTable.tsx` (129 lines) - Data table with edit/delete actions
+    - `CooldownActivitiesView.tsx` (144 lines) - Pure presentational component
+  - Refactored `CooldownActivities.tsx` (118 lines) - Container with business logic only
+  - **Benefits**: 72% code reduction, better separation of concerns, easier testing
+
+- **P1: React Query Migration for Cooldown Activities**
+  - Migrated from manual `useState`/`useEffect` to React Query hooks
+  - Created custom hooks in `hooks/useCooldownActivities.ts`:
+    - `useCooldownActivities()` - Fetch activities with automatic caching
+    - `useCooldownSummary()` - Fetch summary statistics
+    - `useCreateCooldownActivity()` - Create mutation with optimistic updates
+    - `useUpdateCooldownActivity()` - Update mutation with cache invalidation
+    - `useDeleteCooldownActivity()` - Delete mutation with automatic refetch
+  - Updated `CooldownActivities.tsx` and `CooldownActivityDialog.tsx` to use new hooks
+  - **Benefits**: Automatic background refetching, better error handling, reduced loading state management
+
+- **P1: RetroService.java Already Decomposed** ✅
+  - Verified facade pattern implementation with specialized services:
+    - `RetroCrudService.java` (222 lines) - CRUD operations
+    - `RetroItemService.java` (249 lines) - Item management
+    - `RetroActionService.java` (139 lines) - Action tracking
+    - `RetroConversionService.java` (243 lines) - Pitch conversion
+  - `RetroService.java` (163 lines) acts as lightweight coordinator
+  - **Benefits**: Single Responsibility Principle, focused testing, easier maintenance
+
+- **P1: API Contract Generation Infrastructure**
+  - Installed OpenAPI TypeScript code generation tools:
+    - `openapi-typescript` v7.12.0 - Type definition generator
+    - `openapi-typescript-codegen` v0.30.0 - API client generator
+  - Created `frontend/generate-api-types.sh` script:
+    - Downloads OpenAPI spec from running backend (`/v3/api-docs`)
+    - Generates TypeScript types to `src/types/api-schema.d.ts`
+    - Generates type-safe API client to `src/api/generated/`
+  - Added `npm run generate:api` script to package.json
+  - Created comprehensive documentation: `API_CONTRACT_GENERATION.md`
+  - **Benefits**: Prevents future contract mismatches, compile-time type safety, auto-completion
+
+- **P2: Large File Decomposition Recommendations**
+  - Identified top refactoring candidates:
+    - **Frontend**: BacklogPage.tsx (2,013 lines), OrganizationSettings.tsx (1,510 lines), PitchDetail.tsx (1,314 lines)
+    - **Backend**: QAService.java (1,215 lines), RiskAnalysisService.java (1,064 lines), PitchHealthService.java (981 lines)
+  - Created `P2_REFACTORING_RECOMMENDATIONS.md` with detailed decomposition plans
+  - Extracted `constants/backlogConstants.ts` from BacklogPage.tsx (first step)
+  - **Benefits**: Roadmap for future maintainability improvements, reduced technical debt
+
+### Test Coverage
+- **CooldownActivityServiceTest**: Extended with 6 new test cases
+  - `shouldNotModifyFieldsNotProvided` - verifies partial update behavior
+  - `shouldUpdateStatusWithTimestamp` - validates startedAt/completedAt handling
+  - `shouldClearAssigneeWhenFlagSet` - tests explicit unassignment
+  - `shouldAssignNewUser` - tests assignee update
+  - `shouldClearRelatedPitchWhenFlagSet` - tests explicit pitch unlinking
+  - All 23 tests passing (18 existing + 5 new)
+
+- **Layout.test.tsx**: Added 4 new tests
+  - Version display from package.json
+  - Format validation (v{major}.{minor}.{patch})
+  - Children rendering
+  - Navigation components presence
+
+### Technical Details
+- **Frontend Contract Changes** ([cooldownActivityService.ts](frontend/src/services/cooldownActivityService.ts)):
+  - `CooldownActivityStatus`: Added `SKIPPED`, `BLOCKED`; removed `CANCELLED`
+  - `CooldownActivityDTO`: Added backend-aligned fields
+  - `UpdateCooldownActivityRequest`: Added `clearAssignee`, `clearRelatedPitch`, `priority`, `notes`
+  - `CooldownSummaryDTO`: Full alignment with backend fields
+
+- **Backend Contract Changes**:
+  - New `UpdateCooldownActivityRequest.java` DTO
+  - `CooldownActivityService.updateActivity()` signature changed
+  - Partial update pattern: null = keep existing value
 
 - **UI Components**
   - `ActOnRetroItemsDialog.tsx` - Flexible action selection dialog

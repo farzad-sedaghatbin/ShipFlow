@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,9 @@ class DashboardWidgetServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private EntityManager entityManager;
 
   @InjectMocks
   private DashboardWidgetService dashboardWidgetService;

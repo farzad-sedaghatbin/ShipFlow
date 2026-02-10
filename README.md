@@ -37,6 +37,15 @@ A modern project management application implementing the [Shape Up](https://base
     - Inline editing of Shape Up fields on pitch detail page
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+  - **Scope-Task Auto-Bridge**: Unified workflow for scopes and tasks
+    - Creating a root task with a pitch automatically creates a linked scope on the hill chart
+    - Creating a scope automatically creates a corresponding task for work assignment
+    - Auto-progress: scope position automatically syncs with subtask completion (0-100%)
+    - Manual override: dragging a scope disables auto-progress (user control)
+    - Toggle auto-progress on/off to restore automatic synchronization
+    - Visual indicators show auto-progress status, linked relationships, and suggested positions
+    - Event-driven real-time sync when task statuses change
+    - Simplifies workflow: one action creates both trackable work item and hill chart visualization
   - **Traceability**: Optional links to pitches and scopes for improved reporting
     - Tasks can optionally link to specific pitch and scope (hill chart point)
     - Supports technical debt and improvement work (no pitch required)
@@ -62,6 +71,12 @@ A modern project management application implementing the [Shape Up](https://base
   - Automatic indexing for AI-powered Q&A
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization
+  - **Capacity Configuration**: Configurable hours per day and working days per week
+    - Organization defaults: 8 hours/day, 5 days/week
+    - Team-level overrides for working patterns
+    - Person-level overrides for individual capacity
+    - Assignment-level overrides for fine-grained control per pitch
+    - Inheritance hierarchy: Organization → Team → Person → Assignment
   - Color schemes for appetite/actual hours visualization (4 configurable colors)
   - Bug workflow statuses (5 predefined states: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX)
   - Severity levels for bug prioritization (CRITICAL, HIGH, MEDIUM, LOW)

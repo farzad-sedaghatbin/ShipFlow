@@ -200,37 +200,68 @@ public class CooldownActivityService {
   }
 
   /**
-   * Update activity details.
+   * Update activity details with partial update support.
+   * Only non-null fields are updated.
    */
-  public CooldownActivityDTO updateActivity(Long id, CreateCooldownActivityRequest request) {
+  public CooldownActivityDTO updateActivity(Long id, UpdateCooldownActivityRequest request) {
     CooldownActivity activity = cooldownActivityRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cooldown activity not found: " + id));
 
-    activity.setActivityType(request.getActivityType());
-    activity.setTitle(request.getTitle());
-    activity.setDescription(request.getDescription());
-    activity.setEstimatedHours(request.getEstimatedHours());
-    activity.setPriority(request.getPriority() != null ? request.getPriority() : activity.getPriority());
-    activity.setNotes(request.getNotes());
+    // Only update fields that are provided (partial update)
+    if (request.getActivityType() != null) {
+      activity.setActivityType(request.getActivityType());
+    }
+    if (request.getTitle() != null) {
+      activity.setTitle(request.getTitle());
+    }
+    if (request.getDescription() != null) {
+      activity.setDescription(request.getDescription());
+    }
+    if (request.getStatus() != null) {
+      CooldownActivityStatus newStatus = request.getStatus();
+      CooldownActivityStatus oldStatus = activity.getStatus();
+      activity.setStatus(newStatus);
+      
+      // Handle status transitions
+      if (newStatus == CooldownActivityStatus.IN_PROGRESS && activity.getStartedAt() == null) {
+        activity.setStartedAt(LocalDateTime.now());
+      }
+      if (newStatus == CooldownActivityStatus.COMPLETED && activity.getCompletedAt() == null) {
+        activity.setCompletedAt(LocalDateTime.now());
+      }
+      log.info("Updated cooldown activity {} status: {} → {}", id, oldStatus, newStatus);
+    }
+    if (request.getEstimatedHours() != null) {
+      activity.setEstimatedHours(request.getEstimatedHours());
+    }
+    if (request.getActualHours() != null) {
+      activity.setActualHours(request.getActualHours());
+    }
+    if (request.getPriority() != null) {
+      activity.setPriority(request.getPriority());
+    }
+    if (request.getNotes() != null) {
+      activity.setNotes(request.getNotes());
+    }
 
-    // Update assignee
-    if (request.getAssigneeId() != null) {
+    // Handle assignee update with explicit clear flag
+    if (Boolean.TRUE.equals(request.getClearAssignee())) {
+      activity.setAssignee(null);
+    } else if (request.getAssigneeId() != null) {
       User assignee = userRepository.findById(request.getAssigneeId())
           .orElseThrow(() -> new ResourceNotFoundException(
               messageService.getMessage("error.user.not.found", request.getAssigneeId())));
       activity.setAssignee(assignee);
-    } else {
-      activity.setAssignee(null);
     }
 
-    // Update related pitch
-    if (request.getRelatedPitchId() != null) {
+    // Handle related pitch update with explicit clear flag
+    if (Boolean.TRUE.equals(request.getClearRelatedPitch())) {
+      activity.setRelatedPitch(null);
+    } else if (request.getRelatedPitchId() != null) {
       Pitch relatedPitch = pitchRepository.findById(request.getRelatedPitchId())
           .orElseThrow(() -> new ResourceNotFoundException(
               messageService.getMessage("error.pitch.not.found", request.getRelatedPitchId())));
       activity.setRelatedPitch(relatedPitch);
-    } else {
-      activity.setRelatedPitch(null);
     }
 
     CooldownActivity saved = cooldownActivityRepository.save(activity);

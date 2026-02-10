@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,10 +25,28 @@ public class DashboardWidgetService {
 
   private final DashboardWidgetRepository dashboardWidgetRepository;
   private final UserRepository userRepository;
+  private final EntityManager entityManager;
 
-  // Default widget types
-  private static final List<String> DEFAULT_WIDGETS = Arrays.asList("OVERDUE_TASKS", "BLOCKED_TASKS",
-      "UPCOMING_DEADLINES", "MY_TASKS", "TEAM_WORKLOAD", "CYCLE_PROGRESS", "RECENT_ACTIVITY");
+  // Default widget types - organized by tab
+  // Overview tab widgets
+  private static final List<String> OVERVIEW_WIDGETS = Arrays.asList(
+      "ACTIVE_CYCLES", "HILL_CHART", "CYCLE_PROGRESS", "RECENT_PITCHES");
+  
+  // AI Insights tab widgets
+  private static final List<String> AI_INSIGHTS_WIDGETS = Arrays.asList(
+      "CYCLE_SUMMARY", "CYCLE_SIGNALS", "AI_RISK_ADVISORY");
+  
+  // Activity tab widgets
+  private static final List<String> ACTIVITY_WIDGETS = Arrays.asList(
+      "RECENT_ACTIVITY", "OVERDUE_TASKS", "BLOCKED_TASKS", 
+      "UPCOMING_DEADLINES", "MY_TASKS", "TEAM_WORKLOAD");
+  
+  // All default widgets combined
+  private static final List<String> DEFAULT_WIDGETS = Arrays.asList(
+      "OVERDUE_TASKS", "BLOCKED_TASKS", "UPCOMING_DEADLINES", "MY_TASKS", 
+      "TEAM_WORKLOAD", "CYCLE_PROGRESS", "RECENT_ACTIVITY",
+      "CYCLE_SUMMARY", "CYCLE_SIGNALS", "AI_RISK_ADVISORY",
+      "ACTIVE_CYCLES", "HILL_CHART", "RECENT_PITCHES");
 
   /** Get all widgets for a user. Create defaults if none exist. */
   @Transactional
@@ -124,6 +143,7 @@ public class DashboardWidgetService {
   /** Reset to default widgets */
   public List<DashboardWidgetDTO> resetToDefaults(Long userId) {
     dashboardWidgetRepository.deleteByUserId(userId);
+    entityManager.flush(); // Ensure deletions are committed before inserts
     log.info("Reset widgets to defaults for user {}", userId);
     return createDefaultWidgets(userId);
   }

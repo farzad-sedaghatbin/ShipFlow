@@ -62,6 +62,9 @@ class PitchServiceTest {
   @Mock
   private Authentication authentication;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchService pitchService;
 
@@ -93,6 +96,20 @@ class PitchServiceTest {
     testRequest.setCycleId(1L);
     testRequest.setTeamId(1L);
     testRequest.setStatus(PitchStatus.PENDING);
+
+    // Setup capacity config mock - default 8 hours/day, 14 days * 8 hours = 112 hours
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    
+    // Mock calculateTeamBudget to return a valid TeamBudget with empty member list
+    var emptyTeamBudget = CapacityConfigService.TeamBudget.builder()
+        .memberCount(0)
+        .totalBudgetHours(0.0)
+        .totalDailyCapacityHours(0.0)
+        .memberBudgets(java.util.Collections.emptyList())
+        .build();
+    lenient().when(capacityConfigService.calculateTeamBudget(any(Team.class), any(Integer.class)))
+        .thenReturn(emptyTeamBudget);
   }
 
   @org.junit.jupiter.api.AfterEach

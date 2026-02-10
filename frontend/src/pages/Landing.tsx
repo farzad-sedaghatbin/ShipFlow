@@ -18,6 +18,10 @@ import {
   Mail,
   Code2,
   Activity,
+  Sparkles,
+  Layers,
+  Calendar,
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -42,12 +46,12 @@ export default function Landing() {
 
   const features = [
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Layers className="h-10 w-10" />,
       title: t('landing.dualProjectModes'),
       description: t('landing.dualProjectModesDesc'),
     },
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Calendar className="h-10 w-10" />,
       title: t('landing.cycleManagement'),
       description: t('landing.cycleManagementDesc'),
     },
@@ -57,12 +61,17 @@ export default function Landing() {
       description: t('landing.hillChartsDesc'),
     },
     {
+      icon: <Target className="h-10 w-10" />,
+      title: t('landing.scopeTaskBridge'),
+      description: t('landing.scopeTaskBridgeDesc'),
+    },
+    {
       icon: <Brain className="h-10 w-10" />,
       title: t('landing.aiRiskAnalysis'),
       description: t('landing.aiRiskAnalysisDesc'),
     },
     {
-      icon: <Target className="h-10 w-10" />,
+      icon: <Heart className="h-10 w-10" />,
       title: t('landing.pitchHealthSummary'),
       description: t('landing.pitchHealthSummaryDesc'),
     },
@@ -179,6 +188,14 @@ export default function Landing() {
                 >
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.compareToCompetitors')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/releases')}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {t('landing.whatsNew')}
                 </Button>
               </div>
 
@@ -474,6 +491,12 @@ export default function Landing() {
               © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
             </p>
             <nav className="flex gap-6">
+              <button
+                onClick={() => navigate('/releases')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t('landing.whatsNew')}
+              </button>
               <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
                 target="_blank"

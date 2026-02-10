@@ -168,6 +168,8 @@ export default function OrganizationSettingsPage() {
             { name: 'MEDIUM', description: t('organizationSettings.defaults.severity.medium'), color: '#3B82F6', isActive: true, order: 3, priority: 3 },
             { name: 'LOW', description: t('organizationSettings.defaults.severity.low'), color: '#10B981', isActive: true, order: 4, priority: 4 },
           ],
+          defaultHoursPerDay: 8.0,
+          defaultWorkingDaysPerWeek: 5,
         };
         setFormData(defaultSettings);
       } else {
@@ -470,6 +472,64 @@ export default function OrganizationSettingsPage() {
                 <Clock className="h-4 w-4" />
                 <AlertDescription>
                   {t('organizationSettings.cycleDefaultsNote')}
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Capacity Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                {t('organizationSettings.capacityConfiguration', 'Capacity Configuration')}
+              </CardTitle>
+              <CardDescription>
+                {t('organizationSettings.capacityDesc', 'Configure default work hours and working days. Teams and individuals can override these values.')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="hoursPerDay">{t('organizationSettings.defaultHoursPerDay', 'Default Hours Per Day')}</Label>
+                  <Input
+                    id="hoursPerDay"
+                    type="number"
+                    min="1"
+                    max="24"
+                    step="0.5"
+                    value={formData.defaultHoursPerDay || 8}
+                    onChange={(e) =>
+                      setFormData({ ...formData, defaultHoursPerDay: parseFloat(e.target.value) })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('organizationSettings.defaultHoursPerDayNote', 'Standard working hours per day. Teams and individuals can override this setting.')}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="workingDaysPerWeek">{t('organizationSettings.defaultWorkingDaysPerWeek', 'Default Working Days Per Week')}</Label>
+                  <Input
+                    id="workingDaysPerWeek"
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={formData.defaultWorkingDaysPerWeek || 5}
+                    onChange={(e) =>
+                      setFormData({ ...formData, defaultWorkingDaysPerWeek: parseInt(e.target.value) })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('organizationSettings.defaultWorkingDaysPerWeekNote', 'Used to convert weeks to days for appetite calculations. E.g., 2 weeks = 10 working days (if 5 days/week).')}
+                  </p>
+                </div>
+              </div>
+
+              <Alert>
+                <Sparkles className="h-4 w-4" />
+                <AlertDescription>
+                  {t('organizationSettings.capacityInheritanceNote', 'Capacity inheritance: Organization → Team → Person → Team Assignment. More specific settings override general ones.')}
                 </AlertDescription>
               </Alert>
             </CardContent>

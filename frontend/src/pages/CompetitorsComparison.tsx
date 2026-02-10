@@ -59,6 +59,8 @@ const comparisonFeatures: ComparisonFeature[] = [
   // Progress Visualization
   { category: 'Progress', feature: 'Hill charts', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Progress', feature: 'Interactive hill chart editing', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Progress', feature: 'Scope-Task auto-bridging', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Progress', feature: 'Auto-progress from subtasks', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Progress', feature: 'Gantt charts', shipflow: false, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Progress', feature: 'Kanban boards', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   { category: 'Progress', feature: 'Sprint burndown', shipflow: false, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: false, clickup: true },
@@ -81,6 +83,8 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'QA', feature: 'Traceability links', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
 
   // Team & Collaboration
+  { category: 'Team', feature: 'Configurable team capacity', shipflow: true, linear: false, asana: 'partial', monday: 'partial', jira: 'partial', basecamp: false, clickup: 'partial' },
+  { category: 'Team', feature: 'Per-person budget tracking', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Team', feature: 'Retrospectives', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Team', feature: 'Anonymous retro submissions', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },

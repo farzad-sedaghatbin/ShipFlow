@@ -26,10 +26,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.github.farzadsedaghatbin.shipflow.event.CycleStatusChangedEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class CycleService {
   private final UserRepository userRepository;
   private final OrganizationSettingsService organizationSettingsService;
   private final MessageService messageService;
+  private final ApplicationEventPublisher eventPublisher;
 
   public List<CycleDTO> getAllCycles() {
     return cycleRepository.findAllByOrderByStartDateDesc().stream().map(this::toDTO).collect(Collectors.toList());
@@ -156,6 +159,15 @@ public class CycleService {
     // Send notifications if phase actually changed
     if (oldPhase != phase) {
       notificationService.notifyCyclePhaseChange(saved, oldPhase, phase);
+      
+      // Publish event for narrative auto-regeneration
+      eventPublisher.publishEvent(new CycleStatusChangedEvent(
+          this, 
+          saved.getId(), 
+          saved.getName(),
+          oldPhase != null ? oldPhase.name() : null, 
+          phase.name()
+      ));
     }
 
     return toDTO(saved);

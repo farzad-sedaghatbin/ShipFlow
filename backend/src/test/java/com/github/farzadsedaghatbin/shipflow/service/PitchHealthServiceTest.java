@@ -57,6 +57,9 @@ class PitchHealthServiceTest {
   @Mock
   private RiskAnalysisService riskAnalysisService;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchHealthService pitchHealthService;
 
@@ -79,6 +82,30 @@ class PitchHealthServiceTest {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
         .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS)
         .createdAt(LocalDateTime.now().minusDays(7)).updatedAt(LocalDateTime.now()).build();
+
+    // Setup capacity config mock - dynamically calculate hours based on appetite
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class)))
+        .thenAnswer(invocation -> {
+          Pitch pitch = invocation.getArgument(0);
+          return pitch.getAppetiteDays() * 8.0; // 8 hours/day default
+        });
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    
+    // Mock TeamBudget for risk calculation
+    CapacityConfigService.TeamBudget mockTeamBudget = CapacityConfigService.TeamBudget.builder()
+        .teamId(1L)
+        .teamName("Test Team")
+        .memberCount(2)
+        .appetiteDays(14)
+        .totalBudgetHours(224.0) // 2 members * 14 days * 8 hours
+        .totalDailyCapacityHours(16.0) // 2 members * 8 hours
+        .capacitySource("organization")
+        .memberBudgets(Arrays.asList())
+        .totalHoursSpent(0.0)
+        .totalHoursRemaining(224.0)
+        .utilizationPercentage(0.0)
+        .build();
+    lenient().when(capacityConfigService.calculateTeamBudget(any(Team.class), anyInt())).thenReturn(mockTeamBudget);
   }
 
   @Test

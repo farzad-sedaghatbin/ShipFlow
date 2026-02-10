@@ -77,10 +77,10 @@ public class CooldownActivityController {
   }
 
   @PutMapping("/{id}")
-  @Operation(summary = "Update activity", description = "Update cooldown activity details")
+  @Operation(summary = "Update activity", description = "Update cooldown activity details (partial updates supported)")
   public ResponseEntity<CooldownActivityDTO> updateActivity(
       @PathVariable Long id,
-      @Valid @RequestBody CreateCooldownActivityRequest request) {
+      @Valid @RequestBody UpdateCooldownActivityRequest request) {
     return ResponseEntity.ok(cooldownActivityService.updateActivity(id, request));
   }
 

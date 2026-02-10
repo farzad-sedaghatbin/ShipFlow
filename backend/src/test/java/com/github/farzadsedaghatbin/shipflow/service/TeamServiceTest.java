@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.CreateTeamRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
+import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import java.util.ArrayList;
@@ -21,8 +22,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TeamServiceTest {
 
   @Mock
@@ -30,6 +34,9 @@ class TeamServiceTest {
 
   @Mock
   private CycleRepository cycleRepository;
+
+  @Mock
+  private CapacityConfigService capacityConfigService;
 
   @InjectMocks
   private TeamService teamService;
@@ -47,6 +54,14 @@ class TeamServiceTest {
     testRequest = new CreateTeamRequest();
     testRequest.setName("Test Team");
     testRequest.setCycleId(1L);
+
+    // Setup capacity config mock - default 8 hours/day
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any())).thenReturn(80.0);
+    lenient().when(capacityConfigService.getEffectiveWorkingDaysPerWeek(any(Team.class)))
+        .thenReturn(new CapacityConfigService.CapacityResolution(5.0, "organization"));
+    lenient().when(capacityConfigService.getEffectiveHoursPerDay(any(TeamAssignment.class)))
+        .thenReturn(new CapacityConfigService.CapacityResolution(8.0, "organization"));
   }
 
   @Test

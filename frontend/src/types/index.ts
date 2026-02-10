@@ -140,11 +140,18 @@ export interface Team {
   projectName?: string;
   projectKey?: string;
   assignments?: TeamAssignment[];
+  // Capacity overrides
+  hoursPerDayOverride?: number;
+  workingDaysPerWeekOverride?: number;
+  effectiveHoursPerDay?: number;
+  effectiveWorkingDaysPerWeek?: number;
 }
 
 export interface CreateTeamRequest {
   name: string;
   cycleId?: number;
+  hoursPerDayOverride?: number;
+  workingDaysPerWeekOverride?: number;
 }
 
 // Person - independent entity that persists across cycles
@@ -156,6 +163,8 @@ export interface Person {
   avatarUrl?: string;
   isActive: boolean;
   createdAt: string;
+  // Capacity override
+  hoursPerDayOverride?: number;
   currentAssignments?: TeamAssignment[];
   pastAssignments?: TeamAssignment[];
 }
@@ -186,6 +195,10 @@ export interface TeamAssignment {
   endDate?: string;
   isActive: boolean;
   notes?: string;
+  // Capacity override
+  hoursPerDayOverride?: number;
+  effectiveHoursPerDay?: number;
+  capacitySource?: 'ORGANIZATION' | 'TEAM' | 'PERSON' | 'ASSIGNMENT';
 }
 
 export interface CreateTeamAssignmentRequest {
@@ -195,6 +208,7 @@ export interface CreateTeamAssignmentRequest {
   startDate?: string;
   endDate?: string;
   notes?: string;
+  hoursPerDayOverride?: number;
 }
 
 export interface Pitch {
@@ -215,6 +229,15 @@ export interface Pitch {
   totalHoursSpent?: number;
   appetiteHours?: number;
   progressPercentage?: number;
+  // Team Capacity and Budget
+  teamMemberCount?: number;
+  totalBudgetPersonDays?: number;
+  budgetUtilizationPercent?: number;
+  busiestPerson?: BusiestPerson;
+  // Circuit Breaker
+  isCircuitBreakerTriggered?: boolean;
+  circuitBreakerReason?: string;
+  circuitBreakerDate?: string;
   // Shape Up Methodology Fields
   problemStatement?: string;
   solution?: string;
@@ -222,6 +245,18 @@ export interface Pitch {
   risks?: string;
   noGos?: string;
   wireframeLinks?: string;
+}
+
+export interface BusiestPerson {
+  personId: number;
+  personName: string;
+  role?: string;
+  hoursPerDay: number;
+  capacitySource: string; // 'organization' | 'team' | 'person' | 'assignment'
+  totalBudgetHours: number;
+  hoursSpent: number;
+  utilizationPercent: number;
+  isOverBudget: boolean;
 }
 
 export interface CreatePitchRequest {
@@ -634,6 +669,13 @@ export interface HillChartPoint {
   scope: string;
   description: string;
   position: number; // 0-50 uphill (figuring out), 50-100 downhill (executing)
+  
+  // Scope-Task Bridge fields
+  linkedTaskId?: number;
+  linkedTaskTitle?: string;
+  autoProgressEnabled?: boolean;
+  suggestedPosition?: number;
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -643,6 +685,8 @@ export interface CreateHillChartPointRequest {
   scope: string;
   description: string;
   position: number;
+  createTaskAutomatically?: boolean; // When true, auto-creates a linked Task (default: true)
+  assigneeId?: number; // Optional assignee for the auto-created task
 }
 
 export interface UpdateHillChartPointRequest {
@@ -672,6 +716,10 @@ export interface Task {
   pitchTitle?: string;
   scopeId?: number;
   scopeName?: string;
+  
+  // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
+  autoCreatedScopeId?: number;
+  showOnHillChart?: boolean;
   
   assigneeId?: number;
   assigneeName?: string;
@@ -714,6 +762,10 @@ export interface CreateTaskRequest {
   parentTaskId?: number;
   dueDate?: string;
   tags?: string;
+  
+  // Scope-Task Bridge fields
+  createScopeAutomatically?: boolean; // When true and pitchId set (no parentTaskId), auto-creates a scope (default: true)
+  initialHillPosition?: number; // Initial position on hill chart (0-100), only used when createScopeAutomatically is true
 }
 
 // Task Dependency Types

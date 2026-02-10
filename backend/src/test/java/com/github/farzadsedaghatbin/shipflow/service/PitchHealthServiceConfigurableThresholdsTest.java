@@ -59,6 +59,9 @@ class PitchHealthServiceConfigurableThresholdsTest {
   @Mock
   private OrganizationSettingsService organizationSettingsService;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchHealthService pitchHealthService;
 
@@ -80,6 +83,26 @@ class PitchHealthServiceConfigurableThresholdsTest {
 
     testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
         .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS).build();
+
+    // Setup capacity config mock - 8 hours/day default, 14 days * 8 hours = 112 hours
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    
+    // Mock TeamBudget for risk calculation
+    CapacityConfigService.TeamBudget mockTeamBudget = CapacityConfigService.TeamBudget.builder()
+        .teamId(1L)
+        .teamName("Test Team")
+        .memberCount(2)
+        .appetiteDays(14)
+        .totalBudgetHours(224.0) // 2 members * 14 days * 8 hours
+        .totalDailyCapacityHours(16.0) // 2 members * 8 hours
+        .capacitySource("organization")
+        .memberBudgets(Arrays.asList())
+        .totalHoursSpent(0.0)
+        .totalHoursRemaining(224.0)
+        .utilizationPercentage(0.0)
+        .build();
+    lenient().when(capacityConfigService.calculateTeamBudget(any(Team.class), anyInt())).thenReturn(mockTeamBudget);
   }
 
   @Test

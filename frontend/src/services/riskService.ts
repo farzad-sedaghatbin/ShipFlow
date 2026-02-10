@@ -107,36 +107,19 @@ export const riskService = {
 
   /**
    * Get risk analysis for a specific pitch (fast - rule-based)
+   * For AI-powered analysis, use startAsyncPitchRiskAnalysis() instead
    */
   getPitchRisk: (pitchId: number) => api.get<PitchRiskDTO>(`/risk/pitch/${pitchId}`),
 
   /**
-   * Get risk analysis for a specific pitch with AI (slower)
-   */
-  getPitchRiskWithAI: (pitchId: number) => api.get<PitchRiskDTO>(`/risk/pitch/${pitchId}/ai`),
-
-  /**
    * Get risk overview for an entire cycle (fast - rule-based)
+   * For AI-powered analysis, use startAsyncCycleRiskAnalysis() instead
    */
   getCycleRiskOverview: (cycleId: number) => api.get<CycleRiskOverviewDTO>(`/risk/cycle/${cycleId}`),
 
   /**
-   * Get risk overview for an entire cycle with AI (slower)
-   */
-  getCycleRiskOverviewWithAI: (cycleId: number) => api.get<CycleRiskOverviewDTO>(`/risk/cycle/${cycleId}/ai`),
-
-  /**
-   * Force refresh risk analysis for a pitch (always uses AI)
-   */
-  refreshPitchRisk: (pitchId: number) => api.post<PitchRiskDTO>(`/risk/pitch/${pitchId}/refresh`),
-
-  /**
-   * Force refresh risk overview for a cycle (always uses AI)
-   */
-  refreshCycleRisk: (cycleId: number) => api.post<CycleRiskOverviewDTO>(`/risk/cycle/${cycleId}/refresh`),
-
-  /**
-   * Ask a question to the AI Risk Advisor
+   * Ask a question to the AI Risk Advisor (sync - for backward compatibility)
+   * Consider using startAsyncQuestion() for non-blocking calls
    */
   askQuestion: (pitchId: number, question: string) => 
     api.post<RiskQuestionResponse>(`/risk/pitch/${pitchId}/ask`, { question }),

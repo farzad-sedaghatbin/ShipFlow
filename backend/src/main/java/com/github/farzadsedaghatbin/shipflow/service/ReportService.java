@@ -41,8 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ReportService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   private final CycleRepository cycleRepository;
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
@@ -53,6 +51,7 @@ public class ReportService {
   private final LocalizationService localizationService;
   private final CycleSignalService cycleSignalService;
   private final CycleNarrativeService cycleNarrativeService;
+  private final CapacityConfigService capacityConfigService;
 
   @SuppressWarnings("null")
   public CycleReportDTO getCycleReport(Long cycleId) {
@@ -79,7 +78,7 @@ public class ReportService {
     int inProgressPitches = (int) pitches.stream()
         .filter(p -> p.getStatus() == PitchStatus.IN_PROGRESS || p.getStatus() == PitchStatus.STARTED).count();
 
-    double totalAppetiteHours = pitches.stream().mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY).sum();
+    double totalAppetiteHours = pitches.stream().mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p)).sum();
 
     double totalActualHours = workLogs.stream().mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
@@ -313,7 +312,7 @@ public class ReportService {
     double actualHours = allWorkLogs.stream().filter(wl -> wl.getPitch().getId().equals(pitch.getId()))
         .mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double variance = actualHours - appetiteHours;
     double variancePercent = appetiteHours > 0 ? (variance / appetiteHours) * 100 : 0;
 
@@ -368,6 +367,7 @@ public class ReportService {
    * distribution.
    */
   @SuppressWarnings("null")
+  @Transactional(readOnly = false)
   public EnhancedCycleReportDTO getEnhancedCycleReport(Long cycleId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
@@ -395,7 +395,7 @@ public class ReportService {
         .filter(p -> p.getStatus() == PitchStatus.PENDING || p.getStatus() == PitchStatus.SHAPED).count();
 
     // Calculate hours and efficiency
-    double totalAppetiteHours = pitches.stream().mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY).sum();
+    double totalAppetiteHours = pitches.stream().mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p)).sum();
 
     double totalActualHours = workLogs.stream().mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 

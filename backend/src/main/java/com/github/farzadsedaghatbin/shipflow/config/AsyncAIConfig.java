@@ -19,22 +19,31 @@ public class AsyncAIConfig {
 
   /**
    * Thread pool executor for AI operations.
-   * - Core pool: 2 threads (for normal load)
-   * - Max pool: 5 threads (for burst AI requests)
-   * - Queue capacity: 50 (buffer for pending requests)
+   * - Core pool: 10 threads (handles concurrent AI requests without queueing)
+   * - Max pool: 20 threads (for burst AI requests)
+   * - Queue capacity: 100 (buffer for pending requests when pool is full)
+   * - CallerRunsPolicy: If queue is full, caller thread executes the task (backpressure)
    * - Thread name prefix for easy identification in logs
+   * 
+   * Sizing rationale:
+   * - OpenAI has rate limits (~60 RPM for gpt-4-turbo), so 10-20 concurrent is reasonable
+   * - Each AI call blocks 5-120s, so more threads = more concurrent capacity
+   * - CallerRunsPolicy provides natural backpressure under extreme load
    */
   @Bean(name = "aiTaskExecutor")
   public Executor aiTaskExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(2);
-    executor.setMaxPoolSize(5);
-    executor.setQueueCapacity(50);
+    executor.setCorePoolSize(10);
+    executor.setMaxPoolSize(20);
+    executor.setQueueCapacity(100);
     executor.setThreadNamePrefix("AI-Advisor-");
     executor.setWaitForTasksToCompleteOnShutdown(true);
-    executor.setAwaitTerminationSeconds(30);
+    executor.setAwaitTerminationSeconds(60);
+    // CallerRunsPolicy: When queue is full, the calling thread runs the task
+    // This provides natural backpressure and prevents task rejection
+    executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
     executor.initialize();
-    log.info("AI Task Executor initialized with core={}, max={}, queue={}",
+    log.info("AI Task Executor initialized with core={}, max={}, queue={}, rejectionPolicy=CallerRunsPolicy",
         executor.getCorePoolSize(), executor.getMaxPoolSize(), executor.getQueueCapacity());
     return executor;
   }

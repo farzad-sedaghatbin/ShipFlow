@@ -129,4 +129,23 @@ public class HillChartController {
     }
     return null;
   }
+
+  @PutMapping("/{id}/auto-progress")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Toggle auto-progress for a scope",
+      description = "When enabled, the scope position auto-updates based on subtask completion. When disabled, user controls position manually via drag.")
+  public ResponseEntity<HillChartPointDTO> toggleAutoProgress(
+      @PathVariable Long id,
+      @RequestParam boolean enabled) {
+    return ResponseEntity.ok(hillChartService.toggleAutoProgress(id, enabled));
+  }
+
+  @GetMapping("/{id}/suggested-position")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get suggested position based on subtask completion",
+      description = "Returns the calculated position without applying it. Useful for showing the difference between current and suggested position in UI.")
+  public ResponseEntity<Map<String, Integer>> getSuggestedPosition(@PathVariable Long id) {
+    Integer position = hillChartService.getSuggestedPosition(id);
+    return ResponseEntity.ok(Map.of("suggestedPosition", position));
+  }
 }

@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CycleSignalService {
 
-  private static final double HOURS_PER_DAY = 8.0;
   private static final double DEFAULT_TOLERANCE_PERCENT = 15.0;
   private static final int MIN_CYCLES_FOR_TREND = 3;
 
@@ -48,6 +47,7 @@ public class CycleSignalService {
   private final ProjectRepository projectRepository;
   private final AIConfig aiConfig;
   private final ChatLanguageModel chatLanguageModel;
+  private final CapacityConfigService capacityConfigService;
 
   @Autowired
   public CycleSignalService(
@@ -59,7 +59,8 @@ public class CycleSignalService {
       PitchRiskHistoryRepository riskHistoryRepository,
       ProjectRepository projectRepository,
       AIConfig aiConfig,
-      @Autowired(required = false) ChatLanguageModel chatLanguageModel) {
+      @Autowired(required = false) ChatLanguageModel chatLanguageModel,
+      CapacityConfigService capacityConfigService) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.workLogRepository = workLogRepository;
@@ -69,6 +70,7 @@ public class CycleSignalService {
     this.projectRepository = projectRepository;
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
+    this.capacityConfigService = capacityConfigService;
   }
 
   /**
@@ -178,7 +180,7 @@ public class CycleSignalService {
       if (pitches.isEmpty()) continue;
 
       double totalAppetite = pitches.stream()
-          .mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY)
+          .mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p))
           .sum();
 
       // Calculate total actual hours from work logs per pitch
@@ -195,7 +197,7 @@ public class CycleSignalService {
       int underBudget = 0;
       for (Pitch pitch : pitches) {
         Double pitchActual = pitchHoursMap.getOrDefault(pitch.getId(), 0.0);
-        double pitchAppetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double pitchAppetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
         if (pitchActual > pitchAppetite * 1.15) overBudget++;
         else if (pitchActual < pitchAppetite * 0.85) underBudget++;
       }
@@ -277,7 +279,7 @@ public class CycleSignalService {
 
       for (Pitch pitch : pitches) {
         Double actualHours = workHoursMap.getOrDefault(pitch.getId(), 0.0);
-        double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
         double variancePercent = appetiteHours > 0 ? ((actualHours - appetiteHours) / appetiteHours) * 100 : 0;
 
         totalPitches++;
@@ -566,7 +568,7 @@ public class CycleSignalService {
   private boolean isSignificantlyOverBudget(Pitch pitch, Map<Long, Double> workHoursMap) {
     Double actual = workHoursMap.get(pitch.getId());
     if (actual == null) return false;
-    double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
     return appetite > 0 && actual > appetite * 1.3; // 30% over
   }
 

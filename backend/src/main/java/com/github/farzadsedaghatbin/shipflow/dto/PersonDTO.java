@@ -16,6 +16,10 @@ public class PersonDTO {
   private String skills;
   private Boolean isActive;
   private LocalDateTime createdAt;
+
+  // Capacity Configuration (null = inherit from organization/team)
+  private Double hoursPerDayOverride;
+
   private List<TeamAssignmentDTO> currentAssignments;
   private List<TeamAssignmentDTO> pastAssignments;
 }

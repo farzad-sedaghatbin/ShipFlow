@@ -15,6 +15,7 @@ import Reports from './pages/Reports';
 import Teams from './pages/Teams';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import ReleaseNotes from './pages/ReleaseNotes';
 import CompetitorsComparison from './pages/CompetitorsComparison';
 import Profile from './pages/Profile';
 import People from './pages/People';
@@ -97,6 +98,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/compare" element={<CompetitorsComparison />} />
+      <Route path="/releases" element={<ReleaseNotes />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"

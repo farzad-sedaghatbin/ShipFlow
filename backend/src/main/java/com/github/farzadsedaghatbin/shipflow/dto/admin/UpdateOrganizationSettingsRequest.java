@@ -28,4 +28,8 @@ public class UpdateOrganizationSettingsRequest {
   private String dateFormat;
   private Boolean enableNotifications;
   private Boolean enableAIFeatures;
+
+  // Capacity Configuration
+  private Double defaultHoursPerDay;
+  private Integer defaultWorkingDaysPerWeek;
 }

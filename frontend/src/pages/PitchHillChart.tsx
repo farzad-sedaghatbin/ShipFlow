@@ -259,6 +259,16 @@ export const PitchHillChart: React.FC = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Info about auto-created task when adding new scope */}
+            {!editingPoint && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <Info className="h-4 w-4 shrink-0" />
+                <p className="text-sm">
+                  {t('pitchHillChart.taskAutoCreate', 'A linked task will be automatically created for tracking and assigning work.')}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="scope">{t('pitchHillChart.scopeName')} *</Label>
               <Input

@@ -21,12 +21,14 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +50,7 @@ public class TaskService {
   private final HillChartPointRepository hillChartPointRepository;
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
+  private final ApplicationEventPublisher eventPublisher;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -193,6 +196,11 @@ public class TaskService {
 
     Task saved = taskRepository.save(task);
 
+    // Auto-create hill chart scope for root tasks with pitch (Scope-Task Bridge)
+    if (shouldCreateScopeAutomatically(request, saved)) {
+      createLinkedScope(saved, request.getInitialHillPosition());
+    }
+
     // Send notification if task is assigned during creation
     if (assignee != null && assignee.getUser() != null) {
       try {
@@ -204,6 +212,43 @@ public class TaskService {
     }
 
     return toDTO(saved);
+  }
+
+  /**
+   * Check if a scope should be auto-created for this task.
+   * Scope is created when:
+   * - createScopeAutomatically flag is true (or null, default true)
+   * - Task has a pitch association
+   * - Task has no parent (is a root task)
+   * - Task doesn't already have an explicit scope
+   */
+  private boolean shouldCreateScopeAutomatically(CreateTaskRequest request, Task task) {
+    boolean createFlag = request.getCreateScopeAutomatically() == null || request.getCreateScopeAutomatically();
+    boolean hasPitch = task.getPitch() != null;
+    boolean isRootTask = task.getParentTask() == null;
+    boolean noExistingScope = request.getScopeId() == null;
+
+    return createFlag && hasPitch && isRootTask && noExistingScope;
+  }
+
+  /**
+   * Create a hill chart scope linked to the given task.
+   */
+  private void createLinkedScope(Task task, Integer initialPosition) {
+    int position = initialPosition != null ? initialPosition : 0;
+
+    HillChartPoint scope = HillChartPoint.builder()
+        .pitch(task.getPitch())
+        .scope(task.getTitle())
+        .description(task.getDescription() != null ? task.getDescription() : task.getTitle())
+        .position(position)
+        .linkedTask(task)
+        .autoProgressEnabled(true)
+        .build();
+
+    HillChartPoint savedScope = hillChartPointRepository.save(scope);
+    log.info("Auto-created hill chart scope {} for task {} (pitch {})",
+        savedScope.getId(), task.getId(), task.getPitch().getId());
   }
 
   public TaskDTO updateTask(Long id, CreateTaskRequest request) {
@@ -320,6 +365,9 @@ public class TaskService {
       // Check if status changed
       if (request.getStatus() != null && !request.getStatus().equals(oldStatus)) {
         notificationService.notifyTaskStatusChange(saved, oldStatus, request.getStatus());
+
+        // Publish task status changed event for scope progress sync
+        publishTaskStatusChangedEvent(saved, oldStatus, request.getStatus());
       }
 
       // Check if priority changed to high
@@ -357,7 +405,31 @@ public class TaskService {
     }
 
     Task saved = taskRepository.save(task);
+
+    // Publish task status changed event for scope progress sync
+    if (!status.equals(oldStatus)) {
+      publishTaskStatusChangedEvent(saved, oldStatus, status);
+    }
+
     return toDTO(saved);
+  }
+
+  /**
+   * Publish a task status changed event for scope progress synchronization.
+   */
+  private void publishTaskStatusChangedEvent(Task task, TaskStatus oldStatus, TaskStatus newStatus) {
+    TaskStatusChangedEvent event = new TaskStatusChangedEvent(
+        this,
+        task.getId(),
+        task.getPitch() != null ? task.getPitch().getId() : null,
+        task.getScope() != null ? task.getScope().getId() : null,
+        task.getParentTask() != null ? task.getParentTask().getId() : null,
+        oldStatus,
+        newStatus
+    );
+    eventPublisher.publishEvent(event);
+    log.debug("Published TaskStatusChangedEvent for task {} (status: {} -> {})",
+        task.getId(), oldStatus, newStatus);
   }
 
   public TaskDTO updateTaskPriority(Long id, TaskPriority priority) {
@@ -582,6 +654,8 @@ public class TaskService {
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
         .scopeId(task.getScope() != null ? task.getScope().getId() : null)
         .scopeName(task.getScope() != null ? task.getScope().getScope() : null)
+        .autoCreatedScopeId(getAutoCreatedScopeId(task))
+        .showOnHillChart(task.isRootScope() && getAutoCreatedScopeId(task) != null)
         .assigneeId(task.getAssignee() != null ? task.getAssignee().getId() : null)
         .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
         .assigneeAvatarUrl(task.getAssignee() != null ? task.getAssignee().getAvatarUrl() : null)
@@ -595,5 +669,18 @@ public class TaskService {
         .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
         .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty()).build();
+  }
+
+  /**
+   * Get the auto-created scope ID for a task.
+   * Uses repository query to avoid lazy loading issues.
+   */
+  private Long getAutoCreatedScopeId(Task task) {
+    if (task.getPitch() == null || task.getParentTask() != null) {
+      return null; // Not a root task with pitch
+    }
+    return hillChartPointRepository.findByLinkedTaskId(task.getId())
+        .map(HillChartPoint::getId)
+        .orElse(null);
   }
 }

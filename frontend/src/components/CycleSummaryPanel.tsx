@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  FileText, 
   RefreshCcw, 
   Download, 
   Sparkles, 
@@ -13,7 +12,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Skeleton } from './ui/skeleton';
@@ -21,6 +20,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { narrativeService, CycleSummary, CycleNarrative } from '../services/narrativeService';
 import { cn } from '../lib/utils';
+import { PermissionGate } from '../hooks/usePermission';
 
 interface NarrativeSectionProps {
   narrative: CycleNarrative | null;
@@ -48,19 +48,21 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
             {icon}
             <span>{title}</span>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRegenerate}
-            disabled={regenerating}
-          >
-            {regenerating ? (
-              <RefreshCcw className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-3 w-3 mr-1" />
-            )}
-            {t('narratives.generate')}
-          </Button>
+          <PermissionGate resource="REPORT" permission="CREATE">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRegenerate}
+              disabled={regenerating}
+            >
+              {regenerating ? (
+                <RefreshCcw className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-3 w-3 mr-1" />
+              )}
+              {t('narratives.generate')}
+            </Button>
+          </PermissionGate>
         </CardContent>
       </Card>
     );
@@ -113,22 +115,24 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
               <span className="text-xs text-muted-foreground">
                 {t('narratives.generatedAt')} {new Date(narrative.generatedAt).toLocaleString()}
               </span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRegenerate();
-                }}
-                disabled={regenerating}
-              >
-                {regenerating ? (
-                  <RefreshCcw className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-3 w-3 mr-1" />
-                )}
-                {t('narratives.regenerate')}
-              </Button>
+              <PermissionGate resource="REPORT" permission="CREATE">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRegenerate();
+                  }}
+                  disabled={regenerating}
+                >
+                  {regenerating ? (
+                    <RefreshCcw className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="h-3 w-3 mr-1" />
+                  )}
+                  {t('narratives.regenerate')}
+                </Button>
+              </PermissionGate>
             </div>
           </CardContent>
         </CollapsibleContent>
@@ -262,26 +266,32 @@ export const CycleSummaryPanel: React.FC<CycleSummaryPanelProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {t('narratives.title')}
-            </CardTitle>
-            <CardDescription>{t('narratives.subtitle')}</CardDescription>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg font-semibold">
+                {t('narratives.title')}
+              </CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {summary.cycleName} • {summary.projectName}
+            </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRegenerateAll}
-              disabled={regenerating.all}
-            >
-              {regenerating.all ? (
-                <RefreshCcw className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <RefreshCcw className="h-4 w-4 mr-1" />
-              )}
-              {t('narratives.regenerateAll')}
-            </Button>
+            <PermissionGate resource="REPORT" permission="CREATE">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRegenerateAll}
+                disabled={regenerating.all}
+              >
+                {regenerating.all ? (
+                  <RefreshCcw className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4 mr-1" />
+                )}
+                {t('narratives.regenerateAll')}
+              </Button>
+            </PermissionGate>
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="h-4 w-4 mr-1" />
               {t('narratives.exportMarkdown')}
@@ -290,7 +300,7 @@ export const CycleSummaryPanel: React.FC<CycleSummaryPanelProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <NarrativeSection
             narrative={summary.whatWeBet}
             title={t('narratives.whatWeBet')}
@@ -323,10 +333,6 @@ export const CycleSummaryPanel: React.FC<CycleSummaryPanelProps> = ({
             regenerating={regenerating.SURPRISES || false}
           />
         </div>
-        
-        <p className="text-xs text-muted-foreground text-right mt-4">
-          {summary.cycleName} • {summary.projectName}
-        </p>
       </CardContent>
     </Card>
   );
