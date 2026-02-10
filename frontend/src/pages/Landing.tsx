@@ -2,7 +2,6 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LogIn,
-  TrendingUp,
   BarChart3,
   Users,
   Brain,
