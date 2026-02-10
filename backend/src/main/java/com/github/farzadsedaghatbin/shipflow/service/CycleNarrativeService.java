@@ -163,6 +163,7 @@ public class CycleNarrativeService {
 
   /**
    * Generate a narrative for a specific type.
+   * Handles race conditions by catching duplicate key violations and retrying with update.
    */
   @Transactional
   public CycleNarrativeDTO generateNarrative(Long cycleId, NarrativeType type) {
@@ -200,7 +201,21 @@ public class CycleNarrativeService {
     narrative.setGeneratedAt(LocalDateTime.now());
     narrative.setGeneratedBy(getCurrentUser());
 
-    narrative = narrativeRepository.save(narrative);
+    try {
+      narrative = narrativeRepository.save(narrative);
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // Race condition: another thread created the narrative between our find and save
+      // Retry by finding the existing one and updating it
+      log.warn("Duplicate key on narrative save for cycle {} type {}, retrying with update", cycleId, type);
+      narrative = narrativeRepository.findByCycleIdAndNarrativeType(cycleId, type)
+          .orElseThrow(() -> new RuntimeException("Narrative not found after duplicate key error"));
+      narrative.setContent(content);
+      narrative.setIsAiGenerated(isAI);
+      narrative.setAiModel(aiModel);
+      narrative.setGeneratedAt(LocalDateTime.now());
+      narrative.setGeneratedBy(getCurrentUser());
+      narrative = narrativeRepository.save(narrative);
+    }
     return toDTO(narrative);
   }
 
