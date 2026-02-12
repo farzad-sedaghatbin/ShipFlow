@@ -145,11 +145,24 @@ public class KnowledgeIngestionService {
 
     String content = buildWorkLogContent(workLog);
 
+    // Work logs may not have a pitch (e.g., technical debt work)
+    Long cycleId = null;
+    Long teamId = null;
+    Long pitchId = null;
+    
+    if (workLog.getPitch() != null) {
+      pitchId = workLog.getPitch().getId();
+      if (workLog.getPitch().getCycle() != null) {
+        cycleId = workLog.getPitch().getCycle().getId();
+      }
+      if (workLog.getPitch().getTeam() != null) {
+        teamId = workLog.getPitch().getTeam().getId();
+      }
+    }
+
     ingestEntity(KnowledgeEntityType.WORKLOG, workLog.getId(),
         "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(), content,
-        workLog.getPitch().getCycle().getId(),
-        workLog.getPitch().getTeam() != null ? workLog.getPitch().getTeam().getId() : null,
-        workLog.getPitch().getId(), null);
+        cycleId, teamId, pitchId, null);
 
     log.info("Ingested work log: ID: {}", workLog.getId());
   }
@@ -726,7 +739,13 @@ public class KnowledgeIngestionService {
     sb.append("Date: ").append(workLog.getDate()).append("\n");
     sb.append("Person: ").append(workLog.getPerson().getName()).append("\n");
     sb.append("Hours Spent: ").append(workLog.getHoursSpent()).append("\n");
-    sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n\n");
+    
+    if (workLog.getPitch() != null) {
+      sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n");
+    } else {
+      sb.append("Pitch: Technical Debt / Unassigned\n");
+    }
+    sb.append("\n");
 
     if (workLog.getNote() != null) {
       sb.append("Notes:\n").append(workLog.getNote()).append("\n");
