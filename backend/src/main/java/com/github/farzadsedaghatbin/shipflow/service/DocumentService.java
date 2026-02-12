@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.DocumentUploadResponse;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -269,7 +270,7 @@ public class DocumentService {
       Resource resource = new UrlResource(filePath.toUri());
 
       if (!resource.exists() || !resource.isReadable()) {
-        throw new RuntimeException(
+        throw new ResourceNotFoundException(
             localizationService.getMessage("document.not.found", document.getOriginalFileName()));
       }
 
@@ -282,7 +283,9 @@ public class DocumentService {
           .body(resource);
 
     } catch (MalformedURLException e) {
-      throw new RuntimeException(localizationService.getMessage("document.read.error", e.getMessage()), e);
+      log.error("Malformed URL for document: {}", document.getOriginalFileName(), e);
+      throw new ResourceNotFoundException(
+          localizationService.getMessage("document.read.error", e.getMessage()), e);
     }
   }
 
