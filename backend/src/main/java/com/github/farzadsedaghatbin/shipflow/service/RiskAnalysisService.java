@@ -302,9 +302,11 @@ public class RiskAnalysisService {
   }
 
   /**
-   * Answer a question about pitch risk using AI. Note: This method is not
-   * transactional to ensure error responses are returned properly.
+   * Answer a question about pitch risk using AI.
+   * Uses transaction to prevent LazyInitializationException when accessing
+   * pitch relationships in async context.
    */
+  @Transactional(readOnly = true)
   public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
     // Get pitch first
     Pitch pitch;
