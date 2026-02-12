@@ -2880,14 +2880,14 @@
     "stopTimerFirst": "Stop the current timer first",
     "subtaskCount": "{{count}} subtask(s)",
     "subtasks": "Subtasks",
-    "taskDeleteFailed": "[Translation needed: حذف تسک ناموفق بود]",
-    "taskLoadFailed": "[Translation needed: بارگذاری تسک‌ها ناموفق بود]",
-    "taskName": "[Translation needed: نام تسک]",
-    "taskSaveFailed": "[Translation needed: ذخیره تسک ناموفق بود]",
-    "timerRunning": "[Translation needed: تایمر برای این تسک در حال اجرا است]",
-    "totalTasks": "[Translation needed: کل تسک‌ها]",
-    "update": "[Translation needed: بروزرسانی]",
-    "uploadFile": "[Translation needed: آپلود فایل]"
+    "taskDeleteFailed": "Failed to delete task",
+    "taskLoadFailed": "Failed to load tasks",
+    "taskName": "Task Name",
+    "taskSaveFailed": "Failed to save task",
+    "timerRunning": "Timer is running for this task",
+    "totalTasks": "Total Tasks",
+    "update": "Update",
+    "uploadFile": "Upload File"
   },
   "healthOverview": {
     "title": "Pitch Health Overview",
