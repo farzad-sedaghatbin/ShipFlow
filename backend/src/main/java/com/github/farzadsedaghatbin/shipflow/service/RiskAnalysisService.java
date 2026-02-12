@@ -90,7 +90,7 @@ public class RiskAnalysisService {
       return cachedResult.get();
     }
 
-    Pitch pitch = pitchRepository.findById(pitchId)
+    Pitch pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
         .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
 
     return analyzePitchRisk(pitch, useAI);
@@ -309,7 +309,7 @@ public class RiskAnalysisService {
     // Get pitch first
     Pitch pitch;
     try {
-      pitch = pitchRepository.findById(pitchId)
+      pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
           .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
     } catch (Exception e) {
       return RiskQuestionResponse.builder().pitchId(pitchId).pitchTitle("Unknown").question(question).answer(null)
