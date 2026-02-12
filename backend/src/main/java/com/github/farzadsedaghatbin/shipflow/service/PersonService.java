@@ -159,7 +159,12 @@ public class PersonService {
         .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + assignmentId));
 
     assignment.setRole(request.getRole());
-    assignment.setStartDate(request.getStartDate());
+    
+    // Only update startDate if provided (don't overwrite with null)
+    if (request.getStartDate() != null) {
+      assignment.setStartDate(request.getStartDate());
+    }
+    
     assignment.setEndDate(request.getEndDate());
 
     TeamAssignment saved = teamAssignmentRepository.save(assignment);
