@@ -21,7 +21,7 @@ import {
 import { retroService } from '../services/retroService';
 import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
 
-import { usePermission } from '../hooks/usePermission';
+import { useAuth } from '../contexts/AuthContext';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
 import { cn } from '../lib/utils';
 
@@ -87,8 +87,8 @@ export default function RetroBoard() {
   });
   const [actOnItemsDialog, setActOnItemsDialog] = useState(false);
 
-  const { hasPermissionSync } = usePermission();
-  const canManageRetro = hasPermissionSync('RETROSPECTIVE', 'MANAGE');
+  const { user } = useAuth();
+  const canManageRetro = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
   const isReadOnly = retro?.status === 'CLOSED';
 
   // Memoize actionable items to avoid repeated filtering
