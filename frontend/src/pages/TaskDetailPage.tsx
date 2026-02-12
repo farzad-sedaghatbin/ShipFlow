@@ -691,7 +691,11 @@ export default function TaskDetailPage() {
               <Label htmlFor="edit-cycle">Cycle *</Label>
               <Select
                 value={formData.cycleId.toString()}
-                onValueChange={(value) => setFormData({ ...formData, cycleId: parseInt(value) })}
+                onValueChange={(value) => {
+                  const cycleId = parseInt(value);
+                  setFormData({ ...formData, cycleId, pitchId: undefined });
+                  loadPitchesForCycle(cycleId);
+                }}
               >
                 <SelectTrigger id="edit-cycle" className={fieldErrors.cycleId ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select cycle" />

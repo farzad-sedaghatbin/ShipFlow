@@ -527,6 +527,7 @@ export default function BacklogPage() {
         dueDate: task.dueDate,
         tags: task.tags || '',
         category: task.category || activeCategory,
+        pitchId: task.pitchId,
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
