@@ -188,6 +188,24 @@ public class TaskController {
     return ResponseEntity.ok(taskService.getTasksByProjectIdAndCategory(projectId, category, pageable));
   }
 
+  @GetMapping("/project/{projectId}/filter")
+  @Operation(summary = "Get tasks with multi-selection filters for a project", 
+      description = "Filter tasks by multiple statuses, priorities, assignees, and category with optional exclusion")
+  public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdWithFilters(@PathVariable Long projectId,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "desc") String sortOrder) {
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    return ResponseEntity.ok(taskService.getTasksByProjectIdWithFilters(projectId, statuses, priorities, 
+        assigneeIds, category, exclude, pageable));
+  }
+
   @GetMapping("/project/{projectId}/statistics")
   @Operation(summary = "Get task statistics for a project")
   public ResponseEntity<TaskStatisticsDTO> getTaskStatisticsByProjectId(@PathVariable Long projectId) {

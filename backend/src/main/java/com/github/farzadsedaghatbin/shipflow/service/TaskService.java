@@ -551,6 +551,26 @@ public class TaskService {
     }
   }
 
+  public Page<TaskDTO> getTasksByProjectIdWithFilters(Long projectId, List<TaskStatus> statuses, 
+      List<TaskPriority> priorities, List<Long> assigneeIds, TaskCategory category, Boolean exclude, 
+      Pageable pageable) {
+
+    // Convert empty lists to null for the query
+    List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
+    List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
+    List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+
+    if (exclude != null && exclude) {
+      return taskRepository
+          .findByProjectIdWithExclusionFilters(projectId, statusList, priorityList, assigneeList, pageable)
+          .map(this::toDTO);
+    } else {
+      return taskRepository
+          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category, pageable)
+          .map(this::toDTO);
+    }
+  }
+
   // ========== Category-based methods ==========
 
   public Page<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category, Pageable pageable) {

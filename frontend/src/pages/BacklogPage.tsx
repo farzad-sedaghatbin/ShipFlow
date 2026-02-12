@@ -285,39 +285,44 @@ export default function BacklogPage() {
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       
       try {
-        const response = await taskService.getByProjectIdAndCategory(
-          currentProject.id, 
-          activeCategory, 
-          effectivePage, 
-          effectiveRowsPerPage, 
-          sortBy, 
-          sortOrder
-        );
+        let response: any;
+        
+        // Use filter endpoint if any filters are active (except dependency which is not in backend)
+        if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
+          response = await taskService.getByProjectIdWithFilters(
+            currentProject.id,
+            statusFilter.length > 0 ? statusFilter : undefined,
+            priorityFilter.length > 0 ? priorityFilter : undefined,
+            assigneeFilter.length > 0 ? assigneeFilter : undefined,
+            activeCategory,
+            excludeMode,
+            effectivePage,
+            effectiveRowsPerPage,
+            sortBy,
+            sortOrder
+          );
+        } else {
+          // No status/priority/assignee filters, use category endpoint
+          response = await taskService.getByProjectIdAndCategory(
+            currentProject.id, 
+            activeCategory, 
+            effectivePage, 
+            effectiveRowsPerPage, 
+            sortBy, 
+            sortOrder
+          );
+        }
+        
         let filteredTasks = response?.data?.content || [];
         
-        // Apply additional filters
-        if (statusFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
-          );
-        }
-        if (priorityFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
-          );
-        }
-        if (assigneeFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
-          );
-        }
+        // Apply client-side filters for features not in backend yet
         if (dependencyFilter === 'blocked') {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
         }
         
-        // Apply search query
+        // Apply search query (client-side for now)
         if (searchQuery.trim()) {
           const query = searchQuery.toLowerCase();
           filteredTasks = filteredTasks.filter((t: Task) => 
