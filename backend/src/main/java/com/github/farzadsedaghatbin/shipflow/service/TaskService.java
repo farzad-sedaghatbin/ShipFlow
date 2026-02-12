@@ -248,7 +248,7 @@ public class TaskService {
 
     HillChartPoint savedScope = hillChartPointRepository.save(scope);
     log.info("Auto-created hill chart scope {} for task {} (pitch {})",
-        savedScope.getId(), task.getId(), task.getPitch().getId());
+        savedScope.getId(), task.getId(), task.getPitch() != null ? task.getPitch().getId() : "null");
   }
 
   public TaskDTO updateTask(Long id, CreateTaskRequest request) {

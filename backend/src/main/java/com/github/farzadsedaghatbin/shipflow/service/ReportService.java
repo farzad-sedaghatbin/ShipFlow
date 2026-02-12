@@ -309,7 +309,8 @@ public class ReportService {
   }
 
   private PitchReportDTO buildPitchReport(Pitch pitch, List<WorkLog> allWorkLogs) {
-    double actualHours = allWorkLogs.stream().filter(wl -> wl.getPitch().getId().equals(pitch.getId()))
+    double actualHours = allWorkLogs.stream()
+        .filter(wl -> wl.getPitch() != null && wl.getPitch().getId().equals(pitch.getId()))
         .mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
     double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
@@ -337,14 +338,19 @@ public class ReportService {
 
     Set<java.time.LocalDate> workDays = workLogs.stream().map(WorkLog::getDate).collect(Collectors.toSet());
 
-    Map<Long, Double> pitchHours = workLogs.stream().collect(Collectors.groupingBy(wl -> wl.getPitch().getId(),
+    Map<Long, Double> pitchHours = workLogs.stream()
+        .filter(wl -> wl.getPitch() != null)
+        .collect(Collectors.groupingBy(wl -> wl.getPitch().getId(),
         Collectors.summingDouble(wl -> wl.getHoursSpent().doubleValue())));
 
     List<MemberWorkReportDTO.PitchWorkSummary> pitchWork = pitchHours.entrySet().stream().map(entry -> {
-      WorkLog sample = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(entry.getKey())).findFirst()
+      WorkLog sample = workLogs.stream()
+          .filter(wl -> wl.getPitch() != null && wl.getPitch().getId().equals(entry.getKey()))
+          .findFirst()
           .orElse(null);
       return MemberWorkReportDTO.PitchWorkSummary.builder().pitchId(entry.getKey())
-          .pitchTitle(sample != null ? sample.getPitch().getTitle() : "Unknown").hoursSpent(entry.getValue())
+          .pitchTitle(sample != null && sample.getPitch() != null ? sample.getPitch().getTitle() : "Unknown")
+          .hoursSpent(entry.getValue())
           .build();
     }).collect(Collectors.toList());
 
