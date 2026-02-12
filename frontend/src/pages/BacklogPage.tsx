@@ -175,8 +175,7 @@ export default function BacklogPage() {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_assigneeDropdownOpen, _setAssigneeDropdownOpen] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
 
   // Sync view mode when project type changes
   useEffect(() => {
@@ -1112,6 +1111,36 @@ export default function BacklogPage() {
                       className="mr-2"
                     />
                     {t(priority.labelKey)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Assignee Filter */}
+            <DropdownMenu open={assigneeDropdownOpen} onOpenChange={setAssigneeDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  {t('backlogPage.filters.assignee')} {assigneeFilter.length > 0 && `(${assigneeFilter.length})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {persons.map((person) => (
+                  <DropdownMenuItem
+                    key={person.id}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (assigneeFilter.includes(person.id)) {
+                        setAssigneeFilter(assigneeFilter.filter(p => p !== person.id));
+                      } else {
+                        setAssigneeFilter([...assigneeFilter, person.id]);
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={assigneeFilter.includes(person.id)}
+                      className="mr-2"
+                    />
+                    {person.name}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
