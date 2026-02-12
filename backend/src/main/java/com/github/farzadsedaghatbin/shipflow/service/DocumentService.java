@@ -113,7 +113,8 @@ public class DocumentService {
       // Save document metadata to database
       UploadedDocument document = UploadedDocument.builder().fileName(uniqueFileName)
           .originalFileName(originalFileName).fileType(fileType).fileSize(file.getSize())
-          .storagePath(filePath.toString()).extractedText(extractedText).textExtracted(textExtracted)
+          .storagePath(uniqueFileName) // Store only filename, not absolute path
+          .extractedText(extractedText).textExtracted(textExtracted)
           .entityType(entityType).entityId(entityId).uploaderId(uploaderId).uploaderUsername(uploaderUsername)
           .indexedForQA(false).build();
 
@@ -141,6 +142,38 @@ public class DocumentService {
       return DocumentUploadResponse.builder().textExtracted(false)
           .errorMessage("Error uploading document: " + e.getMessage()).build();
     }
+  }
+
+  /**
+   * Fix storage paths for existing documents that have absolute paths.
+   * This method extracts just the filename from absolute paths.
+   * Can be called on application startup or as an admin endpoint.
+   */
+  @Transactional
+  public int fixDocumentStoragePaths() {
+    int fixedCount = 0;
+    List<UploadedDocument> allDocuments = documentRepository.findAll();
+    
+    for (UploadedDocument document : allDocuments) {
+      String storagePath = document.getStoragePath();
+      
+      // Check if storage path contains directory separators (indicating absolute path)
+      if (storagePath != null && (storagePath.contains("/") || storagePath.contains("\\"))) {
+        // Extract just the filename
+        Path path = Paths.get(storagePath);
+        String filename = path.getFileName().toString();
+        
+        log.info("Fixing storage path for document ID {}: {} -> {}", 
+            document.getId(), storagePath, filename);
+        
+        document.setStoragePath(filename);
+        documentRepository.save(document);
+        fixedCount++;
+      }
+    }
+    
+    log.info("Fixed storage paths for {} documents", fixedCount);
+    return fixedCount;
   }
 
   /** Extract text from a document based on its file type. */
@@ -266,10 +299,22 @@ public class DocumentService {
     UploadedDocument document = getDocumentById(id);
 
     try {
-      Path filePath = Paths.get(document.getStoragePath());
+      // Construct full path from upload directory and stored filename
+      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+      Path filePath = uploadPath.resolve(document.getStoragePath()).normalize();
+      
+      // Security check: ensure resolved path is within upload directory
+      if (!filePath.startsWith(uploadPath)) {
+        log.error("Security violation: Attempted path traversal for document ID {}: {}", id, document.getStoragePath());
+        throw new ResourceNotFoundException(
+            localizationService.getMessage("document.not.found", document.getOriginalFileName()));
+      }
+      
       Resource resource = new UrlResource(filePath.toUri());
 
       if (!resource.exists() || !resource.isReadable()) {
+        log.warn("Document file not found or not readable. Document ID: {}, Original name: {}, Storage path: {}, Resolved path: {}", 
+            id, document.getOriginalFileName(), document.getStoragePath(), filePath);
         throw new ResourceNotFoundException(
             localizationService.getMessage("document.not.found", document.getOriginalFileName()));
       }

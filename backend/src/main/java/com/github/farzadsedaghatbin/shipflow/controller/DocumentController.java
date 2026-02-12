@@ -280,6 +280,19 @@ public class DocumentController {
             : "AI extraction is not configured. Please enable AI in application settings."));
   }
 
+  /** Fix storage paths for existing documents (admin endpoint). */
+  @PostMapping("/admin/fix-storage-paths")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Fix document storage paths", 
+      description = "Admin endpoint to fix storage paths for documents that were uploaded with absolute paths")
+  public ResponseEntity<Map<String, Object>> fixStoragePaths() {
+    int fixedCount = documentService.fixDocumentStoragePaths();
+    return ResponseEntity.ok(Map.of(
+        "message", "Storage paths fixed successfully", 
+        "fixedCount", fixedCount
+    ));
+  }
+
   /**
    * Helper method to extract user information from UserDetails. Reduces code
    * duplication across multiple endpoints.
