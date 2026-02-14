@@ -88,7 +88,7 @@ export default function ReleaseListPage() {
     open: false,
     release: null,
   });
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -134,9 +134,9 @@ export default function ReleaseListPage() {
       searchTerm === '' ||
       release.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       release.version.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = filterStatus === 'all' || release.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -185,7 +185,7 @@ export default function ReleaseListPage() {
           </h1>
           <p className="text-muted-foreground">{t('releases.description')}</p>
         </div>
-        <Button onClick={() => navigate('/releases/new')}>
+        <Button onClick={() => navigate('/releases-management/new')}>
           <Plus className="h-4 w-4 mr-2" />
           {t('releases.create')}
         </Button>
@@ -223,7 +223,7 @@ export default function ReleaseListPage() {
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium">{t('releases.noReleases')}</h3>
             <p className="text-muted-foreground mb-4">{t('releases.noReleasesDescription')}</p>
-            <Button onClick={() => navigate('/releases/new')}>
+            <Button onClick={() => navigate('/releases-management/new')}>
               <Plus className="h-4 w-4 mr-2" />
               {t('releases.createFirst')}
             </Button>
@@ -248,7 +248,7 @@ export default function ReleaseListPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <Link
-                                to={`/releases/${release.id}`}
+                                to={`/releases-management/${release.id}`}
                                 className="font-semibold text-lg hover:underline"
                               >
                                 {release.version}
@@ -266,7 +266,7 @@ export default function ReleaseListPage() {
                             <p className="text-sm text-muted-foreground">{release.name}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-4">
                           {release.targetDate && (
                             <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -286,10 +286,10 @@ export default function ReleaseListPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/releases/${release.id}`)}>
+                              <DropdownMenuItem onClick={() => navigate(`/releases-management/${release.id}`)}>
                                 {t('common.view')}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/releases/${release.id}/edit`)}>
+                              <DropdownMenuItem onClick={() => navigate(`/releases-management/${release.id}/edit`)}>
                                 <Pencil className="h-4 w-4 mr-2" />
                                 {t('common.edit')}
                               </DropdownMenuItem>
@@ -328,7 +328,7 @@ export default function ReleaseListPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <Link
-                                to={`/releases/${release.id}`}
+                                to={`/releases-management/${release.id}`}
                                 className="font-semibold hover:underline"
                               >
                                 {release.version}
@@ -338,7 +338,7 @@ export default function ReleaseListPage() {
                             <p className="text-sm text-muted-foreground">{release.name}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-4">
                           {release.releaseDate && (
                             <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -346,7 +346,7 @@ export default function ReleaseListPage() {
                               {t('releases.releasedOn')} {formatLocalizedDate(release.releaseDate, i18n.language)}
                             </div>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/releases/${release.id}`)}>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/releases-management/${release.id}`)}>
                             {t('common.view')}
                           </Button>
                         </div>
