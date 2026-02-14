@@ -12,4 +12,8 @@ public class CreateTeamRequest {
   private String name;
 
   private Long cycleId;
+
+  // Capacity Configuration Overrides (null = inherit from organization)
+  private Double hoursPerDayOverride;
+  private Integer workingDaysPerWeekOverride;
 }

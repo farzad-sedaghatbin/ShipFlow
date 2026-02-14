@@ -40,6 +40,10 @@ public class Person {
   @Column(nullable = false)
   private Boolean isActive;
 
+  // Capacity Configuration (null = inherit from organization/team)
+  @Column(name = "hours_per_day_override", columnDefinition = "NUMERIC")
+  private Double hoursPerDayOverride;
+
   @Column(nullable = false)
   private LocalDateTime createdAt;
 

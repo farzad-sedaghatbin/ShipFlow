@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/risk")
 @RequiredArgsConstructor
-@Tag(name = "Risk Analysis", description = "Risk analysis for pitches and cycles (fast rule-based + optional AI)")
+@Tag(name = "Risk Analysis", description = "Risk analysis for pitches and cycles (fast rule-based). For AI analysis, use /api/risk/async/* endpoints.")
 public class RiskAnalysisController {
 
   private final RiskAnalysisService riskAnalysisService;
@@ -37,55 +37,23 @@ public class RiskAnalysisController {
     boolean aiAvailable = riskAnalysisService.isAIAvailable();
     return ResponseEntity.ok(Map.of("enabled", aiAvailable, "message",
         aiAvailable
-            ? "AI risk analysis is active"
+            ? "AI risk analysis is active. Use /api/risk/async/* for AI-powered analysis."
             : "AI risk analysis is disabled or AI provider is not available"));
   }
 
   @GetMapping("/pitch/{pitchId}")
-  @Operation(summary = "Analyze pitch risk (fast)", description = "Get rule-based risk analysis for a pitch (fast response)")
+  @Operation(summary = "Analyze pitch risk (fast)", description = "Get rule-based risk analysis for a pitch (fast response). For AI analysis, use POST /api/risk/async/pitch/{pitchId}/analyze")
   @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
   public ResponseEntity<PitchRiskDTO> analyzePitchRisk(@PathVariable Long pitchId) {
     PitchRiskDTO risk = riskAnalysisService.analyzePitchRisk(pitchId, false);
     return ResponseEntity.ok(risk);
   }
 
-  @GetMapping("/pitch/{pitchId}/ai")
-  @Operation(summary = "Analyze pitch risk with AI", description = "Get AI-powered risk analysis including score, factors, and recommendations (slower)")
-  @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
-  public ResponseEntity<PitchRiskDTO> analyzePitchRiskWithAI(@PathVariable Long pitchId) {
-    PitchRiskDTO risk = riskAnalysisService.analyzePitchRisk(pitchId, true);
-    return ResponseEntity.ok(risk);
-  }
-
   @GetMapping("/cycle/{cycleId}")
-  @Operation(summary = "Get cycle risk overview (fast)", description = "Get rule-based risk overview for a cycle (fast response)")
+  @Operation(summary = "Get cycle risk overview (fast)", description = "Get rule-based risk overview for a cycle (fast response). For AI analysis, use POST /api/risk/async/cycle/{cycleId}/analyze")
   @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
   public ResponseEntity<CycleRiskOverviewDTO> getCycleRiskOverview(@PathVariable Long cycleId) {
     CycleRiskOverviewDTO overview = riskAnalysisService.getCycleRiskOverview(cycleId, false);
-    return ResponseEntity.ok(overview);
-  }
-
-  @GetMapping("/cycle/{cycleId}/ai")
-  @Operation(summary = "Get cycle risk overview with AI", description = "Get AI-powered risk overview including all pitch risks and aggregated insights (slower)")
-  @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
-  public ResponseEntity<CycleRiskOverviewDTO> getCycleRiskOverviewWithAI(@PathVariable Long cycleId) {
-    CycleRiskOverviewDTO overview = riskAnalysisService.getCycleRiskOverview(cycleId, true);
-    return ResponseEntity.ok(overview);
-  }
-
-  @PostMapping("/pitch/{pitchId}/refresh")
-  @Operation(summary = "Refresh pitch risk analysis with AI", description = "Force a fresh AI-powered risk analysis for a pitch")
-  @PreAuthorize("@permissionService.hasPermission('RISK', 'UPDATE')")
-  public ResponseEntity<PitchRiskDTO> refreshPitchRisk(@PathVariable Long pitchId) {
-    PitchRiskDTO risk = riskAnalysisService.analyzePitchRisk(pitchId, true);
-    return ResponseEntity.ok(risk);
-  }
-
-  @PostMapping("/cycle/{cycleId}/refresh")
-  @Operation(summary = "Refresh cycle risk overview with AI", description = "Force a fresh AI-powered risk analysis for an entire cycle")
-  @PreAuthorize("@permissionService.hasPermission('RISK', 'UPDATE')")
-  public ResponseEntity<CycleRiskOverviewDTO> refreshCycleRisk(@PathVariable Long cycleId) {
-    CycleRiskOverviewDTO overview = riskAnalysisService.getCycleRiskOverview(cycleId, true);
     return ResponseEntity.ok(overview);
   }
 

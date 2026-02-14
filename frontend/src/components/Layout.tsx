@@ -34,6 +34,9 @@ import {
   Plug,
   BookOpen,
   Beaker,
+  Map,
+  Layers,
+  PackageCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -72,6 +75,7 @@ import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
+import packageJson from '../../package.json';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -117,6 +121,14 @@ const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
   { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/qa/wise-architecture', tourId: 'qa-wise-architecture-menu' },
+];
+
+// Roadmap & Planning section
+const roadmapItems: NavItemConfig[] = [
+  { textKey: 'nav.roadmap', icon: Map, path: '/roadmap', tourId: 'roadmap-menu' },
+  { textKey: 'nav.initiatives', icon: Target, path: '/initiatives', tourId: 'initiatives-menu' },
+  { textKey: 'nav.epics', icon: Layers, path: '/epics', tourId: 'epics-menu' },
+  { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
 ];
 
 // Meetings (accessible from cycle context)
@@ -338,6 +350,16 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onItemClick={onItemClick}
           />
 
+          {/* Roadmap & Planning Section */}
+          <SectionHeader textKey="nav.sections.roadmap" />
+          <NavGroup
+            titleKey="nav.groups.planning"
+            icon={Map}
+            items={roadmapItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
           <NavItem
@@ -381,7 +403,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       {/* Footer with version */}
       <div className="border-t border-sidebar-border px-3 py-2">
         <div className="text-xs text-muted-foreground text-center">
-          v0.4.0
+          v{packageJson.version}
         </div>
       </div>
     </div>

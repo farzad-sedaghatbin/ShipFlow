@@ -85,6 +85,51 @@ public class KnowledgeEventListener {
     }
   }
 
+  /** Handle initiative created/updated events. */
+  @Async
+  @EventListener
+  public void handleInitiativeEvent(InitiativeKnowledgeEvent event) {
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
+
+    log.debug("Handling initiative event for initiative ID: {}", event.getInitiativeId());
+    try {
+      knowledgeIngestionService.ingestInitiative(event.getInitiativeId());
+    } catch (Exception e) {
+      log.error("Failed to ingest initiative {}: {}", event.getInitiativeId(), e.getMessage());
+    }
+  }
+
+  /** Handle epic created/updated events. */
+  @Async
+  @EventListener
+  public void handleEpicEvent(EpicKnowledgeEvent event) {
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
+
+    log.debug("Handling epic event for epic ID: {}", event.getEpicId());
+    try {
+      knowledgeIngestionService.ingestEpic(event.getEpicId());
+    } catch (Exception e) {
+      log.error("Failed to ingest epic {}: {}", event.getEpicId(), e.getMessage());
+    }
+  }
+
+  /** Handle release created/updated events. */
+  @Async
+  @EventListener
+  public void handleReleaseEvent(ReleaseKnowledgeEvent event) {
+    if (!qaEnabled || knowledgeIngestionService == null)
+      return;
+
+    log.debug("Handling release event for release ID: {}", event.getReleaseId());
+    try {
+      knowledgeIngestionService.ingestRelease(event.getReleaseId());
+    } catch (Exception e) {
+      log.error("Failed to ingest release {}: {}", event.getReleaseId(), e.getMessage());
+    }
+  }
+
   // ===== Event classes =====
 
   public static class PitchKnowledgeEvent {
@@ -132,6 +177,42 @@ public class KnowledgeEventListener {
 
     public Long getEvidenceId() {
       return evidenceId;
+    }
+  }
+
+  public static class InitiativeKnowledgeEvent {
+    private final Long initiativeId;
+
+    public InitiativeKnowledgeEvent(Long initiativeId) {
+      this.initiativeId = initiativeId;
+    }
+
+    public Long getInitiativeId() {
+      return initiativeId;
+    }
+  }
+
+  public static class EpicKnowledgeEvent {
+    private final Long epicId;
+
+    public EpicKnowledgeEvent(Long epicId) {
+      this.epicId = epicId;
+    }
+
+    public Long getEpicId() {
+      return epicId;
+    }
+  }
+
+  public static class ReleaseKnowledgeEvent {
+    private final Long releaseId;
+
+    public ReleaseKnowledgeEvent(Long releaseId) {
+      this.releaseId = releaseId;
+    }
+
+    public Long getReleaseId() {
+      return releaseId;
     }
   }
 }

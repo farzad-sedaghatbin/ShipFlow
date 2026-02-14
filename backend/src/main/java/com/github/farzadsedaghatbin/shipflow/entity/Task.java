@@ -52,6 +52,10 @@ public class Task {
   @Column(precision = 5, scale = 2)
   private BigDecimal actualHours;
 
+  /**
+   * The cycle this task belongs to. For Kanban projects, tasks are associated with a long-term
+   * hidden cycle for data consistency, but this cycle is never shown in the UI.
+   */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cycle_id", nullable = false)
@@ -74,6 +78,14 @@ public class Task {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "scope_id")
   private HillChartPoint scope;
+
+  /**
+   * The scope that was auto-created when this root task was linked to a pitch.
+   * Used for bidirectional Scope-Task synchronization.
+   */
+  @NotAudited
+  @OneToOne(fetch = FetchType.LAZY, mappedBy = "linkedTask")
+  private HillChartPoint autoCreatedScope;
 
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
@@ -133,6 +145,12 @@ public class Task {
   @Column(columnDefinition = "TEXT")
   private String tags;
 
+  /** The target release for this task (optional) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "target_release_id")
+  private Release targetRelease;
+
   // Soft delete fields
   @NotAudited
   @Column
@@ -142,6 +160,22 @@ public class Task {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "deleted_by_id")
   private User deletedBy;
+
+  /**
+   * Checks if this task is a root scope task (shows on hill chart).
+   * A task is a root scope if it has a pitch and no parent task.
+   */
+  public boolean isRootScope() {
+    return pitch != null && parentTask == null;
+  }
+
+  /**
+   * Checks if this task should be displayed on the hill chart.
+   * True if it's a root scope task with an auto-created scope.
+   */
+  public boolean showsOnHillChart() {
+    return isRootScope() && autoCreatedScope != null;
+  }
 
   @PrePersist
   protected void onCreate() {

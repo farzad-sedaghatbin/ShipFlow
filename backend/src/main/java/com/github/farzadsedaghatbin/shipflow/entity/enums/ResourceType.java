@@ -42,5 +42,14 @@ public enum ResourceType {
   AI_FEATURES,
 
   /** Global system settings */
-  SYSTEM
+  SYSTEM,
+
+  /** Strategic initiative resource */
+  INITIATIVE,
+
+  /** Epic/feature group resource */
+  EPIC,
+
+  /** Release/milestone resource */
+  RELEASE
 }

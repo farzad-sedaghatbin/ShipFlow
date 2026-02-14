@@ -16,7 +16,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TeamMemberRole;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -26,6 +29,7 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ReportService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   private final CycleRepository cycleRepository;
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
@@ -47,6 +49,9 @@ public class ReportService {
   private final TaskRepository taskRepository;
   private final RiskAnalysisService riskAnalysisService;
   private final LocalizationService localizationService;
+  private final CycleSignalService cycleSignalService;
+  private final CycleNarrativeService cycleNarrativeService;
+  private final CapacityConfigService capacityConfigService;
 
   @SuppressWarnings("null")
   public CycleReportDTO getCycleReport(Long cycleId) {
@@ -73,7 +78,7 @@ public class ReportService {
     int inProgressPitches = (int) pitches.stream()
         .filter(p -> p.getStatus() == PitchStatus.IN_PROGRESS || p.getStatus() == PitchStatus.STARTED).count();
 
-    double totalAppetiteHours = pitches.stream().mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY).sum();
+    double totalAppetiteHours = pitches.stream().mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p)).sum();
 
     double totalActualHours = workLogs.stream().mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
@@ -170,45 +175,53 @@ public class ReportService {
       PdfWriter writer = new PdfWriter(baos);
       PdfDocument pdf = new PdfDocument(writer);
       Document document = new Document(pdf);
+      
+      PdfFont boldFont;
+      try {
+        boldFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+      } catch (IOException e) {
+        document.close();
+        throw new RuntimeException("Failed to create PDF font", e);
+      }
 
       // Title
-      Paragraph title = new Paragraph("Cycle Report: " + report.getCycleName()).setFontSize(20).setBold()
+      Paragraph title = new Paragraph("Cycle Report: " + report.getCycleName()).setFontSize(20).setFont(boldFont)
           .setTextAlignment(TextAlignment.CENTER);
       document.add(title);
       document.add(new Paragraph(" "));
 
       // Summary Section
-      Paragraph summaryHeader = new Paragraph("Summary").setFontSize(16).setBold();
+      Paragraph summaryHeader = new Paragraph("Summary").setFontSize(16).setFont(boldFont);
       document.add(summaryHeader);
 
       Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{3, 2}));
       summaryTable.setWidth(UnitValue.createPercentValue(60));
-      addSummaryRow(summaryTable, "Total Pitches", String.valueOf(report.getTotalPitches()));
-      addSummaryRow(summaryTable, "Completed", String.valueOf(report.getCompletedPitches()));
-      addSummaryRow(summaryTable, "In Progress", String.valueOf(report.getInProgressPitches()));
+      addSummaryRow(summaryTable, "Total Pitches", String.valueOf(report.getTotalPitches()), boldFont);
+      addSummaryRow(summaryTable, "Completed", String.valueOf(report.getCompletedPitches()), boldFont);
+      addSummaryRow(summaryTable, "In Progress", String.valueOf(report.getInProgressPitches()), boldFont);
       addSummaryRow(summaryTable, "Total Appetite (hours)",
-          String.format("%.2f", report.getTotalAppetiteHours()));
-      addSummaryRow(summaryTable, "Total Actual (hours)", String.format("%.2f", report.getTotalActualHours()));
-      addSummaryRow(summaryTable, "Efficiency %", String.format("%.2f%%", report.getEfficiencyPercentage()));
+          String.format("%.2f", report.getTotalAppetiteHours()), boldFont);
+      addSummaryRow(summaryTable, "Total Actual (hours)", String.format("%.2f", report.getTotalActualHours()), boldFont);
+      addSummaryRow(summaryTable, "Efficiency %", String.format("%.2f%%", report.getEfficiencyPercentage()), boldFont);
       document.add(summaryTable);
       document.add(new Paragraph(" "));
 
       // Out-of-Scope Work Section
-      Paragraph taskHeader = new Paragraph("Out-of-Scope Work (Tasks)").setFontSize(16).setBold();
+      Paragraph taskHeader = new Paragraph("Out-of-Scope Work (Tasks)").setFontSize(16).setFont(boldFont);
       document.add(taskHeader);
 
       Table taskTable = new Table(UnitValue.createPercentArray(new float[]{3, 2}));
       taskTable.setWidth(UnitValue.createPercentValue(60));
-      addSummaryRow(taskTable, "Total Tasks", String.valueOf(report.getTotalTasks()));
-      addSummaryRow(taskTable, "Completed Tasks", String.valueOf(report.getCompletedTasks()));
+      addSummaryRow(taskTable, "Total Tasks", String.valueOf(report.getTotalTasks()), boldFont);
+      addSummaryRow(taskTable, "Completed Tasks", String.valueOf(report.getCompletedTasks()), boldFont);
       addSummaryRow(taskTable, "Task Estimate (hours)",
-          String.format("%.2f", report.getTotalTaskEstimateHours()));
-      addSummaryRow(taskTable, "Task Actual (hours)", String.format("%.2f", report.getTotalTaskActualHours()));
+          String.format("%.2f", report.getTotalTaskEstimateHours()), boldFont);
+      addSummaryRow(taskTable, "Task Actual (hours)", String.format("%.2f", report.getTotalTaskActualHours()), boldFont);
       document.add(taskTable);
       document.add(new Paragraph(" "));
 
       // Pitch Reports Section
-      Paragraph pitchHeader = new Paragraph("Pitch Reports").setFontSize(16).setBold();
+      Paragraph pitchHeader = new Paragraph("Pitch Reports").setFontSize(16).setFont(boldFont);
       document.add(pitchHeader);
 
       Table pitchTable = new Table(
@@ -216,15 +229,15 @@ public class ReportService {
       pitchTable.setWidth(UnitValue.createPercentValue(100));
 
       // Header row
-      addHeaderCell(pitchTable, "Pitch");
-      addHeaderCell(pitchTable, "Team");
-      addHeaderCell(pitchTable, "Status");
-      addHeaderCell(pitchTable, "Appetite Days");
-      addHeaderCell(pitchTable, "Appetite Hours");
-      addHeaderCell(pitchTable, "Actual Hours");
-      addHeaderCell(pitchTable, "Variance Hours");
-      addHeaderCell(pitchTable, "Variance %");
-      addHeaderCell(pitchTable, "Over Budget");
+      addHeaderCell(pitchTable, "Pitch", boldFont);
+      addHeaderCell(pitchTable, "Team", boldFont);
+      addHeaderCell(pitchTable, "Status", boldFont);
+      addHeaderCell(pitchTable, "Appetite Days", boldFont);
+      addHeaderCell(pitchTable, "Appetite Hours", boldFont);
+      addHeaderCell(pitchTable, "Actual Hours", boldFont);
+      addHeaderCell(pitchTable, "Variance Hours", boldFont);
+      addHeaderCell(pitchTable, "Variance %", boldFont);
+      addHeaderCell(pitchTable, "Over Budget", boldFont);
 
       // Data rows
       for (PitchReportDTO pitch : report.getPitchReports()) {
@@ -248,19 +261,19 @@ public class ReportService {
       document.add(new Paragraph(" "));
 
       // Member Reports Section
-      Paragraph memberHeader = new Paragraph("Member Work Summary").setFontSize(16).setBold();
+      Paragraph memberHeader = new Paragraph("Member Work Summary").setFontSize(16).setFont(boldFont);
       document.add(memberHeader);
 
       Table memberTable = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2, 2, 2, 2}));
       memberTable.setWidth(UnitValue.createPercentValue(100));
 
       // Header row
-      addHeaderCell(memberTable, "Member");
-      addHeaderCell(memberTable, "Role");
-      addHeaderCell(memberTable, "Team");
-      addHeaderCell(memberTable, "Total Hours");
-      addHeaderCell(memberTable, "Work Days");
-      addHeaderCell(memberTable, "Avg Hours/Day");
+      addHeaderCell(memberTable, "Member", boldFont);
+      addHeaderCell(memberTable, "Role", boldFont);
+      addHeaderCell(memberTable, "Team", boldFont);
+      addHeaderCell(memberTable, "Total Hours", boldFont);
+      addHeaderCell(memberTable, "Work Days", boldFont);
+      addHeaderCell(memberTable, "Avg Hours/Day", boldFont);
 
       // Data rows
       for (MemberWorkReportDTO member : report.getMemberReports()) {
@@ -283,23 +296,24 @@ public class ReportService {
     return baos.toByteArray();
   }
 
-  private void addSummaryRow(Table table, String label, String value) {
-    table.addCell(new Cell().add(new Paragraph(label).setBold()));
+  private void addSummaryRow(Table table, String label, String value, PdfFont boldFont) {
+    table.addCell(new Cell().add(new Paragraph(label).setFont(boldFont)));
     table.addCell(new Cell().add(new Paragraph(value)));
   }
 
-  private void addHeaderCell(Table table, String text) {
-    Cell cell = new Cell().add(new Paragraph(text).setBold().setFontSize(10));
+  private void addHeaderCell(Table table, String text, PdfFont boldFont) {
+    Cell cell = new Cell().add(new Paragraph(text).setFont(boldFont).setFontSize(10));
     cell.setBackgroundColor(ColorConstants.LIGHT_GRAY);
     cell.setTextAlignment(TextAlignment.CENTER);
     table.addHeaderCell(cell);
   }
 
   private PitchReportDTO buildPitchReport(Pitch pitch, List<WorkLog> allWorkLogs) {
-    double actualHours = allWorkLogs.stream().filter(wl -> wl.getPitch().getId().equals(pitch.getId()))
+    double actualHours = allWorkLogs.stream()
+        .filter(wl -> wl.getPitch() != null && wl.getPitch().getId().equals(pitch.getId()))
         .mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double variance = actualHours - appetiteHours;
     double variancePercent = appetiteHours > 0 ? (variance / appetiteHours) * 100 : 0;
 
@@ -324,14 +338,19 @@ public class ReportService {
 
     Set<java.time.LocalDate> workDays = workLogs.stream().map(WorkLog::getDate).collect(Collectors.toSet());
 
-    Map<Long, Double> pitchHours = workLogs.stream().collect(Collectors.groupingBy(wl -> wl.getPitch().getId(),
+    Map<Long, Double> pitchHours = workLogs.stream()
+        .filter(wl -> wl.getPitch() != null)
+        .collect(Collectors.groupingBy(wl -> wl.getPitch().getId(),
         Collectors.summingDouble(wl -> wl.getHoursSpent().doubleValue())));
 
     List<MemberWorkReportDTO.PitchWorkSummary> pitchWork = pitchHours.entrySet().stream().map(entry -> {
-      WorkLog sample = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(entry.getKey())).findFirst()
+      WorkLog sample = workLogs.stream()
+          .filter(wl -> wl.getPitch() != null && wl.getPitch().getId().equals(entry.getKey()))
+          .findFirst()
           .orElse(null);
       return MemberWorkReportDTO.PitchWorkSummary.builder().pitchId(entry.getKey())
-          .pitchTitle(sample != null ? sample.getPitch().getTitle() : "Unknown").hoursSpent(entry.getValue())
+          .pitchTitle(sample != null && sample.getPitch() != null ? sample.getPitch().getTitle() : "Unknown")
+          .hoursSpent(entry.getValue())
           .build();
     }).collect(Collectors.toList());
 
@@ -354,6 +373,7 @@ public class ReportService {
    * distribution.
    */
   @SuppressWarnings("null")
+  @Transactional(readOnly = false)
   public EnhancedCycleReportDTO getEnhancedCycleReport(Long cycleId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new RuntimeException("Cycle not found with id: " + cycleId));
@@ -381,7 +401,7 @@ public class ReportService {
         .filter(p -> p.getStatus() == PitchStatus.PENDING || p.getStatus() == PitchStatus.SHAPED).count();
 
     // Calculate hours and efficiency
-    double totalAppetiteHours = pitches.stream().mapToDouble(p -> p.getAppetiteDays() * HOURS_PER_DAY).sum();
+    double totalAppetiteHours = pitches.stream().mapToDouble(p -> capacityConfigService.calculatePitchAppetiteHours(p)).sum();
 
     double totalActualHours = workLogs.stream().mapToDouble(wl -> wl.getHoursSpent().doubleValue()).sum();
 
@@ -416,6 +436,10 @@ public class ReportService {
     List<String> overBudgetPitches = pitchReports.stream().filter(PitchReportDTO::getIsOverBudget)
         .map(PitchReportDTO::getPitchTitle).collect(Collectors.toList());
 
+    // v0.5 - Add signals and narrative summary
+    var signals = cycleSignalService.getCycleSignals(cycleId);
+    var narrativeSummary = cycleNarrativeService.getCycleSummary(cycleId);
+
     return EnhancedCycleReportDTO.builder().cycleId(cycle.getId()).cycleName(cycle.getName())
         .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).totalPitches(pitches.size())
@@ -428,7 +452,8 @@ public class ReportService {
         .riskDistribution(riskDistribution).totalTeamMembers(totalTeamMembers)
         .averageHoursPerMember(averageHoursPerMember).maxHoursPerMember(maxHoursPerMember)
         .minHoursPerMember(minHoursPerMember).pitchReports(pitchReports).memberReports(memberReports)
-        .topPerformers(topPerformers).overBudgetPitches(overBudgetPitches).build();
+        .topPerformers(topPerformers).overBudgetPitches(overBudgetPitches)
+        .signals(signals).narrativeSummary(narrativeSummary).build();
   }
 
   /** Calculate risk distribution for pitches in a cycle. */

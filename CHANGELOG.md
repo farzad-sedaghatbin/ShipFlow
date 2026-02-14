@@ -17,6 +17,415 @@ All notable changes to this project will be documented in this file.
     - Shows which sources were used (code analysis, team skills, design context)
     - Warns users that recommendations may be less accurate without full context
 
+- **Shape Up Workflow Improvements - Pre-Cycle Pitch States**
+  - Pitches now support a true pre-cycle workflow per Shape Up methodology
+  - **Pre-cycle statuses** (IDEA, DRAFT, SHAPED) no longer require cycle assignment
+  - **Betting Candidates**: SHAPED pitches with `cycle=null` appear in betting table for selection
+  - **Cycle Assignment**: Betting process assigns shaped pitches to cycles (SHAPED → PENDING transition)
+  - New repository method `findBettingCandidates()` fetches SHAPED pitches without cycle
+  - New endpoint `PUT /api/pitches/{id}/assign-cycle/{cycleId}` for betting table integration
+  - Entity enhancements: `Pitch.isPreCycleStatus()`, `Pitch.isReadyForBetting()`
+  - Full null-safety for DTOs when handling pre-cycle pitches
+  - Database and service layer support for pitches throughout their complete lifecycle
+- **Roadmap & Release Planning Feature**
+  - **Initiatives**: Strategic themes spanning multiple quarters for high-level planning
+    - Full CRUD operations with soft delete support
+    - Status workflow: DRAFT → PLANNED → IN_PROGRESS → COMPLETED (with ON_HOLD, CANCELLED)
+    - Color-coded visualization with sortable display order
+    - Target date ranges for timeline planning
+    - Owner assignment and project association
+  - **Epics**: Feature grouping layer between initiatives and pitches
+    - Optional parent initiative for strategic alignment
+    - Independent lifecycle with same status options as initiatives
+    - Link multiple pitches to track epic progress
+    - Color customization for visual differentiation
+  - **Releases**: Versioned delivery milestones
+    - Version string support (e.g., "v2.4.0", "2026.Q2")
+    - Status workflow: DRAFT → PLANNED → IN_PROGRESS → STAGING → RELEASED
+    - Risk level tracking: LOW, MEDIUM, HIGH, CRITICAL
+    - Many-to-many relationship with cycles (releases can span multiple cycles)
+    - Release notes for documentation
+  - **Roadmap Timeline View**: Stakeholder-friendly visualization
+    - Timeline data aggregation across initiatives, epics, and releases
+    - Progress calculation from linked pitches
+    - Pitch status breakdown per epic/release
+  - **Bug & Pitch Release Tracking**
+    - `target_release_id` on pitches - "When will this be delivered?"
+    - `target_release_id` and `fixed_in_release_id` on bugs - Track expected vs actual fix release
+    - `target_release_id` on tasks for release scoping
+  - Backend: 4 new enums, 3 new entities, migration V82, 8 DTOs, 3 repositories, 4 services, 4 controllers
+  - Frontend: 4 services, 8 pages (Roadmap, Initiatives, Epics, Releases)
+  - Navigation: New "Roadmap & Planning" menu group with Map, Target, Layers, PackageCheck icons
+  - i18n: Full English and Persian translations for all roadmap features
+
+- **Bug Report Attachments & Media Support**
+  - Image and video attachment support for bug reports (JPG, JPEG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI)
+  - Drag-and-drop upload interface with progress indicators and previews
+  - **Attachments can be added during bug creation** - files are staged and uploaded after the bug is created
+  - Gallery view with thumbnail previews for all attachments
+  - Full-screen preview modal for viewing images and videos
+  - Download functionality for all attachments
+  - Backend API endpoints: `POST /api/documents/bug/{bugId}/attachment`, `GET /api/documents/bug/{bugId}/attachments`, `DELETE /api/documents/bug/attachment/{attachmentId}`
+  - New `MediaAttachmentUpload` component with file validation and preview capabilities
+  - Extended `DocumentService` with `uploadMediaAttachment()` method for handling media files (50MB limit, no text extraction)
+  - Integrated into `BugReportModal` (upload during creation and editing) and `BugViewDialog` (attachment gallery display)
+  - i18n support for attachment-related messages in English and Persian
+  - Comprehensive integration tests (9 tests covering upload, retrieval, deletion, validation)
+  - Seed data with 14 sample bug attachments across 7 bug reports demonstrating the feature
+
+- **Scope-Task Auto-Bridge Integration**
+  - Unified Scope and Task entities with automatic bidirectional synchronization
+  - Creating a root task with a pitch automatically creates a linked hill chart scope
+  - Creating a scope automatically creates a corresponding task for work assignment
+  - Auto-progress feature: scope position automatically updates based on subtask completion (0-100%)
+  - Manual override: dragging a scope on the hill chart disables auto-progress (user takes control)
+  - Re-enable auto-progress: toggle to restore automatic position synchronization
+  - New `ScopeProgressService` calculates positions from task completion percentages
+  - New `ScopeProgressListener` listens to task status changes for real-time sync
+  - Task status change events (`TaskStatusChangedEvent`) trigger scope progress updates
+  - UI indicators show auto-progress status, linked tasks, and suggested positions
+  - Hill chart displays ghost position when suggested differs from current
+  - API endpoints: `PUT /api/hill-chart/{id}/auto-progress`, `GET /api/hill-chart/{id}/suggested-position`
+  - Database migrations V73 and V79: add bidirectional linking columns (`linked_task_id`, `auto_progress_enabled` on hill_chart_points; `auto_created_scope_id` on tasks)
+  - Database migration V80: fixes invalid `COMPLETED` status values to `DONE` (TaskStatus enum compatibility)
+  - New fields in DTOs: `linkedTaskId`, `autoProgressEnabled`, `suggestedPosition`, `showOnHillChart`
+  - Simplified UX: single workflow for creating trackable work items
+
+- **Configurable Team Capacity & Budget Management**
+  - Organization-wide default hours per day (default: 8) and working days per week (default: 5)
+  - Team-level capacity overrides for working hours and days
+  - Person-level capacity overrides for individual team members
+  - Team assignment-level overrides for fine-grained control per pitch
+  - Capacity inheritance hierarchy: Organization → Team → Person → Assignment (most specific wins)
+>>>>>>> 2672077d4faf882f592e2a80d06bb566f95f281c
+  - Budget calculations now use team member capacity for accurate per-person budget tracking
+  - Risk calculation enhanced to detect over-budget individual team members
+  - New UI in Organization Settings for configuring default capacity
+  - New UI in Teams page for team and assignment capacity overrides
+  - PitchHealthDTO now includes team budget breakdown with member utilization
+
+- **Dashboard Tabbed Layout Redesign**
+  - Reorganized dashboard into 3 tabs: Overview, AI Insights, Activity
+  - Reduces scrolling and improves content discoverability
+  - Tab selection persisted to localStorage for user preference
+  - Overview: Quick Links, Active Cycles, Cycle Summary
+  - AI Insights: Hill Chart, AI Risk Advisory, Cycle Signals
+  - Activity: Recent Pitches, Recent Activity
+
+- **Extended Widget Management**
+  - Added 6 new manageable widgets: Cycle Summary, Cycle Signals, AI Risk Advisory, Hill Chart, Active Cycles, Recent Pitches
+  - All widgets now appear in show/hide customization panel
+  - Widget visibility preferences saved per user
+
+- **Auto-Regeneration for AI Narratives**
+  - Automatic narrative regeneration on cycle status changes (SHIPPED, COMPLETED, COOLDOWN)
+  - Auto-regeneration on pitch status changes (SHIPPED, DROPPED)
+  - 60-minute debounce interval to prevent excessive regenerations
+  - Event-driven architecture using Spring Events for decoupled processing
+  - New event classes: `CycleStatusChangedEvent`, `PitchStatusChangedEvent`, `TaskCompletedEvent`
+
+### Changed
+- **Permission Control for Regenerate Buttons**
+  - Regenerate buttons in CycleSummaryPanel now require ADMIN or MANAGER role
+  - Uses PermissionGate component with REPORT:CREATE permission check
+  - Aligns with existing permission matrix (REPORT write access for Admin/Manager only)
+
+### Fixed
+- **Meeting creation - project association for non-pitch meetings**
+  - Added direct `project_id` column to meetings table (migration V89) to support project-level meetings without pitch association
+  - Meetings can now be associated with a project directly, not just through pitch → cycle → project relationship
+  - When creating a meeting without selecting a pitch, the current project is automatically assigned
+  - Fixes issue where meetings created without a pitch wouldn't appear when filtering by project (e.g., standalone standups in Kanban projects)
+  - Backend: Added `projectId` field to `CreateMeetingRequest`, updated `MeetingService` to handle project assignment
+  - Frontend: Automatically passes `currentProject.id` when creating meetings without a pitch
+  - Migration V89 backfills existing meetings with project data from their pitch associations
+
+- **Retrospectives API graceful handling for disabled features**
+  - `/api/retros/project/{projectId}` and `/api/retros/cycle/{cycleId}` now return empty lists instead of 500 errors when retrospectives are disabled for a project (e.g., Kanban projects)
+  - Meeting List page was calling retros endpoint during data refresh to populate retrospective dropdown, causing errors in Kanban projects
+  - Updated backend service layer (`RetroCrudService`) to gracefully handle disabled features
+  - Updated 3 tests to reflect non-blocking behavior for feature availability checks
+  - Removed frontend error handling workaround now that backend handles this properly
+
+- **ActOnRetroItemsDialog checkbox double-toggle bug**
+  - Fixed issue where clicking checkbox triggered both onCheckedChange and parent div onClick
+  - Removed redundant onCheckedChange handler to prevent state toggling twice
+  - Checkbox selection now works correctly in retrospective action dialog
+
+- **Backend test failures from dashboard changes**
+  - Added missing ApplicationEventPublisher mock to CycleServiceTest
+  - Added missing EntityManager mock to DashboardWidgetServiceTest
+  - All 1,475 backend tests now passing
+
+### API Contract Alignment & Code Quality (2026-02-09)
+
+- **P0: Cooldown Activity API Contract Alignment**
+  - **Status Enum Mismatch**: Unified `CooldownActivityStatus` enum between frontend and backend
+    - Removed `CANCELLED` from frontend (was never in backend)
+    - Frontend now uses: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `SKIPPED`, `BLOCKED`
+    - Matches backend enum exactly for proper API communication
+  - **Summary DTO Field Mismatch**: Updated frontend `CooldownSummaryDTO` interface
+    - Added `blockedCount` and `skippedCount` fields (were missing)
+    - Removed non-existent `cancelledCount` field
+    - Added `cycleName`, `activities`, `countByType`, `countByStatus` fields for full compatibility
+  - **Assignee Field Name**: Updated frontend to use `assigneeUsername` (matching backend)
+    - Changed `assigneeName` → `assigneeUsername` in `CooldownActivityDTO`
+    - Updated `CooldownActivities.tsx` table to display correct field
+
+- **P0: i18n Duplicate Key Detection**
+  - **Fixed Duplicate Keys**: Renamed `cooldownActivity.title` to avoid collision
+    - `cooldownActivity.pageTitle` for page heading ("Cooldown Activities")
+    - `cooldownActivity.title` for form field label ("Title")
+    - Updated `CooldownActivities.tsx` to use `pageTitle` for page heading
+  - **CI Protection**: Added duplicate key detection to `validate-i18n.js`
+    - New `checkDuplicateKeys()` method with text-based JSON parsing
+    - Detects same-level duplicate keys that would be silently overwritten
+    - Reports exact line numbers of first and second occurrence
+    - Duplicate keys now cause CI validation to **fail** (exit code 1)
+
+- **P0: Separate Create/Update DTOs for Cooldown API**
+  - Created `UpdateCooldownActivityRequest.java` with partial update support
+    - All fields optional (null = no change)
+    - Added `clearAssignee` flag for explicit unassignment
+    - Added `clearRelatedPitch` flag for explicit pitch unlinking
+    - Includes `status` field for status changes
+  - Updated `CooldownActivityController.java` PUT endpoint
+  - Enhanced `CooldownActivityService.updateActivity()` with:
+    - Null-safe partial updates (only modifies provided fields)
+    - Automatic timestamp handling for status transitions
+    - Explicit clear flag support for nullable relationships
+
+### Changed
+- **Cooldown Activity UI Improvements**
+  - Updated status badge colors for `SKIPPED` (amber) and `BLOCKED` (red)
+  - Added appropriate icons: `SkipForward` for skipped, `Ban` for blocked
+  - Status filter dropdown now shows all five status options
+  - Status select in edit dialog shows correct localized labels
+
+- **i18n Translations**
+  - Added translations for new status values: `skipped`, `blocked`
+  - Persian translations: `رد شده` (skipped), `مسدود شده` (blocked)
+  - Fixed i18n key structure to prevent duplicate key issues
+
+- **P1: Cooldown UI Refactoring (Container/Presentational Pattern)**
+  - Decomposed monolithic `CooldownActivities.tsx` (433 lines) into focused components
+  - Created 5 new presentational components:
+    - `cooldownActivityUtils.tsx` (58 lines) - Shared utility functions for icons and badge colors
+    - `CooldownSummaryCards.tsx` (70 lines) - Metrics dashboard cards
+    - `CooldownActivityFilters.tsx` (73 lines) - Type/status filter dropdowns
+    - `CooldownActivityTable.tsx` (129 lines) - Data table with edit/delete actions
+    - `CooldownActivitiesView.tsx` (144 lines) - Pure presentational component
+  - Refactored `CooldownActivities.tsx` (118 lines) - Container with business logic only
+  - **Benefits**: 72% code reduction, better separation of concerns, easier testing
+
+- **P1: React Query Migration for Cooldown Activities**
+  - Migrated from manual `useState`/`useEffect` to React Query hooks
+  - Created custom hooks in `hooks/useCooldownActivities.ts`:
+    - `useCooldownActivities()` - Fetch activities with automatic caching
+    - `useCooldownSummary()` - Fetch summary statistics
+    - `useCreateCooldownActivity()` - Create mutation with optimistic updates
+    - `useUpdateCooldownActivity()` - Update mutation with cache invalidation
+    - `useDeleteCooldownActivity()` - Delete mutation with automatic refetch
+  - Updated `CooldownActivities.tsx` and `CooldownActivityDialog.tsx` to use new hooks
+  - **Benefits**: Automatic background refetching, better error handling, reduced loading state management
+
+- **P1: RetroService.java Already Decomposed** ✅
+  - Verified facade pattern implementation with specialized services:
+    - `RetroCrudService.java` (222 lines) - CRUD operations
+    - `RetroItemService.java` (249 lines) - Item management
+    - `RetroActionService.java` (139 lines) - Action tracking
+    - `RetroConversionService.java` (243 lines) - Pitch conversion
+  - `RetroService.java` (163 lines) acts as lightweight coordinator
+  - **Benefits**: Single Responsibility Principle, focused testing, easier maintenance
+
+- **P1: API Contract Generation Infrastructure**
+  - Installed OpenAPI TypeScript code generation tools:
+    - `openapi-typescript` v7.12.0 - Type definition generator
+    - `openapi-typescript-codegen` v0.30.0 - API client generator
+  - Created `frontend/generate-api-types.sh` script:
+    - Downloads OpenAPI spec from running backend (`/v3/api-docs`)
+    - Generates TypeScript types to `src/types/api-schema.d.ts`
+    - Generates type-safe API client to `src/api/generated/`
+  - Added `npm run generate:api` script to package.json
+  - Created comprehensive documentation: `API_CONTRACT_GENERATION.md`
+  - **Benefits**: Prevents future contract mismatches, compile-time type safety, auto-completion
+
+- **P2: Large File Decomposition Recommendations**
+  - Identified top refactoring candidates:
+    - **Frontend**: BacklogPage.tsx (2,013 lines), OrganizationSettings.tsx (1,510 lines), PitchDetail.tsx (1,314 lines)
+    - **Backend**: QAService.java (1,215 lines), RiskAnalysisService.java (1,064 lines), PitchHealthService.java (981 lines)
+  - Created `P2_REFACTORING_RECOMMENDATIONS.md` with detailed decomposition plans
+  - Extracted `constants/backlogConstants.ts` from BacklogPage.tsx (first step)
+  - **Benefits**: Roadmap for future maintainability improvements, reduced technical debt
+
+### Test Coverage
+- **CooldownActivityServiceTest**: Extended with 6 new test cases
+  - `shouldNotModifyFieldsNotProvided` - verifies partial update behavior
+  - `shouldUpdateStatusWithTimestamp` - validates startedAt/completedAt handling
+  - `shouldClearAssigneeWhenFlagSet` - tests explicit unassignment
+  - `shouldAssignNewUser` - tests assignee update
+  - `shouldClearRelatedPitchWhenFlagSet` - tests explicit pitch unlinking
+  - All 23 tests passing (18 existing + 5 new)
+
+- **Layout.test.tsx**: Added 4 new tests
+  - Version display from package.json
+  - Format validation (v{major}.{minor}.{patch})
+  - Children rendering
+  - Navigation components presence
+
+### Technical Details
+- **Frontend Contract Changes** ([cooldownActivityService.ts](frontend/src/services/cooldownActivityService.ts)):
+  - `CooldownActivityStatus`: Added `SKIPPED`, `BLOCKED`; removed `CANCELLED`
+  - `CooldownActivityDTO`: Added backend-aligned fields
+  - `UpdateCooldownActivityRequest`: Added `clearAssignee`, `clearRelatedPitch`, `priority`, `notes`
+  - `CooldownSummaryDTO`: Full alignment with backend fields
+
+- **Backend Contract Changes**:
+  - New `UpdateCooldownActivityRequest.java` DTO
+  - `CooldownActivityService.updateActivity()` signature changed
+  - Partial update pattern: null = keep existing value
+
+- **UI Components**
+  - `ActOnRetroItemsDialog.tsx` - Flexible action selection dialog
+  - `RadioGroup.tsx` - Radio button group component for UI controls
+  - Action type selection with visual descriptions
+  - Success confirmations for all action types
+
+- **Seed Data**
+  - Added comprehensive examples of acted-on retrospective items demonstrating all three action types
+  - Example pitch converted from retro items: "Infrastructure Improvements for Safer & More Thoughtful Development"
+  - Example tasks converted from ACTION items: Feature flag setup and performance testing integration
+  - Example marked-only items with detailed notes explaining decisions
+
+- **Test Coverage**
+  - Frontend: `ActOnRetroItemsDialog.test.tsx` with 8 test cases covering all action workflows
+  - Backend: `RetroServiceTest` with 7 new test cases for `markActedOn` and `convertToPitchDraft` methods
+  - Coverage for edge cases, validation, and error handling
+
+### Changed
+- **Mobile Responsiveness**
+  - Updated WorkLogsPage, BugReportsPage, TestCasesPage, BacklogPage, MeetingList, RetroList, and Teams pages to show skeletons during project switching
+  - Converted fixed-width components to responsive: WorkLogForm, PitchDetail, BettingTable selects now use `w-full sm:w-[Xpx]` pattern
+  - KanbanBoard columns now use responsive widths with scroll snap for mobile navigation
+  - DashboardGrid automatically adjusts column count based on screen size
+
+- Replaced `ConvertRetroToPitchDialog` with more flexible `ActOnRetroItemsDialog`
+- Updated `RetroBoard` to use new action dialog
+- Made retro-to-pitch conversion optional rather than automatic
+- Enhanced translation keys in en.json and fa.json for new dialog options
+
+### Fixed
+- **UX Improvements**
+  - Missing loading indicators when switching projects - now shows page-specific skeletons
+  - Data appearing to "flash" during project changes - smooth skeleton transitions prevent layout shift
+  - Fixed-width components breaking mobile layouts
+  - Horizontal overflow on mobile for select components and drag overlays
+
+- Translation inconsistencies between en.json and fa.json
+- Added missing Persian translation placeholders for new features
+
+## [0.5.0] - 2026-02-08 - Insight, Not Metrics
+
+### Theme
+> "Help teams think, not measure velocity."
+
+This release introduces **decision support signals** that replace vanity metrics with actionable insights. Instead of tracking velocity or story points, ShipFlow now surfaces patterns that help teams improve their process.
+
+### Added
+- **Cycle Signals - Decision Support from Historical Data**
+  - **Appetite Accuracy Signal**: Track how well appetite estimates match reality
+    - Per-cycle ratio analysis (actual/appetite)
+    - Linear regression for trend detection (IMPROVING, DECLINING, STABLE)
+    - Contextual interpretation and recommendations
+  - **Shaping Quality Signal**: Detect shaping health patterns
+    - Aggregated shaping health evaluation based on existing shaping data
+    - Highlights cycles that may warrant closer review
+    - Quality classification (EXCELLENT, GOOD, NEEDS_ATTENTION, POOR, INSUFFICIENT_DATA)
+  - **Risk Prediction Signal**: Measure risk prediction accuracy
+    - Compare predicted vs actual risk outcomes
+    - Correlation strength indicator (STRONG, MODERATE, WEAK)
+    - Calibration guidance for future estimates
+  - **Retro Follow-Through Signal**: Track action item completion rates
+    - Per-retrospective follow-through analysis
+    - Cross-cycle trending for systemic issues
+    - Pending action item surfacing
+
+- **Narrative Cycle Summaries**
+  - **AI-Powered Narratives**: Generate cycle summaries with LangChain4j
+    - What We Bet On: Committed pitches and appetites
+    - What Shipped: Completed work with outcomes
+    - What We Cut: Descoped items with rationale
+    - Surprises: Unexpected discoveries and lessons
+  - **Template Fallback**: Structured summaries when AI is unavailable
+  - **Markdown Export**: Download cycle summaries for stakeholders
+  - **Regeneration**: Re-generate narratives as cycle evolves
+
+- **Enhanced Retrospectives 2.0**
+  - **Action Tracking**: "Did we act on this?" checkbox for retro items
+    - Boolean `actedOn` status with notes
+    - Timestamp and user attribution for actions
+    - Visual indicators in retro board
+  - **Tag-Based Correlation**: Link retro items to pitches via tags
+    - Shared tags between RetroItem and Pitch entities
+    - "Link to Future Bet" suggestions
+    - Cross-cycle learning patterns
+  - **Action Statistics**: Follow-through metrics per retrospective
+    - Total action items vs acted-on count
+    - Follow-through rate percentage
+    - Pending actions dashboard
+
+- **Health Score Dashboard**
+  - Combined signal health score (0-100)
+  - Holistic view of team process health
+  - Trend indicators across all signal types
+
+- **API Endpoints**
+  - `GET /api/signals/project/{projectId}` - Project-level signals
+  - `GET /api/signals/cycle/{cycleId}` - Cycle-specific signals
+  - `GET /api/narratives/cycle/{cycleId}/summary` - Full cycle summary
+  - `POST /api/narratives/cycle/{cycleId}/regenerate` - Regenerate narratives
+  - `GET /api/narratives/cycle/{cycleId}/export/markdown` - Export as Markdown
+  - `GET /api/tags/project/{projectId}` - Tag management
+  - `POST /api/retros/items/{itemId}/acted-on` - Mark action items
+  - `GET /api/retros/{retroId}/action-stats` - Action statistics
+
+- **Frontend Components**
+  - `SignalCards.tsx` - Individual signal visualization cards
+  - `CycleSignalsPanel.tsx` - Combined signals overview
+  - `CycleSummaryPanel.tsx` - Narrative display with regeneration
+  - Signal and narrative services for API integration
+
+### Changed
+- **EnhancedCycleReportDTO**: Now includes signals and narrative summary
+- **RetroItemDTO**: Extended with action tracking fields
+- **ReportService**: Integrates signals and narratives into enhanced reports
+
+### Database
+- **V72**: Added insights and narrative tables
+  - `tags` - Project-scoped tags for cross-entity correlation
+  - `retro_item_tags` - Many-to-many for RetroItem-Tag
+  - `pitch_tags` - Many-to-many for Pitch-Tag
+  - `cycle_narratives` - AI/template generated narratives
+  - `cycle_signal_cache` - Cached signal calculations
+  - Added `acted_on`, `acted_on_notes`, `acted_on_at`, `acted_on_by_id` to `retro_items`
+
+### Philosophy
+This release embodies Shape Up's principle that **appetite is not an estimate**. Instead of measuring whether teams "hit their targets," signals help teams understand:
+- Are we getting better at shaping?
+- Do our risk predictions match reality?
+- Are we learning from retrospectives?
+
+These signals inform better betting decisions, not performance evaluations.
+
+## [0.4.1] - 2026-02-07 - Bug Fixes & Improvements
+
+### Fixed
+- **Meeting List Sorting**: Fixed meeting list to show newest meetings first in pitch detail view
+- **Meeting Type Display**: Fixed case-sensitive UUID matching for meeting type display
+- **Meeting Type Names**: Display meeting type names instead of UUIDs throughout the application
+- **Test Suite Improvements**: Fixed backend and frontend tests for improved reliability
+>>>>>>> 2672077d4faf882f592e2a80d06bb566f95f281c
+
 ## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
 
 ### Added

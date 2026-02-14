@@ -15,6 +15,7 @@ import Reports from './pages/Reports';
 import Teams from './pages/Teams';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import ReleaseNotes from './pages/ReleaseNotes';
 import CompetitorsComparison from './pages/CompetitorsComparison';
 import Profile from './pages/Profile';
 import People from './pages/People';
@@ -42,6 +43,16 @@ import WiseArchitecturePage from './pages/WiseArchitecturePage';
 import BugReportsPage from './pages/BugReportsPage';
 import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
+import RoadmapPage from './pages/RoadmapPage';
+import InitiativeListPage from './pages/InitiativeListPage';
+import InitiativeDetailPage from './pages/InitiativeDetailPage';
+import InitiativeFormPage from './pages/InitiativeFormPage';
+import EpicListPage from './pages/EpicListPage';
+import EpicDetailPage from './pages/EpicDetailPage';
+import EpicFormPage from './pages/EpicFormPage';
+import ReleaseListPage from './pages/ReleaseListPage';
+import ReleaseDetailPage from './pages/ReleaseDetailPage';
+import ReleaseFormPage from './pages/ReleaseFormPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
 import CircuitBreakerMonitor from './pages/CircuitBreakerMonitor';
@@ -99,6 +110,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/compare" element={<CompetitorsComparison />} />
+      <Route path="/releases" element={<ReleaseNotes />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"
@@ -183,6 +195,21 @@ function App() {
                     <Route path="qa/bug-reports" element={<BugReportsPage />} />
                     <Route path="pitches/:pitchId/test" element={<PitchTestPage />} />
                     <Route path="cycles/:cycleId/qa-dashboard" element={<CycleQADashboardPage />} />
+
+                    {/* Roadmap & Planning */}
+                    <Route path="roadmap" element={<RoadmapPage />} />
+                    <Route path="initiatives" element={<InitiativeListPage />} />
+                    <Route path="initiatives/new" element={<InitiativeFormPage />} />
+                    <Route path="initiatives/:id" element={<InitiativeDetailPage />} />
+                    <Route path="initiatives/:id/edit" element={<InitiativeFormPage />} />
+                    <Route path="epics" element={<EpicListPage />} />
+                    <Route path="epics/new" element={<EpicFormPage />} />
+                    <Route path="epics/:id" element={<EpicDetailPage />} />
+                    <Route path="epics/:id/edit" element={<EpicFormPage />} />
+                    <Route path="releases-management" element={<ReleaseListPage />} />
+                    <Route path="releases-management/new" element={<ReleaseFormPage />} />
+                    <Route path="releases-management/:id" element={<ReleaseDetailPage />} />
+                    <Route path="releases-management/:id/edit" element={<ReleaseFormPage />} />
 
                     {/* Help & Guides */}
                     <Route path="help" element={<HelpGuides />} />

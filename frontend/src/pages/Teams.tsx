@@ -13,6 +13,7 @@ import { useProject, useToast } from '../contexts';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
+import { TeamsSkeleton } from '../components/Skeletons';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -56,7 +57,7 @@ const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'QA', 'DESIGNER', 'FULLS
 
 export default function Teams() {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { showToast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -72,8 +73,8 @@ export default function Teams() {
   const [editTeamId, setEditTeamId] = useState<number | null>(null);
   const [editAssignmentId, setEditAssignmentId] = useState<number | null>(null);
 
-  const [teamForm, setTeamForm] = useState<CreateTeamRequest>({ name: '', cycleId: undefined });
-  const [assignmentForm, setAssignmentForm] = useState<CreateTeamAssignmentRequest>({ personId: 0, role: 'BACKEND', teamId: 0 });
+  const [teamForm, setTeamForm] = useState<CreateTeamRequest>({ name: '', cycleId: undefined, hoursPerDayOverride: undefined, workingDaysPerWeekOverride: undefined });
+  const [assignmentForm, setAssignmentForm] = useState<CreateTeamAssignmentRequest>({ personId: 0, role: 'BACKEND', teamId: 0, hoursPerDayOverride: undefined });
   const [selectedPersonId, setSelectedPersonId] = useState<string>('');
   
   // Work activity dialog states
@@ -122,16 +123,22 @@ export default function Teams() {
       console.error(t('teams.loadFailed'), error);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
   const handleOpenTeamDialog = (team?: Team) => {
     if (team) {
       setEditTeamId(team.id);
-      setTeamForm({ name: team.name, cycleId: team.cycleId });
+      setTeamForm({ 
+        name: team.name, 
+        cycleId: team.cycleId,
+        hoursPerDayOverride: team.hoursPerDayOverride,
+        workingDaysPerWeekOverride: team.workingDaysPerWeekOverride
+      });
     } else {
       setEditTeamId(null);
-      setTeamForm({ name: '', cycleId: undefined });
+      setTeamForm({ name: '', cycleId: undefined, hoursPerDayOverride: undefined, workingDaysPerWeekOverride: undefined });
     }
     setFieldErrors({});
     setTeamDialog(true);
@@ -188,11 +195,16 @@ export default function Teams() {
     if (assignment) {
       setEditAssignmentId(assignment.id);
       setSelectedPersonId(assignment.personId.toString());
-      setAssignmentForm({ personId: assignment.personId, role: assignment.role, teamId: assignment.teamId });
+      setAssignmentForm({ 
+        personId: assignment.personId, 
+        role: assignment.role, 
+        teamId: assignment.teamId,
+        hoursPerDayOverride: assignment.hoursPerDayOverride
+      });
     } else {
       setEditAssignmentId(null);
       setSelectedPersonId('');
-      setAssignmentForm({ personId: 0, role: 'BACKEND', teamId });
+      setAssignmentForm({ personId: 0, role: 'BACKEND', teamId, hoursPerDayOverride: undefined });
     }
     setAssignmentDialog(true);
   };
@@ -284,12 +296,8 @@ export default function Teams() {
       }
     });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <TeamsSkeleton />;
   }
 
   return (
@@ -558,6 +566,43 @@ export default function Teams() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Capacity Configuration */}
+            <Separator className="my-2" />
+            <div className="text-sm font-medium">{t('teams.capacityConfiguration')}</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="hours-per-day">{t('teams.hoursPerDay')}</Label>
+                <Input
+                  id="hours-per-day"
+                  type="number"
+                  min="1"
+                  max="24"
+                  step="0.5"
+                  value={teamForm.hoursPerDayOverride ?? ''}
+                  onChange={(e) => setTeamForm({ 
+                    ...teamForm, 
+                    hoursPerDayOverride: e.target.value ? parseFloat(e.target.value) : undefined 
+                  })}
+                  placeholder={t('teams.inheritFromOrg')}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="working-days">{t('teams.workingDaysPerWeek')}</Label>
+                <Input
+                  id="working-days"
+                  type="number"
+                  min="1"
+                  max="7"
+                  value={teamForm.workingDaysPerWeekOverride ?? ''}
+                  onChange={(e) => setTeamForm({ 
+                    ...teamForm, 
+                    workingDaysPerWeekOverride: e.target.value ? parseInt(e.target.value) : undefined 
+                  })}
+                  placeholder={t('teams.inheritFromOrg')}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('teams.capacityNote')}</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTeamDialog(false)}>
@@ -619,6 +664,24 @@ export default function Teams() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            {/* Capacity Override */}
+            <div className="grid gap-2">
+              <Label htmlFor="assignment-hours">{t('teams.hoursPerDay')}</Label>
+              <Input
+                id="assignment-hours"
+                type="number"
+                min="1"
+                max="24"
+                step="0.5"
+                value={assignmentForm.hoursPerDayOverride ?? ''}
+                onChange={(e) => setAssignmentForm({ 
+                  ...assignmentForm, 
+                  hoursPerDayOverride: e.target.value ? parseFloat(e.target.value) : undefined 
+                })}
+                placeholder={t('teams.inheritFromOrg')}
+              />
+              <p className="text-xs text-muted-foreground">{t('teams.capacityNote')}</p>
             </div>
           </div>
           <DialogFooter>

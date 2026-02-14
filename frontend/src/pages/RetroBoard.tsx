@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -16,10 +16,12 @@ import {
   ThumbsUp,
   Merge,
   Loader2,
+  Rocket,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
+import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
 
-import { usePermission } from '../hooks/usePermission';
+import { useAuth } from '../contexts/AuthContext';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
 import { cn } from '../lib/utils';
 
@@ -83,10 +85,16 @@ export default function RetroBoard() {
     sourceItem: null,
     columnType: null,
   });
+  const [actOnItemsDialog, setActOnItemsDialog] = useState(false);
 
-  const { hasPermissionSync } = usePermission();
-  const canManageRetro = hasPermissionSync('RETROSPECTIVE', 'MANAGE');
+  const { user } = useAuth();
+  const canManageRetro = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
   const isReadOnly = retro?.status === 'CLOSED';
+
+  // Memoize actionable items to avoid repeated filtering
+  const actionableItems = useMemo(() => {
+    return items.filter(i => (i.columnType === 'TRY_NEXT' || i.columnType === 'ACTIONS') && !i.mergedIntoId);
+  }, [items]);
 
   const getColumnTitle = (type: RetroColumnType) => {
     const map: Record<RetroColumnType, string> = {
@@ -218,6 +226,10 @@ export default function RetroBoard() {
       const res = await retroService.close(retro.id);
       setRetro(res.data);
       showSuccess(t('retroBoardPage.retroClosed'));
+      // After closing, offer to act on action items (use memoized value)
+      if (actionableItems.length > 0) {
+        setActOnItemsDialog(true);
+      }
     } catch (error) {
       showError(t('retroBoardPage.saveFailed'));
     }
@@ -314,6 +326,12 @@ export default function RetroBoard() {
               <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleCloseRetro}>
                 <Square className="mr-2 h-4 w-4" />
                 {t('retroBoardPage.closeRetro')}
+              </Button>
+            )}
+            {retro.status === 'CLOSED' && actionableItems.length > 0 && (
+              <Button variant="default" onClick={() => setActOnItemsDialog(true)}>
+                <Rocket className="mr-2 h-4 w-4" />
+                {t('retroBoardPage.actOnItems', 'Act on Items')}
               </Button>
             )}
           </div>
@@ -573,6 +591,22 @@ export default function RetroBoard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Act on Items Dialog */}
+        {retro && (
+          <ActOnRetroItemsDialog
+            open={actOnItemsDialog}
+            onOpenChange={setActOnItemsDialog}
+            retroId={retro.id}
+            retroTitle={retro.title}
+            projectId={retro.projectId}
+            items={items}
+            onActionComplete={() => {
+              // Refresh items to show acted-on status
+              retroService.getItems(retro.id).then((res) => setItems(res.data));
+            }}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.report.EnhancedCycleReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.report.RiskDistributionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.signal.CycleSignalsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.narrative.CycleSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
@@ -25,6 +27,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
  * Comprehensive tests for ReportService with focus on enhanced reporting
@@ -54,6 +58,15 @@ class ReportServiceTest {
 
   @Mock
   private RiskAnalysisService riskAnalysisService;
+
+  @Mock
+  private CycleSignalService cycleSignalService;
+
+  @Mock
+  private CycleNarrativeService cycleNarrativeService;
+
+  @Mock
+  private CapacityConfigService capacityConfigService;
 
   @InjectMocks
   private ReportService reportService;
@@ -103,6 +116,29 @@ class ReportServiceTest {
     workLogs.add(createWorkLog(4L, pitch2, person2, 12.0, LocalDate.of(2026, 1, 11)));
 
     // pitch3: 0 hours (not started)
+
+    // Mock v0.5 services with empty/default responses
+    when(cycleSignalService.getCycleSignals(anyLong())).thenReturn(CycleSignalsDTO.builder()
+        .projectId(1L)
+        .cycleId(1L)
+        .cyclesAnalyzed(1)
+        .overallHealthScore(75)
+        .analyzedAt(LocalDateTime.now())
+        .build());
+    
+    when(cycleNarrativeService.getCycleSummary(anyLong())).thenReturn(CycleSummaryDTO.builder()
+        .cycleId(1L)
+        .cycleName("Q1 2026")
+        .projectName("Test Project")
+        .build());
+
+    // Setup capacity config mock - dynamically calculate hours based on appetite
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class)))
+        .thenAnswer(invocation -> {
+          Pitch pitch = invocation.getArgument(0);
+          return pitch.getAppetiteDays() * 8.0; // 8 hours/day default
+        });
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
   }
 
   private WorkLog createWorkLog(Long id, Pitch pitch, Person person, Double hours, LocalDate date) {
@@ -112,6 +148,7 @@ class ReportServiceTest {
 
   @Nested
   @DisplayName("Enhanced Cycle Report Tests")
+  @MockitoSettings(strictness = Strictness.LENIENT)
   class EnhancedCycleReportTests {
 
     @Test
@@ -121,7 +158,7 @@ class ReportServiceTest {
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
 
       // Mock person repository
@@ -200,7 +237,7 @@ class ReportServiceTest {
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -236,7 +273,7 @@ class ReportServiceTest {
     void shouldHandleEmptyCycle() {
       // Given
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(Collections.emptyList());
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Collections.emptyList());
       when(workLogRepository.findByCycleId(1L)).thenReturn(Collections.emptyList());
       when(taskRepository.countByCycleId(anyLong())).thenReturn(0);
       when(taskRepository.countByCycleIdAndStatus(anyLong(), any())).thenReturn(0);
@@ -273,7 +310,7 @@ class ReportServiceTest {
       allLogs.add(log6);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(allLogs);
       when(personRepository.findById(anyLong())).thenAnswer(inv -> {
         Long id = inv.getArgument(0);
@@ -315,7 +352,7 @@ class ReportServiceTest {
       List<Pitch> pitches = Arrays.asList(pitch1, pitch2, pitch3, pitch4);
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(workLogs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -360,7 +397,7 @@ class ReportServiceTest {
       List<WorkLog> pitch2Logs = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(2L)).toList();
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(pitch2Logs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))
@@ -389,7 +426,7 @@ class ReportServiceTest {
       List<WorkLog> pitch1Logs = workLogs.stream().filter(wl -> wl.getPitch().getId().equals(1L)).toList();
 
       when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-      when(pitchRepository.findByCycleId(1L)).thenReturn(pitches);
+      when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(pitches);
       when(workLogRepository.findByCycleId(1L)).thenReturn(pitch1Logs);
       when(personRepository.findById(anyLong())).thenReturn(Optional.of(person1));
       when(teamAssignmentRepository.findByPersonAndCycle(anyLong(), anyLong()))

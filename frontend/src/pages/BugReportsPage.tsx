@@ -66,6 +66,7 @@ import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
+import { BugReportsSkeleton } from '../components/Skeletons';
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -88,7 +89,7 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -126,7 +127,7 @@ const BugReportsPage: React.FC = () => {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
@@ -186,6 +187,7 @@ const BugReportsPage: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -309,12 +311,8 @@ const BugReportsPage: React.FC = () => {
   const stats = getStatCounts();
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <BugReportsSkeleton />;
   }
 
   return (

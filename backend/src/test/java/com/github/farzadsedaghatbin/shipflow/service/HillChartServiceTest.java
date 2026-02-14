@@ -10,9 +10,12 @@ import com.github.farzadsedaghatbin.shipflow.dto.UpdateHillChartPointRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +35,15 @@ class HillChartServiceTest {
 
   @Mock
   private PitchRepository pitchRepository;
+
+  @Mock
+  private TaskRepository taskRepository;
+
+  @Mock
+  private PersonRepository personRepository;
+
+  @Mock
+  private ScopeProgressService scopeProgressService;
 
   @InjectMocks
   private HillChartService hillChartService;
@@ -60,6 +72,12 @@ class HillChartServiceTest {
     testPoint.setPosition(25);
     testPoint.setCreatedAt(LocalDateTime.now());
     testPoint.setUpdatedAt(LocalDateTime.now());
+    
+    // Mock taskRepository.save() to prevent NullPointerException in createLinkedTask
+    Task mockTask = new Task();
+    mockTask.setId(1L);
+    mockTask.setTitle("Mock Task");
+    lenient().when(taskRepository.save(any(Task.class))).thenReturn(mockTask);
   }
 
   @Test
@@ -131,7 +149,8 @@ class HillChartServiceTest {
     // Assert
     assertNotNull(result);
     verify(pitchRepository, times(1)).findById(1L);
-    verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
+    // Service saves twice: once initially, once after setting linkedTask
+    verify(hillChartPointRepository, times(2)).save(any(HillChartPoint.class));
   }
 
   @Test
@@ -181,5 +200,35 @@ class HillChartServiceTest {
 
     // Act & Assert
     assertThrows(RuntimeException.class, () -> hillChartService.deleteHillChartPoint(999L));
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldEnableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, true);
+
+    // Assert
+    assertNotNull(result);
+    // Service calls syncProgressIfEnabled when enabling auto-progress
+    verify(scopeProgressService, times(1)).syncProgressIfEnabled(1L);
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldDisableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, false);
+
+    // Assert
+    assertNotNull(result);
+    // Service just sets the flag and saves, no service method call when disabling
+    verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
   }
 }

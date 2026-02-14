@@ -269,7 +269,7 @@ export default function CycleDetail() {
               <Target className="h-4 w-4" />
               <span className="text-sm">{t('cycleDetailPage.totalAppetite')}</span>
             </div>
-            <p className="text-3xl font-bold text-foreground">{totalAppetiteHours.toFixed(0)}</p>
+            <p className="text-3xl font-bold text-foreground">{totalAppetiteHours.toFixed(0)}h</p>
           </CardContent>
         </Card>
         <Card>
@@ -279,7 +279,7 @@ export default function CycleDetail() {
               <span className="text-sm">{t('cycleDetailPage.totalActual')}</span>
             </div>
             <p className={`text-3xl font-bold ${totalActualHours > totalAppetiteHours ? 'text-red-400' : 'text-green-400'}`}>
-              {totalActualHours.toFixed(0)}
+              {totalActualHours.toFixed(0)}h
             </p>
           </CardContent>
         </Card>
@@ -318,6 +318,11 @@ export default function CycleDetail() {
                         <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')} {t('cycles.appetite')}</span>
                         <span>{pitch.totalHoursSpent?.toFixed(1) || 0}h / {pitch.appetiteHours?.toFixed(0) || 0}h</span>
                       </div>
+                      {pitch.busiestPerson && (
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Busiest: {pitch.busiestPerson.personName} ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}% utilized)
+                        </div>
+                      )}
                       <ProgressBar
                         value={pitch.progressPercentage || 0}
                         showPercentage={false}

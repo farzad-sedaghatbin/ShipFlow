@@ -106,12 +106,16 @@ function DraggablePitchCard({
               {decision && <BettingDecisionBadge decision={decision} size="sm" />}
             </div>
             <div className="flex items-center gap-1.5">
-              <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
-                {pitch.appetiteDays} {t('common.days')}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {getAppetiteLabel(pitch.appetiteDays)}
-              </span>
+              {pitch.appetiteDays !== undefined && (
+                <>
+                  <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
+                    {pitch.appetiteDays} {t('common.days')}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {getAppetiteLabel(pitch.appetiteDays)}
+                  </span>
+                </>
+              )}
             </div>
             {pitch.projectKey && (
               <p className="text-xs text-muted-foreground mt-1">{pitch.projectKey}</p>
@@ -679,7 +683,7 @@ export default function BettingTablePage() {
           {/* Drag Overlay */}
           <DragOverlay>
             {activePitch ? (
-              <Card className="w-[250px] shadow-lg opacity-90">
+              <Card className="w-full max-w-[250px] shadow-lg opacity-90">
                 <CardContent className="py-3 px-4">
                   <p className="font-semibold text-sm">{activePitch.title}</p>
                   <Badge variant="secondary" className="mt-1">

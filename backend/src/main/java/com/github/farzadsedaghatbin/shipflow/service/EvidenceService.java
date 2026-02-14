@@ -78,19 +78,20 @@ public class EvidenceService {
   }
 
   private EvidenceDTO toDTO(Evidence evidence) {
-    return EvidenceDTO.builder().id(evidence.getId()).pitchId(evidence.getPitch().getId())
-        .pitchTitle(evidence.getPitch().getTitle())
-        .cycleId(evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getId() : null)
-        .cycleName(evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getName() : null)
-        .projectId(evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
+    return EvidenceDTO.builder().id(evidence.getId())
+        .pitchId(evidence.getPitch() != null ? evidence.getPitch().getId() : null)
+        .pitchTitle(evidence.getPitch() != null ? evidence.getPitch().getTitle() : null)
+        .cycleId(evidence.getPitch() != null && evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getId() : null)
+        .cycleName(evidence.getPitch() != null && evidence.getPitch().getCycle() != null ? evidence.getPitch().getCycle().getName() : null)
+        .projectId(evidence.getPitch() != null && evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
             ? evidence.getPitch().getCycle().getProject().getId()
             : null)
         .projectName(
-            evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
+            evidence.getPitch() != null && evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
                 ? evidence.getPitch().getCycle().getProject().getName()
                 : null)
         .projectKey(
-            evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
+            evidence.getPitch() != null && evidence.getPitch().getCycle() != null && evidence.getPitch().getCycle().getProject() != null
                 ? evidence.getPitch().getCycle().getProject().getProjectKey()
                 : null)
         .personId(evidence.getPerson().getId()).personName(evidence.getPerson().getName())

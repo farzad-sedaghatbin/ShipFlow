@@ -8,10 +8,10 @@ import com.github.farzadsedaghatbin.shipflow.dto.MeetingActionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.MeetingDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.repository.MeetingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetrospectiveRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
@@ -35,6 +35,7 @@ public class MeetingService {
 
   private final MeetingRepository meetingRepository;
   private final PitchRepository pitchRepository;
+  private final ProjectRepository projectRepository;
   private final RetrospectiveRepository retrospectiveRepository;
   private final PersonRepository personRepository;
   private final ApplicationEventPublisher eventPublisher;
@@ -48,7 +49,7 @@ public class MeetingService {
     return meetingRepository.findAll(pageable).map(this::toDTO);
   }
 
-  public Page<MeetingDTO> getMeetingsWithFilters(Long cycleId, Long projectId, Long pitchId, List<MeetingType> types,
+  public Page<MeetingDTO> getMeetingsWithFilters(Long cycleId, Long projectId, Long pitchId, List<String> types,
       LocalDate startDate, LocalDate endDate, Boolean dorReady, Boolean dodReady, Pageable pageable) {
 
     Specification<Meeting> spec = (root, query, cb) -> {
@@ -96,7 +97,7 @@ public class MeetingService {
     return meetingRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
-  public List<MeetingDTO> getMeetingsByType(MeetingType type) {
+  public List<MeetingDTO> getMeetingsByType(String type) {
     return meetingRepository.findByType(type).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
@@ -139,6 +140,15 @@ public class MeetingService {
       Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
           () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       meeting.setPitch(pitch);
+      // Also set project from pitch's cycle
+      if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+        meeting.setProject(pitch.getCycle().getProject());
+      }
+    } else if (request.getProjectId() != null) {
+      // For meetings without a pitch, use direct project association
+      Project project = projectRepository.findById(request.getProjectId())
+          .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + request.getProjectId()));
+      meeting.setProject(project);
     }
 
     if (request.getRetrospectiveId() != null) {
@@ -193,8 +203,20 @@ public class MeetingService {
       Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
           () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       meeting.setPitch(pitch);
+      // Also update project from pitch's cycle
+      if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+        meeting.setProject(pitch.getCycle().getProject());
+      }
     } else {
       meeting.setPitch(null);
+      // For meetings without a pitch, use direct project association
+      if (request.getProjectId() != null) {
+        Project project = projectRepository.findById(request.getProjectId())
+            .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + request.getProjectId()));
+        meeting.setProject(project);
+      } else {
+        meeting.setProject(null);
+      }
     }
 
     if (request.getRetrospectiveId() != null) {
@@ -247,27 +269,38 @@ public class MeetingService {
             .collect(Collectors.toList())
         : new ArrayList<>();
 
+    // Derive project/cycle from pitch if available, otherwise use direct project reference
+    Long projectId = null;
+    String projectName = null;
+    String projectKey = null;
+    Long cycleId = null;
+    String cycleName = null;
+
+    if (meeting.getPitch() != null) {
+      if (meeting.getPitch().getCycle() != null) {
+        cycleId = meeting.getPitch().getCycle().getId();
+        cycleName = meeting.getPitch().getCycle().getName();
+        if (meeting.getPitch().getCycle().getProject() != null) {
+          projectId = meeting.getPitch().getCycle().getProject().getId();
+          projectName = meeting.getPitch().getCycle().getProject().getName();
+          projectKey = meeting.getPitch().getCycle().getProject().getProjectKey();
+        }
+      }
+    } else if (meeting.getProject() != null) {
+      // Use direct project reference when no pitch
+      projectId = meeting.getProject().getId();
+      projectName = meeting.getProject().getName();
+      projectKey = meeting.getProject().getProjectKey();
+    }
+
     return MeetingDTO.builder().id(meeting.getId())
         .pitchId(meeting.getPitch() != null ? meeting.getPitch().getId() : null)
         .pitchTitle(meeting.getPitch() != null ? meeting.getPitch().getTitle() : null)
-        .cycleId(meeting.getPitch() != null && meeting.getPitch().getCycle() != null
-            ? meeting.getPitch().getCycle().getId()
-            : null)
-        .cycleName(meeting.getPitch() != null && meeting.getPitch().getCycle() != null
-            ? meeting.getPitch().getCycle().getName()
-            : null)
-        .projectId(meeting.getPitch() != null && meeting.getPitch().getCycle() != null
-            && meeting.getPitch().getCycle().getProject() != null
-                ? meeting.getPitch().getCycle().getProject().getId()
-                : null)
-        .projectName(meeting.getPitch() != null && meeting.getPitch().getCycle() != null
-            && meeting.getPitch().getCycle().getProject() != null
-                ? meeting.getPitch().getCycle().getProject().getName()
-                : null)
-        .projectKey(meeting.getPitch() != null && meeting.getPitch().getCycle() != null
-            && meeting.getPitch().getCycle().getProject() != null
-                ? meeting.getPitch().getCycle().getProject().getProjectKey()
-                : null)
+        .cycleId(cycleId)
+        .cycleName(cycleName)
+        .projectId(projectId)
+        .projectName(projectName)
+        .projectKey(projectKey)
         .type(meeting.getType()).dateHeld(meeting.getDateHeld()).dorReady(meeting.getDorReady())
         .dodReady(meeting.getDodReady())
         .dorItems(fromJson(meeting.getDorItemsJson(), new TypeReference<List<MeetingDTO.MeetingChecklistItem>>() {}))

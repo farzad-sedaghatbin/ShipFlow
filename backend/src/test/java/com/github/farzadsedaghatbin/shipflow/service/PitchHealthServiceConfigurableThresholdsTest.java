@@ -59,6 +59,9 @@ class PitchHealthServiceConfigurableThresholdsTest {
   @Mock
   private OrganizationSettingsService organizationSettingsService;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchHealthService pitchHealthService;
 
@@ -80,6 +83,26 @@ class PitchHealthServiceConfigurableThresholdsTest {
 
     testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
         .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS).build();
+
+    // Setup capacity config mock - 8 hours/day default, 14 days * 8 hours = 112 hours
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    
+    // Mock TeamBudget for risk calculation
+    CapacityConfigService.TeamBudget mockTeamBudget = CapacityConfigService.TeamBudget.builder()
+        .teamId(1L)
+        .teamName("Test Team")
+        .memberCount(2)
+        .appetiteDays(14)
+        .totalBudgetHours(224.0) // 2 members * 14 days * 8 hours
+        .totalDailyCapacityHours(16.0) // 2 members * 8 hours
+        .capacitySource("organization")
+        .memberBudgets(Arrays.asList())
+        .totalHoursSpent(0.0)
+        .totalHoursRemaining(224.0)
+        .utilizationPercentage(0.0)
+        .build();
+    lenient().when(capacityConfigService.calculateTeamBudget(any(Team.class), anyInt())).thenReturn(mockTeamBudget);
   }
 
   @Test
@@ -94,7 +117,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(84.0); // 75% of appetite (112 hours)
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -123,7 +146,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
 
     // 2 critical bugs - should trigger moderate risk with custom threshold
@@ -156,7 +179,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
 
@@ -189,7 +212,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
 
     // 95% budget usage - should score medium-high risk points
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(106.4); // 95%
@@ -212,7 +235,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldFallBackToDefaultsWhenSettingsUnavailable() {
     // Given: No organization settings available
     when(organizationSettingsService.getSettings()).thenReturn(null);
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -233,7 +256,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
   void shouldHandleOrganizationSettingsException() {
     // Given: Organization settings service throws exception
     when(organizationSettingsService.getSettings()).thenThrow(new RuntimeException("Database error"));
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
@@ -270,7 +293,7 @@ class PitchHealthServiceConfigurableThresholdsTest {
     OrganizationSettingsDTO settings = OrganizationSettingsDTO.builder().riskThresholds(customThresholds).build();
 
     when(organizationSettingsService.getSettings()).thenReturn(settings);
-    when(pitchRepository.findById(2L)).thenReturn(Optional.of(urgentPitch));
+    when(pitchRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(urgentPitch));
     when(workLogRepository.getTotalHoursByPitchId(2L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());
     when(hillChartPointRepository.findByPitchId(anyLong())).thenReturn(Collections.emptyList());

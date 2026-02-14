@@ -42,6 +42,11 @@ public class TeamAssignment {
   @Column(columnDefinition = "TEXT")
   private String notes;
 
+  // Capacity Configuration Override (finest-grained control per team assignment)
+  // Useful for shared resources like tech leads with different allocations per team
+  @Column(name = "hours_per_day_override", columnDefinition = "NUMERIC")
+  private Double hoursPerDayOverride;
+
   @PrePersist
   protected void onCreate() {
     if (isActive == null) {

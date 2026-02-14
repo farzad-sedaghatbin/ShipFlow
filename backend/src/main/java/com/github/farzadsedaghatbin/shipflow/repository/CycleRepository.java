@@ -1,7 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.repository;
 
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,7 +39,8 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
   @Query("""
       SELECT DISTINCT c FROM Cycle c
       JOIN FETCH c.project p
-      WHERE p.id IN (
+      WHERE p.projectType != com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN
+      AND p.id IN (
           SELECT DISTINCT proj.id FROM Project proj
           WHERE proj.owner.id = :userId
           OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
@@ -60,6 +63,7 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
       SELECT DISTINCT c FROM Cycle c
       JOIN FETCH c.project p
       WHERE c.isActive = true
+      AND p.projectType != com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN
       AND p.id IN (
           SELECT DISTINCT proj.id FROM Project proj
           WHERE proj.owner.id = :userId
@@ -77,4 +81,11 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
       ORDER BY c.startDate DESC
       """)
   List<Cycle> findAccessibleActiveCyclesByUserId(@Param("userId") Long userId);
+
+  /**
+   * Find the next upcoming cycle for a project (start date after today, ordered by start date).
+   * Used for converting retro items to pitch drafts.
+   */
+  Optional<Cycle> findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(
+      Long projectId, LocalDate currentDate);
 }

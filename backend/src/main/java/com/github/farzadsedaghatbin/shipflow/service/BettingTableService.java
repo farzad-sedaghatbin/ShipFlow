@@ -28,16 +28,22 @@ public class BettingTableService {
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
   private final MessageService messageService;
-
-  private static final double HOURS_PER_DAY = 8.0;
+  private final CapacityConfigService capacityConfigService;
 
   /** Get the full betting table view for a cycle */
   public BettingTableDTO getBettingTable(Long cycleId) {
     Cycle cycle = cycleRepository.findByIdWithProject(cycleId)
         .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
 
-    // Get shaped pitches not yet assigned to any slot
-    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatusNotDeleted(cycleId, PitchStatus.SHAPED);
+    // Get shaped pitches ready for betting (status=SHAPED, no cycle assigned yet)
+    // These are pitches from the same project as this cycle
+    List<Pitch> shapedPitches;
+    if (cycle.getProject() != null) {
+      shapedPitches = pitchRepository.findBettingCandidatesByProjectId(cycle.getProject().getId());
+    } else {
+      // Fallback: get all shaped pitches without a cycle
+      shapedPitches = pitchRepository.findBettingCandidates();
+    }
     List<BettingSlot> allSlots = bettingSlotRepository.findByCycleId(cycleId);
 
     // Filter out pitches that are already assigned to a slot
@@ -80,21 +86,20 @@ public class BettingTableService {
   }
 
   /**
-   * Get all shaped pitches available for betting (across all cycles or specific
-   * project)
+   * Get all shaped pitches available for betting (no cycle assigned yet).
+   * Follows Shape Up methodology: pitches are shaped before betting.
    */
   public List<PitchDTO> getShapedPitchesForBetting(Long projectId) {
     List<Pitch> pitches;
     if (projectId != null) {
-      // Get cycles for project, then get shaped pitches from those cycles
-      List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(projectId);
-      Set<Long> cycleIds = cycles.stream().map(Cycle::getId).collect(Collectors.toSet());
-      pitches = pitchRepository.findByStatusAndCycleIdInNotDeleted(PitchStatus.SHAPED, cycleIds);
+      // Get shaped pitches from this project that have no cycle assigned
+      pitches = pitchRepository.findBettingCandidatesByProjectId(projectId);
     } else {
-      pitches = pitchRepository.findByStatusNotDeleted(PitchStatus.SHAPED);
+      // Get all shaped pitches with no cycle assigned
+      pitches = pitchRepository.findBettingCandidates();
     }
 
-    // Filter out already assigned pitches
+    // Filter out already assigned to betting slots
     Set<Long> assignedIds = bettingSlotRepository.findAll().stream().filter(slot -> slot.getPitch() != null)
         .map(slot -> slot.getPitch().getId()).collect(Collectors.toSet());
 
@@ -371,16 +376,28 @@ public class BettingTableService {
     if (totalHours == null)
       totalHours = 0.0;
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
+    // Handle null cycle for pre-cycle pitches (IDEA, DRAFT, SHAPED)
+    Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    String cycleName = pitch.getCycle() != null ? pitch.getCycle().getName() : null;
+    Long projectId = null;
+    String projectName = null;
+    String projectKey = null;
+    
+    if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+      projectId = pitch.getCycle().getProject().getId();
+      projectName = pitch.getCycle().getProject().getName();
+      projectKey = pitch.getCycle().getProject().getProjectKey();
+    }
+
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
-        .appetiteDays(pitch.getAppetiteDays()).cycleId(pitch.getCycle().getId())
-        .cycleName(pitch.getCycle().getName())
-        .projectId(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getId() : null)
-        .projectName(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getName() : null)
-        .projectKey(
-            pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getProjectKey() : null)
+        .appetiteDays(pitch.getAppetiteDays()).cycleId(cycleId)
+        .cycleName(cycleName)
+        .projectId(projectId)
+        .projectName(projectName)
+        .projectKey(projectKey)
         .teamId(pitch.getTeam() != null ? pitch.getTeam().getId() : null)
         .teamName(pitch.getTeam() != null ? pitch.getTeam().getName() : null).status(pitch.getStatus())
         .createdAt(pitch.getCreatedAt()).updatedAt(pitch.getUpdatedAt()).totalHoursSpent(totalHours)
@@ -459,7 +476,13 @@ public class BettingTableService {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + cycleId));
 
-    List<Pitch> shapedPitches = pitchRepository.findByCycleIdAndStatusNotDeleted(cycleId, PitchStatus.SHAPED);
+    // Get shaped pitches ready for betting (from project, no cycle assigned)
+    List<Pitch> shapedPitches;
+    if (cycle.getProject() != null) {
+      shapedPitches = pitchRepository.findBettingCandidatesByProjectId(cycle.getProject().getId());
+    } else {
+      shapedPitches = pitchRepository.findBettingCandidates();
+    }
     List<Team> teams = teamRepository.findByCycleId(cycleId);
 
     return shapedPitches.stream().map(pitch -> buildPitchComparison(pitch, teams, cycle))
@@ -702,7 +725,7 @@ public class BettingTableService {
           continue;
 
         // Calculate appetite hours
-        double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+        double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
         if (appetiteHours == 0.0)
           continue;
 

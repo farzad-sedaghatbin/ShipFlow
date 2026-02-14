@@ -30,7 +30,12 @@ export interface Page<T> {
 
 // Enums
 export type CyclePhase = 'SHAPING' | 'BETTING' | 'BUILD' | 'COOLDOWN';
-export type PitchStatus = 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
+/**
+ * Shape Up pitch lifecycle statuses.
+ * Pre-cycle: IDEA → DRAFT → SHAPED (no cycle required)
+ * In-cycle: PENDING → STARTED → ... → DONE (requires cycle)
+ */
+export type PitchStatus = 'IDEA' | 'DRAFT' | 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
 export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
 export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO' | 'RETROSPECTIVE' | 'HILL_CHART_REVIEW';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
@@ -140,11 +145,18 @@ export interface Team {
   projectName?: string;
   projectKey?: string;
   assignments?: TeamAssignment[];
+  // Capacity overrides
+  hoursPerDayOverride?: number;
+  workingDaysPerWeekOverride?: number;
+  effectiveHoursPerDay?: number;
+  effectiveWorkingDaysPerWeek?: number;
 }
 
 export interface CreateTeamRequest {
   name: string;
   cycleId?: number;
+  hoursPerDayOverride?: number;
+  workingDaysPerWeekOverride?: number;
 }
 
 // Person - independent entity that persists across cycles
@@ -156,6 +168,8 @@ export interface Person {
   avatarUrl?: string;
   isActive: boolean;
   createdAt: string;
+  // Capacity override
+  hoursPerDayOverride?: number;
   currentAssignments?: TeamAssignment[];
   pastAssignments?: TeamAssignment[];
 }
@@ -186,6 +200,10 @@ export interface TeamAssignment {
   endDate?: string;
   isActive: boolean;
   notes?: string;
+  // Capacity override
+  hoursPerDayOverride?: number;
+  effectiveHoursPerDay?: number;
+  capacitySource?: 'ORGANIZATION' | 'TEAM' | 'PERSON' | 'ASSIGNMENT';
 }
 
 export interface CreateTeamAssignmentRequest {
@@ -195,14 +213,17 @@ export interface CreateTeamAssignmentRequest {
   startDate?: string;
   endDate?: string;
   notes?: string;
+  hoursPerDayOverride?: number;
 }
 
 export interface Pitch {
   id: number;
   title: string;
   description?: string;
-  appetiteDays: number;
-  cycleId: number;
+  /** Appetite in days - nullable for IDEA/DRAFT statuses */
+  appetiteDays?: number;
+  /** Cycle ID - nullable for pre-cycle statuses (IDEA, DRAFT, SHAPED) */
+  cycleId?: number;
   cycleName?: string;
   projectId?: number;
   projectName?: string;
@@ -215,6 +236,15 @@ export interface Pitch {
   totalHoursSpent?: number;
   appetiteHours?: number;
   progressPercentage?: number;
+  // Team Capacity and Budget
+  teamMemberCount?: number;
+  totalBudgetPersonDays?: number;
+  budgetUtilizationPercent?: number;
+  busiestPerson?: BusiestPerson;
+  // Circuit Breaker
+  isCircuitBreakerTriggered?: boolean;
+  circuitBreakerReason?: string;
+  circuitBreakerDate?: string;
   // Shape Up Methodology Fields
   problemStatement?: string;
   solution?: string;
@@ -222,14 +252,37 @@ export interface Pitch {
   risks?: string;
   noGos?: string;
   wireframeLinks?: string;
+  // Epic and Release linking
+  epicId?: number;
+  epicName?: string;
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
+}
+
+export interface BusiestPerson {
+  personId: number;
+  personName: string;
+  role?: string;
+  hoursPerDay: number;
+  capacitySource: string; // 'organization' | 'team' | 'person' | 'assignment'
+  totalBudgetHours: number;
+  hoursSpent: number;
+  utilizationPercent: number;
+  isOverBudget: boolean;
 }
 
 export interface CreatePitchRequest {
   title: string;
   description?: string;
-  appetiteDays: number;
-  cycleId: number;
+  /** Appetite in days - required for SHAPED and above statuses */
+  appetiteDays?: number;
+  /** Cycle ID - required for PENDING and above statuses */
+  cycleId?: number;
   teamId?: number;
+  // Epic and Release linking (roadmap)
+  epicId?: number;
+  targetReleaseId?: number;
   status?: PitchStatus;
   // Shape Up Methodology Fields
   problemStatement?: string;
@@ -239,6 +292,64 @@ export interface CreatePitchRequest {
   noGos?: string;
   wireframeLinks?: string;
 }
+
+/**
+ * Lightweight request for creating an idea.
+ * Ideas are raw concepts that don't require shaping details yet.
+ */
+export interface CreateIdeaRequest {
+  title: string;
+  description?: string;
+  epicId?: number;
+}
+
+/**
+ * Shape Up workflow utility functions
+ */
+export const PitchStatusUtils = {
+  /** Pre-cycle statuses where pitches don't have a cycle assignment */
+  preCycleStatuses: ['IDEA', 'DRAFT', 'SHAPED'] as const,
+  
+  /** In-cycle statuses where pitches are assigned to a cycle */
+  inCycleStatuses: ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE', 'COOLDOWN', 'CANCELLED'] as const,
+  
+  /** Check if a pitch is in a pre-cycle status */
+  isPreCycle: (status: PitchStatus): boolean => 
+    ['IDEA', 'DRAFT', 'SHAPED'].includes(status),
+  
+  /** Check if a pitch requires shaping (IDEA or DRAFT) */
+  requiresShaping: (status: PitchStatus): boolean => 
+    ['IDEA', 'DRAFT'].includes(status),
+  
+  /** Check if a pitch is ready for the betting table */
+  isReadyForBetting: (status: PitchStatus): boolean => 
+    status === 'SHAPED',
+  
+  /** Check if a pitch is in progress (active work) */
+  isInProgress: (status: PitchStatus): boolean => 
+    ['STARTED', 'IN_PROGRESS', 'TESTING'].includes(status),
+  
+  /** Check if a pitch is complete */
+  isComplete: (status: PitchStatus): boolean => 
+    ['DONE', 'CANCELLED'].includes(status),
+
+  /** Get display color for status */
+  getStatusColor: (status: PitchStatus): string => {
+    switch (status) {
+      case 'IDEA': return '#9e9e9e'; // grey
+      case 'DRAFT': return '#64b5f6'; // light blue
+      case 'SHAPED': return '#4caf50'; // green
+      case 'PENDING': return '#ff9800'; // orange
+      case 'STARTED': return '#2196f3'; // blue
+      case 'IN_PROGRESS': return '#1976d2'; // darker blue
+      case 'TESTING': return '#9c27b0'; // purple
+      case 'DONE': return '#388e3c'; // dark green
+      case 'COOLDOWN': return '#607d8b'; // blue grey
+      case 'CANCELLED': return '#f44336'; // red
+      default: return '#9e9e9e';
+    }
+  }
+};
 
 // Response from AI pitch data extraction
 export interface ExtractedPitchData {
@@ -334,6 +445,7 @@ export interface MeetingChecklistItem {
 
 export interface CreateMeetingRequest {
   pitchId?: number;
+  projectId?: number;
   type: MeetingType;
   dateHeld: string;
   dorReady?: boolean;
@@ -424,6 +536,95 @@ export interface EnhancedCycleReport {
   // Top performers and risks
   topPerformers: string[];
   overBudgetPitches: string[];
+  
+  // v0.5 - Insight, Not Metrics
+  signals?: CycleSignalsDTO;            // Decision support signals
+  narrativeSummary?: CycleSummaryDTO;   // AI-generated or template narrative
+}
+
+// v0.5 - Signal and Narrative DTOs for enhanced reports
+export interface CycleSignalsDTO {
+  cycleId: number | null;
+  cycleName: string | null;
+  projectId: number;
+  projectName: string;
+  analyzedAt: string;
+  overallHealthScore: number;
+  appetiteAccuracy: AppetiteAccuracyDTO | null;
+  shapingPattern: ShapingPatternDTO | null;
+  riskCorrelation: RiskCorrelationDTO | null;
+  retroFollowThrough: RetroFollowThroughDTO | null;
+}
+
+export interface AppetiteAccuracyDTO {
+  trend: string;
+  averageVariancePercent: number;
+  cyclesAnalyzed: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface ShapingPatternDTO {
+  overallQuality: string;
+  overShapedCount: number;
+  underShapedCount: number;
+  accuratelyShapedCount: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface RiskCorrelationDTO {
+  predictiveAccuracyPercent: number;
+  pitchesAnalyzed: number;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface RetroFollowThroughDTO {
+  followThroughRatePercent: number;
+  totalActionItems: number;
+  actedOnCount: number;
+  pendingCount: number;
+  trend: string;
+  interpretation: string;
+  recommendations: string[];
+}
+
+export interface CycleSummaryDTO {
+  cycleId: number;
+  cycleName: string;
+  projectName?: string;
+  startDate: string;
+  endDate: string;
+  phase?: string;
+  
+  // Narrative sections
+  whatWeBet: CycleNarrativeDTO | null;
+  whatShipped: CycleNarrativeDTO | null;
+  whatWeCut: CycleNarrativeDTO | null;
+  surprises: CycleNarrativeDTO | null;
+  fullSummary: CycleNarrativeDTO | null;
+  
+  // Quick stats for context
+  totalPitchesCommitted?: number;
+  pitchesShipped?: number;
+  pitchesCut?: number;
+  pitchesInProgress?: number;
+  averageAppetiteAccuracy?: number;
+  
+  // Generation metadata
+  generatedAt: string;
+  aiGenerated?: boolean;
+  exportFormats?: string[];
+}
+
+export interface CycleNarrativeDTO {
+  id: number;
+  cycleId: number;
+  narrativeType: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY';
+  content: string;
+  isAiGenerated: boolean;
+  generatedAt: string;
 }
 
 export interface CycleReport {
@@ -545,6 +746,13 @@ export interface HillChartPoint {
   scope: string;
   description: string;
   position: number; // 0-50 uphill (figuring out), 50-100 downhill (executing)
+  
+  // Scope-Task Bridge fields
+  linkedTaskId?: number;
+  linkedTaskTitle?: string;
+  autoProgressEnabled?: boolean;
+  suggestedPosition?: number;
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -554,6 +762,8 @@ export interface CreateHillChartPointRequest {
   scope: string;
   description: string;
   position: number;
+  createTaskAutomatically?: boolean; // When true, auto-creates a linked Task (default: true)
+  assigneeId?: number; // Optional assignee for the auto-created task
 }
 
 export interface UpdateHillChartPointRequest {
@@ -584,6 +794,10 @@ export interface Task {
   scopeId?: number;
   scopeName?: string;
   
+  // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
+  autoCreatedScopeId?: number;
+  showOnHillChart?: boolean;
+  
   assigneeId?: number;
   assigneeName?: string;
   assigneeAvatarUrl?: string;
@@ -607,6 +821,11 @@ export interface Task {
   blockedByTasks?: TaskDependency[];
   blockedByCount?: number;
   isBlocked?: boolean;
+  
+  // Release linking
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
 }
 
 export interface CreateTaskRequest {
@@ -614,7 +833,6 @@ export interface CreateTaskRequest {
   description?: string;
   cycleId: number;
   pitchId?: number;
-  scopeId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;
   category?: TaskCategory;
@@ -625,6 +843,10 @@ export interface CreateTaskRequest {
   parentTaskId?: number;
   dueDate?: string;
   tags?: string;
+  
+  // Scope-Task Bridge fields
+  createScopeAutomatically?: boolean; // When true and pitchId set (no parentTaskId), auto-creates a scope (default: true)
+  initialHillPosition?: number; // Initial position on hill chart (0-100), only used when createScopeAutomatically is true
 }
 
 // Task Dependency Types
@@ -792,6 +1014,16 @@ export interface BugReport {
   createdAt: string;
   updatedAt: string;
   commentCount?: number;
+  
+  // Release tracking
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
+  fixedInReleaseId?: number;
+  fixedInReleaseName?: string;
+  fixedInReleaseVersion?: string;
+  /** Whether the bug slipped to a different release than originally targeted */
+  isSlipped?: boolean;
 }
 
 export interface CreateBugReportRequest {
@@ -813,6 +1045,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  targetReleaseId?: number;
 }
 
 export interface UpdateBugReportRequest {
@@ -834,6 +1067,8 @@ export interface UpdateBugReportRequest {
   attachments?: string;
   assigneeId?: number;
   resolution?: string;
+  targetReleaseId?: number;
+  fixedInReleaseId?: number;
 }
 
 export interface TestRun {
@@ -1058,6 +1293,13 @@ export interface RetroItem {
   mergedItemIds?: number[];
   createdAt: string;
   updatedAt?: string;
+  
+  // v0.5 - Action tracking fields
+  actedOn?: boolean;
+  actedOnNotes?: string;
+  actedOnAt?: string;
+  actedOnById?: number;
+  actedOnByName?: string;
 }
 
 export interface CreateRetroRequest {
@@ -1117,6 +1359,275 @@ export interface EntityHistory {
   revisionType: RevisionType;
   /** The list of individual field changes in this revision */
   changes: FieldChange[];
+}
+
+// ============================================
+// Roadmap & Release Management Types
+// ============================================
+
+/** Initiative status in strategic planning */
+export type InitiativeStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+
+/** Epic status (similar to Initiative) */
+export type EpicStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+
+/** Release lifecycle status */
+export type ReleaseStatus = 'PLANNING' | 'IN_PROGRESS' | 'STAGING' | 'RELEASED' | 'CANCELLED';
+
+/** Risk level for releases */
+export type ReleaseRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/**
+ * Summary of an Epic within an Initiative
+ */
+export interface EpicSummary {
+  id: number;
+  name: string;
+  status: EpicStatus;
+  pitchCount: number;
+}
+
+/**
+ * Strategic initiative - top-level group spanning multiple quarters
+ */
+export interface Initiative {
+  id: number;
+  name: string;
+  description?: string;
+  status: InitiativeStatus;
+  color?: string;
+  projectId: number;
+  projectName?: string;
+  ownerId?: number;
+  ownerName?: string;
+  targetStartDate?: string;
+  targetEndDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Progress metrics
+  epicCount?: number;
+  completedEpicCount?: number;
+  totalPitchCount?: number;
+  completedPitchCount?: number;
+  progressPercentage?: number;
+  // Nested epics
+  epics?: EpicSummary[];
+}
+
+/**
+ * Request to create or update an Initiative
+ */
+export interface CreateInitiativeRequest {
+  name: string;
+  description?: string;
+  status?: InitiativeStatus;
+  color?: string;
+  projectId: number;
+  ownerId?: number;
+  targetStartDate?: string;
+  targetEndDate?: string;
+}
+
+/**
+ * Summary of a Pitch within an Epic
+ */
+export interface PitchSummary {
+  id: number;
+  title: string;
+  status: PitchStatus;
+}
+
+/**
+ * Epic - groups pitches under an initiative
+ */
+export interface Epic {
+  id: number;
+  name: string;
+  description?: string;
+  status: EpicStatus;
+  color?: string;
+  projectId: number;
+  projectName?: string;
+  initiativeId?: number;
+  initiativeName?: string;
+  targetStartDate?: string;
+  targetEndDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Progress metrics
+  pitchCount?: number;
+  completedPitchCount?: number;
+  progressPercentage?: number;
+  // Nested pitches
+  pitches?: PitchSummary[];
+}
+
+/**
+ * Request to create or update an Epic
+ */
+export interface CreateEpicRequest {
+  name: string;
+  description?: string;
+  status?: EpicStatus;
+  color?: string;
+  projectId: number;
+  initiativeId?: number;
+  targetStartDate?: string;
+  targetEndDate?: string;
+}
+
+/**
+ * Summary of a Cycle linked to a Release
+ */
+export interface CycleSummary {
+  id: number;
+  name: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Release - a versioned delivery milestone
+ */
+export interface Release {
+  id: number;
+  name: string;
+  version: string;
+  description?: string;
+  status: ReleaseStatus;
+  riskLevel: ReleaseRiskLevel;
+  projectId: number;
+  projectName?: string;
+  targetDate?: string;
+  releaseDate?: string;
+  releaseNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Linked cycles
+  cycles?: CycleSummary[];
+}
+
+/**
+ * Request to create or update a Release
+ */
+export interface CreateReleaseRequest {
+  name: string;
+  version: string;
+  description?: string;
+  status?: ReleaseStatus;
+  riskLevel?: ReleaseRiskLevel;
+  projectId: number;
+  targetDate?: string;
+  releaseDate?: string;
+  releaseNotes?: string;
+  cycleIds?: number[];
+}
+
+/**
+ * Bug information within a release progress summary
+ */
+export interface ReleaseBugInfo {
+  id: number;
+  title: string;
+  status: string;
+  severity: string;
+  targetReleaseId?: number;
+  targetReleaseVersion?: string;
+  fixedInReleaseId?: number;
+  fixedInReleaseVersion?: string;
+  isSlipped: boolean;
+}
+
+/**
+ * Release progress metrics
+ */
+export interface ReleaseProgress {
+  releaseId: number;
+  name: string;
+  version: string;
+  status: ReleaseStatus;
+  riskLevel: ReleaseRiskLevel;
+  targetDate?: string;
+  releaseDate?: string;
+  // Pitch metrics
+  totalPitches: number;
+  completedPitches: number;
+  inProgressPitches: number;
+  pitchCompletionPercentage: number;
+  // Task metrics
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  blockedTasks: number;
+  taskCompletionPercentage: number;
+  // Bug metrics
+  totalBugs: number;
+  openBugs: number;
+  resolvedBugs: number;
+  slippedBugs: number;
+  // Slipped bug details
+  slippedBugList?: ReleaseBugInfo[];
+}
+
+/**
+ * Timeline representation for Gantt charts
+ */
+export interface TimelinePitch {
+  id: number;
+  title: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  cycleId?: number;
+  cycleName?: string;
+}
+
+export interface TimelineEpic {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  color?: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  pitches?: TimelinePitch[];
+}
+
+export interface TimelineInitiative {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  color?: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  epics?: TimelineEpic[];
+}
+
+export interface TimelineRelease {
+  id: number;
+  name: string;
+  version: string;
+  status: string;
+  targetDate?: string;
+  releaseDate?: string;
+  riskLevel: string;
+  progress: number;
+}
+
+/**
+ * Complete roadmap timeline data for Gantt view
+ */
+export interface RoadmapTimeline {
+  projectId: number;
+  startDate: string;
+  endDate: string;
+  initiatives: TimelineInitiative[];
+  orphanEpics: TimelineEpic[];
+  releases: TimelineRelease[];
 }
 
 export * from './betting-analytics';

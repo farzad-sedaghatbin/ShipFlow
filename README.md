@@ -35,8 +35,22 @@ A modern project management application implementing the [Shape Up](https://base
     - Automatic knowledge base indexing for Q&A
     - Document upload, preview, and download capabilities
     - Inline editing of Shape Up fields on pitch detail page
+  - **Pre-Cycle Workflow**: True Shape Up pitch lifecycle
+    - Pre-cycle statuses: IDEA → DRAFT → SHAPED (no cycle required)
+    - Betting candidates: shaped pitches automatically appear in betting table
+    - Cycle assignment: betting assigns shaped pitches to cycles (SHAPED → PENDING)
+    - Full support for pitches at every lifecycle stage
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
+  - **Scope-Task Auto-Bridge**: Unified workflow for scopes and tasks
+    - Creating a root task with a pitch automatically creates a linked scope on the hill chart
+    - Creating a scope automatically creates a corresponding task for work assignment
+    - Auto-progress: scope position automatically syncs with subtask completion (0-100%)
+    - Manual override: dragging a scope disables auto-progress (user control)
+    - Toggle auto-progress on/off to restore automatic synchronization
+    - Visual indicators show auto-progress status, linked relationships, and suggested positions
+    - Event-driven real-time sync when task statuses change
+    - Simplifies workflow: one action creates both trackable work item and hill chart visualization
   - **Traceability**: Optional links to pitches and scopes for improved reporting
     - Tasks can optionally link to specific pitch and scope (hill chart point)
     - Supports technical debt and improvement work (no pitch required)
@@ -60,8 +74,32 @@ A modern project management application implementing the [Shape Up](https://base
   - Document preview with extracted text
   - Download with original filenames and proper Content-Type headers
   - Automatic indexing for AI-powered Q&A
+- **Roadmap & Release Planning**: Strategic planning with Initiative → Epic → Pitch hierarchy
+  - **Initiatives**: Strategic themes spanning multiple quarters (e.g., "Mobile Experience 2026")
+    - Status tracking: DRAFT, PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED
+    - Color-coded timeline visualization with target dates
+    - Owner assignment and project association
+  - **Epics**: Large feature groups organizing related pitches (e.g., "Mobile Checkout Redesign")
+    - Optional parent initiative for strategic alignment
+    - Progress tracking from linked pitches
+    - Flexible status management matching initiative workflow
+  - **Releases**: Versioned delivery milestones with multi-cycle support
+    - Version tracking (e.g., "v2.4.0", "2026.Q2")
+    - Risk level indicators: LOW, MEDIUM, HIGH, CRITICAL
+    - Link releases to one or more cycles
+    - Track pitches and bugs by target release and actual fix release
+  - **Roadmap Timeline View**: Visual timeline for stakeholder communication
+    - Gantt-style visualization of initiatives, epics, and releases
+    - Progress bars showing completion percentages
+    - Filterable by project, status, and date range
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization
+  - **Capacity Configuration**: Configurable hours per day and working days per week
+    - Organization defaults: 8 hours/day, 5 days/week
+    - Team-level overrides for working patterns
+    - Person-level overrides for individual capacity
+    - Assignment-level overrides for fine-grained control per pitch
+    - Inheritance hierarchy: Organization → Team → Person → Assignment
   - Color schemes for appetite/actual hours visualization (4 configurable colors)
   - Bug workflow statuses (5 predefined states: NEW, IN_PROGRESS, FIXED, VERIFIED, WONT_FIX)
   - Severity levels for bug prioritization (CRITICAL, HIGH, MEDIUM, LOW)
@@ -76,6 +114,8 @@ A modern project management application implementing the [Shape Up](https://base
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
     - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)
+    - **Image & Video Attachments**: Drag-and-drop upload of screenshots and screen recordings (JPG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI)
+    - Gallery view with preview and download capabilities
     - Optional traceability to cycles, pitches, scopes, and related tasks
     - Auto-derives project from cycle/pitch when not explicitly set
     - Server-side search for finding related scopes/tasks (min 3 chars, 300ms debounce)
@@ -100,6 +140,40 @@ A modern project management application implementing the [Shape Up](https://base
   - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
   - Real-time collaboration and voting
+  - **Flexible Action Conversion (v0.5)**: Transform retro insights into actionable work
+    - **Convert to Pitch**: Create draft pitches for the next betting table
+    - **Convert to Tasks**: Generate tasks for immediate work
+    - **Mark as Acted On**: Track completion without creating new items
+    - Batch processing of multiple retro items with customizable titles and notes
+    - Automatic status tracking with notes and timestamps
+  - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
+    - "Did we act on this?" checkbox for Action Items (ACTIONS column)
+    - Notes and attribution for action follow-through
+    - Follow-through rate calculation per retrospective
+  - **Tag-Based Linking**: Connect retro items to future pitches via shared tags
+    - Link learnings to future bets
+    - Cross-cycle pattern detection
+- **Cycle Signals (v0.5)**: Decision support from historical patterns
+  - **Appetite Accuracy**: Track how well estimates match reality over time
+    - Per-cycle ratio analysis with trend detection
+    - Contextual recommendations for estimate calibration
+  - **Shaping Quality**: Detect over-shaping or under-shaping patterns
+    - Analysis of uncertainty scores and rabbit holes
+    - Quality classification with improvement guidance
+  - **Risk Prediction**: Measure risk forecast accuracy
+    - Compare predicted vs actual outcomes
+    - Correlation strength indicators
+  - **Retro Follow-Through**: Surface action item completion rates
+    - Per-retrospective and cross-cycle analysis
+    - Pending action visibility
+  - **Health Score**: Combined signal health (0-100) for process overview
+- **Narrative Summaries (v0.5)**: AI-generated cycle narratives
+  - **What We Bet On**: Committed pitches and appetite allocations
+  - **What Shipped**: Completed work with key outcomes
+  - **What We Cut**: Descoped items and rationale
+  - **Surprises**: Unexpected discoveries and lessons learned
+  - Template fallback when AI is unavailable
+  - Markdown export for stakeholder communication
 - **Meetings**: Comprehensive meeting management with customizable types
   - **Configurable Meeting Types**: Manage 7+ meeting types (SHAPING, BETTING, KICKOFF, STANDUP, DEMO, RETROSPECTIVE, HILL_CHART_REVIEW)
   - **DOR/DOD Checklists**: Definition of Ready (DOR) and Definition of Done (DOD) checklist items per meeting type

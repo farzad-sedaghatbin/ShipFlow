@@ -26,12 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, HillChartPoint } from '../types';
+import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { pitchService } from '../services/pitchService';
-import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskDependencies from '../components/TaskDependencies';
@@ -85,11 +84,9 @@ export default function TaskDetailPage() {
     tags: '',
     category: 'PITCH_SCOPE',
     pitchId: undefined,
-    scopeId: undefined,
   });
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -152,23 +149,9 @@ export default function TaskDetailPage() {
     }
   };
 
-  const loadScopesForPitch = async (pitchId: number) => {
-    try {
-      const response = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setScopes(response);
-    } catch (error) {
-      console.error('Failed to load scopes:', error);
-      setScopes([]);
-    }
-  };
-
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
-    setFormData({ ...formData, pitchId: pitch, scopeId: undefined });
-    setScopes([]);
-    if (pitch) {
-      loadScopesForPitch(pitch);
-    }
+    setFormData({ ...formData, pitchId: pitch });
   };
 
   const handleStartTimer = async () => {
@@ -205,7 +188,6 @@ export default function TaskDetailPage() {
       category: task.category,
       parentTaskId: task.parentTaskId,
       pitchId: task.pitchId,
-      scopeId: task.scopeId,
     });
     
     if (task.dueDate) {
@@ -217,11 +199,6 @@ export default function TaskDetailPage() {
     // Load pitches for the cycle
     if (task.cycleId) {
       loadPitchesForCycle(task.cycleId);
-    }
-    
-    // Load scopes if pitch is selected
-    if (task.pitchId) {
-      loadScopesForPitch(task.pitchId);
     }
     
     setFieldErrors({});
@@ -413,6 +390,16 @@ export default function TaskDetailPage() {
                 <Label className="text-xs text-muted-foreground">{t('common.project')}</Label>
                 <div className="mt-1 font-medium">
                   {task.projectName}
+                </div>
+              </div>
+            )}
+            {task.pitchId && task.pitchTitle && (
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('common.pitch', 'Pitch')}</Label>
+                <div className="mt-1 font-medium">
+                  <Link to={`/pitches/${task.pitchId}`} className="hover:underline text-primary">
+                    {task.pitchTitle}
+                  </Link>
                 </div>
               </div>
             )}
@@ -704,7 +691,11 @@ export default function TaskDetailPage() {
               <Label htmlFor="edit-cycle">Cycle *</Label>
               <Select
                 value={formData.cycleId.toString()}
-                onValueChange={(value) => setFormData({ ...formData, cycleId: parseInt(value) })}
+                onValueChange={(value) => {
+                  const cycleId = parseInt(value);
+                  setFormData({ ...formData, cycleId, pitchId: undefined });
+                  loadPitchesForCycle(cycleId);
+                }}
               >
                 <SelectTrigger id="edit-cycle" className={fieldErrors.cycleId ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select cycle" />
@@ -807,46 +798,24 @@ export default function TaskDetailPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Pitch (optional)</Label>
-                <Select
-                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                  onValueChange={handlePitchChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No pitch (technical debt)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No pitch (technical debt)</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={String(pitch.id)}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Scope (optional)</Label>
-                <Select
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                  disabled={!formData.pitchId || scopes.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId ? "Select pitch first" : "No specific scope"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No specific scope</SelectItem>
-                    {scopes.map((scope) => (
-                      <SelectItem key={scope.id} value={String(scope.id)}>
-                        {scope.scope}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label>Pitch (optional)</Label>
+              <Select
+                value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                onValueChange={handlePitchChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="No pitch (technical debt)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No pitch (technical debt)</SelectItem>
+                  {pitches.map((pitch) => (
+                    <SelectItem key={pitch.id} value={String(pitch.id)}>
+                      {pitch.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

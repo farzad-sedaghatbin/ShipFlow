@@ -35,4 +35,8 @@ public class UpdateOrganizationSettingsRequest {
    * Set to update the token, empty string to clear it, null to leave unchanged.
    */
   private String figmaAccessToken;
+
+  // Capacity Configuration
+  private Double defaultHoursPerDay;
+  private Integer defaultWorkingDaysPerWeek;
 }

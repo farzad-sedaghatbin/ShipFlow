@@ -43,6 +43,9 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final UserPreferenceRepository userPreferenceRepository;
   private final RiskFeedbackRepository riskFeedbackRepository;
   private final DashboardNotificationRepository dashboardNotificationRepository;
+  private final InitiativeRepository initiativeRepository;
+  private final EpicRepository epicRepository;
+  private final ReleaseRepository releaseRepository;
 
   @Override
   @Transactional
@@ -140,6 +143,10 @@ public class SampleDataInitializer implements CommandLineRunner {
         .startDate(LocalDate.of(2024, 10, 7)).endDate(LocalDate.of(2024, 12, 20)).phase(CyclePhase.COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(maCycle2);
+
+    // Create Roadmap data - Initiatives, Epics, and Releases
+    createRoadmapData(mainProject, internalToolsProject, mobileAppProject, aliceUser, frankUser,
+        activeCycle, itCycle1, maCycle1);
 
     // Create teams for active cycle
     Team alphaTeam = Team.builder().name("Alpha Team").cycle(activeCycle).build();
@@ -398,27 +405,27 @@ public class SampleDataInitializer implements CommandLineRunner {
     createWorkLog(carol, offlineMode, LocalDate.of(2024, 5, 22), new BigDecimal("5.0"), "Offline mode testing");
 
     // Create meetings
-    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type(MeetingType.KICKOFF)
+    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type("KICKOFF")
         .dateHeld(LocalDate.now().minusDays(10)).dorReady(true).dodReady(false)
         .notes("Defined scope and milestones").build();
     meetingRepository.save(kickoff1);
 
-    Meeting standup1 = Meeting.builder().pitch(userDashboard).type(MeetingType.STANDUP)
+    Meeting standup1 = Meeting.builder().pitch(userDashboard).type("STANDUP")
         .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
         .notes("Progress update - 70% complete").build();
     meetingRepository.save(standup1);
 
-    Meeting shaping = Meeting.builder().pitch(reportModule).type(MeetingType.SHAPING)
+    Meeting shaping = Meeting.builder().pitch(reportModule).type("SHAPING")
         .dateHeld(LocalDate.now().minusDays(5)).dorReady(false).dodReady(false)
         .notes("Identified key requirements and risks").build();
     meetingRepository.save(shaping);
 
-    Meeting betting = Meeting.builder().pitch(reportModule).type(MeetingType.BETTING)
+    Meeting betting = Meeting.builder().pitch(reportModule).type("BETTING")
         .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
         .notes("Approved for next build phase").build();
     meetingRepository.save(betting);
 
-    Meeting demo = Meeting.builder().pitch(mobileApp).type(MeetingType.DEMO).dateHeld(LocalDate.now().minusDays(1))
+    Meeting demo = Meeting.builder().pitch(mobileApp).type("DEMO").dateHeld(LocalDate.now().minusDays(1))
         .dorReady(true).dodReady(true).notes("Successful demo to stakeholders").build();
     meetingRepository.save(demo);
 
@@ -803,5 +810,197 @@ public class SampleDataInitializer implements CommandLineRunner {
           .build();
       riskFeedbackRepository.save(feedback);
     }
+  }
+
+  private void createRoadmapData(Project mainProject, Project internalToolsProject, 
+      Project mobileAppProject, User aliceUser, User frankUser,
+      Cycle activeCycle, Cycle itCycle, Cycle maCycle) {
+    log.info("Creating roadmap data (Initiatives, Epics, Releases)...");
+
+    // === INITIATIVES FOR MAIN PROJECT (ShipFlow) ===
+    Initiative coreProductInitiative = Initiative.builder()
+        .name("Core Product Enhancement 2025")
+        .description("Strategic initiative to enhance core features and improve user experience")
+        .status(InitiativeStatus.IN_PROGRESS)
+        .color("#3B82F6")
+        .targetStartDate(LocalDate.of(2025, 1, 1))
+        .targetEndDate(LocalDate.of(2025, 6, 30))
+        .project(mainProject)
+        .owner(aliceUser)
+        .sortOrder(1)
+        .build();
+    initiativeRepository.save(coreProductInitiative);
+
+    Initiative enterpriseInitiative = Initiative.builder()
+        .name("Enterprise Features 2025")
+        .description("Build enterprise-grade features for larger organizations")
+        .status(InitiativeStatus.PLANNED)
+        .color("#8B5CF6")
+        .targetStartDate(LocalDate.of(2025, 4, 1))
+        .targetEndDate(LocalDate.of(2025, 12, 31))
+        .project(mainProject)
+        .owner(frankUser)
+        .sortOrder(2)
+        .build();
+    initiativeRepository.save(enterpriseInitiative);
+
+    // === EPICS FOR CORE PRODUCT INITIATIVE ===
+    Epic dashboardEpic = Epic.builder()
+        .name("Dashboard Modernization")
+        .description("Complete overhaul of the dashboard with real-time analytics and customizable widgets")
+        .status(EpicStatus.IN_PROGRESS)
+        .color("#10B981")
+        .targetStartDate(LocalDate.of(2025, 1, 1))
+        .targetEndDate(LocalDate.of(2025, 3, 31))
+        .project(mainProject)
+        .initiative(coreProductInitiative)
+        .owner(aliceUser)
+        .sortOrder(1)
+        .build();
+    epicRepository.save(dashboardEpic);
+
+    Epic reportingEpic = Epic.builder()
+        .name("Advanced Reporting")
+        .description("Build comprehensive reporting system with export capabilities and scheduling")
+        .status(EpicStatus.PLANNED)
+        .color("#F59E0B")
+        .targetStartDate(LocalDate.of(2025, 2, 1))
+        .targetEndDate(LocalDate.of(2025, 5, 31))
+        .project(mainProject)
+        .initiative(coreProductInitiative)
+        .owner(frankUser)
+        .sortOrder(2)
+        .build();
+    epicRepository.save(reportingEpic);
+
+    // === EPICS FOR ENTERPRISE INITIATIVE ===
+    Epic ssoEpic = Epic.builder()
+        .name("SSO & SAML Integration")
+        .description("Enterprise single sign-on with SAML 2.0 and OAuth 2.0 support")
+        .status(EpicStatus.DRAFT)
+        .color("#EF4444")
+        .targetStartDate(LocalDate.of(2025, 4, 1))
+        .targetEndDate(LocalDate.of(2025, 6, 30))
+        .project(mainProject)
+        .initiative(enterpriseInitiative)
+        .owner(frankUser)
+        .sortOrder(1)
+        .build();
+    epicRepository.save(ssoEpic);
+
+    Epic auditEpic = Epic.builder()
+        .name("Audit Trail & Compliance")
+        .description("Comprehensive audit logging for SOC 2 and GDPR compliance")
+        .status(EpicStatus.DRAFT)
+        .color("#6366F1")
+        .targetStartDate(LocalDate.of(2025, 5, 1))
+        .targetEndDate(LocalDate.of(2025, 8, 31))
+        .project(mainProject)
+        .initiative(enterpriseInitiative)
+        .owner(aliceUser)
+        .sortOrder(2)
+        .build();
+    epicRepository.save(auditEpic);
+
+    // === STANDALONE EPIC (NOT LINKED TO INITIATIVE) ===
+    Epic techDebtEpic = Epic.builder()
+        .name("Technical Debt Reduction")
+        .description("Address critical technical debt items and improve codebase maintainability")
+        .status(EpicStatus.IN_PROGRESS)
+        .color("#78716C")
+        .targetStartDate(LocalDate.of(2025, 1, 15))
+        .targetEndDate(LocalDate.of(2025, 12, 31))
+        .project(mainProject)
+        .initiative(null)  // Orphan epic
+        .owner(aliceUser)
+        .sortOrder(99)
+        .build();
+    epicRepository.save(techDebtEpic);
+
+    // === INITIATIVE FOR MOBILE PROJECT ===
+    Initiative mobileInitiative = Initiative.builder()
+        .name("Mobile 2.0 Launch")
+        .description("Launch the next generation mobile application with enhanced features")
+        .status(InitiativeStatus.IN_PROGRESS)
+        .color("#EC4899")
+        .targetStartDate(LocalDate.of(2025, 1, 1))
+        .targetEndDate(LocalDate.of(2025, 6, 30))
+        .project(mobileAppProject)
+        .owner(frankUser)
+        .sortOrder(1)
+        .build();
+    initiativeRepository.save(mobileInitiative);
+
+    Epic mobileUxEpic = Epic.builder()
+        .name("Mobile UX Redesign")
+        .description("Redesign mobile user experience based on user feedback")
+        .status(EpicStatus.IN_PROGRESS)
+        .color("#14B8A6")
+        .targetStartDate(LocalDate.of(2025, 1, 6))
+        .targetEndDate(LocalDate.of(2025, 3, 31))
+        .project(mobileAppProject)
+        .initiative(mobileInitiative)
+        .owner(frankUser)
+        .sortOrder(1)
+        .build();
+    epicRepository.save(mobileUxEpic);
+
+    // === RELEASES ===
+    Release q1Release = Release.builder()
+        .name("Q1 2025 Release")
+        .version("v2.5.0")
+        .description("First major release of 2025 with dashboard improvements")
+        .status(ReleaseStatus.IN_PROGRESS)
+        .riskLevel(ReleaseRiskLevel.MEDIUM)
+        .targetDate(LocalDate.of(2025, 3, 31))
+        .releaseDate(null)
+        .project(mainProject)
+        .sortOrder(1)
+        .build();
+    q1Release.getCycles().add(activeCycle);
+    releaseRepository.save(q1Release);
+
+    Release q2Release = Release.builder()
+        .name("Q2 2025 Release")
+        .version("v2.6.0")
+        .description("Enterprise features and reporting enhancements")
+        .status(ReleaseStatus.PLANNING)
+        .riskLevel(ReleaseRiskLevel.LOW)
+        .targetDate(LocalDate.of(2025, 6, 30))
+        .releaseDate(null)
+        .project(mainProject)
+        .sortOrder(2)
+        .build();
+    releaseRepository.save(q2Release);
+
+    Release mobileRelease = Release.builder()
+        .name("Mobile 2.0 Launch")
+        .version("v2.0.0")
+        .description("Major mobile app launch with new features")
+        .status(ReleaseStatus.IN_PROGRESS)
+        .riskLevel(ReleaseRiskLevel.HIGH)
+        .targetDate(LocalDate.of(2025, 2, 28))
+        .releaseDate(null)
+        .project(mobileAppProject)
+        .sortOrder(1)
+        .build();
+    mobileRelease.getCycles().add(maCycle);
+    releaseRepository.save(mobileRelease);
+
+    Release itRelease = Release.builder()
+        .name("Internal Tools v1.2")
+        .version("v1.2.0")
+        .description("Dashboard and analytics improvements")
+        .status(ReleaseStatus.PLANNING)
+        .riskLevel(ReleaseRiskLevel.LOW)
+        .targetDate(LocalDate.of(2025, 2, 14))
+        .releaseDate(null)
+        .project(internalToolsProject)
+        .sortOrder(1)
+        .build();
+    itRelease.getCycles().add(itCycle);
+    releaseRepository.save(itRelease);
+
+    log.info("Roadmap data created: 4 initiatives, 6 epics, 4 releases");
   }
 }

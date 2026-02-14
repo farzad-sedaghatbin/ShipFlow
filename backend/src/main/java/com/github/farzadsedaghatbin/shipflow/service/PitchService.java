@@ -3,19 +3,25 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,15 +37,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class PitchService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   private final PitchRepository pitchRepository;
   private final CycleRepository cycleRepository;
   private final TeamRepository teamRepository;
   private final WorkLogRepository workLogRepository;
   private final UserRepository userRepository;
+  private final EpicRepository epicRepository;
+  private final ReleaseRepository releaseRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
+  private final CapacityConfigService capacityConfigService;
 
   public List<PitchDTO> getAllPitches() {
     return pitchRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -83,28 +90,136 @@ public class PitchService {
     return pitchRepository.findByTeamIdNotDeleted(teamId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  public List<PitchDTO> getPitchesByEpicId(Long epicId) {
+    return pitchRepository.findByEpicIdNotDeleted(epicId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  public List<PitchDTO> getPitchesByReleaseId(Long releaseId) {
+    return pitchRepository.findByTargetReleaseIdNotDeleted(releaseId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  public PitchDTO linkToEpic(Long pitchId, Long epicId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Epic epic = epicRepository.findByIdNotDeleted(epicId)
+        .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + epicId));
+    pitch.setEpic(epic);
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
+  }
+
+  public PitchDTO unlinkFromEpic(Long pitchId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    pitch.setEpic(null);
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
+  }
+
+  public PitchDTO setTargetRelease(Long pitchId, Long releaseId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Release release = releaseRepository.findByIdNotDeleted(releaseId)
+        .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + releaseId));
+    pitch.setTargetRelease(release);
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
+  }
+
+  public PitchDTO clearTargetRelease(Long pitchId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    pitch.setTargetRelease(null);
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
+  }
+
   public PitchDTO getPitchById(Long id) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
     return toDTO(pitch);
   }
 
-  public PitchDTO createPitch(CreatePitchRequest request) {
-    Cycle cycle = cycleRepository.findById(request.getCycleId())
-        .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
+  /**
+   * Create a lightweight idea (just title + optional description).
+   * Ideas don't require cycle or appetite - they're raw concepts.
+   */
+  public PitchDTO createIdea(String title, String description, Long epicId) {
+    Pitch pitch = Pitch.builder()
+        .title(title)
+        .description(description)
+        .status(PitchStatus.IDEA)
+        .build();
 
-    Pitch pitch = Pitch.builder().title(request.getTitle()).description(request.getDescription())
-        .appetiteDays(request.getAppetiteDays()).cycle(cycle)
-        .status(request.getStatus() != null ? request.getStatus() : PitchStatus.PENDING)
+    if (epicId != null) {
+      Epic epic = epicRepository.findByIdNotDeleted(epicId)
+          .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + epicId));
+      pitch.setEpic(epic);
+    }
+
+    Pitch saved = pitchRepository.save(pitch);
+    log.info("Created idea: {} (ID: {})", saved.getTitle(), saved.getId());
+
+    // Publish event for knowledge ingestion
+    eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
+
+    return toDTO(saved);
+  }
+
+  /**
+   * Create a pitch with full flexibility - can be IDEA, DRAFT, SHAPED, or assigned to cycle.
+   * Validates field requirements based on target status.
+   */
+  public PitchDTO createPitch(CreatePitchRequest request) {
+    // Determine final status - default to IDEA if not specified
+    PitchStatus targetStatus = request.getStatus() != null ? request.getStatus() : PitchStatus.IDEA;
+
+    // Validate based on target status
+    validatePitchForStatus(request, targetStatus);
+
+    // Build the pitch
+    Pitch.PitchBuilder builder = Pitch.builder()
+        .title(request.getTitle())
+        .description(request.getDescription())
+        .status(targetStatus)
         // Shape Up fields
-        .problemStatement(request.getProblemStatement()).solution(request.getSolution())
-        .rabbitHoles(request.getRabbitHoles()).risks(request.getRisks()).noGos(request.getNoGos())
-        .wireframeLinks(request.getWireframeLinks()).build();
+        .problemStatement(request.getProblemStatement())
+        .solution(request.getSolution())
+        .rabbitHoles(request.getRabbitHoles())
+        .risks(request.getRisks())
+        .noGos(request.getNoGos())
+        .wireframeLinks(request.getWireframeLinks());
+
+    // Set appetite if provided (required for SHAPED+)
+    if (request.getAppetiteDays() != null) {
+      builder.appetiteDays(request.getAppetiteDays());
+    }
+
+    // Set cycle if provided (required for PENDING+)
+    if (request.getCycleId() != null) {
+      Cycle cycle = cycleRepository.findById(request.getCycleId())
+          .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
+      builder.cycle(cycle);
+    }
+
+    Pitch pitch = builder.build();
 
     if (request.getTeamId() != null) {
       Team team = teamRepository.findById(request.getTeamId())
           .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + request.getTeamId()));
       pitch.setTeam(team);
+    }
+
+    // Epic and Release linking
+    if (request.getEpicId() != null) {
+      Epic epic = epicRepository.findByIdNotDeleted(request.getEpicId())
+          .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + request.getEpicId()));
+      pitch.setEpic(epic);
+    }
+    if (request.getTargetReleaseId() != null) {
+      Release release = releaseRepository.findByIdNotDeleted(request.getTargetReleaseId())
+          .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + request.getTargetReleaseId()));
+      pitch.setTargetRelease(release);
     }
 
     Pitch saved = pitchRepository.save(pitch);
@@ -113,6 +228,189 @@ public class PitchService {
     eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
 
     return toDTO(saved);
+  }
+
+  /**
+   * Validates that a pitch has the required fields for a given status.
+   */
+  private void validatePitchForStatus(CreatePitchRequest request, PitchStatus targetStatus) {
+    // IDEA: Only title required (already validated by @NotBlank)
+    if (targetStatus == PitchStatus.IDEA) {
+      return;
+    }
+
+    // DRAFT: Only title required
+    if (targetStatus == PitchStatus.DRAFT) {
+      return;
+    }
+
+    // SHAPED: Requires appetite
+    if (targetStatus == PitchStatus.SHAPED) {
+      if (request.getAppetiteDays() == null) {
+        throw new IllegalArgumentException("Appetite days is required for SHAPED status");
+      }
+      return;
+    }
+
+    // PENDING and beyond: Requires cycle and appetite
+    if (request.getCycleId() == null) {
+      throw new IllegalArgumentException("Cycle ID is required for " + targetStatus + " status");
+    }
+    if (request.getAppetiteDays() == null) {
+      throw new IllegalArgumentException("Appetite days is required for " + targetStatus + " status");
+    }
+  }
+
+  // ===== Shape Up Workflow Transitions =====
+
+  /**
+   * Start shaping an idea - transitions IDEA → DRAFT.
+   */
+  public PitchDTO startShaping(Long pitchId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+
+    if (pitch.getStatus() != PitchStatus.IDEA) {
+      throw new IllegalStateException("Can only start shaping from IDEA status. Current: " + pitch.getStatus());
+    }
+
+    pitch.setStatus(PitchStatus.DRAFT);
+    Pitch saved = pitchRepository.save(pitch);
+    log.info("Started shaping pitch: {} (IDEA → DRAFT)", saved.getTitle());
+
+    eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
+    return toDTO(saved);
+  }
+
+  /**
+   * Mark a draft as shaped and ready for betting - transitions DRAFT → SHAPED.
+   * Requires: problemStatement OR solution, AND appetiteDays.
+   */
+  public PitchDTO markAsShaped(Long pitchId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+
+    if (pitch.getStatus() != PitchStatus.DRAFT && pitch.getStatus() != PitchStatus.IDEA) {
+      throw new IllegalStateException("Can only mark as shaped from IDEA or DRAFT status. Current: " + pitch.getStatus());
+    }
+
+    // Validate shaping requirements
+    if (pitch.getAppetiteDays() == null) {
+      throw new IllegalArgumentException("Appetite days is required to mark as shaped");
+    }
+    boolean hasProblemOrSolution = (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank())
+        || (pitch.getSolution() != null && !pitch.getSolution().isBlank());
+    if (!hasProblemOrSolution) {
+      throw new IllegalArgumentException("Problem statement or solution is required to mark as shaped");
+    }
+
+    pitch.setStatus(PitchStatus.SHAPED);
+    Pitch saved = pitchRepository.save(pitch);
+    log.info("Marked pitch as shaped: {} (→ SHAPED, ready for betting)", saved.getTitle());
+
+    eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
+    return toDTO(saved);
+  }
+
+  /**
+   * Assign a shaped pitch to a cycle (betting table decision) - transitions SHAPED → PENDING.
+   */
+  public PitchDTO assignToCycle(Long pitchId, Long cycleId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+
+    if (pitch.getStatus() != PitchStatus.SHAPED) {
+      throw new IllegalStateException("Can only assign SHAPED pitches to cycle. Current: " + pitch.getStatus());
+    }
+
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+
+    PitchStatus oldStatus = pitch.getStatus();
+    pitch.setCycle(cycle);
+    pitch.setStatus(PitchStatus.PENDING);
+    Pitch saved = pitchRepository.save(pitch);
+
+    log.info("Assigned pitch to cycle: {} → Cycle {} (SHAPED → PENDING)", saved.getTitle(), cycle.getName());
+
+    // Invalidate cache and publish events
+    invalidateCacheForPitch(saved);
+    eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
+    eventPublisher.publishEvent(new PitchStatusChangedEvent(
+        this, saved.getId(), cycle.getId(), saved.getTitle(), 
+        oldStatus.name(), PitchStatus.PENDING.name()));
+
+    return toDTO(saved);
+  }
+
+  /**
+   * Unassign a pitch from its cycle (move back to betting candidates) - transitions PENDING → SHAPED.
+   */
+  public PitchDTO unassignFromCycle(Long pitchId) {
+    Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+
+    if (pitch.getStatus() != PitchStatus.PENDING) {
+      throw new IllegalStateException("Can only unassign PENDING pitches. Current: " + pitch.getStatus());
+    }
+
+    Long oldCycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    pitch.setCycle(null);
+    pitch.setTeam(null); // Also clear team assignment
+    pitch.setStatus(PitchStatus.SHAPED);
+    Pitch saved = pitchRepository.save(pitch);
+
+    log.info("Unassigned pitch from cycle: {} (PENDING → SHAPED)", saved.getTitle());
+
+    // Invalidate cache
+    if (oldCycleId != null) {
+      cacheService.invalidateCycleRiskCache(oldCycleId);
+    }
+    eventPublisher.publishEvent(new KnowledgeEventListener.PitchKnowledgeEvent(saved.getId()));
+
+    return toDTO(saved);
+  }
+
+  // ===== Pool Queries =====
+
+  /** Get all ideas (raw concepts not yet being shaped). */
+  public List<PitchDTO> getIdeas() {
+    return pitchRepository.findAllIdeas().stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get ideas for a specific project. */
+  public List<PitchDTO> getIdeasByProjectId(Long projectId) {
+    return pitchRepository.findIdeasByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get ideas for a specific epic. */
+  public List<PitchDTO> getIdeasByEpicId(Long epicId) {
+    return pitchRepository.findIdeasByEpicId(epicId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get all drafts (pitches being shaped). */
+  public List<PitchDTO> getDrafts() {
+    return pitchRepository.findAllDrafts().stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get drafts for a specific project. */
+  public List<PitchDTO> getDraftsByProjectId(Long projectId) {
+    return pitchRepository.findDraftsByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get all betting candidates (shaped pitches ready for cycle assignment). */
+  public List<PitchDTO> getBettingCandidates() {
+    return pitchRepository.findBettingCandidates().stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get betting candidates for a specific project. */
+  public List<PitchDTO> getBettingCandidatesByProjectId(Long projectId) {
+    return pitchRepository.findBettingCandidatesByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Get all unassigned pitches (IDEA, DRAFT, SHAPED). */
+  public List<PitchDTO> getUnassignedByEpicId(Long epicId) {
+    return pitchRepository.findUnassignedByEpicId(epicId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public PitchDTO updatePitch(Long id, CreatePitchRequest request) {
@@ -138,6 +436,22 @@ public class PitchService {
       pitch.setTeam(team);
     }
 
+    // Epic and Release linking (null clears the link)
+    if (request.getEpicId() != null) {
+      Epic epic = epicRepository.findByIdNotDeleted(request.getEpicId())
+          .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + request.getEpicId()));
+      pitch.setEpic(epic);
+    } else {
+      pitch.setEpic(null);
+    }
+    if (request.getTargetReleaseId() != null) {
+      Release release = releaseRepository.findByIdNotDeleted(request.getTargetReleaseId())
+          .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + request.getTargetReleaseId()));
+      pitch.setTargetRelease(release);
+    } else {
+      pitch.setTargetRelease(null);
+    }
+
     Pitch saved = pitchRepository.save(pitch);
 
     // Publish event for knowledge ingestion
@@ -153,11 +467,24 @@ public class PitchService {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
+    PitchStatus oldStatus = pitch.getStatus();
     pitch.setStatus(status);
     Pitch saved = pitchRepository.save(pitch);
 
     // Invalidate risk analysis cache since status changed
     invalidateCacheForPitch(saved);
+
+    // Publish event for narrative auto-regeneration if status changed significantly
+    if (oldStatus != status && saved.getCycle() != null) {
+      eventPublisher.publishEvent(new PitchStatusChangedEvent(
+          this,
+          saved.getId(),
+          saved.getCycle().getId(),
+          saved.getTitle(),
+          oldStatus != null ? oldStatus.name() : null,
+          status.name()
+      ));
+    }
 
     return toDTO(saved);
   }
@@ -216,24 +543,114 @@ public class PitchService {
     if (totalHours == null)
       totalHours = 0.0;
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
+    // Calculate team capacity and busiest person
+    Integer teamMemberCount = null;
+    Double totalBudgetPersonDays = null;
+    Double budgetUtilizationPercent = null;
+    PitchDTO.BusiestPersonDTO busiestPerson = null;
+    
+    if (pitch.getTeam() != null && pitch.getAppetiteDays() != null) {
+      var team = pitch.getTeam();
+      var teamBudget = capacityConfigService.calculateTeamBudget(team, pitch.getAppetiteDays());
+      
+      // Get hours spent per person from work logs
+      Map<Long, Double> personHoursMap = workLogRepository.findByPitchId(pitch.getId()).stream()
+          .filter(wl -> wl.getPerson() != null)
+          .collect(java.util.stream.Collectors.groupingBy(
+              wl -> wl.getPerson().getId(),
+              java.util.stream.Collectors.summingDouble(wl -> wl.getHoursSpent() != null ? wl.getHoursSpent().doubleValue() : 0.0)
+          ));
+      
+      // Calculate average hours per day for person-days conversion
+      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ? 
+          capacityConfigService.getOrganizationDefaultHoursPerDay() :
+          teamBudget.getTotalDailyCapacityHours() / teamBudget.getMemberCount();
+      
+      // Find busiest member (highest utilization)
+      var busiestMember = teamBudget.getMemberBudgets().stream()
+          .map(pb -> {
+            double hoursSpent = personHoursMap.getOrDefault(pb.getPersonId(), 0.0);
+            double utilization = pb.getTotalBudgetHours() > 0 ? 
+                (hoursSpent / pb.getTotalBudgetHours()) * 100 : 0;
+            return new Object() {
+              final Long personId = pb.getPersonId();
+              final String personName = pb.getPersonName();
+              final String role = pb.getRole() != null ? pb.getRole().name() : null;
+              final Double hoursPerDay = pb.getHoursPerDay();
+              final String capacitySource = pb.getCapacitySource();
+              final Double totalBudgetHours = pb.getTotalBudgetHours();
+              final Double spent = hoursSpent;
+              final Double util = Math.round(utilization * 10.0) / 10.0;
+              final Boolean overBudget = hoursSpent > pb.getTotalBudgetHours();
+            };
+          })
+          .max((a, b) -> Double.compare(a.util, b.util))
+          .orElse(null);
+      
+      if (busiestMember != null) {
+        busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+            .personId(busiestMember.personId)
+            .personName(busiestMember.personName)
+            .role(busiestMember.role)
+            .hoursPerDay(busiestMember.hoursPerDay)
+            .capacitySource(busiestMember.capacitySource)
+            .totalBudgetHours(busiestMember.totalBudgetHours)
+            .hoursSpent(busiestMember.spent)
+            .utilizationPercent(busiestMember.util)
+            .isOverBudget(busiestMember.overBudget)
+            .build();
+      }
+      
+      // Calculate budget metrics
+      teamMemberCount = teamBudget.getMemberCount();
+      totalBudgetPersonDays = avgHoursPerDay > 0 ? 
+          Math.round((teamBudget.getTotalBudgetHours() / avgHoursPerDay) * 10.0) / 10.0 : 0;
+      double totalPersonDaysSpent = avgHoursPerDay > 0 ? totalHours / avgHoursPerDay : 0;
+      budgetUtilizationPercent = totalBudgetPersonDays > 0 ? 
+          Math.round((totalPersonDaysSpent / totalBudgetPersonDays) * 1000.0) / 10.0 : 0;
+    }
+
+    // Handle null cycle for pre-cycle pitches (IDEA, DRAFT, SHAPED)
+    Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    String cycleName = pitch.getCycle() != null ? pitch.getCycle().getName() : null;
+    Long projectId = null;
+    String projectName = null;
+    String projectKey = null;
+    
+    if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+      projectId = pitch.getCycle().getProject().getId();
+      projectName = pitch.getCycle().getProject().getName();
+      projectKey = pitch.getCycle().getProject().getProjectKey();
+    }
+
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
-        .appetiteDays(pitch.getAppetiteDays()).cycleId(pitch.getCycle().getId())
-        .cycleName(pitch.getCycle().getName())
-        .projectId(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getId() : null)
-        .projectName(pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getName() : null)
-        .projectKey(
-            pitch.getCycle().getProject() != null ? pitch.getCycle().getProject().getProjectKey() : null)
+        .appetiteDays(pitch.getAppetiteDays()).cycleId(cycleId)
+        .cycleName(cycleName)
+        .projectId(projectId)
+        .projectName(projectName)
+        .projectKey(projectKey)
         .teamId(pitch.getTeam() != null ? pitch.getTeam().getId() : null)
         .teamName(pitch.getTeam() != null ? pitch.getTeam().getName() : null).status(pitch.getStatus())
         .createdAt(pitch.getCreatedAt()).updatedAt(pitch.getUpdatedAt()).totalHoursSpent(totalHours)
         .appetiteHours(appetiteHours).progressPercentage(Math.min(progress, 100))
+        // Team capacity and budget
+        .teamMemberCount(teamMemberCount)
+        .totalBudgetPersonDays(totalBudgetPersonDays)
+        .budgetUtilizationPercent(budgetUtilizationPercent)
+        .busiestPerson(busiestPerson)
         // Shape Up fields
         .problemStatement(pitch.getProblemStatement()).solution(pitch.getSolution())
         .rabbitHoles(pitch.getRabbitHoles()).risks(pitch.getRisks()).noGos(pitch.getNoGos())
         .wireframeLinks(pitch.getWireframeLinks())
+        // Epic and release fields (roadmap)
+        .epicId(pitch.getEpic() != null ? pitch.getEpic().getId() : null)
+        .epicName(pitch.getEpic() != null ? pitch.getEpic().getName() : null)
+        .targetReleaseId(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getId() : null)
+        .targetReleaseName(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getName() : null)
+        .targetReleaseVersion(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getVersion() : null)
         // Circuit breaker fields
         .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
         .circuitBreakerReason(pitch.getCircuitBreakerReason()).circuitBreakerDate(pitch.getCircuitBreakerDate())

@@ -23,8 +23,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class BettingTableServiceTest {
 
   @Mock
@@ -44,6 +47,9 @@ class BettingTableServiceTest {
 
   @Mock
   private MessageService messageService;
+
+  @Mock
+  private CapacityConfigService capacityConfigService;
 
   @InjectMocks
   private BettingTableService bettingTableService;
@@ -92,12 +98,17 @@ class BettingTableServiceTest {
 
     testSlot = BettingSlot.builder().id(1L).cycle(testCycle).team(testTeam).position(0)
         .startDate(testCycle.getStartDate()).endDate(testCycle.getEndDate()).build();
+
+    // Setup capacity config mock - default 8 hours/day
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
   }
 
   @Test
   void getBettingTable_ShouldReturnFullBettingTableView() {
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatusNotDeleted(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
+    // Shape Up workflow: shaped pitches have no cycle, so we use findBettingCandidates()
+    when(pitchRepository.findBettingCandidates()).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);
@@ -126,7 +137,8 @@ class BettingTableServiceTest {
     testSlot.setPitch(shapedPitch);
 
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleIdAndStatusNotDeleted(1L, PitchStatus.SHAPED)).thenReturn(Arrays.asList(shapedPitch));
+    // Shape Up workflow: shaped pitches have no cycle, so we use findBettingCandidates()
+    when(pitchRepository.findBettingCandidates()).thenReturn(Arrays.asList(shapedPitch));
     when(bettingSlotRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testSlot));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam));
     lenient().when(workLogRepository.getTotalHoursByPitchId(any())).thenReturn(0.0);

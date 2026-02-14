@@ -21,6 +21,7 @@ public class TeamService {
 
   private final TeamRepository teamRepository;
   private final CycleRepository cycleRepository;
+  private final CapacityConfigService capacityConfigService;
 
   public List<TeamDTO> getAllTeams() {
     return teamRepository.findAllWithAssignments().stream().map(this::toDTO).collect(Collectors.toList());
@@ -45,6 +46,20 @@ public class TeamService {
       team.setCycle(cycle);
     }
 
+    // Set capacity overrides if provided
+    if (request.getHoursPerDayOverride() != null) {
+      if (request.getHoursPerDayOverride() < 1 || request.getHoursPerDayOverride() > 24) {
+        throw new IllegalArgumentException("Hours per day must be between 1 and 24");
+      }
+      team.setHoursPerDayOverride(request.getHoursPerDayOverride());
+    }
+    if (request.getWorkingDaysPerWeekOverride() != null) {
+      if (request.getWorkingDaysPerWeekOverride() < 1 || request.getWorkingDaysPerWeekOverride() > 7) {
+        throw new IllegalArgumentException("Working days per week must be between 1 and 7");
+      }
+      team.setWorkingDaysPerWeekOverride(request.getWorkingDaysPerWeekOverride());
+    }
+
     Team saved = teamRepository.save(team);
     return toDTO(saved);
   }
@@ -61,6 +76,20 @@ public class TeamService {
       team.setCycle(cycle);
     }
 
+    // Update capacity overrides
+    if (request.getHoursPerDayOverride() != null) {
+      if (request.getHoursPerDayOverride() < 1 || request.getHoursPerDayOverride() > 24) {
+        throw new IllegalArgumentException("Hours per day must be between 1 and 24");
+      }
+      team.setHoursPerDayOverride(request.getHoursPerDayOverride());
+    }
+    if (request.getWorkingDaysPerWeekOverride() != null) {
+      if (request.getWorkingDaysPerWeekOverride() < 1 || request.getWorkingDaysPerWeekOverride() > 7) {
+        throw new IllegalArgumentException("Working days per week must be between 1 and 7");
+      }
+      team.setWorkingDaysPerWeekOverride(request.getWorkingDaysPerWeekOverride());
+    }
+
     Team saved = teamRepository.save(team);
     return toDTO(saved);
   }
@@ -75,6 +104,33 @@ public class TeamService {
             .collect(Collectors.toList())
         : List.of();
 
+    // Resolve effective capacity values
+    CapacityConfigService.CapacityResolution hoursResolution = 
+        team.getHoursPerDayOverride() != null 
+            ? new CapacityConfigService.CapacityResolution(team.getHoursPerDayOverride(), "team")
+            : new CapacityConfigService.CapacityResolution(
+                capacityConfigService.getOrganizationDefaultHoursPerDay(), "organization");
+    
+    CapacityConfigService.CapacityResolution daysResolution = 
+        capacityConfigService.getEffectiveWorkingDaysPerWeek(team);
+
+    // Calculate team capacity summary
+    double totalDailyCapacity = team.getAssignments() != null 
+        ? team.getAssignments().stream()
+            .filter(a -> a.getIsActive() != null && a.getIsActive())
+            .mapToDouble(a -> capacityConfigService.getEffectiveHoursPerDay(a).value())
+            .sum()
+        : 0;
+
+    // Determine capacity source for the team
+    String capacitySource = determineCapacitySource(team);
+
+    TeamDTO.TeamCapacitySummary capacitySummary = TeamDTO.TeamCapacitySummary.builder()
+        .memberCount(assignmentDTOs.size())
+        .totalDailyCapacityHours(totalDailyCapacity)
+        .capacitySource(capacitySource)
+        .build();
+
     return TeamDTO.builder().id(team.getId()).name(team.getName())
         .cycleId(team.getCycle() != null ? team.getCycle().getId() : null)
         .cycleName(team.getCycle() != null ? team.getCycle().getName() : null)
@@ -87,14 +143,44 @@ public class TeamService {
         .projectKey(team.getCycle() != null && team.getCycle().getProject() != null
             ? team.getCycle().getProject().getProjectKey()
             : null)
+        .hoursPerDayOverride(team.getHoursPerDayOverride())
+        .workingDaysPerWeekOverride(team.getWorkingDaysPerWeekOverride())
+        .effectiveHoursPerDay(hoursResolution.value())
+        .effectiveWorkingDaysPerWeek((int) daysResolution.value())
+        .capacitySummary(capacitySummary)
         .assignments(assignmentDTOs).build();
   }
 
+  private String determineCapacitySource(Team team) {
+    if (team.getAssignments() == null || team.getAssignments().isEmpty()) {
+      return team.getHoursPerDayOverride() != null ? "team" : "organization";
+    }
+
+    List<String> sources = team.getAssignments().stream()
+        .filter(a -> a.getIsActive() != null && a.getIsActive())
+        .map(a -> capacityConfigService.getEffectiveHoursPerDay(a).source())
+        .distinct()
+        .toList();
+
+    if (sources.size() == 1) {
+      return sources.get(0);
+    }
+    return "mixed";
+  }
+
   private TeamAssignmentDTO toAssignmentDTO(TeamAssignment assignment) {
+    // Resolve effective capacity
+    CapacityConfigService.CapacityResolution capacityResolution = 
+        capacityConfigService.getEffectiveHoursPerDay(assignment);
+
     return TeamAssignmentDTO.builder().id(assignment.getId()).personId(assignment.getPerson().getId())
         .personName(assignment.getPerson().getName()).teamId(assignment.getTeam().getId())
         .teamName(assignment.getTeam().getName()).role(assignment.getRole())
         .startDate(assignment.getStartDate()).endDate(assignment.getEndDate())
-        .isActive(assignment.getIsActive()).build();
+        .isActive(assignment.getIsActive())
+        .hoursPerDayOverride(assignment.getHoursPerDayOverride())
+        .effectiveHoursPerDay(capacityResolution.value())
+        .capacitySource(capacityResolution.source())
+        .build();
   }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, Paperclip } from 'lucide-react';
 import { useProject } from '../contexts';
+import { MediaAttachmentUpload } from './MediaAttachmentUpload';
 import {
   BugReport,
   CreateBugReportRequest,
@@ -14,6 +15,7 @@ import {
 } from '../types';
 import { hillChartApi } from '../services/hillChartApi';
 import { taskService } from '../services/taskService';
+import { documentService } from '../services/documentService';
 import api from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
 import {
@@ -96,6 +98,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [searchingScopes, setSearchingScopes] = useState(false);
   const [searchingTasks, setSearchingTasks] = useState(false);
   const [loadingPeople, setLoadingPeople] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   
   // Debounce search queries to avoid excessive API calls (uses useDebounce default delay of 300ms defined in the hook)
   const debouncedScopeSearch = useDebounce(scopeSearch);
@@ -128,6 +131,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       });
       setTagInput('');
       setError(null);
+      setPendingAttachments([]);
       loadPeople();
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
@@ -281,7 +285,23 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       if (isEdit) {
         await onSubmit(formData as UpdateBugReportRequest);
       } else {
-        await onSubmit(formData as CreateBugReportRequest);
+        // Create the bug first
+        const createdBug = await onSubmit(formData as CreateBugReportRequest);
+        
+        // Upload any pending attachments if bug was created successfully
+        if (pendingAttachments.length > 0 && createdBug && typeof createdBug === 'object' && 'id' in createdBug) {
+          const bugId = (createdBug as BugReport).id;
+          try {
+            // Upload all pending attachments
+            await Promise.all(
+              pendingAttachments.map(file => documentService.uploadBugAttachment(bugId, file))
+            );
+          } catch (uploadErr) {
+            console.error('Failed to upload attachments:', uploadErr);
+            // Don't fail the whole operation if attachment upload fails
+            // The bug was created successfully, user can add attachments later
+          }
+        }
       }
       onClose();
     } catch (err) {
@@ -600,6 +620,29 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                   </Badge>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Attachments Section */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              {t('bugAttachments.title')}
+            </Label>
+            {isEdit && bugReport?.id ? (
+              <MediaAttachmentUpload
+                bugId={bugReport.id}
+                disabled={loading}
+                compact
+              />
+            ) : (
+              <MediaAttachmentUpload
+                bugId={null}
+                disabled={loading}
+                compact
+                pendingFiles={pendingAttachments}
+                onPendingFilesChange={setPendingAttachments}
+              />
             )}
           </div>
 

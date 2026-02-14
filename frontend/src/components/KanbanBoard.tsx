@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Task, TaskStatus, TaskPriority } from '../types';
+import { useBreakpointHelpers } from '../hooks/useBreakpoint';
 
 // Define the columns for Kanban board based on TaskStatus
 const KANBAN_COLUMNS: { status: TaskStatus; labelKey: string; color: string }[] = [
@@ -281,7 +282,11 @@ function KanbanColumn({
   return (
     <div 
       className={cn(
-        "flex-shrink-0 w-72 bg-muted/30 rounded-lg p-3 transition-colors",
+        "flex-shrink-0 bg-muted/30 rounded-lg p-3 transition-colors",
+        // Responsive width: narrower on mobile, wider on desktop
+        "w-[280px] sm:w-72",
+        // Scroll snap alignment for mobile
+        "snap-center",
         isDragOver && "bg-primary/10 ring-2 ring-primary ring-inset"
       )}
       onDragOver={handleDragOver}
@@ -336,6 +341,7 @@ export default function KanbanBoard({
   onToggleColumn
 }: KanbanBoardProps) {
   const { t } = useTranslation();
+  const { isMobile } = useBreakpointHelpers();
 
   if (loading) {
     return (
@@ -431,7 +437,15 @@ export default function KanbanBoard({
       )}
 
       {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div 
+        className={cn(
+          "flex gap-4 overflow-x-auto pb-4",
+          // Mobile: scroll snap for better touch navigation
+          isMobile && "snap-x snap-mandatory scroll-smooth -mx-4 px-4",
+          // Touch-friendly scrolling
+          "touch-pan-x"
+        )}
+      >
         {KANBAN_COLUMNS
           .filter(column => visibleColumnsSet.has(column.status))
           .map(column => (

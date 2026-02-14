@@ -158,6 +158,18 @@ public class BugReport {
   @NotAudited
   private LocalDateTime resolvedAt;
 
+  /** The target release where this bug is expected to be fixed (optional) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "target_release_id")
+  private Release targetRelease;
+
+  /** The release where this bug was actually fixed (may differ from target) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "fixed_in_release_id")
+  private Release fixedInRelease;
+
   @NotAudited
   @Column(nullable = false)
   private LocalDateTime createdAt;

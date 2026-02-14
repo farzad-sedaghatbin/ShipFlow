@@ -2,11 +2,11 @@
 -- This demonstrates a fully completed Shape Up cycle with retro done
 
 -- ===========================================
--- Cycle 6 - Completed Cycle in COOLDOWN (closed)
+-- Cycle 6 - Completed Cycle in COOLDOWN (active for demo)
 -- ===========================================
 
 INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) OVERRIDING SYSTEM VALUE VALUES
-(6, 'Cycle 6 - Completed Sprint', '2025-10-01', '2025-11-15', 'COOLDOWN', 1, false);
+(6, 'Cycle 6 - Completed Sprint', '2025-10-01', '2025-11-30', 'COOLDOWN', 1, true);
 
 -- ===========================================
 -- Teams for Cycle 6
@@ -18,11 +18,11 @@ INSERT INTO teams (id, name, cycle_id) OVERRIDING SYSTEM VALUE VALUES
 
 -- Add team assignments for Cycle 6 teams
 INSERT INTO team_assignments (person_id, team_id, role, start_date, end_date, is_active) VALUES
-(2, 6, 'FRONTEND', '2025-10-01', '2025-11-15', false),
-(3, 6, 'BACKEND', '2025-10-01', '2025-11-15', false),
-(4, 7, 'DESIGNER', '2025-10-01', '2025-11-15', false),
-(5, 7, 'FULLSTACK', '2025-10-01', '2025-11-15', false),
-(6, 6, 'QA', '2025-10-01', '2025-11-15', false);
+(2, 6, 'FRONTEND', '2025-10-01', '2025-11-30', true),
+(3, 6, 'BACKEND', '2025-10-01', '2025-11-30', true),
+(4, 7, 'DESIGNER', '2025-10-01', '2025-11-30', true),
+(5, 7, 'FULLSTACK', '2025-10-01', '2025-11-30', true),
+(6, 6, 'QA', '2025-10-01', '2025-11-30', true);
 
 -- ===========================================
 -- Completed Pitches for Cycle 6 (all DONE)
@@ -141,11 +141,18 @@ INSERT INTO meetings (pitch_id, type, date_held, dor_ready, dod_ready, notes) VA
 -- Tasks for Cycle 6 (all completed)
 -- ===========================================
 
-INSERT INTO tasks (title, description, status, priority, estimate_hours, actual_hours, cycle_id, assignee_id, pair_assignee_id, created_by_id, due_date, tags, created_at, updated_at) VALUES
-('Update email service documentation', 'Document SendGrid integration and template system', 'DONE', 'MEDIUM', 4.0, 3.5, 6, 3, NULL, 3, '2025-11-08', 'documentation,backend', '2025-10-01 09:00:00', '2025-11-08 16:00:00'),
-('Performance benchmarks for rate limiter', 'Run load tests and document results', 'DONE', 'HIGH', 6.0, 5.5, 6, 6, 3, 6, '2025-10-19', 'testing,performance', '2025-10-01 09:00:00', '2025-10-19 17:00:00'),
-('Accessibility audit for dashboard', 'Ensure dashboard meets WCAG 2.1 AA standards', 'DONE', 'HIGH', 8.0, 9.0, 6, 2, NULL, 4, '2025-11-05', 'accessibility,frontend', '2025-10-01 09:00:00', '2025-11-05 18:00:00'),
-('Audit log retention policy', 'Implement log rotation and archival', 'DONE', 'MEDIUM', 4.0, 4.5, 6, 5, NULL, 5, '2025-11-10', 'backend,infrastructure', '2025-10-01 09:00:00', '2025-11-10 15:00:00');
+INSERT INTO tasks (title, description, status, priority, category, estimate_hours, actual_hours, cycle_id, assignee_id, pair_assignee_id, created_by_id, due_date, tags, created_at, updated_at) VALUES
+('Update email service documentation', 'Document SendGrid integration and template system', 'DONE', 'MEDIUM', 'PITCH_SCOPE', 4.0, 3.5, 6, 3, NULL, 3, '2025-11-08', 'documentation,backend', '2025-10-01 09:00:00', '2025-11-08 16:00:00'),
+('Performance benchmarks for rate limiter', 'Run load tests and document results', 'DONE', 'HIGH', 'PITCH_SCOPE', 6.0, 5.5, 6, 6, 3, 6, '2025-10-19', 'testing,performance', '2025-10-01 09:00:00', '2025-10-19 17:00:00'),
+('Accessibility audit for dashboard', 'Ensure dashboard meets WCAG 2.1 AA standards', 'DONE', 'HIGH', 'PITCH_SCOPE', 8.0, 9.0, 6, 2, NULL, 4, '2025-11-05', 'accessibility,frontend', '2025-10-01 09:00:00', '2025-11-05 18:00:00'),
+('Audit log retention policy', 'Implement log rotation and archival', 'DONE', 'MEDIUM', 'PITCH_SCOPE', 4.0, 4.5, 6, 5, NULL, 5, '2025-11-10', 'backend,infrastructure', '2025-10-01 09:00:00', '2025-11-10 15:00:00'),
+
+-- Tech debt and improvement tasks for cooldown
+('Upgrade Spring Boot dependencies', 'Update to latest stable Spring Boot 3.x and resolve deprecation warnings', 'DONE', 'HIGH', 'DEBT_IMPROVEMENT', 6.0, 5.0, 6, 3, NULL, 3, '2025-11-20', 'tech-debt,backend,dependencies', '2025-10-15 09:00:00', '2025-11-20 14:00:00'),
+('Remove unused React components', 'Clean up deprecated components and unused code from frontend', 'DONE', 'MEDIUM', 'DEBT_IMPROVEMENT', 4.0, 4.0, 6, 2, NULL, 2, '2025-11-18', 'tech-debt,frontend,refactoring', '2025-10-15 09:00:00', '2025-11-18 16:00:00'),
+('Add API integration tests', 'Expand test coverage for REST API endpoints', 'DONE', 'MEDIUM', 'DEBT_IMPROVEMENT', 8.0, 7.5, 6, 6, NULL, 6, '2025-11-25', 'improvement,testing,backend', '2025-10-15 09:00:00', '2025-11-25 17:00:00'),
+('Optimize database indexes', 'Analyze slow queries and add missing indexes', 'DONE', 'HIGH', 'DEBT_IMPROVEMENT', 5.0, 6.0, 6, 5, 3, 5, '2025-11-22', 'tech-debt,database,performance', '2025-10-15 09:00:00', '2025-11-22 15:00:00'),
+('Setup code quality dashboard', 'Configure SonarQube for continuous code quality monitoring', 'DONE', 'MEDIUM', 'DEBT_IMPROVEMENT', 3.0, 3.5, 6, 3, NULL, 3, '2025-11-15', 'improvement,tooling,devops', '2025-10-15 09:00:00', '2025-11-15 11:00:00');
 
 -- ===========================================
 -- Completed Retrospective for Cycle 6

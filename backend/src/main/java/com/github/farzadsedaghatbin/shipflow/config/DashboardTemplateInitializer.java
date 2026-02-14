@@ -114,9 +114,9 @@ public class DashboardTemplateInitializer implements CommandLineRunner {
         .createdBy(owner).build();
     dashboard = customDashboardRepository.save(dashboard);
 
-    // Widget 1: My Tasks
+    // Widget 1: My Active Tasks - larger size for better visibility
     createWidget(dashboard, "TABLE", 0, 0, 8, 4, 1,
-        "{\"title\":\"My Tasks\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"TASK_LIST\",\"sortBy\":\"priority\",\"sortOrder\":\"desc\",\"limit\":10,\"filters\":[{\"field\":\"status\",\"operator\":\"in\",\"value\":[\"TODO\",\"IN_PROGRESS\"]}]}");
+        "{\"title\":\"My Active Tasks\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"TASK_LIST\",\"sortBy\":\"priority\",\"sortOrder\":\"desc\",\"limit\":10,\"filters\":[{\"field\":\"status\",\"operator\":\"in\",\"value\":[\"TODO\",\"IN_PROGRESS\"]}]}");
 
     // Widget 2: Recent Activity
     createWidget(dashboard, "TABLE", 8, 0, 4, 4, 2,

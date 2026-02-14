@@ -2,7 +2,6 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LogIn,
-  TrendingUp,
   BarChart3,
   Users,
   Brain,
@@ -14,6 +13,14 @@ import {
   ArrowRight,
   FileText,
   BookOpen,
+  Linkedin,
+  Mail,
+  Code2,
+  Activity,
+  Sparkles,
+  Layers,
+  Calendar,
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -38,12 +45,12 @@ export default function Landing() {
 
   const features = [
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Layers className="h-10 w-10" />,
       title: t('landing.dualProjectModes'),
       description: t('landing.dualProjectModesDesc'),
     },
     {
-      icon: <TrendingUp className="h-10 w-10" />,
+      icon: <Calendar className="h-10 w-10" />,
       title: t('landing.cycleManagement'),
       description: t('landing.cycleManagementDesc'),
     },
@@ -51,6 +58,11 @@ export default function Landing() {
       icon: <BarChart3 className="h-10 w-10" />,
       title: t('landing.hillCharts'),
       description: t('landing.hillChartsDesc'),
+    },
+    {
+      icon: <Target className="h-10 w-10" />,
+      title: t('landing.scopeTaskBridge'),
+      description: t('landing.scopeTaskBridgeDesc'),
     },
     {
       icon: <Brain className="h-10 w-10" />,
@@ -63,7 +75,7 @@ export default function Landing() {
       description: t('landing.wiseArchitectureDesc'),
     },
     {
-      icon: <Target className="h-10 w-10" />,
+      icon: <Heart className="h-10 w-10" />,
       title: t('landing.pitchHealthSummary'),
       description: t('landing.pitchHealthSummaryDesc'),
     },
@@ -91,6 +103,11 @@ export default function Landing() {
       icon: <FileText className="h-10 w-10" />,
       title: t('landing.reportsAnalytics'),
       description: t('landing.reportsAnalyticsDesc'),
+    },
+    {
+      icon: <Activity className="h-10 w-10" />,
+      title: t('landing.cycleSignals'),
+      description: t('landing.cycleSignalsDesc'),
     },
     {
       icon: <BookOpen className="h-10 w-10" />,
@@ -175,6 +192,14 @@ export default function Landing() {
                 >
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.compareToCompetitors')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/releases')}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {t('landing.whatsNew')}
                 </Button>
               </div>
 
@@ -348,6 +373,98 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* About Author Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              {t('landing.aboutAuthorTitle')}
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              {t('landing.aboutAuthorSubtitle')}
+            </p>
+          </div>
+
+          <Card className="max-w-3xl mx-auto">
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* Author Avatar */}
+                <div className="flex-shrink-0">
+                  <img 
+                    src="https://media.licdn.com/dms/image/v2/D4E03AQEr4IZ0OrttkA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1715346862132?e=1772064000&v=beta&t=j2ylrKyVYfQGhbGFloCUyXG6lWxMKxlSe_hHxtr8RTk"
+                    alt="Farzad Sedaghatbin"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+
+                {/* Author Info */}
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    {t('landing.authorName')}
+                  </h3>
+                  <p className="text-primary font-medium mb-4">
+                    {t('landing.authorRole')}
+                  </p>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    {t('landing.authorBio')}
+                  </p>
+
+                  {/* Social Links */}
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="https://github.com/farzad-sedaghatbin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Github className="h-4 w-4 mr-2" />
+                        GitHub
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="https://www.linkedin.com/in/farzad-sedaghatbin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Linkedin className="h-4 w-4 mr-2" />
+                        LinkedIn
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="mailto:farzad.sedaghatbin@gmail.com"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        {t('landing.contact')}
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-8" />
+
+              {/* Skills/Expertise */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
+                  <Code2 className="h-4 w-4" />
+                  {t('landing.authorExpertise')}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {['Digital Banking', 'Fintech', 'AI', 'Java', 'Java EE', 'Spring Boot', 'Quarkus', 'React', 'React Native', 'Cloud-Native', 'Solution Architecture', 'Nexus/Scrum', 'Shape Up'].map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 max-w-3xl text-center">
@@ -378,6 +495,12 @@ export default function Landing() {
               © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
             </p>
             <nav className="flex gap-6">
+              <button
+                onClick={() => navigate('/releases')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t('landing.whatsNew')}
+              </button>
               <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
                 target="_blank"

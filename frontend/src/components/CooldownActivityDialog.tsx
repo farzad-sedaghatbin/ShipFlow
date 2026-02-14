@@ -25,12 +25,15 @@ import {
   CooldownActivityStatus,
   CreateCooldownActivityRequest,
   UpdateCooldownActivityRequest,
-  cooldownActivityService,
 } from '../services/cooldownActivityService';
 import { personService } from '../services/personService';
 import { Person } from '../types';
 import { useToast } from '../contexts';
 import { Loader2 } from 'lucide-react';
+import {
+  useCreateCooldownActivity,
+  useUpdateCooldownActivity,
+} from '../hooks/useCooldownActivities';
 
 interface CooldownActivityDialogProps {
   open: boolean;
@@ -48,9 +51,12 @@ export default function CooldownActivityDialog({
   activity,
 }: CooldownActivityDialogProps) {
   const { t } = useTranslation();
-  const { showSuccess, showError } = useToast();
-  const [loading, setLoading] = useState(false);
+  const { showError } = useToast();
   const [people, setPeople] = useState<Person[]>([]);
+
+  // React Query mutations
+  const createMutation = useCreateCooldownActivity();
+  const updateMutation = useUpdateCooldownActivity();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -98,44 +104,46 @@ export default function CooldownActivityDialog({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.title.trim()) {
       showError(t('cooldownActivity.titleRequired'));
       return;
     }
 
-    setLoading(true);
-    try {
-      if (activity) {
-        const request: UpdateCooldownActivityRequest = {
-          title: formData.title,
-          description: formData.description || undefined,
-          activityType: formData.activityType,
-          status: formData.status,
-          assigneeId: formData.assigneeId,
-          estimatedHours: formData.estimatedHours,
-          actualHours: formData.actualHours,
-        };
-        await cooldownActivityService.updateActivity(activity.id, request);
-        showSuccess(t('cooldownActivity.updateSuccess'));
-      } else {
-        const request: CreateCooldownActivityRequest = {
-          cycleId,
-          title: formData.title,
-          description: formData.description || undefined,
-          activityType: formData.activityType,
-          assigneeId: formData.assigneeId,
-          estimatedHours: formData.estimatedHours,
-        };
-        await cooldownActivityService.createActivity(request);
-        showSuccess(t('cooldownActivity.createSuccess'));
-      }
-      onSave();
-      onClose();
-    } catch (error: any) {
-      showError(error.response?.data?.message || t('cooldownActivity.saveError'));
-    } finally {
-      setLoading(false);
+    if (activity) {
+      const request: UpdateCooldownActivityRequest = {
+        title: formData.title,
+        description: formData.description || undefined,
+        activityType: formData.activityType,
+        status: formData.status,
+        assigneeId: formData.assigneeId,
+        estimatedHours: formData.estimatedHours,
+        actualHours: formData.actualHours,
+      };
+      updateMutation.mutate(
+        { id: activity.id, data: request, cycleId },
+        {
+          onSuccess: () => {
+            onSave();
+            onClose();
+          },
+        }
+      );
+    } else {
+      const request: CreateCooldownActivityRequest = {
+        cycleId,
+        title: formData.title,
+        description: formData.description || undefined,
+        activityType: formData.activityType,
+        assigneeId: formData.assigneeId,
+        estimatedHours: formData.estimatedHours,
+      };
+      createMutation.mutate(request, {
+        onSuccess: () => {
+          onSave();
+          onClose();
+        },
+      });
     }
   };
 
@@ -189,23 +197,38 @@ export default function CooldownActivityDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={CooldownActivityType.TECH_DEBT}>
+                    {t('cooldownActivity.types.techDebt')}
+                  </SelectItem>
                   <SelectItem value={CooldownActivityType.BUG_FIX}>
                     {t('cooldownActivity.types.bugFix')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.TECH_DEBT}>
-                    {t('cooldownActivity.types.techDebt')}
+                  <SelectItem value={CooldownActivityType.REFACTORING}>
+                    {t('cooldownActivity.types.refactoring')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.KICKOFF_PREP}>
+                    {t('cooldownActivity.types.kickoffPrep')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.LEARNING}>
+                    {t('cooldownActivity.types.learning')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.QA}>
+                    {t('cooldownActivity.types.qa')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.DOCUMENTATION}>
+                    {t('cooldownActivity.types.documentation')}
+                  </SelectItem>
+                  <SelectItem value={CooldownActivityType.INFRASTRUCTURE}>
+                    {t('cooldownActivity.types.infrastructure')}
                   </SelectItem>
                   <SelectItem value={CooldownActivityType.RESEARCH}>
                     {t('cooldownActivity.types.research')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.EXPERIMENT}>
-                    {t('cooldownActivity.types.experiment')}
+                  <SelectItem value={CooldownActivityType.PLANNING}>
+                    {t('cooldownActivity.types.planning')}
                   </SelectItem>
-                  <SelectItem value={CooldownActivityType.TRAINING}>
-                    {t('cooldownActivity.types.training')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.DOCUMENTATION}>
-                    {t('cooldownActivity.types.documentation')}
+                  <SelectItem value={CooldownActivityType.OTHER}>
+                    {t('cooldownActivity.types.other')}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -234,8 +257,11 @@ export default function CooldownActivityDialog({
                     <SelectItem value={CooldownActivityStatus.COMPLETED}>
                       {t('cooldownActivity.statuses.completed')}
                     </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.CANCELLED}>
-                      {t('cooldownActivity.statuses.cancelled')}
+                    <SelectItem value={CooldownActivityStatus.SKIPPED}>
+                      {t('cooldownActivity.statuses.skipped')}
+                    </SelectItem>
+                    <SelectItem value={CooldownActivityStatus.BLOCKED}>
+                      {t('cooldownActivity.statuses.blocked')}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -313,11 +339,20 @@ export default function CooldownActivityDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={createMutation.isPending || updateMutation.isPending}
+          >
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+          <Button
+            onClick={handleSubmit}
+            disabled={createMutation.isPending || updateMutation.isPending}
+          >
+            {(createMutation.isPending || updateMutation.isPending) && (
+              <Loader2 className="me-2 h-4 w-4 animate-spin" />
+            )}
             {activity ? t('common.update') : t('common.create')}
           </Button>
         </DialogFooter>

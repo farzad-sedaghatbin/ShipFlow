@@ -57,6 +57,9 @@ class PitchHealthServiceTest {
   @Mock
   private RiskAnalysisService riskAnalysisService;
 
+  @Mock
+  private CapacityConfigService capacityConfigService;
+
   @InjectMocks
   private PitchHealthService pitchHealthService;
 
@@ -79,12 +82,36 @@ class PitchHealthServiceTest {
     testPitch = Pitch.builder().id(1L).title("Test Pitch").description("Test Description").appetiteDays(14)
         .cycle(testCycle).team(testTeam).status(PitchStatus.IN_PROGRESS)
         .createdAt(LocalDateTime.now().minusDays(7)).updatedAt(LocalDateTime.now()).build();
+
+    // Setup capacity config mock - dynamically calculate hours based on appetite
+    lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class)))
+        .thenAnswer(invocation -> {
+          Pitch pitch = invocation.getArgument(0);
+          return pitch.getAppetiteDays() * 8.0; // 8 hours/day default
+        });
+    lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    
+    // Mock TeamBudget for risk calculation
+    CapacityConfigService.TeamBudget mockTeamBudget = CapacityConfigService.TeamBudget.builder()
+        .teamId(1L)
+        .teamName("Test Team")
+        .memberCount(2)
+        .appetiteDays(14)
+        .totalBudgetHours(224.0) // 2 members * 14 days * 8 hours
+        .totalDailyCapacityHours(16.0) // 2 members * 8 hours
+        .capacitySource("organization")
+        .memberBudgets(Arrays.asList())
+        .totalHoursSpent(0.0)
+        .totalHoursRemaining(224.0)
+        .utilizationPercentage(0.0)
+        .build();
+    lenient().when(capacityConfigService.calculateTeamBudget(any(Team.class), anyInt())).thenReturn(mockTeamBudget);
   }
 
   @Test
   void getPitchHealth_ShouldReturnHealthSummary_WhenPitchExists() {
     // Given
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -100,13 +127,13 @@ class PitchHealthServiceTest {
     assertThat(result.getRiskLevel()).isNotNull();
     assertThat(result.getRiskTrend()).isNotNull();
     assertThat(result.getAppetiteUsedPercent()).isGreaterThanOrEqualTo(0.0);
-    verify(pitchRepository).findById(1L);
+    verify(pitchRepository).findByIdNotDeleted(1L);
   }
 
   @Test
   void getPitchHealth_ShouldThrowException_WhenPitchNotFound() {
     // Given
-    when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
+    when(pitchRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
 
     // When / Then
     assertThatThrownBy(() -> pitchHealthService.getPitchHealth(999L)).isInstanceOf(RuntimeException.class)
@@ -116,7 +143,7 @@ class PitchHealthServiceTest {
   @Test
   void calculateRiskLevel_ShouldReturnCritical_WhenMultipleCriticalBugs() {
     // Given - Pitch with 3 critical bugs
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -137,7 +164,7 @@ class PitchHealthServiceTest {
   void calculateRiskLevel_ShouldReturnHigh_WhenOverBudget() {
     // Given - Pitch using 130% of budget
     testPitch.setAppetiteDays(10); // 80 hours budget
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(104.0); // 130% usage
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -158,7 +185,7 @@ class PitchHealthServiceTest {
     testCycle.setStartDate(today.minusDays(21)); // 3 weeks ago
     testCycle.setEndDate(today.plusDays(7)); // 1 week left (75% through cycle)
 
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -184,7 +211,7 @@ class PitchHealthServiceTest {
     testCycle.setEndDate(LocalDate.now().plusDays(21)); // Plenty of time
     testPitch.setStatus(PitchStatus.IN_PROGRESS);
 
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(30.0); // ~27% of 112 hours
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -205,7 +232,7 @@ class PitchHealthServiceTest {
   @Test
   void calculateRiskTrend_ShouldReturnWorsening_WhenNewCriticalBugs() {
     // Given - Recent critical bugs filed
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(hillChartPointRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -226,7 +253,7 @@ class PitchHealthServiceTest {
   @Test
   void calculateRiskTrend_ShouldReturnImproving_WhenRecentProgress() {
     // Given - Recent hill chart updates showing progress
-    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.getTotalHoursByPitchId(1L)).thenReturn(50.0);
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
     when(meetingRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -251,12 +278,12 @@ class PitchHealthServiceTest {
         .status(PitchStatus.DONE).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testPitch, pitch2));
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch, pitch2));
 
     when(workLogRepository.getTotalHoursByPitchIds(any())).thenAnswer(invocation -> {
       List<Object[]> result = new java.util.ArrayList<>();
-      result.add(new Object[]{1L, 56.0});
-      result.add(new Object[]{2L, 40.0});
+      result.add(new Object[] { 1L, 56.0 });
+      result.add(new Object[] { 2L, 40.0 });
       return result;
     });
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -278,10 +305,10 @@ class PitchHealthServiceTest {
   void getCycleHealthSummary_ShouldCalculateRiskBreakdown() {
     // Given - Mix of healthy and at-risk pitches
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testPitch));
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList(testPitch));
     when(workLogRepository.getTotalHoursByPitchIds(any())).thenAnswer(invocation -> {
       List<Object[]> result = new java.util.ArrayList<>();
-      result.add(new Object[]{1L, 50.0});
+      result.add(new Object[] { 1L, 50.0 });
       return result;
     });
     when(bugReportRepository.findByPitchId(1L)).thenReturn(Arrays.asList());
@@ -305,7 +332,7 @@ class PitchHealthServiceTest {
 
     when(cycleRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(testCycle));
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(pitchRepository.findByCycleId(1L)).thenReturn(Arrays.asList());
+    when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList());
     when(workLogRepository.getTotalHoursByPitchIds(any()))
         .thenAnswer(invocation -> new java.util.ArrayList<Object[]>());
     when(bugReportRepository.findByPitchId(anyLong())).thenReturn(Arrays.asList());

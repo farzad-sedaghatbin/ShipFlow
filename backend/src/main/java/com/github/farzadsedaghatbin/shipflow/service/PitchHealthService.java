@@ -11,7 +11,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.MeetingType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
@@ -83,8 +82,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PitchHealthService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   /**
    * Maximum risk factor weight for hybrid risk scoring.
    *
@@ -116,6 +113,7 @@ public class PitchHealthService {
   private final MeetingRepository meetingRepository;
   private final BugReportRepository bugReportRepository;
   private final HillChartPointRepository hillChartPointRepository;
+  private final CapacityConfigService capacityConfigService;
 
   @Autowired(required = false)
   private RiskAnalysisService riskAnalysisService;
@@ -345,7 +343,7 @@ public class PitchHealthService {
         totalHours = 0.0;
     }
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double appetiteUsed = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
     // Calculate days left
@@ -362,15 +360,132 @@ public class PitchHealthService {
     // Generate status summary
     String statusSummary = generateStatusSummary(pitch, appetiteUsed, daysLeft, qaStatus);
 
-    return PitchHealthDTO.builder().pitchId(pitch.getId()).pitchName(pitch.getTitle())
+    // Build team budget information
+    var teamBudgetInfo = buildTeamBudgetInfo(pitch, totalHours);
+
+    return PitchHealthDTO.builder()
+        .pitchId(pitch.getId())
+        .pitchName(pitch.getTitle())
         .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
         .projectKey(cycle.getProject() != null ? cycle.getProject().getProjectKey() : null)
-        .cycleName(cycle.getName()).riskLevel(riskLevel).riskColor(getRiskColor(riskLevel)).riskTrend(riskTrend)
-        .appetiteUsedPercent(Math.round(appetiteUsed * 10.0) / 10.0).daysLeft(daysLeft)
-        .statusSummary(statusSummary).status(pitch.getStatus().name())
+        .cycleName(cycle.getName())
+        .riskLevel(riskLevel)
+        .riskColor(getRiskColor(riskLevel))
+        .riskTrend(riskTrend)
+        .appetiteUsedPercent(Math.round(appetiteUsed * 10.0) / 10.0)
+        .daysLeft(daysLeft)
+        .statusSummary(statusSummary)
+        .status(pitch.getStatus().name())
         .teamName(pitch.getTeam() != null ? pitch.getTeam().getName() : "Unassigned")
-        .appetiteHours(appetiteHours).actualHours(totalHours).qaStatus(qaStatus)
-        .cycleEndDate(cycle.getEndDate()).build();
+        .appetiteHours(appetiteHours)
+        .actualHours(totalHours)
+        .qaStatus(qaStatus)
+        .cycleEndDate(cycle.getEndDate())
+        // Team budget fields
+        .teamMemberCount(teamBudgetInfo.memberCount)
+        .appetiteDays(pitch.getAppetiteDays())
+        .totalBudgetPersonDays(teamBudgetInfo.totalBudgetPersonDays)
+        .totalHoursSpent(totalHours)
+        .totalPersonDaysSpent(teamBudgetInfo.totalPersonDaysSpent)
+        .budgetUtilizationPercent(teamBudgetInfo.utilizationPercent)
+        .bottleneckMember(teamBudgetInfo.bottleneckMember)
+        .memberBudgets(teamBudgetInfo.memberBudgets)
+        .hasOverBudgetMember(teamBudgetInfo.hasOverBudgetMember)
+        .build();
+  }
+
+  /**
+   * Helper record for team budget calculation results.
+   */
+  private record TeamBudgetInfo(
+      int memberCount,
+      double totalBudgetPersonDays,
+      double totalPersonDaysSpent,
+      double utilizationPercent,
+      PitchHealthDTO.MemberBudgetSummary bottleneckMember,
+      java.util.List<PitchHealthDTO.MemberBudgetSummary> memberBudgets,
+      boolean hasOverBudgetMember) {}
+
+  /**
+   * Build team budget information for a pitch.
+   */
+  private TeamBudgetInfo buildTeamBudgetInfo(Pitch pitch, Double totalHoursSpent) {
+    if (pitch.getTeam() == null || pitch.getAppetiteDays() == null) {
+      return new TeamBudgetInfo(0, 0, 0, 0, null, java.util.List.of(), false);
+    }
+
+    var team = pitch.getTeam();
+    var teamBudget = capacityConfigService.calculateTeamBudget(team, pitch.getAppetiteDays());
+    
+    // Get hours spent per person from work logs
+    Map<Long, Double> personHoursMap = getPersonHoursForPitch(pitch.getId());
+    
+    // Calculate average hours per day for person-days conversion
+    double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ? 
+        capacityConfigService.getOrganizationDefaultHoursPerDay() :
+        teamBudget.getTotalDailyCapacityHours() / teamBudget.getMemberCount();
+    
+    // Convert member budgets to DTOs with actual hours spent
+    java.util.List<PitchHealthDTO.MemberBudgetSummary> memberBudgetDTOs = teamBudget.getMemberBudgets().stream()
+        .map(pb -> {
+          double hoursSpent = personHoursMap.getOrDefault(pb.getPersonId(), 0.0);
+          double hoursRemaining = Math.max(0, pb.getTotalBudgetHours() - hoursSpent);
+          double utilization = pb.getTotalBudgetHours() > 0 ? 
+              (hoursSpent / pb.getTotalBudgetHours()) * 100 : 0;
+          return PitchHealthDTO.MemberBudgetSummary.builder()
+              .personId(pb.getPersonId())
+              .personName(pb.getPersonName())
+              .role(pb.getRole() != null ? pb.getRole().name() : null)
+              .hoursPerDay(pb.getHoursPerDay())
+              .capacitySource(pb.getCapacitySource())
+              .totalBudgetHours(pb.getTotalBudgetHours())
+              .hoursSpent(hoursSpent)
+              .hoursRemaining(hoursRemaining)
+              .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+              .isOverBudget(hoursSpent > pb.getTotalBudgetHours())
+              .build();
+        })
+        .toList();
+    
+    // Find bottleneck member (highest utilization)
+    PitchHealthDTO.MemberBudgetSummary bottleneck = memberBudgetDTOs.stream()
+        .max((a, b) -> Double.compare(a.getUtilizationPercent(), b.getUtilizationPercent()))
+        .orElse(null);
+    
+    // Check for any over-budget members
+    boolean hasOverBudget = memberBudgetDTOs.stream()
+        .anyMatch(m -> Boolean.TRUE.equals(m.getIsOverBudget()));
+    
+    // Calculate person-days
+    double totalBudgetPersonDays = avgHoursPerDay > 0 ? 
+        teamBudget.getTotalBudgetHours() / avgHoursPerDay : 0;
+    double totalPersonDaysSpent = avgHoursPerDay > 0 && totalHoursSpent != null ? 
+        totalHoursSpent / avgHoursPerDay : 0;
+    double utilization = totalBudgetPersonDays > 0 ? 
+        (totalPersonDaysSpent / totalBudgetPersonDays) * 100 : 0;
+    
+    return new TeamBudgetInfo(
+        teamBudget.getMemberCount(),
+        Math.round(totalBudgetPersonDays * 10.0) / 10.0,
+        Math.round(totalPersonDaysSpent * 10.0) / 10.0,
+        Math.round(utilization * 10.0) / 10.0,
+        bottleneck,
+        memberBudgetDTOs,
+        hasOverBudget
+    );
+  }
+
+  /**
+   * Get hours spent by each person on a pitch.
+   */
+  private Map<Long, Double> getPersonHoursForPitch(Long pitchId) {
+    List<WorkLog> workLogs = workLogRepository.findByPitchId(pitchId);
+    return workLogs.stream()
+        .filter(wl -> wl.getPerson() != null)
+        .collect(Collectors.groupingBy(
+            wl -> wl.getPerson().getId(),
+            Collectors.summingDouble(wl -> wl.getHoursSpent() != null ? wl.getHoursSpent().doubleValue() : 0.0)
+        ));
   }
 
   /**
@@ -397,7 +512,7 @@ public class PitchHealthService {
         totalHours = 0.0;
     }
 
-    double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+    double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double appetiteUsed = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
     // Calculate cycle progress
@@ -409,7 +524,7 @@ public class PitchHealthService {
 
     // Enhanced rule-based risk calculation with weighted scoring
     // Calculate individual risk factor scores (0-100 scale)
-    double budgetRisk = calculateBudgetRisk(appetiteUsed, cycleProgress, thresholds);
+    double budgetRisk = calculateBudgetRisk(pitch, appetiteUsed, cycleProgress, totalHours, thresholds);
     double bugsRisk = calculateBugsRisk(pitch, daysElapsed, totalCycleDays, thresholds);
     double scopeRisk = calculateScopeRisk(pitch, cycleProgress, thresholds);
     double timeRisk = calculateTimeRisk(pitch, daysElapsed, totalCycleDays, thresholds);
@@ -441,8 +556,8 @@ public class PitchHealthService {
     return RiskLevel.LOW;
   }
 
-  /** Calculate budget risk score (0-100 scale). */
-  private double calculateBudgetRisk(double appetiteUsed, double cycleProgress,
+  /** Calculate budget risk score (0-100 scale) including individual member analysis. */
+  private double calculateBudgetRisk(Pitch pitch, double appetiteUsed, double cycleProgress, double totalHours,
       com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.RiskThresholds thresholds) {
     double riskScore = 0;
 
@@ -465,6 +580,28 @@ public class PitchHealthService {
       double warningLevel = (appetiteUsed - thresholds.getBudgetWarning())
           / (thresholds.getBudgetOverrun() - thresholds.getBudgetWarning());
       riskScore += 20 + (warningLevel * 30);
+    }
+
+    // NEW: Check individual member budget constraints
+    // Even if team total looks OK, individual members may be over budget
+    if (pitch.getTeam() != null && pitch.getAppetiteDays() != null) {
+      var teamBudgetInfo = buildTeamBudgetInfo(pitch, totalHours);
+      
+      if (teamBudgetInfo.hasOverBudgetMember()) {
+        // At least one member is over their individual budget - add significant risk
+        riskScore += 40;
+        log.debug("Pitch {} has over-budget team member(s), adding 40 to risk score", pitch.getId());
+      } else if (teamBudgetInfo.bottleneckMember() != null) {
+        // Check if bottleneck member is approaching their limit
+        double bottleneckUtilization = teamBudgetInfo.bottleneckMember().getUtilizationPercent();
+        if (bottleneckUtilization > 90) {
+          riskScore += 25; // Bottleneck member nearly exhausted
+          log.debug("Pitch {} bottleneck member at {}% utilization, adding 25 to risk", 
+              pitch.getId(), bottleneckUtilization);
+        } else if (bottleneckUtilization > 75) {
+          riskScore += 10; // Bottleneck member getting close
+        }
+      }
     }
 
     return Math.min(riskScore, 100); // Cap at 100
@@ -679,8 +816,11 @@ public class PitchHealthService {
 
     // Check if there's been any QA-related meeting
     List<Meeting> meetings = meetingRepository.findByPitchId(pitch.getId());
-    boolean hasQAActivity = meetings.stream().anyMatch(m -> m.getType() == MeetingType.DEMO
-        || (m.getNotes() != null && m.getNotes().toLowerCase().contains("qa")));
+    boolean hasQAActivity = meetings.stream().anyMatch(m -> {
+      String type = m.getType() != null ? m.getType().trim().toUpperCase() : "";
+      return "DEMO".equals(type)
+          || (m.getNotes() != null && m.getNotes().toLowerCase().contains("qa"));
+    });
 
     if (hasQAActivity) {
       return "IN_PROGRESS";

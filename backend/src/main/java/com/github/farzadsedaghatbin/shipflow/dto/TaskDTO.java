@@ -39,6 +39,10 @@ public class TaskDTO {
   private Long scopeId;
   private String scopeName;
 
+  // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
+  private Long autoCreatedScopeId;
+  private Boolean showOnHillChart;
+
   private Long assigneeId;
   private String assigneeName;
   private String assigneeAvatarUrl;
@@ -60,6 +64,11 @@ public class TaskDTO {
   private LocalDateTime updatedAt;
 
   private String tags;
+
+  // Target release
+  private Long targetReleaseId;
+  private String targetReleaseName;
+  private String targetReleaseVersion;
 
   // Dependency information
   private java.util.List<TaskDependencyDTO> blockingTasks; // Tasks this task blocks

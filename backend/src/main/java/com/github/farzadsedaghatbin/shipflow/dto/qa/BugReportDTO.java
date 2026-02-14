@@ -56,6 +56,16 @@ public class BugReportDTO {
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
+  // Release tracking
+  private Long targetReleaseId;
+  private String targetReleaseName;
+  private String targetReleaseVersion;
+  private Long fixedInReleaseId;
+  private String fixedInReleaseName;
+  private String fixedInReleaseVersion;
+  /** True if bug was fixed in a later release than target */
+  private Boolean isSlipped;
+
   // Comment count
   private Integer commentCount;
 }

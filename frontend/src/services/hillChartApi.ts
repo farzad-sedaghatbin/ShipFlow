@@ -93,4 +93,27 @@ export const hillChartApi = {
     const response = await api.get<ConfidenceAnalysisDTO>(`/hill-chart/pitch/${pitchId}/confidence`);
     return response.data;
   },
+
+  // Scope-Task Bridge methods for auto-progress control
+  
+  /**
+   * Toggle auto-progress for a scope.
+   * When enabled, the scope position auto-updates based on subtask completion.
+   * When disabled, user controls position manually via drag.
+   */
+  toggleAutoProgress: async (id: number, enabled: boolean): Promise<HillChartPoint> => {
+    const response = await api.put<HillChartPoint>(`/hill-chart/${id}/auto-progress`, null, {
+      params: { enabled },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get the suggested position based on subtask completion without applying it.
+   * Useful for showing the difference between current and suggested position in UI.
+   */
+  getSuggestedPosition: async (id: number): Promise<{ suggestedPosition: number }> => {
+    const response = await api.get<{ suggestedPosition: number }>(`/hill-chart/${id}/suggested-position`);
+    return response.data;
+  },
 };

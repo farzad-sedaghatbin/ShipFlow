@@ -169,4 +169,42 @@ public class RetroController {
     retroService.setRetrospectivesEnabled(projectId, enabled);
     return ResponseEntity.ok(Map.of("enabled", enabled));
   }
+
+  // ==================== ACTION TRACKING (v0.5) ====================
+
+  @PostMapping("/items/{itemId}/acted-on")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'MANAGER')")
+  @Operation(summary = "Mark a retro item as acted upon", 
+      description = "Part of v0.5 - tracks whether teams follow through on retro decisions")
+  public ResponseEntity<RetroItemDTO> markActedOn(
+      @PathVariable Long itemId,
+      @Valid @RequestBody MarkActedOnRequest request) {
+    return ResponseEntity.ok(retroService.markActedOn(itemId, request.getActedOn(), request.getNotes()));
+  }
+
+  @GetMapping("/{retroId}/action-stats")
+  @Operation(summary = "Get action tracking statistics for a retrospective")
+  public ResponseEntity<RetroActionStatsDTO> getActionStats(@PathVariable Long retroId) {
+    return ResponseEntity.ok(retroService.getActionStats(retroId));
+  }
+
+  @GetMapping("/project/{projectId}/pending-actions")
+  @Operation(summary = "Get pending action items across all retros in a project")
+  public ResponseEntity<List<RetroItemDTO>> getPendingActionItems(@PathVariable Long projectId) {
+    return ResponseEntity.ok(retroService.getPendingActionItems(projectId));
+  }
+
+  // ==================== RETRO → PITCH CONVERSION (v0.5) ====================
+
+  @PostMapping("/{id}/convert-to-pitch")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'MANAGER')")
+  @Operation(summary = "Convert closed retro action items into a pitch draft",
+      description = "Part of v0.5 - enables closed retro insights to feed into next cycle's shaping")
+  public ResponseEntity<PitchDTO> convertToPitchDraft(
+      @PathVariable Long id,
+      @Valid @RequestBody ConvertRetroToPitchRequest request) {
+    // Override the request's retrospectiveId with the path parameter for security
+    request.setRetrospectiveId(id);
+    return ResponseEntity.status(HttpStatus.CREATED).body(retroService.convertToPitchDraft(request));
+  }
 }

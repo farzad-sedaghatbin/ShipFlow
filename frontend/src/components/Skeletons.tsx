@@ -447,3 +447,258 @@ export function HealthOverviewSkeleton() {
     </div>
   );
 }
+
+/**
+ * Skeleton for Work Logs page
+ */
+export function WorkLogsSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <Skeleton className="w-32 h-8" />
+          <Skeleton className="w-48 h-5 mt-1" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="w-[180px] h-10 rounded-md" />
+          <Skeleton className="w-[120px] h-10 rounded-md" />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Skeleton className="w-48 h-10 mb-4" />
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-4">
+          <TableSkeleton rows={8} columns={5} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Bug Reports page
+ */
+export function BugReportsSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <Skeleton className="w-36 h-8" />
+          <Skeleton className="w-56 h-5 mt-1" />
+        </div>
+        <Skeleton className="w-32 h-10 rounded-md" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Skeleton className="w-[200px] h-10 rounded-md" />
+        <Skeleton className="w-[150px] h-10 rounded-md" />
+        <Skeleton className="w-[150px] h-10 rounded-md" />
+        <Skeleton className="w-[120px] h-10 rounded-md" />
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-4">
+          <TableSkeleton rows={10} columns={6} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Test Cases page
+ */
+export function TestCasesSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <Skeleton className="w-32 h-8" />
+          <Skeleton className="w-48 h-5 mt-1" />
+        </div>
+        <Skeleton className="w-36 h-10 rounded-md" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Skeleton className="w-[200px] h-10 rounded-md" />
+        <Skeleton className="w-[150px] h-10 rounded-md" />
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-4">
+          <TableSkeleton rows={8} columns={5} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Meeting List page
+ */
+export function MeetingListSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="w-28 h-8" />
+        <Skeleton className="w-36 h-10 rounded-md" />
+      </div>
+
+      {/* Meeting Cards */}
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <Skeleton className="w-48 h-6 mb-2" />
+                  <div className="flex gap-4 mb-2">
+                    <Skeleton className="w-32 h-5" />
+                    <Skeleton className="w-24 h-5" />
+                  </div>
+                  <Skeleton className="w-full h-4" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="w-8 h-8 rounded-md" />
+                  <Skeleton className="w-8 h-8 rounded-md" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Retro List page
+ */
+export function RetroListSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="w-40 h-8" />
+        <Skeleton className="w-32 h-10 rounded-md" />
+      </div>
+
+      {/* Retro Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <Skeleton className="w-40 h-6" />
+                <Skeleton className="w-16 h-6 rounded-full" />
+              </div>
+              <Skeleton className="w-32 h-5 mb-2" />
+              <Skeleton className="w-full h-4 mb-1" />
+              <Skeleton className="w-3/4 h-4" />
+              <div className="flex gap-2 mt-3">
+                <Skeleton className="w-20 h-8 rounded-md" />
+                <Skeleton className="w-20 h-8 rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Teams page
+ */
+export function TeamsSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="w-24 h-8" />
+        <Skeleton className="w-28 h-10 rounded-md" />
+      </div>
+
+      {/* Team Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Skeleton className="w-12 h-12 rounded-full" />
+                <div>
+                  <Skeleton className="w-32 h-6" />
+                  <Skeleton className="w-24 h-5 mt-1" />
+                </div>
+              </div>
+              <Skeleton className="w-full h-4 mb-2" />
+              <div className="flex -space-x-2">
+                {[1, 2, 3, 4].map((j) => (
+                  <Skeleton key={j} className="w-8 h-8 rounded-full border-2 border-background" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Backlog page
+ */
+export function BacklogSkeleton() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <Skeleton className="w-28 h-8" />
+          <Skeleton className="w-48 h-5 mt-1" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="w-[150px] h-10 rounded-md" />
+          <Skeleton className="w-28 h-10 rounded-md" />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Skeleton className="w-64 h-10 mb-4" />
+
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <Skeleton className="w-[70%] h-6" />
+                <Skeleton className="w-16 h-6 rounded-full" />
+              </div>
+              <Skeleton className="w-full h-4 mb-1" />
+              <Skeleton className="w-3/4 h-4 mb-3" />
+              <div className="flex justify-between items-center">
+                <div className="flex gap-1">
+                  <Skeleton className="w-14 h-6 rounded-full" />
+                  <Skeleton className="w-12 h-6 rounded-full" />
+                </div>
+                <Skeleton className="w-8 h-8 rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}

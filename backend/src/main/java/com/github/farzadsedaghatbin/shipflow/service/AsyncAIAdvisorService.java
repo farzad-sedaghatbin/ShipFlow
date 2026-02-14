@@ -12,7 +12,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +21,10 @@ import org.springframework.stereotype.Service;
  * 
  * IMPORTANT: This service checks cache first and returns immediately if cached.
  * Only uncached requests go through the async job flow.
+ * 
+ * ARCHITECTURE NOTE: Async execution is delegated to AsyncAIExecutor (separate bean)
+ * to ensure Spring AOP properly intercepts @Async methods. Self-invocation within
+ * the same bean bypasses the proxy and runs synchronously.
  * 
  * Usage pattern:
  * 1. Client calls check*Cache() - if cached, returns result immediately
@@ -33,8 +36,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AsyncAIAdvisorService {
 
-  private final RiskAnalysisService riskAnalysisService;
   private final AICacheService cacheService;
+  private final AsyncAIExecutor asyncAIExecutor;
 
   // In-memory job storage (consider Redis for production clustering)
   private final Map<String, AIJob<?>> jobs = new ConcurrentHashMap<>();
@@ -43,10 +46,11 @@ public class AsyncAIAdvisorService {
   private static final int JOB_TTL_MINUTES = 30;
 
   @Autowired
-  public AsyncAIAdvisorService(RiskAnalysisService riskAnalysisService, 
-      @Autowired(required = false) AICacheService cacheService) {
-    this.riskAnalysisService = riskAnalysisService;
+  public AsyncAIAdvisorService(
+      @Autowired(required = false) AICacheService cacheService,
+      AsyncAIExecutor asyncAIExecutor) {
     this.cacheService = cacheService;
+    this.asyncAIExecutor = asyncAIExecutor;
   }
 
   /**
@@ -130,10 +134,18 @@ public class AsyncAIAdvisorService {
   // ===========================================
 
   /**
-   * Start async pitch risk analysis with AI
+   * Start async pitch risk analysis with AI.
+   * Includes request deduplication - returns existing job if one is already in progress.
    * @return jobId for polling
    */
   public String startPitchRiskAnalysis(Long pitchId) {
+    // Deduplication: Check if a job for this pitch is already pending/processing
+    Optional<String> existingJobId = findExistingJob("pitch_risk", pitchId);
+    if (existingJobId.isPresent()) {
+      log.info("Reusing existing pitch risk analysis job {} for pitch {}", existingJobId.get(), pitchId);
+      return existingJobId.get();
+    }
+    
     String jobId = generateJobId();
     
     AIJob<PitchRiskDTO> job = AIJob.<PitchRiskDTO>builder()
@@ -146,36 +158,11 @@ public class AsyncAIAdvisorService {
     
     jobs.put(jobId, job);
     
-    // Execute async
-    executePitchRiskAnalysisAsync(jobId, pitchId);
+    // Execute async via separate bean (ensures @Async proxy works)
+    asyncAIExecutor.executePitchRiskAnalysisAsync(jobId, pitchId, jobs);
     
     log.info("Started async pitch risk analysis job {} for pitch {}", jobId, pitchId);
     return jobId;
-  }
-
-  @Async("aiTaskExecutor")
-  protected void executePitchRiskAnalysisAsync(String jobId, Long pitchId) {
-    @SuppressWarnings("unchecked")
-    AIJob<PitchRiskDTO> job = (AIJob<PitchRiskDTO>) jobs.get(jobId);
-    if (job == null) return;
-
-    try {
-      job.setStatus(JobStatus.PROCESSING);
-      
-      // This is the potentially slow AI call
-      PitchRiskDTO result = riskAnalysisService.analyzePitchRisk(pitchId, true);
-      
-      job.setResult(result);
-      job.setStatus(JobStatus.COMPLETED);
-      job.setCompletedAt(LocalDateTime.now());
-      
-      log.info("Completed async pitch risk analysis job {} for pitch {}", jobId, pitchId);
-    } catch (Exception e) {
-      log.error("Failed async pitch risk analysis job {} for pitch {}: {}", jobId, pitchId, e.getMessage());
-      job.setStatus(JobStatus.FAILED);
-      job.setErrorMessage(e.getMessage());
-      job.setCompletedAt(LocalDateTime.now());
-    }
   }
 
   /**
@@ -195,10 +182,18 @@ public class AsyncAIAdvisorService {
   // ===========================================
 
   /**
-   * Start async cycle risk analysis with AI
+   * Start async cycle risk analysis with AI.
+   * Includes request deduplication - returns existing job if one is already in progress.
    * @return jobId for polling
    */
   public String startCycleRiskAnalysis(Long cycleId) {
+    // Deduplication: Check if a job for this cycle is already pending/processing
+    Optional<String> existingJobId = findExistingJob("cycle_risk", cycleId);
+    if (existingJobId.isPresent()) {
+      log.info("Reusing existing cycle risk analysis job {} for cycle {}", existingJobId.get(), cycleId);
+      return existingJobId.get();
+    }
+    
     String jobId = generateJobId();
     
     AIJob<CycleRiskOverviewDTO> job = AIJob.<CycleRiskOverviewDTO>builder()
@@ -211,36 +206,11 @@ public class AsyncAIAdvisorService {
     
     jobs.put(jobId, job);
     
-    // Execute async
-    executeCycleRiskAnalysisAsync(jobId, cycleId);
+    // Execute async via separate bean (ensures @Async proxy works)
+    asyncAIExecutor.executeCycleRiskAnalysisAsync(jobId, cycleId, jobs);
     
     log.info("Started async cycle risk analysis job {} for cycle {}", jobId, cycleId);
     return jobId;
-  }
-
-  @Async("aiTaskExecutor")
-  protected void executeCycleRiskAnalysisAsync(String jobId, Long cycleId) {
-    @SuppressWarnings("unchecked")
-    AIJob<CycleRiskOverviewDTO> job = (AIJob<CycleRiskOverviewDTO>) jobs.get(jobId);
-    if (job == null) return;
-
-    try {
-      job.setStatus(JobStatus.PROCESSING);
-      
-      // This is the potentially slow AI call
-      CycleRiskOverviewDTO result = riskAnalysisService.getCycleRiskOverview(cycleId, true);
-      
-      job.setResult(result);
-      job.setStatus(JobStatus.COMPLETED);
-      job.setCompletedAt(LocalDateTime.now());
-      
-      log.info("Completed async cycle risk analysis job {} for cycle {}", jobId, cycleId);
-    } catch (Exception e) {
-      log.error("Failed async cycle risk analysis job {} for cycle {}: {}", jobId, cycleId, e.getMessage());
-      job.setStatus(JobStatus.FAILED);
-      job.setErrorMessage(e.getMessage());
-      job.setCompletedAt(LocalDateTime.now());
-    }
   }
 
   /**
@@ -260,7 +230,8 @@ public class AsyncAIAdvisorService {
   // ===========================================
 
   /**
-   * Start async Q&A with AI advisor
+   * Start async Q&A with AI advisor.
+   * Q&A is not deduplicated since each question is unique.
    * @return jobId for polling
    */
   public String startQAQuestion(Long pitchId, String question) {
@@ -276,36 +247,11 @@ public class AsyncAIAdvisorService {
     
     jobs.put(jobId, job);
     
-    // Execute async
-    executeQAAsync(jobId, pitchId, question);
+    // Execute async via separate bean (ensures @Async proxy works)
+    asyncAIExecutor.executeQAAsync(jobId, pitchId, question, jobs);
     
     log.info("Started async Q&A job {} for pitch {}", jobId, pitchId);
     return jobId;
-  }
-
-  @Async("aiTaskExecutor")
-  protected void executeQAAsync(String jobId, Long pitchId, String question) {
-    @SuppressWarnings("unchecked")
-    AIJob<RiskQuestionResponse> job = (AIJob<RiskQuestionResponse>) jobs.get(jobId);
-    if (job == null) return;
-
-    try {
-      job.setStatus(JobStatus.PROCESSING);
-      
-      // This is the potentially slow AI call
-      RiskQuestionResponse result = riskAnalysisService.answerRiskQuestion(pitchId, question);
-      
-      job.setResult(result);
-      job.setStatus(JobStatus.COMPLETED);
-      job.setCompletedAt(LocalDateTime.now());
-      
-      log.info("Completed async Q&A job {} for pitch {}", jobId, pitchId);
-    } catch (Exception e) {
-      log.error("Failed async Q&A job {} for pitch {}: {}", jobId, pitchId, e.getMessage());
-      job.setStatus(JobStatus.FAILED);
-      job.setErrorMessage(e.getMessage());
-      job.setCompletedAt(LocalDateTime.now());
-    }
   }
 
   /**
@@ -403,5 +349,26 @@ public class AsyncAIAdvisorService {
 
   private String generateJobId() {
     return UUID.randomUUID().toString().substring(0, 8);
+  }
+
+  /**
+   * Find an existing job with matching type and context that is still active (PENDING or PROCESSING).
+   * Used for request deduplication to prevent parallel duplicate AI calls.
+   */
+  private Optional<String> findExistingJob(String jobType, Long contextId) {
+    return jobs.entrySet().stream()
+        .filter(e -> jobType.equals(e.getValue().getJobType()))
+        .filter(e -> contextId.equals(e.getValue().getContextId()))
+        .filter(e -> e.getValue().getStatus() == JobStatus.PENDING 
+                  || e.getValue().getStatus() == JobStatus.PROCESSING)
+        .map(Map.Entry::getKey)
+        .findFirst();
+  }
+
+  /**
+   * Get the jobs map (for AsyncAIExecutor access).
+   */
+  public Map<String, AIJob<?>> getJobs() {
+    return jobs;
   }
 }

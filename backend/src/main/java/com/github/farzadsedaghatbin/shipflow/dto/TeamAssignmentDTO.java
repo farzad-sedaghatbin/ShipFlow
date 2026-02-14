@@ -21,4 +21,13 @@ public class TeamAssignmentDTO {
   private LocalDate endDate;
   private Boolean isActive;
   private String notes;
+
+  // Capacity Configuration Override (per team assignment)
+  private Double hoursPerDayOverride;
+
+  // Computed effective hours per day (resolved from hierarchy: assignment → person → team → org)
+  private Double effectiveHoursPerDay;
+
+  // Source of the effective value for UI display
+  private String capacitySource; // "organization", "team", "person", or "assignment"
 }

@@ -18,7 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/cooldown-activities")
+@RequestMapping({"/api/cooldown-activities", "/cooldown-activities"})
 @RequiredArgsConstructor
 @Tag(name = "Cooldown Activities", description = "Manage cooldown phase activities")
 public class CooldownActivityController {
@@ -77,10 +77,10 @@ public class CooldownActivityController {
   }
 
   @PutMapping("/{id}")
-  @Operation(summary = "Update activity", description = "Update cooldown activity details")
+  @Operation(summary = "Update activity", description = "Update cooldown activity details (partial updates supported)")
   public ResponseEntity<CooldownActivityDTO> updateActivity(
       @PathVariable Long id,
-      @Valid @RequestBody CreateCooldownActivityRequest request) {
+      @Valid @RequestBody UpdateCooldownActivityRequest request) {
     return ResponseEntity.ok(cooldownActivityService.updateActivity(id, request));
   }
 

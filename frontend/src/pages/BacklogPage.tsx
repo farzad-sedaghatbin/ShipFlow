@@ -22,6 +22,7 @@ import {
   Shield,
   List,
   Kanban,
+  Search,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,9 +75,8 @@ import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { pitchService } from '../services/pitchService';
-import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
-import { Task, Cycle, Person, Pitch, HillChartPoint, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
+import { Task, Cycle, Person, Pitch, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
@@ -84,6 +84,7 @@ import TaskDependencies from '../components/TaskDependencies';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import KanbanBoard from '../components/KanbanBoard';
 import { useProject, useAuth } from '../contexts';
+import { BacklogSkeleton } from '../components/Skeletons';
 
 // View mode type
 type ViewMode = 'list' | 'kanban';
@@ -109,7 +110,7 @@ export default function BacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
-  const { isKanbanProject, currentProject } = useProject();
+  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { user } = useAuth();
   
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -133,6 +134,7 @@ export default function BacklogPage() {
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
   const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
   const [excludeMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status' | 'dueDate' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
@@ -165,18 +167,15 @@ export default function BacklogPage() {
     tags: '',
     category: activeCategory,
     pitchId: undefined,
-    scopeId: undefined,
   });
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
 
   // Multi-select dropdown states
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_assigneeDropdownOpen, _setAssigneeDropdownOpen] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
 
   // Sync view mode when project type changes
   useEffect(() => {
@@ -189,11 +188,9 @@ export default function BacklogPage() {
     loadActiveTimer();
   }, []);
 
-  // Re-load when project changes (for Kanban auto-select)
+  // Re-load when project changes (for Kanban auto-select and All Projects)
   useEffect(() => {
-    if (currentProject) {
-      loadInitialData();
-    }
+    loadInitialData();
   }, [currentProject?.id, isKanbanProject]);
 
   useEffect(() => {
@@ -223,7 +220,7 @@ export default function BacklogPage() {
       setTasksLoading(false);
       setStatistics(null);
     }
-  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter]);
+  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter, searchQuery, viewMode]);
 
   // Sync URL param to state when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -260,6 +257,7 @@ export default function BacklogPage() {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -277,42 +275,60 @@ export default function BacklogPage() {
   };
 
   const loadTasks = async () => {
+    // For Kanban view, load all tasks without pagination
+    const effectiveRowsPerPage = viewMode === 'kanban' ? 1000 : rowsPerPage;
+    const effectivePage = viewMode === 'kanban' ? 0 : page;
+    
     // For Kanban projects, load tasks by project, not by cycle
     if (isKanbanProject && currentProject) {
       setTasksLoading(true);
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       
       try {
-        const response = await taskService.getByProjectIdAndCategory(
-          currentProject.id, 
-          activeCategory, 
-          page, 
-          rowsPerPage, 
-          sortBy, 
-          sortOrder
-        );
+        let response: any;
+        
+        // Use filter endpoint if any filters are active (except dependency which is not in backend)
+        if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
+          response = await taskService.getByProjectIdWithFilters(
+            currentProject.id,
+            statusFilter.length > 0 ? statusFilter : undefined,
+            priorityFilter.length > 0 ? priorityFilter : undefined,
+            assigneeFilter.length > 0 ? assigneeFilter : undefined,
+            activeCategory,
+            excludeMode,
+            effectivePage,
+            effectiveRowsPerPage,
+            sortBy,
+            sortOrder
+          );
+        } else {
+          // No status/priority/assignee filters, use category endpoint
+          response = await taskService.getByProjectIdAndCategory(
+            currentProject.id, 
+            activeCategory, 
+            effectivePage, 
+            effectiveRowsPerPage, 
+            sortBy, 
+            sortOrder
+          );
+        }
+        
         let filteredTasks = response?.data?.content || [];
         
-        // Apply additional filters
-        if (statusFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
-          );
-        }
-        if (priorityFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
-          );
-        }
-        if (assigneeFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
-          );
-        }
+        // Apply client-side filters for features not in backend yet
         if (dependencyFilter === 'blocked') {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search query (client-side for now)
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         // Filter by tab (my tasks)
@@ -352,29 +368,45 @@ export default function BacklogPage() {
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
           // Get all my tasks with server-side pagination and sorting
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMy(effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
           const allTasks = response?.data?.content || [];
           // Filter by category
-          const filteredTasks = allTasks.filter((task: Task) => {
+          let filteredTasks = allTasks.filter((task: Task) => {
             const taskCategory = task.category || 'PITCH_SCOPE';
             return taskCategory === activeCategory;
           });
+          // Apply search filter
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter((t: Task) => 
+              t.title.toLowerCase().includes(query) || 
+              (t.description && t.description.toLowerCase().includes(query))
+            );
+          }
           setTasks(filteredTasks);
           setTotalElements(response?.data?.totalElements || 0);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMyByCycle(selectedCycle, effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
           // Client-side filter for my tasks until backend supports it
           const allTasks = response?.data?.content || [];
-          const filteredTasks = allTasks.filter((task: Task) => {
+          let filteredTasks = allTasks.filter((task: Task) => {
             const taskCategory = task.category || 'PITCH_SCOPE';
             return taskCategory === activeCategory;
           });
+          // Apply search filter
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter((t: Task) => 
+              t.title.toLowerCase().includes(query) || 
+              (t.description && t.description.toLowerCase().includes(query))
+            );
+          }
           setTasks(filteredTasks);
           setTotalElements(filteredTasks.length);
         }
       } else if (selectedCycle === 'all') {
         // Get all tasks with server-side pagination and sorting
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getAll(effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
         const allTasks = response?.data?.content || [];
         
         // Filter by category
@@ -407,6 +439,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
         }
         
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -418,8 +459,8 @@ export default function BacklogPage() {
           assigneeFilter.length > 0 ? assigneeFilter : undefined,
           activeCategory,
           excludeMode,
-          page,
-          rowsPerPage,
+          effectivePage,
+          effectiveRowsPerPage,
           sortBy,
           sortOrder
         );
@@ -430,6 +471,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         setTasks(filteredTasks);
@@ -444,6 +494,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         setTasks(filteredTasks);
@@ -501,23 +560,9 @@ export default function BacklogPage() {
     }
   };
 
-  const loadScopesForPitch = async (pitchId: number) => {
-    try {
-      const response = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setScopes(response);
-    } catch (error) {
-      console.error('Failed to load scopes:', error);
-      setScopes([]);
-    }
-  };
-
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
-    setFormData({ ...formData, pitchId: pitch, scopeId: undefined });
-    setScopes([]);
-    if (pitch) {
-      loadScopesForPitch(pitch);
-    }
+    setFormData({ ...formData, pitchId: pitch });
   };
 
   const handleCategoryChange = (category: TaskCategory) => {
@@ -542,6 +587,7 @@ export default function BacklogPage() {
         dueDate: task.dueDate,
         tags: task.tags || '',
         category: task.category || activeCategory,
+        pitchId: task.pitchId,
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
@@ -811,12 +857,8 @@ export default function BacklogPage() {
     ? (isKanbanProject ? t('backlogPage.categoryDescription.featureScope') : t('backlogPage.categoryDescription.pitchScope'))
     : t('backlogPage.categoryDescription.debtImprovement');
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <BacklogSkeleton />;
   }
 
   return (
@@ -1007,6 +1049,18 @@ export default function BacklogPage() {
 
           {/* Filters */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('backlogPage.filters.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-64"
+              />
+            </div>
+            
             {/* Status Filter */}
             <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
               <DropdownMenuTrigger asChild>
@@ -1067,6 +1121,36 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Assignee Filter */}
+            <DropdownMenu open={assigneeDropdownOpen} onOpenChange={setAssigneeDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  {t('backlogPage.filters.assignee')} {assigneeFilter.length > 0 && `(${assigneeFilter.length})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {persons.map((person) => (
+                  <DropdownMenuItem
+                    key={person.id}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (assigneeFilter.includes(person.id)) {
+                        setAssigneeFilter(assigneeFilter.filter(p => p !== person.id));
+                      } else {
+                        setAssigneeFilter([...assigneeFilter, person.id]);
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={assigneeFilter.includes(person.id)}
+                      className="mr-2"
+                    />
+                    {person.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Dependency Filter */}
             <DropdownMenu open={dependencyDropdownOpen} onOpenChange={setDependencyDropdownOpen}>
               <DropdownMenuTrigger asChild>
@@ -1105,7 +1189,7 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all') && (
+            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all' || searchQuery.trim()) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1114,6 +1198,7 @@ export default function BacklogPage() {
                   setPriorityFilter([]);
                   setAssigneeFilter([]);
                   setDependencyFilter('all');
+                  setSearchQuery('');
                 }}
               >
                 {t('backlogPage.filters.clearFilters')}
@@ -1317,48 +1402,26 @@ export default function BacklogPage() {
                 placeholder={t('backlogPage.commaSeparated')}
               />
             </div>
-            {/* Hide pitch and scope fields for Kanban projects */}
+            {/* Hide pitch field for Kanban projects */}
             {!isKanbanProject && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.pitch')}</Label>
-                  <Select
-                    value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                    onValueChange={handlePitchChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('backlogPage.noPitch')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
-                      {pitches.map((pitch) => (
-                        <SelectItem key={pitch.id} value={String(pitch.id)}>
-                          {pitch.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>{t('backlogPage.scope')}</Label>
-                  <Select
-                    value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                    onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                    disabled={!formData.pitchId || scopes.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!formData.pitchId ? t('backlogPage.selectPitchFirst') : t('backlogPage.noSpecificScope')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('backlogPage.noSpecificScope')}</SelectItem>
-                      {scopes.map((scope) => (
-                        <SelectItem key={scope.id} value={String(scope.id)}>
-                          {scope.scope}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-2">
+                <Label>{t('backlogPage.pitch')}</Label>
+                <Select
+                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                  onValueChange={handlePitchChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('backlogPage.noPitch')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
+                    {pitches.map((pitch) => (
+                      <SelectItem key={pitch.id} value={String(pitch.id)}>
+                        {pitch.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

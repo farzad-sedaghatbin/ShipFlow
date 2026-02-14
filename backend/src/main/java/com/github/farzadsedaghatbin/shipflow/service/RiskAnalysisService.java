@@ -39,8 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(name = "app.ai.risk-analysis.enabled", havingValue = "true", matchIfMissing = false)
 public class RiskAnalysisService {
 
-  private static final double HOURS_PER_DAY = 8.0;
-
   private final AIConfig aiConfig;
   private final ChatLanguageModel chatLanguageModel;
   private final PitchRepository pitchRepository;
@@ -50,12 +48,14 @@ public class RiskAnalysisService {
   private final PitchRiskHistoryRepository riskHistoryRepository;
   private final OrganizationSettingsService organizationSettingsService;
   private final RiskHistoryService riskHistoryService;
+  private final CapacityConfigService capacityConfigService;
 
   @Autowired
   public RiskAnalysisService(AIConfig aiConfig, @Autowired(required = false) ChatLanguageModel chatLanguageModel,
       PitchRepository pitchRepository, CycleRepository cycleRepository, WorkLogRepository workLogRepository,
       AICacheService cacheService, PitchRiskHistoryRepository riskHistoryRepository,
-      OrganizationSettingsService organizationSettingsService, RiskHistoryService riskHistoryService) {
+      OrganizationSettingsService organizationSettingsService, RiskHistoryService riskHistoryService,
+      CapacityConfigService capacityConfigService) {
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
     this.pitchRepository = pitchRepository;
@@ -65,6 +65,7 @@ public class RiskAnalysisService {
     this.riskHistoryRepository = riskHistoryRepository;
     this.organizationSettingsService = organizationSettingsService;
     this.riskHistoryService = riskHistoryService;
+    this.capacityConfigService = capacityConfigService;
   }
 
   /** Analyze risk for a single pitch (with AI if enabled). */
@@ -89,7 +90,7 @@ public class RiskAnalysisService {
       return cachedResult.get();
     }
 
-    Pitch pitch = pitchRepository.findById(pitchId)
+    Pitch pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
         .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
 
     return analyzePitchRisk(pitch, useAI);
@@ -125,7 +126,7 @@ public class RiskAnalysisService {
       if (totalHours == null)
         totalHours = 0.0;
 
-      double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+      double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
       double progress = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
       // Calculate days elapsed and remaining in cycle
@@ -301,14 +302,16 @@ public class RiskAnalysisService {
   }
 
   /**
-   * Answer a question about pitch risk using AI. Note: This method is not
-   * transactional to ensure error responses are returned properly.
+   * Answer a question about pitch risk using AI.
+   * Uses transaction to prevent LazyInitializationException when accessing
+   * pitch relationships in async context.
    */
+  @Transactional(readOnly = true)
   public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
     // Get pitch first
     Pitch pitch;
     try {
-      pitch = pitchRepository.findById(pitchId)
+      pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
           .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
     } catch (Exception e) {
       return RiskQuestionResponse.builder().pitchId(pitchId).pitchTitle("Unknown").question(question).answer(null)
@@ -332,7 +335,7 @@ public class RiskAnalysisService {
       Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
       if (totalHours == null)
         totalHours = 0.0;
-      double appetiteHours = pitch.getAppetiteDays() * HOURS_PER_DAY;
+      double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
 
       Cycle cycle = pitch.getCycle();
       LocalDate today = LocalDate.now();
@@ -540,6 +543,8 @@ public class RiskAnalysisService {
       case STARTED -> 5;
       case SHAPED -> 10;
       case PENDING -> 15;
+      case DRAFT -> 20; // Early shaping - more uncertainty
+      case IDEA -> 25; // Raw idea - highest uncertainty
       case COOLDOWN -> -20;
       case CANCELLED -> -50;
       case CIRCUIT_BREAKER -> 50; // High risk when circuit breaker is triggered
@@ -833,7 +838,7 @@ public class RiskAnalysisService {
       Double hours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
       if (hours == null)
         hours = 0.0;
-      double appetite = pitch.getAppetiteDays() * HOURS_PER_DAY;
+      double appetite = capacityConfigService.calculatePitchAppetiteHours(pitch);
       totalActual += hours;
       totalAppetite += appetite;
       if (appetite > 0) {

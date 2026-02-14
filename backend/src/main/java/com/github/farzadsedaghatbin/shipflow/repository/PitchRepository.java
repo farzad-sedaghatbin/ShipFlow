@@ -26,6 +26,9 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.id = :id AND p.deletedAt IS NULL")
   Optional<Pitch> findByIdNotDeleted(@Param("id") Long id);
 
+  @Query("SELECT p FROM Pitch p LEFT JOIN FETCH p.team t LEFT JOIN FETCH t.assignments WHERE p.id = :id")
+  Optional<Pitch> findByIdWithTeamAndAssignments(@Param("id") Long id);
+
   @Query("SELECT p FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
   List<Pitch> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
 
@@ -128,4 +131,91 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
       ORDER BY p.id DESC
       """)
   List<Pitch> findAccessiblePitchesByUserIdIncludingDeleted(@Param("userId") Long userId);
+
+  // Release-related queries
+  @Query("SELECT p FROM Pitch p WHERE p.targetRelease.id = :releaseId AND p.deletedAt IS NULL")
+  List<Pitch> findByTargetReleaseIdNotDeleted(@Param("releaseId") Long releaseId);
+
+  @Query("SELECT p FROM Pitch p WHERE p.epic.id = :epicId AND p.deletedAt IS NULL")
+  List<Pitch> findByEpicIdNotDeleted(@Param("epicId") Long epicId);
+
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.epic.id = :epicId AND p.deletedAt IS NULL")
+  long countByEpicIdNotDeleted(@Param("epicId") Long epicId);
+
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.epic.id = :epicId AND p.status = :status AND p.deletedAt IS NULL")
+  long countByEpicIdAndStatusNotDeleted(@Param("epicId") Long epicId, @Param("status") PitchStatus status);
+
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.targetRelease.id = :releaseId AND p.deletedAt IS NULL")
+  long countByTargetReleaseIdNotDeleted(@Param("releaseId") Long releaseId);
+
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.targetRelease.id = :releaseId AND p.status = :status AND p.deletedAt IS NULL")
+  long countByTargetReleaseIdAndStatusNotDeleted(@Param("releaseId") Long releaseId, @Param("status") PitchStatus status);
+
+  // ===== Ideas Pool Queries (IDEA status, no cycle) =====
+
+  /** Find all ideas (raw concepts not yet being shaped). */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+  List<Pitch> findAllIdeas();
+
+  /** Find ideas for a specific project (via epic or any accessible mechanism). */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.epic.project.id = :projectId AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+  List<Pitch> findIdeasByProjectId(@Param("projectId") Long projectId);
+
+  /** Find ideas for a specific epic. */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+  List<Pitch> findIdeasByEpicId(@Param("epicId") Long epicId);
+
+  // ===== Shaping Pool Queries (DRAFT status, no cycle) =====
+
+  /** Find all drafts (pitches being shaped). */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'DRAFT' AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findAllDrafts();
+
+  /** Find drafts for a specific project. */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'DRAFT' AND p.epic.project.id = :projectId AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findDraftsByProjectId(@Param("projectId") Long projectId);
+
+  /** Find drafts for a specific epic. */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'DRAFT' AND p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findDraftsByEpicId(@Param("epicId") Long epicId);
+
+  // ===== Betting Table Queries (SHAPED status, no cycle) =====
+
+  /** Find all betting candidates (shaped pitches ready for cycle assignment). */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findBettingCandidates();
+
+  /** Find betting candidates for a specific project. */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND p.epic.project.id = :projectId AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findBettingCandidatesByProjectId(@Param("projectId") Long projectId);
+
+  /** Find betting candidates for a specific epic. */
+  @Query("SELECT p FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  List<Pitch> findBettingCandidatesByEpicId(@Param("epicId") Long epicId);
+
+  // ===== Combined Pre-Cycle Queries =====
+
+  /** Find all unassigned pitches (IDEA, DRAFT, or SHAPED without cycle). */
+  @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
+  List<Pitch> findAllUnassigned();
+
+  /** Find unassigned pitches for a specific project. */
+  @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND p.epic.project.id = :projectId AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
+  List<Pitch> findUnassignedByProjectId(@Param("projectId") Long projectId);
+
+  /** Find unassigned pitches for a specific epic. */
+  @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
+  List<Pitch> findUnassignedByEpicId(@Param("epicId") Long epicId);
+
+  /** Count ideas for a project. */
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'IDEA' AND p.epic.project.id = :projectId AND p.deletedAt IS NULL")
+  long countIdeasByProjectId(@Param("projectId") Long projectId);
+
+  /** Count drafts for a project. */
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'DRAFT' AND p.epic.project.id = :projectId AND p.deletedAt IS NULL")
+  long countDraftsByProjectId(@Param("projectId") Long projectId);
+
+  /** Count betting candidates for a project. */
+  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND p.epic.project.id = :projectId AND p.deletedAt IS NULL")
+  long countBettingCandidatesByProjectId(@Param("projectId") Long projectId);
 }
