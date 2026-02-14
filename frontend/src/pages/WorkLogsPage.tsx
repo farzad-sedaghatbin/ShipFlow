@@ -182,7 +182,7 @@ export default function WorkLogsPage() {
           // Otherwise filter by pitch/task's cycle
           if (log.pitchId) {
             const pitch = pitches.find(p => p.id === log.pitchId);
-            return pitch ? projectCycleIds.has(pitch.cycleId) : false;
+            return pitch && pitch.cycleId !== undefined ? projectCycleIds.has(pitch.cycleId) : false;
           }
           if (log.taskId) {
             const task = tasks.find(t => t.id === log.taskId);
@@ -216,7 +216,7 @@ export default function WorkLogsPage() {
       // Filter by current project if one is selected
       if (!isAllProjectsSelected && currentProject) {
         const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        allPitches = allPitches.filter(p => projectCycleIds.has(p.cycleId));
+        allPitches = allPitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
       }
       setPitches(allPitches);
     } catch (error) {

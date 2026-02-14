@@ -30,7 +30,12 @@ export interface Page<T> {
 
 // Enums
 export type CyclePhase = 'SHAPING' | 'BETTING' | 'BUILD' | 'COOLDOWN';
-export type PitchStatus = 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
+/**
+ * Shape Up pitch lifecycle statuses.
+ * Pre-cycle: IDEA → DRAFT → SHAPED (no cycle required)
+ * In-cycle: PENDING → STARTED → ... → DONE (requires cycle)
+ */
+export type PitchStatus = 'IDEA' | 'DRAFT' | 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
 export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
 export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO' | 'RETROSPECTIVE' | 'HILL_CHART_REVIEW';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
@@ -215,8 +220,10 @@ export interface Pitch {
   id: number;
   title: string;
   description?: string;
-  appetiteDays: number;
-  cycleId: number;
+  /** Appetite in days - nullable for IDEA/DRAFT statuses */
+  appetiteDays?: number;
+  /** Cycle ID - nullable for pre-cycle statuses (IDEA, DRAFT, SHAPED) */
+  cycleId?: number;
   cycleName?: string;
   projectId?: number;
   projectName?: string;
@@ -245,6 +252,12 @@ export interface Pitch {
   risks?: string;
   noGos?: string;
   wireframeLinks?: string;
+  // Epic and Release linking
+  epicId?: number;
+  epicName?: string;
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
 }
 
 export interface BusiestPerson {
@@ -262,9 +275,14 @@ export interface BusiestPerson {
 export interface CreatePitchRequest {
   title: string;
   description?: string;
-  appetiteDays: number;
-  cycleId: number;
+  /** Appetite in days - required for SHAPED and above statuses */
+  appetiteDays?: number;
+  /** Cycle ID - required for PENDING and above statuses */
+  cycleId?: number;
   teamId?: number;
+  // Epic and Release linking (roadmap)
+  epicId?: number;
+  targetReleaseId?: number;
   status?: PitchStatus;
   // Shape Up Methodology Fields
   problemStatement?: string;
@@ -274,6 +292,64 @@ export interface CreatePitchRequest {
   noGos?: string;
   wireframeLinks?: string;
 }
+
+/**
+ * Lightweight request for creating an idea.
+ * Ideas are raw concepts that don't require shaping details yet.
+ */
+export interface CreateIdeaRequest {
+  title: string;
+  description?: string;
+  epicId?: number;
+}
+
+/**
+ * Shape Up workflow utility functions
+ */
+export const PitchStatusUtils = {
+  /** Pre-cycle statuses where pitches don't have a cycle assignment */
+  preCycleStatuses: ['IDEA', 'DRAFT', 'SHAPED'] as const,
+  
+  /** In-cycle statuses where pitches are assigned to a cycle */
+  inCycleStatuses: ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE', 'COOLDOWN', 'CANCELLED'] as const,
+  
+  /** Check if a pitch is in a pre-cycle status */
+  isPreCycle: (status: PitchStatus): boolean => 
+    ['IDEA', 'DRAFT', 'SHAPED'].includes(status),
+  
+  /** Check if a pitch requires shaping (IDEA or DRAFT) */
+  requiresShaping: (status: PitchStatus): boolean => 
+    ['IDEA', 'DRAFT'].includes(status),
+  
+  /** Check if a pitch is ready for the betting table */
+  isReadyForBetting: (status: PitchStatus): boolean => 
+    status === 'SHAPED',
+  
+  /** Check if a pitch is in progress (active work) */
+  isInProgress: (status: PitchStatus): boolean => 
+    ['STARTED', 'IN_PROGRESS', 'TESTING'].includes(status),
+  
+  /** Check if a pitch is complete */
+  isComplete: (status: PitchStatus): boolean => 
+    ['DONE', 'CANCELLED'].includes(status),
+
+  /** Get display color for status */
+  getStatusColor: (status: PitchStatus): string => {
+    switch (status) {
+      case 'IDEA': return '#9e9e9e'; // grey
+      case 'DRAFT': return '#64b5f6'; // light blue
+      case 'SHAPED': return '#4caf50'; // green
+      case 'PENDING': return '#ff9800'; // orange
+      case 'STARTED': return '#2196f3'; // blue
+      case 'IN_PROGRESS': return '#1976d2'; // darker blue
+      case 'TESTING': return '#9c27b0'; // purple
+      case 'DONE': return '#388e3c'; // dark green
+      case 'COOLDOWN': return '#607d8b'; // blue grey
+      case 'CANCELLED': return '#f44336'; // red
+      default: return '#9e9e9e';
+    }
+  }
+};
 
 // Response from AI pitch data extraction
 export interface ExtractedPitchData {
@@ -369,6 +445,7 @@ export interface MeetingChecklistItem {
 
 export interface CreateMeetingRequest {
   pitchId?: number;
+  projectId?: number;
   type: MeetingType;
   dateHeld: string;
   dorReady?: boolean;
@@ -744,6 +821,11 @@ export interface Task {
   blockedByTasks?: TaskDependency[];
   blockedByCount?: number;
   isBlocked?: boolean;
+  
+  // Release linking
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
 }
 
 export interface CreateTaskRequest {
@@ -932,6 +1014,16 @@ export interface BugReport {
   createdAt: string;
   updatedAt: string;
   commentCount?: number;
+  
+  // Release tracking
+  targetReleaseId?: number;
+  targetReleaseName?: string;
+  targetReleaseVersion?: string;
+  fixedInReleaseId?: number;
+  fixedInReleaseName?: string;
+  fixedInReleaseVersion?: string;
+  /** Whether the bug slipped to a different release than originally targeted */
+  isSlipped?: boolean;
 }
 
 export interface CreateBugReportRequest {
@@ -953,6 +1045,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  targetReleaseId?: number;
 }
 
 export interface UpdateBugReportRequest {
@@ -974,6 +1067,8 @@ export interface UpdateBugReportRequest {
   attachments?: string;
   assigneeId?: number;
   resolution?: string;
+  targetReleaseId?: number;
+  fixedInReleaseId?: number;
 }
 
 export interface TestRun {
@@ -1264,6 +1359,275 @@ export interface EntityHistory {
   revisionType: RevisionType;
   /** The list of individual field changes in this revision */
   changes: FieldChange[];
+}
+
+// ============================================
+// Roadmap & Release Management Types
+// ============================================
+
+/** Initiative status in strategic planning */
+export type InitiativeStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+
+/** Epic status (similar to Initiative) */
+export type EpicStatus = 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+
+/** Release lifecycle status */
+export type ReleaseStatus = 'PLANNING' | 'IN_PROGRESS' | 'STAGING' | 'RELEASED' | 'CANCELLED';
+
+/** Risk level for releases */
+export type ReleaseRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/**
+ * Summary of an Epic within an Initiative
+ */
+export interface EpicSummary {
+  id: number;
+  name: string;
+  status: EpicStatus;
+  pitchCount: number;
+}
+
+/**
+ * Strategic initiative - top-level group spanning multiple quarters
+ */
+export interface Initiative {
+  id: number;
+  name: string;
+  description?: string;
+  status: InitiativeStatus;
+  color?: string;
+  projectId: number;
+  projectName?: string;
+  ownerId?: number;
+  ownerName?: string;
+  targetStartDate?: string;
+  targetEndDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Progress metrics
+  epicCount?: number;
+  completedEpicCount?: number;
+  totalPitchCount?: number;
+  completedPitchCount?: number;
+  progressPercentage?: number;
+  // Nested epics
+  epics?: EpicSummary[];
+}
+
+/**
+ * Request to create or update an Initiative
+ */
+export interface CreateInitiativeRequest {
+  name: string;
+  description?: string;
+  status?: InitiativeStatus;
+  color?: string;
+  projectId: number;
+  ownerId?: number;
+  targetStartDate?: string;
+  targetEndDate?: string;
+}
+
+/**
+ * Summary of a Pitch within an Epic
+ */
+export interface PitchSummary {
+  id: number;
+  title: string;
+  status: PitchStatus;
+}
+
+/**
+ * Epic - groups pitches under an initiative
+ */
+export interface Epic {
+  id: number;
+  name: string;
+  description?: string;
+  status: EpicStatus;
+  color?: string;
+  projectId: number;
+  projectName?: string;
+  initiativeId?: number;
+  initiativeName?: string;
+  targetStartDate?: string;
+  targetEndDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Progress metrics
+  pitchCount?: number;
+  completedPitchCount?: number;
+  progressPercentage?: number;
+  // Nested pitches
+  pitches?: PitchSummary[];
+}
+
+/**
+ * Request to create or update an Epic
+ */
+export interface CreateEpicRequest {
+  name: string;
+  description?: string;
+  status?: EpicStatus;
+  color?: string;
+  projectId: number;
+  initiativeId?: number;
+  targetStartDate?: string;
+  targetEndDate?: string;
+}
+
+/**
+ * Summary of a Cycle linked to a Release
+ */
+export interface CycleSummary {
+  id: number;
+  name: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Release - a versioned delivery milestone
+ */
+export interface Release {
+  id: number;
+  name: string;
+  version: string;
+  description?: string;
+  status: ReleaseStatus;
+  riskLevel: ReleaseRiskLevel;
+  projectId: number;
+  projectName?: string;
+  targetDate?: string;
+  releaseDate?: string;
+  releaseNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Linked cycles
+  cycles?: CycleSummary[];
+}
+
+/**
+ * Request to create or update a Release
+ */
+export interface CreateReleaseRequest {
+  name: string;
+  version: string;
+  description?: string;
+  status?: ReleaseStatus;
+  riskLevel?: ReleaseRiskLevel;
+  projectId: number;
+  targetDate?: string;
+  releaseDate?: string;
+  releaseNotes?: string;
+  cycleIds?: number[];
+}
+
+/**
+ * Bug information within a release progress summary
+ */
+export interface ReleaseBugInfo {
+  id: number;
+  title: string;
+  status: string;
+  severity: string;
+  targetReleaseId?: number;
+  targetReleaseVersion?: string;
+  fixedInReleaseId?: number;
+  fixedInReleaseVersion?: string;
+  isSlipped: boolean;
+}
+
+/**
+ * Release progress metrics
+ */
+export interface ReleaseProgress {
+  releaseId: number;
+  name: string;
+  version: string;
+  status: ReleaseStatus;
+  riskLevel: ReleaseRiskLevel;
+  targetDate?: string;
+  releaseDate?: string;
+  // Pitch metrics
+  totalPitches: number;
+  completedPitches: number;
+  inProgressPitches: number;
+  pitchCompletionPercentage: number;
+  // Task metrics
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  blockedTasks: number;
+  taskCompletionPercentage: number;
+  // Bug metrics
+  totalBugs: number;
+  openBugs: number;
+  resolvedBugs: number;
+  slippedBugs: number;
+  // Slipped bug details
+  slippedBugList?: ReleaseBugInfo[];
+}
+
+/**
+ * Timeline representation for Gantt charts
+ */
+export interface TimelinePitch {
+  id: number;
+  title: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  cycleId?: number;
+  cycleName?: string;
+}
+
+export interface TimelineEpic {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  color?: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  pitches?: TimelinePitch[];
+}
+
+export interface TimelineInitiative {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  color?: string;
+  startDate?: string;
+  endDate?: string;
+  progress: number;
+  epics?: TimelineEpic[];
+}
+
+export interface TimelineRelease {
+  id: number;
+  name: string;
+  version: string;
+  status: string;
+  targetDate?: string;
+  releaseDate?: string;
+  riskLevel: string;
+  progress: number;
+}
+
+/**
+ * Complete roadmap timeline data for Gantt view
+ */
+export interface RoadmapTimeline {
+  projectId: number;
+  startDate: string;
+  endDate: string;
+  initiatives: TimelineInitiative[];
+  orphanEpics: TimelineEpic[];
+  releases: TimelineRelease[];
 }
 
 export * from './betting-analytics';

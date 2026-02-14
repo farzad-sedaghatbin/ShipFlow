@@ -69,8 +69,8 @@ BEGIN
     -- Create 4 subtasks (2 completed, 1 in progress, 1 todo = 50% complete)
     INSERT INTO tasks (title, description, status, priority, category, estimate_hours, cycle_id, pitch_id, parent_task_id, assignee_id, created_at, updated_at)
     VALUES 
-    ('Design navigation patterns', 'Create mockups', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 8.0, v_cycle_id, v_pitch_id_1, v_task_id_1, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Implement responsive layouts', 'Build components', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 12.0, v_cycle_id, v_pitch_id_1, v_task_id_1, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Design navigation patterns', 'Create mockups', 'DONE', 'HIGH', 'PITCH_SCOPE', 8.0, v_cycle_id, v_pitch_id_1, v_task_id_1, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Implement responsive layouts', 'Build components', 'DONE', 'HIGH', 'PITCH_SCOPE', 12.0, v_cycle_id, v_pitch_id_1, v_task_id_1, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('Add dark mode support', 'Implement theming', 'IN_PROGRESS', 'MEDIUM', 'PITCH_SCOPE', 10.0, v_cycle_id, v_pitch_id_1, v_task_id_1, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('User testing and feedback', 'Conduct testing', 'TODO', 'MEDIUM', 'PITCH_SCOPE', 10.0, v_cycle_id, v_pitch_id_1, v_task_id_1, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
@@ -113,9 +113,9 @@ BEGIN
       -- Create 4 subtasks (3 completed, 1 todo = 75% complete, but scope stays at manual position 60)
       INSERT INTO tasks (title, description, status, priority, category, estimate_hours, cycle_id, pitch_id, parent_task_id, assignee_id, created_at, updated_at)
       VALUES 
-      ('Design cache architecture', 'Design distributed cache', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 8.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-      ('Implement Redis integration', 'Set up Redis cluster', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 10.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-      ('Add cache invalidation logic', 'Implement invalidation', 'COMPLETED', 'MEDIUM', 'PITCH_SCOPE', 6.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('Design cache architecture', 'Design distributed cache', 'DONE', 'HIGH', 'PITCH_SCOPE', 8.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('Implement Redis integration', 'Set up Redis cluster', 'DONE', 'HIGH', 'PITCH_SCOPE', 10.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('Add cache invalidation logic', 'Implement invalidation', 'DONE', 'MEDIUM', 'PITCH_SCOPE', 6.0, v_cycle_id, v_pitch_id_2, v_task_id_2, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
       ('Performance testing', 'Load test cache', 'TODO', 'MEDIUM', 'PITCH_SCOPE', 6.0, v_cycle_id, v_pitch_id_2, v_task_id_2, v_user_id_1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
     END IF;
 
@@ -154,10 +154,10 @@ BEGIN
     -- Create 4 completed subtasks
     INSERT INTO tasks (title, description, status, priority, category, estimate_hours, cycle_id, pitch_id, parent_task_id, assignee_id, created_at, updated_at)
     VALUES 
-    ('Email template engine', 'Build template system', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, v_user_id_1, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
-    ('SMTP integration', 'Connect to email provider', 'COMPLETED', 'HIGH', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, v_user_id_1, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '6 days'),
-    ('Notification preferences', 'User settings for notifications', 'COMPLETED', 'MEDIUM', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP - INTERVAL '6 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
-    ('Email delivery tracking', 'Track open rates', 'COMPLETED', 'LOW', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '1 day');
+    ('Email template engine', 'Build template system', 'DONE', 'HIGH', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, v_user_id_1, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
+    ('SMTP integration', 'Connect to email provider', 'DONE', 'HIGH', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, v_user_id_1, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '6 days'),
+    ('Notification preferences', 'User settings for notifications', 'DONE', 'MEDIUM', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP - INTERVAL '6 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
+    ('Email delivery tracking', 'Track open rates', 'DONE', 'LOW', 'PITCH_SCOPE', 4.0, v_cycle_id, v_pitch_id_1, v_task_id_3, COALESCE(v_user_id_2, v_user_id_1), CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '1 day');
 
   END IF;
 END $$;

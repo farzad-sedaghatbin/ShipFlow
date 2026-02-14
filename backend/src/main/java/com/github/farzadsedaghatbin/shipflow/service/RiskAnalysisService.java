@@ -543,6 +543,8 @@ public class RiskAnalysisService {
       case STARTED -> 5;
       case SHAPED -> 10;
       case PENDING -> 15;
+      case DRAFT -> 20; // Early shaping - more uncertainty
+      case IDEA -> 25; // Raw idea - highest uncertainty
       case COOLDOWN -> -20;
       case CANCELLED -> -50;
       case CIRCUIT_BREAKER -> 50; // High risk when circuit breaker is triggered

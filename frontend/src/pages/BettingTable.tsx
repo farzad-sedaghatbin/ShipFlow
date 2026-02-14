@@ -106,12 +106,16 @@ function DraggablePitchCard({
               {decision && <BettingDecisionBadge decision={decision} size="sm" />}
             </div>
             <div className="flex items-center gap-1.5">
-              <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
-                {pitch.appetiteDays} {t('common.days')}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {getAppetiteLabel(pitch.appetiteDays)}
-              </span>
+              {pitch.appetiteDays !== undefined && (
+                <>
+                  <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
+                    {pitch.appetiteDays} {t('common.days')}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {getAppetiteLabel(pitch.appetiteDays)}
+                  </span>
+                </>
+              )}
             </div>
             {pitch.projectKey && (
               <p className="text-xs text-muted-foreground mt-1">{pitch.projectKey}</p>

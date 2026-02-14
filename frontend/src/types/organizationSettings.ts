@@ -115,10 +115,15 @@ export interface UpdateOrganizationSettingsRequest {
   organizationName?: string;
   defaultCycleLengthWeeks?: number;
   defaultCooldownWeeks?: number;
+  defaultHoursPerDay?: number;
+  defaultWorkingDaysPerWeek?: number;
   riskThresholds?: RiskThresholds;
   riskWeights?: RiskWeights;
   taskCategories?: CategoryConfig[];
   pitchCategories?: CategoryConfig[];
+  colors?: ColorSettings;
+  bugStatuses?: BugStatusConfig[];
+  severityLevels?: SeverityLevelConfig[];
   meetingTypes?: MeetingTypeConfig[];
   timeZone?: string;
   dateFormat?: string;

@@ -14,6 +14,7 @@ import lombok.*;
 @Builder
 public class CreateMeetingRequest {
   private Long pitchId;
+  private Long projectId;
 
   @NotNull(message = "Meeting type is required")
   @ValidMeetingType(message = "Invalid meeting type")

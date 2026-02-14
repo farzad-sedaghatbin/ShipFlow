@@ -35,6 +35,11 @@ A modern project management application implementing the [Shape Up](https://base
     - Automatic knowledge base indexing for Q&A
     - Document upload, preview, and download capabilities
     - Inline editing of Shape Up fields on pitch detail page
+  - **Pre-Cycle Workflow**: True Shape Up pitch lifecycle
+    - Pre-cycle statuses: IDEA → DRAFT → SHAPED (no cycle required)
+    - Betting candidates: shaped pitches automatically appear in betting table
+    - Cycle assignment: betting assigns shaped pitches to cycles (SHAPED → PENDING)
+    - Full support for pitches at every lifecycle stage
 - **Hill Charts**: Visual progress tracking with drag-and-drop dots
 - **Tasks**: Independent work management during cycles
   - **Scope-Task Auto-Bridge**: Unified workflow for scopes and tasks
@@ -69,6 +74,24 @@ A modern project management application implementing the [Shape Up](https://base
   - Document preview with extracted text
   - Download with original filenames and proper Content-Type headers
   - Automatic indexing for AI-powered Q&A
+- **Roadmap & Release Planning**: Strategic planning with Initiative → Epic → Pitch hierarchy
+  - **Initiatives**: Strategic themes spanning multiple quarters (e.g., "Mobile Experience 2026")
+    - Status tracking: DRAFT, PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED
+    - Color-coded timeline visualization with target dates
+    - Owner assignment and project association
+  - **Epics**: Large feature groups organizing related pitches (e.g., "Mobile Checkout Redesign")
+    - Optional parent initiative for strategic alignment
+    - Progress tracking from linked pitches
+    - Flexible status management matching initiative workflow
+  - **Releases**: Versioned delivery milestones with multi-cycle support
+    - Version tracking (e.g., "v2.4.0", "2026.Q2")
+    - Risk level indicators: LOW, MEDIUM, HIGH, CRITICAL
+    - Link releases to one or more cycles
+    - Track pitches and bugs by target release and actual fix release
+  - **Roadmap Timeline View**: Visual timeline for stakeholder communication
+    - Gantt-style visualization of initiatives, epics, and releases
+    - Progress bars showing completion percentages
+    - Filterable by project, status, and date range
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization
   - **Capacity Configuration**: Configurable hours per day and working days per week
@@ -91,6 +114,8 @@ A modern project management application implementing the [Shape Up](https://base
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
     - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)
+    - **Image & Video Attachments**: Drag-and-drop upload of screenshots and screen recordings (JPG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI)
+    - Gallery view with preview and download capabilities
     - Optional traceability to cycles, pitches, scopes, and related tasks
     - Auto-derives project from cycle/pitch when not explicitly set
     - Server-side search for finding related scopes/tasks (min 3 chars, 300ms debounce)

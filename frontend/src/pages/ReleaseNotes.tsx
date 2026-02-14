@@ -42,6 +42,28 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.3',
+    date: 'February 13, 2026',
+    title: 'Dashboard Widget Fixes & Custom KPI Support',
+    highlights: [
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Custom KPI Widget Support',
+        description: 'CUSTOM_KPI widgets now render properly in dashboards. Display custom metrics with trend indicators and sparklines.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Improved Developer Dashboard',
+        description: 'Fixed widget sizing and positioning in the Developer Dashboard template. "My Active Tasks" widget now displays at a proper size (8×4) with better layout.',
+      },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Widget Layout Migration',
+        description: 'Automatic migration updates existing dashboards with improved widget sizes and positions for better visibility.',
+      },
+    ],
+  },
+  {
     version: '0.5.2',
     date: 'February 10, 2026',
     title: 'Scope-Task Bridge & Capacity Management',

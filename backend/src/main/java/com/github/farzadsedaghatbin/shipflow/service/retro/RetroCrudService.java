@@ -44,7 +44,10 @@ public class RetroCrudService {
   // ==================== READ OPERATIONS ====================
 
   public List<RetroDTO> getAllRetrosByProject(Long projectId) {
-    validateRetrospectivesEnabled(projectId);
+    // Return empty list if retrospectives are disabled for this project
+    if (!isRetrospectivesEnabled(projectId)) {
+      return List.of();
+    }
     List<Retrospective> retros = retroRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
     return retroMapper.toDTOBatch(retros);
   }
@@ -53,8 +56,9 @@ public class RetroCrudService {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
 
-    if (cycle.getProject() != null) {
-      validateRetrospectivesEnabled(cycle.getProject().getId());
+    // Return empty list if retrospectives are disabled for the cycle's project
+    if (cycle.getProject() != null && !isRetrospectivesEnabled(cycle.getProject().getId())) {
+      return List.of();
     }
 
     List<Retrospective> retros = retroRepository.findByCycleIdOrderByCreatedAtDesc(cycleId);

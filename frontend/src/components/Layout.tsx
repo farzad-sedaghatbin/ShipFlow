@@ -33,6 +33,9 @@ import {
   Github,
   Plug,
   BookOpen,
+  Map,
+  Layers,
+  PackageCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -116,6 +119,14 @@ const peopleItems: NavItemConfig[] = [
 const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
+];
+
+// Roadmap & Planning section
+const roadmapItems: NavItemConfig[] = [
+  { textKey: 'nav.roadmap', icon: Map, path: '/roadmap', tourId: 'roadmap-menu' },
+  { textKey: 'nav.initiatives', icon: Target, path: '/initiatives', tourId: 'initiatives-menu' },
+  { textKey: 'nav.epics', icon: Layers, path: '/epics', tourId: 'epics-menu' },
+  { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
 ];
 
 // Meetings (accessible from cycle context)
@@ -333,6 +344,16 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             titleKey="nav.groups.qaTesting"
             icon={FlaskConical}
             items={qualityItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
+          {/* Roadmap & Planning Section */}
+          <SectionHeader textKey="nav.sections.roadmap" />
+          <NavGroup
+            titleKey="nav.groups.planning"
+            icon={Map}
+            items={roadmapItems}
             currentPath={currentPath}
             onItemClick={onItemClick}
           />

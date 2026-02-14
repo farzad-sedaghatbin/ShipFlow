@@ -487,6 +487,9 @@ export default function PitchDetail() {
               <SelectValue placeholder={t('pitchDetailPage.status')} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="IDEA">{t('status.idea')}</SelectItem>
+              <SelectItem value="DRAFT">{t('status.draft')}</SelectItem>
+              <SelectItem value="SHAPED">{t('pitches.status.shaped')}</SelectItem>
               <SelectItem value="PENDING">{t('status.pending')}</SelectItem>
               <SelectItem value="STARTED">{t('status.started')}</SelectItem>
               <SelectItem value="IN_PROGRESS">{t('status.inProgress')}</SelectItem>

@@ -207,13 +207,13 @@ VALUES
 INSERT INTO dashboard_widget_configs (dashboard_id, widget_id, widget_type, metric_id,
     position_x, position_y, width, height, data_filters, chart_config, settings, display_order, created_at, updated_at)
 VALUES
-(6, NULL, 'TABLE', NULL, 0, 0, 2, 2, NULL, NULL,
+(6, NULL, 'TABLE', NULL, 0, 0, 8, 4, NULL, NULL,
  '{"title": "My Active Tasks", "pageSize": 10, "searchable": true, "sourceType": "TASK_LIST", "sortBy": "priority", "sortOrder": "desc", "limit": 10, "filters": [{"field": "status", "operator": "in", "value": ["TODO", "IN_PROGRESS"]}]}', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
-(6, NULL, 'CUSTOM_KPI', 4, 0, 2, 1, 1, NULL, NULL,
+(6, NULL, 'CUSTOM_KPI', 4, 8, 0, 2, 2, NULL, NULL,
  '{"title": "Code Review Time", "icon": "git-pull-request", "color": "#8b5cf6", "format": "hours"}', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
-(6, NULL, 'CUSTOM_KPI', 5, 1, 2, 1, 1, NULL, NULL,
+(6, NULL, 'CUSTOM_KPI', 5, 10, 0, 2, 2, NULL, NULL,
  '{"title": "Tech Debt", "icon": "tool", "color": "#f59e0b"}', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Executive Summary Template widgets (high-level overview for stakeholders)

@@ -56,6 +56,15 @@ public class PitchDTO {
   private String risks;
   private String noGos;
   private String wireframeLinks;
+
+  // Epic relationship (roadmap)
+  private Long epicId;
+  private String epicName;
+
+  // Target release
+  private Long targetReleaseId;
+  private String targetReleaseName;
+  private String targetReleaseVersion;
   
   /**
    * Summary of the busiest team member (closest to exhausting their budget).

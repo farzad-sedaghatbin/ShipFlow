@@ -105,7 +105,7 @@ export default function MeetingList() {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject?.id).map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, cycles, currentProject, isAllProjectsSelected]);
 
   const [formData, setFormData] = useState<CreateMeetingRequest>({
@@ -142,7 +142,7 @@ export default function MeetingList() {
         pitchService.getMyPitches(),
         cycleService.getMyCycles(),
         currentProject 
-          ? retroService.getByProject(currentProject.id).catch(() => ({ data: [] }))
+          ? retroService.getByProject(currentProject.id)
           : Promise.resolve({ data: [] }),
         personService.getAll(true), // Get active persons
         organizationSettingsService.getSettings().catch(() => ({ data: null })),
@@ -276,6 +276,8 @@ export default function MeetingList() {
       const data = {
         ...formData,
         dateHeld: meetingDate,
+        // Set projectId from currentProject if no pitch is selected
+        projectId: formData.pitchId ? undefined : currentProject?.id,
       };
       if (editId) {
         await meetingService.update(editId, data);

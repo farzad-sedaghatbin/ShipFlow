@@ -65,6 +65,11 @@ public class TaskDTO {
 
   private String tags;
 
+  // Target release
+  private Long targetReleaseId;
+  private String targetReleaseName;
+  private String targetReleaseVersion;
+
   // Dependency information
   private java.util.List<TaskDependencyDTO> blockingTasks; // Tasks this task blocks
   private java.util.List<TaskDependencyDTO> blockedByTasks; // Tasks blocking this task

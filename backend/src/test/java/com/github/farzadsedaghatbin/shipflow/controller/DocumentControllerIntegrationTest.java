@@ -12,17 +12,23 @@ import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -63,12 +69,22 @@ class DocumentControllerIntegrationTest {
   @Autowired
   private PermissionRepository permissionRepository;
 
+  @Autowired
+  private BugReportRepository bugReportRepository;
+
+  @Autowired
+  private ProjectRepository projectRepository;
+
+  @Value("${app.upload.dir}")
+  private String uploadDir;
+
   @TempDir
   Path tempDir;
 
   private Pitch testPitch;
   private Cycle testCycle;
   private User testUser;
+  private BugReport testBug;
 
   @BeforeEach
   void setUp() {
@@ -107,6 +123,30 @@ class DocumentControllerIntegrationTest {
         .appetiteDays(14).status(com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus.PENDING)
         .build();
     testPitch = pitchRepository.save(testPitch);
+
+    // Create test project for bug report
+    Project testProject = projectRepository.findAll().stream().findFirst().orElse(null);
+    if (testProject == null) {
+      testProject = Project.builder()
+          .name("Test Project")
+          .projectKey("TEST")
+          .description("Test project for bug attachments")
+          .isActive(true)
+          .build();
+      testProject = projectRepository.save(testProject);
+    }
+
+    // Create test bug report
+    testBug = BugReport.builder()
+        .bugKey("BUG-001")
+        .title("Test Bug")
+        .description("Test bug for attachment testing")
+        .severity(BugSeverity.MAJOR)
+        .status(BugStatus.OPEN)
+        .project(testProject)
+        .reporter(testUser)
+        .build();
+    testBug = bugReportRepository.save(testBug);
   }
 
   @Test
@@ -284,14 +324,139 @@ class DocumentControllerIntegrationTest {
         .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").exists());
   }
 
+  // ========== Bug Report Attachment Tests ==========
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void uploadBugAttachment_withValidImage_shouldReturnSuccess() throws Exception {
+    // Given - Create a mock PNG image
+    byte[] imageContent = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}; // PNG header
+    MockMultipartFile file = new MockMultipartFile("file", "screenshot.png", "image/png", imageContent);
+
+    // When/Then
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fileName").value("screenshot.png"))
+        .andExpect(jsonPath("$.fileType").value("png"))
+        .andExpect(jsonPath("$.textExtracted").value(false));
+
+    // Verify document was saved
+    assertThat(documentRepository.findByEntityTypeAndEntityId("BUG_REPORT", testBug.getId())).hasSize(1);
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void uploadBugAttachment_withValidVideo_shouldReturnSuccess() throws Exception {
+    // Given - Create a mock MP4 video
+    byte[] videoContent = "mock video content".getBytes();
+    MockMultipartFile file = new MockMultipartFile("file", "recording.mp4", "video/mp4", videoContent);
+
+    // When/Then
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fileName").value("recording.mp4"))
+        .andExpect(jsonPath("$.fileType").value("mp4"))
+        .andExpect(jsonPath("$.textExtracted").value(false));
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void uploadBugAttachment_withInvalidFileType_shouldReturnError() throws Exception {
+    // Given - Create a file with unsupported type
+    MockMultipartFile file = new MockMultipartFile("file", "document.exe", "application/octet-stream", 
+        "executable content".getBytes());
+
+    // When/Then
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorMessage").exists());
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void uploadBugAttachment_withEmptyFile_shouldReturnError() throws Exception {
+    // Given - Create an empty file
+    MockMultipartFile file = new MockMultipartFile("file", "empty.png", "image/png", new byte[0]);
+
+    // When/Then
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorMessage").value("File is empty"));
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void getBugAttachments_shouldReturnAllAttachments() throws Exception {
+    // Given - Create two attachments for the bug
+    createDocument("screenshot1.png", "BUG_REPORT", testBug.getId());
+    createDocument("screenshot2.jpg", "BUG_REPORT", testBug.getId());
+
+    // When/Then
+    mockMvc.perform(get("/api/documents/bug/{bugId}/attachments", testBug.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].originalFileName").exists())
+        .andExpect(jsonPath("$[1].originalFileName").exists());
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void getBugAttachments_withNonExistentBug_shouldReturnEmptyList() throws Exception {
+    // When/Then
+    mockMvc.perform(get("/api/documents/bug/{bugId}/attachments", 99999L))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void deleteBugAttachment_withValidId_shouldRemoveAttachment() throws Exception {
+    // Given - Create an attachment
+    UploadedDocument doc = createDocument("screenshot.png", "BUG_REPORT", testBug.getId());
+    Long docId = doc.getId();
+
+    // When/Then
+    mockMvc.perform(delete("/api/documents/bug/attachment/{attachmentId}", docId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Attachment deleted successfully"));
+
+    // Verify deletion
+    assertThat(documentRepository.findById(docId)).isEmpty();
+  }
+
+  @Test
+  @WithMockUser(username = "testuser", roles = {"USER"})
+  void uploadBugAttachment_multipleFiles_shouldSaveAll() throws Exception {
+    // Given - Create multiple files
+    MockMultipartFile file1 = new MockMultipartFile("file", "screenshot1.png", "image/png", 
+        "image content 1".getBytes());
+
+    // Upload first file
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file1))
+        .andExpect(status().isOk());
+
+    // Upload second file
+    MockMultipartFile file2 = new MockMultipartFile("file", "recording.mp4", "video/mp4", 
+        "video content".getBytes());
+    mockMvc.perform(multipart("/api/documents/bug/{bugId}/attachment", testBug.getId()).file(file2))
+        .andExpect(status().isOk());
+
+    // Verify both attachments were saved
+    assertThat(documentRepository.findByEntityTypeAndEntityId("BUG_REPORT", testBug.getId())).hasSize(2);
+  }
+
   private UploadedDocument createDocument(String fileName, String entityType, Long entityId) throws IOException {
-    // Create actual file in temp directory
-    Path filePath = tempDir.resolve(fileName);
+    // Create actual file in the upload directory (where DocumentService looks for it)
+    Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    Files.createDirectories(uploadPath);
+    
+    String storedFileName = "uuid_" + fileName;
+    Path filePath = uploadPath.resolve(storedFileName);
     Files.writeString(filePath, "Sample text content for " + fileName);
 
-    UploadedDocument doc = UploadedDocument.builder().fileName("uuid_" + fileName).originalFileName(fileName)
+    UploadedDocument doc = UploadedDocument.builder().fileName(storedFileName).originalFileName(fileName)
         .fileType(fileName.substring(fileName.lastIndexOf('.') + 1)).fileSize(Files.size(filePath))
-        .storagePath(filePath.toString()).extractedText("Sample text content").textExtracted(true)
+        .storagePath(storedFileName).extractedText("Sample text content").textExtracted(true)
         .entityType(entityType).entityId(entityId).uploaderId(1L).uploaderUsername("testuser")
         .indexedForQA(false).build();
     return documentRepository.save(doc);

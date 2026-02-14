@@ -4,9 +4,63 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.5.2] - 2026-02-10 - Scope-Task Bridge & Capacity Management
-
 ### Added
+- **Shape Up Workflow Improvements - Pre-Cycle Pitch States**
+  - Pitches now support a true pre-cycle workflow per Shape Up methodology
+  - **Pre-cycle statuses** (IDEA, DRAFT, SHAPED) no longer require cycle assignment
+  - **Betting Candidates**: SHAPED pitches with `cycle=null` appear in betting table for selection
+  - **Cycle Assignment**: Betting process assigns shaped pitches to cycles (SHAPED → PENDING transition)
+  - New repository method `findBettingCandidates()` fetches SHAPED pitches without cycle
+  - New endpoint `PUT /api/pitches/{id}/assign-cycle/{cycleId}` for betting table integration
+  - Entity enhancements: `Pitch.isPreCycleStatus()`, `Pitch.isReadyForBetting()`
+  - Full null-safety for DTOs when handling pre-cycle pitches
+  - Database and service layer support for pitches throughout their complete lifecycle
+- **Roadmap & Release Planning Feature**
+  - **Initiatives**: Strategic themes spanning multiple quarters for high-level planning
+    - Full CRUD operations with soft delete support
+    - Status workflow: DRAFT → PLANNED → IN_PROGRESS → COMPLETED (with ON_HOLD, CANCELLED)
+    - Color-coded visualization with sortable display order
+    - Target date ranges for timeline planning
+    - Owner assignment and project association
+  - **Epics**: Feature grouping layer between initiatives and pitches
+    - Optional parent initiative for strategic alignment
+    - Independent lifecycle with same status options as initiatives
+    - Link multiple pitches to track epic progress
+    - Color customization for visual differentiation
+  - **Releases**: Versioned delivery milestones
+    - Version string support (e.g., "v2.4.0", "2026.Q2")
+    - Status workflow: DRAFT → PLANNED → IN_PROGRESS → STAGING → RELEASED
+    - Risk level tracking: LOW, MEDIUM, HIGH, CRITICAL
+    - Many-to-many relationship with cycles (releases can span multiple cycles)
+    - Release notes for documentation
+  - **Roadmap Timeline View**: Stakeholder-friendly visualization
+    - Timeline data aggregation across initiatives, epics, and releases
+    - Progress calculation from linked pitches
+    - Pitch status breakdown per epic/release
+  - **Bug & Pitch Release Tracking**
+    - `target_release_id` on pitches - "When will this be delivered?"
+    - `target_release_id` and `fixed_in_release_id` on bugs - Track expected vs actual fix release
+    - `target_release_id` on tasks for release scoping
+  - Backend: 4 new enums, 3 new entities, migration V82, 8 DTOs, 3 repositories, 4 services, 4 controllers
+  - Frontend: 4 services, 8 pages (Roadmap, Initiatives, Epics, Releases)
+  - Navigation: New "Roadmap & Planning" menu group with Map, Target, Layers, PackageCheck icons
+  - i18n: Full English and Persian translations for all roadmap features
+
+- **Bug Report Attachments & Media Support**
+  - Image and video attachment support for bug reports (JPG, JPEG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI)
+  - Drag-and-drop upload interface with progress indicators and previews
+  - **Attachments can be added during bug creation** - files are staged and uploaded after the bug is created
+  - Gallery view with thumbnail previews for all attachments
+  - Full-screen preview modal for viewing images and videos
+  - Download functionality for all attachments
+  - Backend API endpoints: `POST /api/documents/bug/{bugId}/attachment`, `GET /api/documents/bug/{bugId}/attachments`, `DELETE /api/documents/bug/attachment/{attachmentId}`
+  - New `MediaAttachmentUpload` component with file validation and preview capabilities
+  - Extended `DocumentService` with `uploadMediaAttachment()` method for handling media files (50MB limit, no text extraction)
+  - Integrated into `BugReportModal` (upload during creation and editing) and `BugViewDialog` (attachment gallery display)
+  - i18n support for attachment-related messages in English and Persian
+  - Comprehensive integration tests (9 tests covering upload, retrieval, deletion, validation)
+  - Seed data with 14 sample bug attachments across 7 bug reports demonstrating the feature
+
 - **Scope-Task Auto-Bridge Integration**
   - Unified Scope and Task entities with automatic bidirectional synchronization
   - Creating a root task with a pitch automatically creates a linked hill chart scope
@@ -64,6 +118,22 @@ All notable changes to this project will be documented in this file.
   - Aligns with existing permission matrix (REPORT write access for Admin/Manager only)
 
 ### Fixed
+- **Meeting creation - project association for non-pitch meetings**
+  - Added direct `project_id` column to meetings table (migration V89) to support project-level meetings without pitch association
+  - Meetings can now be associated with a project directly, not just through pitch → cycle → project relationship
+  - When creating a meeting without selecting a pitch, the current project is automatically assigned
+  - Fixes issue where meetings created without a pitch wouldn't appear when filtering by project (e.g., standalone standups in Kanban projects)
+  - Backend: Added `projectId` field to `CreateMeetingRequest`, updated `MeetingService` to handle project assignment
+  - Frontend: Automatically passes `currentProject.id` when creating meetings without a pitch
+  - Migration V89 backfills existing meetings with project data from their pitch associations
+
+- **Retrospectives API graceful handling for disabled features**
+  - `/api/retros/project/{projectId}` and `/api/retros/cycle/{cycleId}` now return empty lists instead of 500 errors when retrospectives are disabled for a project (e.g., Kanban projects)
+  - Meeting List page was calling retros endpoint during data refresh to populate retrospective dropdown, causing errors in Kanban projects
+  - Updated backend service layer (`RetroCrudService`) to gracefully handle disabled features
+  - Updated 3 tests to reflect non-blocking behavior for feature availability checks
+  - Removed frontend error handling workaround now that backend handles this properly
+
 - **ActOnRetroItemsDialog checkbox double-toggle bug**
   - Fixed issue where clicking checkbox triggered both onCheckedChange and parent div onClick
   - Removed redundant onCheckedChange handler to prevent state toggling twice

@@ -145,6 +145,12 @@ public class Task {
   @Column(columnDefinition = "TEXT")
   private String tags;
 
+  /** The target release for this task (optional) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "target_release_id")
+  private Release targetRelease;
+
   // Soft delete fields
   @NotAudited
   @Column

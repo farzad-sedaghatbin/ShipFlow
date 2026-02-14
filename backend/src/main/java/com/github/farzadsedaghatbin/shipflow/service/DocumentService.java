@@ -46,9 +46,33 @@ public class DocumentService {
    * Mapping of file extensions to MIME content types. Centralized to maintain
    * consistency across the codebase.
    */
-  private static final Map<String, String> CONTENT_TYPE_MAP = Map.of("pdf", "application/pdf", "docx",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "doc", "application/msword",
-      "txt", "text/plain", "md", "text/markdown");
+  private static final Map<String, String> CONTENT_TYPE_MAP = Map.ofEntries(
+      // Documents
+      Map.entry("pdf", "application/pdf"),
+      Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+      Map.entry("doc", "application/msword"),
+      Map.entry("txt", "text/plain"),
+      Map.entry("md", "text/markdown"),
+      // Images
+      Map.entry("jpg", "image/jpeg"),
+      Map.entry("jpeg", "image/jpeg"),
+      Map.entry("png", "image/png"),
+      Map.entry("gif", "image/gif"),
+      Map.entry("webp", "image/webp"),
+      Map.entry("svg", "image/svg+xml"),
+      // Videos
+      Map.entry("mp4", "video/mp4"),
+      Map.entry("webm", "video/webm"),
+      Map.entry("mov", "video/quicktime"),
+      Map.entry("avi", "video/x-msvideo")
+  );
+
+  /**
+   * Allowed media file extensions for bug report attachments.
+   */
+  private static final java.util.Set<String> ALLOWED_MEDIA_TYPES = java.util.Set.of(
+      "jpg", "jpeg", "png", "gif", "webp", "svg", "mp4", "webm", "mov", "avi"
+  );
 
   private final UploadedDocumentRepository documentRepository;
   private final LocalizationService localizationService;
@@ -142,6 +166,108 @@ public class DocumentService {
       return DocumentUploadResponse.builder().textExtracted(false)
           .errorMessage("Error uploading document: " + e.getMessage()).build();
     }
+  }
+
+  /**
+   * Upload a media attachment (image/video) for bug reports.
+   * Does not extract text or index for Q&A.
+   *
+   * @param file              The media file to upload
+   * @param entityType        The entity type (e.g., "BUG_REPORT")
+   * @param entityId          The entity ID
+   * @param uploaderId        The uploader user ID
+   * @param uploaderUsername  The uploader username
+   * @param maxMediaSize      Maximum allowed file size (0 for default)
+   * @return Upload response with file details
+   */
+  @Transactional
+  public DocumentUploadResponse uploadMediaAttachment(MultipartFile file, String entityType, Long entityId,
+      Long uploaderId, String uploaderUsername, long maxMediaSize) {
+    try {
+      // Validate file
+      if (file.isEmpty()) {
+        return DocumentUploadResponse.builder().textExtracted(false).errorMessage("File is empty").build();
+      }
+
+      long effectiveMaxSize = maxMediaSize > 0 ? maxMediaSize : maxFileSize * 5; // 50MB default for media
+      if (file.getSize() > effectiveMaxSize) {
+        return DocumentUploadResponse.builder().textExtracted(false)
+            .errorMessage("File size exceeds maximum allowed size (" + (effectiveMaxSize / 1024 / 1024) + "MB)")
+            .build();
+      }
+
+      String originalFileName = file.getOriginalFilename();
+      String fileType = getFileType(originalFileName);
+
+      // Validate file type for media
+      if (!isAllowedMediaType(fileType)) {
+        return DocumentUploadResponse.builder().fileName(originalFileName).fileType(fileType)
+            .textExtracted(false)
+            .errorMessage("Unsupported media file type. Allowed: JPG, JPEG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI")
+            .build();
+      }
+
+      // Sanitize original filename to prevent path traversal
+      String sanitizedFileName = sanitizeFileName(originalFileName);
+
+      // Generate unique file name
+      String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedFileName;
+
+      // Save file to disk
+      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+      Files.createDirectories(uploadPath);
+      Path filePath = uploadPath.resolve(uniqueFileName);
+
+      // Verify the resolved path is still within the upload directory
+      if (!filePath.normalize().startsWith(uploadPath)) {
+        throw new SecurityException("Invalid file path detected");
+      }
+
+      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+      // Save document metadata to database (no text extraction for media)
+      UploadedDocument document = UploadedDocument.builder()
+          .fileName(uniqueFileName)
+          .originalFileName(originalFileName)
+          .fileType(fileType)
+          .fileSize(file.getSize())
+          .storagePath(uniqueFileName)
+          .extractedText(null)
+          .textExtracted(false)
+          .entityType(entityType)
+          .entityId(entityId)
+          .uploaderId(uploaderId)
+          .uploaderUsername(uploaderUsername)
+          .indexedForQA(false)
+          .build();
+
+      document = documentRepository.save(document);
+
+      log.info("Media attachment uploaded successfully: {} ({})", originalFileName, fileType);
+
+      return DocumentUploadResponse.builder()
+          .id(document.getId())
+          .fileName(originalFileName)
+          .fileType(fileType)
+          .fileSize(file.getSize())
+          .storagePath(uniqueFileName)
+          .textExtracted(false)
+          .build();
+
+    } catch (Exception e) {
+      log.error("Error uploading media attachment: {}", e.getMessage(), e);
+      return DocumentUploadResponse.builder()
+          .textExtracted(false)
+          .errorMessage("Error uploading media attachment: " + e.getMessage())
+          .build();
+    }
+  }
+
+  /**
+   * Check if a file type is an allowed media type for bug attachments.
+   */
+  private boolean isAllowedMediaType(String fileType) {
+    return fileType != null && ALLOWED_MEDIA_TYPES.contains(fileType.toLowerCase());
   }
 
   /**

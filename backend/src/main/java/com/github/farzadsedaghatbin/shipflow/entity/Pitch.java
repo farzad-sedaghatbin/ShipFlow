@@ -33,8 +33,9 @@ public class Pitch {
   @Column(columnDefinition = "TEXT")
   private String description;
 
+  /** Appetite in days. Required for SHAPED status and beyond. NULL for IDEA. */
   @NotAudited
-  @Column(nullable = false)
+  @Column(nullable = true)
   private Integer appetiteDays;
 
   // Shape Up Methodology Fields
@@ -62,9 +63,10 @@ public class Pitch {
   @Column(columnDefinition = "TEXT")
   private String wireframeLinks;
 
+  /** Cycle this pitch is assigned to. Required for PENDING status and beyond. NULL for IDEA, DRAFT, SHAPED. */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "cycle_id", nullable = false)
+  @JoinColumn(name = "cycle_id", nullable = true)
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pitches", "teams", "retrospectives", "project"})
   private Cycle cycle;
 
@@ -89,6 +91,18 @@ public class Pitch {
   @NotAudited
   @Column
   private LocalDateTime circuitBreakerDate;
+
+  /** The epic this pitch belongs to (optional, for roadmap organization) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "epic_id")
+  private Epic epic;
+
+  /** The target release for this pitch (optional) */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "target_release_id")
+  private Release targetRelease;
 
   @NotAudited
   @Column(nullable = false)
@@ -137,10 +151,53 @@ public class Pitch {
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = LocalDateTime.now();
+    // Default to IDEA status for new pitches without explicit status
+    if (status == null) {
+      status = PitchStatus.IDEA;
+    }
   }
 
   @PreUpdate
   protected void onUpdate() {
     updatedAt = LocalDateTime.now();
+  }
+
+  // ===== Helper Methods for Status Workflow =====
+
+  /** Returns true if this pitch is assigned to a cycle. */
+  public boolean isAssignedToCycle() {
+    return cycle != null;
+  }
+
+  /** Returns true if this pitch is in a pre-cycle status (IDEA, DRAFT, SHAPED). */
+  public boolean isPreCycle() {
+    return status == PitchStatus.IDEA 
+        || status == PitchStatus.DRAFT 
+        || status == PitchStatus.SHAPED;
+  }
+
+  /** Returns true if this pitch requires shaping (IDEA or DRAFT). */
+  public boolean requiresShaping() {
+    return status == PitchStatus.IDEA || status == PitchStatus.DRAFT;
+  }
+
+  /** Returns true if this pitch is ready for betting (SHAPED status). */
+  public boolean isReadyForBetting() {
+    return status == PitchStatus.SHAPED && cycle == null;
+  }
+
+  /** Returns true if this pitch is actively being worked (STARTED to TESTING). */
+  public boolean isInProgress() {
+    return status == PitchStatus.STARTED 
+        || status == PitchStatus.IN_PROGRESS 
+        || status == PitchStatus.TESTING;
+  }
+
+  /** Returns true if this pitch is complete (DONE, COOLDOWN, CANCELLED, CIRCUIT_BREAKER). */
+  public boolean isComplete() {
+    return status == PitchStatus.DONE 
+        || status == PitchStatus.COOLDOWN
+        || status == PitchStatus.CANCELLED 
+        || status == PitchStatus.CIRCUIT_BREAKER;
   }
 }
