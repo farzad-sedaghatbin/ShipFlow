@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-02-16 - Wise AI & Strategic Planning
+
+### Theme
+> "Context-aware AI meets strategic roadmap planning."
+
+This release introduces **Wise Architecture** with multi-source context integration (team skills, Figma designs, GitHub code, roadmap relationships) and a comprehensive **Roadmap & Release Planning** system for strategic product management.
+
 ### Added
 - **Wise Architecture Enhancements**
   - **Team Skills Integration**: AI solutions now consider team member skills when generating technical recommendations

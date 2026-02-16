@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wise Architecture is an **experimental** AI-powered feature that helps development teams generate comprehensive technical solutions for pitches. It analyzes your codebase to identify reusable services, recommend libraries, and create implementation plans that fit within your appetite (time budget).
+Wise Architecture is an **experimental** AI-powered feature that helps development teams generate comprehensive technical solutions for pitches. It leverages multiple context sources—your codebase, team skills, design files, and product roadmap—to identify reusable services, recommend libraries, and create implementation plans that fit within your appetite (time budget).
 
 ## Features
 
@@ -14,20 +14,50 @@ Wise Architecture is an **experimental** AI-powered feature that helps developme
   - **Web**: React, Angular, Vue.js, Next.js
 - Shows confidence scores for each detected stack
 
-### 2. Technical Solution Generation
+### 2. Multi-Source Context Integration (v0.5.3)
+
+Wise Architecture now considers multiple context sources for smarter recommendations:
+
+- **Team Skills Integration**: Extracts unique skills from assigned team members (~25-35 tokens)
+  - Suggests technologies matching team expertise for faster implementation
+  - Prioritizes libraries and tools the team already knows
+  
+- **Figma MCP Integration**: Analyzes Figma design files linked in pitches
+  - Extracts design context from wireframeLinks via Figma MCP server (~100-200 tokens)
+  - Per-organization Figma access token storage in Organization Settings
+  - Environment-variable driven: `MCP_FIGMA_ENABLED`, `MCP_FIGMA_SERVER_URL`
+
+- **GitHub MCP Integration**: Repository code analysis via Model Context Protocol servers
+  - Full HTTP implementation for file listing, reading, and searching
+  - Batch file read support with fallback to individual reads
+  - Automatic service discovery based on tech stack patterns
+  - Graceful fallback to default patterns when MCP not configured
+
+- **Roadmap Context Integration**: Considers Epic/Initiative relationships for extensibility
+  - Extracts roadmap context from assigned Epic (name, status, description)
+  - Includes parent Initiative information when available
+  - Lists related pitches in the same Epic for cohesive design recommendations
+  - Generates architecture suggestions optimized for future extension
+
+- **Context Availability Warnings**: Frontend displays alerts when context sources are missing
+  - Shows which sources were used (code analysis, team skills, design context, roadmap context)
+  - Warns users that recommendations may be less accurate without full context
+  - Tip: "Assign pitches to epics to enable roadmap-aware recommendations"
+
+### 3. Technical Solution Generation
 - Generates architecture overviews for each selected stack
 - Identifies reusable services from your existing codebase
 - Recommends libraries and tools to accelerate development
 - Creates step-by-step implementation plans with time estimates
 - Provides best practices specific to your tech stack
 
-### 3. Appetite Validation
+### 4. Appetite Validation
 - Checks if the estimated effort fits within the pitch's appetite
 - Converts appetite (in days) to estimated hours
 - Provides reduced scope suggestions when appetite is exceeded
 - Lists items that could be deferred to fit the timeline
 
-### 4. Follow-up Questions & Copilot Prompts
+### 5. Follow-up Questions & Copilot Prompts
 - Chat interface for asking clarifying questions about the solution
 - Automatically detects code requests (keywords like "generate", "create", "implement")
 - Generates ready-to-use prompts for GitHub Copilot or other AI assistants
@@ -149,4 +179,4 @@ As an experimental feature, we welcome feedback to improve Wise Architecture:
 
 ---
 
-*This documentation is for Wise Architecture v1.0 (Experimental)*
+*This documentation is for Wise Architecture v1.1 (Experimental) - Updated February 2026*
