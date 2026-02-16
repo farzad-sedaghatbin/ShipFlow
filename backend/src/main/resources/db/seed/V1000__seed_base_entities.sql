@@ -27,20 +27,21 @@ INSERT INTO persons (id, name, email, skills, avatar_url, department, bio, is_ac
 -- ===========================================
 -- 3. USERS (Authentication accounts)
 -- Password is 'password123' hashed with BCrypt
+-- Valid UserRole values: ADMIN, MANAGER, MEMBER, READONLY
 -- ===========================================
 INSERT INTO users (id, username, password, role, person_id, is_active, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 (1, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'alice', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'bob', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 'carol', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 'dan', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(6, 'eve', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'alice', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'bob', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'carol', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'dan', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 5, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'eve', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (7, 'frank', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER', 7, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(8, 'grace', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEAM_MEMBER', 8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(8, 'grace', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MEMBER', 8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- 4. CYCLES (Shape Up 6-week cycles)
--- Phases: SHAPING, BETTING, BUILDING, COOLDOWN
+-- Valid CyclePhase values: SHAPING, BETTING, BUILD, COOLDOWN
 -- ===========================================
 INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) OVERRIDING SYSTEM VALUE VALUES
 -- Past completed cycles
@@ -48,12 +49,12 @@ INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active
 (2, 'Cycle 2 - Core Features', '2025-07-15', '2025-08-26', 'COOLDOWN', 1, false),
 (3, 'Cycle 3 - Polish', '2025-09-01', '2025-10-12', 'COOLDOWN', 1, false),
 -- Current active cycle in BUILD phase
-(4, 'Cycle 4 - Integrations', '2025-10-15', '2025-11-26', 'BUILDING', 1, true),
+(4, 'Cycle 4 - Integrations', '2025-10-15', '2025-11-26', 'BUILD', 1, true),
 -- Future cycle in SHAPING
 (5, 'Cycle 5 - Mobile', '2025-12-01', '2026-01-12', 'SHAPING', 1, true),
 -- Mobile App project cycles
 (6, 'Mobile Cycle 1', '2025-09-01', '2025-10-12', 'COOLDOWN', 2, false),
-(7, 'Mobile Cycle 2', '2025-10-15', '2025-11-26', 'BUILDING', 2, true);
+(7, 'Mobile Cycle 2', '2025-10-15', '2025-11-26', 'BUILD', 2, true);
 
 -- ===========================================
 -- 5. TEAMS (Per-cycle teams)

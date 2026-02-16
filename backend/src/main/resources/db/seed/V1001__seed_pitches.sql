@@ -4,7 +4,7 @@
 -- ============================================================================
 
 -- ===========================================
--- PITCHES for Cycle 4 (BUILDING phase - committed work)
+-- PITCHES for Cycle 4 (BUILD phase - committed work)
 -- ===========================================
 INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 -- Alpha Team pitches (committed and in progress)
@@ -26,12 +26,12 @@ INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, s
 (10, 'Team Capacity View', 'Visual capacity planning for teams', 10, 5, NULL, 'SHAPED', '2025-11-02', CURRENT_TIMESTAMP);
 
 -- ===========================================
--- IDEA pitches (not yet shaped - in backlog)
+-- IDEA pitches (not yet shaped - in backlog for Cycle 5)
 -- ===========================================
 INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
-(11, 'AI Writing Assistant', 'AI-powered pitch description generator', 21, NULL, NULL, 'IDEA', '2025-11-05', CURRENT_TIMESTAMP),
-(12, 'Custom Reports', 'Build custom reports with drag-drop fields', 14, NULL, NULL, 'IDEA', '2025-11-06', CURRENT_TIMESTAMP),
-(13, 'Calendar Integration', 'Sync with Google Calendar and Outlook', 10, NULL, NULL, 'IDEA', '2025-11-07', CURRENT_TIMESTAMP);
+(11, 'AI Writing Assistant', 'AI-powered pitch description generator', 21, 5, NULL, 'IDEA', '2025-11-05', CURRENT_TIMESTAMP),
+(12, 'Custom Reports', 'Build custom reports with drag-drop fields', 14, 5, NULL, 'IDEA', '2025-11-06', CURRENT_TIMESTAMP),
+(13, 'Calendar Integration', 'Sync with Google Calendar and Outlook', 10, 5, NULL, 'IDEA', '2025-11-07', CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- Completed pitches from previous cycles
