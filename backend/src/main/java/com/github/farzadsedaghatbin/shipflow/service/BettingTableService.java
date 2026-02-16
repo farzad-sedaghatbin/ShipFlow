@@ -386,10 +386,16 @@ public class BettingTableService {
     String projectName = null;
     String projectKey = null;
     
+    // Prefer project from cycle when available
     if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
       projectId = pitch.getCycle().getProject().getId();
       projectName = pitch.getCycle().getProject().getName();
       projectKey = pitch.getCycle().getProject().getProjectKey();
+    } else if (pitch.getEpic() != null && pitch.getEpic().getProject() != null) {
+      // For pre-cycle betting candidates, fall back to project from epic
+      projectId = pitch.getEpic().getProject().getId();
+      projectName = pitch.getEpic().getProject().getName();
+      projectKey = pitch.getEpic().getProject().getProjectKey();
     }
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())

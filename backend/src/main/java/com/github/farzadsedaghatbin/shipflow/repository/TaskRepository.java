@@ -145,6 +145,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     // Project-based multi-filter queries with pagination
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+            + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
@@ -156,6 +157,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("category") TaskCategory category, Pageable pageable);
 
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+            + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id NOT IN :assigneeIds)")

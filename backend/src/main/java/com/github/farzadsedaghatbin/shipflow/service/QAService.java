@@ -536,10 +536,10 @@ public class QAService {
   }
 
   /**
-   * Save QA interaction in a separate transaction to avoid rollback issues
-   * when exceptions occur in the main processing flow.
+   * Save QA interaction. Note: @Transactional removed because it has no effect on private methods
+   * called internally (Spring AOP proxy limitation). The repository save already participates
+   * in any existing transaction from the caller if present.
    */
-  @Transactional
   private QAInteraction saveInteraction(QAInteraction interaction) {
     return qaInteractionRepository.save(interaction);
   }

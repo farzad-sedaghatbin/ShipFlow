@@ -143,8 +143,12 @@ public class TechStackDetectorService {
             int matchCount = 0;
             
             for (String filePath : fileList) {
+                // Prevent ReDoS by skipping excessively long paths
+                if (filePath != null && filePath.length() > 500) {
+                    continue;
+                }
                 for (Pattern pattern : patterns) {
-                    if (pattern.matcher(filePath).matches()) {
+                    if (filePath != null && pattern.matcher(filePath).matches()) {
                         matchedFiles.add(filePath);
                         matchCount++;
                         break; // Only count each file once

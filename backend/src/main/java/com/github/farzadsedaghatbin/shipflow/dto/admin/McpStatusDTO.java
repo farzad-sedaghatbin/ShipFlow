@@ -62,9 +62,13 @@ public class McpStatusDTO {
             java.net.URI uri = java.net.URI.create(url);
             String scheme = uri.getScheme();
             String path = uri.getPath();
-            String lastSegment = path != null && !path.isEmpty() 
-                ? path.substring(path.lastIndexOf('/')) 
+            String lastSegment = path != null && !path.isEmpty()
+                ? path.substring(path.lastIndexOf('/'))
                 : "";
+            // Handle missing scheme (e.g., "localhost:3100")
+            if (scheme == null || scheme.isBlank()) {
+                return "****" + lastSegment;
+            }
             return scheme + "://****" + lastSegment;
         } catch (Exception e) {
             return "****";

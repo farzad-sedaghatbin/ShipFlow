@@ -199,7 +199,6 @@ public class GlobalExceptionHandler {
     
     log.error("HTTP Method Not Supported - Method: {}, URL: {}, Supported Methods: {}", 
         method, fullUrl, String.join(", ", ex.getSupportedMethods() != null ? ex.getSupportedMethods() : new String[]{"UNKNOWN"}));
-    log.error("Request Headers: {}", request.getHeaderNames());
     
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());

@@ -558,9 +558,10 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
                     ) : attachments.length > 0 ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {attachments.map((attachment) => (
-                          <div
+                          <button
+                            type="button"
                             key={attachment.id}
-                            className="relative group rounded-lg overflow-hidden border bg-muted/30 cursor-pointer"
+                            className="relative group rounded-lg overflow-hidden border bg-muted/30 cursor-pointer hover:ring-2 hover:ring-ring focus:outline-none focus:ring-2 focus:ring-ring w-full"
                             onClick={() => {
                               setPreviewAttachment(attachment);
                               setPreviewOpen(true);
@@ -583,17 +584,17 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
                             )}
                             
                             {/* Overlay with view icon */}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                               <Eye className="h-6 w-6 text-white" />
                             </div>
                             
                             {/* File name */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 pointer-events-none">
                               <p className="text-[10px] text-white truncate">
                                 {attachment.originalFileName}
                               </p>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     ) : (
