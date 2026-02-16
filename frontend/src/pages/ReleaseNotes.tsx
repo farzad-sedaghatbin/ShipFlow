@@ -43,23 +43,48 @@ interface Release {
 const releases: Release[] = [
   {
     version: '0.5.3',
-    date: 'February 13, 2026',
-    title: 'Dashboard Widget Fixes & Custom KPI Support',
+    date: 'February 16, 2026',
+    title: 'Wise AI & Strategic Planning',
     highlights: [
       {
-        icon: <Layout className="h-5 w-5" />,
-        title: 'Custom KPI Widget Support',
-        description: 'CUSTOM_KPI widgets now render properly in dashboards. Display custom metrics with trend indicators and sparklines.',
+        icon: <Brain className="h-5 w-5" />,
+        title: 'Wise Architecture - Context-Aware AI',
+        description: 'AI solutions integrate team skills, Figma designs via MCP, GitHub code analysis, and roadmap context. Get smarter technical recommendations that consider your team\'s expertise and product strategy.',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Roadmap & Release Planning',
+        description: 'Strategic planning with Initiatives (quarterly themes), Epics (feature groups), and Releases (delivery milestones). Timeline visualization for stakeholder communication.',
+      },
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'Scope-Task Auto-Bridge',
+        description: 'Tasks and scopes auto-sync bidirectionally. Create a task to get a scope, complete subtasks to auto-update hill chart progress. Toggle manual override when needed.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Bug Report Attachments',
+        description: 'Drag-and-drop images and videos (JPG, PNG, GIF, MP4, MOV). Gallery with thumbnails, full-screen preview, download support, and 50MB file limit.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Team Capacity & Budget',
+        description: 'Configure hours/day and days/week per person. Capacity hierarchy: Organization → Team → Person → Assignment. Accurate per-person budget tracking.',
+      },
+      {
+        icon: <Calendar className="h-5 w-5" />,
+        title: 'Pre-Cycle Pitch States',
+        description: 'True Shape Up workflow: IDEA → DRAFT → SHAPED without cycles. Betting table shows shaped pitches ready for cycle assignment during betting.',
       },
       {
         icon: <Layout className="h-5 w-5" />,
-        title: 'Improved Developer Dashboard',
-        description: 'Fixed widget sizing and positioning in the Developer Dashboard template. "My Active Tasks" widget now displays at a proper size (8×4) with better layout.',
+        title: 'Dashboard Redesign',
+        description: 'Tabbed layout with Overview, AI Insights, and Activity. 6 new manageable widgets. Auto-regeneration of AI narratives on status changes.',
       },
       {
-        icon: <RefreshCw className="h-5 w-5" />,
-        title: 'Widget Layout Migration',
-        description: 'Automatic migration updates existing dashboards with improved widget sizes and positions for better visibility.',
+        icon: <Shield className="h-5 w-5" />,
+        title: 'API Contract Alignment',
+        description: 'Unified frontend/backend DTOs, duplicate i18n key detection in CI, separate Create/Update DTOs for Cooldown API. Full type safety.',
       },
     ],
   },
