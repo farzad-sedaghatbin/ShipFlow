@@ -45,12 +45,13 @@ INSERT INTO tasks (id, title, description, status, priority, estimate_hours, cyc
 
 -- ===========================================
 -- TASK DEPENDENCIES
+-- dependency_type: BLOCKS, DEPENDS_ON, RELATED_TO
 -- ===========================================
-INSERT INTO task_dependencies (task_id, depends_on_id, dependency_type, created_at) VALUES
-(4, 3, 'FINISH_TO_START', CURRENT_TIMESTAMP),  -- Parse events depends on webhook endpoint
-(5, 4, 'FINISH_TO_START', CURRENT_TIMESTAMP),  -- Issue sync depends on event parsing
-(8, 7, 'FINISH_TO_START', CURRENT_TIMESTAMP),  -- Channel UI depends on Slack API
-(11, 9, 'FINISH_TO_START', CURRENT_TIMESTAMP); -- Widget save depends on drag-drop
+INSERT INTO task_dependencies (source_task_id, target_task_id, dependency_type, created_at) VALUES
+(4, 3, 'DEPENDS_ON', CURRENT_TIMESTAMP),  -- Parse events depends on webhook endpoint
+(5, 4, 'DEPENDS_ON', CURRENT_TIMESTAMP),  -- Issue sync depends on event parsing
+(8, 7, 'DEPENDS_ON', CURRENT_TIMESTAMP),  -- Channel UI depends on Slack API
+(11, 9, 'DEPENDS_ON', CURRENT_TIMESTAMP); -- Widget save depends on drag-drop
 
 -- Reset sequences
 SELECT setval('tasks_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM tasks), false);
