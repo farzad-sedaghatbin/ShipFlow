@@ -74,10 +74,7 @@ const DATE_FORMATS = [
 ];
 
 // Extended form data type to include editable fields not in OrganizationSettings
-interface FormData extends Partial<OrganizationSettings> {
-  /** Figma access token for update (not present in OrganizationSettings response) */
-  figmaAccessToken?: string;
-}
+interface FormData extends Partial<OrganizationSettings> {}
 
 export default function OrganizationSettingsPage() {
   const { t, i18n } = useTranslation();
@@ -1545,43 +1542,6 @@ export default function OrganizationSettingsPage() {
                   disabled={!(formData.enableAIFeatures ?? true)}
                 />
               </div>
-
-              {/* Figma Access Token for Wise Architecture */}
-              {formData.enableWiseArchitecture && (
-                <div className="ml-6 mt-4 p-4 border rounded-lg bg-muted/30">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="figma-token">{t('organizationSettings.figmaAccessToken')}</Label>
-                      {settings?.hasFigmaAccessToken && (
-                        <Badge variant="secondary" className="text-xs">
-                          {t('organizationSettings.configured')}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {t('organizationSettings.figmaAccessTokenDesc')}
-                    </p>
-                    <Input
-                      id="figma-token"
-                      type="password"
-                      placeholder={settings?.hasFigmaAccessToken ? '••••••••••••' : t('organizationSettings.figmaAccessTokenPlaceholder')}
-                      onChange={(e) =>
-                        setFormData({ ...formData, figmaAccessToken: e.target.value })
-                      }
-                    />
-                    {settings?.hasFigmaAccessToken && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        onClick={() => setFormData({ ...formData, figmaAccessToken: '' })}
-                      >
-                        {t('organizationSettings.clearFigmaToken')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 

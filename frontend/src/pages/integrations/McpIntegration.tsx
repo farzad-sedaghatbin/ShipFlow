@@ -44,12 +44,6 @@ export default function McpIntegration() {
   const [figmaToken, setFigmaToken] = useState('');
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [showFigmaToken, setShowFigmaToken] = useState(false);
-  
-  // Form states for default context
-  const [githubOwner, setGithubOwner] = useState('');
-  const [githubRepo, setGithubRepo] = useState('');
-  const [githubBranch, setGithubBranch] = useState('main');
-  const [figmaFileKey, setFigmaFileKey] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -76,12 +70,6 @@ export default function McpIntegration() {
       setMcpStatus(status);
       setSettings(orgSettings);
       
-      // Populate form fields from settings
-      setGithubOwner(orgSettings.defaultGithubOwner ?? '');
-      setGithubRepo(orgSettings.defaultGithubRepo ?? '');
-      setGithubBranch(orgSettings.defaultGithubBranch ?? 'main');
-      setFigmaFileKey(orgSettings.defaultFigmaFileKey ?? '');
-      
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.fetchFailed'));
@@ -93,11 +81,7 @@ export default function McpIntegration() {
   const handleSaveGithub = async () => {
     try {
       setSaving(true);
-      const request: UpdateMcpSettingsRequest = {
-        defaultGithubOwner: githubOwner || undefined,
-        defaultGithubRepo: githubRepo || undefined,
-        defaultGithubBranch: githubBranch || 'main',
-      };
+      const request: UpdateMcpSettingsRequest = {};
       
       // Only include token if user entered something
       if (githubToken) {
@@ -118,9 +102,7 @@ export default function McpIntegration() {
   const handleSaveFigma = async () => {
     try {
       setSaving(true);
-      const request: UpdateMcpSettingsRequest = {
-        defaultFigmaFileKey: figmaFileKey || undefined,
-      };
+      const request: UpdateMcpSettingsRequest = {};
       
       // Only include token if user entered something
       if (figmaToken) {
@@ -329,47 +311,6 @@ export default function McpIntegration() {
             </CardContent>
           </Card>
 
-          {/* Default Repository Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('mcpIntegration.defaultRepository')}</CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.defaultRepositoryDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="github-owner">{t('mcpIntegration.owner')}</Label>
-                  <Input
-                    id="github-owner"
-                    value={githubOwner}
-                    onChange={(e) => setGithubOwner(e.target.value)}
-                    placeholder="organization-or-username"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="github-repo">{t('mcpIntegration.repository')}</Label>
-                  <Input
-                    id="github-repo"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
-                    placeholder="repository-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="github-branch">{t('mcpIntegration.branch')}</Label>
-                  <Input
-                    id="github-branch"
-                    value={githubBranch}
-                    onChange={(e) => setGithubBranch(e.target.value)}
-                    placeholder="main"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Save Button */}
           <div className="flex justify-end">
             <Button onClick={handleSaveGithub} disabled={saving}>
@@ -457,30 +398,6 @@ export default function McpIntegration() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {t('mcpIntegration.figmaTokenHint')}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Default File Key Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('mcpIntegration.defaultFigmaFile')}</CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.defaultFigmaFileDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="figma-file-key">{t('mcpIntegration.fileKey')}</Label>
-                <Input
-                  id="figma-file-key"
-                  value={figmaFileKey}
-                  onChange={(e) => setFigmaFileKey(e.target.value)}
-                  placeholder="AbCdEfGhIjKlMnOpQrStUv"
-                />
-                <p className="text-sm text-muted-foreground">
-                  {t('mcpIntegration.figmaFileKeyHint')}
                 </p>
               </div>
             </CardContent>

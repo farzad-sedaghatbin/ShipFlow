@@ -111,26 +111,9 @@ public class OrganizationSettingsService {
       settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
     }
 
-    // Figma MCP Configuration
-    if (request.getFigmaAccessToken() != null) {
-      settings.setFigmaAccessToken(request.getFigmaAccessToken());
-    }
-    if (request.getDefaultFigmaFileKey() != null) {
-      settings.setDefaultFigmaFileKey(request.getDefaultFigmaFileKey());
-    }
-
-    // GitHub MCP Configuration
+    // GitHub MCP Configuration (token only, managed via MCP settings API)
     if (request.getGithubAccessToken() != null) {
       settings.setGithubAccessToken(request.getGithubAccessToken());
-    }
-    if (request.getDefaultGithubOwner() != null) {
-      settings.setDefaultGithubOwner(request.getDefaultGithubOwner());
-    }
-    if (request.getDefaultGithubRepo() != null) {
-      settings.setDefaultGithubRepo(request.getDefaultGithubRepo());
-    }
-    if (request.getDefaultGithubBranch() != null) {
-      settings.setDefaultGithubBranch(request.getDefaultGithubBranch());
     }
 
     settings.setUpdatedBy(username);

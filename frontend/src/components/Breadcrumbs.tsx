@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Settings,
   MessageSquare,
+  Beaker,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +52,7 @@ const routeConfig: Record<string, { key: string; icon: React.ReactNode }> = {
   '/qa': { key: 'breadcrumbs.qa', icon: <CheckSquare className="h-4 w-4" /> },
   '/qa/test-cases': { key: 'breadcrumbs.testCases', icon: <CheckSquare className="h-4 w-4" /> },
   '/qa/bug-reports': { key: 'breadcrumbs.bugReports', icon: <CheckSquare className="h-4 w-4" /> },
-  '/qa/wise-architecture': { key: 'breadcrumbs.wiseArchitecture', icon: <CheckSquare className="h-4 w-4" /> },
+  '/rd/wise-architecture': { key: 'breadcrumbs.wiseArchitecture', icon: <Beaker className="h-4 w-4" /> },
   '/integrations': { key: 'breadcrumbs.integrations', icon: <Settings className="h-4 w-4" /> },
   '/integrations/github': { key: 'breadcrumbs.githubIntegration', icon: <Settings className="h-4 w-4" /> },
   '/integrations/teams': { key: 'breadcrumbs.teamsIntegration', icon: <Settings className="h-4 w-4" /> },

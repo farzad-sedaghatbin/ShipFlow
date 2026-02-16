@@ -36,13 +36,6 @@ public class UpdateOrganizationSettingsRequest {
   // Wise Architecture Feature Flag
   private Boolean enableWiseArchitecture;
 
-  // Figma MCP Configuration
-  private String figmaAccessToken;
-  private String defaultFigmaFileKey;
-
-  // GitHub MCP Configuration
+  // GitHub MCP Configuration (token managed via MCP settings API)
   private String githubAccessToken;
-  private String defaultGithubOwner;
-  private String defaultGithubRepo;
-  private String defaultGithubBranch;
 }

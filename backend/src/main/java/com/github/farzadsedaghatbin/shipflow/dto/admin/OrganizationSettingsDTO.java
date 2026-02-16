@@ -60,13 +60,9 @@ public class OrganizationSettingsDTO {
 
   // Figma MCP Configuration (token not exposed, only flag)
   private Boolean hasFigmaAccessToken;
-  private String defaultFigmaFileKey;
 
   // GitHub MCP Configuration (token not exposed, only flag)
   private Boolean hasGithubAccessToken;
-  private String defaultGithubOwner;
-  private String defaultGithubRepo;
-  private String defaultGithubBranch;
 
   /**
    * Configurable risk detection thresholds for automated health assessment. These

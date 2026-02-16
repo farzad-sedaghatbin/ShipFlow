@@ -190,7 +190,7 @@ function App() {
                     <Route path="qa/test-cases" element={<TestCasesPage />} />
                     <Route path="qa/test-cases/new" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/generate" element={<AITestGeneratePage />} />
-                    <Route path="qa/wise-architecture" element={<WiseArchitecturePage />} />
+                    <Route path="rd/wise-architecture" element={<WiseArchitecturePage />} />
                     <Route path="qa/test-cases/:id" element={<TestCaseDetailPage />} />
                     <Route path="qa/test-cases/:id/edit" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/:id/run" element={<TestRunPage />} />

@@ -120,7 +120,11 @@ const peopleItems: NavItemConfig[] = [
 const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
-  { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/qa/wise-architecture', tourId: 'qa-wise-architecture-menu' },
+];
+
+// R&D section
+const rdItems: NavItemConfig[] = [
+  { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/rd/wise-architecture', tourId: 'rd-wise-architecture-menu' },
 ];
 
 // Roadmap & Planning section
@@ -347,6 +351,16 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             titleKey="nav.groups.qaTesting"
             icon={FlaskConical}
             items={qualityItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
+          {/* R&D Section */}
+          <SectionHeader textKey="nav.sections.rd" />
+          <NavGroup
+            titleKey="nav.groups.research"
+            icon={Beaker}
+            items={rdItems}
             currentPath={currentPath}
             onItemClick={onItemClick}
           />

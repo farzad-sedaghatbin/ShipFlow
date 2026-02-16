@@ -39,12 +39,8 @@ export interface McpStatus {
 export interface McpOrganizationSettings {
   // Figma settings
   hasFigmaAccessToken: boolean;
-  defaultFigmaFileKey: string | null;
   // GitHub settings
   hasGithubAccessToken: boolean;
-  defaultGithubOwner: string | null;
-  defaultGithubRepo: string | null;
-  defaultGithubBranch: string | null;
 }
 
 /**
@@ -53,12 +49,8 @@ export interface McpOrganizationSettings {
 export interface UpdateMcpSettingsRequest {
   // Figma settings
   figmaAccessToken?: string;  // Set to update, empty to clear, omit to leave unchanged
-  defaultFigmaFileKey?: string;
   // GitHub settings
   githubAccessToken?: string;  // Set to update, empty to clear, omit to leave unchanged
-  defaultGithubOwner?: string;
-  defaultGithubRepo?: string;
-  defaultGithubBranch?: string;
 }
 
 /**
@@ -86,11 +78,7 @@ export async function getMcpSettings(): Promise<McpOrganizationSettings> {
   const data = response.data;
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
-    defaultFigmaFileKey: data.defaultFigmaFileKey ?? null,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
-    defaultGithubOwner: data.defaultGithubOwner ?? null,
-    defaultGithubRepo: data.defaultGithubRepo ?? null,
-    defaultGithubBranch: data.defaultGithubBranch ?? null,
   };
 }
 
@@ -102,11 +90,7 @@ export async function updateMcpSettings(request: UpdateMcpSettingsRequest): Prom
   const data = response.data;
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
-    defaultFigmaFileKey: data.defaultFigmaFileKey ?? null,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
-    defaultGithubOwner: data.defaultGithubOwner ?? null,
-    defaultGithubRepo: data.defaultGithubRepo ?? null,
-    defaultGithubBranch: data.defaultGithubBranch ?? null,
   };
 }
 
