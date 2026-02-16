@@ -17,19 +17,6 @@ UPDATE user_preferences SET theme_mode = 'DARK', compact_view = true WHERE user_
 UPDATE user_preferences SET theme_mode = 'LIGHT' WHERE user_id = 7;
 
 -- ===========================================
--- NOTIFICATIONS (sample notifications)
--- ===========================================
-INSERT INTO notifications (id, user_id, type, title, message, data, is_read, created_at) OVERRIDING SYSTEM VALUE VALUES
--- Recent notifications
-(1, 2, 'PITCH_UPDATE', 'Pitch Updated', 'GitHub Integration pitch moved to IN_PROGRESS', '{"pitchId":1}', false, CURRENT_TIMESTAMP - INTERVAL '1 hour'),
-(2, 2, 'TASK_ASSIGNED', 'Task Assigned', 'You have been assigned to "Create Webhook Endpoint"', '{"taskId":3}', false, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
-(3, 3, 'BUG_ASSIGNED', 'Bug Assigned', 'BUG-002: GitHub webhook timeout assigned to you', '{"bugId":2}', true, CURRENT_TIMESTAMP - INTERVAL '1 day'),
-(4, 5, 'MEETING_REMINDER', 'Meeting Reminder', 'Hill Review meeting in 1 hour', '{"meetingId":2}', true, CURRENT_TIMESTAMP - INTERVAL '2 days'),
-(5, 6, 'TEST_RUN_FAILED', 'Test Failed', 'TC-005 failed in latest test run', '{"testRunId":5}', true, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(6, 7, 'CYCLE_PHASE_CHANGE', 'Cycle Phase Changed', 'Cycle 4 moved to BUILDING phase', '{"cycleId":4}', true, CURRENT_TIMESTAMP - INTERVAL '7 days'),
-(7, 7, 'RETRO_CREATED', 'Retrospective Created', 'Cycle 4 Retrospective is now open', '{"retroId":4}', false, CURRENT_TIMESTAMP - INTERVAL '1 day');
-
--- ===========================================
 -- HILL CHART HISTORY (position change tracking)
 -- ===========================================
 INSERT INTO hill_chart_history (hill_chart_point_id, pitch_id, user_id, previous_position, new_position, confidence_level, note, created_at) VALUES
@@ -70,5 +57,4 @@ INSERT INTO comment_reactions (comment_id, user_id, reaction_type, created_at) V
 -- ===========================================
 -- FINAL SEQUENCE RESETS (ensure all sequences are correct)
 -- ===========================================
-SELECT setval('notifications_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM notifications), false);
 SELECT setval('comments_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM comments), false);
