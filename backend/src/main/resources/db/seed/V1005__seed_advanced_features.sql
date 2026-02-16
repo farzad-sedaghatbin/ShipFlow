@@ -13,7 +13,7 @@ INSERT INTO betting_decisions (id, pitch_id, cycle_id, decision, reason, decided
 (2, 2, 4, 'COMMITTED', 'Slack notifications will improve team visibility and communication.', 7, '2025-10-14 10:15:00', 7, 14, 'Small batch, good fit for remaining capacity', 1, 85, 'Supports async communication goal'),
 (3, 3, 4, 'COMMITTED', 'Dashboard customization frequently requested by users.', 7, '2025-10-14 10:30:00', 14, 28, 'Primary focus for Beta Team', 2, 90, 'Improves user engagement metrics'),
 (4, 4, 4, 'COMMITTED', 'User preferences needed for better UX. Small scope.', 7, '2025-10-14 10:45:00', 7, 14, 'Good secondary work for Beta Team', 2, 75, 'Part of personalization initiative'),
-(5, 20, 4, 'REJECTED', 'Blockchain integration is too speculative at this stage. Not enough customer demand.', 7, '2025-10-14 11:00:00', 28, 28, 'Would consume full team capacity', NULL, 30, 'Does not align with current roadmap');
+(5, 20, 4, 'DEFERRED', 'Blockchain integration is too speculative at this stage. Not enough customer demand.', 7, '2025-10-14 11:00:00', 28, 28, 'Would consume full team capacity', NULL, 30, 'Does not align with current roadmap');
 
 -- ===========================================
 -- COOLDOWN ACTIVITIES

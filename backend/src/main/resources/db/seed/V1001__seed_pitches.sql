@@ -1,6 +1,6 @@
 -- ============================================================================
 -- V1001: Pitches seed data
--- Status values: IDEA, PENDING, SHAPED, COMMITTED, IN_PROGRESS, DONE, REJECTED
+-- Status values: IDEA, DRAFT, SHAPED, PENDING, STARTED, IN_PROGRESS, TESTING, DONE, COOLDOWN, CANCELLED, CIRCUIT_BREAKER
 -- ============================================================================
 
 -- ===========================================
@@ -45,10 +45,10 @@ INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, s
 (19, 'Bug Tracking', 'Bug reporting and tracking system', 10, 3, NULL, 'DONE', '2025-09-01', '2025-10-05');
 
 -- ===========================================
--- REJECTED pitches (for demo data)
+-- CANCELLED pitches (for demo data)
 -- ===========================================
 INSERT INTO pitches (id, title, description, appetite_days, cycle_id, team_id, status, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
-(20, 'Blockchain Integration', 'Add blockchain-based audit trail', 28, 4, NULL, 'REJECTED', '2025-10-10', '2025-10-12');
+(20, 'Blockchain Integration', 'Add blockchain-based audit trail', 28, 4, NULL, 'CANCELLED', '2025-10-10', '2025-10-12');
 
 -- ===========================================
 -- HILL CHART POINTS (progress tracking)
