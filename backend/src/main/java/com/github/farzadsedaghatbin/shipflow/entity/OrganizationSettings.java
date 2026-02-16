@@ -77,50 +77,6 @@ public class OrganizationSettings {
   @Builder.Default
   private Boolean enableAIFeatures = true;
 
-  @Column(nullable = false, name = "enable_wise_architecture")
-  @Builder.Default
-  private Boolean enableWiseArchitecture = false;
-
-  /**
-   * Figma personal access token for reading design files via MCP.
-   * Used by Wise Architecture to analyze Figma designs linked in pitches.
-   */
-  @Column(name = "figma_access_token", columnDefinition = "TEXT")
-  private String figmaAccessToken;
-
-  /**
-   * Default Figma file key for design context.
-   * Used as fallback when a pitch doesn't have wireframe links.
-   */
-  @Column(name = "default_figma_file_key")
-  private String defaultFigmaFileKey;
-
-  /**
-   * GitHub personal access token for reading repository files via MCP.
-   * Used by Wise Architecture to analyze code context.
-   */
-  @Column(name = "github_access_token", columnDefinition = "TEXT")
-  private String githubAccessToken;
-
-  /**
-   * Default GitHub repository owner (organization or username).
-   */
-  @Column(name = "default_github_owner")
-  private String defaultGithubOwner;
-
-  /**
-   * Default GitHub repository name.
-   */
-  @Column(name = "default_github_repo")
-  private String defaultGithubRepo;
-
-  /**
-   * Default GitHub branch name.
-   */
-  @Column(name = "default_github_branch")
-  @Builder.Default
-  private String defaultGithubBranch = "main";
-
   // Capacity Configuration
   @Column(nullable = false, name = "default_hours_per_day", columnDefinition = "NUMERIC")
   @Builder.Default
@@ -138,6 +94,32 @@ public class OrganizationSettings {
 
   @Column(nullable = false)
   private String updatedBy;
+
+  // Wise Architecture Feature Flag
+  @Column(name = "enable_wise_architecture", nullable = false)
+  @Builder.Default
+  private Boolean enableWiseArchitecture = false;
+
+  // Figma MCP Configuration
+  @Column(name = "figma_access_token", columnDefinition = "TEXT")
+  private String figmaAccessToken;
+
+  @Column(name = "default_figma_file_key")
+  private String defaultFigmaFileKey;
+
+  // GitHub MCP Configuration
+  @Column(name = "github_access_token", columnDefinition = "TEXT")
+  private String githubAccessToken;
+
+  @Column(name = "default_github_owner")
+  private String defaultGithubOwner;
+
+  @Column(name = "default_github_repo")
+  private String defaultGithubRepo;
+
+  @Column(name = "default_github_branch")
+  @Builder.Default
+  private String defaultGithubBranch = "main";
 
   @PrePersist
   protected void onCreate() {

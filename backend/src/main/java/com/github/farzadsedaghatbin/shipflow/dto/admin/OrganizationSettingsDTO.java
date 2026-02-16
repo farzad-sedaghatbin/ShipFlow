@@ -47,52 +47,6 @@ public class OrganizationSettingsDTO {
   private String dateFormat;
   private Boolean enableNotifications;
   private Boolean enableAIFeatures;
-  private Boolean enableWiseArchitecture;
-  
-  /**
-   * Figma personal access token for Wise Architecture design context.
-   * When set, allows AI to analyze Figma designs linked in pitches.
-   * Note: Token is stored but not returned in responses for security.
-   */
-  private String figmaAccessToken;
-  
-  /**
-   * Indicates if a Figma access token is configured (without exposing the token).
-   */
-  private Boolean hasFigmaAccessToken;
-  
-  /**
-   * Default Figma file key for design context.
-   */
-  private String defaultFigmaFileKey;
-  
-  /**
-   * GitHub personal access token for Wise Architecture code context.
-   * When set, allows AI to analyze repository files.
-   * Note: Token is stored but not returned in responses for security.
-   */
-  private String githubAccessToken;
-  
-  /**
-   * Indicates if a GitHub access token is configured (without exposing the token).
-   */
-  private Boolean hasGithubAccessToken;
-  
-  /**
-   * Default GitHub repository owner (organization or username).
-   */
-  private String defaultGithubOwner;
-  
-  /**
-   * Default GitHub repository name.
-   */
-  private String defaultGithubRepo;
-  
-  /**
-   * Default GitHub branch name.
-   */
-  private String defaultGithubBranch;
-  private Boolean hasFigmaAccessToken;
 
   // Capacity Configuration
   private Double defaultHoursPerDay;
@@ -100,6 +54,19 @@ public class OrganizationSettingsDTO {
 
   private LocalDateTime updatedAt;
   private String updatedBy;
+
+  // Wise Architecture Feature Flag
+  private Boolean enableWiseArchitecture;
+
+  // Figma MCP Configuration (token not exposed, only flag)
+  private Boolean hasFigmaAccessToken;
+  private String defaultFigmaFileKey;
+
+  // GitHub MCP Configuration (token not exposed, only flag)
+  private Boolean hasGithubAccessToken;
+  private String defaultGithubOwner;
+  private String defaultGithubRepo;
+  private String defaultGithubBranch;
 
   /**
    * Configurable risk detection thresholds for automated health assessment. These

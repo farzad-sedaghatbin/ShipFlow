@@ -252,16 +252,9 @@ public class WiseArchitectureService {
 
         // Check if GitHub MCP is available
         if (!githubMcpProvider.isAvailable()) {
-            log.debug("GitHub MCP not available, returning common file patterns");
-            // Return common patterns as fallback when MCP not configured
-            return List.of(
-                "pom.xml",
-                "src/main/java/Application.java",
-                "src/main/resources/application.properties",
-                "package.json",
-                "src/App.tsx",
-                "src/index.tsx"
-            );
+            log.debug("GitHub MCP not available, skipping repository file listing");
+            // Return empty - don't provide fake data, let LLM work with pitch context
+            return List.of();
         }
 
         String[] parts = repo.getFullName().split("/");
@@ -288,13 +281,14 @@ public class WiseArchitectureService {
     private String getCodeContext(GitHubRepository repo, TechStackType stackType) {
         if (repo == null || repo.getFullName() == null) {
             log.debug("No repository provided for code context");
-            return "// No repository context available";
+            return "";
         }
 
         // Check if GitHub MCP is available
         if (!githubMcpProvider.isAvailable()) {
             log.debug("GitHub MCP not available for code context");
-            return "// Code context: GitHub MCP integration not configured";
+            // Return empty - LLM will generate based on pitch context and tech stack
+            return "";
         }
 
         String[] parts = repo.getFullName().split("/");
@@ -363,19 +357,19 @@ public class WiseArchitectureService {
     private List<String> findExistingServices(GitHubRepository repo, TechStackType stackType) {
         if (repo == null || repo.getFullName() == null) {
             log.debug("No repository provided for service discovery");
-            // Return common patterns as fallback
-            return getDefaultServices(stackType);
+            // Return empty - don't provide fake service names
+            return List.of();
         }
 
         // Check if GitHub MCP is available
         if (!githubMcpProvider.isAvailable()) {
-            log.debug("GitHub MCP not available, returning default service patterns");
-            return getDefaultServices(stackType);
+            log.debug("GitHub MCP not available, skipping service discovery");
+            return List.of();
         }
 
         String[] parts = repo.getFullName().split("/");
         if (parts.length != 2) {
-            return getDefaultServices(stackType);
+            return List.of();
         }
 
         Map<String, String> context = Map.of(
@@ -389,8 +383,8 @@ public class WiseArchitectureService {
         List<String> serviceFiles = githubMcpProvider.searchFiles(context, servicePattern);
         
         if (serviceFiles.isEmpty()) {
-            log.debug("No service files found, returning defaults for {}", stackType);
-            return getDefaultServices(stackType);
+            log.debug("No service files found in repository for {}", stackType);
+            return List.of();
         }
 
         // Extract service names from file paths
@@ -402,7 +396,7 @@ public class WiseArchitectureService {
             .collect(Collectors.toList());
 
         log.debug("Found {} services in {} via MCP", services.size(), repo.getFullName());
-        return services.isEmpty() ? getDefaultServices(stackType) : services;
+        return services;
     }
 
     /**
@@ -429,19 +423,6 @@ public class WiseArchitectureService {
         // Remove extension
         int dotIndex = fileName.lastIndexOf(".");
         return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
-    }
-
-    /**
-     * Get default service patterns when MCP not available.
-     */
-    private List<String> getDefaultServices(TechStackType stackType) {
-        return switch (stackType) {
-            case BACKEND_JAVA -> List.of("UserService", "AuthService", "BaseRepository");
-            case BACKEND_NODE -> List.of("userService", "authMiddleware", "databaseHelper");
-            case WEB_REACT, WEB_NEXTJS -> List.of("useAuth hook", "ApiService", "ThemeContext");
-            case MOBILE_KOTLIN -> List.of("NetworkModule", "UserRepository", "PreferencesManager");
-            default -> List.of();
-        };
     }
 
     /**
