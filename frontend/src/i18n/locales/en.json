@@ -94,7 +94,12 @@
     "votes": "votes",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "selectStatus": "Select status",
+    "selectPriority": "Select priority",
+    "searchPersons": "Search persons...",
+    "searchPitches": "Search pitches...",
+    "searchCycles": "Search cycles..."
   },
   "nav": {
     "dashboard": "Dashboard",

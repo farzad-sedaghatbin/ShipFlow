@@ -113,7 +113,7 @@ export function BacklogTaskDialog({
                 options={STATUS_OPTIONS.map(status => ({ value: status.value, label: t(status.labelKey) }))}
                 value={formData.status}
                 onValueChange={(value) => onFormDataChange({ status: value as TaskStatus })}
-                placeholder="Select status"
+                placeholder={t('common.selectStatus')}
               />
             </div>
             <div className="grid gap-2">
@@ -122,7 +122,7 @@ export function BacklogTaskDialog({
                 options={PRIORITY_OPTIONS.map(priority => ({ value: priority.value, label: t(priority.labelKey) }))}
                 value={formData.priority}
                 onValueChange={(value) => onFormDataChange({ priority: value as TaskPriority })}
-                placeholder="Select priority"
+                placeholder={t('common.selectPriority')}
               />
             </div>
           </div>
@@ -139,7 +139,7 @@ export function BacklogTaskDialog({
                 value={formData.assigneeId?.toString() || 'unassigned'}
                 onValueChange={(value) => onFormDataChange({ assigneeId: value === 'unassigned' ? undefined : Number(value) })}
                 placeholder={t('backlogPage.selectAssignee')}
-                searchPlaceholder="Search persons..."
+                searchPlaceholder={t('common.searchPersons')}
               />
             </div>
             <div className="grid gap-2">
@@ -152,7 +152,7 @@ export function BacklogTaskDialog({
                 value={formData.pairAssigneeId?.toString() || 'none'}
                 onValueChange={(value) => onFormDataChange({ pairAssigneeId: value === 'none' ? undefined : Number(value) })}
                 placeholder={t('backlogPage.selectPair')}
-                searchPlaceholder="Search persons..."
+                searchPlaceholder={t('common.searchPersons')}
               />
             </div>
           </div>
@@ -208,7 +208,7 @@ export function BacklogTaskDialog({
                   value={formData.pitchId ? String(formData.pitchId) : 'none'}
                   onValueChange={onPitchChange}
                   placeholder={t('backlogPage.noPitch')}
-                  searchPlaceholder="Search pitches..."
+                  searchPlaceholder={t('common.searchPitches')}
                 />
               </div>
 

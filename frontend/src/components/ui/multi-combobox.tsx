@@ -4,7 +4,6 @@ import * as React from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Command,
@@ -89,16 +88,22 @@ export function MultiCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
+        <div
           role="combobox"
           aria-expanded={open}
-          disabled={disabled}
+          tabIndex={disabled ? -1 : 0}
           className={cn(
-            "w-full justify-between min-h-10 h-auto",
+            "flex items-center w-full justify-between min-h-10 h-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            disabled && "cursor-not-allowed opacity-50",
             !value.length && "text-muted-foreground",
             triggerClassName
           )}
+          onKeyDown={(e) => {
+            if (!disabled && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault()
+              setOpen(true)
+            }
+          }}
         >
           <div className="flex flex-wrap gap-1 flex-1">
             {selectedOptions.length === 0 ? (
@@ -112,25 +117,17 @@ export function MultiCombobox({
                     className="mr-1 flex items-center gap-1"
                   >
                     <span>{option.label}</span>
-                    <span
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleRemove(option.value)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleRemove(option.value)
-                        }
                       }}
                       aria-label={`Remove ${option.label}`}
                       className="inline-flex h-3 w-3 items-center justify-center rounded-full hover:bg-secondary-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       <X className="h-3 w-3" aria-hidden="true" />
-                    </span>
+                    </button>
                   </Badge>
                 ))}
                 {selectedOptions.length > maxDisplay && (
@@ -142,7 +139,7 @@ export function MultiCombobox({
             )}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        </div>
       </PopoverTrigger>
       <PopoverContent className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)} align="start">
         <Command shouldFilter={false}>

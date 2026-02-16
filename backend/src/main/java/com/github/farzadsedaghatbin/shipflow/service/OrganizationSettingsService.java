@@ -127,6 +127,10 @@ public class OrganizationSettingsService {
 
   /**
    * Get Figma access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.
+   * Consider refactoring to use a dedicated token provider service.</p>
    * @return the Figma access token or null if not configured
    */
   public String getFigmaAccessToken() {
@@ -137,6 +141,10 @@ public class OrganizationSettingsService {
 
   /**
    * Get GitHub access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.
+   * Consider refactoring to use a dedicated token provider service.</p>
    * @return the GitHub access token or null if not configured
    */
   public String getGithubAccessToken() {
@@ -414,8 +422,8 @@ public class OrganizationSettingsService {
         // Wise Architecture Feature Flag
         .enableWiseArchitecture(entity.getEnableWiseArchitecture())
         // MCP Configuration (tokens not exposed, only presence flags)
-        .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isEmpty())
-        .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isEmpty())
+        .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
+        .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

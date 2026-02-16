@@ -63,7 +63,7 @@ export function BacklogHeader({
               }
             }}
             placeholder={t('backlogPage.selectCycle')}
-            searchPlaceholder="Search cycles..."
+            searchPlaceholder={t('common.searchCycles')}
             triggerClassName="w-[250px]"
           />
         )}

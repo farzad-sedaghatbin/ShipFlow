@@ -157,7 +157,7 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
   List<Pitch> findAllIdeas();
 
-  /** Find ideas for a specific project (via epic or any accessible mechanism). */
+  /** Find ideas for a specific project via their epic's project. */
   @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.epic.project.id = :projectId AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
   List<Pitch> findIdeasByProjectId(@Param("projectId") Long projectId);
 

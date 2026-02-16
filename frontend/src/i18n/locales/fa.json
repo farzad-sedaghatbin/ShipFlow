@@ -1143,7 +1143,12 @@
     "votes": "آرا",
     "selectAll": "انتخاب همه",
     "deselectAll": "لغو انتخاب همه",
-    "creating": "در حال ایجاد..."
+    "creating": "در حال ایجاد...",
+    "selectStatus": "انتخاب وضعیت",
+    "selectPriority": "انتخاب اولویت",
+    "searchPersons": "جستجوی افراد...",
+    "searchPitches": "جستجوی پیچ‌ها...",
+    "searchCycles": "جستجوی چرخه‌ها..."
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
