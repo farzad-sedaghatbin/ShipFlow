@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Combobox } from '../../components/ui/combobox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
@@ -666,21 +666,18 @@ export default function TeamsIntegration() {
 
             <div className="space-y-2">
               <Label htmlFor="flowType">{t('teamsIntegration.flowType')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'WEBHOOK', label: t('teamsIntegration.webhookType') },
+                  { value: 'POWER_AUTOMATE_POST', label: t('teamsIntegration.powerAutomatePost') },
+                  { value: 'POWER_AUTOMATE_THREAD', label: t('teamsIntegration.powerAutomateThread') }
+                ]}
                 value={channelForm.flowType}
                 onValueChange={(value) =>
                   setChannelForm({ ...channelForm, flowType: value as 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD' })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('teamsIntegration.flowTypeDescription')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WEBHOOK">{t('teamsIntegration.webhookType')}</SelectItem>
-                  <SelectItem value="POWER_AUTOMATE_POST">{t('teamsIntegration.powerAutomatePost')}</SelectItem>
-                  <SelectItem value="POWER_AUTOMATE_THREAD">{t('teamsIntegration.powerAutomateThread')}</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder={t('teamsIntegration.flowTypeDescription')}
+              />
               <p className="text-xs text-muted-foreground">
                 {t('teamsIntegration.flowTypeHelpText')}
               </p>

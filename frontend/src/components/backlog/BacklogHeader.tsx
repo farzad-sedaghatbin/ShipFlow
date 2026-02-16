@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Plus, List, Kanban } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Combobox } from '../ui/combobox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Cycle, Project } from '../../types';
 
@@ -41,49 +41,24 @@ export function BacklogHeader({
       <div className="flex items-center gap-2">
         {/* Cycle Selector - Hidden for Kanban projects */}
         {!isKanbanProject && (
-          <Select
+          <Combobox
+            options={[
+              { value: 'all', label: t('backlogPage.allCycles') },
+              ...(currentProject ? cycles.filter(c => c.projectId === currentProject.id).map(cycle => ({
+                value: cycle.id.toString(),
+                label: `${currentProject.name}: ${cycle.name}`
+              })) : []),
+              ...cycles.filter(c => !currentProject || c.projectId !== currentProject.id).map(cycle => ({
+                value: cycle.id.toString(),
+                label: cycle.name
+              }))
+            ]}
             value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
             onValueChange={(value) => onCycleChange(value === 'all' ? 'all' : Number(value))}
-          >
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder={t('backlogPage.selectCycle')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('backlogPage.allCycles')}</SelectItem>
-              
-              {/* Current Project Cycles */}
-              {currentProject && cycles.filter(c => c.projectId === currentProject.id).length > 0 && (
-                <>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    {currentProject.name}
-                  </div>
-                  {cycles
-                    .filter(c => c.projectId === currentProject.id)
-                    .map((cycle) => (
-                      <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                        {cycle.name}
-                      </SelectItem>
-                    ))}
-                </>
-              )}
-              
-              {/* Other Projects Cycles */}
-              {cycles.filter(c => !currentProject || c.projectId !== currentProject.id).length > 0 && (
-                <>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    {t('backlogPage.otherProjects')}
-                  </div>
-                  {cycles
-                    .filter(c => !currentProject || c.projectId !== currentProject.id)
-                    .map((cycle) => (
-                      <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                        {cycle.name}
-                      </SelectItem>
-                    ))}
-                </>
-              )}
-            </SelectContent>
-          </Select>
+            placeholder={t('backlogPage.selectCycle')}
+            searchPlaceholder="Search cycles..."
+            triggerClassName="w-[250px]"
+          />
         )}
         
         {/* View Mode Toggle */}

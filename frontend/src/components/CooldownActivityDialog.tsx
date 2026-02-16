@@ -12,13 +12,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+import { Combobox } from './ui/combobox';
 import {
   CooldownActivityDTO,
   CooldownActivityType,
@@ -187,91 +181,57 @@ export default function CooldownActivityDialog({
             {/* Activity Type */}
             <div>
               <Label>{t('cooldownActivity.activityType')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: CooldownActivityType.TECH_DEBT, label: t('cooldownActivity.types.techDebt') },
+                  { value: CooldownActivityType.BUG_FIX, label: t('cooldownActivity.types.bugFix') },
+                  { value: CooldownActivityType.REFACTORING, label: t('cooldownActivity.types.refactoring') },
+                  { value: CooldownActivityType.KICKOFF_PREP, label: t('cooldownActivity.types.kickoffPrep') },
+                  { value: CooldownActivityType.LEARNING, label: t('cooldownActivity.types.learning') },
+                  { value: CooldownActivityType.QA, label: t('cooldownActivity.types.qa') },
+                  { value: CooldownActivityType.DOCUMENTATION, label: t('cooldownActivity.types.documentation') },
+                  { value: CooldownActivityType.INFRASTRUCTURE, label: t('cooldownActivity.types.infrastructure') },
+                  { value: CooldownActivityType.RESEARCH, label: t('cooldownActivity.types.research') },
+                  { value: CooldownActivityType.PLANNING, label: t('cooldownActivity.types.planning') },
+                  { value: CooldownActivityType.OTHER, label: t('cooldownActivity.types.other') }
+                ]}
                 value={formData.activityType}
                 onValueChange={(value) =>
                   setFormData({ ...formData, activityType: value as CooldownActivityType })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={CooldownActivityType.TECH_DEBT}>
-                    {t('cooldownActivity.types.techDebt')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.BUG_FIX}>
-                    {t('cooldownActivity.types.bugFix')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.REFACTORING}>
-                    {t('cooldownActivity.types.refactoring')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.KICKOFF_PREP}>
-                    {t('cooldownActivity.types.kickoffPrep')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.LEARNING}>
-                    {t('cooldownActivity.types.learning')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.QA}>
-                    {t('cooldownActivity.types.qa')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.DOCUMENTATION}>
-                    {t('cooldownActivity.types.documentation')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.INFRASTRUCTURE}>
-                    {t('cooldownActivity.types.infrastructure')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.RESEARCH}>
-                    {t('cooldownActivity.types.research')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.PLANNING}>
-                    {t('cooldownActivity.types.planning')}
-                  </SelectItem>
-                  <SelectItem value={CooldownActivityType.OTHER}>
-                    {t('cooldownActivity.types.other')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select type"
+              />
             </div>
 
             {/* Status (only for edit) */}
             {activity && (
               <div>
                 <Label>{t('cooldownActivity.status')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: CooldownActivityStatus.PLANNED, label: t('cooldownActivity.statuses.planned') },
+                    { value: CooldownActivityStatus.IN_PROGRESS, label: t('cooldownActivity.statuses.inProgress') },
+                    { value: CooldownActivityStatus.COMPLETED, label: t('cooldownActivity.statuses.completed') },
+                    { value: CooldownActivityStatus.SKIPPED, label: t('cooldownActivity.statuses.skipped') },
+                    { value: CooldownActivityStatus.BLOCKED, label: t('cooldownActivity.statuses.blocked') }
+                  ]}
                   value={formData.status}
                   onValueChange={(value) =>
                     setFormData({ ...formData, status: value as CooldownActivityStatus })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={CooldownActivityStatus.PLANNED}>
-                      {t('cooldownActivity.statuses.planned')}
-                    </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.IN_PROGRESS}>
-                      {t('cooldownActivity.statuses.inProgress')}
-                    </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.COMPLETED}>
-                      {t('cooldownActivity.statuses.completed')}
-                    </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.SKIPPED}>
-                      {t('cooldownActivity.statuses.skipped')}
-                    </SelectItem>
-                    <SelectItem value={CooldownActivityStatus.BLOCKED}>
-                      {t('cooldownActivity.statuses.blocked')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                  placeholder="Select status"
+                />
               </div>
             )}
 
             {/* Assignee */}
             <div className={activity ? 'col-span-2' : ''}>
               <Label>{t('cooldownActivity.assignee')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'none', label: t('cooldownActivity.unassigned') },
+                  ...people.map((person) => ({ value: person.id.toString(), label: person.name }))
+                ]}
                 value={formData.assigneeId?.toString() || 'none'}
                 onValueChange={(value) =>
                   setFormData({
@@ -279,19 +239,9 @@ export default function CooldownActivityDialog({
                     assigneeId: value === 'none' ? undefined : parseInt(value),
                   })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('cooldownActivity.selectAssignee')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('cooldownActivity.unassigned')}</SelectItem>
-                  {people.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('cooldownActivity.selectAssignee')}
+                searchPlaceholder="Search persons..."
+              />
             </div>
           </div>
 

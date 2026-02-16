@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Combobox } from '../ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -109,39 +109,21 @@ export function BacklogTaskDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="status">{t('common.status')}</Label>
-              <Select
+              <Combobox
+                options={STATUS_OPTIONS.map(status => ({ value: status.value, label: t(status.labelKey) }))}
                 value={formData.status}
                 onValueChange={(value) => onFormDataChange({ status: value as TaskStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {t(status.labelKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select status"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="priority">{t('backlogPage.filters.priority')}</Label>
-              <Select
+              <Combobox
+                options={PRIORITY_OPTIONS.map(priority => ({ value: priority.value, label: t(priority.labelKey) }))}
                 value={formData.priority}
                 onValueChange={(value) => onFormDataChange({ priority: value as TaskPriority })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITY_OPTIONS.map((priority) => (
-                    <SelectItem key={priority.value} value={priority.value}>
-                      {t(priority.labelKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select priority"
+              />
             </div>
           </div>
 
@@ -149,41 +131,29 @@ export function BacklogTaskDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="assignee">{t('backlogPage.assignee')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'unassigned', label: t('backlogPage.unassigned') },
+                  ...persons.map(person => ({ value: person.id.toString(), label: person.name }))
+                ]}
                 value={formData.assigneeId?.toString() || 'unassigned'}
                 onValueChange={(value) => onFormDataChange({ assigneeId: value === 'unassigned' ? undefined : Number(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('backlogPage.selectAssignee')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">{t('backlogPage.unassigned')}</SelectItem>
-                  {persons.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('backlogPage.selectAssignee')}
+                searchPlaceholder="Search persons..."
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pairAssignee">{t('backlogPage.pairAssignee')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'none', label: t('backlogPage.none') },
+                  ...persons.filter(p => p.id !== formData.assigneeId).map(person => ({ value: person.id.toString(), label: person.name }))
+                ]}
                 value={formData.pairAssigneeId?.toString() || 'none'}
                 onValueChange={(value) => onFormDataChange({ pairAssigneeId: value === 'none' ? undefined : Number(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('backlogPage.selectPair')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('backlogPage.none')}</SelectItem>
-                  {persons.filter(p => p.id !== formData.assigneeId).map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('backlogPage.selectPair')}
+                searchPlaceholder="Search persons..."
+              />
             </div>
           </div>
 
@@ -230,22 +200,16 @@ export function BacklogTaskDialog({
             <>
               <div className="grid gap-2">
                 <Label>{t('backlogPage.pitch')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('backlogPage.noPitch') },
+                    ...pitches.map(pitch => ({ value: String(pitch.id), label: pitch.title }))
+                  ]}
                   value={formData.pitchId ? String(formData.pitchId) : 'none'}
                   onValueChange={onPitchChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('backlogPage.noPitch')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('backlogPage.noPitch')}</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={String(pitch.id)}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('backlogPage.noPitch')}
+                  searchPlaceholder="Search pitches..."
+                />
               </div>
 
               {/* Hill Chart Indicator - shown when task will appear on hill chart */}

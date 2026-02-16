@@ -12,13 +12,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+import { Combobox } from './ui/combobox';
 import permissionService, {
   UserRole,
   ResourceType,
@@ -108,68 +102,47 @@ export function PermissionEditDialog({
 
           <div className="space-y-2">
             <Label htmlFor="role">{t('permissions.dialog.role')}</Label>
-            <Select
+            <Combobox
+              options={permissionService.getUserRoles().map(role => ({ value: role, label: role }))}
               value={formData.role}
               onValueChange={(value) =>
                 setFormData({ ...formData, role: value as UserRole })
               }
               disabled={mode === 'edit'}
-            >
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {permissionService.getUserRoles().map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select role"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="resource">{t('permissions.dialog.resourceType')}</Label>
-            <Select
+            <Combobox
+              options={permissionService.getResourceTypes().map(resource => ({ 
+                value: resource, 
+                label: permissionService.getResourceLabel(resource) 
+              }))}
               value={formData.resourceType}
               onValueChange={(value) =>
                 setFormData({ ...formData, resourceType: value as ResourceType })
               }
               disabled={mode === 'edit'}
-            >
-              <SelectTrigger id="resource">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {permissionService.getResourceTypes().map((resource) => (
-                  <SelectItem key={resource} value={resource}>
-                    {permissionService.getResourceLabel(resource)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select resource"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="permission">{t('permissions.dialog.permissionType')}</Label>
-            <Select
+            <Combobox
+              options={permissionService.getPermissionTypes().map(perm => ({ 
+                value: perm, 
+                label: permissionService.getPermissionLabel(perm) 
+              }))}
               value={formData.permissionType}
               onValueChange={(value) =>
                 setFormData({ ...formData, permissionType: value as PermissionType })
               }
               disabled={mode === 'edit'}
-            >
-              <SelectTrigger id="permission">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {permissionService.getPermissionTypes().map((perm) => (
-                  <SelectItem key={perm} value={perm}>
-                    {permissionService.getPermissionLabel(perm)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select permission"
+            />
           </div>
 
           <div className="space-y-2">

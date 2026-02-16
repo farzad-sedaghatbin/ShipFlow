@@ -19,13 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
@@ -650,64 +644,38 @@ export default function TaskDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">{t('common.status')} *</Label>
-                <Select
+                <Combobox
+                  options={statusOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={formData.status}
-                  onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger id="edit-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}
+                  placeholder="Select status"
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-priority">Priority *</Label>
-                <Select
+                <Combobox
+                  options={priorityOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={formData.priority}
-                  onValueChange={(value: TaskPriority) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger id="edit-priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}
+                  placeholder="Select priority"
+                />
               </div>
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="edit-cycle">Cycle *</Label>
-              <Select
+              <Combobox
+                options={cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))}
                 value={formData.cycleId.toString()}
                 onValueChange={(value) => {
                   const cycleId = parseInt(value);
                   setFormData({ ...formData, cycleId, pitchId: undefined });
                   loadPitchesForCycle(cycleId);
                 }}
-              >
-                <SelectTrigger id="edit-cycle" className={fieldErrors.cycleId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select cycle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                      {cycle.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select cycle"
+                className={fieldErrors.cycleId ? 'border-destructive' : ''}
+              />
               {fieldErrors.cycleId && (
                 <p className="text-sm text-destructive">{fieldErrors.cycleId}</p>
               )}
@@ -716,46 +684,34 @@ export default function TaskDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-assignee">Assignee</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: 'None' },
+                    ...persons.map(person => ({ value: person.id.toString(), label: person.name }))
+                  ]}
                   value={formData.assigneeId?.toString() || 'none'}
                   onValueChange={(value) =>
                     setFormData({ ...formData, assigneeId: value === 'none' ? undefined : parseInt(value) })
                   }
-                >
-                  <SelectTrigger id="edit-assignee">
-                    <SelectValue placeholder="Select assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {persons.map((person) => (
-                      <SelectItem key={person.id} value={person.id.toString()}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select assignee"
+                  searchPlaceholder="Search persons..."
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-pair-assignee">Pair Assignee</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: 'None' },
+                    ...persons.map(person => ({ value: person.id.toString(), label: person.name }))
+                  ]}
                   value={formData.pairAssigneeId?.toString() || 'none'}
                   onValueChange={(value) =>
                     setFormData({ ...formData, pairAssigneeId: value === 'none' ? undefined : parseInt(value) })
                   }
-                >
-                  <SelectTrigger id="edit-pair-assignee">
-                    <SelectValue placeholder="Select pair assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {persons.map((person) => (
-                      <SelectItem key={person.id} value={person.id.toString()}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select pair assignee"
+                  searchPlaceholder="Search persons..."
+                />
               </div>
             </div>
 
@@ -800,22 +756,16 @@ export default function TaskDetailPage() {
 
             <div className="grid gap-2">
               <Label>Pitch (optional)</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'none', label: 'No pitch (technical debt)' },
+                  ...pitches.map(pitch => ({ value: String(pitch.id), label: pitch.title }))
+                ]}
                 value={formData.pitchId ? String(formData.pitchId) : 'none'}
                 onValueChange={handlePitchChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="No pitch (technical debt)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No pitch (technical debt)</SelectItem>
-                  {pitches.map((pitch) => (
-                    <SelectItem key={pitch.id} value={String(pitch.id)}>
-                      {pitch.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="No pitch (technical debt)"
+                searchPlaceholder="Search pitches..."
+              />
             </div>
           </div>
 
