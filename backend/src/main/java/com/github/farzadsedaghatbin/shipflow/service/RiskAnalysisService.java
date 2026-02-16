@@ -303,10 +303,9 @@ public class RiskAnalysisService {
 
   /**
    * Answer a question about pitch risk using AI.
-   * Uses transaction to prevent LazyInitializationException when accessing
-   * pitch relationships in async context.
+   * The pitch is fetched with eager loading, so no transaction is needed.
+   * AI work should not hold DB connections.
    */
-  @Transactional(readOnly = true)
   public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
     // Get pitch first
     Pitch pitch;

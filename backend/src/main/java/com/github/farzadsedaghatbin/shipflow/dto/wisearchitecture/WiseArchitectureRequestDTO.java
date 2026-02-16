@@ -31,7 +31,6 @@ public class WiseArchitectureRequestDTO {
 
     /**
      * Selected technology stacks to generate solutions for.
-     * If empty, solutions will be generated for all detected stacks.
      */
     @NotEmpty(message = "At least one stack must be selected")
     private List<TechStackType> selectedStacks;

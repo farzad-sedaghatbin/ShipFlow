@@ -53,23 +53,32 @@ public class McpStatusDTO {
 
     /**
      * Helper method to mask a server URL for safe display.
+     * Handles both full URLs (http://host:port/path) and schemeless URLs (host:port).
      */
     public static String maskServerUrl(String url) {
         if (url == null || url.isBlank()) {
             return null;
         }
         try {
-            java.net.URI uri = java.net.URI.create(url);
+            // Normalize schemeless URLs by prefixing http:// for parsing
+            String normalizedUrl = url;
+            if (!url.contains("://")) {
+                normalizedUrl = "http://" + url;
+            }
+            
+            java.net.URI uri = java.net.URI.create(normalizedUrl);
             String scheme = uri.getScheme();
             String path = uri.getPath();
             String lastSegment = path != null && !path.isEmpty()
                 ? path.substring(path.lastIndexOf('/'))
                 : "";
-            // Handle missing scheme (e.g., "localhost:3100")
-            if (scheme == null || scheme.isBlank()) {
+            
+            // Only return scheme if original URL had one
+            if (url.contains("://")) {
+                return scheme + "://****" + lastSegment;
+            } else {
                 return "****" + lastSegment;
             }
-            return scheme + "://****" + lastSegment;
         } catch (Exception e) {
             return "****";
         }
