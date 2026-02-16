@@ -133,6 +133,7 @@
       "workManagement": "Work Management",
       "organization": "Organization",
       "quality": "Quality",
+      "rd": "Research & Development",
       "roadmap": "Roadmap & Planning",
       "helpSupport": "Help & Support",
       "administration": "Administration"
@@ -141,6 +142,7 @@
       "cycleTools": "Cycle Tools",
       "people": "People",
       "qaTesting": "QA & Testing",
+      "research": "Research",
       "planning": "Planning",
       "userAccess": "User & Access",
       "integrations": "Integrations"
