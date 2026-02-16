@@ -33,26 +33,19 @@ INSERT INTO hill_chart_history (hill_chart_point_id, pitch_id, user_id, previous
 -- COMMENTS (on pitches, tasks, bugs)
 -- ===========================================
 INSERT INTO comments (id, content, entity_type, entity_id, author_id, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
--- Pitch comments
-(1, 'Great progress on the OAuth flow! Token refresh is working smoothly now.', 'PITCH', 1, 3, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(2, 'Should we add rate limiting to the webhook endpoint? Getting a lot of events.', 'PITCH', 1, 2, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
-(3, 'Good idea @alice. Added task for rate limiting in cooldown.', 'PITCH', 1, 3, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
--- Bug comments
-(4, 'This is related to Safari''s handling of disabled attribute on buttons.', 'BUG', 1, 2, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
-(5, 'Fixed in PR #234. Please verify on your device.', 'BUG', 1, 2, CURRENT_TIMESTAMP - INTERVAL '6 hours', CURRENT_TIMESTAMP - INTERVAL '6 hours'),
+-- Bug comments (BUG_REPORT not BUG)
+(1, 'This is related to Safari''s handling of disabled attribute on buttons.', 'BUG_REPORT', 1, 2, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(2, 'Fixed in PR #234. Please verify on your device.', 'BUG_REPORT', 1, 2, CURRENT_TIMESTAMP - INTERVAL '6 hours', CURRENT_TIMESTAMP - INTERVAL '6 hours'),
 -- Task comments
-(6, 'Blocked waiting for API access. Requested access from admin.', 'TASK', 3, 3, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
-(7, 'Access granted, unblocked now.', 'TASK', 3, 1, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days');
+(3, 'Blocked waiting for API access. Requested access from admin.', 'TASK', 3, 3, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
+(4, 'Access granted, unblocked now.', 'TASK', 3, 1, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days');
 
 -- ===========================================
 -- COMMENT REACTIONS
 -- ===========================================
 INSERT INTO comment_reactions (comment_id, user_id, reaction_type, created_at) VALUES
-(1, 2, 'THUMBS_UP', CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(1, 7, 'THUMBS_UP', CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(2, 3, 'THINKING', CURRENT_TIMESTAMP - INTERVAL '2 days'),
-(3, 2, 'THUMBS_UP', CURRENT_TIMESTAMP - INTERVAL '2 days'),
-(5, 6, 'EYES', CURRENT_TIMESTAMP - INTERVAL '5 hours');
+(1, 2, 'THUMBS_UP', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(2, 6, 'EYES', CURRENT_TIMESTAMP - INTERVAL '5 hours');
 
 -- ===========================================
 -- FINAL SEQUENCE RESETS (ensure all sequences are correct)
