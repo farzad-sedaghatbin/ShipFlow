@@ -48,6 +48,9 @@ public class KnowledgeIngestionService {
   private final CycleRepository cycleRepository;
   private final EvidenceRepository evidenceRepository;
   private final ManualNoteRepository manualNoteRepository;
+  private final InitiativeRepository initiativeRepository;
+  private final EpicRepository epicRepository;
+  private final ReleaseRepository releaseRepository;
 
   @Autowired
   public KnowledgeIngestionService(KnowledgeItemRepository knowledgeItemRepository,
@@ -56,7 +59,8 @@ public class KnowledgeIngestionService {
       @Autowired(required = false) QAConfig qaConfig, PitchRepository pitchRepository,
       MeetingRepository meetingRepository, WorkLogRepository workLogRepository, TeamRepository teamRepository,
       CycleRepository cycleRepository, EvidenceRepository evidenceRepository,
-      ManualNoteRepository manualNoteRepository) {
+      ManualNoteRepository manualNoteRepository, InitiativeRepository initiativeRepository,
+      EpicRepository epicRepository, ReleaseRepository releaseRepository) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
     this.embeddingModel = embeddingModel;
@@ -69,6 +73,9 @@ public class KnowledgeIngestionService {
     this.cycleRepository = cycleRepository;
     this.evidenceRepository = evidenceRepository;
     this.manualNoteRepository = manualNoteRepository;
+    this.initiativeRepository = initiativeRepository;
+    this.epicRepository = epicRepository;
+    this.releaseRepository = releaseRepository;
   }
 
   /** Ingest a pitch into the knowledge base. */
@@ -145,11 +152,24 @@ public class KnowledgeIngestionService {
 
     String content = buildWorkLogContent(workLog);
 
+    // Work logs may not have a pitch (e.g., technical debt work)
+    Long cycleId = null;
+    Long teamId = null;
+    Long pitchId = null;
+    
+    if (workLog.getPitch() != null) {
+      pitchId = workLog.getPitch().getId();
+      if (workLog.getPitch().getCycle() != null) {
+        cycleId = workLog.getPitch().getCycle().getId();
+      }
+      if (workLog.getPitch().getTeam() != null) {
+        teamId = workLog.getPitch().getTeam().getId();
+      }
+    }
+
     ingestEntity(KnowledgeEntityType.WORKLOG, workLog.getId(),
         "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(), content,
-        workLog.getPitch().getCycle().getId(),
-        workLog.getPitch().getTeam() != null ? workLog.getPitch().getTeam().getId() : null,
-        workLog.getPitch().getId(), null);
+        cycleId, teamId, pitchId, null);
 
     log.info("Ingested work log: ID: {}", workLog.getId());
   }
@@ -204,6 +224,75 @@ public class KnowledgeIngestionService {
         note.getTeamId(), note.getPitchId(), note.getAuthorId());
 
     log.info("Ingested manual note: {} (ID: {})", note.getTitle(), note.getId());
+  }
+
+  /** Ingest an initiative into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestInitiative(Long initiativeId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Initiative> initiativeOpt = initiativeRepository.findById(initiativeId);
+    if (initiativeOpt.isEmpty()) {
+      log.warn("Initiative not found for ingestion: {}", initiativeId);
+      return;
+    }
+
+    Initiative initiative = initiativeOpt.get();
+    String content = buildInitiativeContent(initiative);
+
+    // Initiatives don't belong to specific cycles/teams/pitches, so pass nulls
+    ingestEntity(KnowledgeEntityType.INITIATIVE, initiative.getId(), initiative.getName(), content,
+        null, null, null, initiative.getOwner() != null ? initiative.getOwner().getId() : null);
+
+    log.info("Ingested initiative: {} (ID: {})", initiative.getName(), initiative.getId());
+  }
+
+  /** Ingest an epic into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestEpic(Long epicId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Epic> epicOpt = epicRepository.findById(epicId);
+    if (epicOpt.isEmpty()) {
+      log.warn("Epic not found for ingestion: {}", epicId);
+      return;
+    }
+
+    Epic epic = epicOpt.get();
+    String content = buildEpicContent(epic);
+
+    // Epics don't belong to specific cycles/teams/pitches, so pass nulls
+    ingestEntity(KnowledgeEntityType.EPIC, epic.getId(), epic.getName(), content,
+        null, null, null, epic.getOwner() != null ? epic.getOwner().getId() : null);
+
+    log.info("Ingested epic: {} (ID: {})", epic.getName(), epic.getId());
+  }
+
+  /** Ingest a release into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestRelease(Long releaseId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Release> releaseOpt = releaseRepository.findById(releaseId);
+    if (releaseOpt.isEmpty()) {
+      log.warn("Release not found for ingestion: {}", releaseId);
+      return;
+    }
+
+    Release release = releaseOpt.get();
+    String content = buildReleaseContent(release);
+
+    // Releases can span multiple cycles, so we don't link to a specific cycle
+    ingestEntity(KnowledgeEntityType.RELEASE, release.getId(), release.getName(), content,
+        null, null, null, null);
+
+    log.info("Ingested release: {} (ID: {})", release.getName(), release.getId());
   }
 
   /**
@@ -726,7 +815,13 @@ public class KnowledgeIngestionService {
     sb.append("Date: ").append(workLog.getDate()).append("\n");
     sb.append("Person: ").append(workLog.getPerson().getName()).append("\n");
     sb.append("Hours Spent: ").append(workLog.getHoursSpent()).append("\n");
-    sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n\n");
+    
+    if (workLog.getPitch() != null) {
+      sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n");
+    } else {
+      sb.append("Pitch: Technical Debt / Unassigned\n");
+    }
+    sb.append("\n");
 
     if (workLog.getNote() != null) {
       sb.append("Notes:\n").append(workLog.getNote()).append("\n");
@@ -778,6 +873,133 @@ public class KnowledgeIngestionService {
       }
       sb.append("\n");
     }
+
+    return sb.toString();
+  }
+
+  private String buildInitiativeContent(Initiative initiative) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Initiative: ").append(initiative.getName()).append("\n\n");
+
+    if (initiative.getDescription() != null && !initiative.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(initiative.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(initiative.getStatus()).append("\n");
+
+    if (initiative.getOwner() != null) {
+      String ownerName = initiative.getOwner().getPerson() != null 
+          ? initiative.getOwner().getPerson().getName() 
+          : initiative.getOwner().getUsername();
+      sb.append("Owner: ").append(ownerName).append("\n");
+    }
+
+    if (initiative.getTargetStartDate() != null) {
+      sb.append("Target Start Date: ").append(initiative.getTargetStartDate()).append("\n");
+    }
+
+    if (initiative.getTargetEndDate() != null) {
+      sb.append("Target End Date: ").append(initiative.getTargetEndDate()).append("\n");
+    }
+
+    if (initiative.getEpics() != null && !initiative.getEpics().isEmpty()) {
+      sb.append("\nEpics in this Initiative:\n");
+      for (Epic epic : initiative.getEpics()) {
+        if (epic.getDeletedAt() == null) {
+          sb.append("  - ").append(epic.getName()).append(" (").append(epic.getStatus()).append(")\n");
+        }
+      }
+    }
+
+    sb.append("\nCreated: ").append(initiative.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(initiative.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
+
+  private String buildEpicContent(Epic epic) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Epic: ").append(epic.getName()).append("\n\n");
+
+    if (epic.getDescription() != null && !epic.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(epic.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(epic.getStatus()).append("\n");
+
+    if (epic.getInitiative() != null) {
+      sb.append("Initiative: ").append(epic.getInitiative().getName()).append("\n");
+    }
+
+    if (epic.getOwner() != null) {
+      String ownerName = epic.getOwner().getPerson() != null 
+          ? epic.getOwner().getPerson().getName() 
+          : epic.getOwner().getUsername();
+      sb.append("Owner: ").append(ownerName).append("\n");
+    }
+
+    if (epic.getTargetStartDate() != null) {
+      sb.append("Target Start Date: ").append(epic.getTargetStartDate()).append("\n");
+    }
+
+    if (epic.getTargetEndDate() != null) {
+      sb.append("Target End Date: ").append(epic.getTargetEndDate()).append("\n");
+    }
+
+    if (epic.getPitches() != null && !epic.getPitches().isEmpty()) {
+      sb.append("\nPitches in this Epic:\n");
+      for (Pitch pitch : epic.getPitches()) {
+        if (pitch.getDeletedAt() == null) {
+          sb.append("  - ").append(pitch.getTitle()).append(" (").append(pitch.getStatus()).append(")\n");
+        }
+      }
+    }
+
+    sb.append("\nCreated: ").append(epic.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(epic.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
+
+  private String buildReleaseContent(Release release) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Release: ").append(release.getName()).append("\n");
+
+    if (release.getVersion() != null && !release.getVersion().isEmpty()) {
+      sb.append("Version: ").append(release.getVersion()).append("\n");
+    }
+
+    sb.append("\n");
+
+    if (release.getDescription() != null && !release.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(release.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(release.getStatus()).append("\n");
+    sb.append("Risk Level: ").append(release.getRiskLevel()).append("\n");
+
+    if (release.getTargetDate() != null) {
+      sb.append("Target Date: ").append(release.getTargetDate()).append("\n");
+    }
+
+    if (release.getReleaseDate() != null) {
+      sb.append("Actual Release Date: ").append(release.getReleaseDate()).append("\n");
+    }
+
+    if (release.getCycles() != null && !release.getCycles().isEmpty()) {
+      sb.append("\nLinked Cycles:\n");
+      for (Cycle cycle : release.getCycles()) {
+        sb.append("  - ").append(cycle.getName()).append(" (").append(cycle.getStartDate())
+            .append(" to ").append(cycle.getEndDate()).append(")\n");
+      }
+    }
+
+    if (release.getReleaseNotes() != null && !release.getReleaseNotes().isEmpty()) {
+      sb.append("\nRelease Notes:\n").append(release.getReleaseNotes()).append("\n");
+    }
+
+    sb.append("\nCreated: ").append(release.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(release.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
 
     return sb.toString();
   }

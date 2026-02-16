@@ -23,6 +23,10 @@ public class Meeting {
   @JoinColumn(name = "pitch_id")
   private Pitch pitch;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id")
+  private Project project;
+
   @Column(nullable = false)
   private String type;
 

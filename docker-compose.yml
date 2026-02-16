@@ -57,6 +57,15 @@ services:
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
       QDRANT_API_KEY: ${QDRANT_API_KEY:-shipflow_qdrant_key}
+      # MCP (Model Context Protocol) Configuration
+      # GitHub MCP server for code context (set MCP_GITHUB_SERVER_URL to your MCP server)
+      MCP_GITHUB_ENABLED: ${MCP_GITHUB_ENABLED:-false}
+      MCP_GITHUB_SERVER_URL: ${MCP_GITHUB_SERVER_URL:-}
+      MCP_GITHUB_TIMEOUT: ${MCP_GITHUB_TIMEOUT:-30}
+      # Figma MCP server for design context (set MCP_FIGMA_SERVER_URL to your MCP server)
+      MCP_FIGMA_ENABLED: ${MCP_FIGMA_ENABLED:-false}
+      MCP_FIGMA_SERVER_URL: ${MCP_FIGMA_SERVER_URL:-}
+      MCP_FIGMA_TIMEOUT: ${MCP_FIGMA_TIMEOUT:-30}
     ports:
       - "8080:8080"
     depends_on:

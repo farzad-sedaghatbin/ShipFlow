@@ -122,13 +122,15 @@ class RetroCrudServiceTest {
     }
 
     @Test
-    @DisplayName("Operations blocked when retrospectives disabled")
-    void getAllRetros_WhenDisabled_ThrowsException() {
+    @DisplayName("getAllRetrosByProject returns empty list when retrospectives disabled")
+    void getAllRetros_WhenDisabled_ReturnsEmptyList() {
       testProject.setEnableRetrospectives(false);
       when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
-      assertThatThrownBy(() -> service.getAllRetrosByProject(1L))
-          .isInstanceOf(IllegalStateException.class);
+      List<RetroDTO> result = service.getAllRetrosByProject(1L);
+      
+      assertThat(result).isEmpty();
+      verify(retroRepository, never()).findByProjectIdOrderByCreatedAtDesc(anyLong());
     }
   }
 

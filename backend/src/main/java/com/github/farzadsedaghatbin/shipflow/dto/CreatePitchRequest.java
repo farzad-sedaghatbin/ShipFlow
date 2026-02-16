@@ -3,9 +3,17 @@ package com.github.farzadsedaghatbin.shipflow.dto;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+/**
+ * Request DTO for creating pitches.
+ * 
+ * Field requirements by status:
+ * - IDEA: title only (lightweight idea capture)
+ * - DRAFT: title (shaping in progress)
+ * - SHAPED: title, appetiteDays (ready for betting)
+ * - PENDING+: title, appetiteDays, cycleId (assigned to cycle)
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,17 +24,22 @@ public class CreatePitchRequest {
 
   private String description;
 
-  @NotNull(message = "Appetite days is required")
+  /** Required for SHAPED status and beyond. NULL allowed for IDEA/DRAFT. */
   @Min(value = 1, message = "Appetite must be at least 1 day")
   private Integer appetiteDays;
 
-  @NotNull(message = "Cycle ID is required")
+  /** Required for PENDING status and beyond. NULL allowed for IDEA/DRAFT/SHAPED. */
   private Long cycleId;
 
   private Long teamId;
 
+  // Epic and Release linking (roadmap)
+  private Long epicId;
+  private Long targetReleaseId;
+
+  /** Default to IDEA for new pitches (lightweight capture). */
   @Builder.Default
-  private PitchStatus status = PitchStatus.PENDING;
+  private PitchStatus status = PitchStatus.IDEA;
 
   // Shape Up Methodology Fields
   private String problemStatement;

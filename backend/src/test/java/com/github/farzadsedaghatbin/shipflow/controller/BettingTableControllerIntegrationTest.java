@@ -67,8 +67,9 @@ class BettingTableControllerIntegrationTest {
     testTeam = Team.builder().name("Alpha Team").cycle(testCycle).build();
     testTeam = teamRepository.save(testTeam);
 
+    // Shape Up workflow: shaped pitches ready for betting have NO cycle assigned yet
     shapedPitch = Pitch.builder().title("User Authentication").description("Implement OAuth2 login flow")
-        .appetiteDays(14).status(PitchStatus.SHAPED).cycle(testCycle).createdAt(LocalDateTime.now())
+        .appetiteDays(14).status(PitchStatus.SHAPED).cycle(null).createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now()).build();
     shapedPitch = pitchRepository.save(shapedPitch);
 

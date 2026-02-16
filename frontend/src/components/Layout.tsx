@@ -33,6 +33,10 @@ import {
   Github,
   Plug,
   BookOpen,
+  Beaker,
+  Map,
+  Layers,
+  PackageCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -118,6 +122,19 @@ const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
 ];
 
+// R&D section
+const rdItems: NavItemConfig[] = [
+  { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/rd/wise-architecture', tourId: 'rd-wise-architecture-menu' },
+];
+
+// Roadmap & Planning section
+const roadmapItems: NavItemConfig[] = [
+  { textKey: 'nav.roadmap', icon: Map, path: '/roadmap', tourId: 'roadmap-menu' },
+  { textKey: 'nav.initiatives', icon: Target, path: '/initiatives', tourId: 'initiatives-menu' },
+  { textKey: 'nav.epics', icon: Layers, path: '/epics', tourId: 'epics-menu' },
+  { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
+];
+
 // Meetings (accessible from cycle context)
 const meetingsItems: NavItemConfig[] = [
   { textKey: 'nav.meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
@@ -134,6 +151,7 @@ const integrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
+  { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
 ];
 
 function NavItem({
@@ -333,6 +351,26 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             titleKey="nav.groups.qaTesting"
             icon={FlaskConical}
             items={qualityItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
+          {/* R&D Section */}
+          <SectionHeader textKey="nav.sections.rd" />
+          <NavGroup
+            titleKey="nav.groups.research"
+            icon={Beaker}
+            items={rdItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
+          {/* Roadmap & Planning Section */}
+          <SectionHeader textKey="nav.sections.roadmap" />
+          <NavGroup
+            titleKey="nav.groups.planning"
+            icon={Map}
+            items={roadmapItems}
             currentPath={currentPath}
             onItemClick={onItemClick}
           />

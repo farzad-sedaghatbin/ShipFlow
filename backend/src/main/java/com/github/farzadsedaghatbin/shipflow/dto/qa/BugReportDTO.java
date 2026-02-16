@@ -34,11 +34,7 @@ public class BugReportDTO {
   private String teamName;
   private Long testRunId;
 
-  // Scope relationship
-  private Long scopeId;
-  private String scopeName;
-
-  // Task relationship
+  // Task relationship - tasks are now integrated with scopes
   private Long taskId;
   private String taskTitle;
 
@@ -55,6 +51,16 @@ public class BugReportDTO {
   private LocalDateTime resolvedAt;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+
+  // Release tracking
+  private Long targetReleaseId;
+  private String targetReleaseName;
+  private String targetReleaseVersion;
+  private Long fixedInReleaseId;
+  private String fixedInReleaseName;
+  private String fixedInReleaseVersion;
+  /** True if bug was fixed in a later release than target */
+  private Boolean isSlipped;
 
   // Comment count
   private Integer commentCount;

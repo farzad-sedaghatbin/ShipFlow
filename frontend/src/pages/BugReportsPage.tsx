@@ -33,13 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,7 +121,7 @@ const BugReportsPage: React.FC = () => {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
@@ -536,17 +530,17 @@ const BugReportsPage: React.FC = () => {
           <div className="flex gap-2">
             <div className="flex-1">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">{t('bugReports.sort.createdDate')}</SelectItem>
-                  <SelectItem value="severity">{t('bugReports.sort.severity')}</SelectItem>
-                  <SelectItem value="status">{t('bugReports.sort.status')}</SelectItem>
-                  <SelectItem value="title">{t('bugReports.sort.title')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
+                  { value: 'severity', label: t('bugReports.sort.severity') },
+                  { value: 'status', label: t('bugReports.sort.status') },
+                  { value: 'title', label: t('bugReports.sort.title') }
+                ]}
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as typeof sortBy)}
+                placeholder="Sort by"
+              />
             </div>
             <div className="self-end">
               <Button
@@ -565,42 +559,30 @@ const BugReportsPage: React.FC = () => {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[180px]">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allCycles') },
+                  ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
+                ]}
                 value={cycleFilter?.toString() ?? 'all'}
                 onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('bugReports.filters.allCycles')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('bugReports.filters.allCycles')}</SelectItem>
-                  {filteredCycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                      {cycle.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('bugReports.filters.allCycles')}
+                searchPlaceholder="Search cycles..."
+              />
             </div>
 
             <div className="min-w-[180px]">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allPitches') },
+                  ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
+                ]}
                 value={pitchFilter?.toString() ?? 'all'}
                 onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('bugReports.filters.allPitches')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('bugReports.filters.allPitches')}</SelectItem>
-                  {filteredPitches.map((pitch) => (
-                    <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                      {pitch.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('bugReports.filters.allPitches')}
+                searchPlaceholder="Search pitches..."
+              />
             </div>
           </div>
         )}
@@ -857,17 +839,17 @@ const BugReportsPage: React.FC = () => {
         <div className="flex items-center justify-between px-4 py-3 border-t">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{t('bugReports.pagination.rowsPerPage')}</span>
-            <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
-              <SelectTrigger className="w-[70px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={[
+                { value: '5', label: '5' },
+                { value: '10', label: '10' },
+                { value: '25', label: '25' },
+                { value: '50', label: '50' }
+              ]}
+              value={rowsPerPage.toString()}
+              onValueChange={handleChangeRowsPerPage}
+              triggerClassName="w-[70px] h-8"
+            />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">

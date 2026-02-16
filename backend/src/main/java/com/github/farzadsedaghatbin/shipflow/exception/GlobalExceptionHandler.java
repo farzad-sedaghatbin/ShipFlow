@@ -26,8 +26,10 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -185,6 +187,27 @@ public class GlobalExceptionHandler {
     error.put("messageKey", "error.generic");
     error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<Map<String, Object>> handleHttpRequestMethodNotSupported(
+      HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+    String requestUrl = request.getRequestURI();
+    String method = request.getMethod();
+    String queryString = request.getQueryString();
+    String fullUrl = queryString != null ? requestUrl + "?" + queryString : requestUrl;
+    
+    log.error("HTTP Method Not Supported - Method: {}, URL: {}, Supported Methods: {}", 
+        method, fullUrl, String.join(", ", ex.getSupportedMethods() != null ? ex.getSupportedMethods() : new String[]{"UNKNOWN"}));
+    
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", String.format("Request method '%s' is not supported for URL '%s'", method, requestUrl));
+    error.put("requestedUrl", requestUrl);
+    error.put("method", method);
+    error.put("supportedMethods", ex.getSupportedMethods());
+    error.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
   }
 
   @ExceptionHandler(Exception.class)

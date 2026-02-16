@@ -106,7 +106,6 @@ public class QAService {
   /**
    * Ask a question and get an AI-generated answer based on retrieved knowledge.
    */
-  @Transactional
   public QAResponse askQuestion(AskQuestionRequest request, Long userId) {
     long startTime = System.currentTimeMillis();
 
@@ -439,17 +438,24 @@ public class QAService {
           .sourceKnowledgeIds(buildSourceIds(matches)).confidenceScore(confidenceScore)
           .processingTimeMs(System.currentTimeMillis() - startTime).build();
 
-      interaction = qaInteractionRepository.save(interaction);
+      Long interactionId = null;
+      try {
+        interaction = saveInteraction(interaction);
+        interactionId = interaction.getId();
+      } catch (Exception e) {
+        log.error("Failed to save QA interaction: {}", e.getMessage(), e);
+        // Continue without saving - the user still gets their answer
+      }
 
       // 11. Build response
-      QAResponse response = QAResponse.builder().interactionId(interaction.getId()).question(originalQuestion) // Use
+      QAResponse response = QAResponse.builder().interactionId(interactionId).question(originalQuestion) // Use
           // original
           // question
           // in
           // response
           .answer(answer).sources(request.getIncludeSources() ? citations : null)
           .confidenceScore(confidenceScore).answeredAt(LocalDateTime.now())
-          .processingTimeMs(interaction.getProcessingTimeMs()).aiEnabled(chatLanguageModel != null)
+          .processingTimeMs(System.currentTimeMillis() - startTime).aiEnabled(chatLanguageModel != null)
           .suggestedFollowUps(generateSuggestedFollowUps(request, matches)).cached(false)
           .conversationId(conversation != null ? conversation.getConversationId() : null).build();
 
@@ -527,6 +533,15 @@ public class QAService {
   /** Get recent interactions for a user. */
   public List<QAInteraction> getRecentInteractions(Long userId) {
     return qaInteractionRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId);
+  }
+
+  /**
+   * Save QA interaction. Note: @Transactional removed because it has no effect on private methods
+   * called internally (Spring AOP proxy limitation). The repository save already participates
+   * in any existing transaction from the caller if present.
+   */
+  private QAInteraction saveInteraction(QAInteraction interaction) {
+    return qaInteractionRepository.save(interaction);
   }
 
   // ===== Private helper methods =====
@@ -932,7 +947,7 @@ public class QAService {
     String lowerQuestion = question.toLowerCase().trim();
 
     // Extract entity + number patterns (cycle 5, pitch 4, etc.)
-    java.util.regex.Pattern entityPattern = java.util.regex.Pattern.compile("(cycle|pitch|team|meeting)\\s+\\d+");
+    java.util.regex.Pattern entityPattern = java.util.regex.Pattern.compile("(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+");
     java.util.regex.Matcher entityMatcher = entityPattern.matcher(lowerQuestion);
     while (entityMatcher.find()) {
       terms.add(entityMatcher.group().trim());
@@ -965,6 +980,40 @@ public class QAService {
       terms.add("completed");
       terms.add("complete");
       terms.add("done");
+    }
+
+    // Roadmap-specific status terms
+    if (lowerQuestion.contains("draft")) {
+      terms.add("draft");
+    }
+
+    if (lowerQuestion.contains("active") || lowerQuestion.contains("ongoing")) {
+      terms.add("active");
+      terms.add("ongoing");
+    }
+
+    if (lowerQuestion.contains("on hold") || lowerQuestion.contains("on-hold")
+        || lowerQuestion.contains("onhold")) {
+      terms.add("on_hold");
+      terms.add("on hold");
+    }
+
+    if (lowerQuestion.contains("planned") || lowerQuestion.contains("planning")) {
+      terms.add("planned");
+      terms.add("planning");
+    }
+
+    if (lowerQuestion.contains("cancelled") || lowerQuestion.contains("canceled")) {
+      terms.add("cancelled");
+      terms.add("canceled");
+    }
+
+    if (lowerQuestion.contains("released")) {
+      terms.add("released");
+    }
+
+    if (lowerQuestion.contains("testing")) {
+      terms.add("testing");
     }
 
     // Extract hyphenated words (using possessive quantifiers to prevent ReDoS)
@@ -1019,7 +1068,7 @@ public class QAService {
     }
 
     // Entity type + number with nothing else: "cycle 4", "pitch 15"
-    if (lowerQuestion.matches("^(cycle|pitch|team|meeting)\\s+\\d+$")) {
+    if (lowerQuestion.matches("^(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+$")) {
       return true;
     }
 

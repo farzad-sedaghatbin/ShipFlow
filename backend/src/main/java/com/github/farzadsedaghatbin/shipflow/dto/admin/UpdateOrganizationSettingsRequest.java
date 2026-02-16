@@ -32,4 +32,10 @@ public class UpdateOrganizationSettingsRequest {
   // Capacity Configuration
   private Double defaultHoursPerDay;
   private Integer defaultWorkingDaysPerWeek;
+
+  // Wise Architecture Feature Flag
+  private Boolean enableWiseArchitecture;
+
+  // GitHub MCP Configuration (token managed via MCP settings API)
+  private String githubAccessToken;
 }

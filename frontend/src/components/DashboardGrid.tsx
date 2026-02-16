@@ -166,11 +166,12 @@ export default function DashboardGrid({
 
     switch (widget.widgetType) {
       case 'KPI':
+      case 'CUSTOM_KPI':
         return (
           <KPIWidget
             title={config?.title || 'Metric'}
             value={data?.data?.value || 0}
-            format={config?.displayFormat || 'NUMBER'}
+            format={config?.format || config?.displayFormat || 'NUMBER'}
             trend={data?.metadata?.trend}
             sparklineData={data?.data?.history?.slice(-7).map((h: any) => h.value)}
             loading={loading}

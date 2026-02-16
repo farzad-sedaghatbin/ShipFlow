@@ -57,7 +57,7 @@ import {
   TabsTrigger,
 } from '../components/ui/tabs';
 
-const statusColumns: PitchStatus[] = ['PENDING', 'SHAPED', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
+const statusColumns: PitchStatus[] = ['IDEA', 'DRAFT', 'SHAPED', 'PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
 
 export default function PitchBoard() {
   const { t } = useTranslation();
@@ -81,10 +81,10 @@ export default function PitchBoard() {
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
     description: '',
-    appetiteDays: 6,
-    cycleId: 0,
+    appetiteDays: undefined,
+    cycleId: undefined,
     teamId: undefined,
-    status: 'PENDING',
+    status: 'IDEA',
     // Shape Up fields
     problemStatement: '',
     solution: '',
@@ -156,7 +156,7 @@ export default function PitchBoard() {
     }
   };
 
-  // Validate pitch form
+  // Validate pitch form - requirements depend on target status
   const validatePitchForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -166,10 +166,20 @@ export default function PitchBoard() {
       errors.title = t('pitchBoard.pitchTitleMinLength');
     }
 
-    if (!newPitch.appetiteDays || newPitch.appetiteDays < 1) {
-      errors.appetiteDays = t('pitchBoard.appetiteMin');
-    } else if (newPitch.appetiteDays > 42) {
-      errors.appetiteDays = t('pitchBoard.appetiteMax');
+    // Appetite is only required for SHAPED status and above
+    const requiresAppetite = ['SHAPED', 'PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+    if (requiresAppetite) {
+      if (!newPitch.appetiteDays || newPitch.appetiteDays < 1) {
+        errors.appetiteDays = t('pitchBoard.appetiteMin');
+      } else if (newPitch.appetiteDays > 42) {
+        errors.appetiteDays = t('pitchBoard.appetiteMax');
+      }
+    }
+
+    // Cycle is only required for PENDING status and above
+    const requiresCycle = ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+    if (requiresCycle && !selectedCycle) {
+      errors.cycle = t('pitchBoard.cycleRequired');
     }
 
     setFieldErrors(errors);
@@ -187,7 +197,8 @@ export default function PitchBoard() {
       setSaving(true);
       const response = await pitchService.create({
         ...newPitch,
-        cycleId: parseInt(selectedCycle),
+        cycleId: selectedCycle ? parseInt(selectedCycle) : undefined,
+        appetiteDays: newPitch.appetiteDays || undefined,
       });
       const createdPitch = response.data;
       
@@ -222,10 +233,10 @@ export default function PitchBoard() {
       setNewPitch({
         title: '',
         description: '',
-        appetiteDays: 6,
-        cycleId: 0,
+        appetiteDays: undefined,
+        cycleId: undefined,
         teamId: undefined,
-        status: 'PENDING',
+        status: 'IDEA',
         problemStatement: '',
         solution: '',
         rabbitHoles: '',

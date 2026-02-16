@@ -91,7 +91,7 @@ class OrganizationSettingsControllerIntegrationTest {
         .defaultCycleLengthWeeks(8).defaultCooldownWeeks(3)
         .riskThresholdsJson("{\"lowMax\":25,\"mediumMax\":55,\"highMax\":80}").taskCategoriesJson("[]")
         .pitchCategoriesJson("[]").timeZone("America/New_York").dateFormat("DD/MM/YYYY")
-        .enableNotifications(false).enableAIFeatures(false).updatedBy("system").build();
+        .enableNotifications(false).enableAIFeatures(false).enableWiseArchitecture(false).updatedBy("system").build();
     settingsRepository.save(existing);
 
     // When/Then

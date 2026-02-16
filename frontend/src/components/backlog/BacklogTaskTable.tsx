@@ -22,7 +22,7 @@ import { Card } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Combobox } from '../ui/combobox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import {
   DropdownMenu,
@@ -166,16 +166,21 @@ export function BacklogTaskTable({
             Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, totalElements)} of {totalElements} tasks
           </div>
           <div className="flex items-center gap-2">
-            <Select value={rowsPerPage.toString()} onValueChange={(v) => onRowsPerPageChange(parseInt(v, 10))}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={[
+                { value: '10', label: '10' },
+                { value: '25', label: '25' },
+                { value: '50', label: '50' }
+              ]}
+              value={rowsPerPage.toString()}
+              onValueChange={(v) => {
+                if (!v) return;
+                const parsed = parseInt(v, 10);
+                if (Number.isNaN(parsed)) return;
+                onRowsPerPageChange(parsed);
+              }}
+              triggerClassName="w-20"
+            />
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"

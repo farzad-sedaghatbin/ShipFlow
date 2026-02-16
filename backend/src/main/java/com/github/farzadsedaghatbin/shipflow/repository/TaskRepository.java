@@ -143,6 +143,29 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("statuses") List<TaskStatus> statuses, @Param("priorities") List<TaskPriority> priorities,
             @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
 
+    // Project-based multi-filter queries with pagination
+    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+            + "AND t.deletedAt IS NULL "
+            + "AND (:statuses IS NULL OR t.status IN :statuses) "
+            + "AND (:priorities IS NULL OR t.priority IN :priorities) "
+            + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
+            + "AND (:category IS NULL OR t.category = :category)")
+    Page<Task> findByProjectIdWithFilters(@Param("projectId") Long projectId, 
+            @Param("statuses") List<TaskStatus> statuses,
+            @Param("priorities") List<TaskPriority> priorities, 
+            @Param("assigneeIds") List<Long> assigneeIds,
+            @Param("category") TaskCategory category, Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+            + "AND t.deletedAt IS NULL "
+            + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
+            + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
+            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
+    Page<Task> findByProjectIdWithExclusionFilters(@Param("projectId") Long projectId,
+            @Param("statuses") List<TaskStatus> statuses, 
+            @Param("priorities") List<TaskPriority> priorities,
+            @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
+
     // Hierarchy queries
     List<Task> findByParentTaskId(Long parentTaskId);
 
@@ -166,4 +189,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t FROM Task t WHERE t.scope.id = :scopeId AND t.status = :status")
     List<Task> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") TaskStatus status);
+
+    // Release-related queries
+    @Query("SELECT t FROM Task t WHERE t.targetRelease.id = :releaseId AND t.deletedAt IS NULL")
+    List<Task> findByTargetReleaseIdNotDeleted(@Param("releaseId") Long releaseId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.targetRelease.id = :releaseId AND t.deletedAt IS NULL")
+    long countByTargetReleaseIdNotDeleted(@Param("releaseId") Long releaseId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.targetRelease.id = :releaseId AND t.status = :status AND t.deletedAt IS NULL")
+    long countByTargetReleaseIdAndStatusNotDeleted(@Param("releaseId") Long releaseId, @Param("status") TaskStatus status);
 }

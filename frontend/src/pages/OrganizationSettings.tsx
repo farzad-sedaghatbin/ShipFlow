@@ -17,6 +17,7 @@ import {
   Bug,
   Plus,
   Trash2,
+  Beaker,
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
@@ -72,6 +73,9 @@ const DATE_FORMATS = [
   { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
 ];
 
+// Extended form data type to include editable fields not in OrganizationSettings
+interface FormData extends Partial<OrganizationSettings> {}
+
 export default function OrganizationSettingsPage() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
@@ -79,7 +83,7 @@ export default function OrganizationSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
-  const [formData, setFormData] = useState<Partial<OrganizationSettings>>({});
+  const [formData, setFormData] = useState<FormData>({});
 
   const { hasPermission } = usePermission();
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
@@ -144,6 +148,7 @@ export default function OrganizationSettingsPage() {
           dateFormat: 'MM/DD/YYYY',
           enableNotifications: true,
           enableAIFeatures: true,
+          enableWiseArchitecture: false,
           taskCategories: [
             { name: 'PITCH_SCOPE', description: t('organizationSettings.defaults.taskCategory.pitchScope'), color: '#3B82F6', isActive: true, order: 1 },
             { name: 'DEBT_IMPROVEMENT', description: t('organizationSettings.defaults.taskCategory.debtImprovement'), color: '#F59E0B', isActive: true, order: 2 },
@@ -1510,6 +1515,31 @@ export default function OrganizationSettingsPage() {
                   onCheckedChange={(checked) =>
                     setFormData({ ...formData, enableAIFeatures: checked })
                   }
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Beaker className="h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="wise-architecture">{t('organizationSettings.wiseArchitecture')}</Label>
+                    <Badge variant="secondary" className="text-xs">
+                      {t('common.experimental')}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('organizationSettings.wiseArchitectureDesc')}
+                  </p>
+                </div>
+                <Switch
+                  id="wise-architecture"
+                  checked={formData.enableWiseArchitecture ?? false}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, enableWiseArchitecture: checked })
+                  }
+                  disabled={!(formData.enableAIFeatures ?? true)}
                 />
               </div>
             </CardContent>

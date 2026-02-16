@@ -8,13 +8,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -407,73 +401,55 @@ export default function DashboardManager() {
               {/* Cycle Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.cycle')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allCycles') },
+                    ...cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
+                  ]}
                   value={formData.cycleId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     cycleId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allCycles')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allCycles')}</SelectItem>
-                    {cycles.map((cycle) => (
-                      <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                        {cycle.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allCycles')}
+                  searchPlaceholder="Search cycles..."
+                />
               </div>
 
               {/* Pitch Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.pitch')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allPitches') },
+                    ...pitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
+                  ]}
                   value={formData.pitchId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     pitchId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allPitches')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allPitches')}</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allPitches')}
+                  searchPlaceholder="Search pitches..."
+                />
               </div>
 
               {/* Team Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.team')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allTeams') },
+                    ...teams.map(team => ({ value: team.id.toString(), label: team.name }))
+                  ]}
                   value={formData.teamId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     teamId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allTeams')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allTeams')}</SelectItem>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id.toString()}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allTeams')}
+                  searchPlaceholder="Search teams..."
+                />
               </div>
             </div>
           </div>

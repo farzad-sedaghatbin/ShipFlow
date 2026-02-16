@@ -269,6 +269,49 @@ public class DocumentController {
     }
   }
 
+  // ========== Bug Report Attachments ==========
+
+  /** Upload an attachment (image/video) for a bug report. */
+  @PostMapping(value = "/bug/{bugId}/attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Upload bug attachment", 
+      description = "Upload an image or video attachment for a bug report. Supports: JPG, JPEG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI")
+  public ResponseEntity<DocumentUploadResponse> uploadBugAttachment(
+      @PathVariable Long bugId,
+      @RequestParam("file") MultipartFile file,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    UserInfo userInfo = getUserInfo(userDetails);
+
+    DocumentUploadResponse response = documentService.uploadMediaAttachment(
+        file, "BUG_REPORT", bugId, userInfo.userId, userInfo.username, 0);
+
+    if (response.getErrorMessage() != null) {
+      return ResponseEntity.badRequest().body(response);
+    }
+
+    return ResponseEntity.ok(response);
+  }
+
+  /** Get all attachments for a bug report. */
+  @GetMapping("/bug/{bugId}/attachments")
+  @Operation(summary = "Get bug attachments", description = "Get all attachments for a bug report")
+  public ResponseEntity<List<UploadedDocument>> getBugAttachments(@PathVariable Long bugId) {
+    return ResponseEntity.ok(documentService.getDocumentsByEntity("BUG_REPORT", bugId));
+  }
+
+  /** Delete a bug attachment. */
+  @DeleteMapping("/bug/attachment/{attachmentId}")
+  @Operation(summary = "Delete bug attachment", description = "Delete a bug report attachment")
+  public ResponseEntity<Map<String, String>> deleteBugAttachment(@PathVariable Long attachmentId) {
+    try {
+      documentService.deleteDocument(attachmentId);
+      return ResponseEntity.ok(Map.of("message", "Attachment deleted successfully"));
+    } catch (Exception e) {
+      log.error("Error deleting bug attachment: {}", e.getMessage());
+      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+  }
+
   /** Check if AI pitch extraction is available. */
   @GetMapping("/extract-pitch-data/status")
   @Operation(summary = "Check extraction availability", description = "Check if AI-powered pitch data extraction is available")
@@ -278,6 +321,19 @@ public class DocumentController {
         available
             ? "AI extraction is available"
             : "AI extraction is not configured. Please enable AI in application settings."));
+  }
+
+  /** Fix storage paths for existing documents (admin endpoint). */
+  @PostMapping("/admin/fix-storage-paths")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Fix document storage paths", 
+      description = "Admin endpoint to fix storage paths for documents that were uploaded with absolute paths")
+  public ResponseEntity<Map<String, Object>> fixStoragePaths() {
+    int fixedCount = documentService.fixDocumentStoragePaths();
+    return ResponseEntity.ok(Map.of(
+        "message", "Storage paths fixed successfully", 
+        "fixedCount", fixedCount
+    ));
   }
 
   /**

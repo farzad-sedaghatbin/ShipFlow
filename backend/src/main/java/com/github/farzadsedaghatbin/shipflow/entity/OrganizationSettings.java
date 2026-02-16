@@ -95,6 +95,32 @@ public class OrganizationSettings {
   @Column(nullable = false)
   private String updatedBy;
 
+  // Wise Architecture Feature Flag
+  @Column(name = "enable_wise_architecture", nullable = false)
+  @Builder.Default
+  private Boolean enableWiseArchitecture = false;
+
+  // Figma MCP Configuration
+  @Column(name = "figma_access_token", columnDefinition = "TEXT")
+  private String figmaAccessToken;
+
+  @Column(name = "default_figma_file_key")
+  private String defaultFigmaFileKey;
+
+  // GitHub MCP Configuration
+  @Column(name = "github_access_token", columnDefinition = "TEXT")
+  private String githubAccessToken;
+
+  @Column(name = "default_github_owner")
+  private String defaultGithubOwner;
+
+  @Column(name = "default_github_repo")
+  private String defaultGithubRepo;
+
+  @Column(name = "default_github_branch")
+  @Builder.Default
+  private String defaultGithubBranch = "main";
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

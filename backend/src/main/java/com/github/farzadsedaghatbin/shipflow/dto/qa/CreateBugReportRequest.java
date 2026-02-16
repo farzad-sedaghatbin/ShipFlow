@@ -41,8 +41,6 @@ public class CreateBugReportRequest {
 
   private Long testRunId;
 
-  private Long scopeId;
-
   private Long taskId;
 
   @NotNull(message = "Severity is required")

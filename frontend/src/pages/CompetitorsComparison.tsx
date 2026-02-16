@@ -50,6 +50,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'Shape Up', feature: 'Native Shape Up methodology', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: '6-week fixed cycles', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: 'Betting table for pitches', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Shape Up', feature: 'Pre-cycle pitch lifecycle', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
   { category: 'Shape Up', feature: 'Appetite-based budgeting', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: 'Circuit breaker mechanism', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Shape Up', feature: 'Pitch shaping workflow', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
@@ -73,6 +74,9 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: 'partial' },
   { category: 'AI Features', feature: 'AI test case generation', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'AI pitch document extraction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'AI technical solution generator', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Team skills-aware recommendations', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Figma design analysis (MCP)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
 
@@ -247,8 +251,9 @@ export default function CompetitorsComparison() {
                 <h3 className="font-semibold text-lg mb-2">AI-Powered Insights</h3>
                 <p className="text-sm text-muted-foreground">
                   Pluggable LLM architecture: Choose Ollama (local), OpenAI ChatGPT, or RunPod (cloud GPU).
-                  Get automated risk analysis, AI-generated test cases, and intelligent pitch
-                  document extraction. Privacy-first or production-ready—your choice.
+                  Get automated risk analysis, AI-generated test cases, intelligent pitch
+                  document extraction, and Wise Architecture—AI-powered technical solution 
+                  generation with team skills, Figma design, and roadmap context integration.
                 </p>
               </CardContent>
             </Card>

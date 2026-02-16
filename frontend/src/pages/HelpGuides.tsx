@@ -13,7 +13,8 @@ import {
     BarChart3,
     Zap,
     Layers,
-    Coffee
+    Coffee,
+    Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,13 @@ export default function HelpGuides() {
             icon: Brain,
             path: '/help/ai-risk-advisor',
             color: 'text-orange-500',
+        },
+        {
+            title: t('helpGuides.wiseArchitecture'),
+            description: t('helpGuides.wiseArchitectureDesc'),
+            icon: Sparkles,
+            path: '/help/wise-architecture',
+            color: 'text-violet-500',
         },
         {
             title: t('helpGuides.cycleSetup'),

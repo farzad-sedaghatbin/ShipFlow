@@ -55,6 +55,15 @@ public class OrganizationSettingsDTO {
   private LocalDateTime updatedAt;
   private String updatedBy;
 
+  // Wise Architecture Feature Flag
+  private Boolean enableWiseArchitecture;
+
+  // Figma MCP Configuration (token not exposed, only flag)
+  private Boolean hasFigmaAccessToken;
+
+  // GitHub MCP Configuration (token not exposed, only flag)
+  private Boolean hasGithubAccessToken;
+
   /**
    * Configurable risk detection thresholds for automated health assessment. These
    * values control how the system calculates pitch health status.

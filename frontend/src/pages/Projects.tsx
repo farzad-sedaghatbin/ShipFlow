@@ -24,13 +24,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -341,18 +335,21 @@ export default function Projects() {
               className="pl-10"
             />
           </div>
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <ArrowUpDown className="h-4 w-4 mr-2" />
-              <SelectValue placeholder={t('projects.sortBy')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">{t('projects.sortByName')}</SelectItem>
-              <SelectItem value="key">{t('projects.sortByKey')}</SelectItem>
-              <SelectItem value="cycles">{t('projects.sortByCycles')}</SelectItem>
-              <SelectItem value="recent">{t('projects.sortByRecent')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center">
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            <Combobox
+              options={[
+                { value: 'name', label: t('projects.sortByName') },
+                { value: 'key', label: t('projects.sortByKey') },
+                { value: 'cycles', label: t('projects.sortByCycles') },
+                { value: 'recent', label: t('projects.sortByRecent') }
+              ]}
+              value={sortBy}
+              onValueChange={(value: any) => setSortBy(value)}
+              placeholder={t('projects.sortBy')}
+              triggerClassName="w-full sm:w-[200px]"
+            />
+          </div>
         </div>
       </div>
 
@@ -551,13 +548,13 @@ export default function Projects() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingProject ? t('projects.editProject') : t('projects.createNewProject')}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="name">{t('projects.projectName')} *</Label>
               <Input

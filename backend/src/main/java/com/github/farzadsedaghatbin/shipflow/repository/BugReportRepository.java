@@ -75,19 +75,11 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   @Query("SELECT MAX(CAST(SUBSTRING(br.bugKey, 5) AS int)) FROM BugReport br WHERE br.bugKey LIKE 'BUG-%'")
   Integer findMaxBugKeyNumber();
 
-  // Scope and task queries for traceability
-  List<BugReport> findByScopeId(Long scopeId);
-
+  // Task queries for traceability
   List<BugReport> findByTaskId(Long taskId);
-
-  @Query("SELECT br FROM BugReport br WHERE br.scope.id = :scopeId AND br.status = :status")
-  List<BugReport> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") BugStatus status);
 
   @Query("SELECT br FROM BugReport br WHERE br.task.id = :taskId AND br.status = :status")
   List<BugReport> findByTaskIdAndStatus(@Param("taskId") Long taskId, @Param("status") BugStatus status);
-
-  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.scope.id = :scopeId")
-  long countByScopeId(@Param("scopeId") Long scopeId);
 
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.task.id = :taskId")
   long countByTaskId(@Param("taskId") Long taskId);
@@ -130,4 +122,25 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
 
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.project.id = :projectId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
   long countOpenByProjectId(@Param("projectId") Long projectId);
+
+  // Release-related queries
+  List<BugReport> findByTargetReleaseId(Long releaseId);
+
+  List<BugReport> findByFixedInReleaseId(Long releaseId);
+
+  @Query("SELECT br FROM BugReport br WHERE br.targetRelease.id = :releaseId AND br.status = :status")
+  List<BugReport> findByTargetReleaseIdAndStatus(@Param("releaseId") Long releaseId, @Param("status") BugStatus status);
+
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.targetRelease.id = :releaseId")
+  long countByTargetReleaseId(@Param("releaseId") Long releaseId);
+
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.targetRelease.id = :releaseId AND br.status = :status")
+  long countByTargetReleaseIdAndStatus(@Param("releaseId") Long releaseId, @Param("status") BugStatus status);
+
+  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.targetRelease.id = :releaseId AND br.status NOT IN ('CLOSED', 'RESOLVED', 'VERIFIED', 'WONT_FIX', 'DUPLICATE')")
+  long countOpenByTargetReleaseId(@Param("releaseId") Long releaseId);
+
+  /** Find bugs whose fixed release differs from target (slipped bugs) */
+  @Query("SELECT br FROM BugReport br WHERE br.targetRelease.id = :releaseId AND br.fixedInRelease IS NOT NULL AND br.fixedInRelease.id <> br.targetRelease.id")
+  List<BugReport> findSlippedBugsByTargetReleaseId(@Param("releaseId") Long releaseId);
 }

@@ -90,7 +90,7 @@ public class RiskAnalysisService {
       return cachedResult.get();
     }
 
-    Pitch pitch = pitchRepository.findById(pitchId)
+    Pitch pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
         .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
 
     return analyzePitchRisk(pitch, useAI);
@@ -302,14 +302,15 @@ public class RiskAnalysisService {
   }
 
   /**
-   * Answer a question about pitch risk using AI. Note: This method is not
-   * transactional to ensure error responses are returned properly.
+   * Answer a question about pitch risk using AI.
+   * The pitch is fetched with eager loading, so no transaction is needed.
+   * AI work should not hold DB connections.
    */
   public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
     // Get pitch first
     Pitch pitch;
     try {
-      pitch = pitchRepository.findById(pitchId)
+      pitch = pitchRepository.findByIdWithTeamAndAssignments(pitchId)
           .orElseThrow(() -> new RuntimeException("Pitch not found with id: " + pitchId));
     } catch (Exception e) {
       return RiskQuestionResponse.builder().pitchId(pitchId).pitchTitle("Unknown").question(question).answer(null)
@@ -541,6 +542,8 @@ public class RiskAnalysisService {
       case STARTED -> 5;
       case SHAPED -> 10;
       case PENDING -> 15;
+      case DRAFT -> 20; // Early shaping - more uncertainty
+      case IDEA -> 25; // Raw idea - highest uncertainty
       case COOLDOWN -> -20;
       case CANCELLED -> -50;
       case CIRCUIT_BREAKER -> 50; // High risk when circuit breaker is triggered

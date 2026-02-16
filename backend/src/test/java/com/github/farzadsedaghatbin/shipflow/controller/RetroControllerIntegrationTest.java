@@ -347,12 +347,14 @@ class RetroControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Access blocked when retros disabled")
-    void accessBlockedWhenDisabled() throws Exception {
+    @DisplayName("Returns empty list when retros disabled")
+    void returnsEmptyListWhenDisabled() throws Exception {
       testProject.setEnableRetrospectives(false);
       projectRepository.save(testProject);
 
-      mockMvc.perform(get("/api/retros/project/" + testProject.getId())).andExpect(status().is5xxServerError());
+      mockMvc.perform(get("/api/retros/project/" + testProject.getId()))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$", hasSize(0)));
     }
   }
 

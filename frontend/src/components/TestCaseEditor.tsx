@@ -21,20 +21,13 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+import { Combobox } from './ui/combobox';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip';
-import { cn } from '../lib/utils';
 
 interface TestCaseEditorProps {
   testCase?: TestCase | null;
@@ -63,21 +56,6 @@ const testTypes: TestCaseType[] = [
 const priorities: TestCasePriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
 const statuses: TestCaseStatus[] = ['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'];
-
-const priorityStyles: Record<TestCasePriority, string> = {
-  LOW: 'bg-muted text-muted-foreground',
-  MEDIUM: 'bg-blue-500/10 text-blue-500',
-  HIGH: 'bg-amber-500/10 text-amber-500',
-  CRITICAL: 'bg-red-500/10 text-red-500',
-};
-
-const statusStyles: Record<TestCaseStatus, string> = {
-  DRAFT: 'bg-muted text-muted-foreground',
-  READY: 'bg-violet-500/10 text-violet-500',
-  APPROVED: 'bg-green-500/10 text-green-500',
-  DEPRECATED: 'bg-amber-500/10 text-amber-500',
-  ARCHIVED: 'bg-red-500/10 text-red-500',
-};
 
 const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   testCase,
@@ -228,67 +206,32 @@ const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Type *</Label>
-              <Select
+              <Combobox
+                options={testTypes.map(type => ({ value: type, label: type }))}
                 value={formData.type}
                 onValueChange={(value) => handleChange('type', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {testTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select type"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Priority *</Label>
-              <Select
+              <Combobox
+                options={priorities.map(priority => ({ value: priority, label: priority }))}
                 value={formData.priority}
                 onValueChange={(value) => handleChange('priority', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorities.map((priority) => (
-                    <SelectItem key={priority} value={priority}>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("text-xs", priorityStyles[priority])}>
-                          {priority}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select priority"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select
+              <Combobox
+                options={statuses.map(status => ({ value: status, label: status }))}
                 value={formData.status}
                 onValueChange={(value) => handleChange('status', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("text-xs", statusStyles[status])}>
-                          {status}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select status"
+              />
             </div>
           </div>
 

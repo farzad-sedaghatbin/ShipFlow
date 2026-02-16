@@ -16,7 +16,12 @@ import {
   ArrowRight,
   Loader2,
   MessageSquare,
-  Activity
+  Activity,
+  Image as ImageIcon,
+  Video,
+  Paperclip,
+  Download,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,6 +37,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import Comments from './Comments';
 import qaTestManagementService from '../services/qaTestManagementService';
+import { documentService, UploadedDocument } from '../services/documentService';
 import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType } from '../types';
 
 interface BugViewDialogProps {
@@ -67,8 +73,21 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyPage, setHistoryPage] = useState(0);
   const [totalHistoryPages, setTotalHistoryPages] = useState(0);
+  
+  // Attachments state
+  const [attachments, setAttachments] = useState<UploadedDocument[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<UploadedDocument | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const pageSize = 20;
+  
+  // Media file type helpers
+  const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+  const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
+  const isImageFile = (fileType: string) => IMAGE_EXTENSIONS.includes(fileType?.toLowerCase() || '');
+  const isVideoFile = (fileType: string) => VIDEO_EXTENSIONS.includes(fileType?.toLowerCase() || '');
+  const getAttachmentUrl = (attachment: UploadedDocument) => `/api/documents/${attachment.id}/download`;
 
   // Field name translations mapping
   const fieldNameKeys: Record<string, string> = {
@@ -133,12 +152,35 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     }
   }, [open, bug, activeTab, loadHistory]);
 
+  // Load attachments when dialog opens
+  const loadAttachments = useCallback(async () => {
+    if (!bug) return;
+    setAttachmentsLoading(true);
+    try {
+      const response = await documentService.getBugAttachments(bug.id);
+      setAttachments(response.data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+      setAttachments([]);
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  }, [bug]);
+
+  useEffect(() => {
+    if (open && bug) {
+      loadAttachments();
+    }
+  }, [open, bug, loadAttachments]);
+
   // Reset state when dialog closes or bug changes
   useEffect(() => {
     if (!open) {
       setActiveTab('details');
       setHistory([]);
       setHistoryPage(0);
+      setAttachments([]);
+      setPreviewAttachment(null);
     }
   }, [open]);
 
@@ -502,6 +544,64 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
                     </div>
                   )}
 
+                  {/* Attachments */}
+                  <div className="space-y-2 border-t pt-4">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Paperclip className="h-3 w-3" />
+                      {t('bugAttachments.title')}
+                    </Label>
+                    {attachmentsLoading ? (
+                      <div className="flex items-center gap-2 py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
+                      </div>
+                    ) : attachments.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {attachments.map((attachment) => (
+                          <button
+                            type="button"
+                            key={attachment.id}
+                            className="relative group rounded-lg overflow-hidden border bg-muted/30 cursor-pointer hover:ring-2 hover:ring-ring focus:outline-none focus:ring-2 focus:ring-ring w-full"
+                            onClick={() => {
+                              setPreviewAttachment(attachment);
+                              setPreviewOpen(true);
+                            }}
+                          >
+                            {isImageFile(attachment.fileType) ? (
+                              <img
+                                src={getAttachmentUrl(attachment)}
+                                alt={attachment.originalFileName}
+                                className="w-full h-20 object-cover"
+                              />
+                            ) : isVideoFile(attachment.fileType) ? (
+                              <div className="w-full h-20 flex items-center justify-center bg-muted">
+                                <Video className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <div className="w-full h-20 flex items-center justify-center bg-muted">
+                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            
+                            {/* Overlay with view icon */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <Eye className="h-6 w-6 text-white" />
+                            </div>
+                            
+                            {/* File name */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 pointer-events-none">
+                              <p className="text-[10px] text-white truncate">
+                                {attachment.originalFileName}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-2">{t('bugAttachments.noAttachments')}</p>
+                    )}
+                  </div>
+
                   {/* Resolution */}
                   {bug.resolution && (
                     <div className="space-y-2 border-t pt-4">
@@ -540,6 +640,59 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
           </div>
         </Tabs>
       </DialogContent>
+
+      {/* Attachment Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {previewAttachment && isImageFile(previewAttachment.fileType) && (
+                <ImageIcon className="h-5 w-5" />
+              )}
+              {previewAttachment && isVideoFile(previewAttachment.fileType) && (
+                <Video className="h-5 w-5" />
+              )}
+              {previewAttachment?.originalFileName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center overflow-auto max-h-[70vh]">
+            {previewAttachment && isImageFile(previewAttachment.fileType) && (
+              <img
+                src={getAttachmentUrl(previewAttachment)}
+                alt={previewAttachment.originalFileName}
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
+            {previewAttachment && isVideoFile(previewAttachment.fileType) && (
+              <video
+                src={getAttachmentUrl(previewAttachment)}
+                controls
+                className="max-w-full max-h-full"
+              >
+                {t('bugAttachments.videoNotSupported')}
+              </video>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (previewAttachment) {
+                  // Trigger download
+                  const link = document.createElement('a');
+                  link.href = getAttachmentUrl(previewAttachment);
+                  link.download = previewAttachment.originalFileName;
+                  link.click();
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {t('common.download')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

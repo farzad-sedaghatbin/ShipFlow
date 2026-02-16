@@ -64,7 +64,6 @@ class BugReportTraceabilityTest {
   private Project kanbanProject;
   private Cycle cycle;
   private Pitch pitch;
-  private HillChartPoint scope;
   private Task task;
 
   @BeforeEach
@@ -84,29 +83,25 @@ class BugReportTraceabilityTest {
 
     pitch = Pitch.builder().id(1L).title("User Authentication").cycle(cycle).build();
 
-    scope = HillChartPoint.builder().id(1L).scope("Login Form").description("Build login form UI").pitch(pitch)
-        .build();
-
-    task = Task.builder().id(1L).title("Implement login validation").cycle(cycle).pitch(pitch).scope(scope).build();
+    task = Task.builder().id(1L).title("Implement login validation").cycle(cycle).pitch(pitch).build();
   }
 
   @Test
-  @DisplayName("Should create bug report with scope and task links")
-  void shouldCreateBugReportWithScopeAndTask() {
+  @DisplayName("Should create bug report with task link")
+  void shouldCreateBugReportWithTask() {
     // Arrange
     CreateBugReportRequest request = CreateBugReportRequest.builder()
         .title("Login form validation fails for empty email")
         .description("When submitting login form with empty email, no error is shown")
-        .severity(BugSeverity.MAJOR).pitchId(1L).scopeId(1L).taskId(1L).build();
+        .severity(BugSeverity.MAJOR).pitchId(1L).taskId(1L).build();
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(pitchRepository.findById(1L)).thenReturn(Optional.of(pitch));
-    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
     BugReport savedBug = BugReport.builder().id(1L).bugKey("BUG-001").title(request.getTitle())
         .description(request.getDescription()).severity(request.getSeverity()).status(BugStatus.OPEN)
-        .pitch(pitch).cycle(cycle).scope(scope).task(task).reporter(user).build();
+        .pitch(pitch).cycle(cycle).task(task).reporter(user).build();
 
     when(bugReportRepository.save(any(BugReport.class))).thenReturn(savedBug);
 
@@ -116,19 +111,16 @@ class BugReportTraceabilityTest {
     // Assert
     assertNotNull(result);
     assertEquals("Login form validation fails for empty email", result.getTitle());
-    assertEquals(1L, result.getScopeId());
-    assertEquals("Login Form", result.getScopeName());
     assertEquals(1L, result.getTaskId());
     assertEquals("Implement login validation", result.getTaskTitle());
 
-    verify(hillChartPointRepository).findById(1L);
     verify(taskRepository).findById(1L);
     verify(bugReportRepository).save(any(BugReport.class));
   }
 
   @Test
-  @DisplayName("Should create bug report without scope/task for general bugs")
-  void shouldCreateBugReportWithoutScopeOrTask() {
+  @DisplayName("Should create bug report without task for general bugs")
+  void shouldCreateBugReportWithoutTask() {
     // Arrange
     CreateBugReportRequest request = CreateBugReportRequest.builder()
         .title("Application crashes on startup in IE11").description("Legacy browser compatibility issue")
@@ -138,7 +130,6 @@ class BugReportTraceabilityTest {
 
     BugReport savedBug = BugReport.builder().id(2L).bugKey("BUG-002").title(request.getTitle())
         .description(request.getDescription()).severity(request.getSeverity()).status(BugStatus.OPEN)
-        .scope(null) // No specific scope
         .task(null) // No specific task
         .reporter(user).build();
 
@@ -150,27 +141,23 @@ class BugReportTraceabilityTest {
     // Assert
     assertNotNull(result);
     assertEquals("Application crashes on startup in IE11", result.getTitle());
-    assertNull(result.getScopeId());
-    assertNull(result.getScopeName());
     assertNull(result.getTaskId());
     assertNull(result.getTaskTitle());
 
-    verify(hillChartPointRepository, never()).findById(anyLong());
     verify(taskRepository, never()).findById(anyLong());
   }
 
   @Test
-  @DisplayName("Should update bug report to link with scope and task")
-  void shouldUpdateBugReportToLinkWithScopeAndTask() {
+  @DisplayName("Should update bug report to link with task")
+  void shouldUpdateBugReportToLinkWithTask() {
     // Arrange
     BugReport existingBug = BugReport.builder().id(1L).bugKey("BUG-001").title("Generic bug")
-        .description("Some issue").severity(BugSeverity.MINOR).status(BugStatus.OPEN).reporter(user).scope(null)
+        .description("Some issue").severity(BugSeverity.MINOR).status(BugStatus.OPEN).reporter(user)
         .task(null).build();
 
-    UpdateBugReportRequest updateRequest = UpdateBugReportRequest.builder().scopeId(1L).taskId(1L).build();
+    UpdateBugReportRequest updateRequest = UpdateBugReportRequest.builder().taskId(1L).build();
 
     when(bugReportRepository.findById(1L)).thenReturn(Optional.of(existingBug));
-    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
     when(bugReportRepository.save(any(BugReport.class))).thenReturn(existingBug);
 
@@ -179,59 +166,12 @@ class BugReportTraceabilityTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(1L, result.getScopeId());
     assertEquals(1L, result.getTaskId());
 
-    verify(hillChartPointRepository).findById(1L);
     verify(taskRepository).findById(1L);
   }
 
-  @Test
-  @DisplayName("Should link bug to scope but not task")
-  void shouldLinkBugToScopeOnly() {
-    // Arrange
-    CreateBugReportRequest request = CreateBugReportRequest.builder().title("UI inconsistency in login form")
-        .description("Font size varies across fields").severity(BugSeverity.MINOR).scopeId(1L)
-        // No taskId - bug is related to scope but not specific task
-        .build();
 
-    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
-
-    BugReport savedBug = BugReport.builder().id(3L).bugKey("BUG-003").title(request.getTitle())
-        .description(request.getDescription()).severity(request.getSeverity()).status(BugStatus.OPEN)
-        .scope(scope).task(null).reporter(user).build();
-
-    when(bugReportRepository.save(any(BugReport.class))).thenReturn(savedBug);
-
-    // Act
-    BugReportDTO result = bugReportService.createBugReport(request, 1L);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(1L, result.getScopeId());
-    assertEquals("Login Form", result.getScopeName());
-    assertNull(result.getTaskId());
-
-    verify(hillChartPointRepository).findById(1L);
-    verify(taskRepository, never()).findById(anyLong());
-  }
-
-  @Test
-  @DisplayName("Should throw exception when scope not found")
-  void shouldThrowExceptionWhenScopeNotFound() {
-    // Arrange
-    CreateBugReportRequest request = CreateBugReportRequest.builder().title("Bug with invalid scope")
-        .description("Test bug").severity(BugSeverity.MAJOR).scopeId(999L) // Non-existent scope
-        .build();
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-    when(hillChartPointRepository.findById(999L)).thenReturn(Optional.empty());
-
-    // Act & Assert
-    assertThrows(IllegalArgumentException.class, () -> bugReportService.createBugReport(request, 1L));
-    verify(bugReportRepository, never()).save(any(BugReport.class));
-  }
 
   @Test
   @DisplayName("Should throw exception when task not found")
@@ -273,7 +213,7 @@ class BugReportTraceabilityTest {
 
       BugReport savedBug = BugReport.builder().id(10L).bugKey("BUG-010").title(request.getTitle())
           .description(request.getDescription()).severity(request.getSeverity()).status(BugStatus.OPEN)
-          .project(kanbanProject).cycle(null).pitch(null).scope(null).task(null).reporter(user).build();
+          .project(kanbanProject).cycle(null).pitch(null).task(null).reporter(user).build();
 
       when(bugReportRepository.save(any(BugReport.class))).thenReturn(savedBug);
 
@@ -288,7 +228,6 @@ class BugReportTraceabilityTest {
       assertEquals("KBN", result.getProjectKey());
       assertNull(result.getCycleId());
       assertNull(result.getPitchId());
-      assertNull(result.getScopeId());
       assertNull(result.getTaskId());
 
       verify(projectRepository).findById(2L);

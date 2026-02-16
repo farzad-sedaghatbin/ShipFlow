@@ -22,6 +22,7 @@ import {
   Shield,
   List,
   Kanban,
+  Search,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,6 +134,7 @@ export default function BacklogPage() {
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
   const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
   const [excludeMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status' | 'dueDate' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
@@ -173,8 +175,7 @@ export default function BacklogPage() {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_assigneeDropdownOpen, _setAssigneeDropdownOpen] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
 
   // Sync view mode when project type changes
   useEffect(() => {
@@ -187,11 +188,9 @@ export default function BacklogPage() {
     loadActiveTimer();
   }, []);
 
-  // Re-load when project changes (for Kanban auto-select)
+  // Re-load when project changes (for Kanban auto-select and All Projects)
   useEffect(() => {
-    if (currentProject) {
-      loadInitialData();
-    }
+    loadInitialData();
   }, [currentProject?.id, isKanbanProject]);
 
   useEffect(() => {
@@ -221,7 +220,7 @@ export default function BacklogPage() {
       setTasksLoading(false);
       setStatistics(null);
     }
-  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter]);
+  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter, searchQuery, viewMode]);
 
   // Sync URL param to state when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -276,42 +275,60 @@ export default function BacklogPage() {
   };
 
   const loadTasks = async () => {
+    // For Kanban view, load all tasks without pagination
+    const effectiveRowsPerPage = viewMode === 'kanban' ? 1000 : rowsPerPage;
+    const effectivePage = viewMode === 'kanban' ? 0 : page;
+    
     // For Kanban projects, load tasks by project, not by cycle
     if (isKanbanProject && currentProject) {
       setTasksLoading(true);
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       
       try {
-        const response = await taskService.getByProjectIdAndCategory(
-          currentProject.id, 
-          activeCategory, 
-          page, 
-          rowsPerPage, 
-          sortBy, 
-          sortOrder
-        );
+        let response: any;
+        
+        // Use filter endpoint if any filters are active (except dependency which is not in backend)
+        if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
+          response = await taskService.getByProjectIdWithFilters(
+            currentProject.id,
+            statusFilter.length > 0 ? statusFilter : undefined,
+            priorityFilter.length > 0 ? priorityFilter : undefined,
+            assigneeFilter.length > 0 ? assigneeFilter : undefined,
+            activeCategory,
+            excludeMode,
+            effectivePage,
+            effectiveRowsPerPage,
+            sortBy,
+            sortOrder
+          );
+        } else {
+          // No status/priority/assignee filters, use category endpoint
+          response = await taskService.getByProjectIdAndCategory(
+            currentProject.id, 
+            activeCategory, 
+            effectivePage, 
+            effectiveRowsPerPage, 
+            sortBy, 
+            sortOrder
+          );
+        }
+        
         let filteredTasks = response?.data?.content || [];
         
-        // Apply additional filters
-        if (statusFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status)
-          );
-        }
-        if (priorityFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority)
-          );
-        }
-        if (assigneeFilter.length > 0) {
-          filteredTasks = filteredTasks.filter((t: Task) => 
-            excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0)
-          );
-        }
+        // Apply client-side filters for features not in backend yet
         if (dependencyFilter === 'blocked') {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search query (client-side for now)
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         // Filter by tab (my tasks)
@@ -351,29 +368,45 @@ export default function BacklogPage() {
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
           // Get all my tasks with server-side pagination and sorting
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMy(effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
           const allTasks = response?.data?.content || [];
           // Filter by category
-          const filteredTasks = allTasks.filter((task: Task) => {
+          let filteredTasks = allTasks.filter((task: Task) => {
             const taskCategory = task.category || 'PITCH_SCOPE';
             return taskCategory === activeCategory;
           });
+          // Apply search filter
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter((t: Task) => 
+              t.title.toLowerCase().includes(query) || 
+              (t.description && t.description.toLowerCase().includes(query))
+            );
+          }
           setTasks(filteredTasks);
           setTotalElements(response?.data?.totalElements || 0);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMyByCycle(selectedCycle, effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
           // Client-side filter for my tasks until backend supports it
           const allTasks = response?.data?.content || [];
-          const filteredTasks = allTasks.filter((task: Task) => {
+          let filteredTasks = allTasks.filter((task: Task) => {
             const taskCategory = task.category || 'PITCH_SCOPE';
             return taskCategory === activeCategory;
           });
+          // Apply search filter
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter((t: Task) => 
+              t.title.toLowerCase().includes(query) || 
+              (t.description && t.description.toLowerCase().includes(query))
+            );
+          }
           setTasks(filteredTasks);
           setTotalElements(filteredTasks.length);
         }
       } else if (selectedCycle === 'all') {
         // Get all tasks with server-side pagination and sorting
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getAll(effectivePage, effectiveRowsPerPage, sortBy, sortOrder);
         const allTasks = response?.data?.content || [];
         
         // Filter by category
@@ -406,6 +439,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
         }
         
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -417,8 +459,8 @@ export default function BacklogPage() {
           assigneeFilter.length > 0 ? assigneeFilter : undefined,
           activeCategory,
           excludeMode,
-          page,
-          rowsPerPage,
+          effectivePage,
+          effectiveRowsPerPage,
           sortBy,
           sortOrder
         );
@@ -429,6 +471,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         setTasks(filteredTasks);
@@ -443,6 +494,15 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.isBlocked && t.blockedByCount && t.blockedByCount > 0);
         } else if (dependencyFilter === 'blocking') {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
+        }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.filter((t: Task) => 
+            t.title.toLowerCase().includes(query) || 
+            (t.description && t.description.toLowerCase().includes(query))
+          );
         }
         
         setTasks(filteredTasks);
@@ -527,6 +587,7 @@ export default function BacklogPage() {
         dueDate: task.dueDate,
         tags: task.tags || '',
         category: task.category || activeCategory,
+        pitchId: task.pitchId,
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
@@ -988,6 +1049,18 @@ export default function BacklogPage() {
 
           {/* Filters */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('backlogPage.filters.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-64"
+              />
+            </div>
+            
             {/* Status Filter */}
             <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
               <DropdownMenuTrigger asChild>
@@ -1048,6 +1121,36 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Assignee Filter */}
+            <DropdownMenu open={assigneeDropdownOpen} onOpenChange={setAssigneeDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  {t('backlogPage.filters.assignee')} {assigneeFilter.length > 0 && `(${assigneeFilter.length})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {persons.map((person) => (
+                  <DropdownMenuItem
+                    key={person.id}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (assigneeFilter.includes(person.id)) {
+                        setAssigneeFilter(assigneeFilter.filter(p => p !== person.id));
+                      } else {
+                        setAssigneeFilter([...assigneeFilter, person.id]);
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={assigneeFilter.includes(person.id)}
+                      className="mr-2"
+                    />
+                    {person.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Dependency Filter */}
             <DropdownMenu open={dependencyDropdownOpen} onOpenChange={setDependencyDropdownOpen}>
               <DropdownMenuTrigger asChild>
@@ -1086,7 +1189,7 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all') && (
+            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all' || searchQuery.trim()) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1095,6 +1198,7 @@ export default function BacklogPage() {
                   setPriorityFilter([]);
                   setAssigneeFilter([]);
                   setDependencyFilter('all');
+                  setSearchQuery('');
                 }}
               >
                 {t('backlogPage.filters.clearFilters')}

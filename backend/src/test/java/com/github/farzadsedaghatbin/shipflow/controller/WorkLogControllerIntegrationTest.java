@@ -88,7 +88,7 @@ class WorkLogControllerIntegrationTest {
         .createdAt(LocalDateTime.now()).build();
     testPerson = personRepository.save(testPerson);
 
-    User testUser = User.builder().username("testuser").password("password").role(UserRole.MEMBER)
+    User testUser = User.builder().username("workloguser").password("password").role(UserRole.MEMBER)
         .person(testPerson).isActive(true).build();
     testUser = userRepository.save(testUser);
 
@@ -112,7 +112,7 @@ class WorkLogControllerIntegrationTest {
     testWorkLog = workLogRepository.save(testWorkLog);
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getAllWorkLogs_ShouldReturnWorkLogs() throws Exception {
     mockMvc.perform(get("/api/worklogs")).andExpect(status().isOk())
@@ -121,7 +121,7 @@ class WorkLogControllerIntegrationTest {
         .andExpect(jsonPath("$[0].note", is("Test Work")));
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getWorkLogById_WhenExists_ShouldReturnWorkLog() throws Exception {
     mockMvc.perform(get("/api/worklogs/{id}", testWorkLog.getId())).andExpect(status().isOk())
@@ -130,13 +130,13 @@ class WorkLogControllerIntegrationTest {
         .andExpect(jsonPath("$.note", is("Test Work")));
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getWorkLogById_WhenNotExists_ShouldReturn404() throws Exception {
     mockMvc.perform(get("/api/worklogs/{id}", 9999L)).andExpect(status().isBadRequest());
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void createWorkLog_WithValidData_ShouldCreateWorkLog() throws Exception {
     CreateWorkLogRequest request = CreateWorkLogRequest.builder().note("New Work")
@@ -148,7 +148,7 @@ class WorkLogControllerIntegrationTest {
         .andExpect(jsonPath("$.note", is("New Work")));
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void updateWorkLog_WhenExists_ShouldUpdateWorkLog() throws Exception {
     CreateWorkLogRequest request = CreateWorkLogRequest.builder().note("Updated Work")
@@ -160,7 +160,7 @@ class WorkLogControllerIntegrationTest {
         .andExpect(jsonPath("$.note", is("Updated Work")));
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void deleteWorkLog_WhenExists_ShouldDeleteWorkLog() throws Exception {
     mockMvc.perform(delete("/api/worklogs/{id}", testWorkLog.getId())).andExpect(status().isNoContent());
@@ -168,7 +168,7 @@ class WorkLogControllerIntegrationTest {
     mockMvc.perform(get("/api/worklogs/{id}", testWorkLog.getId())).andExpect(status().isBadRequest());
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getWorkLogsByPerson_ShouldReturnWorkLogsForPerson() throws Exception {
     mockMvc.perform(get("/api/worklogs/person/{personId}", testPerson.getId())).andExpect(status().isOk())
@@ -176,7 +176,7 @@ class WorkLogControllerIntegrationTest {
         .andExpect(jsonPath("$[0].note", is("Test Work")));
   }
 
-  @WithMockUser(username = "testuser", roles = "MEMBER")
+  @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getWorkLogsByPitch_ShouldReturnWorkLogsForPitch() throws Exception {
     mockMvc.perform(get("/api/worklogs/pitch/{pitchId}", testPitch.getId())).andExpect(status().isOk())

@@ -189,13 +189,13 @@ class RetroServiceTest {
     }
 
     @Test
-    @DisplayName("Retro operations blocked when feature disabled")
-    void retroOperationsBlockedWhenDisabled() {
-      doThrow(new IllegalStateException("Retrospectives feature is disabled"))
-          .when(retroCrudService).getAllRetrosByProject(1L);
+    @DisplayName("getAllRetrosByProject returns empty list when feature disabled")
+    void getAllRetrosByProject_WhenDisabled_ReturnsEmptyList() {
+      when(retroCrudService.getAllRetrosByProject(1L)).thenReturn(List.of());
 
-      assertThatThrownBy(() -> retroService.getAllRetrosByProject(1L)).isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Retrospectives feature is disabled");
+      List<RetroDTO> result = retroService.getAllRetrosByProject(1L);
+      
+      assertThat(result).isEmpty();
     }
   }
 

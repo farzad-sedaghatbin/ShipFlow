@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, Paperclip } from 'lucide-react';
 import { useProject } from '../contexts';
+import { MediaAttachmentUpload } from './MediaAttachmentUpload';
 import {
   BugReport,
   CreateBugReportRequest,
   UpdateBugReportRequest,
   BugSeverity,
   BugStatus,
-  HillChartPoint,
   Task,
   Person,
 } from '../types';
-import { hillChartApi } from '../services/hillChartApi';
 import { taskService } from '../services/taskService';
+import { documentService } from '../services/documentService';
 import api from '../services/api';
-import { useDebounce } from '../hooks/useDebounce';
 import {
   Dialog,
   DialogContent,
@@ -27,17 +26,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+import { Combobox } from './ui/combobox';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { cn } from '../lib/utils';
 
 interface BugReportModalProps {
   open: boolean;
@@ -53,25 +44,6 @@ interface BugReportModalProps {
 const severities: BugSeverity[] = ['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'];
 const statuses: BugStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REOPENED', 'WONT_FIX', 'DUPLICATE'];
 
-const severityVariants: Record<BugSeverity, string> = {
-  TRIVIAL: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  MINOR: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  MAJOR: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  CRITICAL: 'bg-red-500/20 text-red-400 border-red-500/30',
-  BLOCKER: 'bg-red-600/20 text-red-500 border-red-600/30',
-};
-
-const statusVariants: Record<BugStatus, string> = {
-  OPEN: 'bg-red-500/20 text-red-400 border-red-500/30',
-  IN_PROGRESS: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  RESOLVED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  VERIFIED: 'bg-green-500/20 text-green-400 border-green-500/30',
-  CLOSED: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  REOPENED: 'bg-red-500/20 text-red-400 border-red-500/30',
-  WONT_FIX: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  DUPLICATE: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-};
-
 const BugReportModal: React.FC<BugReportModalProps> = ({
   open,
   onClose,
@@ -83,23 +55,15 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   testRunId,
 }) => {
   const { t } = useTranslation();
-  const { isKanbanProject, currentProject } = useProject();
+  const { currentProject } = useProject();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
-  const [scopeSearch, setScopeSearch] = useState('');
-  const [taskSearch, setTaskSearch] = useState('');
-  const [searchingScopes, setSearchingScopes] = useState(false);
-  const [searchingTasks, setSearchingTasks] = useState(false);
   const [loadingPeople, setLoadingPeople] = useState(false);
-  
-  // Debounce search queries to avoid excessive API calls (uses useDebounce default delay of 300ms defined in the hook)
-  const debouncedScopeSearch = useDebounce(scopeSearch);
-  const debouncedTaskSearch = useDebounce(taskSearch);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({});
 
@@ -123,11 +87,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
         assigneeId: bugReport?.assigneeId,
-        scopeId: bugReport?.scopeId,
         taskId: bugReport?.taskId,
       });
       setTagInput('');
       setError(null);
+      setPendingAttachments([]);
       loadPeople();
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
@@ -145,28 +109,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       setLoadingPeople(false);
     }
   };
-
-  // Load initial scopes based on pitch context
-  useEffect(() => {
-    const loadScopes = async () => {
-      if (!open) return;
-      
-      try {
-        if (pitchId) {
-          // Load scopes for specific pitch
-          const scopesRes = await hillChartApi.getHillChartPointsByPitch(pitchId);
-          setScopes(scopesRes);
-        } else {
-          // No pitch context - start with empty, user must search
-          setScopes([]);
-        }
-      } catch (err) {
-        console.error('Failed to load scopes:', err);
-        setScopes([]);
-      }
-    };
-    loadScopes();
-  }, [open, pitchId]);
 
   // Load initial tasks based on cycle context
   useEffect(() => {
@@ -190,56 +132,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     };
     loadTasks();
   }, [open, cycleId]);
-
-  // Server-side search for scopes (minimum 3 characters)
-  useEffect(() => {
-    const searchScopes = async () => {
-      if (!open || debouncedScopeSearch.length < 3) {
-        if (!pitchId && debouncedScopeSearch.length > 0 && debouncedScopeSearch.length < 3) {
-          // Show message that more characters needed
-          setScopes([]);
-        }
-        return;
-      }
-      
-      setSearchingScopes(true);
-      try {
-        const scopesRes = await hillChartApi.searchHillChartPoints(debouncedScopeSearch);
-        setScopes(scopesRes);
-      } catch (err) {
-        console.error('Failed to search scopes:', err);
-        setScopes([]);
-      } finally {
-        setSearchingScopes(false);
-      }
-    };
-    searchScopes();
-  }, [open, debouncedScopeSearch, pitchId]);
-
-  // Server-side search for tasks (minimum 3 characters)
-  useEffect(() => {
-    const searchTasks = async () => {
-      if (!open || debouncedTaskSearch.length < 3) {
-        if (!cycleId && debouncedTaskSearch.length > 0 && debouncedTaskSearch.length < 3) {
-          // Show message that more characters needed
-          setTasks([]);
-        }
-        return;
-      }
-      
-      setSearchingTasks(true);
-      try {
-        const tasksRes = await taskService.search(debouncedTaskSearch, 0, 50);
-        setTasks(tasksRes.data.content);
-      } catch (err) {
-        console.error('Failed to search tasks:', err);
-        setTasks([]);
-      } finally {
-        setSearchingTasks(false);
-      }
-    };
-    searchTasks();
-  }, [open, debouncedTaskSearch, cycleId]);
 
   const handleChange = (field: keyof CreateBugReportRequest, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -281,7 +173,23 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       if (isEdit) {
         await onSubmit(formData as UpdateBugReportRequest);
       } else {
-        await onSubmit(formData as CreateBugReportRequest);
+        // Create the bug first
+        const createdBug = await onSubmit(formData as CreateBugReportRequest);
+        
+        // Upload any pending attachments if bug was created successfully
+        if (pendingAttachments.length > 0 && createdBug && typeof createdBug === 'object' && 'id' in createdBug) {
+          const bugId = (createdBug as BugReport).id;
+          try {
+            // Upload all pending attachments
+            await Promise.all(
+              pendingAttachments.map(file => documentService.uploadBugAttachment(bugId, file))
+            );
+          } catch (uploadErr) {
+            console.error('Failed to upload attachments:', uploadErr);
+            // Don't fail the whole operation if attachment upload fails
+            // The bug was created successfully, user can add attachments later
+          }
+        }
       }
       onClose();
     } catch (err) {
@@ -336,196 +244,58 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Severity *</Label>
-              <Select
+              <Combobox
+                options={severities.map(severity => ({ value: severity, label: severity }))}
                 value={formData.severity}
                 onValueChange={(value) => handleChange('severity', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select severity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {severities.map((severity) => (
-                    <SelectItem key={severity} value={severity}>
-                      <Badge variant="outline" className={cn('mr-2', severityVariants[severity])}>
-                        {severity}
-                      </Badge>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select severity"
+              />
             </div>
 
             {isEdit && (
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
+                <Combobox
+                  options={statuses.map(status => ({ value: status, label: status.replace('_', ' ') }))}
                   value={formData.status}
                   onValueChange={(value) => handleChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        <Badge variant="outline" className={cn('mr-2', statusVariants[status])}>
-                          {status.replace('_', ' ')}
-                        </Badge>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select status"
+                />
               </div>
             )}
           </div>
 
           <div className="space-y-2">
             <Label>{t('bugReports.assignee')}</Label>
-            <Select
+            <Combobox
+              options={[
+                { value: 'unassigned', label: t('bugReports.unassigned') },
+                ...people.map(person => ({ value: person.id.toString(), label: person.name }))
+              ]}
               value={formData.assigneeId?.toString() || 'unassigned'}
               onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('bugReports.selectAssignee')}>
-                  {formData.assigneeId ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        {people.find(p => p.id === formData.assigneeId)?.avatarUrl ? (
-                          <AvatarImage src={people.find(p => p.id === formData.assigneeId)?.avatarUrl} />
-                        ) : (
-                          <AvatarFallback className="text-[10px]">
-                            {people.find(p => p.id === formData.assigneeId)?.name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <span>{people.find(p => p.id === formData.assigneeId)?.name}</span>
-                    </div>
-                  ) : (
-                    t('bugReports.unassigned')
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">{t('bugReports.unassigned')}</SelectItem>
-                {people.map((person) => (
-                  <SelectItem key={person.id} value={person.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        {person.avatarUrl ? (
-                          <AvatarImage src={person.avatarUrl} />
-                        ) : (
-                          <AvatarFallback className="text-[10px]">
-                            {person.name.charAt(0)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <span>{person.name}</span>
-                      {person.email && (
-                        <span className="text-xs text-muted-foreground">({person.email})</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={t('bugReports.selectAssignee')}
+              searchPlaceholder="Search persons..."
+            />
           </div>
 
-          {/* Scope & Task Traceability */}
-          <div className={`grid grid-cols-1 ${!isKanbanProject ? 'sm:grid-cols-2' : ''} gap-4`}>
-            {/* Hide scope field for Kanban projects - scope is a Shape Up concept tied to pitches */}
-            {!isKanbanProject && (
-              <div className="space-y-2">
-                <Label>Scope (optional)</Label>
-                <Select
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => handleChange('scopeId', value === 'none' ? undefined : Number(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={pitchId && scopes.length === 0 ? "Loading scopes..." : "No specific scope"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 pb-2">
-                      <Input
-                        placeholder="Search scopes..."
-                        value={scopeSearch}
-                        onChange={(e) => setScopeSearch(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                    <SelectItem value="none">No specific scope</SelectItem>
-                    {searchingScopes ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
-                    ) : !pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
-                    ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
-                    ) : scopes.length === 0 && !pitchId ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
-                    ) : (
-                      scopes.slice(0, 50).map((scope) => (
-                        <SelectItem key={scope.id} value={String(scope.id)}>
-                          {scope.scope}
-                        </SelectItem>
-                      ))
-                    )}
-                    {scopes.length > 50 && (
-                      <div className="py-2 text-center text-xs text-muted-foreground">
-                        Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {pitchId ? `Link to a specific scope (${scopes.length} available)` : 'Search to find scopes (min 3 chars)'}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Related Task (optional)</Label>
-              <Select
-                value={formData.taskId ? String(formData.taskId) : 'none'}
-                onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Search tasks..."
-                      value={taskSearch}
-                      onChange={(e) => setTaskSearch(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-                  <SelectItem value="none">No related task</SelectItem>
-                  {searchingTasks ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
-                  ) : !cycleId && taskSearch.length > 0 && taskSearch.length < 3 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
-                  ) : tasks.length === 0 && taskSearch.length >= 3 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">No tasks found</div>
-                  ) : tasks.length === 0 && !cycleId ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Type to search tasks</div>
-                  ) : (
-                    tasks.slice(0, 50).map((task) => (
-                      <SelectItem key={task.id} value={String(task.id)}>
-                        {task.title}
-                      </SelectItem>
-                    ))
-                  )}
-                  {tasks.length > 50 && (
-                    <div className="py-2 text-center text-xs text-muted-foreground">
-                      Showing first 50 of {tasks.length} tasks. Refine your search for more specific results.
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Search to find tasks (min 3 chars)'}
-              </p>
-            </div>
+          {/* Task Traceability */}
+          <div className="space-y-2">
+            <Label>Related Task (optional)</Label>
+            <Combobox
+              options={[
+                { value: 'none', label: 'No related task' },
+                ...tasks.slice(0, 50).map(task => ({ value: String(task.id), label: task.title }))
+              ]}
+              value={formData.taskId ? String(formData.taskId) : 'none'}
+              onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
+              placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"}
+              searchPlaceholder="Search tasks..."
+              emptyText={cycleId ? "No tasks found" : "Select a cycle first"}
+            />
+            <p className="text-xs text-muted-foreground">
+              {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Select a cycle to see available tasks'}
+            </p>
           </div>
 
           {/* Steps to Reproduce */}
@@ -600,6 +370,29 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                   </Badge>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Attachments Section */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              {t('bugAttachments.title')}
+            </Label>
+            {isEdit && bugReport?.id ? (
+              <MediaAttachmentUpload
+                bugId={bugReport.id}
+                disabled={loading}
+                compact
+              />
+            ) : (
+              <MediaAttachmentUpload
+                bugId={null}
+                disabled={loading}
+                compact
+                pendingFiles={pendingAttachments}
+                onPendingFilesChange={setPendingAttachments}
+              />
             )}
           </div>
 

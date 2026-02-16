@@ -98,6 +98,32 @@ export const taskService = {
       },
     });
   },
+  getByProjectIdWithFilters: (
+    projectId: number,
+    statuses?: TaskStatus[],
+    priorities?: TaskPriority[],
+    assigneeIds?: number[],
+    category?: TaskCategory,
+    exclude?: boolean,
+    page?: number,
+    size?: number,
+    sortBy?: string,
+    sortOrder?: string
+  ) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/filter`, {
+      params: {
+        statuses: statuses?.join(','),
+        priorities: priorities?.join(','),
+        assigneeIds: assigneeIds?.join(','),
+        category: category,
+        exclude: exclude ?? false,
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
   getStatisticsByProjectId: (projectId: number) => api.get<TaskStatistics>(`/tasks/project/${projectId}/statistics`),
   search: (query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>('/tasks/search', {

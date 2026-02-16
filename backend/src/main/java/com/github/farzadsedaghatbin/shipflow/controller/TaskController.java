@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +34,18 @@ public class TaskController {
 
   private final TaskService taskService;
   private final AuditService auditService;
+  
+  // Allowed fields for sorting to prevent runtime errors
+  private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+      "id", "createdAt", "updatedAt", "title", "status", "priority", "category"
+  );
+  
+  /**
+   * Validates and returns a safe sort field. Returns default if invalid.
+   */
+  private String validateSortField(String sortBy, String defaultField) {
+    return ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : defaultField;
+  }
 
   // ========== Current User's Tasks ==========
 
@@ -44,8 +57,9 @@ public class TaskController {
   public ResponseEntity<Page<TaskDTO>> getMyTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getMyTasks(pageable));
   }
 
@@ -55,8 +69,9 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, pageable));
   }
 
@@ -67,8 +82,9 @@ public class TaskController {
   public ResponseEntity<Page<TaskDTO>> getAllTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getAllTasks(pageable));
   }
 
@@ -80,8 +96,9 @@ public class TaskController {
     if (q == null || q.trim().length() < 3) {
       return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
     }
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.searchTasks(q, pageable));
   }
 
@@ -104,8 +121,9 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getTasksByCycleId(cycleId, pageable));
   }
 
@@ -115,8 +133,9 @@ public class TaskController {
       @PathVariable TaskStatus status, @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getTasksByCycleIdAndStatus(cycleId, status, pageable));
   }
 
@@ -131,8 +150,9 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getTasksWithFilters(cycleId, statuses, priorities, assigneeIds, category,
         exclude, pageable));
   }
@@ -143,8 +163,9 @@ public class TaskController {
       @PathVariable TaskCategory category, @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getTasksByCycleIdAndCategory(cycleId, category, pageable));
   }
 
@@ -172,7 +193,8 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
-    Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+    String validSortBy = validateSortField(sortBy, "createdAt");
+    Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, validSortBy);
     Pageable pageable = PageRequest.of(page, size, sort);
     return ResponseEntity.ok(taskService.getTasksByProjectIdPaged(projectId, pageable));
   }
@@ -183,9 +205,29 @@ public class TaskController {
       @PathVariable TaskCategory category, @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
-    Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+    String validSortBy = validateSortField(sortBy, "createdAt");
+    Sort sort = Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, validSortBy);
     Pageable pageable = PageRequest.of(page, size, sort);
     return ResponseEntity.ok(taskService.getTasksByProjectIdAndCategory(projectId, category, pageable));
+  }
+
+  @GetMapping("/project/{projectId}/filter")
+  @Operation(summary = "Get tasks with multi-selection filters for a project", 
+      description = "Filter tasks by multiple statuses, priorities, assignees, and category with optional exclusion")
+  public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdWithFilters(@PathVariable Long projectId,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "desc") String sortOrder) {
+    String validSortBy = validateSortField(sortBy, "createdAt");
+    Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
+    return ResponseEntity.ok(taskService.getTasksByProjectIdWithFilters(projectId, statuses, priorities, 
+        assigneeIds, category, exclude, pageable));
   }
 
   @GetMapping("/project/{projectId}/statistics")

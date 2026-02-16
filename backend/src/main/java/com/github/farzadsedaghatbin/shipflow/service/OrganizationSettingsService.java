@@ -106,6 +106,16 @@ public class OrganizationSettingsService {
       settings.setDefaultWorkingDaysPerWeek(request.getDefaultWorkingDaysPerWeek());
     }
 
+    // Wise Architecture Feature Flag
+    if (request.getEnableWiseArchitecture() != null) {
+      settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
+    }
+
+    // GitHub MCP Configuration (token only, managed via MCP settings API)
+    if (request.getGithubAccessToken() != null) {
+      settings.setGithubAccessToken(request.getGithubAccessToken());
+    }
+
     settings.setUpdatedBy(username);
     settings.setUpdatedAt(LocalDateTime.now());
 
@@ -113,6 +123,34 @@ public class OrganizationSettingsService {
     log.info("Organization settings updated by {}", username);
 
     return toDTO(settings);
+  }
+
+  /**
+   * Get Figma access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.
+   * Consider refactoring to use a dedicated token provider service.</p>
+   * @return the Figma access token or null if not configured
+   */
+  public String getFigmaAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getFigmaAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get GitHub access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.
+   * Consider refactoring to use a dedicated token provider service.</p>
+   * @return the GitHub access token or null if not configured
+   */
+  public String getGithubAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getGithubAccessToken)
+        .orElse(null);
   }
 
   /** Reset settings to defaults. */
@@ -381,6 +419,11 @@ public class OrganizationSettingsService {
         .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
         .defaultHoursPerDay(entity.getDefaultHoursPerDay())
         .defaultWorkingDaysPerWeek(entity.getDefaultWorkingDaysPerWeek())
+        // Wise Architecture Feature Flag
+        .enableWiseArchitecture(entity.getEnableWiseArchitecture())
+        // MCP Configuration (tokens not exposed, only presence flags)
+        .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
+        .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

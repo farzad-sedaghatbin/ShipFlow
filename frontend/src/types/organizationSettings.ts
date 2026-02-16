@@ -39,6 +39,10 @@ export interface OrganizationSettings {
   dateFormat: string;
   enableNotifications: boolean;
   enableAIFeatures: boolean;
+  enableWiseArchitecture: boolean;
+  
+  // Figma Integration (for Wise Architecture)
+  hasFigmaAccessToken: boolean;
   
   updatedAt: string;
   updatedBy: string;
@@ -115,15 +119,23 @@ export interface UpdateOrganizationSettingsRequest {
   organizationName?: string;
   defaultCycleLengthWeeks?: number;
   defaultCooldownWeeks?: number;
+  defaultHoursPerDay?: number;
+  defaultWorkingDaysPerWeek?: number;
   riskThresholds?: RiskThresholds;
   riskWeights?: RiskWeights;
   taskCategories?: CategoryConfig[];
   pitchCategories?: CategoryConfig[];
+  colors?: ColorSettings;
+  bugStatuses?: BugStatusConfig[];
+  severityLevels?: SeverityLevelConfig[];
   meetingTypes?: MeetingTypeConfig[];
   timeZone?: string;
   dateFormat?: string;
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
+  enableWiseArchitecture?: boolean;
+  /** Figma access token for Wise Architecture. Set to update, empty string to clear. */
+  figmaAccessToken?: string;
 }
 
 /**

@@ -25,6 +25,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import SlackIntegration from './pages/SlackIntegration';
 import GitHubIntegration from './pages/integrations/GitHubIntegration';
 import TeamsIntegration from './pages/integrations/TeamsIntegration';
+import McpIntegration from './pages/integrations/McpIntegration';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import HealthOverview from './pages/HealthOverview';
@@ -39,9 +40,20 @@ import TestCaseFormPage from './pages/TestCaseFormPage';
 import TestCaseDetailPage from './pages/TestCaseDetailPage';
 import TestRunPage from './pages/TestRunPage';
 import AITestGeneratePage from './pages/AITestGeneratePage';
+import WiseArchitecturePage from './pages/WiseArchitecturePage';
 import BugReportsPage from './pages/BugReportsPage';
 import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
+import RoadmapPage from './pages/RoadmapPage';
+import InitiativeListPage from './pages/InitiativeListPage';
+import InitiativeDetailPage from './pages/InitiativeDetailPage';
+import InitiativeFormPage from './pages/InitiativeFormPage';
+import EpicListPage from './pages/EpicListPage';
+import EpicDetailPage from './pages/EpicDetailPage';
+import EpicFormPage from './pages/EpicFormPage';
+import ReleaseListPage from './pages/ReleaseListPage';
+import ReleaseDetailPage from './pages/ReleaseDetailPage';
+import ReleaseFormPage from './pages/ReleaseFormPage';
 import RetroList from './pages/RetroList';
 import RetroBoard from './pages/RetroBoard';
 import CircuitBreakerMonitor from './pages/CircuitBreakerMonitor';
@@ -62,6 +74,7 @@ import RetrospectivesGuide from './pages/guides/RetrospectivesGuide';
 import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
 import CooldownActivitiesGuide from './pages/guides/CooldownActivitiesGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
+import WiseArchitectureGuide from './pages/guides/WiseArchitectureGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
@@ -164,6 +177,7 @@ function App() {
                     <Route path="integrations/slack" element={<SlackIntegration />} />
                     <Route path="integrations/github" element={<GitHubIntegration />} />
                     <Route path="integrations/teams" element={<TeamsIntegration />} />
+                    <Route path="integrations/mcp" element={<McpIntegration />} />
                     {/* Legacy route redirects */}
                     <Route path="slack" element={<Navigate to="/integrations/slack" replace />} />
 
@@ -176,12 +190,28 @@ function App() {
                     <Route path="qa/test-cases" element={<TestCasesPage />} />
                     <Route path="qa/test-cases/new" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/generate" element={<AITestGeneratePage />} />
+                    <Route path="rd/wise-architecture" element={<WiseArchitecturePage />} />
                     <Route path="qa/test-cases/:id" element={<TestCaseDetailPage />} />
                     <Route path="qa/test-cases/:id/edit" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/:id/run" element={<TestRunPage />} />
                     <Route path="qa/bug-reports" element={<BugReportsPage />} />
                     <Route path="pitches/:pitchId/test" element={<PitchTestPage />} />
                     <Route path="cycles/:cycleId/qa-dashboard" element={<CycleQADashboardPage />} />
+
+                    {/* Roadmap & Planning */}
+                    <Route path="roadmap" element={<RoadmapPage />} />
+                    <Route path="initiatives" element={<InitiativeListPage />} />
+                    <Route path="initiatives/new" element={<InitiativeFormPage />} />
+                    <Route path="initiatives/:id" element={<InitiativeDetailPage />} />
+                    <Route path="initiatives/:id/edit" element={<InitiativeFormPage />} />
+                    <Route path="epics" element={<EpicListPage />} />
+                    <Route path="epics/new" element={<EpicFormPage />} />
+                    <Route path="epics/:id" element={<EpicDetailPage />} />
+                    <Route path="epics/:id/edit" element={<EpicFormPage />} />
+                    <Route path="releases-management" element={<ReleaseListPage />} />
+                    <Route path="releases-management/new" element={<ReleaseFormPage />} />
+                    <Route path="releases-management/:id" element={<ReleaseDetailPage />} />
+                    <Route path="releases-management/:id/edit" element={<ReleaseFormPage />} />
 
                     {/* Help & Guides */}
                     <Route path="help" element={<HelpGuides />} />
@@ -196,6 +226,7 @@ function App() {
                     <Route path="help/circuit-breaker" element={<CircuitBreakerGuide />} />
                     <Route path="help/cooldown-activities" element={<CooldownActivitiesGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
+                    <Route path="help/wise-architecture" element={<WiseArchitectureGuide />} />
 
 
                     {/* Catch-all for unmatched routes within protected area */}

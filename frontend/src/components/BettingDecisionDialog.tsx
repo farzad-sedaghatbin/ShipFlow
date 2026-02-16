@@ -181,10 +181,14 @@ export function BettingDecisionDialog({
         <div className="p-4 bg-muted/50 rounded-lg mb-4">
           <h3 className="font-semibold text-lg mb-1">{pitch.title}</h3>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{pitch.appetiteDays} {t('common.days')}</Badge>
-            <span className="text-sm text-muted-foreground">
-              {getAppetiteLabel(pitch.appetiteDays)}
-            </span>
+            {pitch.appetiteDays != null && (
+              <>
+                <Badge variant="outline">{pitch.appetiteDays} {t('common.days')}</Badge>
+                <span className="text-sm text-muted-foreground">
+                  {getAppetiteLabel(pitch.appetiteDays)}
+                </span>
+              </>
+            )}
           </div>
           {pitch.description && (
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">

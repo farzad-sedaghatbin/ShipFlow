@@ -93,7 +93,7 @@ const TestCasesPage: React.FC = () => {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
@@ -151,7 +151,7 @@ const TestCasesPage: React.FC = () => {
       // Filter by current project if one is selected
       if (!isAllProjectsSelected && currentProject) {
         const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
+        const projectPitchIds = new Set(pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId)).map(p => p.id));
         cases = cases.filter(tc => tc.pitchId && projectPitchIds.has(tc.pitchId));
       }
       
