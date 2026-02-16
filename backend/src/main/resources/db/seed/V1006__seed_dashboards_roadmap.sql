@@ -5,40 +5,40 @@
 -- ===========================================
 -- CUSTOM DASHBOARDS
 -- ===========================================
-INSERT INTO custom_dashboards (id, name, description, layout, is_default, is_template, owner_id, project_id, scope, user_context_filter, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
+INSERT INTO custom_dashboards (id, user_id, name, description, is_default, is_template, template_category, created_by, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 -- Template dashboards
-(1, 'Executive Summary', 'High-level overview for leadership', 'grid', false, true, 1, 1, 'PROJECT', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'Developer Dashboard', 'Daily work tracking for developers', 'grid', false, true, 1, 1, 'USER', 'ASSIGNED_TO_ME', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'QA Dashboard', 'Test and quality metrics', 'grid', false, true, 1, 1, 'PROJECT', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 'Cycle Progress', 'Cycle-level progress tracking', 'grid', false, true, 1, 1, 'CYCLE', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 1, 'Executive Summary', 'High-level overview for leadership', false, true, 'EXECUTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 1, 'Developer Dashboard', 'Daily work tracking for developers', false, true, 'DEVELOPER', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 1, 'QA Dashboard', 'Test and quality metrics', false, true, 'QA', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 1, 'Cycle Progress', 'Cycle-level progress tracking', false, true, 'MANAGER', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 -- User dashboards
-(5, 'Alice''s Work View', 'Personal dashboard for Alice', 'grid', true, false, 2, 1, 'USER', 'ASSIGNED_TO_ME', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(6, 'PM Overview', 'Frank''s project management view', 'grid', true, false, 7, 1, 'PROJECT', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(5, 2, 'Alice''s Work View', 'Personal dashboard for Alice', true, false, 'CUSTOM', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 7, 'PM Overview', 'Frank''s project management view', true, false, 'CUSTOM', 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- DASHBOARD WIDGET CONFIGS
 -- ===========================================
-INSERT INTO dashboard_widget_configs (id, dashboard_id, widget_type, title, settings, position_x, position_y, width, height, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
+INSERT INTO dashboard_widget_configs (id, dashboard_id, widget_type, settings, position_x, position_y, width, height, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 -- Executive Summary widgets
-(1, 1, 'STAT', 'Active Pitches', '{"metric":"pitch_count","filter":"status=IN_PROGRESS"}', 0, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 1, 'STAT', 'Cycle Progress', '{"metric":"cycle_progress","showPercentage":true}', 3, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 1, 'STAT', 'Team Velocity', '{"metric":"velocity_avg"}', 6, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 1, 'STAT', 'Open Bugs', '{"metric":"bug_count","filter":"status=NEW,IN_PROGRESS"}', 9, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 1, 'HILL_CHART', 'Hill Chart Overview', '{"showAllPitches":true}', 0, 2, 6, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(6, 1, 'LINE_CHART', 'Burndown', '{"metric":"hours_remaining"}', 6, 2, 6, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 1, 'STAT', '{"title":"Active Pitches","metric":"pitch_count","filter":"status=IN_PROGRESS"}', 0, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 1, 'STAT', '{"title":"Cycle Progress","metric":"cycle_progress","showPercentage":true}', 3, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 1, 'STAT', '{"title":"Team Velocity","metric":"velocity_avg"}', 6, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 1, 'STAT', '{"title":"Open Bugs","metric":"bug_count","filter":"status=NEW,IN_PROGRESS"}', 9, 0, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 1, 'HILL_CHART', '{"title":"Hill Chart Overview","showAllPitches":true}', 0, 2, 6, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 1, 'LINE_CHART', '{"title":"Burndown","metric":"hours_remaining"}', 6, 2, 6, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
 -- Developer Dashboard widgets
-(7, 2, 'TABLE', 'My Active Tasks', '{"view":"tasks","filter":"assignee=me,status!=DONE"}', 0, 0, 8, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(8, 2, 'CUSTOM_KPI', 'Code Review Time', '{"metric":"review_time_avg","target":24}', 8, 0, 2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(9, 2, 'CUSTOM_KPI', 'Tech Debt', '{"metric":"tech_debt_hours"}', 10, 0, 2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(10, 2, 'ACTIVITY_FEED', 'Recent Activity', '{"limit":10}', 8, 2, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(7, 2, 'TABLE', '{"title":"My Active Tasks","view":"tasks","filter":"assignee=me,status!=DONE"}', 0, 0, 8, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(8, 2, 'CUSTOM_KPI', '{"title":"Code Review Time","metric":"review_time_avg","target":24}', 8, 0, 2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(9, 2, 'CUSTOM_KPI', '{"title":"Tech Debt","metric":"tech_debt_hours"}', 10, 0, 2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(10, 2, 'ACTIVITY_FEED', '{"title":"Recent Activity","limit":10}', 8, 2, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
 -- QA Dashboard widgets
-(11, 3, 'PIE_CHART', 'Test Status', '{"metric":"test_status_distribution"}', 0, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(12, 3, 'BAR_CHART', 'Bugs by Severity', '{"metric":"bugs_by_severity"}', 4, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(13, 3, 'TABLE', 'Recent Test Runs', '{"view":"test_runs","limit":10}', 8, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(14, 3, 'STAT', 'Pass Rate', '{"metric":"test_pass_rate","format":"percentage"}', 0, 4, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(15, 3, 'STAT', 'Coverage', '{"metric":"test_coverage","format":"percentage"}', 3, 4, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(11, 3, 'PIE_CHART', '{"title":"Test Status","metric":"test_status_distribution"}', 0, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(12, 3, 'BAR_CHART', '{"title":"Bugs by Severity","metric":"bugs_by_severity"}', 4, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(13, 3, 'TABLE', '{"title":"Recent Test Runs","view":"test_runs","limit":10}', 8, 0, 4, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(14, 3, 'STAT', '{"title":"Pass Rate","metric":"test_pass_rate","format":"percentage"}', 0, 4, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(15, 3, 'STAT', '{"title":"Coverage","metric":"test_coverage","format":"percentage"}', 3, 4, 3, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- ROADMAP: INITIATIVES
