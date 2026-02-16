@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Filter,
   X,
+  Eye,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { meetingService } from '../services/meetingService';
@@ -609,6 +610,20 @@ export default function MeetingList() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon-sm"
+                                  onClick={() => handleViewMeeting(meeting.id)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('meetingList.table.viewTooltip')}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
