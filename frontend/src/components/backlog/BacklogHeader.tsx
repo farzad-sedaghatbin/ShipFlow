@@ -54,7 +54,14 @@ export function BacklogHeader({
               }))
             ]}
             value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
-            onValueChange={(value) => onCycleChange(value === 'all' ? 'all' : Number(value))}
+            onValueChange={(value) => {
+              // Guard against empty string from potential Combobox edge cases
+              if (!value || value === 'all') {
+                onCycleChange('all');
+              } else {
+                onCycleChange(Number(value));
+              }
+            }}
             placeholder={t('backlogPage.selectCycle')}
             searchPlaceholder="Search cycles..."
             triggerClassName="w-[250px]"

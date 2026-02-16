@@ -1,10 +1,8 @@
 -- V2026_02_14_0004: Fix COMPLETED task status values
 -- =============================================================================
--- TaskStatus enum only has DONE, not COMPLETED.
--- Update any tasks with COMPLETED status to DONE.
+-- NOTE: The COMPLETED → DONE data correction is handled by a dedicated migration
+-- (V88__ensure_completed_to_done.sql). This migration is intentionally left as a
+-- no-op to avoid duplicating the same data update in multiple migrations.
 -- =============================================================================
 
-UPDATE tasks 
-SET status = 'DONE', 
-    updated_at = CURRENT_TIMESTAMP
-WHERE status = 'COMPLETED';
+-- No-op: The data fix is already handled by V88__ensure_completed_to_done.sql

@@ -92,14 +92,20 @@ export function MultiCombobox({
                   <Badge
                     key={option.value}
                     variant="secondary"
-                    className="mr-1"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRemove(option.value)
-                    }}
+                    className="mr-1 flex items-center gap-1"
                   >
-                    {option.label}
-                    <X className="ml-1 h-3 w-3" />
+                    <span>{option.label}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemove(option.value)
+                      }}
+                      aria-label={`Remove ${option.label}`}
+                      className="inline-flex h-3 w-3 items-center justify-center rounded-full hover:bg-secondary-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <X className="h-3 w-3" aria-hidden="true" />
+                    </button>
                   </Badge>
                 ))}
                 {selectedOptions.length > maxDisplay && (

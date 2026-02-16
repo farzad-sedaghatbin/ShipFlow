@@ -173,7 +173,12 @@ export function BacklogTaskTable({
                 { value: '50', label: '50' }
               ]}
               value={rowsPerPage.toString()}
-              onValueChange={(v) => onRowsPerPageChange(parseInt(v, 10))}
+              onValueChange={(v) => {
+                if (!v) return;
+                const parsed = parseInt(v, 10);
+                if (Number.isNaN(parsed)) return;
+                onRowsPerPageChange(parsed);
+              }}
               triggerClassName="w-20"
             />
             <div className="flex items-center gap-1">
