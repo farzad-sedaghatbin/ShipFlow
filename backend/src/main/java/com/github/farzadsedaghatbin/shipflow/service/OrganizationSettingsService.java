@@ -415,11 +415,7 @@ public class OrganizationSettingsService {
         .enableWiseArchitecture(entity.getEnableWiseArchitecture())
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isEmpty())
-        .defaultFigmaFileKey(entity.getDefaultFigmaFileKey())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isEmpty())
-        .defaultGithubOwner(entity.getDefaultGithubOwner())
-        .defaultGithubRepo(entity.getDefaultGithubRepo())
-        .defaultGithubBranch(entity.getDefaultGithubBranch())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 
