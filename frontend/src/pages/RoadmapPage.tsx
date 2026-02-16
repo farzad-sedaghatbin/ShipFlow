@@ -11,6 +11,7 @@ import {
   Package,
   CheckCircle,
   Flag,
+  Maximize2,
 } from 'lucide-react';
 import { roadmapService } from '../services/roadmapService';
 import {
@@ -35,6 +36,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { Skeleton } from '../components/ui/skeleton';
+import RoadmapPresentationMode from '../components/RoadmapPresentationMode';
 
 // Helper to format dates for Gantt calculation
 const parseDate = (dateStr?: string): Date | null => {
@@ -135,6 +137,7 @@ export default function RoadmapPage() {
   const [quarter, setQuarter] = useState(Math.ceil((new Date().getMonth() + 1) / 3));
   const [expandedInitiatives, setExpandedInitiatives] = useState<Set<number>>(new Set());
   const [expandedEpics, setExpandedEpics] = useState<Set<number>>(new Set());
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   useEffect(() => {
     if (!currentProject || isAllProjectsSelected) {
@@ -300,6 +303,23 @@ export default function RoadmapPage() {
           <Button variant="outline" size="icon" onClick={() => navigatePeriod('next')}>
             <ChevronRight className="h-4 w-4" />
           </Button>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setIsPresentationMode(true)}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('roadmap.enterPresentation')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -585,6 +605,23 @@ export default function RoadmapPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Presentation Mode */}
+      <RoadmapPresentationMode
+        isOpen={isPresentationMode}
+        onClose={() => setIsPresentationMode(false)}
+        timeline={timeline}
+        viewMode={viewMode}
+        year={year}
+        quarter={quarter}
+        onViewModeChange={(mode) => setViewMode(mode)}
+        onNavigate={navigatePeriod}
+        expandedInitiatives={expandedInitiatives}
+        expandedEpics={expandedEpics}
+        onToggleInitiative={toggleInitiative}
+        onToggleEpic={toggleEpic}
+        projectName={currentProject?.name}
+      />
     </div>
   );
 }

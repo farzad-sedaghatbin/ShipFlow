@@ -1,7 +1,7 @@
 -- ============================================================================
 -- V1004: Retrospectives seed data
 -- Status: OPEN, CLOSED
--- Column types: WENT_WELL, TO_IMPROVE, ACTION_ITEMS
+-- Valid RetroColumnType values: WENT_WELL, DID_NOT_GO_WELL, TRY_NEXT, ACTIONS
 -- ============================================================================
 
 -- ===========================================
@@ -22,28 +22,28 @@ INSERT INTO retro_items (id, content, column_type, retrospective_id, author_id, 
 -- Cycle 1 retro items
 (1, 'Team communication was excellent', 'WENT_WELL', 1, 2, '2025-07-10', '2025-07-10'),
 (2, 'Good documentation practices established', 'WENT_WELL', 1, 3, '2025-07-10', '2025-07-10'),
-(3, 'Need better estimation skills', 'TO_IMPROVE', 1, 5, '2025-07-10', '2025-07-10'),
-(4, 'Code review process was slow', 'TO_IMPROVE', 1, 2, '2025-07-10', '2025-07-10'),
-(5, 'Set up automated code review reminders', 'ACTION_ITEMS', 1, 7, '2025-07-10', '2025-07-10'),
+(3, 'Need better estimation skills', 'DID_NOT_GO_WELL', 1, 5, '2025-07-10', '2025-07-10'),
+(4, 'Code review process was slow', 'DID_NOT_GO_WELL', 1, 2, '2025-07-10', '2025-07-10'),
+(5, 'Set up automated code review reminders', 'ACTIONS', 1, 7, '2025-07-10', '2025-07-10'),
 
 -- Cycle 2 retro items
 (6, 'Sprint planning improved significantly', 'WENT_WELL', 2, 7, '2025-08-24', '2025-08-24'),
 (7, 'Database migrations went smoothly', 'WENT_WELL', 2, 3, '2025-08-24', '2025-08-24'),
-(8, 'Testing coverage could be better', 'TO_IMPROVE', 2, 6, '2025-08-24', '2025-08-24'),
-(9, 'Need more pairing sessions', 'TO_IMPROVE', 2, 5, '2025-08-24', '2025-08-24'),
-(10, 'Implement minimum test coverage requirements', 'ACTION_ITEMS', 2, 6, '2025-08-24', '2025-08-24'),
-(11, 'Schedule weekly pairing sessions', 'ACTION_ITEMS', 2, 7, '2025-08-24', '2025-08-24'),
+(8, 'Testing coverage could be better', 'DID_NOT_GO_WELL', 2, 6, '2025-08-24', '2025-08-24'),
+(9, 'Need more pairing sessions', 'DID_NOT_GO_WELL', 2, 5, '2025-08-24', '2025-08-24'),
+(10, 'Implement minimum test coverage requirements', 'ACTIONS', 2, 6, '2025-08-24', '2025-08-24'),
+(11, 'Schedule weekly pairing sessions', 'ACTIONS', 2, 7, '2025-08-24', '2025-08-24'),
 
 -- Cycle 3 retro items
 (12, 'Quality focus resulted in fewer bugs', 'WENT_WELL', 3, 6, '2025-10-10', '2025-10-10'),
 (13, 'User feedback integration improved', 'WENT_WELL', 3, 4, '2025-10-10', '2025-10-10'),
-(14, 'Deployment pipeline needs work', 'TO_IMPROVE', 3, 8, '2025-10-10', '2025-10-10'),
-(15, 'Automate deployment to staging', 'ACTION_ITEMS', 3, 8, '2025-10-10', '2025-10-10'),
+(14, 'Deployment pipeline needs work', 'DID_NOT_GO_WELL', 3, 8, '2025-10-10', '2025-10-10'),
+(15, 'Automate deployment to staging', 'ACTIONS', 3, 8, '2025-10-10', '2025-10-10'),
 
 -- Current cycle (Cycle 4) - open retro
 (16, 'GitHub integration working well', 'WENT_WELL', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (17, 'Slack notifications helpful for visibility', 'WENT_WELL', 4, 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(18, 'Need better error handling patterns', 'TO_IMPROVE', 4, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(18, 'Need better error handling patterns', 'DID_NOT_GO_WELL', 4, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- RETRO ITEM VOTES

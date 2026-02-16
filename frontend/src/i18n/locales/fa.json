@@ -727,7 +727,18 @@
       "epic": "اپیک",
       "pitch": "پیچ",
       "release": "انتشار"
-    }
+    },
+    "presentationMode": "حالت ارائه",
+    "enterPresentation": "ورود به حالت ارائه",
+    "exitPresentation": "خروج از ارائه",
+    "darkMode": "حالت تاریک",
+    "lightMode": "حالت روشن",
+    "previousPeriod": "دوره قبلی",
+    "nextPeriod": "دوره بعدی",
+    "navigate": "ناوبری",
+    "toggleTheme": "تم",
+    "toggleView": "نما",
+    "exit": "خروج"
   },
   "initiatives": {
     "title": "ابتکارات",

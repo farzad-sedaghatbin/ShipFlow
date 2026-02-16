@@ -67,7 +67,7 @@ INSERT INTO teams (id, name, cycle_id) OVERRIDING SYSTEM VALUE VALUES
 
 -- ===========================================
 -- 6. TEAM ASSIGNMENTS
--- Roles: FRONTEND, BACKEND, FULLSTACK, DESIGNER, QA, DEVOPS, PM
+-- Valid TeamMemberRole values: BACKEND, FRONTEND, QA, DESIGNER, FULLSTACK, TECH_LEAD, PRODUCT_MANAGER
 -- ===========================================
 INSERT INTO team_assignments (person_id, team_id, role, start_date, is_active) VALUES
 -- Alpha Team (Cycle 4)
@@ -82,7 +82,7 @@ INSERT INTO team_assignments (person_id, team_id, role, start_date, is_active) V
 (5, 3, 'FULLSTACK', '2025-12-01', true),
 -- Mobile Team
 (3, 4, 'BACKEND', '2025-10-15', true),
-(8, 4, 'DEVOPS', '2025-10-15', true);
+(8, 4, 'BACKEND', '2025-10-15', true);
 
 -- ===========================================
 -- 7. USER-PROJECT ASSIGNMENTS

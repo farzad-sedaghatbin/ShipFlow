@@ -2299,7 +2299,18 @@
       "epic": "Epic",
       "pitch": "Pitch",
       "release": "Release"
-    }
+    },
+    "presentationMode": "Presentation Mode",
+    "enterPresentation": "Enter Presentation Mode",
+    "exitPresentation": "Exit Presentation",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "previousPeriod": "Previous Period",
+    "nextPeriod": "Next Period",
+    "navigate": "Navigate",
+    "toggleTheme": "Theme",
+    "toggleView": "View",
+    "exit": "Exit"
   },
   "initiatives": {
     "title": "Initiatives",
