@@ -40,7 +40,7 @@ public class TechStackDetectorService {
 
         // Mobile - React Native
         STACK_PATTERNS.put(TechStackType.MOBILE_REACT_NATIVE, List.of(
-            Pattern.compile(".*(react-native|ReactNative).*"),
+            Pattern.compile(".*(react-native|ReactNative)/.*$"),
             Pattern.compile(".*metro\\.config\\.js$"),
             Pattern.compile(".*app\\.json$")
         ));
