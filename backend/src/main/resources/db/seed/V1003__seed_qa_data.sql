@@ -64,14 +64,6 @@ INSERT INTO bug_reports (id, bug_key, title, description, steps_to_reproduce, ex
 (6, 'BUG-006', 'Password reset token expired', 'Tokens expiring after 1 hour instead of 24', '1. Request password reset\n2. Wait 2 hours\n3. Click link', 'Link should work for 24 hours', 'Link expires after 1 hour', 'Production', 14, 3, NULL, NULL, 'CRITICAL', 'VERIFIED', 'auth,security', 6, 3, 'Fixed token expiry configuration', '2025-10-01', '2025-09-28', '2025-10-01', 1),
 (7, 'BUG-007', 'Hill chart not updating', 'Position changes not reflected on chart', '1. Update scope position\n2. Refresh page\n3. Check chart', 'Chart should show new position', 'Chart shows old position', 'All', 16, 2, NULL, NULL, 'MAJOR', 'VERIFIED', 'hill-chart,ui', 6, 2, 'Fixed cache invalidation', '2025-08-15', '2025-08-10', '2025-08-15', 1);
 
--- ===========================================
--- BUG ATTACHMENTS (sample file references)
--- ===========================================
-INSERT INTO bug_attachments (bug_report_id, file_name, file_path, file_type, file_size, uploaded_by_id, uploaded_at) VALUES
-(1, 'ios-login-screenshot.png', '/attachments/bugs/1/ios-login-screenshot.png', 'image/png', 125000, 6, CURRENT_TIMESTAMP),
-(2, 'webhook-timeout-logs.txt', '/attachments/bugs/2/webhook-timeout-logs.txt', 'text/plain', 45000, 6, CURRENT_TIMESTAMP),
-(3, 'widget-overlap.mp4', '/attachments/bugs/3/widget-overlap.mp4', 'video/mp4', 2500000, 6, CURRENT_TIMESTAMP);
-
 -- Reset sequences
 SELECT setval('test_cases_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM test_cases), false);
 SELECT setval('test_runs_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM test_runs), false);
