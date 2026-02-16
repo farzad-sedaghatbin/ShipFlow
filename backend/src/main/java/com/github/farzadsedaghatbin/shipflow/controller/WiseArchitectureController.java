@@ -98,7 +98,7 @@ public class WiseArchitectureController {
                 .enabled(true)
                 .message("Wise Architecture feature is enabled")
                 .build());
-        } catch (Exception e) {
+        } catch (com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException e) {
             return ResponseEntity.ok(FeatureStatusDTO.builder()
                 .enabled(false)
                 .message(e.getMessage())

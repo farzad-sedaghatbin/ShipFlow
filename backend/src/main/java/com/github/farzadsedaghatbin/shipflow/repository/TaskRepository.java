@@ -160,7 +160,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
-            + "AND (:assigneeIds IS NULL OR t.assignee.id NOT IN :assigneeIds)")
+            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
     Page<Task> findByProjectIdWithExclusionFilters(@Param("projectId") Long projectId,
             @Param("statuses") List<TaskStatus> statuses, 
             @Param("priorities") List<TaskPriority> priorities,

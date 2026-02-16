@@ -149,7 +149,7 @@ export function MultiCombobox({
               {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value}
+                  value={`${option.value} ${option.label}`}
                   disabled={option.disabled}
                   onSelect={() => handleSelect(option.value)}
                 >

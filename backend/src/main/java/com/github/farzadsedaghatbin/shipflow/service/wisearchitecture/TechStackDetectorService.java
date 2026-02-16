@@ -34,13 +34,13 @@ public class TechStackDetectorService {
         STACK_PATTERNS.put(TechStackType.MOBILE_SWIFT, List.of(
             Pattern.compile(".*\\.swift$"),
             Pattern.compile(".*Package\\.swift$"),
-            Pattern.compile(".*\\.xcodeproj/.*"),
+            Pattern.compile(".*\\.xcodeproj/[^/]+$"),
             Pattern.compile(".*Podfile$")
         ));
 
         // Mobile - React Native
         STACK_PATTERNS.put(TechStackType.MOBILE_REACT_NATIVE, List.of(
-            Pattern.compile(".*react-native.*"),
+            Pattern.compile(".*(react-native|ReactNative).*"),
             Pattern.compile(".*metro\\.config\\.js$"),
             Pattern.compile(".*app\\.json$")
         ));
@@ -48,8 +48,7 @@ public class TechStackDetectorService {
         // Mobile - Flutter
         STACK_PATTERNS.put(TechStackType.MOBILE_FLUTTER, List.of(
             Pattern.compile(".*pubspec\\.yaml$"),
-            Pattern.compile(".*\\.dart$"),
-            Pattern.compile(".*flutter.*")
+            Pattern.compile(".*\\.dart$")
         ));
 
         // Backend - Java/Spring
@@ -65,9 +64,7 @@ public class TechStackDetectorService {
         STACK_PATTERNS.put(TechStackType.BACKEND_NODE, List.of(
             Pattern.compile(".*package\\.json$"),
             Pattern.compile(".*server\\.js$"),
-            Pattern.compile(".*index\\.js$"),
-            Pattern.compile(".*express.*"),
-            Pattern.compile(".*nest.*")
+            Pattern.compile(".*index\\.js$")
         ));
 
         // Backend - Python
@@ -97,8 +94,7 @@ public class TechStackDetectorService {
             Pattern.compile(".*package\\.json$"),
             Pattern.compile(".*\\.jsx$"),
             Pattern.compile(".*\\.tsx$"),
-            Pattern.compile(".*vite\\.config\\.(js|ts|mjs|mts)$"),
-            Pattern.compile(".*react.*")
+            Pattern.compile(".*vite\\.config\\.(js|ts|mjs|mts)$")
         ));
 
         // Web - Angular
@@ -118,8 +114,8 @@ public class TechStackDetectorService {
         // Web - Next.js
         STACK_PATTERNS.put(TechStackType.WEB_NEXTJS, List.of(
             Pattern.compile(".*next\\.config\\.(js|mjs|ts)$"),
-            Pattern.compile(".*/pages/.*\\.(jsx|tsx)$"),
-            Pattern.compile(".*/app/.*\\.(jsx|tsx)$")
+            Pattern.compile(".*/pages/[^/]+\\.(jsx|tsx)$"),
+            Pattern.compile(".*/app/[^/]+\\.(jsx|tsx)$")
         ));
     }
 

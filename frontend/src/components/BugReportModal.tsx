@@ -55,7 +55,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   testRunId,
 }) => {
   const { t } = useTranslation();
-  const { isKanbanProject, currentProject } = useProject();
+  const { currentProject } = useProject();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
