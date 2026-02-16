@@ -1,7 +1,7 @@
 -- ============================================================================
 -- V1002: Tasks seed data
 -- Status: BACKLOG, TODO, IN_PROGRESS, BLOCKED, IN_REVIEW, DONE, CANCELLED
--- Priority: LOW, MEDIUM, HIGH, CRITICAL
+-- Priority: LOW, MEDIUM, HIGH, URGENT
 -- Category: PITCH_SCOPE, DEBT_IMPROVEMENT
 -- ============================================================================
 
@@ -32,7 +32,7 @@ INSERT INTO tasks (id, title, description, status, priority, estimate_hours, cyc
 (14, 'Database Index Optimization', 'Add missing indexes for slow queries', 'DONE', 'HIGH', 4, 4, 8, 8, '2025-10-25', 'DEBT_IMPROVEMENT', 'tech-debt,performance', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
 -- Bug fix tasks
-(15, 'Fix Login Redirect Loop', 'Users sometimes stuck in redirect loop', 'DONE', 'CRITICAL', 3, 4, 2, 6, '2025-10-18', 'DEBT_IMPROVEMENT', 'bug-fix,auth', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(15, 'Fix Login Redirect Loop', 'Users sometimes stuck in redirect loop', 'DONE', 'URGENT', 3, 4, 2, 6, '2025-10-18', 'DEBT_IMPROVEMENT', 'bug-fix,auth', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (16, 'Fix Chart Tooltip Overlap', 'Tooltips overlapping on small screens', 'IN_PROGRESS', 'LOW', 2, 4, 5, 6, '2025-11-10', 'DEBT_IMPROVEMENT', 'bug-fix,ui', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
