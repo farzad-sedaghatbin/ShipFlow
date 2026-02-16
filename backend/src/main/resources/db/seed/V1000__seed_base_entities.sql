@@ -85,12 +85,13 @@ INSERT INTO team_assignments (person_id, team_id, role, start_date, is_active) V
 
 -- ===========================================
 -- 7. USER-PROJECT ASSIGNMENTS
+-- Valid roles: VIEWER, CONTRIBUTOR, MANAGER
 -- ===========================================
 INSERT INTO user_projects (user_id, project_id, project_role, created_at)
 SELECT u.id, p.id, 
-       CASE WHEN u.role = 'ADMIN' THEN 'ADMIN' 
+       CASE WHEN u.role = 'ADMIN' THEN 'MANAGER' 
             WHEN u.role = 'MANAGER' THEN 'MANAGER' 
-            ELSE 'MEMBER' END,
+            ELSE 'CONTRIBUTOR' END,
        CURRENT_TIMESTAMP
 FROM users u
 CROSS JOIN projects p
