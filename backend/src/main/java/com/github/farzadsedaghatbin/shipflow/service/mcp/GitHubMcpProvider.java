@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp;
 
+import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,12 +34,15 @@ public class GitHubMcpProvider implements McpClientService {
 
     private final McpConfig mcpConfig;
     private final RestTemplate mcpRestTemplate;
+    private final OrganizationSettingsService settingsService;
 
     public GitHubMcpProvider(
             McpConfig mcpConfig,
-            @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate) {
+            @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate,
+            OrganizationSettingsService settingsService) {
         this.mcpConfig = mcpConfig;
         this.mcpRestTemplate = mcpRestTemplate;
+        this.settingsService = settingsService;
     }
 
     @Override
@@ -289,11 +293,20 @@ public class GitHubMcpProvider implements McpClientService {
     }
 
     /**
-     * Create an HTTP entity with JSON content type headers.
+     * Create an HTTP entity with JSON content type and Authorization headers.
      */
     private <T> HttpEntity<T> createJsonEntity(T body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        // Add GitHub token for authentication
+        String githubToken = settingsService.getGithubAccessToken();
+        if (githubToken != null && !githubToken.isBlank()) {
+            headers.set("Authorization", "Bearer " + githubToken);
+        } else {
+            log.warn("GitHub access token not configured, MCP requests may fail");
+        }
+        
         return new HttpEntity<>(body, headers);
     }
 }
