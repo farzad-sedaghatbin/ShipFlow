@@ -13,9 +13,25 @@ All notable changes to this project will be documented in this file.
     - Extracts design context from wireframeLinks via Figma MCP server (~100-200 tokens)
     - Per-organization Figma access token storage in Organization Settings
     - Environment-variable driven MCP configuration (MCP_FIGMA_ENABLED, MCP_FIGMA_SERVER_URL)
+  - **GitHub MCP Integration**: Repository code analysis via Model Context Protocol servers
+    - GitHubMcpProvider with full HTTP implementation for file listing, reading, and searching
+    - Batch file read support with fallback to individual reads
+    - Automatic service discovery based on tech stack patterns
+    - Graceful fallback to default patterns when MCP not configured
+  - **MCP Infrastructure**: Complete HTTP client implementation for MCP servers
+    - Dedicated `mcpRestTemplate` bean with 10s connect / 30s read timeouts
+    - FigmaMcpProvider with page listing, node reading, and design context extraction
+    - JSON-RPC style REST endpoints for MCP server communication
+  - **Roadmap Context Integration**: AI solutions now consider Epic/Initiative relationships for extensibility
+    - Extracts roadmap context from assigned Epic (name, status, description)
+    - Includes parent Initiative information when available
+    - Lists related pitches in the same Epic for cohesive design recommendations
+    - Generates architecture suggestions optimized for future extension across related work
+    - New `hasRoadmapContext` indicator in Context Sources DTO
   - **Context Availability Warnings**: Frontend displays alerts when context sources are missing
-    - Shows which sources were used (code analysis, team skills, design context)
+    - Shows which sources were used (code analysis, team skills, design context, roadmap context)
     - Warns users that recommendations may be less accurate without full context
+    - New tip: "Assign pitches to epics to enable roadmap-aware recommendations"
 
 - **Shape Up Workflow Improvements - Pre-Cycle Pitch States**
   - Pitches now support a true pre-cycle workflow per Shape Up methodology
@@ -97,7 +113,6 @@ All notable changes to this project will be documented in this file.
   - Person-level capacity overrides for individual team members
   - Team assignment-level overrides for fine-grained control per pitch
   - Capacity inheritance hierarchy: Organization → Team → Person → Assignment (most specific wins)
->>>>>>> 2672077d4faf882f592e2a80d06bb566f95f281c
   - Budget calculations now use team member capacity for accurate per-person budget tracking
   - Risk calculation enhanced to detect over-budget individual team members
   - New UI in Organization Settings for configuring default capacity

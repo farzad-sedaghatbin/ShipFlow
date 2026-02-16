@@ -36,6 +36,7 @@ public class TechnicalSolutionGeneratorService {
      * @param existingServices list of existing services found in the codebase
      * @param teamSkills aggregated unique skills of team members (optional, can be null)
      * @param figmaContext design context from Figma (optional, can be null)
+     * @param roadmapContext roadmap context including epic, initiative, and related pitches (optional, can be null)
      * @return the generated stack solution
      */
     public StackSolutionDTO generateStackSolution(
@@ -44,14 +45,15 @@ public class TechnicalSolutionGeneratorService {
             String codeContext,
             List<String> existingServices,
             String teamSkills,
-            String figmaContext) {
+            String figmaContext,
+            String roadmapContext) {
         
         if (chatLanguageModel == null) {
             log.warn("ChatLanguageModel not available, returning placeholder solution");
             return createPlaceholderSolution(stack);
         }
 
-        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext);
+        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
         
         try {
             log.info("Generating solution for {} in pitch '{}'", stack.getStackType(), pitch.getTitle());
@@ -95,7 +97,8 @@ public class TechnicalSolutionGeneratorService {
             String codeContext,
             List<String> existingServices,
             String teamSkills,
-            String figmaContext) {
+            String figmaContext,
+            String roadmapContext) {
         
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are a senior software architect. Generate a technical solution document for implementing a feature.\n\n");
@@ -124,6 +127,13 @@ public class TechnicalSolutionGeneratorService {
         if (figmaContext != null && !figmaContext.isBlank()) {
             prompt.append("## Design Context (from Figma)\n");
             prompt.append(figmaContext).append("\n\n");
+        }
+        
+        // Add roadmap context if available (token-efficient: ~100-150 tokens)
+        if (roadmapContext != null && !roadmapContext.isBlank()) {
+            prompt.append("## Roadmap Context\n");
+            prompt.append(roadmapContext).append("\n");
+            prompt.append("Consider related work when designing for extensibility and shared patterns.\n\n");
         }
         
         if (codeContext != null && !codeContext.isEmpty()) {
@@ -160,12 +170,15 @@ public class TechnicalSolutionGeneratorService {
         prompt.append("3. Recommending libraries that reduce development time\n");
         prompt.append("4. Realistic time estimates (total should fit within ").append(pitch.getAppetiteDays() * 8).append(" hours)\n");
         prompt.append("5. Identifying potential risks\n");
+        int focusNumber = 6;
         if (teamSkills != null && !teamSkills.isBlank()) {
-            prompt.append("6. Leveraging the team's existing expertise where possible\n");
+            prompt.append(focusNumber++).append(". Leveraging the team's existing expertise where possible\n");
         }
         if (figmaContext != null && !figmaContext.isBlank()) {
-            prompt.append(teamSkills != null && !teamSkills.isBlank() ? "7" : "6");
-            prompt.append(". Ensuring implementation aligns with the provided design specifications\n");
+            prompt.append(focusNumber++).append(". Ensuring implementation aligns with the provided design specifications\n");
+        }
+        if (roadmapContext != null && !roadmapContext.isBlank()) {
+            prompt.append(focusNumber++).append(". Designing for extensibility to support related work in the same epic\n");
         }
         
         return prompt.toString();

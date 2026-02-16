@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Brain, Code, Users, Palette, AlertCircle, CheckCircle2, Settings, Lightbulb, Sparkles } from 'lucide-react';
+import { ArrowLeft, Brain, Code, Users, Palette, AlertCircle, CheckCircle2, Settings, Lightbulb, Sparkles, GitBranch } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -62,7 +62,7 @@ export default function WiseArchitectureGuide() {
                     <CardDescription>{t('guides.wiseArchitecture.contextSourcesSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="rounded-lg border p-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Code className="h-5 w-5 text-blue-500" />
@@ -90,6 +90,16 @@ export default function WiseArchitectureGuide() {
                             </div>
                             <p className="text-sm text-muted-foreground">
                                 {t('guides.wiseArchitecture.figmaDesignsDesc')}
+                            </p>
+                        </div>
+
+                        <div className="rounded-lg border p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <GitBranch className="h-5 w-5 text-orange-500" />
+                                <h4 className="font-semibold">{t('guides.wiseArchitecture.roadmapContext')}</h4>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {t('guides.wiseArchitecture.roadmapContextDesc')}
                             </p>
                         </div>
                     </div>
@@ -251,6 +261,10 @@ export default function WiseArchitectureGuide() {
                         <li className="flex items-start gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 shrink-0" />
                             <span className="text-sm">{t('guides.wiseArchitecture.tip4')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 shrink-0" />
+                            <span className="text-sm">{t('guides.wiseArchitecture.tip5')}</span>
                         </li>
                     </ul>
                 </CardContent>

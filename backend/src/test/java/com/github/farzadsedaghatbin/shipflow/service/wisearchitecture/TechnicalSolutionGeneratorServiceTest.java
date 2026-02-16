@@ -82,7 +82,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(mockResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "// code context", List.of("ExistingService"), "Java, Spring Boot", "Design with 3 screens");
+                testPitch, testStack, "// code context", List.of("ExistingService"), "Java, Spring Boot", "Design with 3 screens", "Epic: Mobile App");
 
             assertThat(result).isNotNull();
             assertThat(result.getStackType()).isEqualTo(TechStackType.BACKEND_JAVA);
@@ -102,7 +102,7 @@ class TechnicalSolutionGeneratorServiceTest {
             ReflectionTestUtils.setField(service, "chatLanguageModel", null);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null);
+                testPitch, testStack, "", List.of(), null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getStackType()).isEqualTo(TechStackType.BACKEND_JAVA);
@@ -117,7 +117,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenThrow(new RuntimeException("API error"));
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null);
+                testPitch, testStack, "", List.of(), null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getArchitectureOverview()).contains("Error generating solution");
@@ -148,7 +148,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(mockResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null);
+                testPitch, testStack, "", List.of(), null, null, null);
 
             assertThat(result.getArchitectureOverview()).isEqualTo("Clean Architecture");
         }

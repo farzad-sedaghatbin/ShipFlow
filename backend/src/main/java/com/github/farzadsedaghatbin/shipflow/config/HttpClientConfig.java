@@ -29,4 +29,15 @@ public class HttpClientConfig {
         .additionalMessageConverters(new org.springframework.http.converter.StringHttpMessageConverter())
         .build();
   }
+
+  /**
+   * Dedicated RestTemplate for MCP (Model Context Protocol) server calls.
+   * Has longer timeouts as MCP operations may involve fetching external data.
+   */
+  @Bean("mcpRestTemplate")
+  public RestTemplate mcpRestTemplate(RestTemplateBuilder builder) {
+    return builder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(30))
+        .additionalMessageConverters(new org.springframework.http.converter.StringHttpMessageConverter())
+        .build();
+  }
 }

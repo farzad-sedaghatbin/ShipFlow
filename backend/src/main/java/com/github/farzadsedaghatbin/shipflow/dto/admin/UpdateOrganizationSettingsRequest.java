@@ -35,6 +35,32 @@ public class UpdateOrganizationSettingsRequest {
    * Set to update the token, empty string to clear it, null to leave unchanged.
    */
   private String figmaAccessToken;
+  
+  /**
+   * Default Figma file key for design context.
+   */
+  private String defaultFigmaFileKey;
+  
+  /**
+   * GitHub personal access token for Wise Architecture code context.
+   * Set to update the token, empty string to clear it, null to leave unchanged.
+   */
+  private String githubAccessToken;
+  
+  /**
+   * Default GitHub repository owner (organization or username).
+   */
+  private String defaultGithubOwner;
+  
+  /**
+   * Default GitHub repository name.
+   */
+  private String defaultGithubRepo;
+  
+  /**
+   * Default GitHub branch name.
+   */
+  private String defaultGithubBranch;
 
   // Capacity Configuration
   private Double defaultHoursPerDay;

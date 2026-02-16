@@ -46,6 +46,36 @@ public class OrganizationSettingsService {
         .orElse(null);
   }
 
+  /**
+   * Get the GitHub access token for the organization.
+   * This is a separate method to avoid exposing the token in the DTO.
+   *
+   * @return the GitHub access token, or null if not configured
+   */
+  @Transactional(readOnly = true)
+  public String getGithubAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getGithubAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get the default GitHub repository context for Wise Architecture.
+   *
+   * @return a map containing owner, repo, and branch, or empty map if not configured
+   */
+  @Transactional(readOnly = true)
+  public java.util.Map<String, String> getDefaultGithubContext() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .filter(s -> s.getDefaultGithubOwner() != null && s.getDefaultGithubRepo() != null)
+        .map(s -> java.util.Map.of(
+            "owner", s.getDefaultGithubOwner(),
+            "repo", s.getDefaultGithubRepo(),
+            "branch", s.getDefaultGithubBranch() != null ? s.getDefaultGithubBranch() : "main"
+        ))
+        .orElse(java.util.Collections.emptyMap());
+  }
+
   /** Update organization settings. */
   @Transactional
   public OrganizationSettingsDTO updateSettings(UpdateOrganizationSettingsRequest request, String username) {
@@ -114,6 +144,26 @@ public class OrganizationSettingsService {
       } else {
         settings.setFigmaAccessToken(request.getFigmaAccessToken());
       }
+    }
+    if (request.getDefaultFigmaFileKey() != null) {
+      settings.setDefaultFigmaFileKey(request.getDefaultFigmaFileKey().isBlank() ? null : request.getDefaultFigmaFileKey());
+    }
+    // Only update GitHub token if provided
+    if (request.getGithubAccessToken() != null) {
+      if (request.getGithubAccessToken().isBlank()) {
+        settings.setGithubAccessToken(null); // Clear the token
+      } else {
+        settings.setGithubAccessToken(request.getGithubAccessToken());
+      }
+    }
+    if (request.getDefaultGithubOwner() != null) {
+      settings.setDefaultGithubOwner(request.getDefaultGithubOwner().isBlank() ? null : request.getDefaultGithubOwner());
+    }
+    if (request.getDefaultGithubRepo() != null) {
+      settings.setDefaultGithubRepo(request.getDefaultGithubRepo().isBlank() ? null : request.getDefaultGithubRepo());
+    }
+    if (request.getDefaultGithubBranch() != null) {
+      settings.setDefaultGithubBranch(request.getDefaultGithubBranch().isBlank() ? "main" : request.getDefaultGithubBranch());
     }
     // Capacity Configuration
     if (request.getDefaultHoursPerDay() != null) {
@@ -404,8 +454,13 @@ public class OrganizationSettingsService {
         .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
         .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
         .enableWiseArchitecture(entity.getEnableWiseArchitecture())
-        // Don't expose the actual token, just indicate if it's configured
+        // Don't expose the actual tokens, just indicate if they're configured
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
+        .defaultFigmaFileKey(entity.getDefaultFigmaFileKey())
+        .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
+        .defaultGithubOwner(entity.getDefaultGithubOwner())
+        .defaultGithubRepo(entity.getDefaultGithubRepo())
+        .defaultGithubBranch(entity.getDefaultGithubBranch())
         .defaultHoursPerDay(entity.getDefaultHoursPerDay())
         .defaultWorkingDaysPerWeek(entity.getDefaultWorkingDaysPerWeek())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();

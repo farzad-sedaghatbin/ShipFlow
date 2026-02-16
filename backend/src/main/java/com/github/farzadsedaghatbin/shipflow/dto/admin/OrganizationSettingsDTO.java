@@ -60,6 +60,39 @@ public class OrganizationSettingsDTO {
    * Indicates if a Figma access token is configured (without exposing the token).
    */
   private Boolean hasFigmaAccessToken;
+  
+  /**
+   * Default Figma file key for design context.
+   */
+  private String defaultFigmaFileKey;
+  
+  /**
+   * GitHub personal access token for Wise Architecture code context.
+   * When set, allows AI to analyze repository files.
+   * Note: Token is stored but not returned in responses for security.
+   */
+  private String githubAccessToken;
+  
+  /**
+   * Indicates if a GitHub access token is configured (without exposing the token).
+   */
+  private Boolean hasGithubAccessToken;
+  
+  /**
+   * Default GitHub repository owner (organization or username).
+   */
+  private String defaultGithubOwner;
+  
+  /**
+   * Default GitHub repository name.
+   */
+  private String defaultGithubRepo;
+  
+  /**
+   * Default GitHub branch name.
+   */
+  private String defaultGithubBranch;
+  private Boolean hasFigmaAccessToken;
 
   // Capacity Configuration
   private Double defaultHoursPerDay;

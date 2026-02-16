@@ -147,6 +147,7 @@ const integrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
+  { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
 ];
 
 function NavItem({

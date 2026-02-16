@@ -253,7 +253,7 @@ export default function CompetitorsComparison() {
                   Pluggable LLM architecture: Choose Ollama (local), OpenAI ChatGPT, or RunPod (cloud GPU).
                   Get automated risk analysis, AI-generated test cases, intelligent pitch
                   document extraction, and Wise Architecture—AI-powered technical solution 
-                  generation with team skills and Figma design context integration.
+                  generation with team skills, Figma design, and roadmap context integration.
                 </p>
               </CardContent>
             </Card>

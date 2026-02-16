@@ -3,26 +3,47 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Figma MCP client implementation.
  * Connects to a Figma MCP server to read design files and extract UI context.
+ * 
+ * MCP Server expected endpoints:
+ * - POST /tools/list_pages: List pages/frames in a Figma file
+ * - POST /tools/get_node: Get a specific node's details
+ * - POST /tools/search_nodes: Search for nodes by name/type
+ * - POST /tools/get_design_context: Get comprehensive design metadata
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FigmaMcpProvider implements McpClientService {
 
     private final McpConfig mcpConfig;
+    private final RestTemplate mcpRestTemplate;
 
     // Figma URL patterns
     private static final Pattern FIGMA_FILE_PATTERN = Pattern.compile(
         "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?");
     private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
         "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?");
+
+    public FigmaMcpProvider(
+            McpConfig mcpConfig,
+            @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate) {
+        this.mcpConfig = mcpConfig;
+        this.mcpRestTemplate = mcpRestTemplate;
+    }
 
     @Override
     public boolean isAvailable() {
@@ -44,6 +65,7 @@ public class FigmaMcpProvider implements McpClientService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<String> listFiles(Map<String, String> context) {
         if (!isAvailable()) {
             log.warn("Figma MCP not available, cannot list files");
@@ -51,14 +73,38 @@ public class FigmaMcpProvider implements McpClientService {
         }
 
         String fileKey = context.get("fileKey");
+        String accessToken = context.get("accessToken");
         log.info("Listing pages/frames in Figma file {} via MCP", fileKey);
 
-        // TODO: Implement actual MCP call
-        // POST {serverUrl}/tools/list_pages
-        // { "file_key": "..." }
+        try {
+            String url = mcpConfig.getFigma().getServerUrl() + "/tools/list_pages";
+            
+            Map<String, String> request = new HashMap<>();
+            request.put("file_key", fileKey);
+            if (accessToken != null) {
+                request.put("access_token", accessToken);
+            }
 
-        log.debug("Figma MCP file listing not yet implemented - returning placeholder");
-        return List.of();
+            HttpEntity<Map<String, String>> entity = createJsonEntity(request);
+            ResponseEntity<Map<String, Object>> response = mcpRestTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (response.getBody() != null && response.getBody().containsKey("pages")) {
+                Object pages = response.getBody().get("pages");
+                if (pages instanceof List) {
+                    log.debug("Retrieved {} pages from Figma MCP", ((List<?>) pages).size());
+                    return (List<String>) pages;
+                }
+            }
+
+            log.debug("No pages returned from Figma MCP for file: {}", fileKey);
+            return List.of();
+
+        } catch (RestClientException e) {
+            log.error("Failed to list pages via Figma MCP: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     @Override
@@ -69,17 +115,41 @@ public class FigmaMcpProvider implements McpClientService {
         }
 
         String fileKey = context.get("fileKey");
+        String accessToken = context.get("accessToken");
         log.info("Reading Figma node {} in file {} via MCP", nodePath, fileKey);
 
-        // TODO: Implement actual MCP call
-        // POST {serverUrl}/tools/get_node
-        // { "file_key": "...", "node_id": "..." }
+        try {
+            String url = mcpConfig.getFigma().getServerUrl() + "/tools/get_node";
+            
+            Map<String, String> request = new HashMap<>();
+            request.put("file_key", fileKey);
+            request.put("node_id", nodePath);
+            if (accessToken != null) {
+                request.put("access_token", accessToken);
+            }
 
-        log.debug("Figma MCP node reading not yet implemented - returning empty");
-        return Optional.empty();
+            HttpEntity<Map<String, String>> entity = createJsonEntity(request);
+            ResponseEntity<Map<String, Object>> response = mcpRestTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (response.getBody() != null && response.getBody().containsKey("node")) {
+                String nodeJson = String.valueOf(response.getBody().get("node"));
+                log.debug("Successfully read Figma node {}", nodePath);
+                return Optional.of(nodeJson);
+            }
+
+            log.debug("No node data returned from Figma MCP for: {}", nodePath);
+            return Optional.empty();
+
+        } catch (RestClientException e) {
+            log.error("Failed to read node {} via Figma MCP: {}", nodePath, e.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<String> searchFiles(Map<String, String> context, String pattern) {
         if (!isAvailable()) {
             log.warn("Figma MCP not available, cannot search with pattern: {}", pattern);
@@ -87,12 +157,40 @@ public class FigmaMcpProvider implements McpClientService {
         }
 
         String fileKey = context.get("fileKey");
+        String accessToken = context.get("accessToken");
         log.info("Searching nodes in Figma file {} with pattern '{}' via MCP", fileKey, pattern);
 
-        // TODO: Implement actual MCP call for searching components/frames by name
+        try {
+            String url = mcpConfig.getFigma().getServerUrl() + "/tools/search_nodes";
+            
+            Map<String, String> request = new HashMap<>();
+            request.put("file_key", fileKey);
+            request.put("pattern", pattern);
+            if (accessToken != null) {
+                request.put("access_token", accessToken);
+            }
 
-        log.debug("Figma MCP search not yet implemented - returning empty");
-        return List.of();
+            HttpEntity<Map<String, String>> entity = createJsonEntity(request);
+            ResponseEntity<Map<String, Object>> response = mcpRestTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (response.getBody() != null && response.getBody().containsKey("matches")) {
+                Object matches = response.getBody().get("matches");
+                if (matches instanceof List) {
+                    log.debug("Found {} nodes matching pattern '{}' via Figma MCP", 
+                        ((List<?>) matches).size(), pattern);
+                    return (List<String>) matches;
+                }
+            }
+
+            log.debug("No matches returned from Figma MCP for pattern: {}", pattern);
+            return List.of();
+
+        } catch (RestClientException e) {
+            log.error("Failed to search nodes via Figma MCP: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     @Override
@@ -107,11 +205,41 @@ public class FigmaMcpProvider implements McpClientService {
 
         log.info("Getting design context for Figma file {} via MCP", fileKey);
 
-        // TODO: Implement actual MCP call to get design metadata
-        // This would return: components, styles, colors, typography, layout info
+        try {
+            String url = mcpConfig.getFigma().getServerUrl() + "/tools/get_design_context";
+            
+            Map<String, String> request = new HashMap<>();
+            request.put("file_key", fileKey);
+            if (accessToken != null) {
+                request.put("access_token", accessToken);
+            }
 
-        log.debug("Figma MCP context retrieval not yet implemented - returning empty");
-        return Map.of();
+            HttpEntity<Map<String, String>> entity = createJsonEntity(request);
+            ResponseEntity<Map<String, Object>> response = mcpRestTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (response.getBody() != null) {
+                log.debug("Retrieved design context for Figma file {}", fileKey);
+                return response.getBody();
+            }
+
+            log.debug("No context returned from Figma MCP for file: {}", fileKey);
+            return Map.of();
+
+        } catch (RestClientException e) {
+            log.error("Failed to get design context via Figma MCP: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * Create an HTTP entity with JSON content type headers.
+     */
+    private <T> HttpEntity<T> createJsonEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(body, headers);
     }
 
     /**

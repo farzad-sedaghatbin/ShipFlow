@@ -78,6 +78,7 @@ public class OrganizationSettings {
   private Boolean enableAIFeatures = true;
 
   @Column(nullable = false, name = "enable_wise_architecture")
+  @Builder.Default
   private Boolean enableWiseArchitecture = false;
 
   /**
@@ -86,6 +87,39 @@ public class OrganizationSettings {
    */
   @Column(name = "figma_access_token", columnDefinition = "TEXT")
   private String figmaAccessToken;
+
+  /**
+   * Default Figma file key for design context.
+   * Used as fallback when a pitch doesn't have wireframe links.
+   */
+  @Column(name = "default_figma_file_key")
+  private String defaultFigmaFileKey;
+
+  /**
+   * GitHub personal access token for reading repository files via MCP.
+   * Used by Wise Architecture to analyze code context.
+   */
+  @Column(name = "github_access_token", columnDefinition = "TEXT")
+  private String githubAccessToken;
+
+  /**
+   * Default GitHub repository owner (organization or username).
+   */
+  @Column(name = "default_github_owner")
+  private String defaultGithubOwner;
+
+  /**
+   * Default GitHub repository name.
+   */
+  @Column(name = "default_github_repo")
+  private String defaultGithubRepo;
+
+  /**
+   * Default GitHub branch name.
+   */
+  @Column(name = "default_github_branch")
+  @Builder.Default
+  private String defaultGithubBranch = "main";
 
   // Capacity Configuration
   @Column(nullable = false, name = "default_hours_per_day", columnDefinition = "NUMERIC")

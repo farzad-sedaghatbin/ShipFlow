@@ -7,13 +7,19 @@ import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.GitHubMcpProvider;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +42,9 @@ class WiseArchitectureServiceTest {
     private PitchRepository pitchRepository;
 
     @Mock
+    private EpicRepository epicRepository;
+
+    @Mock
     private GitHubRepositoryRepository repositoryRepository;
 
     @Mock
@@ -46,6 +55,12 @@ class WiseArchitectureServiceTest {
 
     @Mock
     private WiseArchitectureConversationService conversationService;
+
+    @Mock
+    private FigmaMcpProvider figmaMcpProvider;
+
+    @Mock
+    private GitHubMcpProvider githubMcpProvider;
 
     @InjectMocks
     private WiseArchitectureService service;
@@ -216,7 +231,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .architectureOverview("Spring Boot REST API")
@@ -238,7 +253,7 @@ class WiseArchitectureServiceTest {
             assertThat(response.getSolutions()).containsKey(TechStackType.BACKEND_JAVA);
             assertThat(response.getTotalEstimatedHours()).isEqualTo(24);
             
-            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any());
+            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any());
             verify(conversationService).createSession(eq(testPitch), any());
         }
 
@@ -249,11 +264,12 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(32) // 5 days * 8 hours = 40, so 32 is within budget
-                    .build());            when(conversationService.createSession(any(), any())).thenReturn("session-123");            when(conversationService.createSession(any(), any())).thenReturn("session-123");
+                    .build());
+            when(conversationService.createSession(any(), any())).thenReturn("session-123");
 
             WiseArchitectureRequestDTO request = WiseArchitectureRequestDTO.builder()
                 .pitchId(1L)
@@ -276,7 +292,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(56) // Over 40 hour budget
@@ -310,7 +326,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(16)
@@ -388,6 +404,136 @@ class WiseArchitectureServiceTest {
 
             assertThatThrownBy(() -> service.handleFollowUp(request))
                 .isInstanceOf(FeatureDisabledException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("RoadmapContext")
+    class RoadmapContextTests {
+
+        @Test
+        @DisplayName("should include roadmap context when pitch has epic")
+        void shouldIncludeRoadmapContextWhenPitchHasEpic() {
+            // Create epic with initiative
+            Initiative initiative = new Initiative();
+            initiative.setId(1L);
+            initiative.setName("Mobile Experience 2026");
+
+            Epic epic = new Epic();
+            epic.setId(1L);
+            epic.setName("Mobile Checkout Redesign");
+            epic.setDescription("Redesign the checkout flow for mobile users");
+            epic.setStatus(EpicStatus.IN_PROGRESS);
+            epic.setInitiative(initiative);
+
+            Pitch pitchWithEpic = new Pitch();
+            pitchWithEpic.setId(1L);
+            pitchWithEpic.setTitle("Payment Options");
+            pitchWithEpic.setAppetiteDays(5);
+            pitchWithEpic.setEpic(epic);
+
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitchWithEpic));
+            when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitchWithEpic));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(StackSolutionDTO.builder()
+                    .stackType(TechStackType.BACKEND_JAVA)
+                    .estimatedHours(24)
+                    .build());
+            when(conversationService.createSession(any(), any())).thenReturn("session-123");
+
+            WiseArchitectureRequestDTO request = WiseArchitectureRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
+                .build();
+
+            WiseArchitectureResponseDTO response = service.analyze(request);
+
+            assertThat(response.getContextSources().getHasRoadmapContext()).isTrue();
+            // No roadmap warning should be present
+            if (response.getContextSources().getWarnings() != null) {
+                assertThat(response.getContextSources().getWarnings())
+                    .noneMatch(w -> w.contains("No epic assigned"));
+            }
+        }
+
+        @Test
+        @DisplayName("should warn when pitch has no epic assigned")
+        void shouldWarnWhenPitchHasNoEpic() {
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(StackSolutionDTO.builder()
+                    .stackType(TechStackType.BACKEND_JAVA)
+                    .estimatedHours(24)
+                    .build());
+            when(conversationService.createSession(any(), any())).thenReturn("session-123");
+
+            WiseArchitectureRequestDTO request = WiseArchitectureRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
+                .build();
+
+            WiseArchitectureResponseDTO response = service.analyze(request);
+
+            assertThat(response.getContextSources().getHasRoadmapContext()).isFalse();
+            assertThat(response.getContextSources().getWarnings())
+                .anyMatch(w -> w.contains("No epic assigned"));
+        }
+
+        @Test
+        @DisplayName("should include related pitches in roadmap context")
+        void shouldIncludeRelatedPitchesInRoadmapContext() {
+            Epic epic = new Epic();
+            epic.setId(1L);
+            epic.setName("Payment Epic");
+            epic.setStatus(EpicStatus.IN_PROGRESS);
+
+            Pitch pitch1 = new Pitch();
+            pitch1.setId(1L);
+            pitch1.setTitle("Payment Options");
+            pitch1.setAppetiteDays(5);
+            pitch1.setEpic(epic);
+
+            Pitch pitch2 = new Pitch();
+            pitch2.setId(2L);
+            pitch2.setTitle("Payment History");
+            pitch2.setEpic(epic);
+
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitch1));
+            when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitch1, pitch2));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(StackSolutionDTO.builder()
+                    .stackType(TechStackType.BACKEND_JAVA)
+                    .estimatedHours(24)
+                    .build());
+            when(conversationService.createSession(any(), any())).thenReturn("session-123");
+
+            WiseArchitectureRequestDTO request = WiseArchitectureRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
+                .build();
+
+            WiseArchitectureResponseDTO response = service.analyze(request);
+
+            assertThat(response.getContextSources().getHasRoadmapContext()).isTrue();
+            
+            // Verify that roadmap context was passed to solution generator
+            verify(solutionGeneratorService).generateStackSolution(
+                any(), any(), any(), any(), any(), any(), 
+                argThat(roadmapContext -> roadmapContext != null && 
+                    roadmapContext.contains("Payment Epic") &&
+                    roadmapContext.contains("Payment History")));
         }
     }
 }

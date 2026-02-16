@@ -152,6 +152,11 @@ public class WiseArchitectureResponseDTO {
         private Boolean hasFigmaContext;
 
         /**
+         * Whether roadmap context (epic, initiative, related pitches) was available.
+         */
+        private Boolean hasRoadmapContext;
+
+        /**
          * List of warning messages about missing context sources.
          */
         private List<String> warnings;
@@ -159,7 +164,7 @@ public class WiseArchitectureResponseDTO {
         /**
          * Create a DTO with warnings based on missing sources.
          */
-        public static ContextSourcesDTO create(boolean hasCode, boolean hasTeamSkills, boolean hasFigma) {
+        public static ContextSourcesDTO create(boolean hasCode, boolean hasTeamSkills, boolean hasFigma, boolean hasRoadmap) {
             List<String> warnings = new java.util.ArrayList<>();
             
             if (!hasCode) {
@@ -171,11 +176,15 @@ public class WiseArchitectureResponseDTO {
             if (!hasFigma) {
                 warnings.add("Figma design not accessible - UI/UX recommendations based on pitch description only");
             }
+            if (!hasRoadmap) {
+                warnings.add("No epic assigned - recommendations may not consider related work and future extensibility");
+            }
             
             return ContextSourcesDTO.builder()
                 .hasCodeContext(hasCode)
                 .hasTeamSkills(hasTeamSkills)
                 .hasFigmaContext(hasFigma)
+                .hasRoadmapContext(hasRoadmap)
                 .warnings(warnings.isEmpty() ? null : warnings)
                 .build();
         }

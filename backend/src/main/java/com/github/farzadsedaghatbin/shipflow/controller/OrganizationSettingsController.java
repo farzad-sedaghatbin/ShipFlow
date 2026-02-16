@@ -1,9 +1,11 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.admin.McpStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.RiskProfilesDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSettingsRequest;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.McpConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrganizationSettingsController {
 
   private final OrganizationSettingsService settingsService;
+  private final McpConfig mcpConfig;
 
   @GetMapping("/settings")
   @Operation(summary = "Get organization settings")
@@ -58,5 +61,32 @@ public class OrganizationSettingsController {
   public ResponseEntity<RiskProfilesDTO> getRiskProfiles() {
     log.info("Fetching predefined risk profiles");
     return ResponseEntity.ok(RiskProfilesDTO.getDefaultProfiles());
+  }
+
+  @GetMapping("/settings/mcp-status")
+  @Operation(summary = "Get MCP server configuration status")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<McpStatusDTO> getMcpStatus() {
+    log.info("Fetching MCP server status");
+    
+    var githubConfig = mcpConfig.getGithub();
+    var figmaConfig = mcpConfig.getFigma();
+    
+    McpStatusDTO status = McpStatusDTO.builder()
+        .github(McpStatusDTO.McpServerStatus.builder()
+            .enabled(githubConfig.isEnabled())
+            .configured(githubConfig.getServerUrl() != null && !githubConfig.getServerUrl().isBlank())
+            .serverUrlMasked(McpStatusDTO.maskServerUrl(githubConfig.getServerUrl()))
+            .timeoutSeconds(githubConfig.getTimeoutSeconds())
+            .build())
+        .figma(McpStatusDTO.McpServerStatus.builder()
+            .enabled(figmaConfig.isEnabled())
+            .configured(figmaConfig.getServerUrl() != null && !figmaConfig.getServerUrl().isBlank())
+            .serverUrlMasked(McpStatusDTO.maskServerUrl(figmaConfig.getServerUrl()))
+            .timeoutSeconds(figmaConfig.getTimeoutSeconds())
+            .build())
+        .build();
+    
+    return ResponseEntity.ok(status);
   }
 }

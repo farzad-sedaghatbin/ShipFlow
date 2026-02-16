@@ -256,6 +256,7 @@ A modern project management application implementing the [Shape Up](https://base
   - Identifies reusable services, recommended libraries, and implementation steps
   - **Team Skills Integration**: Considers team member skills for technology recommendations
   - **Figma MCP Integration**: Analyzes linked Figma designs for UI/UX context
+  - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations
   - **Context Availability Warnings**: Transparent feedback when context sources are missing
   - Configurable via Organization Settings with per-org Figma token storage
 - **QA Test Case Generation**: AI-assisted test case generation with validation

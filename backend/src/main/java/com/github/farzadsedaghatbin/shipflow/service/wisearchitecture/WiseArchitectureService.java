@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
@@ -8,10 +10,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.GitHubMcpProvider;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,11 +37,13 @@ public class WiseArchitectureService {
 
     private final OrganizationSettingsService settingsService;
     private final PitchRepository pitchRepository;
+    private final EpicRepository epicRepository;
     private final GitHubRepositoryRepository repositoryRepository;
     private final TechStackDetectorService techStackDetectorService;
     private final TechnicalSolutionGeneratorService solutionGeneratorService;
     private final WiseArchitectureConversationService conversationService;
     private final FigmaMcpProvider figmaMcpProvider;
+    private final GitHubMcpProvider githubMcpProvider;
 
     /**
      * Check if the Wise Architecture feature is enabled.
@@ -141,6 +147,11 @@ public class WiseArchitectureService {
         boolean hasFigmaContext = figmaContext != null && !figmaContext.isBlank();
         log.debug("Figma context for pitch '{}': {}", pitch.getTitle(), hasFigmaContext ? "available" : "not available");
         
+        // Extract roadmap context - epic, initiative, and related pitches (token-efficient: ~100-150 tokens)
+        String roadmapContext = extractRoadmapContext(pitch);
+        boolean hasRoadmapContext = roadmapContext != null && !roadmapContext.isBlank();
+        log.debug("Roadmap context for pitch '{}': {}", pitch.getTitle(), hasRoadmapContext ? "available" : "not available");
+        
         // Generate solution for each selected stack
         Map<TechStackType, StackSolutionDTO> solutions = new LinkedHashMap<>();
         int totalEstimatedHours = 0;
@@ -167,7 +178,7 @@ public class WiseArchitectureService {
             }
             
             StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
-                pitch, stack, codeContext, existingServices, teamSkills, figmaContext);
+                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
             
             solutions.put(stackType, solution);
             totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
@@ -196,7 +207,7 @@ public class WiseArchitectureService {
         
         // Build context sources information
         WiseArchitectureResponseDTO.ContextSourcesDTO contextSources = 
-            WiseArchitectureResponseDTO.ContextSourcesDTO.create(hasCodeContext, hasTeamSkills, hasFigmaContext);
+            WiseArchitectureResponseDTO.ContextSourcesDTO.create(hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
         
         // Build response
         WiseArchitectureResponseDTO response = WiseArchitectureResponseDTO.builder()
@@ -214,9 +225,9 @@ public class WiseArchitectureService {
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
         
-        log.info("Generated solution for pitch '{}' - {} hours estimated, appetite {}, context: code={}, team={}, figma={}",
+        log.info("Generated solution for pitch '{}' - {} hours estimated, appetite {}, context: code={}, team={}, figma={}, roadmap={}",
             pitch.getTitle(), totalEstimatedHours, appetitePassed ? "PASSED" : "EXCEEDED",
-            hasCodeContext, hasTeamSkills, hasFigmaContext);
+            hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
         
         return response;
     }
@@ -231,47 +242,199 @@ public class WiseArchitectureService {
 
     /**
      * Get repository file list via MCP.
-     * This is a placeholder - actual implementation would use MCP client.
+     * Uses GitHub MCP provider to fetch actual repository file structure.
      */
     private List<String> getRepositoryFileList(GitHubRepository repo) {
-        // TODO: Implement MCP integration to read actual file structure
-        log.debug("Getting file list for repository: {} (MCP integration pending)", repo.getFullName());
-        
-        // Return simulated structure based on common patterns
-        // In production, this would call MCP to get actual files
-        return List.of(
-            "pom.xml",
-            "src/main/java/Application.java",
-            "src/main/resources/application.properties",
-            "package.json",
-            "src/App.tsx",
-            "src/index.tsx"
+        if (repo == null || repo.getFullName() == null) {
+            log.debug("No repository provided for file listing");
+            return List.of();
+        }
+
+        // Check if GitHub MCP is available
+        if (!githubMcpProvider.isAvailable()) {
+            log.debug("GitHub MCP not available, returning common file patterns");
+            // Return common patterns as fallback when MCP not configured
+            return List.of(
+                "pom.xml",
+                "src/main/java/Application.java",
+                "src/main/resources/application.properties",
+                "package.json",
+                "src/App.tsx",
+                "src/index.tsx"
+            );
+        }
+
+        String[] parts = repo.getFullName().split("/");
+        if (parts.length != 2) {
+            log.warn("Invalid repository full name format: {}", repo.getFullName());
+            return List.of();
+        }
+
+        Map<String, String> context = Map.of(
+            "owner", parts[0],
+            "repo", parts[1],
+            "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
         );
+
+        List<String> files = githubMcpProvider.listFiles(context);
+        log.debug("Retrieved {} files from repository {} via MCP", files.size(), repo.getFullName());
+        return files;
     }
 
     /**
      * Get code context from repository via MCP.
-     * This is a placeholder - actual implementation would use MCP client.
+     * Reads relevant source files based on tech stack type.
      */
     private String getCodeContext(GitHubRepository repo, TechStackType stackType) {
-        // TODO: Implement MCP integration to read actual code
-        log.debug("Getting code context for {} in {} (MCP integration pending)", 
-            stackType, repo != null ? repo.getFullName() : "unknown");
+        if (repo == null || repo.getFullName() == null) {
+            log.debug("No repository provided for code context");
+            return "// No repository context available";
+        }
+
+        // Check if GitHub MCP is available
+        if (!githubMcpProvider.isAvailable()) {
+            log.debug("GitHub MCP not available for code context");
+            return "// Code context: GitHub MCP integration not configured";
+        }
+
+        String[] parts = repo.getFullName().split("/");
+        if (parts.length != 2) {
+            return "// Invalid repository format";
+        }
+
+        Map<String, String> context = Map.of(
+            "owner", parts[0],
+            "repo", parts[1],
+            "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
+        );
+
+        // Get file patterns based on stack type
+        List<String> patterns = getFilePatterns(stackType);
         
-        // Return placeholder
-        return "// Code context will be populated via MCP integration";
+        StringBuilder codeContext = new StringBuilder();
+        for (String pattern : patterns) {
+            List<String> matchingFiles = githubMcpProvider.searchFiles(context, pattern);
+            // Limit to first few matches to keep context manageable
+            for (String filePath : matchingFiles.stream().limit(3).toList()) {
+                githubMcpProvider.readFile(context, filePath).ifPresent(content -> {
+                    // Truncate large files
+                    String truncated = content.length() > 2000 
+                        ? content.substring(0, 2000) + "\n// ... (truncated)" 
+                        : content;
+                    codeContext.append("// File: ").append(filePath).append("\n");
+                    codeContext.append(truncated).append("\n\n");
+                });
+            }
+        }
+
+        String result = codeContext.toString();
+        if (result.isBlank()) {
+            return "// No code context retrieved from " + repo.getFullName();
+        }
+        
+        log.debug("Retrieved code context ({} chars) for {} from {}", 
+            result.length(), stackType, repo.getFullName());
+        return result;
+    }
+
+    /**
+     * Get file patterns to search based on tech stack type.
+     */
+    private List<String> getFilePatterns(TechStackType stackType) {
+        return switch (stackType) {
+            case BACKEND_JAVA -> List.of("*Service.java", "*Controller.java", "*Repository.java", "pom.xml");
+            case BACKEND_NODE -> List.of("*service*.js", "*controller*.js", "package.json");
+            case WEB_REACT -> List.of("*.tsx", "*.jsx", "package.json");
+            case WEB_NEXTJS -> List.of("pages/*.tsx", "app/*.tsx", "package.json");
+            case BACKEND_PYTHON -> List.of("*.py", "requirements.txt", "setup.py");
+            case BACKEND_GO -> List.of("*.go", "go.mod");
+            case MOBILE_KOTLIN -> List.of("*.kt", "build.gradle.kts");
+            case MOBILE_SWIFT -> List.of("*.swift", "Package.swift");
+            case MOBILE_FLUTTER -> List.of("*.dart", "pubspec.yaml");
+            case MOBILE_REACT_NATIVE -> List.of("*.tsx", "*.jsx", "package.json");
+            default -> List.of("*.java", "*.ts", "*.json");
+        };
     }
 
     /**
      * Find existing services in the repository that can be reused.
-     * This is a placeholder - actual implementation would analyze code via MCP.
+     * Analyzes code structure via MCP to discover service classes.
      */
     private List<String> findExistingServices(GitHubRepository repo, TechStackType stackType) {
-        // TODO: Implement MCP integration to discover services
-        log.debug("Finding existing services for {} in {} (MCP integration pending)", 
-            stackType, repo != null ? repo.getFullName() : "unknown");
+        if (repo == null || repo.getFullName() == null) {
+            log.debug("No repository provided for service discovery");
+            // Return common patterns as fallback
+            return getDefaultServices(stackType);
+        }
+
+        // Check if GitHub MCP is available
+        if (!githubMcpProvider.isAvailable()) {
+            log.debug("GitHub MCP not available, returning default service patterns");
+            return getDefaultServices(stackType);
+        }
+
+        String[] parts = repo.getFullName().split("/");
+        if (parts.length != 2) {
+            return getDefaultServices(stackType);
+        }
+
+        Map<String, String> context = Map.of(
+            "owner", parts[0],
+            "repo", parts[1],
+            "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
+        );
+
+        // Search for service-related files
+        String servicePattern = getServicePattern(stackType);
+        List<String> serviceFiles = githubMcpProvider.searchFiles(context, servicePattern);
         
-        // Return common service patterns based on stack type
+        if (serviceFiles.isEmpty()) {
+            log.debug("No service files found, returning defaults for {}", stackType);
+            return getDefaultServices(stackType);
+        }
+
+        // Extract service names from file paths
+        List<String> services = serviceFiles.stream()
+            .map(this::extractServiceName)
+            .filter(Objects::nonNull)
+            .distinct()
+            .limit(10)
+            .collect(Collectors.toList());
+
+        log.debug("Found {} services in {} via MCP", services.size(), repo.getFullName());
+        return services.isEmpty() ? getDefaultServices(stackType) : services;
+    }
+
+    /**
+     * Get search pattern for services based on stack type.
+     */
+    private String getServicePattern(TechStackType stackType) {
+        return switch (stackType) {
+            case BACKEND_JAVA -> "*Service.java";
+            case BACKEND_NODE -> "*service*.js";
+            case WEB_REACT, WEB_NEXTJS -> "*Service.ts";
+            case MOBILE_KOTLIN -> "*Service.kt";
+            default -> "*Service*";
+        };
+    }
+
+    /**
+     * Extract service name from file path.
+     */
+    private String extractServiceName(String filePath) {
+        if (filePath == null) return null;
+        String fileName = filePath.contains("/") 
+            ? filePath.substring(filePath.lastIndexOf("/") + 1)
+            : filePath;
+        // Remove extension
+        int dotIndex = fileName.lastIndexOf(".");
+        return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+    }
+
+    /**
+     * Get default service patterns when MCP not available.
+     */
+    private List<String> getDefaultServices(TechStackType stackType) {
         return switch (stackType) {
             case BACKEND_JAVA -> List.of("UserService", "AuthService", "BaseRepository");
             case BACKEND_NODE -> List.of("userService", "authMiddleware", "databaseHelper");
@@ -380,5 +543,70 @@ public class WiseArchitectureService {
         }
         
         return context.toPromptString();
+    }
+
+    /**
+     * Extract roadmap context from the pitch's epic and initiative.
+     * Returns a compact prompt-ready string for token efficiency (~100-150 tokens).
+     * Includes epic name/description, initiative name, and related pitches.
+     *
+     * @param pitch the pitch to extract roadmap context from
+     * @return roadmap context string, or null if pitch has no epic
+     */
+    private String extractRoadmapContext(Pitch pitch) {
+        Epic epic = pitch.getEpic();
+        if (epic == null) {
+            log.debug("No epic assigned to pitch '{}'", pitch.getTitle());
+            return null;
+        }
+        
+        StringBuilder context = new StringBuilder();
+        
+        // Epic information
+        context.append("Epic: ").append(epic.getName());
+        if (epic.getStatus() != null) {
+            context.append(" [").append(epic.getStatus()).append("]");
+        }
+        context.append("\n");
+        
+        if (epic.getDescription() != null && !epic.getDescription().isBlank()) {
+            // Truncate long descriptions
+            String desc = epic.getDescription();
+            if (desc.length() > 200) {
+                desc = desc.substring(0, 197) + "...";
+            }
+            context.append("Epic Goal: ").append(desc).append("\n");
+        }
+        
+        // Initiative information (if present)
+        Initiative initiative = epic.getInitiative();
+        if (initiative != null) {
+            context.append("Initiative: ").append(initiative.getName());
+            if (initiative.getStatus() != null) {
+                context.append(" [").append(initiative.getStatus()).append("]");
+            }
+            context.append("\n");
+        }
+        
+        // Find related pitches in the same epic
+        List<Pitch> siblingPitches = pitchRepository.findByEpicIdNotDeleted(epic.getId());
+        List<Pitch> otherPitches = siblingPitches.stream()
+            .filter(p -> !p.getId().equals(pitch.getId()))
+            .collect(Collectors.toList());
+        
+        if (!otherPitches.isEmpty()) {
+            context.append("Related pitches in epic:\n");
+            for (Pitch sibling : otherPitches) {
+                context.append("- ").append(sibling.getTitle());
+                if (sibling.getStatus() != null) {
+                    context.append(" [").append(sibling.getStatus()).append("]");
+                }
+                context.append("\n");
+            }
+        }
+        
+        String result = context.toString().trim();
+        log.debug("Extracted roadmap context for pitch '{}': {} chars", pitch.getTitle(), result.length());
+        return result;
     }
 }
