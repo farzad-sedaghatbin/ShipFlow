@@ -64,25 +64,6 @@ INSERT INTO retro_item_votes (retro_item_id, user_id, created_at) VALUES
 (18, 5, CURRENT_TIMESTAMP),
 (18, 6, CURRENT_TIMESTAMP);
 
--- ===========================================
--- ACTED ON RETRO ITEMS (converted to pitches/tasks)
--- ===========================================
-UPDATE retro_items SET 
-    acted_on = true, 
-    acted_on_type = 'PITCH', 
-    acted_on_id = 11,
-    acted_on_at = '2025-11-05',
-    updated_at = '2025-11-05'
-WHERE id = 10;
-
-UPDATE retro_items SET 
-    acted_on = true, 
-    acted_on_type = 'TASK', 
-    acted_on_id = 13,
-    acted_on_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = 15;
-
 -- Reset sequences
 SELECT setval('retrospectives_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM retrospectives), false);
 SELECT setval('retro_items_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM retro_items), false);
