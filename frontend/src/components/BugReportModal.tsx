@@ -9,11 +9,9 @@ import {
   UpdateBugReportRequest,
   BugSeverity,
   BugStatus,
-  HillChartPoint,
   Task,
   Person,
 } from '../types';
-import { hillChartApi } from '../services/hillChartApi';
 import { taskService } from '../services/taskService';
 import { documentService } from '../services/documentService';
 import api from '../services/api';
@@ -62,7 +60,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [loadingPeople, setLoadingPeople] = useState(false);
@@ -90,7 +87,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
         assigneeId: bugReport?.assigneeId,
-        scopeId: bugReport?.scopeId,
         taskId: bugReport?.taskId,
       });
       setTagInput('');
@@ -113,28 +109,6 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       setLoadingPeople(false);
     }
   };
-
-  // Load initial scopes based on pitch context
-  useEffect(() => {
-    const loadScopes = async () => {
-      if (!open) return;
-      
-      try {
-        if (pitchId) {
-          // Load scopes for specific pitch
-          const scopesRes = await hillChartApi.getHillChartPointsByPitch(pitchId);
-          setScopes(scopesRes);
-        } else {
-          // No pitch context - start with empty, user must search
-          setScopes([]);
-        }
-      } catch (err) {
-        console.error('Failed to load scopes:', err);
-        setScopes([]);
-      }
-    };
-    loadScopes();
-  }, [open, pitchId]);
 
   // Load initial tasks based on cycle context
   useEffect(() => {
@@ -305,46 +279,23 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             />
           </div>
 
-          {/* Scope & Task Traceability */}
-          <div className={`grid grid-cols-1 ${!isKanbanProject ? 'sm:grid-cols-2' : ''} gap-4`}>
-            {/* Hide scope field for Kanban projects - scope is a Shape Up concept tied to pitches */}
-            {!isKanbanProject && (
-              <div className="space-y-2">
-                <Label>Scope (optional)</Label>
-                <Combobox
-                  options={[
-                    { value: 'none', label: 'No specific scope' },
-                    ...scopes.slice(0, 50).map(scope => ({ value: String(scope.id), label: scope.scope }))
-                  ]}
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => handleChange('scopeId', value === 'none' ? undefined : Number(value))}
-                  placeholder={pitchId && scopes.length === 0 ? "Loading scopes..." : "No specific scope"}
-                  searchPlaceholder="Search scopes..."
-                  emptyText={pitchId ? "No scopes found" : "Select a pitch first"}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {pitchId ? `Link to a specific scope (${scopes.length} available)` : 'Select a pitch to see available scopes'}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Related Task (optional)</Label>
-              <Combobox
-                options={[
-                  { value: 'none', label: 'No related task' },
-                  ...tasks.slice(0, 50).map(task => ({ value: String(task.id), label: task.title }))
-                ]}
-                value={formData.taskId ? String(formData.taskId) : 'none'}
-                onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
-                placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"}
-                searchPlaceholder="Search tasks..."
-                emptyText={cycleId ? "No tasks found" : "Select a cycle first"}
-              />
-              <p className="text-xs text-muted-foreground">
-                {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Select a cycle to see available tasks'}
-              </p>
-            </div>
+          {/* Task Traceability */}
+          <div className="space-y-2">
+            <Label>Related Task (optional)</Label>
+            <Combobox
+              options={[
+                { value: 'none', label: 'No related task' },
+                ...tasks.slice(0, 50).map(task => ({ value: String(task.id), label: task.title }))
+              ]}
+              value={formData.taskId ? String(formData.taskId) : 'none'}
+              onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
+              placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"}
+              searchPlaceholder="Search tasks..."
+              emptyText={cycleId ? "No tasks found" : "Select a cycle first"}
+            />
+            <p className="text-xs text-muted-foreground">
+              {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Select a cycle to see available tasks'}
+            </p>
           </div>
 
           {/* Steps to Reproduce */}

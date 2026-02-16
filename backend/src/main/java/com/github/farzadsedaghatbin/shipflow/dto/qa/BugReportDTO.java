@@ -34,11 +34,7 @@ public class BugReportDTO {
   private String teamName;
   private Long testRunId;
 
-  // Scope relationship
-  private Long scopeId;
-  private String scopeName;
-
-  // Task relationship
+  // Task relationship - tasks are now integrated with scopes
   private Long taskId;
   private String taskTitle;
 

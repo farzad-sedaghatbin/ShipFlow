@@ -101,17 +101,9 @@ public class BugReport {
   private TestRun testRun;
 
   /**
-   * The scope (hill chart point) this bug is related to (optional). Links the bug
-   * to a specific scope for better traceability.
-   */
-  @NotAudited
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "scope_id")
-  private HillChartPoint scope;
-
-  /**
    * The task this bug is related to (optional). Links the bug to a specific task
-   * for better traceability.
+   * for better traceability. Tasks are now integrated with scopes, so this single
+   * field provides all necessary traceability.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)

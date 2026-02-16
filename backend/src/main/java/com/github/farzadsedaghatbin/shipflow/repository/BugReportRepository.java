@@ -75,19 +75,11 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   @Query("SELECT MAX(CAST(SUBSTRING(br.bugKey, 5) AS int)) FROM BugReport br WHERE br.bugKey LIKE 'BUG-%'")
   Integer findMaxBugKeyNumber();
 
-  // Scope and task queries for traceability
-  List<BugReport> findByScopeId(Long scopeId);
-
+  // Task queries for traceability
   List<BugReport> findByTaskId(Long taskId);
-
-  @Query("SELECT br FROM BugReport br WHERE br.scope.id = :scopeId AND br.status = :status")
-  List<BugReport> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") BugStatus status);
 
   @Query("SELECT br FROM BugReport br WHERE br.task.id = :taskId AND br.status = :status")
   List<BugReport> findByTaskIdAndStatus(@Param("taskId") Long taskId, @Param("status") BugStatus status);
-
-  @Query("SELECT COUNT(br) FROM BugReport br WHERE br.scope.id = :scopeId")
-  long countByScopeId(@Param("scopeId") Long scopeId);
 
   @Query("SELECT COUNT(br) FROM BugReport br WHERE br.task.id = :taskId")
   long countByTaskId(@Param("taskId") Long taskId);

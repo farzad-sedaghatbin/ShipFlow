@@ -994,9 +994,7 @@ export interface BugReport {
   teamName?: string;
   testRunId?: number;
   
-  // Scope and Task relationships
-  scopeId?: number;
-  scopeName?: string;
+  // Task relationship
   taskId?: number;
   taskTitle?: string;
   
@@ -1038,7 +1036,6 @@ export interface CreateBugReportRequest {
   cycleId?: number;
   teamId?: number;
   testRunId?: number;
-  scopeId?: number;
   taskId?: number;
   severity: BugSeverity;
   status?: BugStatus;
@@ -1059,7 +1056,6 @@ export interface UpdateBugReportRequest {
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
-  scopeId?: number;
   taskId?: number;
   severity?: BugSeverity;
   status?: BugStatus;

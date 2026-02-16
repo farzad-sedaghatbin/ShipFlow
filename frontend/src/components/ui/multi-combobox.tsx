@@ -52,10 +52,27 @@ export function MultiCombobox({
   maxDisplay = 3,
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [searchValue, setSearchValue] = React.useState("")
 
   const selectedOptions = options.filter((option) =>
     value.includes(option.value)
   )
+  
+  // Filter options based on search value (case-insensitive)
+  const filteredOptions = React.useMemo(() => {
+    if (!searchValue) return options
+    const search = searchValue.toLowerCase()
+    return options.filter((option) => 
+      option.label.toLowerCase().includes(search)
+    )
+  }, [options, searchValue])
+  
+  // Reset search when popover closes
+  React.useEffect(() => {
+    if (!open) {
+      setSearchValue("")
+    }
+  }, [open])
 
   const handleSelect = (optionValue: string) => {
     const newValue = value.includes(optionValue)
@@ -119,13 +136,17 @@ export function MultiCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-full p-0", className)} align="start">
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+      <PopoverContent className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)} align="start">
+        <Command shouldFilter={false}>
+          <CommandInput 
+            placeholder={searchPlaceholder} 
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
