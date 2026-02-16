@@ -439,7 +439,6 @@ These signals inform better betting decisions, not performance evaluations.
 - **Meeting Type Display**: Fixed case-sensitive UUID matching for meeting type display
 - **Meeting Type Names**: Display meeting type names instead of UUIDs throughout the application
 - **Test Suite Improvements**: Fixed backend and frontend tests for improved reliability
->>>>>>> 2672077d4faf882f592e2a80d06bb566f95f281c
 
 ## [0.4.0] - 2026-02-05 - Cycle & Betting Excellence
 
