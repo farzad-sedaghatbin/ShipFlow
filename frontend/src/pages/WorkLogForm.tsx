@@ -10,6 +10,7 @@ import { personService } from '../services/personService';
 import { cycleService } from '../services/cycleService';
 import { WorkLog, Pitch, Person, Cycle, CreateWorkLogRequest } from '../types';
 import EmptyState from '../components/EmptyState';
+import { Combobox } from '../components/ui/combobox';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -185,21 +186,14 @@ export default function WorkLogForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-4 items-end">
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-2 space-y-2">
               <Label htmlFor="person-select">{t('workLogForm.person')} *</Label>
-              <Select
+              <Combobox
+                options={persons.map((p) => ({ value: String(p.id), label: p.name }))}
                 value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
                 onValueChange={(value) => setNewWorkLog({ ...newWorkLog, personId: Number(value) })}
-              >
-                <SelectTrigger id="person-select">
-                  <SelectValue placeholder={t('workLogForm.selectPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('workLogForm.selectPerson')}
+                searchPlaceholder={t('common.search')}
+                emptyText={t('common.noResults')}
+              />
             </div>
 
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
