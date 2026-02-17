@@ -153,7 +153,14 @@ public class GitHubMcpProvider implements McpClientService {
                     log.warn("MCP response 'result' is not a Map for {}/{}", owner, repo);
                 }
             } else {
-                log.warn("MCP response missing 'result' key for {}/{}", owner, repo);
+                Map<String, Object> body = response.getBody();
+                if (body != null && body.containsKey("error")) {
+                    Object error = body.get("error");
+                    log.error("MCP returned error for {}/{}: {}", owner, repo, error);
+                } else {
+                    log.warn("MCP response missing 'result' key for {}/{}. Response body: {}", 
+                        owner, repo, body);
+                }
             }
             
             log.debug("No files returned from GitHub MCP for {}/{}", owner, repo);
@@ -213,13 +220,20 @@ public class GitHubMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                        if (!contentList.isEmpty() && contentList.get(0).containsKey("text")) {
+                        if (!contentList.isEmpty() && contentList.get(0) != null && contentList.get(0).containsKey("text")) {
                             String text = (String) contentList.get(0).get("text");
                             log.debug("Successfully read file {} ({} chars)", filePath, 
                                 text != null ? text.length() : 0);
                             return Optional.ofNullable(text);
                         }
                     }
+                }
+            } else {
+                Map<String, Object> body = response.getBody();
+                if (body != null && body.containsKey("error")) {
+                    log.error("MCP returned error reading file {}: {}", filePath, body.get("error"));
+                } else {
+                    log.warn("MCP response missing 'result' key for file {}. Response: {}", filePath, body);
                 }
             }
 
@@ -306,6 +320,13 @@ public class GitHubMcpProvider implements McpClientService {
                         }
                     }
                 }
+            } else {
+                Map<String, Object> body = response.getBody();
+                if (body != null && body.containsKey("error")) {
+                    log.error("MCP returned error searching files: {}", body.get("error"));
+                } else {
+                    log.warn("MCP response missing 'result' key for search pattern '{}'. Response: {}", pattern, body);
+                }
             }
 
             log.debug("No matches returned from GitHub MCP for pattern: {}", pattern);
@@ -359,6 +380,13 @@ public class GitHubMcpProvider implements McpClientService {
                 if (result instanceof Map) {
                     log.debug("Retrieved repository context for {}/{}", owner, repo);
                     return (Map<String, Object>) result;
+                }
+            } else {
+                Map<String, Object> body = response.getBody();
+                if (body != null && body.containsKey("error")) {
+                    log.error("MCP returned error for repo context {}/{}: {}", owner, repo, body.get("error"));
+                } else {
+                    log.warn("MCP response missing 'result' key for {}/{}. Response: {}", owner, repo, body);
                 }
             }
 

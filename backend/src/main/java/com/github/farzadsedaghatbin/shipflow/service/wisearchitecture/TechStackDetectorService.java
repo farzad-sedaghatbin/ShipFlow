@@ -141,6 +141,14 @@ public class TechStackDetectorService {
         log.info("Detecting tech stacks in repository: {} with {} files", 
             repository.getFullName(), fileList != null ? fileList.size() : 0);
         
+        // Check if we have cached results
+        List<RepositoryTechStack> cachedStacks = techStackRepository.findByRepository(repository);
+        if (!cachedStacks.isEmpty()) {
+            log.info("Using cached tech stacks for repository: {} ({} stacks)", 
+                repository.getFullName(), cachedStacks.size());
+            return convertCachedToDTO(cachedStacks);
+        }
+        
         if (fileList == null || fileList.isEmpty()) {
             log.warn("File list is empty for repository: {}, cannot detect tech stacks", 
                 repository.getFullName());
@@ -150,14 +158,6 @@ public class TechStackDetectorService {
         log.debug("Sample files from repository {}: {}", 
             repository.getFullName(),
             fileList.stream().limit(20).collect(java.util.stream.Collectors.joining(", ")));
-        
-        // Check if we have cached results
-        List<RepositoryTechStack> cachedStacks = techStackRepository.findByRepository(repository);
-        if (!cachedStacks.isEmpty()) {
-            log.info("Using cached tech stacks for repository: {} ({} stacks)", 
-                repository.getFullName(), cachedStacks.size());
-            return convertCachedToDTO(cachedStacks);
-        }
         
         log.info("No cached stacks found, performing detection for: {}", repository.getFullName());
         List<DetectedStackDTO> detectedStacks = new ArrayList<>();
