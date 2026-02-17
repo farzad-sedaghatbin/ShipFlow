@@ -1,5 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import {
+  AdviceFeedbackRequest,
+  AdviceHistoryItem,
+  ConversationHistoryPage,
+  ConversationSummary,
   DetectStacksRequest,
   DetectStacksResponse,
   FollowUpQuestion,
@@ -283,6 +287,60 @@ export const wiseArchitectureService = {
           });
       }
     }
+  },
+
+  // =====================================================================
+  // ADVICE HISTORY METHODS - For reviewing and following up on past advice
+  // =====================================================================
+
+  /**
+   * Get paginated conversation history for the current user.
+   */
+  getMyHistory: async (page = 0, size = 10): Promise<ConversationHistoryPage> => {
+    const response = await wiseArchApi.get<ConversationHistoryPage>('/history', {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get conversation history for a specific pitch.
+   */
+  getPitchHistory: async (pitchId: number): Promise<ConversationSummary[]> => {
+    const response = await wiseArchApi.get<ConversationSummary[]>(`/history/pitch/${pitchId}`);
+    return response.data;
+  },
+
+  /**
+   * Get full conversation thread by conversation ID.
+   */
+  getConversation: async (conversationId: string): Promise<AdviceHistoryItem[]> => {
+    const response = await wiseArchApi.get<AdviceHistoryItem[]>(
+      `/history/conversation/${conversationId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get a single advice entry by ID.
+   */
+  getAdvice: async (adviceId: number): Promise<AdviceHistoryItem> => {
+    const response = await wiseArchApi.get<AdviceHistoryItem>(`/history/${adviceId}`);
+    return response.data;
+  },
+
+  /**
+   * Submit feedback for an advice entry.
+   */
+  submitFeedback: async (
+    adviceId: number,
+    feedback: AdviceFeedbackRequest
+  ): Promise<AdviceHistoryItem> => {
+    const response = await wiseArchApi.post<AdviceHistoryItem>(
+      `/history/${adviceId}/feedback`,
+      feedback
+    );
+    return response.data;
   },
 };
 

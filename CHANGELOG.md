@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Wise Architecture Advice History**
+  - **Conversation Persistence**: All AI-generated solutions are now saved for review and follow-up
+    - `WiseArchitectureAdvice` entity storing full conversation threads
+    - Conversation ID grouping for threaded discussions
+    - Message type tracking: `INITIAL_SOLUTION` and `FOLLOW_UP`
+  - **History API Endpoints**:
+    - `GET /api/wise-architecture/history` - Paginated list of user's conversation summaries
+    - `GET /api/wise-architecture/history/pitch/{pitchId}` - All conversations for a specific pitch
+    - `GET /api/wise-architecture/history/conversation/{id}` - Full conversation thread
+    - `GET /api/wise-architecture/history/{adviceId}` - Single advice entry
+    - `POST /api/wise-architecture/history/{adviceId}/feedback` - Submit helpful/not helpful feedback
+  - **Context Tracking**: Each advice entry records which context sources were used
+    - Figma design context, GitHub code context, roadmap context flags
+    - Processing time tracking in milliseconds
+    - Tech stacks and repository IDs stored for reference
+  - **Feedback System**: Users can mark advice as helpful/not helpful with optional text
+  - **Database Migration**: New `wise_architecture_advice` table (V94)
+- **Improved Figma MCP Integration**
+  - **Node ID Extraction**: Properly extracts `node-id` parameter from Figma URLs
+    - Parses both `node-id=1434-49411` and `node-id=1434:49411` formats
+    - Uses `get_node` MCP tool for specific frame/component context
+    - New `FigmaFileReference` record with fileKey and nodeId
 - **Wise Architecture Async Processing & Performance**
   - **Async Job Infrastructure**: Long-running operations no longer timeout
     - New `AsyncWiseArchitectureService` with job-based execution pattern

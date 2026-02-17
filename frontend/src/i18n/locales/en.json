@@ -6105,6 +6105,7 @@
     "tipAsk": "Ask follow-up questions for clarification",
     "tipCopilot": "Copy Copilot prompts for code generation",
     "startOver": "Start Over",
+    "viewHistory": "View History",
     "featureDisabled": "Wise Architecture feature is disabled",
     "featureDisabledTitle": "Feature Disabled",
     "featureDisabledDesc": "The Wise Architecture feature is not enabled for your organization. Please contact your administrator to enable it in Organization Settings.",
@@ -6116,6 +6117,37 @@
       "codeNotAvailable": "Code repository not accessible - architecture recommendations based on pitch description only",
       "teamSkillsNotAvailable": "Team skills not available - recommendations may not match team expertise",
       "figmaNotAvailable": "Figma design not accessible - UI/UX recommendations based on pitch description only"
+    },
+    "history": {
+      "title": "Advice History",
+      "noHistory": "No advice history found",
+      "noHistoryDesc": "Generate architecture advice to see your history here.",
+      "loading": "Loading history...",
+      "loadFailed": "Failed to load history",
+      "loadMore": "Load More",
+      "viewPitch": "View Pitch",
+      "detectedStacks": "Detected Stacks",
+      "messages": "Messages",
+      "noMessages": "No messages in this conversation",
+      "viewConversation": "View Conversation",
+      "backToList": "Back to History",
+      "conversationWith": "Conversation about",
+      "messageType": {
+        "user_question": "Question",
+        "ai_advice": "AI Advice",
+        "follow_up": "Follow-up",
+        "ai_response": "AI Response"
+      },
+      "feedback": {
+        "title": "Provide Feedback",
+        "positive": "This was helpful",
+        "negative": "This was not helpful",
+        "submitted": "Thank you for your feedback!",
+        "failed": "Failed to submit feedback",
+        "placeholder": "Optional: Tell us more about your experience...",
+        "submit": "Submit Feedback",
+        "cancel": "Cancel"
+      }
     }
   },
   "mcpIntegration": {

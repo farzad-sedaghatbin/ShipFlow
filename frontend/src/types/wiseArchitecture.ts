@@ -291,3 +291,72 @@ export interface JobStatusResponse {
  * Progress callback for polling
  */
 export type ProgressCallback = (progress: number, message?: string) => void;
+
+// =====================================================================
+// ADVICE HISTORY TYPES - For reviewing and following up on past advice
+// =====================================================================
+
+/**
+ * Message type in a conversation
+ */
+export type AdviceMessageType = 'INITIAL_SOLUTION' | 'FOLLOW_UP';
+
+/**
+ * Single advice entry in history
+ */
+export interface AdviceHistoryItem {
+  id: number;
+  conversationId: string;
+  pitchId: number;
+  pitchTitle: string;
+  userId: number;
+  messageType: AdviceMessageType;
+  userMessage?: string;
+  aiResponse: string;
+  techStacks: string[];
+  repositoryIds: number[];
+  hasFigmaContext: boolean;
+  hasGitHubContext: boolean;
+  hasRoadmapContext: boolean;
+  processingTimeMs?: number;
+  feedbackHelpful?: boolean;
+  feedbackText?: string;
+  feedbackAt?: string;
+  createdAt: string;
+}
+
+/**
+ * Conversation summary for history list
+ */
+export interface ConversationSummary {
+  conversationId: string;
+  pitchId: number;
+  pitchTitle: string;
+  projectName?: string;
+  techStacks: string[];
+  messageCount: number;
+  createdAt: string;
+  lastMessageAt: string;
+  responsePreview: string;
+}
+
+/**
+ * Paginated response for conversation history
+ */
+export interface ConversationHistoryPage {
+  content: ConversationSummary[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}
+
+/**
+ * Feedback request for advice entry
+ */
+export interface AdviceFeedbackRequest {
+  helpful: boolean;
+  feedbackText?: string;
+}
