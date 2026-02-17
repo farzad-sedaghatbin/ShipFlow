@@ -305,6 +305,11 @@ public class PitchService {
     }
 
     pitch.setStatus(PitchStatus.SHAPED);
+    // Shape Up workflow: Clear cycle/team assignment when marked as shaped
+    // so it becomes available for betting in the next cycle
+    pitch.setCycle(null);
+    pitch.setTeam(null);
+    
     Pitch saved = pitchRepository.save(pitch);
     log.info("Marked pitch as shaped: {} (→ SHAPED, ready for betting)", saved.getTitle());
 
@@ -420,7 +425,16 @@ public class PitchService {
     pitch.setTitle(request.getTitle());
     pitch.setDescription(request.getDescription());
     pitch.setAppetiteDays(request.getAppetiteDays());
+    
+    PitchStatus oldStatus = pitch.getStatus();
     pitch.setStatus(request.getStatus());
+    
+    // Shape Up workflow: When a pitch becomes SHAPED, clear cycle/team assignment
+    // so it becomes available for betting in the next cycle
+    if (request.getStatus() == PitchStatus.SHAPED && oldStatus != PitchStatus.SHAPED) {
+      pitch.setCycle(null);
+      pitch.setTeam(null);
+    }
 
     // Shape Up fields
     pitch.setProblemStatement(request.getProblemStatement());
@@ -469,6 +483,14 @@ public class PitchService {
 
     PitchStatus oldStatus = pitch.getStatus();
     pitch.setStatus(status);
+    
+    // Shape Up workflow: When a pitch becomes SHAPED, clear cycle/team assignment
+    // so it becomes available for betting in the next cycle
+    if (status == PitchStatus.SHAPED && oldStatus != PitchStatus.SHAPED) {
+      pitch.setCycle(null);
+      pitch.setTeam(null);
+    }
+    
     Pitch saved = pitchRepository.save(pitch);
 
     // Invalidate risk analysis cache since status changed

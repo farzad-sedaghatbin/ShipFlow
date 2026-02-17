@@ -12,6 +12,7 @@ import {
   Copy,
   FileCode2,
   GitBranch,
+  History,
   Loader2,
   MessageSquare,
   RefreshCw,
@@ -482,12 +483,18 @@ const WiseArchitecturePage: React.FC = () => {
           <h1 className="text-2xl font-bold">{t('wiseArchitecture.title')}</h1>
           <Badge variant="secondary">{t('common.experimental')}</Badge>
         </div>
-        {currentStep !== 'pitch' && (
-          <Button variant="outline" size="sm" onClick={handleStartOver}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('wiseArchitecture.startOver')}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate('/rd/advice-history')}>
+            <History className="h-4 w-4 mr-2" />
+            {t('wiseArchitecture.viewHistory')}
           </Button>
-        )}
+          {currentStep !== 'pitch' && (
+            <Button variant="outline" size="sm" onClick={handleStartOver}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('wiseArchitecture.startOver')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Progress Steps */}

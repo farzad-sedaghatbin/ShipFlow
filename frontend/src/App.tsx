@@ -41,6 +41,7 @@ import TestCaseDetailPage from './pages/TestCaseDetailPage';
 import TestRunPage from './pages/TestRunPage';
 import AITestGeneratePage from './pages/AITestGeneratePage';
 import WiseArchitecturePage from './pages/WiseArchitecturePage';
+import AdviceHistoryPage from './pages/AdviceHistoryPage';
 import BugReportsPage from './pages/BugReportsPage';
 import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
@@ -191,6 +192,7 @@ function App() {
                     <Route path="qa/test-cases/new" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/generate" element={<AITestGeneratePage />} />
                     <Route path="rd/wise-architecture" element={<WiseArchitecturePage />} />
+                    <Route path="rd/advice-history" element={<AdviceHistoryPage />} />
                     <Route path="qa/test-cases/:id" element={<TestCaseDetailPage />} />
                     <Route path="qa/test-cases/:id/edit" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/:id/run" element={<TestRunPage />} />

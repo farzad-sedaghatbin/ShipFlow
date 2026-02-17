@@ -114,7 +114,11 @@ public class WiseArchitectureService {
             
             // Use MCP to get the file list with the specified branch
             List<String> fileList = getRepositoryFileList(repo, branch);
-            List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList);
+            
+            // Read package.json for accurate React Native detection
+            String packageJsonContent = readPackageJson(repo, branch);
+            
+            List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList, packageJsonContent);
             allStacks.addAll(repoStacks);
         }
         
@@ -314,6 +318,47 @@ public class WiseArchitectureService {
         }
         
         return files;
+    }
+
+    /**
+     * Read package.json content from repository via MCP.
+     * Used for accurate React Native detection.
+     * 
+     * @param repo The repository to read from
+     * @param branch The branch to use (if null, uses repo's default branch)
+     * @return The content of package.json, or null if not found
+     */
+    private String readPackageJson(GitHubRepository repo, String branch) {
+        if (repo == null || repo.getFullName() == null) {
+            return null;
+        }
+
+        if (!githubMcpProvider.isAvailable()) {
+            log.debug("GitHub MCP not available, skipping package.json read");
+            return null;
+        }
+
+        String[] parts = repo.getFullName().split("/");
+        if (parts.length != 2) {
+            return null;
+        }
+
+        String effectiveBranch = branch != null && !branch.isBlank() 
+            ? branch 
+            : (repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main");
+
+        Map<String, String> context = Map.of(
+            "owner", parts[0],
+            "repo", parts[1],
+            "branch", effectiveBranch
+        );
+
+        try {
+            return githubMcpProvider.readFile(context, "package.json").orElse(null);
+        } catch (Exception e) {
+            log.debug("Could not read package.json from {}: {}", repo.getFullName(), e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -575,6 +620,7 @@ public class WiseArchitectureService {
     /**
      * Extract Figma design context from the pitch's wireframe links.
      * Returns a compact prompt-ready string for token efficiency (~100-200 tokens).
+     * Supports Figma URLs with node-id parameter to target specific frames.
      *
      * @param pitch the pitch with wireframe links
      * @return Figma context string, or null if no Figma links or MCP not available
@@ -586,9 +632,9 @@ public class WiseArchitectureService {
             return null;
         }
         
-        // Extract Figma file keys from wireframe links
-        List<String> figmaFileKeys = figmaMcpProvider.extractFigmaFileKeys(wireframeLinks);
-        if (figmaFileKeys.isEmpty()) {
+        // Extract Figma file references (with node IDs) from wireframe links
+        List<FigmaMcpProvider.FigmaFileReference> figmaRefs = figmaMcpProvider.extractFigmaFileReferences(wireframeLinks);
+        if (figmaRefs.isEmpty()) {
             log.debug("No Figma URLs found in wireframe links for pitch '{}'", pitch.getTitle());
             return null;
         }
@@ -601,9 +647,15 @@ public class WiseArchitectureService {
             return null;
         }
         
-        // Get design context for the first Figma file (to keep token usage reasonable)
-        String fileKey = figmaFileKeys.get(0);
-        FigmaMcpProvider.FigmaDesignContext context = figmaMcpProvider.getDesignContext(fileKey, figmaToken);
+        // Get design context for the first Figma reference (with node ID if present)
+        FigmaMcpProvider.FigmaFileReference fileRef = figmaRefs.get(0);
+        
+        if (fileRef.hasNodeId()) {
+            log.info("Fetching Figma design context for file {} with node-id {}", 
+                fileRef.getFileKey(), fileRef.getNodeId());
+        }
+        
+        FigmaMcpProvider.FigmaDesignContext context = figmaMcpProvider.getDesignContext(fileRef, figmaToken);
         
         if (context == null || !context.hasContent()) {
             log.debug("No design context retrieved from Figma for pitch '{}'", pitch.getTitle());
@@ -734,28 +786,69 @@ public class WiseArchitectureService {
         
         int totalRepos = repositories.size();
         
-        // Phase 2: File listing (10-55%) - Sequential for accurate progress
-        Map<GitHubRepository, List<String>> repoFileLists = new LinkedHashMap<>();
-        for (int i = 0; i < repositories.size(); i++) {
-            GitHubRepository repo = repositories.get(i);
-            int progressPercent = 10 + (int) ((i * 1.0 / totalRepos) * 45);
-            callback.onProgress(progressPercent, 
-                String.format("Listing files for repository %d/%d (%s)...", i + 1, totalRepos, repo.getName()));
-            
-            try {
-                if (Boolean.TRUE.equals(request.getForceRedetection())) {
+        // Phase 2: File listing (10-55%) - PARALLEL for performance
+        callback.onProgress(12, String.format("Fetching file lists from %d repositories in parallel...", totalRepos));
+        
+        Map<GitHubRepository, List<String>> repoFileLists = Collections.synchronizedMap(new LinkedHashMap<>());
+        Map<GitHubRepository, String> repoPackageJsons = Collections.synchronizedMap(new HashMap<>());
+        java.util.concurrent.atomic.AtomicInteger fileListCompleted = new java.util.concurrent.atomic.AtomicInteger(0);
+        ExecutorService fileListExecutor = Executors.newFixedThreadPool(Math.min(totalRepos, 4));
+        
+        try {
+            // Clear cache if force redetection requested
+            if (Boolean.TRUE.equals(request.getForceRedetection())) {
+                for (GitHubRepository repo : repositories) {
                     techStackDetectorService.clearCache(repo);
                 }
+            }
+            
+            List<CompletableFuture<Void>> fileListFutures = new ArrayList<>();
+            
+            for (GitHubRepository repo : repositories) {
+                final String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
                 
-                String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
-                List<String> fileList = getRepositoryFileList(repo, branch);
-                repoFileLists.put(repo, fileList);
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        List<String> fileList = getRepositoryFileList(repo, branch);
+                        repoFileLists.put(repo, fileList);
+                        
+                        // Also read package.json for accurate React Native detection
+                        String packageJsonContent = readPackageJson(repo, branch);
+                        if (packageJsonContent != null) {
+                            repoPackageJsons.put(repo, packageJsonContent);
+                        }
+                        
+                        int completedCount = fileListCompleted.incrementAndGet();
+                        int progressPercent = 10 + (int) ((completedCount * 1.0 / totalRepos) * 45);
+                        callback.onProgress(progressPercent, 
+                            String.format("Listed %d files from %s (%d/%d)", 
+                                fileList.size(), repo.getName(), completedCount, totalRepos));
+                    } catch (Exception e) {
+                        log.error("Error listing files from repository {}: {}", repo.getFullName(), e.getMessage());
+                        repoFileLists.put(repo, List.of());
+                        fileListCompleted.incrementAndGet();
+                    }
+                }, fileListExecutor);
                 
-                callback.onProgress(progressPercent + (int) (45.0 / totalRepos), 
-                    String.format("Listed %d files from %s", fileList.size(), repo.getName()));
-            } catch (Exception e) {
-                log.error("Error listing files from repository {}: {}", repo.getFullName(), e.getMessage());
-                repoFileLists.put(repo, List.of());
+                fileListFutures.add(future);
+            }
+            
+            // Wait for all file listings to complete
+            CompletableFuture.allOf(fileListFutures.toArray(new CompletableFuture[0])).join();
+            
+        } catch (Exception e) {
+            log.error("Error during parallel file listing", e);
+        } finally {
+            fileListExecutor.shutdown();
+            try {
+                if (!fileListExecutor.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+                    log.warn("File list executor did not terminate in time");
+                    fileListExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for file list executor");
+                fileListExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
             }
         }
         
@@ -773,10 +866,11 @@ public class WiseArchitectureService {
                 final int repoIndex = i;
                 final GitHubRepository repo = repositories.get(i);
                 final List<String> fileList = repoFileLists.getOrDefault(repo, List.of());
+                final String packageJsonContent = repoPackageJsons.get(repo);
                 
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
-                        List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList);
+                        List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList, packageJsonContent);
                         allStacks.addAll(repoStacks);
                         
                         int completedCount = completed.incrementAndGet();

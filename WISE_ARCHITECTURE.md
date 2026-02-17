@@ -72,20 +72,43 @@ Wise Architecture now considers multiple context sources for smarter recommendat
   - Warns users that recommendations may be less accurate without full context
   - Tip: "Assign pitches to epics to enable roadmap-aware recommendations"
 
-### 3. Technical Solution Generation
+### 4. Advice History & Feedback (v0.5.5)
+
+All AI-generated solutions are automatically saved for review and follow-up:
+
+- **Conversation Persistence**: Solutions and follow-ups are stored for later review
+  - Conversation ID groups related messages into threads
+  - Message types: `INITIAL_SOLUTION` and `FOLLOW_UP`
+  - Processing time tracked for performance monitoring
+
+- **Context Tracking**: Each advice entry records which context sources were used
+  - Figma design context, GitHub code context, roadmap context flags
+  - Tech stacks and repository IDs stored for reference
+
+- **Feedback System**: Users can rate advice quality
+  - Mark advice as helpful or not helpful
+  - Optional text feedback for improvement suggestions
+  - Feedback timestamp for analytics
+
+- **History API**: Full REST API for accessing advice history
+  - Paginated user history with conversation summaries
+  - Pitch-specific conversation lists
+  - Full conversation thread retrieval
+
+### 5. Technical Solution Generation
 - Generates architecture overviews for each selected stack
 - Identifies reusable services from your existing codebase
 - Recommends libraries and tools to accelerate development
 - Creates step-by-step implementation plans with time estimates
 - Provides best practices specific to your tech stack
 
-### 4. Appetite Validation
+### 6. Appetite Validation
 - Checks if the estimated effort fits within the pitch's appetite
 - Converts appetite (in days) to estimated hours
 - Provides reduced scope suggestions when appetite is exceeded
 - Lists items that could be deferred to fit the timeline
 
-### 5. Follow-up Questions & Copilot Prompts
+### 7. Follow-up Questions & Copilot Prompts
 - Chat interface for asking clarifying questions about the solution
 - Automatically detects code requests (keywords like "generate", "create", "implement")
 - Generates ready-to-use prompts for GitHub Copilot or other AI assistants
@@ -220,6 +243,44 @@ DELETE /api/wise-architecture/jobs/{jobId}
 ```
 Cancels a running job.
 
+### Advice History Endpoints
+
+Save and retrieve AI-generated solutions for review and follow-up:
+
+#### Get User's Conversation History
+```
+GET /api/wise-architecture/history?page=0&size=10
+```
+Returns paginated list of conversation summaries for the current user.
+
+#### Get Pitch Conversations
+```
+GET /api/wise-architecture/history/pitch/{pitchId}
+```
+Returns all conversations related to a specific pitch.
+
+#### Get Full Conversation
+```
+GET /api/wise-architecture/history/conversation/{conversationId}
+```
+Returns all messages in a conversation thread, ordered chronologically.
+
+#### Get Single Advice Entry
+```
+GET /api/wise-architecture/history/{adviceId}
+```
+Returns a specific advice entry by ID.
+
+#### Submit Feedback
+```
+POST /api/wise-architecture/history/{adviceId}/feedback
+{
+  "helpful": true,
+  "feedbackText": "This solution worked well for our architecture."
+}
+```
+Submit feedback on an advice entry (helpful/not helpful with optional comment).
+
 ## Requirements
 
 - **AI Features** must be enabled in organization settings
@@ -233,10 +294,12 @@ Cancels a running job.
 - `WiseArchitectureService`: Main orchestration service with progress callbacks
 - `AsyncWiseArchitectureService`: Job management and request deduplication
 - `WiseArchitectureExecutor`: Async execution on `aiTaskExecutor` thread pool
+- `WiseArchitectureHistoryService`: Persists and retrieves advice history with feedback
 - `TechStackDetectorService`: Detects tech stacks with pre-indexed pattern matching
 - `TechnicalSolutionGeneratorService`: Generates solutions using LLM
 - `WiseArchitectureConversationService`: Manages chat sessions and Copilot prompts
 - `GitHubMcpProvider`: File list caching with 10-minute TTL
+- `FigmaMcpProvider`: Figma design context extraction with node-id support
 
 ### Frontend Components
 - `WiseArchitecturePage`: Multi-step wizard UI with polling

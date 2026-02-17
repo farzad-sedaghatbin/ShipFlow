@@ -231,6 +231,20 @@ public class TechStackDetectorService {
      */
     @Transactional
     public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList) {
+        return detectStacks(repository, fileList, null);
+    }
+
+    /**
+     * Detect technology stacks in a repository based on file structure and optional package.json content.
+     * Uses cached results if available, otherwise performs detection and caches the result.
+     *
+     * @param repository the GitHub repository to analyze
+     * @param fileList list of file paths in the repository (from MCP)
+     * @param packageJsonContent optional content of package.json for accurate framework detection
+     * @return list of detected technology stacks
+     */
+    @Transactional
+    public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList, String packageJsonContent) {
         log.info("Detecting tech stacks in repository: {} with {} files", 
             repository.getFullName(), fileList != null ? fileList.size() : 0);
         
@@ -260,9 +274,47 @@ public class TechStackDetectorService {
         log.debug("File indexing took {}ms for {} files", 
             System.currentTimeMillis() - indexStart, fileList.size());
         
+        // PRIORITY: Check for React Native via package.json content FIRST
+        // This is more reliable than file pattern matching
+        boolean isReactNativeProject = false;
+        if (packageJsonContent != null && !packageJsonContent.isBlank()) {
+            isReactNativeProject = packageJsonContent.contains("\"react-native\"");
+            if (isReactNativeProject) {
+                log.info("Detected React Native from package.json in {}", repository.getFullName());
+            }
+        }
+        
+        // Also check for React Native structural indicators when package.json isn't available
+        if (!isReactNativeProject && packageJsonContent == null) {
+            // Check for RN project structure: both android/ and ios/ directories + package.json
+            boolean hasAndroidDir = fileList.stream().anyMatch(f -> f.startsWith("android/") || f.contains("/android/"));
+            boolean hasIosDir = fileList.stream().anyMatch(f -> f.startsWith("ios/") || f.contains("/ios/"));
+            boolean hasPackageJson = fileIndex.containsKey("__package.json");
+            boolean hasMetroConfig = fileIndex.containsKey("__metro.config.js") || fileIndex.containsKey("__metro.config.ts");
+            boolean hasBabelConfig = fileIndex.containsKey("__babel.config.js");
+            boolean hasAppJson = fileIndex.containsKey("__app.json");
+            boolean hasRNConfig = fileIndex.containsKey("__react-native.config.js");
+            boolean hasJsxFiles = fileIndex.get(".jsx") != null || fileIndex.get(".tsx") != null;
+            
+            // Strong indicators of React Native
+            if (hasMetroConfig || hasRNConfig) {
+                isReactNativeProject = true;
+                log.info("Detected React Native from metro/rn config in {}", repository.getFullName());
+            } else if (hasAndroidDir && hasIosDir && hasPackageJson && (hasBabelConfig || hasAppJson) && hasJsxFiles) {
+                // Structural detection: android + ios + package.json + babel/app.json + jsx/tsx = React Native
+                isReactNativeProject = true;
+                log.info("Detected React Native from project structure in {}", repository.getFullName());
+            }
+        }
+        
         // OPTIMIZATION: Quick detect from key config files (exact match, no regex)
         Set<TechStackType> quickDetected = quickDetectFromConfigFiles(fileIndex);
         log.debug("Quick detection found {} stacks from config files", quickDetected.size());
+        
+        // If React Native detected, add it to quick detected and mark it
+        if (isReactNativeProject) {
+            quickDetected.add(TechStackType.MOBILE_REACT_NATIVE);
+        }
         
         List<DetectedStackDTO> detectedStacks = new ArrayList<>();
         
@@ -341,6 +393,49 @@ public class TechStackDetectorService {
                     detectedStacks.add(detected);
                     log.debug("Detected {} with {}% confidence in {}", 
                         stackType, confidence, repository.getFullName());
+                }
+            }
+        }
+        
+        // Special handling: Ensure React Native is properly detected if identified earlier
+        if (isReactNativeProject) {
+            boolean rnAlreadyDetected = detectedStacks.stream()
+                .anyMatch(s -> s.getStackType() == TechStackType.MOBILE_REACT_NATIVE);
+            
+            if (!rnAlreadyDetected) {
+                // Add React Native with high confidence
+                List<String> rnKeyFiles = new ArrayList<>();
+                if (fileIndex.containsKey("__package.json")) rnKeyFiles.add("package.json");
+                if (fileIndex.containsKey("__metro.config.js")) rnKeyFiles.add("metro.config.js");
+                if (fileIndex.containsKey("__app.json")) rnKeyFiles.add("app.json");
+                if (fileIndex.containsKey("__babel.config.js")) rnKeyFiles.add("babel.config.js");
+                
+                detectedStacks.add(DetectedStackDTO.builder()
+                    .stackType(TechStackType.MOBILE_REACT_NATIVE)
+                    .confidence(95) // High confidence since we detected via package.json or structure
+                    .keyFilesFound(rnKeyFiles.isEmpty() ? List.of("package.json") : rnKeyFiles)
+                    .primaryLanguage("TypeScript/JavaScript")
+                    .framework("React Native")
+                    .repositoryId(repository.getId())
+                    .repositoryName(repository.getFullName())
+                    .build());
+                log.info("Added React Native stack with 95% confidence for {}", repository.getFullName());
+            } else {
+                // Boost existing React Native confidence if it was detected but with low confidence
+                for (int i = 0; i < detectedStacks.size(); i++) {
+                    DetectedStackDTO s = detectedStacks.get(i);
+                    if (s.getStackType() == TechStackType.MOBILE_REACT_NATIVE && s.getConfidence() < 85) {
+                        detectedStacks.set(i, DetectedStackDTO.builder()
+                            .stackType(s.getStackType())
+                            .confidence(95) // Boost to 95% since we confirmed via package.json/structure
+                            .keyFilesFound(s.getKeyFilesFound())
+                            .primaryLanguage(s.getPrimaryLanguage())
+                            .framework(s.getFramework())
+                            .repositoryId(s.getRepositoryId())
+                            .repositoryName(s.getRepositoryName())
+                            .build());
+                        break;
+                    }
                 }
             }
         }
@@ -631,15 +726,20 @@ public class TechStackDetectorService {
     }
 
     private List<DetectedStackDTO> filterOverlappingStacks(List<DetectedStackDTO> stacks) {
-        // First pass: Check if React Native is detected in any repository
-        Set<Long> reactNativeRepos = stacks.stream()
+        // First pass: Check if React Native is detected in any repository and get its confidence
+        Map<Long, Integer> reactNativeConfidenceByRepo = stacks.stream()
             .filter(s -> s.getStackType() == TechStackType.MOBILE_REACT_NATIVE)
-            .map(DetectedStackDTO::getRepositoryId)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toMap(
+                DetectedStackDTO::getRepositoryId, 
+                DetectedStackDTO::getConfidence,
+                Math::max // If multiple React Native detections, take highest confidence
+            ));
+        
+        Set<Long> reactNativeRepos = reactNativeConfidenceByRepo.keySet();
         
         // Second pass: Filter out false positives for React Native projects
-        // When React Native is detected, remove WEB_REACT and potentially BACKEND_NODE
-        // since those are just the JS/TS files that React Native projects include
+        // When React Native is detected with HIGH confidence (from package.json), 
+        // aggressively remove false positives
         List<DetectedStackDTO> filteredStacks = stacks.stream()
             .filter(stack -> {
                 Long repoId = stack.getRepositoryId();
@@ -647,21 +747,52 @@ public class TechStackDetectorService {
                 
                 // If this repo has React Native detected
                 if (reactNativeRepos.contains(repoId)) {
+                    int rnConfidence = reactNativeConfidenceByRepo.getOrDefault(repoId, 0);
+                    boolean highConfidenceRN = rnConfidence >= 90;
+                    
                     // Remove WEB_REACT as it's a false positive from .tsx/.jsx files
                     if (type == TechStackType.WEB_REACT) {
-                        log.debug("Filtering out {} for repo {} - React Native project", type, repoId);
+                        log.info("Filtering out {} for repo {} - React Native project", type, repoId);
                         return false;
                     }
-                    // Remove MOBILE_KOTLIN if it's just the android/ folder of RN project
-                    // Only keep if confidence is very high (90+) indicating native Kotlin code
-                    if (type == TechStackType.MOBILE_KOTLIN && stack.getConfidence() < 90) {
-                        log.debug("Filtering out {} for repo {} - likely RN android/ folder", type, repoId);
-                        return false;
+                    
+                    // Remove MOBILE_KOTLIN - RN projects always have android/ folder
+                    // When RN is high confidence (from package.json), remove ALL Android detection
+                    if (type == TechStackType.MOBILE_KOTLIN) {
+                        if (highConfidenceRN) {
+                            log.info("Filtering out {} for repo {} - confirmed RN android/ folder", type, repoId);
+                            return false;
+                        } else if (stack.getConfidence() < 90) {
+                            log.debug("Filtering out {} for repo {} - likely RN android/ folder", type, repoId);
+                            return false;
+                        }
                     }
-                    // Remove BACKEND_NODE unless it has high confidence from express/nest/etc
-                    if (type == TechStackType.BACKEND_NODE && stack.getConfidence() < 70) {
-                        log.debug("Filtering out {} for repo {} - likely RN package.json", type, repoId);
-                        return false;
+                    
+                    // Remove MOBILE_SWIFT - RN projects always have ios/ folder  
+                    // When RN is high confidence (from package.json), remove ALL iOS detection unless very high confidence
+                    if (type == TechStackType.MOBILE_SWIFT) {
+                        if (highConfidenceRN) {
+                            log.info("Filtering out {} for repo {} - confirmed RN ios/ folder", type, repoId);
+                            return false;
+                        } else if (stack.getConfidence() < 90) {
+                            log.debug("Filtering out {} for repo {} - likely RN ios/ folder", type, repoId);
+                            return false;
+                        }
+                    }
+                    
+                    // Remove BACKEND_NODE unless it indicates a real backend (Express, NestJS, etc.)
+                    // RN projects always have package.json which triggers Node detection
+                    if (type == TechStackType.BACKEND_NODE) {
+                        String framework = stack.getFramework();
+                        boolean isRealBackend = framework != null && 
+                            (framework.contains("Express") || framework.contains("Nest") || 
+                             framework.contains("Fastify") || framework.contains("Koa"));
+                        
+                        if (!isRealBackend && (highConfidenceRN || stack.getConfidence() < 80)) {
+                            log.info("Filtering out {} for repo {} - RN package.json (framework: {})", 
+                                type, repoId, framework);
+                            return false;
+                        }
                     }
                 }
                 return true;

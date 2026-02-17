@@ -146,7 +146,7 @@ class WiseArchitectureServiceTest {
             when(settingsService.getSettings()).thenReturn(enabledSettings);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(techStackDetectorService.detectStacks(eq(testRepo), anyList()))
+            when(techStackDetectorService.detectStacks(eq(testRepo), anyList(), any()))
                 .thenReturn(List.of(
                     DetectedStackDTO.builder()
                         .stackType(TechStackType.BACKEND_JAVA)
@@ -225,7 +225,7 @@ class WiseArchitectureServiceTest {
             when(settingsService.getSettings()).thenReturn(enabledSettings);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(techStackDetectorService.detectStacks(eq(testRepo), anyList()))
+            when(techStackDetectorService.detectStacks(eq(testRepo), anyList(), any()))
                 .thenReturn(List.of(
                     DetectedStackDTO.builder()
                         .stackType(TechStackType.BACKEND_JAVA)
@@ -252,7 +252,7 @@ class WiseArchitectureServiceTest {
             when(settingsService.getSettings()).thenReturn(enabledSettings);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(techStackDetectorService.detectStacks(eq(testRepo), anyList()))
+            when(techStackDetectorService.detectStacks(eq(testRepo), anyList(), any()))
                 .thenReturn(List.of(
                     DetectedStackDTO.builder()
                         .stackType(TechStackType.BACKEND_JAVA)

@@ -195,9 +195,13 @@ export default function PitchBoard() {
 
     try {
       setSaving(true);
+      // Shape Up workflow: Only assign cycle for PENDING+ status pitches
+      // IDEA, DRAFT, SHAPED pitches should have no cycle
+      const requiresCycle = ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+      
       const response = await pitchService.create({
         ...newPitch,
-        cycleId: selectedCycle ? parseInt(selectedCycle) : undefined,
+        cycleId: requiresCycle && selectedCycle ? parseInt(selectedCycle) : undefined,
         appetiteDays: newPitch.appetiteDays || undefined,
       });
       const createdPitch = response.data;

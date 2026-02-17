@@ -39,6 +39,25 @@ public class FigmaMcpProvider implements McpClientService {
         "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
     private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
         "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
+    // Pattern to extract node-id from URL query params
+    private static final Pattern NODE_ID_PATTERN = Pattern.compile(
+        "node-id=([0-9]+-[0-9]+|[0-9]+:[0-9]+)" );
+
+    /**
+     * Represents a Figma file reference with optional node ID.
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.AllArgsConstructor
+    public static class FigmaFileReference {
+        private final String fileKey;
+        private final String nodeId;  // Optional - specific frame/node to focus on
+        private final String originalUrl;
+        
+        public boolean hasNodeId() {
+            return nodeId != null && !nodeId.isBlank();
+        }
+    }
 
     public FigmaMcpProvider(
             McpConfig mcpConfig,
@@ -296,6 +315,7 @@ public class FigmaMcpProvider implements McpClientService {
 
         String fileKey = context.get("fileKey");
         String accessToken = context.get("accessToken");
+        String nodeId = context.get("nodeId");  // Optional: specific node/frame to focus on
         
         // Validate file key format (Figma file keys are 22 alphanumeric characters)
         if (fileKey == null || fileKey.length() < 10 || fileKey.length() > 30) {
@@ -304,7 +324,11 @@ public class FigmaMcpProvider implements McpClientService {
             return Map.of("error", "Invalid Figma file key format");
         }
 
-        log.info("Getting design context for Figma file {} via MCP", fileKey);
+        if (nodeId != null && !nodeId.isBlank()) {
+            log.info("Getting design context for Figma file {} node {} via MCP", fileKey, nodeId);
+        } else {
+            log.info("Getting design context for Figma file {} via MCP", fileKey);
+        }
 
         // Check if Figma token is configured
         String figmaToken = settingsService.getFigmaAccessToken();
@@ -323,9 +347,14 @@ public class FigmaMcpProvider implements McpClientService {
             if (accessToken != null) {
                 arguments.put("access_token", accessToken);
             }
+            // Include node_id if provided to focus on specific frame/component
+            if (nodeId != null && !nodeId.isBlank()) {
+                arguments.put("node_id", nodeId);
+                arguments.put("depth", 2); // Get some depth for the specific node
+            }
             
             Map<String, Object> params = Map.of(
-                "name", "get_design_context",
+                "name", nodeId != null && !nodeId.isBlank() ? "get_node" : "get_design_context",
                 "arguments", arguments
             );
             
@@ -345,7 +374,8 @@ public class FigmaMcpProvider implements McpClientService {
                 Object result = response.getBody().get("result");
                 if (result instanceof Map) {
                     Map<String, Object> resultMap = (Map<String, Object>) result;
-                    log.debug("Retrieved design context for Figma file {}", fileKey);
+                    log.debug("Retrieved design context for Figma file {}{}", fileKey, 
+                        nodeId != null ? " node " + nodeId : "");
                     return resultMap;
                 }
             }
@@ -354,9 +384,10 @@ public class FigmaMcpProvider implements McpClientService {
             return Map.of();
 
         } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
-            log.warn("Figma file not found or not accessible: {}. " +
+            log.warn("Figma file not found or not accessible: {}{}. " +
                 "Verify: (1) file key is correct, (2) Figma token has access to this file, (3) file exists. " +
-                "Full URL may help: https://www.figma.com/file/{}", fileKey, fileKey);
+                "Full URL may help: https://www.figma.com/design/{}", 
+                fileKey, nodeId != null ? " (node: " + nodeId + ")" : "", fileKey);
             return Map.of("error", "Figma file not found or not accessible: " + fileKey,
                 "suggestion", "Check Figma token permissions and file sharing settings");
         } catch (org.springframework.web.client.HttpClientErrorException.Unauthorized e) {
@@ -403,26 +434,66 @@ public class FigmaMcpProvider implements McpClientService {
      * @return list of extracted Figma file keys
      */
     public List<String> extractFigmaFileKeys(String wireframeLinks) {
+        return extractFigmaFileReferences(wireframeLinks).stream()
+            .map(FigmaFileReference::getFileKey)
+            .distinct()
+            .toList();
+    }
+
+    /**
+     * Extract Figma file references (with node IDs) from wireframe links text.
+     * Handles multiple URLs separated by newlines, commas, or spaces.
+     * Extracts node-id from URL query parameters for specific frame targeting.
+     *
+     * @param wireframeLinks the wireframe links text from a pitch
+     * @return list of extracted Figma file references
+     */
+    public List<FigmaFileReference> extractFigmaFileReferences(String wireframeLinks) {
         if (wireframeLinks == null || wireframeLinks.isBlank()) {
             return List.of();
         }
 
-        Set<String> fileKeys = new LinkedHashSet<>();
+        List<FigmaFileReference> references = new ArrayList<>();
+        Set<String> seenKeys = new HashSet<>();
 
-        // Try file pattern
-        Matcher fileMatcher = FIGMA_FILE_PATTERN.matcher(wireframeLinks);
-        while (fileMatcher.find()) {
-            fileKeys.add(fileMatcher.group(1));
+        // First, find all complete Figma URLs to preserve the node-id parameter
+        Pattern urlPattern = Pattern.compile(
+            "(https?://(?:www\\.)?figma\\.com/(?:file|design|proto)/([a-zA-Z0-9-]{10,50})(?:/[^\\s,]*)?(?:\\?[^\\s,]*)?)");
+        Matcher urlMatcher = urlPattern.matcher(wireframeLinks);
+        
+        while (urlMatcher.find()) {
+            String fullUrl = urlMatcher.group(1);
+            String fileKey = urlMatcher.group(2);
+            
+            // Extract node-id from URL if present
+            String nodeId = null;
+            Matcher nodeIdMatcher = NODE_ID_PATTERN.matcher(fullUrl);
+            if (nodeIdMatcher.find()) {
+                nodeId = nodeIdMatcher.group(1);
+                // Normalize node-id format (1434-49411 or 1434:49411)
+                nodeId = nodeId.replace("-", ":");
+            }
+            
+            // Use fileKey+nodeId as unique key to allow same file with different nodes
+            String uniqueKey = fileKey + (nodeId != null ? ":" + nodeId : "");
+            if (!seenKeys.contains(uniqueKey)) {
+                seenKeys.add(uniqueKey);
+                references.add(FigmaFileReference.builder()
+                    .fileKey(fileKey)
+                    .nodeId(nodeId)
+                    .originalUrl(fullUrl)
+                    .build());
+                    
+                if (nodeId != null) {
+                    log.debug("Extracted Figma file: {} with node-id: {} from URL", fileKey, nodeId);
+                } else {
+                    log.debug("Extracted Figma file: {} (no specific node)", fileKey);
+                }
+            }
         }
 
-        // Try prototype pattern
-        Matcher protoMatcher = FIGMA_PROTOTYPE_PATTERN.matcher(wireframeLinks);
-        while (protoMatcher.find()) {
-            fileKeys.add(protoMatcher.group(1));
-        }
-
-        log.debug("Extracted {} Figma file keys from wireframe links", fileKeys.size());
-        return new ArrayList<>(fileKeys);
+        log.info("Extracted {} Figma file references from wireframe links", references.size());
+        return references;
     }
 
     /**
@@ -460,6 +531,32 @@ public class FigmaMcpProvider implements McpClientService {
      * @return design context summary, or null if unavailable
      */
     public FigmaDesignContext getDesignContext(String fileKey, String accessToken) {
+        return getDesignContext(fileKey, null, accessToken);
+    }
+
+    /**
+     * Get design context for a Figma file with optional node ID.
+     * Returns a compact, token-efficient summary of the design.
+     *
+     * @param fileRef Figma file reference (with optional node ID)
+     * @param accessToken organization's Figma access token
+     * @return design context summary, or null if unavailable
+     */
+    public FigmaDesignContext getDesignContext(FigmaFileReference fileRef, String accessToken) {
+        return getDesignContext(fileRef.getFileKey(), fileRef.getNodeId(), accessToken);
+    }
+
+    /**
+     * Get design context for a Figma file with optional node ID.
+     * Returns a compact, token-efficient summary of the design.
+     * When node ID is provided, fetches context for that specific frame/component.
+     *
+     * @param fileKey Figma file key
+     * @param nodeId Optional node ID for specific frame (e.g., "1434:49411")
+     * @param accessToken organization's Figma access token
+     * @return design context summary, or null if unavailable
+     */
+    public FigmaDesignContext getDesignContext(String fileKey, String nodeId, String accessToken) {
         if (!isAvailable()) {
             log.debug("Figma MCP not available for file: {}", fileKey);
             return null;
@@ -470,10 +567,12 @@ public class FigmaMcpProvider implements McpClientService {
             return null;
         }
 
-        Map<String, String> context = Map.of(
-            "fileKey", fileKey,
-            "accessToken", accessToken
-        );
+        Map<String, String> context = new HashMap<>();
+        context.put("fileKey", fileKey);
+        context.put("accessToken", accessToken);
+        if (nodeId != null && !nodeId.isBlank()) {
+            context.put("nodeId", nodeId);
+        }
 
         Map<String, Object> resourceContext = getResourceContext(context);
         
@@ -484,6 +583,7 @@ public class FigmaMcpProvider implements McpClientService {
         // Parse the response into a compact context object
         return FigmaDesignContext.builder()
             .fileKey(fileKey)
+            .nodeId(nodeId)
             .fileName((String) resourceContext.getOrDefault("name", "Unknown"))
             .components(extractComponentNames(resourceContext))
             .colors(extractColors(resourceContext))
@@ -547,6 +647,7 @@ public class FigmaMcpProvider implements McpClientService {
     @lombok.AllArgsConstructor
     public static class FigmaDesignContext {
         private String fileKey;
+        private String nodeId;      // Optional: specific frame/component node ID
         private String fileName;
         private List<String> components;
         private List<String> colors;
