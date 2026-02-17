@@ -22,11 +22,11 @@ import org.springframework.web.client.RestTemplate;
  * GitHub MCP client implementation.
  * Connects to a GitHub MCP server to read repository files and code.
  * 
- * MCP Server expected endpoints:
- * - POST /tools/list_files: List files in a repository
- * - POST /tools/read_file: Read a single file's content
- * - POST /tools/search_files: Search for files matching a pattern
- * - POST /tools/get_repo_context: Get repository metadata (languages, tech stack)
+ * Uses standard GitHub MCP tools:
+ * - get_file_contents: Read file content or list directory contents
+ * - search_code: Search for code matching a pattern
+ * 
+ * @see <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/github">GitHub MCP Server</a>
  */
 @Service
 @Slf4j
@@ -79,16 +79,57 @@ public class GitHubMcpProvider implements McpClientService {
         log.info("Listing files for {}/{} on branch {} via MCP", owner, repo, branch);
 
         try {
+            // Use get_file_contents with empty path to get repository root, then recurse
+            List<String> allFiles = new ArrayList<>();
+            fetchFilesRecursively(owner, repo, branch, "", allFiles, 0);
+            
+            if (!allFiles.isEmpty()) {
+                log.info("Retrieved {} files from GitHub MCP for {}/{}", allFiles.size(), owner, repo);
+                log.debug("Sample files: {}", 
+                    allFiles.stream().limit(10).collect(java.util.stream.Collectors.joining(", ")));
+            } else {
+                log.warn("No files retrieved from repository {}/{}", owner, repo);
+            }
+            
+            return allFiles;
+
+        } catch (RestClientException e) {
+            log.error("Failed to list files via GitHub MCP: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Recursively fetch files from a directory using get_file_contents.
+     */
+    @SuppressWarnings("unchecked")
+    private void fetchFilesRecursively(String owner, String repo, String branch, 
+            String path, List<String> files, int depth) {
+        // Limit recursion depth to prevent infinite loops and excessive API calls
+        if (depth > 5) {
+            log.debug("Max recursion depth reached for path: {}", path);
+            return;
+        }
+        
+        // Limit total files to prevent memory issues
+        if (files.size() > 1000) {
+            log.debug("Max file limit reached, stopping recursion");
+            return;
+        }
+
+        try {
             String url = mcpConfig.getGithub().getServerUrl() + "/mcp/v1/tools/call";
             
-            Map<String, Object> arguments = Map.of(
-                "owner", owner,
-                "repo", repo,
-                "branch", branch
-            );
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("owner", owner);
+            arguments.put("repo", repo);
+            arguments.put("path", path.isEmpty() ? "" : path);
+            if (branch != null && !branch.isEmpty()) {
+                arguments.put("branch", branch);
+            }
             
             Map<String, Object> params = Map.of(
-                "name", "list_files",
+                "name", "get_file_contents",
                 "arguments", arguments
             );
             
@@ -111,64 +152,72 @@ public class GitHubMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                        log.info("MCP response contains {} content items", contentList.size());
-                        List<String> files = new ArrayList<>();
                         
                         for (Map<String, Object> item : contentList) {
-                            if (item == null) {
-                                continue;
-                            }
+                            if (item == null) continue;
+                            
                             Object textObj = item.get("text");
                             if (textObj != null) {
                                 String text = textObj.toString().trim();
-                                log.debug("Parsing MCP text content (length: {}): {}", 
-                                    text.length(), 
-                                    text.length() > 200 ? text.substring(0, 200) + "..." : text);
-                                if (!text.isEmpty()) {
-                                    // Parse each line as a file path
-                                    String[] lines = text.split("\\n");
-                                    for (String line : lines) {
-                                        String trimmed = line.trim();
-                                        if (!trimmed.isEmpty()) {
-                                            files.add(trimmed);
+                                // Try to parse as JSON (directory listing)
+                                try {
+                                    Object parsed = new com.fasterxml.jackson.databind.ObjectMapper()
+                                        .readValue(text, Object.class);
+                                    if (parsed instanceof List) {
+                                        // Directory listing - array of file entries
+                                        List<Map<String, Object>> entries = (List<Map<String, Object>>) parsed;
+                                        for (Map<String, Object> entry : entries) {
+                                            String entryPath = (String) entry.get("path");
+                                            String type = (String) entry.get("type");
+                                            
+                                            if (entryPath != null) {
+                                                if ("file".equals(type)) {
+                                                    files.add(entryPath);
+                                                } else if ("dir".equals(type)) {
+                                                    // Recurse into subdirectory
+                                                    fetchFilesRecursively(owner, repo, branch, 
+                                                        entryPath, files, depth + 1);
+                                                }
+                                            }
+                                        }
+                                    } else if (parsed instanceof Map) {
+                                        // Single file entry
+                                        Map<String, Object> entry = (Map<String, Object>) parsed;
+                                        String entryPath = (String) entry.get("path");
+                                        if (entryPath != null) {
+                                            files.add(entryPath);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    // Not JSON - might be raw file content or line-delimited paths
+                                    if (!text.isEmpty()) {
+                                        String[] lines = text.split("\\n");
+                                        for (String line : lines) {
+                                            String trimmed = line.trim();
+                                            if (!trimmed.isEmpty() && !trimmed.startsWith("{") 
+                                                    && !trimmed.startsWith("[")) {
+                                                files.add(trimmed);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                        if (!files.isEmpty()) {
-                            log.info("Retrieved {} files from GitHub MCP for {}/{}", 
-                                files.size(), owner, repo);
-                            log.debug("Sample files: {}", 
-                                files.stream().limit(10).collect(java.util.stream.Collectors.joining(", ")));
-                            return files;
-                        } else {
-                            log.warn("MCP response parsed but no files extracted for {}/{}", owner, repo);
-                        }
-                    } else {
-                        log.warn("MCP response 'content' is not a List for {}/{}", owner, repo);
                     }
-                } else {
-                    log.warn("MCP response 'result' is not a Map for {}/{}", owner, repo);
                 }
             } else {
                 Map<String, Object> body = response.getBody();
                 if (body != null && body.containsKey("error")) {
                     Object error = body.get("error");
-                    log.error("MCP returned error for {}/{}: {}", owner, repo, error);
-                } else {
-                    log.warn("MCP response missing 'result' key for {}/{}. Response body: {}", 
-                        owner, repo, body);
+                    if (depth == 0) {
+                        log.error("MCP returned error for {}/{}: {}", owner, repo, error);
+                    } else {
+                        log.debug("MCP error fetching path '{}': {}", path, error);
+                    }
                 }
             }
-            
-            log.debug("No files returned from GitHub MCP for {}/{}", owner, repo);
-            return List.of();
-
-        } catch (RestClientException e) {
-            log.error("Failed to list files via GitHub MCP: {}", e.getMessage());
-            return List.of();
+        } catch (Exception e) {
+            log.debug("Error fetching path '{}': {}", path, e.getMessage());
         }
     }
 
@@ -189,15 +238,16 @@ public class GitHubMcpProvider implements McpClientService {
         try {
             String url = mcpConfig.getGithub().getServerUrl() + "/mcp/v1/tools/call";
             
-            Map<String, Object> arguments = Map.of(
-                "owner", owner,
-                "repo", repo,
-                "branch", branch,
-                "path", filePath
-            );
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("owner", owner);
+            arguments.put("repo", repo);
+            arguments.put("path", filePath);
+            if (branch != null && !branch.isEmpty()) {
+                arguments.put("branch", branch);
+            }
             
             Map<String, Object> params = Map.of(
-                "name", "read_file",
+                "name", "get_file_contents",
                 "arguments", arguments
             );
             
@@ -262,14 +312,13 @@ public class GitHubMcpProvider implements McpClientService {
         try {
             String url = mcpConfig.getGithub().getServerUrl() + "/mcp/v1/tools/call";
             
+            // Use search_code tool with query scoped to the repository
             Map<String, Object> arguments = Map.of(
-                "owner", owner,
-                "repo", repo,
-                "pattern", pattern
+                "q", pattern + " repo:" + owner + "/" + repo
             );
             
             Map<String, Object> params = Map.of(
-                "name", "search_files",
+                "name", "search_code",
                 "arguments", arguments
             );
             
@@ -348,9 +397,11 @@ public class GitHubMcpProvider implements McpClientService {
         String owner = context.get("owner");
         String repo = context.get("repo");
 
-        log.info("Getting repository context for {}/{} via MCP", owner, repo);
+        log.debug("Getting repository context for {}/{} via MCP", owner, repo);
 
         try {
+            // Note: get_repo_context is not a standard GitHub MCP tool
+            // This may fail if using a standard MCP server - that's expected
             String url = mcpConfig.getGithub().getServerUrl() + "/mcp/v1/tools/call";
             
             Map<String, Object> arguments = Map.of(

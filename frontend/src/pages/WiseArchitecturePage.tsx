@@ -113,6 +113,7 @@ const WiseArchitecturePage: React.FC = () => {
   // Step 2: Repository selection
   const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
   const [selectedRepoIds, setSelectedRepoIds] = useState<number[]>([]);
+  const [repoBranches, setRepoBranches] = useState<Record<number, string>>({});
   const [repoSearchQuery, setRepoSearchQuery] = useState('');
 
   // Step 3: Stack detection and selection
@@ -180,11 +181,27 @@ const WiseArchitecturePage: React.FC = () => {
   };
 
   const handleRepoToggle = (repoId: number) => {
-    setSelectedRepoIds(prev =>
-      prev.includes(repoId)
-        ? prev.filter(id => id !== repoId)
-        : [...prev, repoId]
-    );
+    const repo = repositories.find(r => r.id === repoId);
+    setSelectedRepoIds(prev => {
+      if (prev.includes(repoId)) {
+        // Removing - also remove from branches
+        setRepoBranches(b => {
+          const { [repoId]: _, ...rest } = b;
+          return rest;
+        });
+        return prev.filter(id => id !== repoId);
+      } else {
+        // Adding - initialize with default branch
+        if (repo?.defaultBranch) {
+          setRepoBranches(b => ({ ...b, [repoId]: repo.defaultBranch }));
+        }
+        return [...prev, repoId];
+      }
+    });
+  };
+
+  const handleBranchChange = (repoId: number, branch: string) => {
+    setRepoBranches(prev => ({ ...prev, [repoId]: branch }));
   };
 
   const handleDetectStacks = async () => {
@@ -205,6 +222,7 @@ const WiseArchitecturePage: React.FC = () => {
       const response: DetectStacksResponse = await wiseArchitectureService.detectStacks({
         pitchId: selectedPitch.id,
         repositoryIds: selectedRepoIds,
+        repositoryBranches: repoBranches,
       });
       setDetectedStacks(response.detectedStacks);
       
@@ -243,6 +261,7 @@ const WiseArchitecturePage: React.FC = () => {
       const response: WiseArchitectureResponse = await wiseArchitectureService.analyze({
         pitchId: selectedPitch.id,
         repositoryIds: selectedRepoIds,
+        repositoryBranches: repoBranches,
         selectedStacks,
       });
       
@@ -519,7 +538,7 @@ const WiseArchitecturePage: React.FC = () => {
                         className="pl-10"
                       />
                     </div>
-                    <ScrollArea className="h-[300px]">
+                    <ScrollArea className="h-[350px]">
                       <div className="space-y-2">
                         {repositories
                           .filter(repo => 
@@ -528,24 +547,40 @@ const WiseArchitecturePage: React.FC = () => {
                           .map(repo => (
                         <div
                           key={repo.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          className={`p-3 rounded-lg border transition-colors ${
                             selectedRepoIds.includes(repo.id)
                               ? 'border-primary bg-primary/5'
                               : 'border-border hover:bg-muted/50'
                           }`}
-                          onClick={() => handleRepoToggle(repo.id)}
                         >
-                          <Checkbox
-                            checked={selectedRepoIds.includes(repo.id)}
-                            onCheckedChange={() => handleRepoToggle(repo.id)}
-                          />
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{repo.fullName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {repo.defaultBranch}
-                            </p>
+                          <div 
+                            className="flex items-center gap-3 cursor-pointer"
+                            onClick={() => handleRepoToggle(repo.id)}
+                          >
+                            <Checkbox
+                              checked={selectedRepoIds.includes(repo.id)}
+                              onCheckedChange={() => handleRepoToggle(repo.id)}
+                            />
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{repo.fullName}</p>
+                            </div>
                           </div>
+                          {selectedRepoIds.includes(repo.id) && (
+                            <div className="mt-2 ml-8 flex items-center gap-2">
+                              <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                placeholder={t('wiseArchitecture.branchPlaceholder') || 'Branch name'}
+                                value={repoBranches[repo.id] || ''}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleBranchChange(repo.id, e.target.value);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-8 text-sm flex-1"
+                              />
+                            </div>
+                          )}
                         </div>
                         ))}
                       </div>
