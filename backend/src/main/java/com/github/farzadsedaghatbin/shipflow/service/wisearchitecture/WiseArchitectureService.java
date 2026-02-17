@@ -825,69 +825,45 @@ public class WiseArchitectureService {
         
         int totalRepos = repositories.size();
         
-        // Phase 2: File listing (10-55%) - PARALLEL for performance
-        callback.onProgress(12, String.format("Fetching file lists from %d repositories in parallel...", totalRepos));
+        // Phase 2: File listing (10-55%) - SEQUENTIAL to avoid MCP rate limiting
+        // GitHub Copilot MCP endpoint can't handle concurrent requests (returns 403)
+        callback.onProgress(12, String.format("Fetching file lists from %d repositories...", totalRepos));
         
-        Map<GitHubRepository, List<String>> repoFileLists = Collections.synchronizedMap(new LinkedHashMap<>());
-        Map<GitHubRepository, String> repoPackageJsons = Collections.synchronizedMap(new HashMap<>());
-        java.util.concurrent.atomic.AtomicInteger fileListCompleted = new java.util.concurrent.atomic.AtomicInteger(0);
-        ExecutorService fileListExecutor = Executors.newFixedThreadPool(Math.min(totalRepos, 4));
+        Map<GitHubRepository, List<String>> repoFileLists = new LinkedHashMap<>();
+        Map<GitHubRepository, String> repoPackageJsons = new HashMap<>();
         
-        try {
-            // Clear cache if force redetection requested
-            if (Boolean.TRUE.equals(request.getForceRedetection())) {
-                for (GitHubRepository repo : repositories) {
-                    techStackDetectorService.clearCache(repo);
-                }
-            }
-            
-            List<CompletableFuture<Void>> fileListFutures = new ArrayList<>();
-            
+        // Clear cache if force redetection requested
+        if (Boolean.TRUE.equals(request.getForceRedetection())) {
             for (GitHubRepository repo : repositories) {
-                final String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
-                
-                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                    try {
-                        List<String> fileList = getRepositoryFileList(repo, branch);
-                        repoFileLists.put(repo, fileList);
-                        
-                        // Also read package.json for accurate React Native detection
-                        String packageJsonContent = readPackageJson(repo, branch);
-                        if (packageJsonContent != null) {
-                            repoPackageJsons.put(repo, packageJsonContent);
-                        }
-                        
-                        int completedCount = fileListCompleted.incrementAndGet();
-                        int progressPercent = 10 + (int) ((completedCount * 1.0 / totalRepos) * 45);
-                        callback.onProgress(progressPercent, 
-                            String.format("Listed %d files from %s (%d/%d)", 
-                                fileList.size(), repo.getName(), completedCount, totalRepos));
-                    } catch (Exception e) {
-                        log.error("Error listing files from repository {}: {}", repo.getFullName(), e.getMessage());
-                        repoFileLists.put(repo, List.of());
-                        fileListCompleted.incrementAndGet();
-                    }
-                }, fileListExecutor);
-                
-                fileListFutures.add(future);
+                techStackDetectorService.clearCache(repo);
             }
+        }
+        
+        // Process repositories sequentially to avoid MCP rate limiting
+        for (int i = 0; i < repositories.size(); i++) {
+            GitHubRepository repo = repositories.get(i);
+            String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
             
-            // Wait for all file listings to complete
-            CompletableFuture.allOf(fileListFutures.toArray(new CompletableFuture[0])).join();
+            int progressPercent = 10 + (int) ((i * 1.0 / totalRepos) * 45);
+            callback.onProgress(progressPercent, 
+                String.format("Fetching files from %s (%d/%d)...", repo.getName(), i + 1, totalRepos));
             
-        } catch (Exception e) {
-            log.error("Error during parallel file listing", e);
-        } finally {
-            fileListExecutor.shutdown();
             try {
-                if (!fileListExecutor.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
-                    log.warn("File list executor did not terminate in time");
-                    fileListExecutor.shutdownNow();
+                List<String> fileList = getRepositoryFileList(repo, branch);
+                repoFileLists.put(repo, fileList);
+                
+                // Also read package.json for accurate React Native detection
+                String packageJsonContent = readPackageJson(repo, branch);
+                if (packageJsonContent != null) {
+                    repoPackageJsons.put(repo, packageJsonContent);
                 }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while waiting for file list executor");
-                fileListExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
+                
+                callback.onProgress(progressPercent + 5, 
+                    String.format("Listed %d files from %s (%d/%d)", 
+                        fileList.size(), repo.getName(), i + 1, totalRepos));
+            } catch (Exception e) {
+                log.error("Error listing files from repository {}: {}", repo.getFullName(), e.getMessage());
+                repoFileLists.put(repo, List.of());
             }
         }
         
