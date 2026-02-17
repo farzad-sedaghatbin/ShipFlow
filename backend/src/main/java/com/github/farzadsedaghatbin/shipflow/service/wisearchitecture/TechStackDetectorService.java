@@ -275,6 +275,7 @@ public class TechStackDetectorService {
             
             List<String> matchedFiles = new ArrayList<>();
             int matchCount = 0;
+            boolean earlyTerminated = false;
             
             // OPTIMIZATION: First check files with relevant extensions only
             extensionLoop:
