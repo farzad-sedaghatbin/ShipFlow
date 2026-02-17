@@ -96,7 +96,7 @@ public class GitHubMcpProvider implements McpClientService {
                 "jsonrpc", "2.0",
                 "method", "tools/call",
                 "params", params,
-                "id", System.currentTimeMillis()
+                "id", java.util.UUID.randomUUID().toString()
             );
 
             HttpEntity<Map<String, Object>> entity = createJsonEntity(request);
@@ -198,7 +198,7 @@ public class GitHubMcpProvider implements McpClientService {
                 "jsonrpc", "2.0",
                 "method", "tools/call",
                 "params", params,
-                "id", System.currentTimeMillis()
+                "id", java.util.UUID.randomUUID().toString()
             );
 
             HttpEntity<Map<String, Object>> entity = createJsonEntity(request);
@@ -263,7 +263,7 @@ public class GitHubMcpProvider implements McpClientService {
                 "jsonrpc", "2.0",
                 "method", "tools/call",
                 "params", params,
-                "id", System.currentTimeMillis()
+                "id", java.util.UUID.randomUUID().toString()
             );
 
             HttpEntity<Map<String, Object>> entity = createJsonEntity(request);
@@ -271,12 +271,40 @@ public class GitHubMcpProvider implements McpClientService {
                 url, HttpMethod.POST, entity,
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
-            if (response.getBody() != null && response.getBody().containsKey("matches")) {
-                Object matches = response.getBody().get("matches");
-                if (matches instanceof List) {
-                    log.debug("Found {} files matching pattern '{}' via MCP", 
-                        ((List<?>) matches).size(), pattern);
-                    return (List<String>) matches;
+            if (response.getBody() != null && response.getBody().containsKey("result")) {
+                Object result = response.getBody().get("result");
+                if (result instanceof Map) {
+                    Map<String, Object> resultMap = (Map<String, Object>) result;
+                    Object content = resultMap.get("content");
+                    if (content instanceof List) {
+                        List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
+                        List<String> matches = new ArrayList<>();
+                        
+                        for (Map<String, Object> item : contentList) {
+                            if (item == null) {
+                                continue;
+                            }
+                            Object textObj = item.get("text");
+                            if (textObj != null) {
+                                String text = textObj.toString().trim();
+                                if (!text.isEmpty()) {
+                                    // Parse each line as a matching file path
+                                    String[] lines = text.split("\\n");
+                                    for (String line : lines) {
+                                        String trimmed = line.trim();
+                                        if (!trimmed.isEmpty()) {
+                                            matches.add(trimmed);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!matches.isEmpty()) {
+                            log.debug("Found {} files matching pattern '{}' via MCP", matches.size(), pattern);
+                            return matches;
+                        }
+                    }
                 }
             }
 
@@ -318,7 +346,7 @@ public class GitHubMcpProvider implements McpClientService {
                 "jsonrpc", "2.0",
                 "method", "tools/call",
                 "params", params,
-                "id", System.currentTimeMillis()
+                "id", java.util.UUID.randomUUID().toString()
             );
 
             HttpEntity<Map<String, Object>> entity = createJsonEntity(request);
@@ -326,9 +354,12 @@ public class GitHubMcpProvider implements McpClientService {
                 url, HttpMethod.POST, entity,
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
-            if (response.getBody() != null) {
-                log.debug("Retrieved repository context for {}/{}", owner, repo);
-                return response.getBody();
+            if (response.getBody() != null && response.getBody().containsKey("result")) {
+                Object result = response.getBody().get("result");
+                if (result instanceof Map) {
+                    log.debug("Retrieved repository context for {}/{}", owner, repo);
+                    return (Map<String, Object>) result;
+                }
             }
 
             log.debug("No context returned from GitHub MCP for {}/{}", owner, repo);
@@ -379,7 +410,7 @@ public class GitHubMcpProvider implements McpClientService {
                 "jsonrpc", "2.0",
                 "method", "tools/call",
                 "params", params,
-                "id", System.currentTimeMillis()
+                "id", java.util.UUID.randomUUID().toString()
             );
 
             HttpEntity<Map<String, Object>> entity = createJsonEntity(request);
@@ -387,10 +418,26 @@ public class GitHubMcpProvider implements McpClientService {
                 url, HttpMethod.POST, entity,
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
-            if (response.getBody() != null && response.getBody().containsKey("files")) {
-                Object files = response.getBody().get("files");
-                if (files instanceof Map) {
-                    return (Map<String, String>) files;
+            if (response.getBody() != null && response.getBody().containsKey("result")) {
+                Object result = response.getBody().get("result");
+                if (result instanceof Map) {
+                    Map<String, Object> resultMap = (Map<String, Object>) result;
+                    Object content = resultMap.get("content");
+                    if (content instanceof List) {
+                        List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
+                        if (!contentList.isEmpty() && contentList.get(0).containsKey("text")) {
+                            String text = (String) contentList.get(0).get("text");
+                            // Parse the text as JSON map of file paths to contents
+                            try {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> filesMap = new com.fasterxml.jackson.databind.ObjectMapper()
+                                    .readValue(text, Map.class);
+                                return filesMap;
+                            } catch (Exception e) {
+                                log.debug("Failed to parse batch file response as JSON: {}", e.getMessage());
+                            }
+                        }
+                    }
                 }
             }
         } catch (RestClientException e) {

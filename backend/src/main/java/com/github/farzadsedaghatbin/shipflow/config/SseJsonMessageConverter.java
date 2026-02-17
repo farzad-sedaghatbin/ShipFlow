@@ -58,6 +58,7 @@ public class SseJsonMessageConverter extends AbstractGenericHttpMessageConverter
 
     private Object readFromStream(HttpInputMessage inputMessage) throws IOException {
         StringBuilder jsonData = new StringBuilder();
+        boolean jsonCollected = false;
         
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(inputMessage.getBody(), StandardCharsets.UTF_8))) {
@@ -68,7 +69,11 @@ public class SseJsonMessageConverter extends AbstractGenericHttpMessageConverter
                 if (line.startsWith("data: ")) {
                     String data = line.substring(6).trim();  // Remove "data: " prefix
                     if (!data.isEmpty() && !data.equals("[DONE]")) {
+                        // Collect only the first non-empty JSON message to avoid
+                        // concatenating multiple JSON roots (e.g., "{...}{...}").
                         jsonData.append(data);
+                        jsonCollected = true;
+                        break;
                     }
                 }
             }
