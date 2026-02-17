@@ -96,15 +96,21 @@ public class WiseArchitectureService {
         
         // Detect stacks in each repository
         List<DetectedStackDTO> allStacks = new ArrayList<>();
+        Map<Long, String> branchMap = request.getRepositoryBranches() != null 
+            ? request.getRepositoryBranches() 
+            : Map.of();
+        
         for (GitHubRepository repo : repositories) {
             // Clear cache if force re-detection is requested
             if (Boolean.TRUE.equals(request.getForceRedetection())) {
                 techStackDetectorService.clearCache(repo);
             }
             
-            // In a real implementation, this would use MCP to get the file list
-            // For now, we simulate with an empty list (stack detection will need actual MCP integration)
-            List<String> fileList = getRepositoryFileList(repo);
+            // Get custom branch for this repo, or use default
+            String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
+            
+            // Use MCP to get the file list with the specified branch
+            List<String> fileList = getRepositoryFileList(repo, branch);
             List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList);
             allStacks.addAll(repoStacks);
         }
@@ -163,6 +169,11 @@ public class WiseArchitectureService {
         int totalEstimatedHours = 0;
         boolean hasCodeContext = false;
         
+        // Get branch map for custom branches
+        Map<Long, String> branchMap = request.getRepositoryBranches() != null 
+            ? request.getRepositoryBranches() 
+            : Map.of();
+        
         for (TechStackType stackType : request.getSelectedStacks()) {
             // Find the repository for this stack (simplified - use first matching)
             GitHubRepository repo = repositories.isEmpty() ? null : repositories.get(0);
@@ -173,8 +184,11 @@ public class WiseArchitectureService {
                 .repositoryName(repo != null ? repo.getFullName() : "Unknown")
                 .build();
             
+            // Get custom branch for this repo
+            String branch = repo != null ? branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch()) : null;
+            
             // Get code context from repository (via MCP in real implementation)
-            String codeContext = getCodeContext(repo, stackType);
+            String codeContext = getCodeContext(repo, stackType, branch);
             List<String> existingServices = findExistingServices(repo, stackType);
             
             // Track if we have any code context
@@ -249,8 +263,11 @@ public class WiseArchitectureService {
     /**
      * Get repository file list via MCP.
      * Uses GitHub MCP provider to fetch actual repository file structure.
+     * 
+     * @param repo The repository to get files from
+     * @param branch The branch to use (if null, uses repo's default branch)
      */
-    private List<String> getRepositoryFileList(GitHubRepository repo) {
+    private List<String> getRepositoryFileList(GitHubRepository repo, String branch) {
         if (repo == null || repo.getFullName() == null) {
             log.debug("No repository provided for file listing");
             return List.of();
@@ -269,14 +286,19 @@ public class WiseArchitectureService {
             return List.of();
         }
 
+        // Use provided branch, or fall back to repo's default, or "main"
+        String effectiveBranch = branch != null && !branch.isBlank() 
+            ? branch 
+            : (repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main");
+
         Map<String, String> context = Map.of(
             "owner", parts[0],
             "repo", parts[1],
-            "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
+            "branch", effectiveBranch
         );
 
-        log.info("Fetching file list for {}/{} (branch: {}) via GitHub MCP", 
-            parts[0], parts[1], context.get("branch"));
+        log.info("Fetching file list for {} (branch: {}) via GitHub MCP", 
+            repo.getFullName(), effectiveBranch);
         
         List<String> files = githubMcpProvider.listFiles(context);
         
@@ -294,8 +316,12 @@ public class WiseArchitectureService {
     /**
      * Get code context from repository via MCP.
      * Reads relevant source files based on tech stack type.
+     * 
+     * @param repo The repository to get code from
+     * @param stackType The technology stack type to look for
+     * @param branch The branch to use (if null, uses repo's default branch)
      */
-    private String getCodeContext(GitHubRepository repo, TechStackType stackType) {
+    private String getCodeContext(GitHubRepository repo, TechStackType stackType, String branch) {
         if (repo == null || repo.getFullName() == null) {
             log.debug("No repository provided for code context");
             return "";
@@ -313,10 +339,15 @@ public class WiseArchitectureService {
             return "// Invalid repository format";
         }
 
+        // Use provided branch, or fall back to repo's default, or "main"
+        String effectiveBranch = branch != null && !branch.isBlank() 
+            ? branch 
+            : (repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main");
+
         Map<String, String> context = Map.of(
             "owner", parts[0],
             "repo", parts[1],
-            "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
+            "branch", effectiveBranch
         );
 
         // Get file patterns based on stack type
