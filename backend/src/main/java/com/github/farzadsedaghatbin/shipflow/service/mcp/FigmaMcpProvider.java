@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp;
 
+import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,18 +32,21 @@ public class FigmaMcpProvider implements McpClientService {
 
     private final McpConfig mcpConfig;
     private final RestTemplate mcpRestTemplate;
+    private final OrganizationSettingsService settingsService;
 
     // Figma URL patterns
     private static final Pattern FIGMA_FILE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?");
+        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
     private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?");
+        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
 
     public FigmaMcpProvider(
             McpConfig mcpConfig,
-            @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate) {
+            @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate,
+            OrganizationSettingsService settingsService) {
         this.mcpConfig = mcpConfig;
         this.mcpRestTemplate = mcpRestTemplate;
+        this.settingsService = settingsService;
     }
 
     @Override
@@ -234,11 +238,21 @@ public class FigmaMcpProvider implements McpClientService {
     }
 
     /**
-     * Create an HTTP entity with JSON content type headers.
+     * Create an HTTP entity with JSON content type and Authorization headers.
+     * Supports both header-based auth (preferred) and body-based auth (legacy).
      */
     private <T> HttpEntity<T> createJsonEntity(T body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        // Add Figma token for authentication
+        String figmaToken = settingsService.getFigmaAccessToken();
+        if (figmaToken != null && !figmaToken.isBlank()) {
+            headers.set("Authorization", "Bearer " + figmaToken);
+        } else {
+            log.warn("Figma access token not configured, MCP requests may fail");
+        }
+        
         return new HttpEntity<>(body, headers);
     }
 

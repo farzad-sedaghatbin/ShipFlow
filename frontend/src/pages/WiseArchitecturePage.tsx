@@ -15,6 +15,7 @@ import {
   Loader2,
   MessageSquare,
   RefreshCw,
+  Search,
   Send,
   Server,
   Smartphone,
@@ -112,6 +113,7 @@ const WiseArchitecturePage: React.FC = () => {
   // Step 2: Repository selection
   const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
   const [selectedRepoIds, setSelectedRepoIds] = useState<number[]>([]);
+  const [repoSearchQuery, setRepoSearchQuery] = useState('');
 
   // Step 3: Stack detection and selection
   const [detectedStacks, setDetectedStacks] = useState<DetectedStack[]>([]);
@@ -507,9 +509,23 @@ const WiseArchitecturePage: React.FC = () => {
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-2">
-                      {repositories.map(repo => (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t('common.search')}
+                        value={repoSearchQuery}
+                        onChange={(e) => setRepoSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {repositories
+                          .filter(repo => 
+                            repo.fullName.toLowerCase().includes(repoSearchQuery.toLowerCase())
+                          )
+                          .map(repo => (
                         <div
                           key={repo.id}
                           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -531,9 +547,10 @@ const WiseArchitecturePage: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </>
                 )}
 
                 <div className="flex gap-2">

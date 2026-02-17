@@ -28,6 +28,7 @@ import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { Checkbox } from '../components/ui/checkbox';
 import { MeetingListSkeleton } from '../components/Skeletons';
+import { Combobox } from '../components/ui/combobox';
 
 
 import { Card, CardContent } from '../components/ui/card';
@@ -973,24 +974,20 @@ export default function MeetingList() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="space-y-1">
                             <Label className="text-xs">{t('meetingList.actionItems.assignee')}</Label>
-                            <Select
+                            <Combobox
+                              options={[
+                                { value: 'none', label: t('meetingList.actionItems.unassigned') },
+                                ...persons.map((p) => ({ value: p.id.toString(), label: p.name }))
+                              ]}
                               value={action.assignedToId?.toString() || 'none'}
                               onValueChange={(value) => 
                                 updateAction(index, 'assignedToId', value === 'none' ? undefined : parseInt(value))
                               }
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder={t('meetingList.actionItems.unassigned')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">{t('meetingList.actionItems.unassigned')}</SelectItem>
-                                {persons.map((p) => (
-                                  <SelectItem key={p.id} value={p.id.toString()}>
-                                    {p.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              placeholder={t('meetingList.actionItems.unassigned')}
+                              searchPlaceholder={t('common.search')}
+                              emptyText={t('common.noResults')}
+                              triggerClassName="h-9"
+                            />
                           </div>
                           
                           <div className="space-y-1">

@@ -111,6 +111,11 @@ public class OrganizationSettingsService {
       settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
     }
 
+    // Figma MCP Configuration (token only, managed via MCP settings API)
+    if (request.getFigmaAccessToken() != null) {
+      settings.setFigmaAccessToken(request.getFigmaAccessToken());
+    }
+
     // GitHub MCP Configuration (token only, managed via MCP settings API)
     if (request.getGithubAccessToken() != null) {
       settings.setGithubAccessToken(request.getGithubAccessToken());
