@@ -3,7 +3,7 @@
 
 CREATE TABLE wise_architecture_advice (
     id BIGSERIAL PRIMARY KEY,
-    conversation_id VARCHAR(36) NOT NULL,
+    conversation_id VARCHAR(100) NOT NULL,
     pitch_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     message_type VARCHAR(50) NOT NULL,
@@ -20,7 +20,8 @@ CREATE TABLE wise_architecture_advice (
     feedback_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_advice_pitch FOREIGN KEY (pitch_id) REFERENCES pitch(id) ON DELETE CASCADE
+    CONSTRAINT fk_advice_pitch FOREIGN KEY (pitch_id) REFERENCES pitches(id) ON DELETE CASCADE,
+    CONSTRAINT fk_advice_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Index for fast lookups by user
