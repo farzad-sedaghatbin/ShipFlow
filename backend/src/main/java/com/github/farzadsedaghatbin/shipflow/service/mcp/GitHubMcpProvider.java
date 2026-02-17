@@ -298,6 +298,7 @@ public class GitHubMcpProvider implements McpClientService {
     private <T> HttpEntity<T> createJsonEntity(T body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept", "application/json, text/event-stream");
         
         // Add GitHub token for authentication
         String githubToken = settingsService.getGithubAccessToken();

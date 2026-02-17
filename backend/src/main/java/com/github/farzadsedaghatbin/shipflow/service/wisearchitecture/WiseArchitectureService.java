@@ -96,6 +96,11 @@ public class WiseArchitectureService {
         // Detect stacks in each repository
         List<DetectedStackDTO> allStacks = new ArrayList<>();
         for (GitHubRepository repo : repositories) {
+            // Clear cache if force re-detection is requested
+            if (Boolean.TRUE.equals(request.getForceRedetection())) {
+                techStackDetectorService.clearCache(repo);
+            }
+            
             // In a real implementation, this would use MCP to get the file list
             // For now, we simulate with an empty list (stack detection will need actual MCP integration)
             List<String> fileList = getRepositoryFileList(repo);

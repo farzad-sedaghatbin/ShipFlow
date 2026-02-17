@@ -218,6 +218,60 @@ class WiseArchitectureServiceTest {
             assertThat(response.getRepositoriesScanned()).isEqualTo(0);
             assertThat(response.getMessage()).contains("No valid repositories");
         }
+
+        @Test
+        @DisplayName("should clear cache when forceRedetection is true")
+        void shouldClearCacheWhenForceRedetection() {
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(techStackDetectorService.detectStacks(eq(testRepo), anyList()))
+                .thenReturn(List.of(
+                    DetectedStackDTO.builder()
+                        .stackType(TechStackType.BACKEND_JAVA)
+                        .confidence(90)
+                        .repositoryId(1L)
+                        .build()
+                ));
+
+            DetectStacksRequestDTO request = DetectStacksRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .forceRedetection(true)
+                .build();
+
+            service.detectStacks(request);
+
+            // Verify cache was cleared before detection
+            verify(techStackDetectorService).clearCache(testRepo);
+        }
+
+        @Test
+        @DisplayName("should not clear cache when forceRedetection is false")
+        void shouldNotClearCacheWhenNotForcing() {
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(techStackDetectorService.detectStacks(eq(testRepo), anyList()))
+                .thenReturn(List.of(
+                    DetectedStackDTO.builder()
+                        .stackType(TechStackType.BACKEND_JAVA)
+                        .confidence(90)
+                        .repositoryId(1L)
+                        .build()
+                ));
+
+            DetectStacksRequestDTO request = DetectStacksRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .forceRedetection(false)
+                .build();
+
+            service.detectStacks(request);
+
+            // Verify cache was NOT cleared
+            verify(techStackDetectorService, never()).clearCache(any());
+        }
     }
 
     @Nested

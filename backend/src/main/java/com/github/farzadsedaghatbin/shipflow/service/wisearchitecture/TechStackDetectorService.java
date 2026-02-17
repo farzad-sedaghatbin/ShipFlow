@@ -2,22 +2,31 @@ package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.DetectedStackDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.TechStackType;
+import com.github.farzadsedaghatbin.shipflow.entity.RepositoryTechStack;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.RepositoryTechStackRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service for detecting technology stacks in repositories.
  * Uses file patterns and project structure to identify tech stacks.
+ * Caches detected stacks to avoid repeated detection.
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TechStackDetectorService {
+
+    private final RepositoryTechStackRepository techStackRepository;
 
     // File patterns for stack detection
     private static final Map<TechStackType, List<Pattern>> STACK_PATTERNS = new HashMap<>();
@@ -121,14 +130,25 @@ public class TechStackDetectorService {
 
     /**
      * Detect technology stacks in a repository based on file structure.
+     * Uses cached results if available, otherwise performs detection and caches the result.
      *
      * @param repository the GitHub repository to analyze
      * @param fileList list of file paths in the repository (from MCP)
      * @return list of detected technology stacks
      */
+    @Transactional
     public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList) {
         log.info("Detecting tech stacks in repository: {}", repository.getFullName());
         
+        // Check if we have cached results
+        List<RepositoryTechStack> cachedStacks = techStackRepository.findByRepository(repository);
+        if (!cachedStacks.isEmpty()) {
+            log.info("Using cached tech stacks for repository: {} ({} stacks)", 
+                repository.getFullName(), cachedStacks.size());
+            return convertCachedToDTO(cachedStacks);
+        }
+        
+        log.info("No cached stacks found, performing detection for: {}", repository.getFullName());
         List<DetectedStackDTO> detectedStacks = new ArrayList<>();
         
         for (Map.Entry<TechStackType, List<Pattern>> entry : STACK_PATTERNS.entrySet()) {
@@ -183,7 +203,63 @@ public class TechStackDetectorService {
             repository.getFullName(),
             detectedStacks.stream().map(d -> d.getStackType().name()).toList());
         
+        // Cache the detected stacks
+        cacheDetectedStacks(repository, detectedStacks);
+        
         return detectedStacks;
+    }
+
+    /**
+     * Force re-detection of tech stacks for a repository by clearing the cache.
+     * Useful when repository structure has changed significantly.
+     *
+     * @param repository the repository to clear cache for
+     */
+    @Transactional
+    public void clearCache(GitHubRepository repository) {
+        log.info("Clearing tech stack cache for repository: {}", repository.getFullName());
+        techStackRepository.deleteByRepository(repository);
+    }
+
+    /**
+     * Convert cached stack entities to DTOs.
+     */
+    private List<DetectedStackDTO> convertCachedToDTO(List<RepositoryTechStack> cachedStacks) {
+        return cachedStacks.stream()
+            .map(cached -> DetectedStackDTO.builder()
+                .stackType(cached.getStackType())
+                .confidence(cached.getConfidenceScore())
+                .keyFilesFound(cached.getDetectedByFiles() != null 
+                    ? List.of(cached.getDetectedByFiles().split(","))
+                    : List.of())
+                .primaryLanguage(getPrimaryLanguage(cached.getStackType()))
+                .framework(cached.getStackType().getDisplayName())
+                .repositoryId(cached.getRepository().getId())
+                .repositoryName(cached.getRepository().getFullName())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Cache detected stacks for future use.
+     */
+    private void cacheDetectedStacks(GitHubRepository repository, List<DetectedStackDTO> detectedStacks) {
+        List<RepositoryTechStack> entitiesToSave = detectedStacks.stream()
+            .map(dto -> RepositoryTechStack.builder()
+                .repository(repository)
+                .stackType(dto.getStackType())
+                .confidenceScore(dto.getConfidence())
+                .detectedByFiles(dto.getKeyFilesFound() != null 
+                    ? String.join(",", dto.getKeyFilesFound())
+                    : null)
+                .build())
+            .collect(Collectors.toList());
+        
+        if (!entitiesToSave.isEmpty()) {
+            techStackRepository.saveAll(entitiesToSave);
+            log.info("Cached {} tech stacks for repository: {}", 
+                entitiesToSave.size(), repository.getFullName());
+        }
     }
 
     /**
