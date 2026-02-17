@@ -103,10 +103,7 @@ public class FigmaMcpProvider implements McpClientService {
             String url = mcpConfig.getFigma().getServerUrl() + "/mcp/v1/tools/call";
             
             Map<String, Object> arguments = new HashMap<>();
-            arguments.put("file_key", fileKey);
-            if (accessToken != null) {
-                arguments.put("access_token", accessToken);
-            }
+            arguments.put("fileKey", fileKey);
             
             Map<String, Object> params = Map.of(
                 "name", "list_pages",
@@ -179,11 +176,8 @@ public class FigmaMcpProvider implements McpClientService {
             String url = mcpConfig.getFigma().getServerUrl() + "/mcp/v1/tools/call";
             
             Map<String, Object> arguments = new HashMap<>();
-            arguments.put("file_key", fileKey);
-            arguments.put("node_id", nodePath);
-            if (accessToken != null) {
-                arguments.put("access_token", accessToken);
-            }
+            arguments.put("fileKey", fileKey);
+            arguments.put("nodeId", nodePath);
             
             Map<String, Object> params = Map.of(
                 "name", "get_node",
@@ -243,11 +237,8 @@ public class FigmaMcpProvider implements McpClientService {
             String url = mcpConfig.getFigma().getServerUrl() + "/mcp/v1/tools/call";
             
             Map<String, Object> arguments = new HashMap<>();
-            arguments.put("file_key", fileKey);
-            arguments.put("pattern", pattern);
-            if (accessToken != null) {
-                arguments.put("access_token", accessToken);
-            }
+            arguments.put("fileKey", fileKey);
+            arguments.put("query", query);
             
             Map<String, Object> params = Map.of(
                 "name", "search_nodes",
@@ -343,18 +334,14 @@ public class FigmaMcpProvider implements McpClientService {
             String url = mcpConfig.getFigma().getServerUrl() + "/mcp/v1/tools/call";
             
             Map<String, Object> arguments = new HashMap<>();
-            arguments.put("file_key", fileKey);
-            if (accessToken != null) {
-                arguments.put("access_token", accessToken);
-            }
-            // Include node_id if provided to focus on specific frame/component
+            arguments.put("fileKey", fileKey);
+            // Include nodeId if provided to focus on specific frame/component
             if (nodeId != null && !nodeId.isBlank()) {
-                arguments.put("node_id", nodeId);
-                arguments.put("depth", 2); // Get some depth for the specific node
+                arguments.put("nodeId", nodeId);
             }
             
             Map<String, Object> params = Map.of(
-                "name", nodeId != null && !nodeId.isBlank() ? "get_node" : "get_design_context",
+                "name", "get_design_context",
                 "arguments", arguments
             );
             
