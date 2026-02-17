@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import {
   ArrowLeft,
   Brain,
@@ -397,15 +398,7 @@ const AdviceHistoryPage: React.FC = () => {
                       </div>
                     )}
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <div
-                        className="whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{
-                          __html: item.aiResponse
-                            .replace(/^## /gm, '<h3 class="text-lg font-semibold mt-4 mb-2">')
-                            .replace(/^### /gm, '<h4 class="text-base font-medium mt-3 mb-1">')
-                            .replace(/\n/g, '<br/>'),
-                        }}
-                      />
+                      <ReactMarkdown>{item.aiResponse}</ReactMarkdown>
                     </div>
                     {item.feedbackText && (
                       <div className="mt-4 p-3 bg-muted rounded-lg">
