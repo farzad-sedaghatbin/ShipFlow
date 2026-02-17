@@ -1,25 +1,38 @@
 package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.DetectedStackDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.TechStackType;
+import com.github.farzadsedaghatbin.shipflow.entity.RepositoryTechStack;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.RepositoryTechStackRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("TechStackDetectorService")
 class TechStackDetectorServiceTest {
 
+    @Mock
+    private RepositoryTechStackRepository techStackRepository;
+
+    @InjectMocks
     private TechStackDetectorService service;
+
     private GitHubRepository testRepo;
 
     @BeforeEach
     void setUp() {
-        service = new TechStackDetectorService();
         testRepo = GitHubRepository.builder()
             .id(1L)
             .owner("test")
@@ -35,6 +48,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Java/Spring backend stack")
         void shouldDetectJavaSpringStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "pom.xml",
                 "src/main/java/com/example/Application.java",
@@ -55,11 +70,15 @@ class TechStackDetectorServiceTest {
             assertThat(javaStack.getConfidence()).isGreaterThanOrEqualTo(30);
             assertThat(javaStack.getPrimaryLanguage()).isEqualTo("Java");
             assertThat(javaStack.getRepositoryId()).isEqualTo(1L);
+            
+            verify(techStackRepository).saveAll(anyList());
         }
 
         @Test
         @DisplayName("should detect React web stack")
         void shouldDetectReactStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "package.json",
                 "src/App.tsx",
@@ -77,6 +96,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Kotlin/Android mobile stack")
         void shouldDetectKotlinAndroidStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "build.gradle.kts",
                 "app/src/main/AndroidManifest.xml",
@@ -100,6 +121,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Swift/iOS mobile stack")
         void shouldDetectSwiftIOSStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "Package.swift",
                 "Sources/App/ContentView.swift",
@@ -115,6 +138,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Node.js backend stack")
         void shouldDetectNodeStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "package.json",
                 "server.js",
@@ -131,6 +156,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Python backend stack")
         void shouldDetectPythonStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "requirements.txt",
                 "app.py",
@@ -147,6 +174,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Angular web stack")
         void shouldDetectAngularStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "angular.json",
                 "package.json",
@@ -163,6 +192,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect Flutter mobile stack")
         void shouldDetectFlutterStack() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "pubspec.yaml",
                 "lib/main.dart",
@@ -178,6 +209,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should detect multiple stacks in full-stack project")
         void shouldDetectMultipleStacks() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 // Backend (Java)
                 "backend/pom.xml",
@@ -199,6 +232,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should return empty list for unknown project structure")
         void shouldReturnEmptyForUnknownStructure() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "README.md",
                 "LICENSE",
@@ -213,6 +248,8 @@ class TechStackDetectorServiceTest {
         @Test
         @DisplayName("should include key files in result")
         void shouldIncludeKeyFilesInResult() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
             List<String> files = List.of(
                 "pom.xml",
                 "src/main/java/Application.java"
@@ -223,6 +260,61 @@ class TechStackDetectorServiceTest {
             assertThat(stacks).isNotEmpty();
             DetectedStackDTO stack = stacks.get(0);
             assertThat(stack.getKeyFilesFound()).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("should use cached stacks when available")
+        void shouldUseCachedStacks() {
+            RepositoryTechStack cachedStack = RepositoryTechStack.builder()
+                .id(1L)
+                .repository(testRepo)
+                .stackType(TechStackType.BACKEND_JAVA)
+                .confidenceScore(95)
+                .detectedByFiles("pom.xml,src/main/java/Application.java")
+                .build();
+            
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of(cachedStack));
+
+            List<String> files = List.of("pom.xml", "src/main/java/Application.java");
+            List<DetectedStackDTO> stacks = service.detectStacks(testRepo, files);
+
+            assertThat(stacks).hasSize(1);
+            assertThat(stacks.get(0).getStackType()).isEqualTo(TechStackType.BACKEND_JAVA);
+            assertThat(stacks.get(0).getConfidence()).isEqualTo(95);
+            
+            verify(techStackRepository, never()).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("should cache detected stacks for future use")
+        void shouldCacheDetectedStacks() {
+            when(techStackRepository.findByRepository(testRepo)).thenReturn(List.of());
+            
+            List<String> files = List.of("pom.xml", "src/main/java/Application.java");
+            service.detectStacks(testRepo, files);
+
+            verify(techStackRepository).saveAll(argThat(list -> {
+                if (list instanceof List) {
+                    List<?> l = (List<?>) list;
+                    return !l.isEmpty() && 
+                        l.get(0) instanceof RepositoryTechStack &&
+                        ((RepositoryTechStack) l.get(0)).getStackType() == TechStackType.BACKEND_JAVA;
+                }
+                return false;
+            }));
+        }
+    }
+
+    @Nested
+    @DisplayName("clearCache")
+    class ClearCache {
+
+        @Test
+        @DisplayName("should clear cache for repository")
+        void shouldClearCacheForRepository() {
+            service.clearCache(testRepo);
+
+            verify(techStackRepository).deleteByRepository(testRepo);
         }
     }
 

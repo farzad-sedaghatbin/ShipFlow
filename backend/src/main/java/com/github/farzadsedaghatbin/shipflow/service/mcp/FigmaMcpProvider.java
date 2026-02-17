@@ -244,6 +244,7 @@ public class FigmaMcpProvider implements McpClientService {
     private <T> HttpEntity<T> createJsonEntity(T body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept", "application/json, text/event-stream");
         
         // Add Figma token for authentication
         String figmaToken = settingsService.getFigmaAccessToken();

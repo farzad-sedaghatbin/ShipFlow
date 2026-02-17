@@ -28,4 +28,11 @@ public class DetectStacksRequestDTO {
      */
     @NotEmpty(message = "At least one repository is required")
     private List<Long> repositoryIds;
+
+    /**
+     * Force re-detection of stacks even if cached results exist.
+     * Set to true to ignore cache and perform fresh detection.
+     */
+    @Builder.Default
+    private Boolean forceRedetection = false;
 }
