@@ -1611,7 +1611,7 @@ export interface TimelineRelease {
   targetDate?: string;
   releaseDate?: string;
   riskLevel: string;
-  progressPercentage: number;
+  progress: number;
 }
 
 /**

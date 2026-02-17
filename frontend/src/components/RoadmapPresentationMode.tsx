@@ -351,7 +351,7 @@ export default function RoadmapPresentationMode({
                             <TooltipContent className="text-base p-4">
                               <p className="font-bold text-lg">{release.name} ({release.version})</p>
                               <p>{t('roadmap.targetDate')}: {formatLocalizedDate(release.targetDate || '', i18n.language)}</p>
-                              <p>{t('roadmap.progress')}: {Math.round(release.progressPercentage || 0)}%</p>
+                              <p>{t('roadmap.progress')}: {Math.round(release.progress)}%</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

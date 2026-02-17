@@ -14,14 +14,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
 public class BettingTableService {
 
   private final BettingSlotRepository bettingSlotRepository;
@@ -41,22 +39,10 @@ public class BettingTableService {
     // These are pitches from the same project as this cycle
     List<Pitch> shapedPitches;
     if (cycle.getProject() != null) {
-      log.info("Finding betting candidates for project ID: {}, project name: {}", 
-          cycle.getProject().getId(), cycle.getProject().getName());
       shapedPitches = pitchRepository.findBettingCandidatesByProjectId(cycle.getProject().getId());
-      log.info("Found {} SHAPED pitches for project {}: {}", 
-          shapedPitches.size(), 
-          cycle.getProject().getName(),
-          shapedPitches.stream()
-              .map(p -> String.format("ID=%d, title='%s', epic=%s, deleted=%s", 
-                  p.getId(), p.getTitle(), 
-                  p.getEpic() != null ? "epicId=" + p.getEpic().getId() : "null",
-                  p.getDeletedAt() != null ? "YES" : "NO"))
-              .collect(Collectors.joining("; ")));
     } else {
       // Fallback: get all shaped pitches without a cycle
       shapedPitches = pitchRepository.findBettingCandidates();
-      log.info("Found {} SHAPED pitches (no project filter)", shapedPitches.size());
     }
     List<BettingSlot> allSlots = bettingSlotRepository.findByCycleId(cycleId);
 
