@@ -157,8 +157,8 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
   List<Pitch> findAllIdeas();
 
-  /** Find ideas for a specific project via their epic's project. */
-  @Query("SELECT p FROM Pitch p WHERE p.status = 'IDEA' AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+  /** Find ideas for a specific project via their epic's project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT p FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'IDEA' AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
   List<Pitch> findIdeasByProjectId(@Param("projectId") Long projectId);
 
   /** Find ideas for a specific epic. */
@@ -171,8 +171,8 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.status = 'DRAFT' AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
   List<Pitch> findAllDrafts();
 
-  /** Find drafts for a specific project. */
-  @Query("SELECT p FROM Pitch p WHERE p.status = 'DRAFT' AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  /** Find drafts for a specific project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT p FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'DRAFT' AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
   List<Pitch> findDraftsByProjectId(@Param("projectId") Long projectId);
 
   /** Find drafts for a specific epic. */
@@ -185,8 +185,8 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
   List<Pitch> findBettingCandidates();
 
-  /** Find betting candidates for a specific project. */
-  @Query("SELECT p FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
+  /** Find betting candidates for a specific project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT p FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.updatedAt DESC")
   List<Pitch> findBettingCandidatesByProjectId(@Param("projectId") Long projectId);
 
   /** Find betting candidates for a specific epic. */
@@ -199,23 +199,23 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
   List<Pitch> findAllUnassigned();
 
-  /** Find unassigned pitches for a specific project. */
-  @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
+  /** Find unassigned pitches for a specific project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT p FROM Pitch p LEFT JOIN p.epic e WHERE p.cycle IS NULL AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
   List<Pitch> findUnassignedByProjectId(@Param("projectId") Long projectId);
 
   /** Find unassigned pitches for a specific epic. */
   @Query("SELECT p FROM Pitch p WHERE p.cycle IS NULL AND p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.status, p.updatedAt DESC")
   List<Pitch> findUnassignedByEpicId(@Param("epicId") Long epicId);
 
-  /** Count ideas for a project. */
-  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'IDEA' AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL")
+  /** Count ideas for a project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT COUNT(p) FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'IDEA' AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL")
   long countIdeasByProjectId(@Param("projectId") Long projectId);
 
-  /** Count drafts for a project. */
-  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'DRAFT' AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL")
+  /** Count drafts for a project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT COUNT(p) FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'DRAFT' AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL")
   long countDraftsByProjectId(@Param("projectId") Long projectId);
 
-  /** Count betting candidates for a project. */
-  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND (p.epic IS NULL OR p.epic.project.id = :projectId) AND p.deletedAt IS NULL")
+  /** Count betting candidates for a project. Uses LEFT JOIN to include pitches with no epic. */
+  @Query("SELECT COUNT(p) FROM Pitch p LEFT JOIN p.epic e WHERE p.status = 'SHAPED' AND p.cycle IS NULL AND (p.epic IS NULL OR e.project.id = :projectId) AND p.deletedAt IS NULL")
   long countBettingCandidatesByProjectId(@Param("projectId") Long projectId);
 }
