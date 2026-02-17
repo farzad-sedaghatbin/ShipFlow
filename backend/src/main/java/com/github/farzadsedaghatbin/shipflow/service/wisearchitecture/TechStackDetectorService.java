@@ -138,7 +138,18 @@ public class TechStackDetectorService {
      */
     @Transactional
     public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList) {
-        log.info("Detecting tech stacks in repository: {}", repository.getFullName());
+        log.info("Detecting tech stacks in repository: {} with {} files", 
+            repository.getFullName(), fileList != null ? fileList.size() : 0);
+        
+        if (fileList == null || fileList.isEmpty()) {
+            log.warn("File list is empty for repository: {}, cannot detect tech stacks", 
+                repository.getFullName());
+            return List.of();
+        }
+        
+        log.debug("Sample files from repository {}: {}", 
+            repository.getFullName(),
+            fileList.stream().limit(20).collect(java.util.stream.Collectors.joining(", ")));
         
         // Check if we have cached results
         List<RepositoryTechStack> cachedStacks = techStackRepository.findByRepository(repository);
@@ -226,22 +237,39 @@ public class TechStackDetectorService {
      */
     private List<DetectedStackDTO> convertCachedToDTO(List<RepositoryTechStack> cachedStacks) {
         return cachedStacks.stream()
-            .map(cached -> DetectedStackDTO.builder()
-                .stackType(cached.getStackType())
-                .confidence(cached.getConfidenceScore())
-                .keyFilesFound(cached.getDetectedByFiles() != null 
-                    ? List.of(cached.getDetectedByFiles().split(","))
-                    : List.of())
-                .primaryLanguage(getPrimaryLanguage(cached.getStackType()))
-                .framework(cached.getStackType().getDisplayName())
-                .repositoryId(cached.getRepository().getId())
-                .repositoryName(cached.getRepository().getFullName())
-                .build())
+            .map(cached -> {
+                List<String> keyFiles = cached.getDetectedByFiles() != null 
+                    ? java.util.Arrays.stream(cached.getDetectedByFiles().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList())
+                    : List.of();
+                
+                // Use persisted values if available, otherwise fall back to computed values
+                String framework = cached.getFramework() != null 
+                    ? cached.getFramework() 
+                    : detectFramework(cached.getStackType(), keyFiles);
+                
+                String primaryLanguage = cached.getPrimaryLanguage() != null
+                    ? cached.getPrimaryLanguage()
+                    : getPrimaryLanguage(cached.getStackType());
+                
+                return DetectedStackDTO.builder()
+                    .stackType(cached.getStackType())
+                    .confidence(cached.getConfidenceScore())
+                    .keyFilesFound(keyFiles)
+                    .primaryLanguage(primaryLanguage)
+                    .framework(framework)
+                    .repositoryId(cached.getRepository().getId())
+                    .repositoryName(cached.getRepository().getFullName())
+                    .build();
+            })
             .collect(Collectors.toList());
     }
 
     /**
      * Cache detected stacks for future use.
+     * Handles concurrent requests gracefully by catching constraint violations.
      */
     private void cacheDetectedStacks(GitHubRepository repository, List<DetectedStackDTO> detectedStacks) {
         List<RepositoryTechStack> entitiesToSave = detectedStacks.stream()
@@ -252,13 +280,21 @@ public class TechStackDetectorService {
                 .detectedByFiles(dto.getKeyFilesFound() != null 
                     ? String.join(",", dto.getKeyFilesFound())
                     : null)
+                .framework(dto.getFramework())
+                .primaryLanguage(dto.getPrimaryLanguage())
                 .build())
             .collect(Collectors.toList());
         
         if (!entitiesToSave.isEmpty()) {
-            techStackRepository.saveAll(entitiesToSave);
-            log.info("Cached {} tech stacks for repository: {}", 
-                entitiesToSave.size(), repository.getFullName());
+            try {
+                techStackRepository.saveAll(entitiesToSave);
+                log.info("Cached {} tech stacks for repository: {}", 
+                    entitiesToSave.size(), repository.getFullName());
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // Race condition: another request already cached these stacks
+                log.debug("Tech stacks already cached for repository {} (concurrent request): {}", 
+                    repository.getFullName(), e.getMessage());
+            }
         }
     }
 

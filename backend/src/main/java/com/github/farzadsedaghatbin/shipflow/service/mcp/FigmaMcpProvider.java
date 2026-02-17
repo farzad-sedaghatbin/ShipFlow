@@ -113,10 +113,24 @@ public class FigmaMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                        if (!contentList.isEmpty() && contentList.get(0).containsKey("text")) {
-                            log.debug("Retrieved pages from Figma MCP");
-                            // For now, return empty - we'll need to parse the actual format
-                            return List.of();
+                        List<String> pages = new ArrayList<>();
+                        
+                        for (Map<String, Object> item : contentList) {
+                            if (item == null) {
+                                continue;
+                            }
+                            Object textObj = item.get("text");
+                            if (textObj != null) {
+                                String text = textObj.toString().trim();
+                                if (!text.isEmpty()) {
+                                    pages.add(text);
+                                }
+                            }
+                        }
+                        
+                        if (!pages.isEmpty()) {
+                            log.debug("Retrieved {} pages from Figma MCP", pages.size());
+                            return pages;
                         }
                     }
                 }
@@ -240,10 +254,24 @@ public class FigmaMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                        if (!contentList.isEmpty() && contentList.get(0).containsKey("text")) {
-                            log.debug("Found nodes matching pattern '{}' via Figma MCP", pattern);
-                            // For now, return empty - we'll need to parse the actual format
-                            return List.of();
+                        List<String> matches = new ArrayList<>();
+                        
+                        for (Map<String, Object> item : contentList) {
+                            if (item == null) {
+                                continue;
+                            }
+                            Object textObj = item.get("text");
+                            if (textObj != null) {
+                                String text = textObj.toString().trim();
+                                if (!text.isEmpty()) {
+                                    matches.add(text);
+                                }
+                            }
+                        }
+                        
+                        if (!matches.isEmpty()) {
+                            log.debug("Found {} nodes matching pattern '{}' via Figma MCP", matches.size(), pattern);
+                            return matches;
                         }
                     }
                 }
