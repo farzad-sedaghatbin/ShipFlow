@@ -844,8 +844,7 @@ public class WiseArchitectureService {
             GitHubRepository repo = repositories.get(i);
             String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
             
-            int progressPercent = 10 + (int) ((i * 1.0 / totalRepos) * 45);
-            callback.onProgress(progressPercent, 
+            callback.onProgress(10 + (int) ((i * 1.0 / totalRepos) * 45), 
                 String.format("Fetching files from %s (%d/%d)...", repo.getName(), i + 1, totalRepos));
             
             try {
@@ -858,7 +857,9 @@ public class WiseArchitectureService {
                     repoPackageJsons.put(repo, packageJsonContent);
                 }
                 
-                callback.onProgress(progressPercent + 5, 
+                // Report progress after completion
+                int completedPercent = 10 + (int) (((i + 1) * 1.0 / totalRepos) * 45);
+                callback.onProgress(completedPercent, 
                     String.format("Listed %d files from %s (%d/%d)", 
                         fileList.size(), repo.getName(), i + 1, totalRepos));
             } catch (Exception e) {
