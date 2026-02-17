@@ -34,11 +34,11 @@ public class FigmaMcpProvider implements McpClientService {
     private final RestTemplate mcpRestTemplate;
     private final OrganizationSettingsService settingsService;
 
-    // Figma URL patterns
+    // Figma URL patterns - file keys are typically 22-24 characters: letters, numbers, hyphens
     private static final Pattern FIGMA_FILE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
+        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
     private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
+        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
 
     public FigmaMcpProvider(
             McpConfig mcpConfig,
@@ -289,14 +289,31 @@ public class FigmaMcpProvider implements McpClientService {
     @Override
     public Map<String, Object> getResourceContext(Map<String, String> context) {
         if (!isAvailable()) {
-            log.warn("Figma MCP not available, cannot get design context");
-            return Map.of();
+            log.warn("Figma MCP not available, cannot get design context. " +
+                "Enable in Organization Settings > Integrations > Figma MCP");
+            return Map.of("error", "Figma MCP not configured");
         }
 
         String fileKey = context.get("fileKey");
         String accessToken = context.get("accessToken");
+        
+        // Validate file key format (Figma file keys are 22 alphanumeric characters)
+        if (fileKey == null || fileKey.length() < 10 || fileKey.length() > 30) {
+            log.warn("Invalid Figma file key format: '{}'. Expected 22 alphanumeric characters.", 
+                fileKey != null ? fileKey : "null");
+            return Map.of("error", "Invalid Figma file key format");
+        }
 
         log.info("Getting design context for Figma file {} via MCP", fileKey);
+
+        // Check if Figma token is configured
+        String figmaToken = settingsService.getFigmaAccessToken();
+        if ((figmaToken == null || figmaToken.isBlank()) && (accessToken == null || accessToken.isBlank())) {
+            log.warn("Figma access token not configured. Set via Organization Settings > Integrations > Figma. " +
+                "Design context will be unavailable.");
+            return Map.of("error", "Figma access token not configured", 
+                "suggestion", "Configure Figma token in Organization Settings > Integrations");
+        }
 
         try {
             String url = mcpConfig.getFigma().getServerUrl() + "/mcp/v1/tools/call";
@@ -336,9 +353,25 @@ public class FigmaMcpProvider implements McpClientService {
             log.debug("No context returned from Figma MCP for file: {}", fileKey);
             return Map.of();
 
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+            log.warn("Figma file not found or not accessible: {}. " +
+                "Verify: (1) file key is correct, (2) Figma token has access to this file, (3) file exists. " +
+                "Full URL may help: https://www.figma.com/file/{}", fileKey, fileKey);
+            return Map.of("error", "Figma file not found or not accessible: " + fileKey,
+                "suggestion", "Check Figma token permissions and file sharing settings");
+        } catch (org.springframework.web.client.HttpClientErrorException.Unauthorized e) {
+            log.warn("Figma authentication failed for file: {}. " +
+                "The configured Figma token may be invalid or expired.", fileKey);
+            return Map.of("error", "Figma authentication failed",
+                "suggestion", "Update Figma access token in Organization Settings");
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            log.warn("Cannot connect to Figma MCP server: {}. Server may be down or unreachable.", 
+                e.getMessage());
+            return Map.of("error", "Figma MCP server unavailable",
+                "suggestion", "Check MCP server status and network connectivity");
         } catch (RestClientException e) {
             log.error("Failed to get design context via Figma MCP: {}", e.getMessage());
-            return Map.of();
+            return Map.of("error", "Figma MCP request failed: " + e.getMessage());
         }
     }
 

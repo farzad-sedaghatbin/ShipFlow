@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.AsyncWiseArchitectureService;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureJob;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,9 +11,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST controller for the Wise Architecture feature.
@@ -25,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class WiseArchitectureController {
 
     private final WiseArchitectureService wiseArchitectureService;
+    private final AsyncWiseArchitectureService asyncService;
 
     @PostMapping("/detect-stacks")
     @Operation(summary = "Detect technology stacks in repositories",
@@ -116,5 +123,208 @@ public class WiseArchitectureController {
     public static class FeatureStatusDTO {
         private Boolean enabled;
         private String message;
+    }
+
+    // =====================================================================
+    // ASYNC ENDPOINTS - For large repositories that may timeout
+    // =====================================================================
+
+    @PostMapping("/async/detect-stacks")
+    @Operation(summary = "Start async stack detection",
+        description = "Starts an asynchronous stack detection job. Returns immediately with a job ID " +
+            "that can be used to poll for status and results. Use this for large repositories.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "202", description = "Job accepted and started"),
+        @ApiResponse(responseCode = "403", description = "Feature is not enabled"),
+        @ApiResponse(responseCode = "409", description = "Duplicate request - job already in progress")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
+    public ResponseEntity<JobStartResponseDTO> startDetectStacksAsync(
+            @Valid @RequestBody DetectStacksRequestDTO request) {
+        
+        log.info("Starting async stack detection for pitch {} in {} repositories", 
+            request.getPitchId(), request.getRepositoryIds().size());
+        
+        // Check feature enabled first
+        wiseArchitectureService.checkFeatureEnabled();
+        
+        String jobId = asyncService.startDetectStacks(request);
+        
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+            .body(JobStartResponseDTO.builder()
+                .jobId(jobId)
+                .status("PENDING")
+                .message("Stack detection job started")
+                .build());
+    }
+
+    @PostMapping("/async/analyze")
+    @Operation(summary = "Start async solution generation",
+        description = "Starts an asynchronous solution generation job. Returns immediately with a job ID " +
+            "that can be used to poll for status and results. Use this for complex analyses.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "202", description = "Job accepted and started"),
+        @ApiResponse(responseCode = "403", description = "Feature is not enabled"),
+        @ApiResponse(responseCode = "409", description = "Duplicate request - job already in progress")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
+    public ResponseEntity<JobStartResponseDTO> startAnalyzeAsync(
+            @Valid @RequestBody WiseArchitectureRequestDTO request) {
+        
+        log.info("Starting async solution generation for pitch {} with stacks: {}", 
+            request.getPitchId(), request.getSelectedStacks());
+        
+        // Check feature enabled first
+        wiseArchitectureService.checkFeatureEnabled();
+        
+        String jobId = asyncService.startAnalyze(request);
+        
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+            .body(JobStartResponseDTO.builder()
+                .jobId(jobId)
+                .status("PENDING")
+                .message("Solution generation job started")
+                .build());
+    }
+
+    @GetMapping("/jobs/{jobId}/status")
+    @Operation(summary = "Get job status",
+        description = "Returns the current status and progress of a job")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Job status returned"),
+        @ApiResponse(responseCode = "404", description = "Job not found")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
+    public ResponseEntity<JobStatusResponseDTO> getJobStatus(@PathVariable String jobId) {
+        Optional<AsyncWiseArchitectureService.JobStatusResponse> jobOpt = asyncService.getJobStatus(jobId);
+        
+        if (jobOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        AsyncWiseArchitectureService.JobStatusResponse job = jobOpt.get();
+        return ResponseEntity.ok(JobStatusResponseDTO.builder()
+            .jobId(job.getJobId())
+            .jobType(job.getJobType())
+            .status(job.getStatus().name())
+            .progress(job.getProgress())
+            .progressMessage(job.getProgressMessage())
+            .createdAt(job.getCreatedAt())
+            .completedAt(job.getCompletedAt())
+            .errorMessage(job.getErrorMessage())
+            .build());
+    }
+
+    @GetMapping("/jobs/{jobId}/result")
+    @Operation(summary = "Get job result",
+        description = "Returns the result of a completed job")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Job result returned"),
+        @ApiResponse(responseCode = "202", description = "Job still in progress"),
+        @ApiResponse(responseCode = "404", description = "Job not found"),
+        @ApiResponse(responseCode = "500", description = "Job failed")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
+    public ResponseEntity<?> getJobResult(@PathVariable String jobId) {
+        Optional<AsyncWiseArchitectureService.JobStatusResponse> statusOpt = asyncService.getJobStatus(jobId);
+        
+        if (statusOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        AsyncWiseArchitectureService.JobStatusResponse status = statusOpt.get();
+        
+        switch (status.getStatus()) {
+            case COMPLETED:
+                // Get the actual result based on job type
+                if ("detect_stacks".equals(status.getJobType())) {
+                    return asyncService.getDetectStacksResult(jobId)
+                        .map(ResponseEntity::ok)
+                        .orElse(ResponseEntity.notFound().build());
+                } else {
+                    return asyncService.getAnalyzeResult(jobId)
+                        .map(ResponseEntity::ok)
+                        .orElse(ResponseEntity.notFound().build());
+                }
+            case FAILED:
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                        "jobId", status.getJobId(),
+                        "status", "FAILED",
+                        "error", status.getErrorMessage() != null ? status.getErrorMessage() : "Unknown error"
+                    ));
+            case CANCELLED:
+                return ResponseEntity.status(HttpStatus.GONE)
+                    .body(Map.of(
+                        "jobId", status.getJobId(),
+                        "status", "CANCELLED",
+                        "message", "Job was cancelled"
+                    ));
+            default: // PENDING or PROCESSING
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(JobStatusResponseDTO.builder()
+                        .jobId(status.getJobId())
+                        .jobType(status.getJobType())
+                        .status(status.getStatus().name())
+                        .progress(status.getProgress())
+                        .progressMessage(status.getProgressMessage())
+                        .build());
+        }
+    }
+
+    @DeleteMapping("/jobs/{jobId}")
+    @Operation(summary = "Cancel a job",
+        description = "Attempts to cancel a running job")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Job cancelled successfully"),
+        @ApiResponse(responseCode = "404", description = "Job not found"),
+        @ApiResponse(responseCode = "409", description = "Job cannot be cancelled (already completed/failed)")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, String>> cancelJob(@PathVariable String jobId) {
+        boolean cancelled = asyncService.cancelJob(jobId);
+        
+        if (cancelled) {
+            return ResponseEntity.ok(Map.of(
+                "jobId", jobId,
+                "status", "CANCELLED",
+                "message", "Job cancelled successfully"
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                    "jobId", jobId,
+                    "message", "Job cannot be cancelled (not found or already completed)"
+                ));
+        }
+    }
+
+    // =====================================================================
+    // ASYNC JOB DTOs
+    // =====================================================================
+
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    @lombok.Builder
+    public static class JobStartResponseDTO {
+        private String jobId;
+        private String status;
+        private String message;
+    }
+
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    @lombok.Builder
+    public static class JobStatusResponseDTO {
+        private String jobId;
+        private String jobType;
+        private String status;
+        private Integer progress;
+        private String progressMessage;
+        private java.time.LocalDateTime createdAt;
+        private java.time.LocalDateTime completedAt;
+        private String errorMessage;
     }
 }

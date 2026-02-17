@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -63,6 +63,18 @@ import {
   DetectedStack,
 } from '../types/wiseArchitecture';
 
+// Custom debounce hook for performance optimization
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 // Step definitions
 type Step = 'pitch' | 'repositories' | 'stacks' | 'solution' | 'chat';
 
@@ -100,6 +112,10 @@ const WiseArchitecturePage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // AbortControllers for cancelling async operations
+  const detectAbortController = useRef<AbortController | null>(null);
+  const analyzeAbortController = useRef<AbortController | null>(null);
 
   // State
   const [currentStep, setCurrentStep] = useState<Step>('pitch');
@@ -120,16 +136,52 @@ const WiseArchitecturePage: React.FC = () => {
   const [detectedStacks, setDetectedStacks] = useState<DetectedStack[]>([]);
   const [selectedStacks, setSelectedStacks] = useState<TechStackType[]>([]);
   const [detectingStacks, setDetectingStacks] = useState(false);
+  const [detectProgress, setDetectProgress] = useState<{ percent: number; message: string }>({ percent: 0, message: '' });
 
   // Step 4: Solution
   const [solution, setSolution] = useState<WiseArchitectureResponse | null>(null);
   const [generatingSolution, setGeneratingSolution] = useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = useState<{ percent: number; message: string }>({ percent: 0, message: '' });
 
   // Step 5: Chat
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  // PERFORMANCE: Debounce repository search to avoid excessive filtering
+  const debouncedRepoSearch = useDebounce(repoSearchQuery, 300);
+
+  // PERFORMANCE: Memoize filtered repositories to avoid re-computation on every render
+  const filteredRepositories = useMemo(() => {
+    if (!debouncedRepoSearch) return repositories;
+    const query = debouncedRepoSearch.toLowerCase();
+    return repositories.filter(repo => 
+      repo.fullName.toLowerCase().includes(query) ||
+      repo.name.toLowerCase().includes(query)
+    );
+  }, [repositories, debouncedRepoSearch]);
+
+  // PERFORMANCE: Memoize stacks grouped by category
+  const stacksByCategory = useMemo(() => {
+    const categories: Record<string, DetectedStack[]> = {
+      Mobile: [],
+      Backend: [],
+      Web: [],
+      Other: [],
+    };
+    detectedStacks.forEach(stack => {
+      const category = getStackCategory(stack.stackType);
+      categories[category].push(stack);
+    });
+    return categories;
+  }, [detectedStacks]);
+
+  // PERFORMANCE: Memoize solution stacks for accordion
+  const solutionStackEntries = useMemo(() => {
+    if (!solution?.solutions) return [];
+    return Object.entries(solution.solutions) as [TechStackType, typeof solution.solutions[TechStackType]][];
+  }, [solution]);
 
   // Check feature status on mount
   useEffect(() => {
@@ -142,6 +194,14 @@ const WiseArchitecturePage: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Cleanup: abort ongoing operations on unmount
+  useEffect(() => {
+    return () => {
+      detectAbortController.current?.abort();
+      analyzeAbortController.current?.abort();
+    };
+  }, []);
 
   const checkFeatureStatus = async () => {
     try {
@@ -200,9 +260,19 @@ const WiseArchitecturePage: React.FC = () => {
     });
   };
 
-  const handleBranchChange = (repoId: number, branch: string) => {
+  // PERFORMANCE: Memoize branch change handler
+  const handleBranchChange = useCallback((repoId: number, branch: string) => {
     setRepoBranches(prev => ({ ...prev, [repoId]: branch }));
-  };
+  }, []);
+
+  // PERFORMANCE: Memoize stack toggle handler
+  const handleStackToggle = useCallback((stack: TechStackType) => {
+    setSelectedStacks(prev =>
+      prev.includes(stack)
+        ? prev.filter(s => s !== stack)
+        : [...prev, stack]
+    );
+  }, []);
 
   const handleDetectStacks = async () => {
     if (selectedRepoIds.length === 0) {
@@ -215,15 +285,27 @@ const WiseArchitecturePage: React.FC = () => {
       return;
     }
 
+    // Create new AbortController for this operation
+    detectAbortController.current?.abort();
+    detectAbortController.current = new AbortController();
+
     setDetectingStacks(true);
     setError(null);
+    setDetectProgress({ percent: 0, message: t('wiseArchitecture.startingDetection') });
 
     try {
-      const response: DetectStacksResponse = await wiseArchitectureService.detectStacks({
-        pitchId: selectedPitch.id,
-        repositoryIds: selectedRepoIds,
-        repositoryBranches: repoBranches,
-      });
+      // Use fallback method that handles sync/async automatically
+      const response: DetectStacksResponse = await wiseArchitectureService.detectStacksWithFallback(
+        {
+          pitchId: selectedPitch.id,
+          repositoryIds: selectedRepoIds,
+          repositoryBranches: repoBranches,
+        },
+        (progress, message) => {
+          setDetectProgress({ percent: progress, message: message || '' });
+        },
+        detectAbortController.current.signal
+      );
       setDetectedStacks(response.detectedStacks);
       
       // Pre-select stacks with high confidence
@@ -234,18 +316,15 @@ const WiseArchitecturePage: React.FC = () => {
       
       setCurrentStep('stacks');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('wiseArchitecture.stackDetectionFailed'));
+      // Ignore errors from abort
+      if (err.message !== 'Operation cancelled') {
+        setError(err.response?.data?.message || err.message || t('wiseArchitecture.stackDetectionFailed'));
+      }
     } finally {
       setDetectingStacks(false);
+      setDetectProgress({ percent: 0, message: '' });
+      detectAbortController.current = null;
     }
-  };
-
-  const handleStackToggle = (stack: TechStackType) => {
-    setSelectedStacks(prev =>
-      prev.includes(stack)
-        ? prev.filter(s => s !== stack)
-        : [...prev, stack]
-    );
   };
 
   const handleGenerateSolution = async () => {
@@ -254,24 +333,41 @@ const WiseArchitecturePage: React.FC = () => {
       return;
     }
 
+    // Create new AbortController for this operation
+    analyzeAbortController.current?.abort();
+    analyzeAbortController.current = new AbortController();
+
     setGeneratingSolution(true);
     setError(null);
+    setAnalyzeProgress({ percent: 0, message: t('wiseArchitecture.startingAnalysis') });
 
     try {
-      const response: WiseArchitectureResponse = await wiseArchitectureService.analyze({
-        pitchId: selectedPitch.id,
-        repositoryIds: selectedRepoIds,
-        repositoryBranches: repoBranches,
-        selectedStacks,
-      });
+      // Use fallback method that handles sync/async automatically
+      const response: WiseArchitectureResponse = await wiseArchitectureService.analyzeWithFallback(
+        {
+          pitchId: selectedPitch.id,
+          repositoryIds: selectedRepoIds,
+          repositoryBranches: repoBranches,
+          selectedStacks,
+        },
+        (progress, message) => {
+          setAnalyzeProgress({ percent: progress, message: message || '' });
+        },
+        analyzeAbortController.current.signal
+      );
       
       setSolution(response);
       setSessionId(response.sessionId);
       setCurrentStep('solution');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('wiseArchitecture.solutionGenerationFailed'));
+      // Ignore errors from abort
+      if (err.message !== 'Operation cancelled') {
+        setError(err.response?.data?.message || err.message || t('wiseArchitecture.solutionGenerationFailed'));
+      }
     } finally {
       setGeneratingSolution(false);
+      setAnalyzeProgress({ percent: 0, message: '' });
+      analyzeAbortController.current = null;
     }
   };
 
@@ -540,11 +636,7 @@ const WiseArchitecturePage: React.FC = () => {
                     </div>
                     <ScrollArea className="h-[350px]">
                       <div className="space-y-2">
-                        {repositories
-                          .filter(repo => 
-                            repo.fullName.toLowerCase().includes(repoSearchQuery.toLowerCase())
-                          )
-                          .map(repo => (
+                        {filteredRepositories.map(repo => (
                         <div
                           key={repo.id}
                           className={`p-3 rounded-lg border transition-colors ${
@@ -604,7 +696,8 @@ const WiseArchitecturePage: React.FC = () => {
                     {detectingStacks ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t('wiseArchitecture.detectingStacks')}
+                        {detectProgress.message || t('wiseArchitecture.detectingStacks')}
+                        {detectProgress.percent > 0 && ` (${detectProgress.percent}%)`}
                       </>
                     ) : (
                       <>
@@ -631,11 +724,9 @@ const WiseArchitecturePage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Group stacks by category */}
-                {['Mobile', 'Backend', 'Web'].map(category => {
-                  const categoryStacks = detectedStacks.filter(
-                    s => getStackCategory(s.stackType) === category
-                  );
+                {/* PERFORMANCE: Use memoized stacks grouped by category */}
+                {(['Mobile', 'Backend', 'Web'] as const).map(category => {
+                  const categoryStacks = stacksByCategory[category];
                   if (categoryStacks.length === 0) return null;
 
                   return (
@@ -691,7 +782,8 @@ const WiseArchitecturePage: React.FC = () => {
                     {generatingSolution ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t('wiseArchitecture.generating')}
+                        {analyzeProgress.message || t('wiseArchitecture.generating')}
+                        {analyzeProgress.percent > 0 && ` (${analyzeProgress.percent}%)`}
                       </>
                     ) : (
                       <>
@@ -773,7 +865,7 @@ const WiseArchitecturePage: React.FC = () => {
 
               {/* Solutions by Stack */}
               <Accordion type="multiple" defaultValue={selectedStacks} className="space-y-2">
-                {Object.entries(solution.solutions).map(([stack, stackSolution]) => {
+                {solutionStackEntries.map(([stack, stackSolution]) => {
                   const Icon = getStackIcon(stack as TechStackType);
                   return (
                     <AccordionItem key={stack} value={stack} className="border rounded-lg">
@@ -789,7 +881,7 @@ const WiseArchitecturePage: React.FC = () => {
                           <p className="text-sm">{stackSolution.architectureOverview}</p>
 
                           {/* Reusable Services */}
-                          {stackSolution.reusableServices.length > 0 && (
+                          {stackSolution.reusableServices?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
                                 <Package className="h-4 w-4" />
@@ -808,7 +900,7 @@ const WiseArchitecturePage: React.FC = () => {
                           )}
 
                           {/* Recommended Libraries */}
-                          {stackSolution.recommendedLibraries.length > 0 && (
+                          {stackSolution.recommendedLibraries?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
                                 <Sparkles className="h-4 w-4" />
@@ -827,7 +919,7 @@ const WiseArchitecturePage: React.FC = () => {
                           )}
 
                           {/* Implementation Steps */}
-                          {stackSolution.implementationSteps.length > 0 && (
+                          {stackSolution.implementationSteps?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
                                 <CheckSquare className="h-4 w-4" />
@@ -855,7 +947,7 @@ const WiseArchitecturePage: React.FC = () => {
                           )}
 
                           {/* Best Practices */}
-                          {stackSolution.bestPractices.length > 0 && (
+                          {stackSolution.bestPractices?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2">{t('wiseArchitecture.bestPractices')}</h5>
                               <ul className="text-sm list-disc list-inside space-y-1">

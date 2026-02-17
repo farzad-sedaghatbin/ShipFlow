@@ -14,7 +14,35 @@ Wise Architecture is an **experimental** AI-powered feature that helps developme
   - **Web**: React, Angular, Vue.js, Next.js
 - Shows confidence scores for each detected stack
 
-### 2. Multi-Source Context Integration (v0.5.3)
+### 2. Async Processing & Performance (v0.5.4)
+
+For large repositories, Wise Architecture uses asynchronous processing to prevent timeouts:
+
+- **Async Job Infrastructure**: Long-running operations execute in background
+  - `AsyncWiseArchitectureService` with job-based execution pattern  
+  - Dedicated `aiTaskExecutor` thread pool for AI operations
+  - Request deduplication prevents duplicate jobs for same parameters
+  - Automatic job cleanup after 30-minute TTL
+
+- **Granular Progress Tracking**: Real-time updates with descriptive messages
+  - 0-10%: Initialization - "Loading repository information..."
+  - 10-55%: File listing - "Listing files for repository 1/3 (kixy-mobile)..."
+  - 55-95%: Processing - "Detected 3 stacks: React Native, Node.js, Kotlin"
+  - 95-100%: Finalization - "Solution complete: 3 stacks, 48 hours, appetite passed"
+
+- **Performance Optimizations**:
+  - File list caching with 10-minute TTL (avoids repeated MCP calls)
+  - Pre-indexed file pattern matching by extension for O(1) lookups
+  - Quick config file detection for common frameworks
+  - Parallel repository processing (up to 4 concurrent scans)
+  - Batch file reads using CompletableFuture for code context
+
+- **Frontend Polling**: Automatic progress tracking
+  - 2-second polling interval with exponential backoff
+  - Real-time progress bar and status messages
+  - Graceful timeout handling after 10 minutes
+
+### 3. Multi-Source Context Integration (v0.5.3)
 
 Wise Architecture now considers multiple context sources for smarter recommendations:
 
@@ -143,6 +171,55 @@ POST /api/wise-architecture/follow-up
 ```
 Answers questions about the generated solution; detects code requests and generates Copilot prompts.
 
+### Async Operations (Recommended for Large Repos)
+
+#### Start Async Stack Detection
+```
+POST /api/wise-architecture/async/detect-stacks
+{
+  "pitchId": 123,
+  "repositoryIds": [1, 2, 3]
+}
+```
+Returns immediately with a job ID for polling.
+
+#### Start Async Solution Analysis
+```
+POST /api/wise-architecture/async/analyze
+{
+  "pitchId": 123,
+  "repositoryIds": [1, 2, 3],
+  "selectedStacks": ["BACKEND_JAVA", "WEB_REACT"]
+}
+```
+Returns immediately with a job ID for polling.
+
+#### Poll Job Status
+```
+GET /api/wise-architecture/jobs/{jobId}/status
+```
+Returns:
+```json
+{
+  "jobId": "abc12345",
+  "status": "PROCESSING",
+  "progress": 45,
+  "progressMessage": "Listing files for repository 2/3 (backend-api)..."
+}
+```
+
+#### Get Job Result
+```
+GET /api/wise-architecture/jobs/{jobId}/result
+```
+Returns the complete result when job status is COMPLETED.
+
+#### Cancel Job
+```
+DELETE /api/wise-architecture/jobs/{jobId}
+```
+Cancels a running job.
+
 ## Requirements
 
 - **AI Features** must be enabled in organization settings
@@ -153,15 +230,20 @@ Answers questions about the generated solution; detects code requests and genera
 ## Technical Architecture
 
 ### Backend Services
-- `WiseArchitectureService`: Main orchestration service
-- `TechStackDetectorService`: Detects tech stacks from file patterns
+- `WiseArchitectureService`: Main orchestration service with progress callbacks
+- `AsyncWiseArchitectureService`: Job management and request deduplication
+- `WiseArchitectureExecutor`: Async execution on `aiTaskExecutor` thread pool
+- `TechStackDetectorService`: Detects tech stacks with pre-indexed pattern matching
 - `TechnicalSolutionGeneratorService`: Generates solutions using LLM
 - `WiseArchitectureConversationService`: Manages chat sessions and Copilot prompts
+- `GitHubMcpProvider`: File list caching with 10-minute TTL
 
 ### Frontend Components
-- `WiseArchitecturePage`: Multi-step wizard UI
-- `wiseArchitectureService`: API client for backend calls
-- Step progress indicator with validation
+- `WiseArchitecturePage`: Multi-step wizard UI with polling
+- `wiseArchitectureService`: API client with async job support
+- Step progress indicator with real-time status updates
+- Debounced repository search (300ms)
+- Memoized computed values for performance
 
 ## Limitations
 
@@ -179,4 +261,4 @@ As an experimental feature, we welcome feedback to improve Wise Architecture:
 
 ---
 
-*This documentation is for Wise Architecture v1.1 (Experimental) - Updated February 2026*
+*This documentation is for Wise Architecture v1.2 (Experimental) - Updated February 2026*

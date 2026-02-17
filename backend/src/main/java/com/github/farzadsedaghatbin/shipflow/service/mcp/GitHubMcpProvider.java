@@ -1,11 +1,13 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp;
 
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -26,6 +29,9 @@ import org.springframework.web.client.RestTemplate;
  * - get_file_contents: Read file content or list directory contents
  * - search_code: Search for code matching a pattern
  * 
+ * Includes in-memory caching for file lists to avoid repeated MCP calls
+ * during the same detection session.
+ * 
  * @see <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/github">GitHub MCP Server</a>
  */
 @Service
@@ -36,6 +42,27 @@ public class GitHubMcpProvider implements McpClientService {
     private final RestTemplate mcpRestTemplate;
     private final OrganizationSettingsService settingsService;
 
+    // In-memory cache for file lists (TTL: 10 minutes)
+    private static final long CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+    private final ConcurrentHashMap<String, CachedFileList> fileListCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache entry for file lists with expiration.
+     */
+    private static class CachedFileList {
+        final List<String> files;
+        final long expiresAt;
+
+        CachedFileList(List<String> files) {
+            this.files = files;
+            this.expiresAt = System.currentTimeMillis() + CACHE_TTL_MS;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiresAt;
+        }
+    }
+
     public GitHubMcpProvider(
             McpConfig mcpConfig,
             @Qualifier("mcpRestTemplate") RestTemplate mcpRestTemplate,
@@ -43,6 +70,44 @@ public class GitHubMcpProvider implements McpClientService {
         this.mcpConfig = mcpConfig;
         this.mcpRestTemplate = mcpRestTemplate;
         this.settingsService = settingsService;
+    }
+
+    /**
+     * Cleanup expired cache entries periodically.
+     */
+    @Scheduled(fixedRate = 60000) // Every minute
+    public void cleanupExpiredCache() {
+        // Use removeIf for atomic check-and-remove
+        int initialSize = fileListCache.size();
+        fileListCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        int removed = initialSize - fileListCache.size();
+        
+        if (removed > 0) {
+            log.debug("Cleaned up {} expired file list cache entries", removed);
+        }
+    }
+
+    /**
+     * Clear the file list cache for a specific repository.
+     * Called when force re-detection is requested.
+     */
+    public void clearFileListCache(String owner, String repo, String branch) {
+        String cacheKey = buildCacheKey(owner, repo, branch);
+        fileListCache.remove(cacheKey);
+        log.debug("Cleared file list cache for {}/{} (branch: {})", owner, repo, branch);
+    }
+
+    /**
+     * Clear all file list cache entries.
+     */
+    public void clearAllFileListCache() {
+        int size = fileListCache.size();
+        fileListCache.clear();
+        log.info("Cleared all {} file list cache entries", size);
+    }
+
+    private String buildCacheKey(String owner, String repo, String branch) {
+        return owner + "/" + repo + "@" + (branch != null ? branch : "main");
     }
 
     @Override
@@ -76,6 +141,14 @@ public class GitHubMcpProvider implements McpClientService {
         String repo = context.get("repo");
         String branch = context.getOrDefault("branch", "main");
 
+        // Check cache first
+        String cacheKey = buildCacheKey(owner, repo, branch);
+        CachedFileList cached = fileListCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            log.info("Using cached file list for {}/{} ({} files)", owner, repo, cached.files.size());
+            return cached.files;
+        }
+
         log.info("Listing files for {}/{} on branch {} via MCP", owner, repo, branch);
 
         try {
@@ -87,6 +160,9 @@ public class GitHubMcpProvider implements McpClientService {
                 log.info("Retrieved {} files from GitHub MCP for {}/{}", allFiles.size(), owner, repo);
                 log.debug("Sample files: {}", 
                     allFiles.stream().limit(10).collect(java.util.stream.Collectors.joining(", ")));
+                
+                // Cache the result
+                fileListCache.put(cacheKey, new CachedFileList(allFiles));
             } else {
                 log.warn("No files retrieved from repository {}/{}", owner, repo);
             }
