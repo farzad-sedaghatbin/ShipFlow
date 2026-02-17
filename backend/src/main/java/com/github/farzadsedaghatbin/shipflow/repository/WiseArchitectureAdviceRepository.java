@@ -3,12 +3,15 @@ package com.github.farzadsedaghatbin.shipflow.repository;
 import com.github.farzadsedaghatbin.shipflow.entity.WiseArchitectureAdvice;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Repository for WISE Architecture advice history.
@@ -33,7 +36,9 @@ public interface WiseArchitectureAdviceRepository extends JpaRepository<WiseArch
 
     /**
      * Find distinct conversations for a user (returns the latest message from each).
+     * Uses @EntityGraph to eagerly fetch pitch and its cycle/project to avoid N+1 queries.
      */
+    @EntityGraph(attributePaths = {"pitch", "pitch.cycle", "pitch.cycle.project"})
     @Query("""
         SELECT w FROM WiseArchitectureAdvice w 
         WHERE w.userId = :userId 
@@ -44,7 +49,9 @@ public interface WiseArchitectureAdviceRepository extends JpaRepository<WiseArch
 
     /**
      * Find distinct conversations for a pitch (returns the latest message from each).
+     * Uses @EntityGraph to eagerly fetch pitch and its cycle/project to avoid N+1 queries.
      */
+    @EntityGraph(attributePaths = {"pitch", "pitch.cycle", "pitch.cycle.project"})
     @Query("""
         SELECT w FROM WiseArchitectureAdvice w 
         WHERE w.pitch.id = :pitchId 
@@ -63,4 +70,16 @@ public interface WiseArchitectureAdviceRepository extends JpaRepository<WiseArch
      * Count messages in a conversation.
      */
     long countByConversationId(String conversationId);
+
+    /**
+     * Count messages for multiple conversations in a single query.
+     * Returns a list of Object[] where [0] is conversationId and [1] is count.
+     */
+    @Query("""
+        SELECT w.conversationId, COUNT(w) 
+        FROM WiseArchitectureAdvice w 
+        WHERE w.conversationId IN :conversationIds 
+        GROUP BY w.conversationId
+        """)
+    List<Object[]> countMessagesByConversationIds(@Param("conversationIds") Set<String> conversationIds);
 }

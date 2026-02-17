@@ -70,12 +70,14 @@ public class WiseArchitectureController {
     })
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
     public ResponseEntity<WiseArchitectureResponseDTO> analyze(
+            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody WiseArchitectureRequestDTO request) {
         
         log.info("Generating solution for pitch {} with stacks: {}", 
             request.getPitchId(), request.getSelectedStacks());
         
-        WiseArchitectureResponseDTO response = wiseArchitectureService.analyze(request);
+        Long userId = getUserId(userDetails);
+        WiseArchitectureResponseDTO response = wiseArchitectureService.analyze(request, userId);
         
         return ResponseEntity.ok(response);
     }
@@ -91,11 +93,13 @@ public class WiseArchitectureController {
     })
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DEVELOPER')")
     public ResponseEntity<FollowUpResponseDTO> followUp(
+            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody FollowUpQuestionDTO request) {
         
         log.info("Processing follow-up question for session {}", request.getSessionId());
         
-        FollowUpResponseDTO response = wiseArchitectureService.handleFollowUp(request);
+        Long userId = getUserId(userDetails);
+        FollowUpResponseDTO response = wiseArchitectureService.handleFollowUp(request, userId);
         
         return ResponseEntity.ok(response);
     }

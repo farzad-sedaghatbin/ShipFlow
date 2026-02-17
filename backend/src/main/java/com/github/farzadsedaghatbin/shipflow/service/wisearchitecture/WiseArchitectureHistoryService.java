@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -106,7 +108,14 @@ public class WiseArchitectureHistoryService {
         Pageable pageable = PageRequest.of(page, size);
         Page<WiseArchitectureAdvice> advicePage = adviceRepository.findConversationsByUserId(userId, pageable);
         
-        return advicePage.map(this::toConversationSummary);
+        // Batch load message counts to avoid N+1 queries
+        Set<String> conversationIds = advicePage.getContent().stream()
+            .map(WiseArchitectureAdvice::getConversationId)
+            .collect(Collectors.toSet());
+        
+        Map<String, Long> messageCounts = getMessageCountsForConversations(conversationIds);
+        
+        return advicePage.map(advice -> toConversationSummary(advice, messageCounts));
     }
 
     /**
@@ -115,9 +124,31 @@ public class WiseArchitectureHistoryService {
     @Transactional(readOnly = true)
     public List<AdviceHistoryDTO.ConversationSummary> getPitchConversations(Long pitchId) {
         List<WiseArchitectureAdvice> adviceList = adviceRepository.findConversationsByPitchId(pitchId);
+        
+        // Batch load message counts to avoid N+1 queries
+        Set<String> conversationIds = adviceList.stream()
+            .map(WiseArchitectureAdvice::getConversationId)
+            .collect(Collectors.toSet());
+        
+        Map<String, Long> messageCounts = getMessageCountsForConversations(conversationIds);
+        
         return adviceList.stream()
-            .map(this::toConversationSummary)
+            .map(advice -> toConversationSummary(advice, messageCounts))
             .toList();
+    }
+
+    /**
+     * Get message counts for multiple conversations in a single query.
+     */
+    private Map<String, Long> getMessageCountsForConversations(Set<String> conversationIds) {
+        if (conversationIds.isEmpty()) {
+            return Map.of();
+        }
+        return adviceRepository.countMessagesByConversationIds(conversationIds).stream()
+            .collect(Collectors.toMap(
+                row -> (String) row[0],
+                row -> (Long) row[1]
+            ));
     }
 
     /**
@@ -189,15 +220,16 @@ public class WiseArchitectureHistoryService {
             .build();
     }
 
-    private AdviceHistoryDTO.ConversationSummary toConversationSummary(WiseArchitectureAdvice advice) {
-        long messageCount = adviceRepository.countByConversationId(advice.getConversationId());
+    private AdviceHistoryDTO.ConversationSummary toConversationSummary(
+            WiseArchitectureAdvice advice, Map<String, Long> messageCounts) {
+        long messageCount = messageCounts.getOrDefault(advice.getConversationId(), 1L);
         
         String responsePreview = advice.getAiResponse();
         if (responsePreview != null && responsePreview.length() > 200) {
             responsePreview = responsePreview.substring(0, 197) + "...";
         }
 
-        // Get project name via cycle if available
+        // Get project name via cycle if available (already eagerly loaded via @EntityGraph)
         String projectName = null;
         if (advice.getPitch().getCycle() != null && advice.getPitch().getCycle().getProject() != null) {
             projectName = advice.getPitch().getCycle().getProject().getName();

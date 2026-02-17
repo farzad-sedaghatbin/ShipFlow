@@ -45,6 +45,7 @@ public class WiseArchitectureService {
     private final TechStackDetectorService techStackDetectorService;
     private final TechnicalSolutionGeneratorService solutionGeneratorService;
     private final WiseArchitectureConversationService conversationService;
+    private final WiseArchitectureHistoryService historyService;
     private final FigmaMcpProvider figmaMcpProvider;
     private final GitHubMcpProvider githubMcpProvider;
 
@@ -139,9 +140,11 @@ public class WiseArchitectureService {
     /**
      * Generate technical solution document for the specified pitch and stacks.
      */
-    @Transactional(readOnly = true)
-    public WiseArchitectureResponseDTO analyze(WiseArchitectureRequestDTO request) {
+    @Transactional
+    public WiseArchitectureResponseDTO analyze(WiseArchitectureRequestDTO request, Long userId) {
         checkFeatureEnabled();
+        
+        long startTime = System.currentTimeMillis();;
         
         log.info("Generating solution for pitch {} with {} stacks", 
             request.getPitchId(), request.getSelectedStacks().size());
@@ -252,6 +255,20 @@ public class WiseArchitectureService {
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
         
+        // Save to advice history
+        long processingTimeMs = System.currentTimeMillis() - startTime;
+        if (userId != null) {
+            historyService.saveInitialSolution(
+                pitch,
+                userId,
+                sessionId,
+                response,
+                processingTimeMs,
+                hasFigmaContext,
+                hasCodeContext,
+                hasRoadmapContext);
+        }
+        
         log.info("Generated solution for pitch '{}' - {} hours estimated, appetite {}, context: code={}, team={}, figma={}, roadmap={}",
             pitch.getTitle(), totalEstimatedHours, appetitePassed ? "PASSED" : "EXCEEDED",
             hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
@@ -262,9 +279,31 @@ public class WiseArchitectureService {
     /**
      * Handle a follow-up question about a generated solution.
      */
-    public FollowUpResponseDTO handleFollowUp(FollowUpQuestionDTO request) {
+    @Transactional
+    public FollowUpResponseDTO handleFollowUp(FollowUpQuestionDTO request, Long userId) {
         checkFeatureEnabled();
-        return conversationService.handleFollowUp(request);
+        
+        long startTime = System.currentTimeMillis();
+        FollowUpResponseDTO response = conversationService.handleFollowUp(request);
+        
+        // Save to advice history if we have a valid session
+        if (userId != null) {
+            var session = conversationService.getSession(request.getSessionId());
+            if (session != null && session.getPitchId() != null) {
+                pitchRepository.findByIdNotDeleted(session.getPitchId()).ifPresent(pitch -> {
+                    long processingTimeMs = System.currentTimeMillis() - startTime;
+                    historyService.saveFollowUp(
+                        pitch,
+                        userId,
+                        request.getSessionId(),
+                        request.getQuestion(),
+                        response.getAnswer(),
+                        processingTimeMs);
+                });
+            }
+        }
+        
+        return response;
     }
 
     /**

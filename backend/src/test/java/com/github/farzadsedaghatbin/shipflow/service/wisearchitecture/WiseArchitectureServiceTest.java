@@ -57,6 +57,9 @@ class WiseArchitectureServiceTest {
     private WiseArchitectureConversationService conversationService;
 
     @Mock
+    private WiseArchitectureHistoryService historyService;
+
+    @Mock
     private FigmaMcpProvider figmaMcpProvider;
 
     @Mock
@@ -299,7 +302,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response).isNotNull();
             assertThat(response.getSessionId()).isEqualTo("session-123");
@@ -331,7 +334,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getAppetiteCheck().getPassed()).isTrue();
             assertThat(response.getAppetiteCheck().getAvailableHours()).isEqualTo(40);
@@ -364,7 +367,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getAppetiteCheck().getPassed()).isFalse();
             assertThat(response.getReducedScope()).isNotNull();
@@ -397,7 +400,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA, TechStackType.WEB_REACT))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getSolutions()).hasSize(2);
             assertThat(response.getTotalEstimatedHours()).isEqualTo(28);
@@ -414,7 +417,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            assertThatThrownBy(() -> service.analyze(request))
+            assertThatThrownBy(() -> service.analyze(request, 100L))
                 .isInstanceOf(FeatureDisabledException.class);
         }
     }
@@ -438,7 +441,7 @@ class WiseArchitectureServiceTest {
                 .question("Explain the architecture")
                 .build();
 
-            FollowUpResponseDTO response = service.handleFollowUp(request);
+            FollowUpResponseDTO response = service.handleFollowUp(request, 100L);
 
             assertThat(response).isNotNull();
             assertThat(response.getAnswer()).isEqualTo("Here's the answer");
@@ -456,7 +459,7 @@ class WiseArchitectureServiceTest {
                 .question("Any question")
                 .build();
 
-            assertThatThrownBy(() -> service.handleFollowUp(request))
+            assertThatThrownBy(() -> service.handleFollowUp(request, 100L))
                 .isInstanceOf(FeatureDisabledException.class);
         }
     }
@@ -504,7 +507,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getContextSources().getHasRoadmapContext()).isTrue();
             // No roadmap warning should be present
@@ -534,7 +537,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getContextSources().getHasRoadmapContext()).isFalse();
             assertThat(response.getContextSources().getWarnings())
@@ -578,7 +581,7 @@ class WiseArchitectureServiceTest {
                 .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
                 .build();
 
-            WiseArchitectureResponseDTO response = service.analyze(request);
+            WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getContextSources().getHasRoadmapContext()).isTrue();
             

@@ -172,14 +172,14 @@ const AdviceHistoryPage: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Your Advice History</h2>
+          <h2 className="text-xl font-semibold">{t('wiseArchitecture.history.yourHistory')}</h2>
           <p className="text-sm text-muted-foreground">
-            Review past AI-generated solutions and provide feedback
+            {t('wiseArchitecture.history.yourHistoryDesc')}
           </p>
         </div>
         <Button variant="outline" onClick={() => loadHistory()}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          {t('wiseArchitecture.history.refresh')}
         </Button>
       </div>
 
@@ -187,13 +187,13 @@ const AdviceHistoryPage: React.FC = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <History className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Advice History</h3>
+            <h3 className="text-lg font-medium mb-2">{t('wiseArchitecture.history.noHistory')}</h3>
             <p className="text-muted-foreground mb-4">
-              You haven't generated any AI solutions yet.
+              {t('wiseArchitecture.history.noHistoryYet')}
             </p>
             <Button onClick={() => navigate('/rd/wise-architecture')}>
               <Brain className="mr-2 h-4 w-4" />
-              Go to WISE Architecture
+              {t('wiseArchitecture.history.goToWise')}
             </Button>
           </CardContent>
         </Card>
@@ -265,10 +265,10 @@ const AdviceHistoryPage: React.FC = () => {
                 disabled={historyPage.first}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
-                Previous
+                {t('wiseArchitecture.history.previous')}
               </Button>
               <span className="text-sm text-muted-foreground">
-                Page {historyPage.number + 1} of {historyPage.totalPages}
+                {t('wiseArchitecture.history.pageOf', { current: historyPage.number + 1, total: historyPage.totalPages })}
               </span>
               <Button
                 variant="outline"
@@ -276,7 +276,7 @@ const AdviceHistoryPage: React.FC = () => {
                 disabled={historyPage.last}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                {t('wiseArchitecture.history.next')}
               </Button>
             </div>
           )}
@@ -290,7 +290,7 @@ const AdviceHistoryPage: React.FC = () => {
     <div className="space-y-4">
       <Button variant="ghost" onClick={handleBackToList}>
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to History
+        {t('wiseArchitecture.history.backToList')}
       </Button>
 
       {selectedConversation && selectedConversation.length > 0 && (
@@ -348,7 +348,7 @@ const AdviceHistoryPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant={item.messageType === 'INITIAL_SOLUTION' ? 'default' : 'secondary'}>
-                          {item.messageType === 'INITIAL_SOLUTION' ? 'Initial Solution' : 'Follow-up'}
+                          {item.messageType === 'INITIAL_SOLUTION' ? t('wiseArchitecture.history.initialSolution') : t('wiseArchitecture.history.followUp')}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(item.createdAt)}
@@ -369,12 +369,12 @@ const AdviceHistoryPage: React.FC = () => {
                             {item.feedbackHelpful ? (
                               <>
                                 <ThumbsUp className="mr-1 h-3 w-3" />
-                                Helpful
+                                {t('wiseArchitecture.history.feedback.helpful')}
                               </>
                             ) : (
                               <>
                                 <ThumbsDown className="mr-1 h-3 w-3" />
-                                Not Helpful
+                                {t('wiseArchitecture.history.feedback.notHelpful')}
                               </>
                             )}
                           </Badge>
@@ -384,7 +384,7 @@ const AdviceHistoryPage: React.FC = () => {
                             size="sm"
                             onClick={() => openFeedbackDialog(item.id)}
                           >
-                            Rate this advice
+                            {t('wiseArchitecture.history.rateAdvice')}
                           </Button>
                         )}
                       </div>
@@ -393,7 +393,7 @@ const AdviceHistoryPage: React.FC = () => {
                   <CardContent>
                     {item.userMessage && item.messageType === 'FOLLOW_UP' && (
                       <div className="mb-4 p-3 bg-muted rounded-lg">
-                        <p className="text-sm font-medium mb-1">Your Question:</p>
+                        <p className="text-sm font-medium mb-1">{t('wiseArchitecture.history.yourQuestion')}</p>
                         <p className="text-sm">{item.userMessage}</p>
                       </div>
                     )}
@@ -402,7 +402,7 @@ const AdviceHistoryPage: React.FC = () => {
                     </div>
                     {item.feedbackText && (
                       <div className="mt-4 p-3 bg-muted rounded-lg">
-                        <p className="text-sm font-medium mb-1">Your Feedback:</p>
+                        <p className="text-sm font-medium mb-1">{t('wiseArchitecture.history.yourFeedback')}</p>
                         <p className="text-sm">{item.feedbackText}</p>
                       </div>
                     )}
@@ -415,7 +415,7 @@ const AdviceHistoryPage: React.FC = () => {
           <div className="flex justify-center">
             <Button onClick={() => navigate(`/rd/wise-architecture?pitch=${selectedConversation[0].pitchId}`)}>
               <Brain className="mr-2 h-4 w-4" />
-              Continue in WISE Architecture
+              {t('wiseArchitecture.history.continueInWise')}
             </Button>
           </div>
         </>
@@ -433,10 +433,10 @@ const AdviceHistoryPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <History className="h-6 w-6" />
-            Advice History
+            {t('wiseArchitecture.history.title')}
           </h1>
           <p className="text-muted-foreground">
-            Review your past AI-generated solutions
+            {t('wiseArchitecture.history.subtitle')}
           </p>
         </div>
       </div>
@@ -455,9 +455,9 @@ const AdviceHistoryPage: React.FC = () => {
       <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rate This Advice</DialogTitle>
+            <DialogTitle>{t('wiseArchitecture.history.feedback.title')}</DialogTitle>
             <DialogDescription>
-              Help us improve by rating the quality of this AI-generated solution.
+              {t('wiseArchitecture.history.feedback.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -469,7 +469,7 @@ const AdviceHistoryPage: React.FC = () => {
                 className={feedbackHelpful === true ? 'bg-green-600 hover:bg-green-700' : ''}
               >
                 <ThumbsUp className="mr-2 h-5 w-5" />
-                Helpful
+                {t('wiseArchitecture.history.feedback.helpful')}
               </Button>
               <Button
                 variant={feedbackHelpful === false ? 'default' : 'outline'}
@@ -478,11 +478,11 @@ const AdviceHistoryPage: React.FC = () => {
                 className={feedbackHelpful === false ? 'bg-red-600 hover:bg-red-700' : ''}
               >
                 <ThumbsDown className="mr-2 h-5 w-5" />
-                Not Helpful
+                {t('wiseArchitecture.history.feedback.notHelpful')}
               </Button>
             </div>
             <Textarea
-              placeholder="Optional: Tell us more about why this was or wasn't helpful..."
+              placeholder={t('wiseArchitecture.history.feedback.placeholder')}
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
               rows={3}
@@ -490,11 +490,11 @@ const AdviceHistoryPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
-              Cancel
+              {t('wiseArchitecture.history.feedback.cancel')}
             </Button>
             <Button onClick={submitFeedback} disabled={feedbackHelpful === null || submittingFeedback}>
               {submittingFeedback && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Feedback
+              {t('wiseArchitecture.history.feedback.submit')}
             </Button>
           </DialogFooter>
         </DialogContent>

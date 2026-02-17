@@ -11,10 +11,11 @@ import lombok.*;
  */
 @Entity
 @Table(name = "wise_architecture_advice", indexes = {
-    @Index(name = "idx_wise_pitch", columnList = "pitch_id"),
-    @Index(name = "idx_wise_user", columnList = "user_id"),
-    @Index(name = "idx_wise_created", columnList = "created_at"),
-    @Index(name = "idx_wise_conversation", columnList = "conversation_id")
+    @Index(name = "idx_advice_pitch_id", columnList = "pitch_id"),
+    @Index(name = "idx_advice_user_id", columnList = "user_id"),
+    @Index(name = "idx_advice_created_at", columnList = "created_at"),
+    @Index(name = "idx_advice_conversation_id", columnList = "conversation_id"),
+    @Index(name = "idx_advice_user_type_created", columnList = "user_id, message_type, created_at")
 })
 @Getter
 @Setter
