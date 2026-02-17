@@ -377,7 +377,7 @@ export default function RoadmapPage() {
                           <div className="text-sm">
                             <p className="font-medium">{release.name} ({release.version})</p>
                             <p className="text-muted-foreground">{t('roadmap.targetDate')}: {formatLocalizedDate(release.targetDate || '', i18n.language)}</p>
-                            <p>{t('roadmap.progress')}: {Math.round(release.progress)}%</p>
+                            <p>{t('roadmap.progress')}: {Math.round(release.progressPercentage || 0)}%</p>
                           </div>
                         </TooltipContent>
                       </Tooltip>
