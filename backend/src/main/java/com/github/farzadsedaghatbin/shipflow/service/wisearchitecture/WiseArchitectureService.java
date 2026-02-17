@@ -65,8 +65,9 @@ public class WiseArchitectureService {
 
     /**
      * Detect technology stacks in the specified repositories.
+     * Note: Not read-only because it may clear cache and persist new detections.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public DetectStacksResponseDTO detectStacks(DetectStacksRequestDTO request) {
         checkFeatureEnabled();
         

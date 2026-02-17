@@ -42,6 +42,12 @@ public class RepositoryTechStack {
     @Column(name = "detected_by_files", columnDefinition = "TEXT")
     private String detectedByFiles; // Comma-separated list of key files that identified this stack
 
+    @Column(name = "framework", length = 100)
+    private String framework; // Detected framework (e.g., "Spring Boot", "React")
+
+    @Column(name = "primary_language", length = 50)
+    private String primaryLanguage; // Primary programming language (e.g., "Java", "TypeScript")
+
     @PrePersist
     protected void onCreate() {
         detectedAt = LocalDateTime.now();
