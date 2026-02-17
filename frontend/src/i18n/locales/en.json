@@ -6070,6 +6070,7 @@
     "selectRepositoriesDesc": "Select one or more repositories to analyze for existing code patterns and services",
     "noRepositories": "No repositories available. Please connect GitHub repositories first.",
     "selectAtLeastOneRepo": "Please select at least one repository",
+    "branchPlaceholder": "Branch name (e.g. main, develop)",
     "detectStacks": "Detect Tech Stacks",
     "detectingStacks": "Detecting stacks...",
     "stackDetectionFailed": "Failed to detect tech stacks",

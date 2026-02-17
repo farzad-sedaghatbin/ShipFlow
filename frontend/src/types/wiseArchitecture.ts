@@ -88,6 +88,11 @@ export interface DetectedStack {
 export interface DetectStacksRequest {
   pitchId: number;
   repositoryIds: number[];
+  /**
+   * Optional map of repository ID to branch name.
+   * If not specified for a repo, the default branch will be used.
+   */
+  repositoryBranches?: Record<number, string>;
 }
 
 /**
@@ -107,6 +112,11 @@ export interface DetectStacksResponse {
 export interface WiseArchitectureRequest {
   pitchId: number;
   repositoryIds: number[];
+  /**
+   * Optional map of repository ID to branch name.
+   * If not specified for a repo, the default branch will be used.
+   */
+  repositoryBranches?: Record<number, string>;
   selectedStacks: TechStackType[];
 }
 

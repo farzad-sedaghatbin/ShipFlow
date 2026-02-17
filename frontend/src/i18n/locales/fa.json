@@ -6037,6 +6037,7 @@
     "selectRepositoriesDesc": "یک یا چند مخزن برای تحلیل الگوهای کد موجود و سرویس‌ها انتخاب کنید",
     "noRepositories": "مخزنی در دسترس نیست. لطفاً ابتدا مخازن گیت‌هاب را متصل کنید.",
     "selectAtLeastOneRepo": "لطفاً حداقل یک مخزن انتخاب کنید",
+    "branchPlaceholder": "نام شاخه (مثلاً main، develop)",
     "detectStacks": "شناسایی استک‌های فنی",
     "detectingStacks": "در حال شناسایی استک‌ها...",
     "stackDetectionFailed": "شناسایی استک‌های فنی ناموفق بود",
