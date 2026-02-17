@@ -111,13 +111,31 @@ public class GitHubMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                        if (!contentList.isEmpty() && contentList.get(0).containsKey("text")) {
-                            // Parse the text content which should contain the file list
-                            String text = (String) contentList.get(0).get("text");
-                            // The text might be JSON or a simple list - try to parse accordingly
-                            log.debug("Retrieved file list from GitHub MCP");
-                            // For now, return empty - we'll need to parse the actual format
-                            return List.of();
+                        List<String> files = new ArrayList<>();
+                        
+                        for (Map<String, Object> item : contentList) {
+                            if (item == null) {
+                                continue;
+                            }
+                            Object textObj = item.get("text");
+                            if (textObj != null) {
+                                String text = textObj.toString().trim();
+                                if (!text.isEmpty()) {
+                                    // Parse each line as a file path
+                                    String[] lines = text.split("\\n");
+                                    for (String line : lines) {
+                                        String trimmed = line.trim();
+                                        if (!trimmed.isEmpty()) {
+                                            files.add(trimmed);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!files.isEmpty()) {
+                            log.debug("Retrieved {} files from GitHub MCP", files.size());
+                            return files;
                         }
                     }
                 }

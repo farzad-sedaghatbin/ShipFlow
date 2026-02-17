@@ -230,7 +230,10 @@ public class TechStackDetectorService {
                 .stackType(cached.getStackType())
                 .confidence(cached.getConfidenceScore())
                 .keyFilesFound(cached.getDetectedByFiles() != null 
-                    ? List.of(cached.getDetectedByFiles().split(","))
+                    ? java.util.Arrays.stream(cached.getDetectedByFiles().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList())
                     : List.of())
                 .primaryLanguage(getPrimaryLanguage(cached.getStackType()))
                 .framework(cached.getStackType().getDisplayName())
