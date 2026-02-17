@@ -238,7 +238,7 @@ public class FigmaMcpProvider implements McpClientService {
             
             Map<String, Object> arguments = new HashMap<>();
             arguments.put("fileKey", fileKey);
-            arguments.put("query", query);
+            arguments.put("query", pattern);
             
             Map<String, Object> params = Map.of(
                 "name", "search_nodes",
