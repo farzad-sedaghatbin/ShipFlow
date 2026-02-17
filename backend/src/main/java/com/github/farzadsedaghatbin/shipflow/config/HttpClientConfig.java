@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -33,11 +34,14 @@ public class HttpClientConfig {
   /**
    * Dedicated RestTemplate for MCP (Model Context Protocol) server calls.
    * Has longer timeouts as MCP operations may involve fetching external data.
+   * Includes custom SSE (Server-Sent Events) message converter for handling text/event-stream responses.
    */
   @Bean("mcpRestTemplate")
-  public RestTemplate mcpRestTemplate(RestTemplateBuilder builder) {
+  public RestTemplate mcpRestTemplate(RestTemplateBuilder builder, ObjectMapper objectMapper) {
     return builder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(30))
-        .additionalMessageConverters(new org.springframework.http.converter.StringHttpMessageConverter())
+        .additionalMessageConverters(
+            new SseJsonMessageConverter(objectMapper),
+            new org.springframework.http.converter.StringHttpMessageConverter())
         .build();
   }
 }
