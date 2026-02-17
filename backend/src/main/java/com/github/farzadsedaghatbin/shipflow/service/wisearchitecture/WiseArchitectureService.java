@@ -275,8 +275,19 @@ public class WiseArchitectureService {
             "branch", repo.getDefaultBranch() != null ? repo.getDefaultBranch() : "main"
         );
 
+        log.info("Fetching file list for {}/{} (branch: {}) via GitHub MCP", 
+            parts[0], parts[1], context.get("branch"));
+        
         List<String> files = githubMcpProvider.listFiles(context);
-        log.debug("Retrieved {} files from repository {} via MCP", files.size(), repo.getFullName());
+        
+        if (files.isEmpty()) {
+            log.warn("No files retrieved from repository {} via MCP", repo.getFullName());
+        } else {
+            log.info("Retrieved {} files from repository {} via MCP", files.size(), repo.getFullName());
+            log.debug("First 10 files: {}", 
+                files.stream().limit(10).collect(java.util.stream.Collectors.joining(", ")));
+        }
+        
         return files;
     }
 

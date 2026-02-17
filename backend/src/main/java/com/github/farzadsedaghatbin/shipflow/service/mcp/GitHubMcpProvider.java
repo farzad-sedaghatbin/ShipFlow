@@ -111,6 +111,7 @@ public class GitHubMcpProvider implements McpClientService {
                     Object content = resultMap.get("content");
                     if (content instanceof List) {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
+                        log.info("MCP response contains {} content items", contentList.size());
                         List<String> files = new ArrayList<>();
                         
                         for (Map<String, Object> item : contentList) {
@@ -120,6 +121,9 @@ public class GitHubMcpProvider implements McpClientService {
                             Object textObj = item.get("text");
                             if (textObj != null) {
                                 String text = textObj.toString().trim();
+                                log.debug("Parsing MCP text content (length: {}): {}", 
+                                    text.length(), 
+                                    text.length() > 200 ? text.substring(0, 200) + "..." : text);
                                 if (!text.isEmpty()) {
                                     // Parse each line as a file path
                                     String[] lines = text.split("\\n");
@@ -134,11 +138,22 @@ public class GitHubMcpProvider implements McpClientService {
                         }
                         
                         if (!files.isEmpty()) {
-                            log.debug("Retrieved {} files from GitHub MCP", files.size());
+                            log.info("Retrieved {} files from GitHub MCP for {}/{}", 
+                                files.size(), owner, repo);
+                            log.debug("Sample files: {}", 
+                                files.stream().limit(10).collect(java.util.stream.Collectors.joining(", ")));
                             return files;
+                        } else {
+                            log.warn("MCP response parsed but no files extracted for {}/{}", owner, repo);
                         }
+                    } else {
+                        log.warn("MCP response 'content' is not a List for {}/{}", owner, repo);
                     }
+                } else {
+                    log.warn("MCP response 'result' is not a Map for {}/{}", owner, repo);
                 }
+            } else {
+                log.warn("MCP response missing 'result' key for {}/{}", owner, repo);
             }
             
             log.debug("No files returned from GitHub MCP for {}/{}", owner, repo);
