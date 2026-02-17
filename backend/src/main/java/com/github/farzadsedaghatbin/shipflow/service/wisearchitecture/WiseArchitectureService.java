@@ -365,27 +365,47 @@ public class WiseArchitectureService {
         }
         
         // Batch read files in parallel for better performance
+        List<FileContent> fileContents = Collections.synchronizedList(new ArrayList<>());
         StringBuilder codeContext = new StringBuilder();
+        
         if (!filesToRead.isEmpty()) {
-            List<CompletableFuture<Void>> readFutures = filesToRead.stream()
-                .distinct()
-                .limit(10) // Cap at 10 files total
-                .map(filePath -> CompletableFuture.runAsync(() -> {
-                    githubMcpProvider.readFile(context, filePath).ifPresent(content -> {
-                        // Truncate large files
-                        String truncated = content.length() > 2000 
-                            ? content.substring(0, 2000) + "\n// ... (truncated)" 
-                            : content;
-                        synchronized (codeContext) {
-                            codeContext.append("// File: ").append(filePath).append("\n");
-                            codeContext.append(truncated).append("\n\n");
-                        }
-                    });
-                }))
-                .toList();
+            // Use a dedicated executor to avoid blocking the common ForkJoinPool with I/O
+            int maxFiles = (int) filesToRead.stream().distinct().limit(10).count();
+            ExecutorService fileReadExecutor = Executors.newFixedThreadPool(Math.min(maxFiles, 4));
+            try {
+                List<CompletableFuture<Void>> readFutures = filesToRead.stream()
+                    .distinct()
+                    .limit(10) // Cap at 10 files total
+                    .map(filePath -> CompletableFuture.runAsync(() -> {
+                        githubMcpProvider.readFile(context, filePath).ifPresent(content -> {
+                            // Truncate large files
+                            String truncated = content.length() > 2000 
+                                ? content.substring(0, 2000) + "\n// ... (truncated)" 
+                                : content;
+                            fileContents.add(new FileContent(filePath, truncated));
+                        });
+                    }, fileReadExecutor))
+                    .toList();
+                
+                // Wait for all reads to complete
+                CompletableFuture.allOf(readFutures.toArray(new CompletableFuture[0])).join();
+            } finally {
+                fileReadExecutor.shutdown();
+                try {
+                    if (!fileReadExecutor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                        fileReadExecutor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    fileReadExecutor.shutdownNow();
+                    Thread.currentThread().interrupt();
+                }
+            }
             
-            // Wait for all reads to complete
-            CompletableFuture.allOf(readFutures.toArray(new CompletableFuture[0])).join();
+            // Build context from collected file contents
+            for (FileContent fc : fileContents) {
+                codeContext.append("// File: ").append(fc.path).append("\n");
+                codeContext.append(fc.content).append("\n\n");
+            }
         }
 
         String result = codeContext.toString();
@@ -743,6 +763,7 @@ public class WiseArchitectureService {
         callback.onProgress(55, "Starting stack detection...");
         
         List<DetectedStackDTO> allStacks = Collections.synchronizedList(new ArrayList<>());
+        java.util.concurrent.atomic.AtomicInteger completed = new java.util.concurrent.atomic.AtomicInteger(0);
         ExecutorService parallelExecutor = Executors.newFixedThreadPool(Math.min(totalRepos, 4));
         
         try {
@@ -758,22 +779,24 @@ public class WiseArchitectureService {
                         List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList);
                         allStacks.addAll(repoStacks);
                         
-                        int progressPercent = 55 + (int) ((repoIndex + 1.0) / totalRepos * 40);
+                        int completedCount = completed.incrementAndGet();
+                        int progressPercent = 55 + (int) ((completedCount * 1.0) / totalRepos * 40);
                         String stackNames = repoStacks.stream()
                             .map(s -> s.getStackType().getDisplayName())
                             .collect(Collectors.joining(", "));
                         
                         if (repoStacks.isEmpty()) {
                             callback.onProgress(progressPercent, 
-                                String.format("No stacks detected in %s (%d/%d)", repo.getName(), repoIndex + 1, totalRepos));
+                                String.format("No stacks detected in %s (%d/%d)", repo.getName(), completedCount, totalRepos));
                         } else {
                             callback.onProgress(progressPercent, 
                                 String.format("Detected %d stack%s: %s in %s (%d/%d)", 
                                     repoStacks.size(), repoStacks.size() == 1 ? "" : "s", 
-                                    stackNames, repo.getName(), repoIndex + 1, totalRepos));
+                                    stackNames, repo.getName(), completedCount, totalRepos));
                         }
                     } catch (Exception e) {
                         log.error("Error detecting stacks in repository {}: {}", repo.getFullName(), e.getMessage());
+                        completed.incrementAndGet(); // Still count as completed even on error
                     }
                 }, parallelExecutor);
                 
@@ -782,8 +805,21 @@ public class WiseArchitectureService {
             
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             
+        } catch (Exception e) {
+            log.error("Error during parallel stack detection", e);
+            throw e;
         } finally {
             parallelExecutor.shutdown();
+            try {
+                if (!parallelExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS)) {
+                    log.warn("Executor did not terminate in time, forcing shutdown");
+                    parallelExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for executor termination");
+                parallelExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
         
         // Phase 4: Finalization (95-100%)
@@ -851,22 +887,18 @@ public class WiseArchitectureService {
         // Phase 2: Context extraction (10-20%)
         callback.onProgress(12, "Extracting team skills context...");
         
-        String[] teamSkillsHolder = new String[1];
-        String[] figmaContextHolder = new String[1];
-        String[] roadmapContextHolder = new String[1];
-        
-        CompletableFuture<Void> teamSkillsFuture = CompletableFuture.runAsync(() ->
-            teamSkillsHolder[0] = extractTeamSkills(pitch));
-        CompletableFuture<Void> figmaFuture = CompletableFuture.runAsync(() ->
-            figmaContextHolder[0] = extractFigmaContext(pitch));
-        CompletableFuture<Void> roadmapFuture = CompletableFuture.runAsync(() ->
-            roadmapContextHolder[0] = extractRoadmapContext(pitch));
+        CompletableFuture<String> teamSkillsFuture = CompletableFuture.supplyAsync(() ->
+            extractTeamSkills(pitch));
+        CompletableFuture<String> figmaFuture = CompletableFuture.supplyAsync(() ->
+            extractFigmaContext(pitch));
+        CompletableFuture<String> roadmapFuture = CompletableFuture.supplyAsync(() ->
+            extractRoadmapContext(pitch));
         
         CompletableFuture.allOf(teamSkillsFuture, figmaFuture, roadmapFuture).join();
         
-        String teamSkills = teamSkillsHolder[0];
-        String figmaContext = figmaContextHolder[0];
-        String roadmapContext = roadmapContextHolder[0];
+        String teamSkills = teamSkillsFuture.join();
+        String figmaContext = figmaFuture.join();
+        String roadmapContext = roadmapFuture.join();
         
         boolean hasTeamSkills = teamSkills != null && !teamSkills.isBlank();
         boolean hasFigmaContext = figmaContext != null && !figmaContext.isBlank();
@@ -1005,4 +1037,9 @@ public class WiseArchitectureService {
         
         return response;
     }
+    
+    /**
+     * Helper record for thread-safe file content collection
+     */
+    private record FileContent(String path, String content) {}
 }

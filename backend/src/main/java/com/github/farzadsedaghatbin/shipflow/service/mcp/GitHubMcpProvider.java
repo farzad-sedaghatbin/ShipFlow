@@ -77,13 +77,11 @@ public class GitHubMcpProvider implements McpClientService {
      */
     @Scheduled(fixedRate = 60000) // Every minute
     public void cleanupExpiredCache() {
-        int removed = 0;
-        for (Map.Entry<String, CachedFileList> entry : fileListCache.entrySet()) {
-            if (entry.getValue().isExpired()) {
-                fileListCache.remove(entry.getKey());
-                removed++;
-            }
-        }
+        // Use removeIf for atomic check-and-remove
+        int initialSize = fileListCache.size();
+        fileListCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        int removed = initialSize - fileListCache.size();
+        
         if (removed > 0) {
             log.debug("Cleaned up {} expired file list cache entries", removed);
         }

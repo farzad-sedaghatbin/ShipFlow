@@ -277,7 +277,7 @@ public class TechStackDetectorService {
             int matchCount = 0;
             
             // OPTIMIZATION: First check files with relevant extensions only
-            Set<TechStackType> stackFromExtensions = new HashSet<>();
+            extensionLoop:
             for (Map.Entry<String, Set<TechStackType>> extEntry : EXTENSION_TO_STACKS.entrySet()) {
                 if (extEntry.getValue().contains(stackType)) {
                     List<String> extFiles = fileIndex.get(extEntry.getKey());
@@ -292,7 +292,8 @@ public class TechStackDetectorService {
                             }
                             // OPTIMIZATION: Stop early if we have enough high-confidence matches
                             if (matchCount >= 20 && alreadyQuickDetected) {
-                                break;
+                                earlyTerminated = true;
+                                break extensionLoop;
                             }
                         }
                     }

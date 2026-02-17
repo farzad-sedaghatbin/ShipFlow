@@ -140,7 +140,8 @@ export const wiseArchitectureService = {
    */
   detectStacksWithFallback: async (
     request: DetectStacksRequest,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
   ): Promise<DetectStacksResponse> => {
     try {
       // Try sync first (faster for small repos)
@@ -156,7 +157,7 @@ export const wiseArchitectureService = {
           axiosError.response?.status === 504 ||
           axiosError.code === 'ECONNABORTED') {
         onProgress?.(5, 'Large repo detected, switching to async mode...');
-        return wiseArchitectureService.pollDetectStacks(request, onProgress);
+        return wiseArchitectureService.pollDetectStacks(request, onProgress, signal);
       }
       throw error;
     }
@@ -168,7 +169,8 @@ export const wiseArchitectureService = {
    */
   analyzeWithFallback: async (
     request: WiseArchitectureRequest,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
   ): Promise<WiseArchitectureResponse> => {
     try {
       // Try sync first (faster for simple analyses)
@@ -184,7 +186,7 @@ export const wiseArchitectureService = {
           axiosError.response?.status === 504 ||
           axiosError.code === 'ECONNABORTED') {
         onProgress?.(5, 'Complex analysis, switching to async mode...');
-        return wiseArchitectureService.pollAnalyze(request, onProgress);
+        return wiseArchitectureService.pollAnalyze(request, onProgress, signal);
       }
       throw error;
     }
@@ -195,12 +197,14 @@ export const wiseArchitectureService = {
    */
   pollDetectStacks: async (
     request: DetectStacksRequest,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
   ): Promise<DetectStacksResponse> => {
     const job = await wiseArchitectureService.startDetectStacksAsync(request);
     return wiseArchitectureService.pollUntilComplete<DetectStacksResponse>(
       job.jobId,
-      onProgress
+      onProgress,
+      signal
     );
   },
 
@@ -209,25 +213,34 @@ export const wiseArchitectureService = {
    */
   pollAnalyze: async (
     request: WiseArchitectureRequest,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
   ): Promise<WiseArchitectureResponse> => {
     const job = await wiseArchitectureService.startAnalyzeAsync(request);
     return wiseArchitectureService.pollUntilComplete<WiseArchitectureResponse>(
       job.jobId,
-      onProgress
+      onProgress,
+      signal
     );
   },
 
   /**
    * Poll a job until it completes or fails.
+   * Supports AbortSignal for cancellation.
    */
   pollUntilComplete: async <T>(
     jobId: string,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
   ): Promise<T> => {
     const startTime = Date.now();
     
     while (true) {
+      // Check if aborted
+      if (signal?.aborted) {
+        throw new Error('Operation cancelled');
+      }
+      
       // Check timeout
       if (Date.now() - startTime > MAX_POLL_DURATION) {
         throw new Error('Job timed out - please try again or select fewer repositories');
@@ -251,8 +264,23 @@ export const wiseArchitectureService = {
         case 'PENDING':
         case 'PROCESSING':
         default:
-          // Wait before next poll
-          await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+          // Wait before next poll with abort support
+          await new Promise<void>((resolve, reject) => {
+            if (signal?.aborted) {
+              reject(new Error('Operation cancelled'));
+              return;
+            }
+            
+            const timeoutId = setTimeout(resolve, POLL_INTERVAL);
+            
+            // Listen for abort during the wait
+            const abortHandler = () => {
+              clearTimeout(timeoutId);
+              reject(new Error('Operation cancelled'));
+            };
+            
+            signal?.addEventListener('abort', abortHandler, { once: true });
+          });
       }
     }
   },

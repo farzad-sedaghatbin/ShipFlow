@@ -112,6 +112,10 @@ const WiseArchitecturePage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // AbortControllers for cancelling async operations
+  const detectAbortController = useRef<AbortController | null>(null);
+  const analyzeAbortController = useRef<AbortController | null>(null);
 
   // State
   const [currentStep, setCurrentStep] = useState<Step>('pitch');
@@ -190,6 +194,14 @@ const WiseArchitecturePage: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Cleanup: abort ongoing operations on unmount
+  useEffect(() => {
+    return () => {
+      detectAbortController.current?.abort();
+      analyzeAbortController.current?.abort();
+    };
+  }, []);
 
   const checkFeatureStatus = async () => {
     try {
@@ -273,6 +285,10 @@ const WiseArchitecturePage: React.FC = () => {
       return;
     }
 
+    // Create new AbortController for this operation
+    detectAbortController.current?.abort();
+    detectAbortController.current = new AbortController();
+
     setDetectingStacks(true);
     setError(null);
     setDetectProgress({ percent: 0, message: t('wiseArchitecture.startingDetection') });
@@ -287,7 +303,8 @@ const WiseArchitecturePage: React.FC = () => {
         },
         (progress, message) => {
           setDetectProgress({ percent: progress, message: message || '' });
-        }
+        },
+        detectAbortController.current.signal
       );
       setDetectedStacks(response.detectedStacks);
       
@@ -299,10 +316,14 @@ const WiseArchitecturePage: React.FC = () => {
       
       setCurrentStep('stacks');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || t('wiseArchitecture.stackDetectionFailed'));
+      // Ignore errors from abort
+      if (err.message !== 'Operation cancelled') {
+        setError(err.response?.data?.message || err.message || t('wiseArchitecture.stackDetectionFailed'));
+      }
     } finally {
       setDetectingStacks(false);
       setDetectProgress({ percent: 0, message: '' });
+      detectAbortController.current = null;
     }
   };
 
@@ -311,6 +332,10 @@ const WiseArchitecturePage: React.FC = () => {
       setError(t('wiseArchitecture.selectPitchAndStacks'));
       return;
     }
+
+    // Create new AbortController for this operation
+    analyzeAbortController.current?.abort();
+    analyzeAbortController.current = new AbortController();
 
     setGeneratingSolution(true);
     setError(null);
@@ -327,17 +352,22 @@ const WiseArchitecturePage: React.FC = () => {
         },
         (progress, message) => {
           setAnalyzeProgress({ percent: progress, message: message || '' });
-        }
+        },
+        analyzeAbortController.current.signal
       );
       
       setSolution(response);
       setSessionId(response.sessionId);
       setCurrentStep('solution');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || t('wiseArchitecture.solutionGenerationFailed'));
+      // Ignore errors from abort
+      if (err.message !== 'Operation cancelled') {
+        setError(err.response?.data?.message || err.message || t('wiseArchitecture.solutionGenerationFailed'));
+      }
     } finally {
       setGeneratingSolution(false);
       setAnalyzeProgress({ percent: 0, message: '' });
+      analyzeAbortController.current = null;
     }
   };
 

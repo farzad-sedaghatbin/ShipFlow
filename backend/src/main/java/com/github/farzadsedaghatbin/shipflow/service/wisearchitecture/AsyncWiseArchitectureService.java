@@ -229,18 +229,18 @@ public class AsyncWiseArchitectureService {
     @Scheduled(fixedRate = 600000)
     public void cleanupOldJobs() {
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(JOB_TTL_MINUTES);
-        int removed = 0;
         
-        for (Map.Entry<String, WiseArchitectureJob<?>> entry : jobs.entrySet()) {
-            WiseArchitectureJob<?> job = entry.getValue();
-            if (job.getCompletedAt() != null && job.getCompletedAt().isBefore(cutoff)) {
-                jobs.remove(entry.getKey());
-                removed++;
-            }
-        }
+        // Collect keys to remove first, then remove them
+        List<String> keysToRemove = jobs.entrySet().stream()
+            .filter(e -> e.getValue().getCompletedAt() != null)
+            .filter(e -> e.getValue().getCompletedAt().isBefore(cutoff))
+            .map(Map.Entry::getKey)
+            .toList();
         
-        if (removed > 0) {
-            log.info("Cleaned up {} old WISE Architecture jobs", removed);
+        keysToRemove.forEach(jobs::remove);
+        
+        if (!keysToRemove.isEmpty()) {
+            log.info("Cleaned up {} old WISE Architecture jobs", keysToRemove.size());
         }
     }
 
@@ -248,17 +248,16 @@ public class AsyncWiseArchitectureService {
      * Get current job statistics
      */
     public Map<String, Object> getJobStats() {
-        long pending = jobs.values().stream().filter(j -> j.getStatus() == JobStatus.PENDING).count();
-        long processing = jobs.values().stream().filter(j -> j.getStatus() == JobStatus.PROCESSING).count();
-        long completed = jobs.values().stream().filter(j -> j.getStatus() == JobStatus.COMPLETED).count();
-        long failed = jobs.values().stream().filter(j -> j.getStatus() == JobStatus.FAILED).count();
+        // Collect all statistics in a single pass for consistency and efficiency
+        Map<JobStatus, Long> statusCounts = jobs.values().stream()
+            .collect(Collectors.groupingBy(WiseArchitectureJob::getStatus, Collectors.counting()));
         
         return Map.of(
             "total", jobs.size(),
-            "pending", pending,
-            "processing", processing,
-            "completed", completed,
-            "failed", failed
+            "pending", statusCounts.getOrDefault(JobStatus.PENDING, 0L),
+            "processing", statusCounts.getOrDefault(JobStatus.PROCESSING, 0L),
+            "completed", statusCounts.getOrDefault(JobStatus.COMPLETED, 0L),
+            "failed", statusCounts.getOrDefault(JobStatus.FAILED, 0L)
         );
     }
 

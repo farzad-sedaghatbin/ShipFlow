@@ -34,11 +34,11 @@ public class FigmaMcpProvider implements McpClientService {
     private final RestTemplate mcpRestTemplate;
     private final OrganizationSettingsService settingsService;
 
-    // Figma URL patterns
+    // Figma URL patterns - file keys are typically 22-24 characters: letters, numbers, hyphens
     private static final Pattern FIGMA_FILE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
+        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
     private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9]+)(?:/[^?]*)?(?:\\?.*)?" );
+        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
 
     public FigmaMcpProvider(
             McpConfig mcpConfig,
