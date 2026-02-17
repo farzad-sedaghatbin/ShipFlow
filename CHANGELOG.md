@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Wise Architecture Async Processing & Performance**
+  - **Async Job Infrastructure**: Long-running operations no longer timeout
+    - New `AsyncWiseArchitectureService` with job-based execution pattern
+    - `WiseArchitectureExecutor` runs on dedicated `aiTaskExecutor` thread pool
+    - Request deduplication prevents duplicate jobs for same parameters
+    - Automatic job cleanup after 30-minute TTL
+    - New async endpoints: `POST /async/detect-stacks`, `POST /async/analyze`, `GET /jobs/{id}/status`
+  - **Granular Progress Tracking**: Real-time progress updates with descriptive messages
+    - 0-10% Initialization phase: "Loading repository information..."
+    - 10-55% File listing phase: "Listing files for repository 1/3 (kixy-mobile)..."
+    - 55-95% Detection/generation phase: "Detected 3 stacks: React Native, Node.js, Kotlin"
+    - 95-100% Finalization phase: "Solution complete: 3 stacks, 48 hours, appetite passed"
+  - **Performance Optimizations**:
+    - File list caching with 10-minute TTL (avoids repeated MCP calls)
+    - Pre-indexed file pattern matching by extension for O(1) lookups
+    - Quick config file detection for common frameworks (package.json, pom.xml, etc.)
+    - Parallel repository processing (up to 4 concurrent scans)
+    - Batch file reads using CompletableFuture.allOf() for code context
+  - **Frontend Polling**: Automatic progress tracking with visual feedback
+    - 2-second polling interval with exponential backoff
+    - Real-time progress bar and descriptive status messages
+    - Graceful timeout handling after 10 minutes
+    - Repository search with 300ms debouncing
+    - Memoized computed values (filteredRepositories, stacksByCategory)
+
+### Fixed
+- **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
+- **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
+- **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions
+
 ## [0.5.3] - 2026-02-16 - Wise AI & Strategic Planning
 
 ### Theme

@@ -35,10 +35,13 @@ public class HttpClientConfig {
    * Dedicated RestTemplate for MCP (Model Context Protocol) server calls.
    * Has longer timeouts as MCP operations may involve fetching external data.
    * Includes custom SSE (Server-Sent Events) message converter for handling text/event-stream responses.
+   * 
+   * Note: Increased timeout from 30s to 120s to handle large repository operations.
+   * For very large repos (1000+ files), use the async endpoints instead.
    */
   @Bean("mcpRestTemplate")
   public RestTemplate mcpRestTemplate(RestTemplateBuilder builder, ObjectMapper objectMapper) {
-    return builder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(30))
+    return builder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(120))
         .additionalMessageConverters(
             new SseJsonMessageConverter(objectMapper),
             new org.springframework.http.converter.StringHttpMessageConverter())

@@ -249,3 +249,45 @@ export interface ConversationItem {
   copilotPrompt?: string;
   timestamp: Date;
 }
+
+// =====================================================================
+// ASYNC JOB TYPES - For large repositories that may timeout
+// =====================================================================
+
+/**
+ * Job status values
+ */
+export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+/**
+ * Job type values
+ */
+export type JobType = 'DETECT_STACKS' | 'ANALYZE';
+
+/**
+ * Response from starting an async job
+ */
+export interface JobStartResponse {
+  jobId: string;
+  status: JobStatus;
+  message: string;
+}
+
+/**
+ * Job status response with progress information
+ */
+export interface JobStatusResponse {
+  jobId: string;
+  jobType: JobType;
+  status: JobStatus;
+  progress: number;  // 0-100
+  progressMessage?: string;
+  createdAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
+}
+
+/**
+ * Progress callback for polling
+ */
+export type ProgressCallback = (progress: number, message?: string) => void;

@@ -161,7 +161,8 @@ public class TechnicalSolutionGeneratorService {
         prompt.append("  \"implementationSteps\": [\n");
         prompt.append("    {\"stepNumber\": 1, \"title\": \"...\", \"description\": \"...\", \"estimatedHours\": 4, \"filesToCreate\": [...], \"filesToModify\": [...]}\n");
         prompt.append("  ],\n");
-        prompt.append("  \"riskFactors\": [\"Risk 1\", \"Risk 2\"]\n");
+        prompt.append("  \"riskFactors\": [\"Risk 1\", \"Risk 2\"],\n");
+        prompt.append("  \"bestPractices\": [\"Best practice 1\", \"Best practice 2\", \"Best practice 3\"]\n");
         prompt.append("}\n");
         prompt.append("```\n\n");
         prompt.append("Focus on:\n");
@@ -248,6 +249,7 @@ public class TechnicalSolutionGeneratorService {
                 .recommendedLibraries(parseRecommendedLibraries(parsed.get("recommendedLibraries")))
                 .implementationSteps(parseImplementationSteps(parsed.get("implementationSteps")))
                 .riskFactors(parseStringList(parsed.get("riskFactors")))
+                .bestPractices(parseStringList(parsed.get("bestPractices")))
                 .estimatedHours(calculateTotalHours(parseImplementationSteps(parsed.get("implementationSteps"))))
                 .build();
                 
@@ -391,6 +393,7 @@ public class TechnicalSolutionGeneratorService {
             ))
             .estimatedHours(1)
             .riskFactors(List.of("AI features not configured"))
+            .bestPractices(List.of())
             .build();
     }
 
@@ -403,6 +406,7 @@ public class TechnicalSolutionGeneratorService {
             .implementationSteps(List.of())
             .estimatedHours(0)
             .riskFactors(List.of("Solution generation failed: " + error))
+            .bestPractices(List.of())
             .build();
     }
 

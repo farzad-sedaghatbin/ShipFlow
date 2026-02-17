@@ -51,6 +51,12 @@ public class StackSolutionDTO {
     private List<String> riskFactors;
 
     /**
+     * Best practices specific to this stack's implementation.
+     */
+    @Builder.Default
+    private List<String> bestPractices = new java.util.ArrayList<>();
+
+    /**
      * DTO for a reusable service found in the codebase.
      */
     @Data

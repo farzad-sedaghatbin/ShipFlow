@@ -254,6 +254,9 @@ A modern project management application implementing the [Shape Up](https://base
   - Analyzes project codebase to understand existing architecture, patterns, and conventions
   - Generates stack-specific solutions for Backend Java, Frontend React, and Database
   - Identifies reusable services, recommended libraries, and implementation steps
+  - **Async Processing**: Job-based execution for large repos (1000+ files) with polling API
+  - **Granular Progress Tracking**: Real-time progress (0-100%) with descriptive status messages
+  - **Performance Optimizations**: File caching, parallel processing, pre-indexed pattern matching
   - **Team Skills Integration**: Considers team member skills for technology recommendations
   - **Figma MCP Integration**: Analyzes linked Figma designs for UI/UX context
   - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations

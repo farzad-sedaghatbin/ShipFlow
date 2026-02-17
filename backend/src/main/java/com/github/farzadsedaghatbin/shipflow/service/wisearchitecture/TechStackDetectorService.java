@@ -7,8 +7,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RepositoryTechStackRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
  * Service for detecting technology stacks in repositories.
  * Uses file patterns and project structure to identify tech stacks.
  * Caches detected stacks to avoid repeated detection.
+ * 
+ * Performance optimizations:
+ * - Pre-indexes files by extension for O(1) extension lookup
+ * - Uses early termination when high-confidence stacks are found
+ * - Batches pattern matching by extension type
  */
 @Service
 @Slf4j
@@ -30,6 +37,12 @@ public class TechStackDetectorService {
 
     // File patterns for stack detection
     private static final Map<TechStackType, List<Pattern>> STACK_PATTERNS = new HashMap<>();
+    
+    // Pre-computed extension sets for fast filtering (avoid regex for simple extension matches)
+    private static final Map<String, Set<TechStackType>> EXTENSION_TO_STACKS = new HashMap<>();
+    
+    // Key config file names that strongly indicate a stack (exact match, no regex needed)
+    private static final Map<String, TechStackType> KEY_CONFIG_FILES = new HashMap<>();
 
     static {
         // Mobile - Kotlin/Android
@@ -47,10 +60,13 @@ public class TechStackDetectorService {
             Pattern.compile(".*Podfile$")
         ));
 
-        // Mobile - React Native
+        // Mobile - React Native (improved detection patterns)
         STACK_PATTERNS.put(TechStackType.MOBILE_REACT_NATIVE, List.of(
-            Pattern.compile(".*(react-native|ReactNative)/.*$"),
-            Pattern.compile(".*metro\\.config\\.js$"),
+            Pattern.compile(".*metro\\.config\\.(js|ts)$"),
+            Pattern.compile(".*babel\\.config\\.js$"),
+            Pattern.compile(".*/android/app/src/main/.*$"),
+            Pattern.compile(".*/ios/.*\\.xcodeproj/.*$"),
+            Pattern.compile(".*react-native\\.config\\.js$"),
             Pattern.compile(".*app\\.json$")
         ));
 
@@ -126,6 +142,83 @@ public class TechStackDetectorService {
             Pattern.compile(".*/pages/[^/]+\\.(jsx|tsx)$"),
             Pattern.compile(".*/app/[^/]+\\.(jsx|tsx)$")
         ));
+
+        // Build extension-to-stacks index for fast filtering
+        addExtension(".kt", TechStackType.MOBILE_KOTLIN);
+        addExtension(".swift", TechStackType.MOBILE_SWIFT);
+        addExtension(".dart", TechStackType.MOBILE_FLUTTER);
+        addExtension(".java", TechStackType.BACKEND_JAVA);
+        addExtension(".py", TechStackType.BACKEND_PYTHON);
+        addExtension(".go", TechStackType.BACKEND_GO);
+        addExtension(".cs", TechStackType.BACKEND_DOTNET);
+        addExtension(".jsx", TechStackType.WEB_REACT);
+        addExtension(".tsx", TechStackType.WEB_REACT, TechStackType.MOBILE_REACT_NATIVE);
+        addExtension(".vue", TechStackType.WEB_VUE);
+        addExtension(".js", TechStackType.BACKEND_NODE, TechStackType.WEB_REACT, TechStackType.MOBILE_REACT_NATIVE);
+        addExtension(".ts", TechStackType.BACKEND_NODE, TechStackType.WEB_REACT, TechStackType.WEB_ANGULAR);
+
+        // Key config files for instant detection (exact filename match)
+        KEY_CONFIG_FILES.put("pom.xml", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("build.gradle", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("build.gradle.kts", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("go.mod", TechStackType.BACKEND_GO);
+        KEY_CONFIG_FILES.put("requirements.txt", TechStackType.BACKEND_PYTHON);
+        KEY_CONFIG_FILES.put("pyproject.toml", TechStackType.BACKEND_PYTHON);
+        KEY_CONFIG_FILES.put("pubspec.yaml", TechStackType.MOBILE_FLUTTER);
+        KEY_CONFIG_FILES.put("angular.json", TechStackType.WEB_ANGULAR);
+        KEY_CONFIG_FILES.put("next.config.js", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("next.config.mjs", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("next.config.ts", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("nuxt.config.js", TechStackType.WEB_VUE);
+        KEY_CONFIG_FILES.put("nuxt.config.ts", TechStackType.WEB_VUE);
+        KEY_CONFIG_FILES.put("metro.config.js", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("metro.config.ts", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("react-native.config.js", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("Podfile", TechStackType.MOBILE_SWIFT);
+        KEY_CONFIG_FILES.put("Package.swift", TechStackType.MOBILE_SWIFT);
+        KEY_CONFIG_FILES.put("AndroidManifest.xml", TechStackType.MOBILE_KOTLIN);
+    }
+
+    private static void addExtension(String ext, TechStackType... stacks) {
+        EXTENSION_TO_STACKS.computeIfAbsent(ext, k -> new HashSet<>()).addAll(Set.of(stacks));
+    }
+
+    /**
+     * Pre-index files by extension for faster pattern matching.
+     * Returns a map of extension -> list of files with that extension.
+     */
+    private Map<String, List<String>> indexFilesByExtension(List<String> fileList) {
+        Map<String, List<String>> index = new HashMap<>();
+        for (String file : fileList) {
+            if (file == null || file.length() > 500) continue;
+            
+            int lastDot = file.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < file.length() - 1) {
+                String ext = file.substring(lastDot);
+                index.computeIfAbsent(ext, k -> new ArrayList<>()).add(file);
+            }
+            
+            // Also index by filename for key config file detection
+            int lastSlash = file.lastIndexOf('/');
+            String filename = lastSlash >= 0 ? file.substring(lastSlash + 1) : file;
+            index.computeIfAbsent("__" + filename, k -> new ArrayList<>()).add(file);
+        }
+        return index;
+    }
+
+    /**
+     * Quick check for key config files using the pre-built index.
+     * Returns stacks that are definitely present based on key config files.
+     */
+    private Set<TechStackType> quickDetectFromConfigFiles(Map<String, List<String>> fileIndex) {
+        Set<TechStackType> detected = new HashSet<>();
+        for (Map.Entry<String, TechStackType> entry : KEY_CONFIG_FILES.entrySet()) {
+            if (fileIndex.containsKey("__" + entry.getKey())) {
+                detected.add(entry.getValue());
+                log.debug("Quick detect: found {} -> {}", entry.getKey(), entry.getValue());
+            }
+        }
+        return detected;
     }
 
     /**
@@ -160,32 +253,77 @@ public class TechStackDetectorService {
             fileList.stream().limit(20).collect(java.util.stream.Collectors.joining(", ")));
         
         log.info("No cached stacks found, performing detection for: {}", repository.getFullName());
+        
+        // OPTIMIZATION: Pre-index files by extension for faster pattern matching
+        long indexStart = System.currentTimeMillis();
+        Map<String, List<String>> fileIndex = indexFilesByExtension(fileList);
+        log.debug("File indexing took {}ms for {} files", 
+            System.currentTimeMillis() - indexStart, fileList.size());
+        
+        // OPTIMIZATION: Quick detect from key config files (exact match, no regex)
+        Set<TechStackType> quickDetected = quickDetectFromConfigFiles(fileIndex);
+        log.debug("Quick detection found {} stacks from config files", quickDetected.size());
+        
         List<DetectedStackDTO> detectedStacks = new ArrayList<>();
         
         for (Map.Entry<TechStackType, List<Pattern>> entry : STACK_PATTERNS.entrySet()) {
             TechStackType stackType = entry.getKey();
             List<Pattern> patterns = entry.getValue();
             
+            // OPTIMIZATION: If already quick-detected with high confidence, skip full scan
+            boolean alreadyQuickDetected = quickDetected.contains(stackType);
+            
             List<String> matchedFiles = new ArrayList<>();
             int matchCount = 0;
             
-            for (String filePath : fileList) {
-                // Prevent ReDoS by skipping excessively long paths
-                if (filePath != null && filePath.length() > 500) {
-                    continue;
-                }
-                for (Pattern pattern : patterns) {
-                    if (filePath != null && pattern.matcher(filePath).matches()) {
-                        matchedFiles.add(filePath);
-                        matchCount++;
-                        break; // Only count each file once
+            // OPTIMIZATION: First check files with relevant extensions only
+            Set<TechStackType> stackFromExtensions = new HashSet<>();
+            for (Map.Entry<String, Set<TechStackType>> extEntry : EXTENSION_TO_STACKS.entrySet()) {
+                if (extEntry.getValue().contains(stackType)) {
+                    List<String> extFiles = fileIndex.get(extEntry.getKey());
+                    if (extFiles != null) {
+                        for (String filePath : extFiles) {
+                            for (Pattern pattern : patterns) {
+                                if (pattern.matcher(filePath).matches()) {
+                                    matchedFiles.add(filePath);
+                                    matchCount++;
+                                    break;
+                                }
+                            }
+                            // OPTIMIZATION: Stop early if we have enough high-confidence matches
+                            if (matchCount >= 20 && alreadyQuickDetected) {
+                                break;
+                            }
+                        }
                     }
                 }
+            }
+            
+            // Also check non-extension patterns (like config files, directories)
+            for (String filePath : fileList) {
+                if (filePath == null || filePath.length() > 500) continue;
+                if (matchedFiles.contains(filePath)) continue; // Skip already matched
+                
+                for (Pattern pattern : patterns) {
+                    if (pattern.matcher(filePath).matches()) {
+                        matchedFiles.add(filePath);
+                        matchCount++;
+                        break;
+                    }
+                }
+                
+                // Stop early if we have enough matches
+                if (matchCount >= 50) break;
             }
             
             // Calculate confidence based on match ratio and specific key files
             if (matchCount > 0) {
                 int confidence = calculateConfidence(stackType, matchedFiles, fileList.size());
+                
+                // Boost confidence if quick-detected from config file
+                if (alreadyQuickDetected && confidence < 80) {
+                    confidence = Math.min(95, confidence + 20);
+                }
                 
                 if (confidence >= 30) { // Minimum confidence threshold
                     DetectedStackDTO detected = DetectedStackDTO.builder()
@@ -491,10 +629,47 @@ public class TechStackDetectorService {
     }
 
     private List<DetectedStackDTO> filterOverlappingStacks(List<DetectedStackDTO> stacks) {
-        // Group by category and keep highest confidence in each category
+        // First pass: Check if React Native is detected in any repository
+        Set<Long> reactNativeRepos = stacks.stream()
+            .filter(s -> s.getStackType() == TechStackType.MOBILE_REACT_NATIVE)
+            .map(DetectedStackDTO::getRepositoryId)
+            .collect(Collectors.toSet());
+        
+        // Second pass: Filter out false positives for React Native projects
+        // When React Native is detected, remove WEB_REACT and potentially BACKEND_NODE
+        // since those are just the JS/TS files that React Native projects include
+        List<DetectedStackDTO> filteredStacks = stacks.stream()
+            .filter(stack -> {
+                Long repoId = stack.getRepositoryId();
+                TechStackType type = stack.getStackType();
+                
+                // If this repo has React Native detected
+                if (reactNativeRepos.contains(repoId)) {
+                    // Remove WEB_REACT as it's a false positive from .tsx/.jsx files
+                    if (type == TechStackType.WEB_REACT) {
+                        log.debug("Filtering out {} for repo {} - React Native project", type, repoId);
+                        return false;
+                    }
+                    // Remove MOBILE_KOTLIN if it's just the android/ folder of RN project
+                    // Only keep if confidence is very high (90+) indicating native Kotlin code
+                    if (type == TechStackType.MOBILE_KOTLIN && stack.getConfidence() < 90) {
+                        log.debug("Filtering out {} for repo {} - likely RN android/ folder", type, repoId);
+                        return false;
+                    }
+                    // Remove BACKEND_NODE unless it has high confidence from express/nest/etc
+                    if (type == TechStackType.BACKEND_NODE && stack.getConfidence() < 70) {
+                        log.debug("Filtering out {} for repo {} - likely RN package.json", type, repoId);
+                        return false;
+                    }
+                }
+                return true;
+            })
+            .collect(Collectors.toList());
+        
+        // Third pass: Group by category and keep highest confidence in each category
         Map<String, DetectedStackDTO> bestByCategory = new HashMap<>();
         
-        for (DetectedStackDTO stack : stacks) {
+        for (DetectedStackDTO stack : filteredStacks) {
             String category = stack.getStackType().getCategory();
             String key = category + "_" + stack.getRepositoryId();
             

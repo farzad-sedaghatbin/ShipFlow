@@ -18,6 +18,9 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.GitHubMcpProvider;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -353,20 +356,36 @@ public class WiseArchitectureService {
         // Get file patterns based on stack type
         List<String> patterns = getFilePatterns(stackType);
         
-        StringBuilder codeContext = new StringBuilder();
+        // OPTIMIZATION: Collect all files to read first, then batch read them in parallel
+        List<String> filesToRead = new ArrayList<>();
         for (String pattern : patterns) {
             List<String> matchingFiles = githubMcpProvider.searchFiles(context, pattern);
             // Limit to first few matches to keep context manageable
-            for (String filePath : matchingFiles.stream().limit(3).toList()) {
-                githubMcpProvider.readFile(context, filePath).ifPresent(content -> {
-                    // Truncate large files
-                    String truncated = content.length() > 2000 
-                        ? content.substring(0, 2000) + "\n// ... (truncated)" 
-                        : content;
-                    codeContext.append("// File: ").append(filePath).append("\n");
-                    codeContext.append(truncated).append("\n\n");
-                });
-            }
+            matchingFiles.stream().limit(3).forEach(filesToRead::add);
+        }
+        
+        // Batch read files in parallel for better performance
+        StringBuilder codeContext = new StringBuilder();
+        if (!filesToRead.isEmpty()) {
+            List<CompletableFuture<Void>> readFutures = filesToRead.stream()
+                .distinct()
+                .limit(10) // Cap at 10 files total
+                .map(filePath -> CompletableFuture.runAsync(() -> {
+                    githubMcpProvider.readFile(context, filePath).ifPresent(content -> {
+                        // Truncate large files
+                        String truncated = content.length() > 2000 
+                            ? content.substring(0, 2000) + "\n// ... (truncated)" 
+                            : content;
+                        synchronized (codeContext) {
+                            codeContext.append("// File: ").append(filePath).append("\n");
+                            codeContext.append(truncated).append("\n\n");
+                        }
+                    });
+                }))
+                .toList();
+            
+            // Wait for all reads to complete
+            CompletableFuture.allOf(readFutures.toArray(new CompletableFuture[0])).join();
         }
 
         String result = codeContext.toString();
@@ -637,5 +656,353 @@ public class WiseArchitectureService {
         String result = context.toString().trim();
         log.debug("Extracted roadmap context for pitch '{}': {} chars", pitch.getTitle(), result.length());
         return result;
+    }
+
+    // =====================================================================
+    // ASYNC METHODS WITH PROGRESS CALLBACKS
+    // =====================================================================
+
+    /**
+     * Detect tech stacks with progress callback for async execution.
+     * Uses granular progress tracking with descriptive messages.
+     * 
+     * Progress phases:
+     * - 0-10%: Initialization (loading pitch, validating repos)
+     * - 10-55%: File listing for each repository
+     * - 55-95%: Stack detection for each repository
+     * - 95-100%: Finalization and summary
+     */
+    @Transactional
+    public DetectStacksResponseDTO detectStacksWithProgress(
+            DetectStacksRequestDTO request, 
+            WiseArchitectureExecutor.ProgressCallback callback) {
+        checkFeatureEnabled();
+        
+        log.info("Detecting stacks (async) for pitch {} in {} repositories", 
+            request.getPitchId(), request.getRepositoryIds().size());
+        
+        // Phase 1: Initialization (0-10%)
+        callback.onProgress(2, "Initializing stack detection...");
+        
+        Pitch pitch = pitchRepository.findByIdNotDeleted(request.getPitchId())
+            .orElseThrow(() -> new ResourceNotFoundException("Pitch not found: " + request.getPitchId()));
+        
+        callback.onProgress(5, "Loading repository information...");
+        
+        List<GitHubRepository> repositories = new ArrayList<>();
+        for (Long repoId : request.getRepositoryIds()) {
+            repositoryRepository.findById(repoId).ifPresent(repositories::add);
+        }
+        
+        if (repositories.isEmpty()) {
+            callback.onProgress(100, "No repositories to scan");
+            return DetectStacksResponseDTO.builder()
+                .pitchId(pitch.getId())
+                .pitchName(pitch.getTitle())
+                .detectedStacks(List.of())
+                .repositoriesScanned(0)
+                .message("No valid repositories found")
+                .build();
+        }
+        
+        callback.onProgress(10, String.format("Found %d repositor%s to scan", 
+            repositories.size(), repositories.size() == 1 ? "y" : "ies"));
+        
+        Map<Long, String> branchMap = request.getRepositoryBranches() != null 
+            ? request.getRepositoryBranches() 
+            : Map.of();
+        
+        int totalRepos = repositories.size();
+        
+        // Phase 2: File listing (10-55%) - Sequential for accurate progress
+        Map<GitHubRepository, List<String>> repoFileLists = new LinkedHashMap<>();
+        for (int i = 0; i < repositories.size(); i++) {
+            GitHubRepository repo = repositories.get(i);
+            int progressPercent = 10 + (int) ((i * 1.0 / totalRepos) * 45);
+            callback.onProgress(progressPercent, 
+                String.format("Listing files for repository %d/%d (%s)...", i + 1, totalRepos, repo.getName()));
+            
+            try {
+                if (Boolean.TRUE.equals(request.getForceRedetection())) {
+                    techStackDetectorService.clearCache(repo);
+                }
+                
+                String branch = branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch());
+                List<String> fileList = getRepositoryFileList(repo, branch);
+                repoFileLists.put(repo, fileList);
+                
+                callback.onProgress(progressPercent + (int) (45.0 / totalRepos), 
+                    String.format("Listed %d files from %s", fileList.size(), repo.getName()));
+            } catch (Exception e) {
+                log.error("Error listing files from repository {}: {}", repo.getFullName(), e.getMessage());
+                repoFileLists.put(repo, List.of());
+            }
+        }
+        
+        // Phase 3: Stack detection (55-95%) - Process in parallel for performance
+        callback.onProgress(55, "Starting stack detection...");
+        
+        List<DetectedStackDTO> allStacks = Collections.synchronizedList(new ArrayList<>());
+        ExecutorService parallelExecutor = Executors.newFixedThreadPool(Math.min(totalRepos, 4));
+        
+        try {
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            
+            for (int i = 0; i < repositories.size(); i++) {
+                final int repoIndex = i;
+                final GitHubRepository repo = repositories.get(i);
+                final List<String> fileList = repoFileLists.getOrDefault(repo, List.of());
+                
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        List<DetectedStackDTO> repoStacks = techStackDetectorService.detectStacks(repo, fileList);
+                        allStacks.addAll(repoStacks);
+                        
+                        int progressPercent = 55 + (int) ((repoIndex + 1.0) / totalRepos * 40);
+                        String stackNames = repoStacks.stream()
+                            .map(s -> s.getStackType().getDisplayName())
+                            .collect(Collectors.joining(", "));
+                        
+                        if (repoStacks.isEmpty()) {
+                            callback.onProgress(progressPercent, 
+                                String.format("No stacks detected in %s (%d/%d)", repo.getName(), repoIndex + 1, totalRepos));
+                        } else {
+                            callback.onProgress(progressPercent, 
+                                String.format("Detected %d stack%s: %s in %s (%d/%d)", 
+                                    repoStacks.size(), repoStacks.size() == 1 ? "" : "s", 
+                                    stackNames, repo.getName(), repoIndex + 1, totalRepos));
+                        }
+                    } catch (Exception e) {
+                        log.error("Error detecting stacks in repository {}: {}", repo.getFullName(), e.getMessage());
+                    }
+                }, parallelExecutor);
+                
+                futures.add(future);
+            }
+            
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            
+        } finally {
+            parallelExecutor.shutdown();
+        }
+        
+        // Phase 4: Finalization (95-100%)
+        callback.onProgress(95, "Finalizing detection results...");
+        
+        String stackSummary = allStacks.stream()
+            .map(s -> s.getStackType().getDisplayName())
+            .distinct()
+            .collect(Collectors.joining(", "));
+        
+        String message = allStacks.isEmpty() 
+            ? String.format("No tech stacks found in %d repositor%s", 
+                repositories.size(), repositories.size() == 1 ? "y" : "ies")
+            : String.format("Found %d tech stack%s: %s across %d repositor%s", 
+                allStacks.size(), allStacks.size() == 1 ? "" : "s",
+                stackSummary, repositories.size(), repositories.size() == 1 ? "y" : "ies");
+        
+        callback.onProgress(100, message);
+        
+        return DetectStacksResponseDTO.builder()
+            .pitchId(pitch.getId())
+            .pitchName(pitch.getTitle())
+            .detectedStacks(new ArrayList<>(allStacks))
+            .repositoriesScanned(repositories.size())
+            .message(message)
+            .build();
+    }
+
+    /**
+     * Generate solution with progress callback for async execution.
+     * Uses granular progress tracking with descriptive messages.
+     * 
+     * Progress phases:
+     * - 0-10%: Initialization (loading pitch, repos)
+     * - 10-20%: Context extraction (team skills, figma, roadmap)
+     * - 20-85%: Solution generation for each stack
+     * - 85-95%: Appetite analysis and reduced scope
+     * - 95-100%: Finalization
+     */
+    @Transactional(readOnly = true)
+    public WiseArchitectureResponseDTO analyzeWithProgress(
+            WiseArchitectureRequestDTO request,
+            WiseArchitectureExecutor.ProgressCallback callback) {
+        checkFeatureEnabled();
+        
+        log.info("Generating solution (async) for pitch {} with {} stacks", 
+            request.getPitchId(), request.getSelectedStacks().size());
+        
+        // Phase 1: Initialization (0-10%)
+        callback.onProgress(2, "Initializing solution analysis...");
+        
+        Pitch pitch = pitchRepository.findByIdNotDeleted(request.getPitchId())
+            .orElseThrow(() -> new ResourceNotFoundException("Pitch not found: " + request.getPitchId()));
+        
+        callback.onProgress(5, "Loading repository information...");
+        
+        List<GitHubRepository> repositories = new ArrayList<>();
+        for (Long repoId : request.getRepositoryIds()) {
+            repositoryRepository.findById(repoId).ifPresent(repositories::add);
+        }
+        
+        callback.onProgress(10, String.format("Loaded %d repositor%s for analysis", 
+            repositories.size(), repositories.size() == 1 ? "y" : "ies"));
+        
+        // Phase 2: Context extraction (10-20%)
+        callback.onProgress(12, "Extracting team skills context...");
+        
+        String[] teamSkillsHolder = new String[1];
+        String[] figmaContextHolder = new String[1];
+        String[] roadmapContextHolder = new String[1];
+        
+        CompletableFuture<Void> teamSkillsFuture = CompletableFuture.runAsync(() ->
+            teamSkillsHolder[0] = extractTeamSkills(pitch));
+        CompletableFuture<Void> figmaFuture = CompletableFuture.runAsync(() ->
+            figmaContextHolder[0] = extractFigmaContext(pitch));
+        CompletableFuture<Void> roadmapFuture = CompletableFuture.runAsync(() ->
+            roadmapContextHolder[0] = extractRoadmapContext(pitch));
+        
+        CompletableFuture.allOf(teamSkillsFuture, figmaFuture, roadmapFuture).join();
+        
+        String teamSkills = teamSkillsHolder[0];
+        String figmaContext = figmaContextHolder[0];
+        String roadmapContext = roadmapContextHolder[0];
+        
+        boolean hasTeamSkills = teamSkills != null && !teamSkills.isBlank();
+        boolean hasFigmaContext = figmaContext != null && !figmaContext.isBlank();
+        boolean hasRoadmapContext = roadmapContext != null && !roadmapContext.isBlank();
+        
+        List<String> contextSummary = new ArrayList<>();
+        if (hasTeamSkills) contextSummary.add("team skills");
+        if (hasFigmaContext) contextSummary.add("Figma designs");
+        if (hasRoadmapContext) contextSummary.add("roadmap");
+        
+        String contextMsg = contextSummary.isEmpty() 
+            ? "No additional context available" 
+            : "Extracted context: " + String.join(", ", contextSummary);
+        callback.onProgress(20, contextMsg);
+        
+        // Phase 3: Solution generation (20-85%)
+        Map<TechStackType, StackSolutionDTO> solutions = new LinkedHashMap<>();
+        int totalEstimatedHours = 0;
+        boolean hasCodeContext = false;
+        
+        Map<Long, String> branchMap = request.getRepositoryBranches() != null 
+            ? request.getRepositoryBranches() 
+            : Map.of();
+        
+        int totalStacks = request.getSelectedStacks().size();
+        int stackIndex = 0;
+        
+        for (TechStackType stackType : request.getSelectedStacks()) {
+            stackIndex++;
+            
+            // Progress for this stack: 20% to 85% divided among stacks
+            int progressStart = 20 + (int) (((stackIndex - 1) * 1.0) / totalStacks * 65);
+            int progressEnd = 20 + (int) ((stackIndex * 1.0) / totalStacks * 65);
+            
+            callback.onProgress(progressStart, 
+                String.format("Generating solution for %s (step %d/%d)...", 
+                    stackType.getDisplayName(), stackIndex, totalStacks));
+            
+            GitHubRepository repo = repositories.isEmpty() ? null : repositories.get(0);
+            
+            DetectedStackDTO stack = DetectedStackDTO.builder()
+                .stackType(stackType)
+                .repositoryId(repo != null ? repo.getId() : null)
+                .repositoryName(repo != null ? repo.getFullName() : "Unknown")
+                .build();
+            
+            String branch = repo != null ? branchMap.getOrDefault(repo.getId(), repo.getDefaultBranch()) : null;
+            
+            // Sub-progress: Fetching code context
+            callback.onProgress(progressStart + (progressEnd - progressStart) / 3, 
+                String.format("Fetching code context for %s...", stackType.getDisplayName()));
+            
+            String codeContext = getCodeContext(repo, stackType, branch);
+            List<String> existingServices = findExistingServices(repo, stackType);
+            
+            if (codeContext != null && !codeContext.isEmpty() && 
+                !codeContext.equals("// Code context will be populated via MCP integration")) {
+                hasCodeContext = true;
+            }
+            
+            // Sub-progress: AI generation
+            callback.onProgress(progressStart + (progressEnd - progressStart) * 2 / 3, 
+                String.format("AI generating architecture for %s...", stackType.getDisplayName()));
+            
+            StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
+                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
+            
+            solutions.put(stackType, solution);
+            totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
+            
+            callback.onProgress(progressEnd, 
+                String.format("Completed %s solution (%d hours estimated)", 
+                    stackType.getDisplayName(), solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0));
+        }
+        
+        // Phase 4: Appetite analysis (85-95%)
+        callback.onProgress(85, "Analyzing appetite and time estimates...");
+        
+        int availableHours = (pitch.getAppetiteDays() != null ? pitch.getAppetiteDays() : 0) * HOURS_PER_DAY;
+        boolean appetitePassed = totalEstimatedHours <= availableHours;
+        
+        WiseArchitectureResponseDTO.AppetiteCheckDTO appetiteCheck = WiseArchitectureResponseDTO.AppetiteCheckDTO.builder()
+            .passed(appetitePassed)
+            .availableHours(availableHours)
+            .estimatedHours(totalEstimatedHours)
+            .hoursByStack(calculateHoursByStack(solutions))
+            .message(appetitePassed 
+                ? String.format("✅ Solution fits within appetite (%d/%d hours)", totalEstimatedHours, availableHours)
+                : String.format("⚠️ Solution exceeds appetite (%d/%d hours)", totalEstimatedHours, availableHours))
+            .build();
+        
+        callback.onProgress(88, appetitePassed 
+            ? String.format("Appetite check passed (%d/%d hours)", totalEstimatedHours, availableHours)
+            : String.format("Appetite exceeded (%d/%d hours)", totalEstimatedHours, availableHours));
+        
+        WiseArchitectureResponseDTO.ReducedScopeDTO reducedScope = null;
+        if (!appetitePassed) {
+            callback.onProgress(90, "Analyzing appetite and reducing scope...");
+            reducedScope = solutionGeneratorService.generateReducedScope(
+                pitch, solutions, availableHours, totalEstimatedHours);
+            callback.onProgress(95, "Generated scope reduction recommendations");
+        } else {
+            callback.onProgress(95, "No scope reduction needed");
+        }
+        
+        // Phase 5: Finalization (95-100%)
+        callback.onProgress(96, "Building response...");
+        
+        WiseArchitectureResponseDTO.ContextSourcesDTO contextSources = 
+            WiseArchitectureResponseDTO.ContextSourcesDTO.create(hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
+        
+        callback.onProgress(98, "Creating conversation session...");
+        
+        WiseArchitectureResponseDTO response = WiseArchitectureResponseDTO.builder()
+            .pitchId(pitch.getId())
+            .pitchName(pitch.getTitle())
+            .solutions(solutions)
+            .appetiteCheck(appetiteCheck)
+            .totalEstimatedHours(totalEstimatedHours)
+            .reducedScope(reducedScope)
+            .contextSources(contextSources)
+            .generatedAt(LocalDateTime.now())
+            .build();
+        
+        String sessionId = conversationService.createSession(pitch, response);
+        response.setSessionId(sessionId);
+        
+        String summaryMsg = String.format("Solution complete: %d stack%s, %d hours, appetite %s", 
+            solutions.size(), solutions.size() == 1 ? "" : "s", 
+            totalEstimatedHours, appetitePassed ? "passed" : "exceeded");
+        callback.onProgress(100, summaryMsg);
+        
+        log.info("Generated solution for pitch '{}' - {} hours estimated, appetite {}, context: code={}, team={}, figma={}, roadmap={}",
+            pitch.getTitle(), totalEstimatedHours, appetitePassed ? "PASSED" : "EXCEEDED",
+            hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
+        
+        return response;
     }
 }
