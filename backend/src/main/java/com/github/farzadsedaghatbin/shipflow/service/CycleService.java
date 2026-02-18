@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,9 @@ public class CycleService {
   private final OrganizationSettingsService organizationSettingsService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
+
+  @Autowired(required = false)
+  private KnowledgeIngestionService knowledgeIngestionService;
 
   public List<CycleDTO> getAllCycles() {
     return cycleRepository.findAllByOrderByStartDateDesc().stream().map(this::toDTO).collect(Collectors.toList());
@@ -80,9 +84,11 @@ public class CycleService {
       throw new AccessDeniedException(messageService.getMessage("error.user.not.authenticated"));
     }
 
-    // ADMINs can see all active cycles
+    // ADMINs can see all active SHAPE_UP cycles (exclude KANBAN projects)
     if (currentUser.getRole() == UserRole.ADMIN) {
-      return getActiveCycles();
+      return cycleRepository
+          .findByIsActiveTrueAndProjectProjectTypeNot(com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN)
+          .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     return cycleRepository.findAccessibleActiveCyclesByUserId(currentUser.getId()).stream().map(this::toDTO)
@@ -121,6 +127,14 @@ public class CycleService {
         .isActive(true).build();
 
     Cycle saved = cycleRepository.save(cycle);
+    // Ingest into knowledge base for QA
+    if (knowledgeIngestionService != null) {
+      try {
+        knowledgeIngestionService.ingestCycle(saved.getId());
+      } catch (Exception e) {
+        log.warn("Failed to ingest cycle to knowledge base: {}", e.getMessage());
+      }
+    }
     return toDTO(saved);
   }
 
@@ -145,6 +159,14 @@ public class CycleService {
     cycle.setPhase(request.getPhase());
 
     Cycle saved = cycleRepository.save(cycle);
+    // Re-ingest into knowledge base for QA
+    if (knowledgeIngestionService != null) {
+      try {
+        knowledgeIngestionService.ingestCycle(saved.getId());
+      } catch (Exception e) {
+        log.warn("Failed to re-ingest cycle to knowledge base: {}", e.getMessage());
+      }
+    }
     return toDTO(saved);
   }
 
@@ -439,7 +461,8 @@ public class CycleService {
 
     if (cycle.getProject() != null) {
       builder.projectId(cycle.getProject().getId()).projectName(cycle.getProject().getName())
-          .projectKey(cycle.getProject().getProjectKey());
+          .projectKey(cycle.getProject().getProjectKey())
+          .projectType(cycle.getProject().getProjectType());
     }
 
     return builder.build();

@@ -59,14 +59,20 @@ public class ConversationManager {
 
   /** Create a new conversation. */
   public ConversationContext createConversation(Long userId, String contextType, Long contextId) {
+    return createConversation(userId, contextType, contextId, null);
+  }
+
+  /** Create a new conversation with optional context name. */
+  public ConversationContext createConversation(Long userId, String contextType, Long contextId,
+      String contextName) {
     String conversationId = UUID.randomUUID().toString();
 
     ConversationContext context = ConversationContext.builder().conversationId(conversationId).userId(userId)
-        .contextType(contextType).contextId(contextId).startedAt(LocalDateTime.now())
+        .contextType(contextType).contextId(contextId).contextName(contextName).startedAt(LocalDateTime.now())
         .lastInteractionAt(LocalDateTime.now()).isActive(true).build();
 
     conversations.put(conversationId, context);
-    log.debug("Created conversation {} for user {}", conversationId, userId);
+    log.debug("Created conversation {} for user {} (contextName='{}')", conversationId, userId, contextName);
 
     // Clean up expired conversations
     cleanupExpired();
@@ -77,15 +83,25 @@ public class ConversationManager {
   /** Get existing conversation or create new one. */
   public ConversationContext getOrCreateConversation(String conversationId, Long userId, String contextType,
       Long contextId) {
+    return getOrCreateConversation(conversationId, userId, contextType, contextId, null);
+  }
+
+  /** Get existing conversation or create new one with optional context name. */
+  public ConversationContext getOrCreateConversation(String conversationId, Long userId, String contextType,
+      Long contextId, String contextName) {
 
     if (conversationId != null) {
       ConversationContext existing = conversations.get(conversationId);
       if (existing != null && !existing.isExpired()) {
+        // Update context name if newly provided
+        if (contextName != null && existing.getContextName() == null) {
+          existing.setContextName(contextName);
+        }
         return existing;
       }
     }
 
-    return createConversation(userId, contextType, contextId);
+    return createConversation(userId, contextType, contextId, contextName);
   }
 
   /** Add a turn to the conversation. */
@@ -131,7 +147,8 @@ public class ConversationManager {
   public ConversationContext.ContextInfo getMostRecentContext(String conversationId) {
     ConversationContext context = conversations.get(conversationId);
     if (context != null) {
-      return new ConversationContext.ContextInfo(context.getContextType(), context.getContextId());
+      return new ConversationContext.ContextInfo(context.getContextType(), context.getContextId(),
+          context.getContextName());
     }
     return null;
   }

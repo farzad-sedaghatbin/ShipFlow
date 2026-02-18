@@ -128,6 +128,10 @@ export interface ReusableService {
   filePath: string;
   description: string;
   howToUse: string;
+  /** Specific methods to call from this service. */
+  methodsToCall?: string[];
+  /** Import/injection statement. */
+  importStatement?: string;
 }
 
 /**
@@ -142,6 +146,14 @@ export interface RecommendedLibrary {
 }
 
 /**
+ * A sub-task within an implementation step with acceptance criteria.
+ */
+export interface SubTask {
+  task: string;
+  acceptanceCriteria: string;
+}
+
+/**
  * A single implementation step
  */
 export interface ImplementationStep {
@@ -151,6 +163,61 @@ export interface ImplementationStep {
   estimatedHours: number;
   filesToCreate?: string[];
   filesToModify?: string[];
+  /** Concrete sub-tasks with acceptance criteria. */
+  subTasks?: SubTask[];
+  /** Key method/function signatures to implement. */
+  methodSignatures?: string[];
+  /** Step numbers this step depends on. */
+  dependsOnSteps?: number[];
+}
+
+/**
+ * Component within the architecture breakdown.
+ */
+export interface ArchitectureComponent {
+  name: string;
+  responsibility: string;
+  interactsWith?: string[];
+}
+
+/**
+ * API contract definition for an endpoint.
+ */
+export interface ApiContract {
+  endpoint: string;
+  method: string;
+  requestShape?: string;
+  responseShape?: string;
+  description?: string;
+}
+
+/**
+ * Data model entity definition.
+ */
+export interface DataModel {
+  entityName: string;
+  fields?: string[];
+  relationships?: string[];
+}
+
+/**
+ * Configuration change required for the implementation.
+ */
+export interface ConfigChange {
+  key: string;
+  value: string;
+  description?: string;
+}
+
+/**
+ * Structured architecture detail breaking the overview into actionable sections.
+ */
+export interface ArchitectureDetail {
+  summary: string;
+  components?: ArchitectureComponent[];
+  apiContracts?: ApiContract[];
+  dataModel?: DataModel[];
+  configChanges?: ConfigChange[];
 }
 
 /**
@@ -158,13 +225,16 @@ export interface ImplementationStep {
  */
 export interface StackSolution {
   stackType: TechStackType;
+  /** Kept for backward compatibility; populated from architectureDetail.summary for new solutions. */
   architectureOverview: string;
+  /** Structured architecture breakdown. */
+  architectureDetail?: ArchitectureDetail;
   reusableServices: ReusableService[];
   recommendedLibraries: RecommendedLibrary[];
   implementationSteps: ImplementationStep[];
   bestPractices: string[];
   estimatedHours: number;
-  risks?: string[];
+  riskFactors?: string[];
 }
 
 /**
@@ -196,6 +266,7 @@ export interface ContextSources {
   hasCodeContext: boolean;
   hasTeamSkills: boolean;
   hasFigmaContext: boolean;
+  hasRoadmapContext: boolean;
   warnings?: string[];
 }
 

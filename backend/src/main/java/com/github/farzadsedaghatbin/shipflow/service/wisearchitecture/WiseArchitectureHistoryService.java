@@ -270,9 +270,130 @@ public class WiseArchitectureHistoryService {
         
         if (response.getSolutions() != null) {
             for (var entry : response.getSolutions().entrySet()) {
+                var stackSol = entry.getValue();
                 sb.append("## ").append(entry.getKey().getDisplayName()).append("\n\n");
-                if (entry.getValue() != null && entry.getValue().getArchitectureOverview() != null) {
-                    sb.append(entry.getValue().getArchitectureOverview()).append("\n\n");
+                
+                // Architecture overview / detail
+                if (stackSol != null && stackSol.getArchitectureDetail() != null) {
+                    var detail = stackSol.getArchitectureDetail();
+                    if (detail.getSummary() != null) {
+                        sb.append(detail.getSummary()).append("\n\n");
+                    }
+                    // Components
+                    if (detail.getComponents() != null && !detail.getComponents().isEmpty()) {
+                        sb.append("### Components\n\n");
+                        for (var comp : detail.getComponents()) {
+                            sb.append("- **").append(comp.getName()).append("**: ").append(comp.getResponsibility());
+                            if (comp.getInteractsWith() != null && !comp.getInteractsWith().isEmpty()) {
+                                sb.append(" _(interacts with: ").append(String.join(", ", comp.getInteractsWith())).append(")");
+                            }
+                            sb.append("\n");
+                        }
+                        sb.append("\n");
+                    }
+                    // API Contracts
+                    if (detail.getApiContracts() != null && !detail.getApiContracts().isEmpty()) {
+                        sb.append("### API Contracts\n\n");
+                        for (var api : detail.getApiContracts()) {
+                            sb.append("- `").append(api.getMethod()).append(" ").append(api.getEndpoint()).append("`");
+                            if (api.getDescription() != null) sb.append(" — ").append(api.getDescription());
+                            if (api.getRequestShape() != null) sb.append("  \n  Request: `").append(api.getRequestShape()).append("`");
+                            if (api.getResponseShape() != null) sb.append("  \n  Response: `").append(api.getResponseShape()).append("`");
+                            sb.append("\n");
+                        }
+                        sb.append("\n");
+                    }
+                    // Data Model
+                    if (detail.getDataModel() != null && !detail.getDataModel().isEmpty()) {
+                        sb.append("### Data Model\n\n");
+                        for (var entity : detail.getDataModel()) {
+                            sb.append("- **").append(entity.getEntityName()).append("**");
+                            if (entity.getFields() != null && !entity.getFields().isEmpty()) {
+                                sb.append(": ").append(String.join(", ", entity.getFields()));
+                            }
+                            if (entity.getRelationships() != null && !entity.getRelationships().isEmpty()) {
+                                sb.append(" (").append(String.join(", ", entity.getRelationships())).append(")");
+                            }
+                            sb.append("\n");
+                        }
+                        sb.append("\n");
+                    }
+                    // Config Changes
+                    if (detail.getConfigChanges() != null && !detail.getConfigChanges().isEmpty()) {
+                        sb.append("### Configuration Changes\n\n");
+                        for (var cfg : detail.getConfigChanges()) {
+                            sb.append("- `").append(cfg.getKey()).append("=").append(cfg.getValue()).append("`");
+                            if (cfg.getDescription() != null) sb.append(" — ").append(cfg.getDescription());
+                            sb.append("\n");
+                        }
+                        sb.append("\n");
+                    }
+                } else if (stackSol != null && stackSol.getArchitectureOverview() != null) {
+                    sb.append(stackSol.getArchitectureOverview()).append("\n\n");
+                }
+                
+                // Reusable Services
+                if (stackSol != null && stackSol.getReusableServices() != null && !stackSol.getReusableServices().isEmpty()) {
+                    sb.append("### Reusable Services\n\n");
+                    for (var svc : stackSol.getReusableServices()) {
+                        sb.append("- **").append(svc.getServiceName()).append("** (`").append(svc.getFilePath()).append("`)\n");
+                        sb.append("  ").append(svc.getDescription()).append("\n");
+                        if (svc.getHowToUse() != null) sb.append("  Usage: ").append(svc.getHowToUse()).append("\n");
+                        if (svc.getImportStatement() != null) sb.append("  Import: `").append(svc.getImportStatement()).append("`\n");
+                        if (svc.getMethodsToCall() != null && !svc.getMethodsToCall().isEmpty()) {
+                            sb.append("  Methods: ").append(String.join(", ", svc.getMethodsToCall())).append("\n");
+                        }
+                    }
+                    sb.append("\n");
+                }
+                
+                // Recommended Libraries
+                if (stackSol != null && stackSol.getRecommendedLibraries() != null && !stackSol.getRecommendedLibraries().isEmpty()) {
+                    sb.append("### Recommended Libraries\n\n");
+                    for (var lib : stackSol.getRecommendedLibraries()) {
+                        sb.append("- **").append(lib.getName()).append("**");
+                        if (lib.getVersion() != null) sb.append(" v").append(lib.getVersion());
+                        sb.append(" — ").append(lib.getPurpose());
+                        if (lib.getAlreadyInProject() != null && lib.getAlreadyInProject()) sb.append(" ✓ already in project");
+                        if (lib.getDocumentationUrl() != null) sb.append(" [docs](").append(lib.getDocumentationUrl()).append(")");
+                        sb.append("\n");
+                    }
+                    sb.append("\n");
+                }
+                
+                // Implementation Steps
+                if (stackSol != null && stackSol.getImplementationSteps() != null && !stackSol.getImplementationSteps().isEmpty()) {
+                    sb.append("### Implementation Steps\n\n");
+                    for (var step : stackSol.getImplementationSteps()) {
+                        sb.append(step.getStepNumber()).append(". **").append(step.getTitle()).append("** (~").append(step.getEstimatedHours()).append("h)\n");
+                        sb.append("   ").append(step.getDescription()).append("\n");
+                        if (step.getFilesToCreate() != null && !step.getFilesToCreate().isEmpty()) {
+                            sb.append("   Create: ").append(String.join(", ", step.getFilesToCreate())).append("\n");
+                        }
+                        if (step.getFilesToModify() != null && !step.getFilesToModify().isEmpty()) {
+                            sb.append("   Modify: ").append(String.join(", ", step.getFilesToModify())).append("\n");
+                        }
+                        if (step.getMethodSignatures() != null && !step.getMethodSignatures().isEmpty()) {
+                            sb.append("   Methods: `").append(String.join("`, `", step.getMethodSignatures())).append("`\n");
+                        }
+                        if (step.getSubTasks() != null && !step.getSubTasks().isEmpty()) {
+                            for (var sub : step.getSubTasks()) {
+                                sb.append("   - [ ] ").append(sub.getTask());
+                                if (sub.getAcceptanceCriteria() != null) sb.append(" — _").append(sub.getAcceptanceCriteria()).append("_");
+                                sb.append("\n");
+                            }
+                        }
+                    }
+                    sb.append("\n");
+                }
+                
+                // Risk Factors
+                if (stackSol != null && stackSol.getRiskFactors() != null && !stackSol.getRiskFactors().isEmpty()) {
+                    sb.append("### Risk Factors\n\n");
+                    for (var risk : stackSol.getRiskFactors()) {
+                        sb.append("- ⚠️ ").append(risk).append("\n");
+                    }
+                    sb.append("\n");
                 }
             }
         }

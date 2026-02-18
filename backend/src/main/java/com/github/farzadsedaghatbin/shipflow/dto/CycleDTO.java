@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import java.time.LocalDate;
 import lombok.*;
 
@@ -20,4 +21,5 @@ public class CycleDTO {
   private Boolean isActive;
   private Integer pitchCount;
   private Integer teamCount;
+  private ProjectType projectType;
 }

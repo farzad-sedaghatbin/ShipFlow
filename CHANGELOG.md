@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Wise Architecture Structured Solutions (Phase 1 Overhaul)**
+  - **Architecture Detail Breakdown**: Solutions now include structured components, API contracts, data models, and config changes instead of generic text
+  - **Enriched Implementation Steps**: Steps include sub-tasks with acceptance criteria, method signatures, step dependencies, and files to create/modify
+  - **Enriched Reusable Services**: Services show specific methods to call, import statements, and usage instructions
+  - **Enriched Libraries**: Recommendations show version, docs URL, and "in project" badge
+  - **Project Convention Pre-pass**: Lightweight LLM call analyzes code context to detect naming conventions and patterns before generating solutions
+  - **Cross-Stack Coordination**: API contracts from previous stacks are passed to subsequent ones for interface consistency
+  - **Risk Factors Section**: Dedicated UI section with warning icon
+  - **Markdown Rendering**: Architecture overviews and step descriptions now rendered as markdown via `<Markdown>` component
+  - **History Alignment**: Enriched markdown persisted to advice history with full structured detail (components, API contracts, data model, sub-tasks, method signatures)
+  - **Follow-up Context**: Conversation service now passes components, API contracts, data model, and method signatures to the LLM for richer follow-up answers
+  - **New i18n Keys**: Added 12 new translation keys for structured solution UI (components, apiContracts, dataModel, configChanges, etc.) in both en and fa locales
+  - **New TypeScript Interfaces**: `ArchitectureDetail`, `ArchitectureComponent`, `ApiContract`, `DataModel`, `ConfigChange`, `SubTask`
+  - **Updated DTOs**: `StackSolutionDTO` restructured with `ArchitectureDetailDTO` and nested component DTOs; `ImplementationStepDTO` enriched with subTasks, methodSignatures, dependsOnSteps; `ReusableServiceDTO` enriched with methodsToCall, importStatement
 - **Wise Architecture Advice History**
   - **Conversation Persistence**: All AI-generated solutions are now saved for review and follow-up
     - `WiseArchitectureAdvice` entity storing full conversation threads
@@ -53,6 +67,8 @@ All notable changes to this project will be documented in this file.
     - Memoized computed values (filteredRepositories, stacksByCategory)
 
 ### Fixed
+- **Risk Factors Not Rendering**: Fixed field name mismatch (`risks` vs `riskFactors`) in TypeScript types that caused risk factors to be silently dropped in the UI
+- **Missing Context Source Flag**: Added `hasRoadmapContext` to frontend `ContextSources` interface to match backend DTO
 - **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
 - **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
 - **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions

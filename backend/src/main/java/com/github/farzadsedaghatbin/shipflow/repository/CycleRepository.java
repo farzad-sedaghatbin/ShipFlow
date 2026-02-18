@@ -13,6 +13,9 @@ import org.springframework.stereotype.Repository;
 public interface CycleRepository extends JpaRepository<Cycle, Long> {
   List<Cycle> findByIsActiveTrue();
 
+  List<Cycle> findByIsActiveTrueAndProjectProjectTypeNot(
+      com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType projectType);
+
   List<Cycle> findByIsActiveFalse();
 
   List<Cycle> findAllByOrderByStartDateDesc();
@@ -88,4 +91,7 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
    */
   Optional<Cycle> findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(
       Long projectId, LocalDate currentDate);
+
+  /** Find cycles by name (case-insensitive, partial match) for QA name-based resolution. */
+  List<Cycle> findByNameContainingIgnoreCase(String name);
 }

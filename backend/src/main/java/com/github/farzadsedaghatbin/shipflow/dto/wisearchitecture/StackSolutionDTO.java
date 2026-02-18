@@ -21,9 +21,15 @@ public class StackSolutionDTO {
     private TechStackType stackType;
 
     /**
-     * High-level architecture overview following best practices.
+     * High-level architecture overview (kept for backward compatibility).
+     * For new solutions, this is populated from architectureDetail.summary.
      */
     private String architectureOverview;
+
+    /**
+     * Structured architecture detail with components, APIs, data model, and config.
+     */
+    private ArchitectureDetailDTO architectureDetail;
 
     /**
      * List of existing services in the codebase that can be reused.
@@ -56,6 +62,90 @@ public class StackSolutionDTO {
     @Builder.Default
     private List<String> bestPractices = new java.util.ArrayList<>();
 
+    // ─── Nested DTOs ───────────────────────────────────────────
+
+    /**
+     * Structured architecture detail breaking the overview into actionable sections.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ArchitectureDetailDTO {
+        /** 2-3 sentence high-level summary. */
+        private String summary;
+
+        /** Components/modules to build with responsibilities and interactions. */
+        @Builder.Default
+        private List<ComponentDTO> components = new java.util.ArrayList<>();
+
+        /** API contracts (REST/GraphQL endpoints) this stack exposes or consumes. */
+        @Builder.Default
+        private List<ApiContractDTO> apiContracts = new java.util.ArrayList<>();
+
+        /** New or modified data model entities. */
+        @Builder.Default
+        private List<DataModelDTO> dataModel = new java.util.ArrayList<>();
+
+        /** Configuration/environment variable changes required. */
+        @Builder.Default
+        private List<ConfigChangeDTO> configChanges = new java.util.ArrayList<>();
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ComponentDTO {
+        private String name;
+        private String responsibility;
+        /** Names of other components this interacts with. */
+        @Builder.Default
+        private List<String> interactsWith = new java.util.ArrayList<>();
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ApiContractDTO {
+        /** e.g. "/api/v1/circles/{id}/activities" */
+        private String endpoint;
+        /** HTTP method: GET, POST, PUT, DELETE */
+        private String method;
+        /** Description of request body shape or query params. */
+        private String requestShape;
+        /** Description of response body shape. */
+        private String responseShape;
+        private String description;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class DataModelDTO {
+        private String entityName;
+        /** Key fields with types, e.g. ["id: Long", "name: String", "createdAt: LocalDateTime"] */
+        @Builder.Default
+        private List<String> fields = new java.util.ArrayList<>();
+        /** e.g. ["User ManyToOne", "Activity OneToMany"] */
+        @Builder.Default
+        private List<String> relationships = new java.util.ArrayList<>();
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ConfigChangeDTO {
+        /** Property key or env var name. */
+        private String key;
+        /** Default or example value. */
+        private String value;
+        private String description;
+    }
+
     /**
      * DTO for a reusable service found in the codebase.
      */
@@ -68,6 +158,11 @@ public class StackSolutionDTO {
         private String filePath;
         private String description;
         private String howToUse;
+        /** Specific methods to call from this service. */
+        @Builder.Default
+        private List<String> methodsToCall = new java.util.ArrayList<>();
+        /** Import/injection statement. */
+        private String importStatement;
     }
 
     /**
@@ -99,5 +194,23 @@ public class StackSolutionDTO {
         private Integer estimatedHours;
         private List<String> filesToCreate;
         private List<String> filesToModify;
+        /** Concrete sub-tasks with acceptance criteria. */
+        @Builder.Default
+        private List<SubTaskDTO> subTasks = new java.util.ArrayList<>();
+        /** Key method/function signatures to implement. */
+        @Builder.Default
+        private List<String> methodSignatures = new java.util.ArrayList<>();
+        /** Step numbers this step depends on. */
+        @Builder.Default
+        private List<Integer> dependsOnSteps = new java.util.ArrayList<>();
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SubTaskDTO {
+        private String task;
+        private String acceptanceCriteria;
     }
 }

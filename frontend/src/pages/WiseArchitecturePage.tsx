@@ -63,6 +63,7 @@ import {
   STACK_DISPLAY_NAMES,
   DetectedStack,
 } from '../types/wiseArchitecture';
+import { Markdown } from '../components/ui/markdown';
 
 // Custom debounce hook for performance optimization
 function useDebounce<T>(value: T, delay: number): T {
@@ -884,10 +885,116 @@ const WiseArchitecturePage: React.FC = () => {
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
                         <div className="space-y-4">
-                          {/* Overview */}
-                          <p className="text-sm">{stackSolution.architectureOverview}</p>
+                          {/* Architecture Overview (markdown) */}
+                          {stackSolution.architectureDetail?.summary ? (
+                            <Markdown content={stackSolution.architectureDetail.summary} className="text-sm" />
+                          ) : (
+                            <Markdown content={stackSolution.architectureOverview} className="text-sm" />
+                          )}
 
-                          {/* Reusable Services */}
+                          {/* Architecture Components */}
+                          {stackSolution.architectureDetail?.components && stackSolution.architectureDetail.components.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Layers className="h-4 w-4" />
+                                {t('wiseArchitecture.components', 'Components')}
+                              </h5>
+                              <div className="space-y-2">
+                                {stackSolution.architectureDetail.components.map((comp, idx) => (
+                                  <div key={idx} className="p-2 bg-muted/50 rounded-lg">
+                                    <p className="font-medium text-sm">{comp.name}</p>
+                                    <p className="text-xs text-muted-foreground">{comp.responsibility}</p>
+                                    {comp.interactsWith && comp.interactsWith.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {comp.interactsWith.map((dep, i) => (
+                                          <Badge key={i} variant="secondary" className="text-xs py-0">{dep}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* API Contracts */}
+                          {stackSolution.architectureDetail?.apiContracts && stackSolution.architectureDetail.apiContracts.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Code2 className="h-4 w-4" />
+                                {t('wiseArchitecture.apiContracts', 'API Contracts')}
+                              </h5>
+                              <div className="space-y-2">
+                                {stackSolution.architectureDetail.apiContracts.map((api, idx) => (
+                                  <div key={idx} className="p-2 bg-muted/50 rounded-lg font-mono text-xs">
+                                    <span className="font-semibold text-primary">{api.method}</span>{' '}
+                                    <span>{api.endpoint}</span>
+                                    {api.description && (
+                                      <p className="text-muted-foreground mt-1 font-sans">{api.description}</p>
+                                    )}
+                                    {(api.requestShape || api.responseShape) && (
+                                      <div className="mt-1 flex gap-4">
+                                        {api.requestShape && <span className="text-muted-foreground">Req: {api.requestShape}</span>}
+                                        {api.responseShape && <span className="text-muted-foreground">Res: {api.responseShape}</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Data Model */}
+                          {stackSolution.architectureDetail?.dataModel && stackSolution.architectureDetail.dataModel.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Server className="h-4 w-4" />
+                                {t('wiseArchitecture.dataModel', 'Data Model')}
+                              </h5>
+                              <div className="space-y-2">
+                                {stackSolution.architectureDetail.dataModel.map((entity, idx) => (
+                                  <div key={idx} className="p-2 bg-muted/50 rounded-lg">
+                                    <p className="font-medium text-sm font-mono">{entity.entityName}</p>
+                                    {entity.fields && entity.fields.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {entity.fields.map((f, i) => (
+                                          <Badge key={i} variant="outline" className="text-xs font-mono py-0">{f}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {entity.relationships && entity.relationships.length > 0 && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {entity.relationships.join(' | ')}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Config Changes */}
+                          {stackSolution.architectureDetail?.configChanges && stackSolution.architectureDetail.configChanges.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium mb-2">
+                                {t('wiseArchitecture.configChanges', 'Configuration Changes')}
+                              </h5>
+                              <div className="space-y-1">
+                                {stackSolution.architectureDetail.configChanges.map((cfg, idx) => (
+                                  <div key={idx} className="flex items-start gap-2 text-xs font-mono p-1 bg-muted/30 rounded">
+                                    <span className="font-semibold text-primary">{cfg.key}</span>
+                                    <span>=</span>
+                                    <span>{cfg.value}</span>
+                                    {cfg.description && (
+                                      <span className="text-muted-foreground font-sans ml-2">— {cfg.description}</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reusable Services (enriched) */}
                           {stackSolution.reusableServices?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
@@ -895,18 +1002,31 @@ const WiseArchitecturePage: React.FC = () => {
                                 {t('wiseArchitecture.reusableServices')}
                               </h5>
                               <div className="space-y-2">
-                                {stackSolution.reusableServices.map((service, idx) => (
+                                {stackSolution.reusableServices.map((svc, idx) => (
                                   <div key={idx} className="p-2 bg-muted/50 rounded-lg">
-                                    <p className="font-medium text-sm">{service.serviceName}</p>
-                                    <p className="text-xs text-muted-foreground">{service.description}</p>
-                                    <p className="text-xs text-primary">{service.filePath}</p>
+                                    <p className="font-medium text-sm">{svc.serviceName}</p>
+                                    <p className="text-xs text-muted-foreground">{svc.description}</p>
+                                    <p className="text-xs text-primary font-mono">{svc.filePath}</p>
+                                    {svc.howToUse && (
+                                      <p className="text-xs mt-1"><span className="font-medium">Usage:</span> {svc.howToUse}</p>
+                                    )}
+                                    {svc.importStatement && (
+                                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded mt-1 block font-mono">{svc.importStatement}</code>
+                                    )}
+                                    {svc.methodsToCall && svc.methodsToCall.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {svc.methodsToCall.map((m, i) => (
+                                          <Badge key={i} variant="secondary" className="text-xs font-mono py-0">{m}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
                             </div>
                           )}
 
-                          {/* Recommended Libraries */}
+                          {/* Recommended Libraries (enriched) */}
                           {stackSolution.recommendedLibraries?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
@@ -915,41 +1035,118 @@ const WiseArchitecturePage: React.FC = () => {
                               </h5>
                               <div className="flex flex-wrap gap-2">
                                 {stackSolution.recommendedLibraries.map((lib, idx) => (
-                                  <Badge key={idx} variant="outline" className="py-1">
+                                  <Badge key={idx} variant="outline" className="py-1 gap-1">
                                     <span className="font-medium">{lib.name}</span>
-                                    <span className="mx-1">-</span>
+                                    {lib.version && <span className="text-muted-foreground text-xs">v{lib.version}</span>}
+                                    <span className="mx-1">—</span>
                                     <span className="text-muted-foreground">{lib.purpose}</span>
+                                    {lib.alreadyInProject && (
+                                      <Badge variant="secondary" className="ml-1 text-xs py-0">
+                                        {t('wiseArchitecture.alreadyInProject', 'In project')}
+                                      </Badge>
+                                    )}
+                                    {lib.documentationUrl && (
+                                      <a href={lib.documentationUrl} target="_blank" rel="noopener noreferrer"
+                                        className="text-primary hover:underline text-xs ml-1">docs</a>
+                                    )}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
                           )}
 
-                          {/* Implementation Steps */}
+                          {/* Implementation Steps (enriched) */}
                           {stackSolution.implementationSteps?.length > 0 && (
                             <div>
                               <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
                                 <CheckSquare className="h-4 w-4" />
                                 {t('wiseArchitecture.implementationSteps')}
                               </h5>
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 {stackSolution.implementationSteps.map((step, idx) => (
-                                  <div key={idx} className="flex gap-3 p-2 bg-muted/30 rounded-lg">
-                                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
-                                      {step.stepNumber}
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="text-sm font-medium">{step.title}</p>
-                                      <p className="text-xs text-muted-foreground">{step.description}</p>
-                                      {step.estimatedHours && (
-                                        <p className="text-xs text-muted-foreground">
-                                          ~{step.estimatedHours}h
-                                        </p>
-                                      )}
+                                  <div key={idx} className="p-3 bg-muted/30 rounded-lg">
+                                    <div className="flex gap-3">
+                                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                                        {step.stepNumber}
+                                      </div>
+                                      <div className="flex-1 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                          <p className="text-sm font-medium">{step.title}</p>
+                                          {step.estimatedHours && (
+                                            <Badge variant="outline" className="text-xs">
+                                              <Clock className="h-3 w-3 mr-1" />
+                                              ~{step.estimatedHours}h
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <Markdown content={step.description} className="text-xs text-muted-foreground" />
+
+                                        {/* Dependencies */}
+                                        {step.dependsOnSteps && step.dependsOnSteps.length > 0 && (
+                                          <p className="text-xs text-muted-foreground">
+                                            {t('wiseArchitecture.dependsOn', 'Depends on:')} {step.dependsOnSteps.map(d => `Step ${d}`).join(', ')}
+                                          </p>
+                                        )}
+
+                                        {/* Files to create/modify */}
+                                        {((step.filesToCreate && step.filesToCreate.length > 0) ||
+                                          (step.filesToModify && step.filesToModify.length > 0)) && (
+                                          <div className="flex flex-wrap gap-1">
+                                            {step.filesToCreate?.map((f, i) => (
+                                              <Badge key={`c-${i}`} variant="default" className="text-xs font-mono py-0">
+                                                + {f}
+                                              </Badge>
+                                            ))}
+                                            {step.filesToModify?.map((f, i) => (
+                                              <Badge key={`m-${i}`} variant="secondary" className="text-xs font-mono py-0">
+                                                ~ {f}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        {/* Method Signatures */}
+                                        {step.methodSignatures && step.methodSignatures.length > 0 && (
+                                          <div className="space-y-1">
+                                            {step.methodSignatures.map((sig, i) => (
+                                              <code key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded block font-mono">
+                                                {sig}
+                                              </code>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        {/* Sub-tasks */}
+                                        {step.subTasks && step.subTasks.length > 0 && (
+                                          <div className="space-y-1 ml-2 border-l-2 border-primary/20 pl-2">
+                                            {step.subTasks.map((sub, i) => (
+                                              <div key={i} className="text-xs">
+                                                <p className="font-medium">{sub.task}</p>
+                                                <p className="text-muted-foreground italic">{sub.acceptanceCriteria}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 ))}
                               </div>
+                            </div>
+                          )}
+
+                          {/* Risk Factors */}
+                          {stackSolution.riskFactors && stackSolution.riskFactors.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                {t('wiseArchitecture.riskFactors', 'Risk Factors')}
+                              </h5>
+                              <ul className="text-sm list-disc list-inside space-y-1">
+                                {stackSolution.riskFactors.map((risk, idx) => (
+                                  <li key={idx} className="text-muted-foreground">{risk}</li>
+                                ))}
+                              </ul>
                             </div>
                           )}
 
