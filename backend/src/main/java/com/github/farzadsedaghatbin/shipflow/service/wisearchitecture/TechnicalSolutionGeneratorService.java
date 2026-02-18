@@ -23,6 +23,24 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TechnicalSolutionGeneratorService {
 
+    /** Compact JSON schema included in retry prompts so the LLM has the contract in a single turn. */
+    private static final String SOLUTION_JSON_SCHEMA = """
+        {
+          "architectureDetail": {
+            "summary": "string",
+            "components": [{"name": "string", "responsibility": "string", "interactsWith": ["string"]}],
+            "apiContracts": [{"endpoint": "string", "method": "string", "requestShape": "string", "responseShape": "string", "description": "string"}],
+            "dataModel": [{"entityName": "string", "fields": ["string"], "relationships": ["string"]}],
+            "configChanges": [{"key": "string", "value": "string", "description": "string"}]
+          },
+          "reusableServices": [{"serviceName": "string", "filePath": "string", "description": "string", "howToUse": "string", "methodsToCall": ["string"], "importStatement": "string"}],
+          "recommendedLibraries": [{"name": "string", "version": "string", "purpose": "string", "documentationUrl": "string", "alreadyInProject": false}],
+          "implementationSteps": [{"stepNumber": 1, "title": "string", "description": "string", "estimatedHours": 4, "filesToCreate": ["string"], "filesToModify": ["string"], "subTasks": [{"task": "string", "acceptanceCriteria": "string"}], "methodSignatures": ["string"], "dependsOnSteps": []}],
+          "riskFactors": ["string"],
+          "bestPractices": ["string"]
+        }
+        """;
+
     private final ObjectMapper objectMapper;
     
     @Autowired(required = false)
@@ -88,7 +106,7 @@ public class TechnicalSolutionGeneratorService {
             return createErrorSolution(stack, "AI returned non-JSON response after retry");
         } catch (Exception e) {
             log.error("Error generating solution for {}: {}", stack.getStackType(), e.getMessage(), e);
-            return createErrorSolution(stack, e.getMessage());
+            return createErrorSolution(stack, "Failed to parse AI response");
         }
     }
 
@@ -221,7 +239,7 @@ public class TechnicalSolutionGeneratorService {
         }
         
         prompt.append("## Response Format\n");
-        prompt.append("Respond ONLY with a valid JSON object — no text before or after it, no markdown, no explanation.\n");
+        prompt.append("Respond with a single valid JSON object. You may optionally wrap it in a ```json fenced code block, but do not include any other text or explanation.\n");
         prompt.append("Be SPECIFIC — no vague descriptions.\n");
         prompt.append("```json\n");
         prompt.append("{\n");
@@ -390,8 +408,9 @@ public class TechnicalSolutionGeneratorService {
                 : originalResponse;
             
             String retryPrompt = "The following text is your previous response, but it is NOT valid JSON. " +
-                "Convert it into the EXACT JSON schema I originally requested. " +
-                "Output ONLY the JSON object — no markdown, no explanation, no code fences.\n\n" +
+                "Convert it into a JSON object matching this schema (respond with ONLY the JSON, no other text):\n" +
+                SOLUTION_JSON_SCHEMA + "\n\n" +
+                "Your previous response:\n" +
                 truncated;
             
             log.info("Sending JSON-repair retry prompt ({} chars)", retryPrompt.length());

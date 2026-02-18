@@ -138,7 +138,8 @@ public class RiskAnalysisService {
       if (cycle != null && cycle.getStartDate() != null && cycle.getEndDate() != null) {
         daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
         totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
-        cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+        double rawCycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+        cycleProgress = Math.max(0, Math.min(100, rawCycleProgress));
       } else {
         log.debug("Pitch {} has no cycle assigned, using zero cycle progress", pitch.getId());
       }

@@ -111,7 +111,7 @@ class TechnicalSolutionGeneratorServiceTest {
         }
 
         @Test
-        @DisplayName("should handle LLM error gracefully")
+        @DisplayName("should handle LLM error gracefully with user-safe message")
         void shouldHandleLLMErrorGracefully() {
             when(chatLanguageModel.generate(anyString()))
                 .thenThrow(new RuntimeException("API error"));
@@ -120,8 +120,136 @@ class TechnicalSolutionGeneratorServiceTest {
                 testPitch, testStack, "", List.of(), null, null, null, null, null);
 
             assertThat(result).isNotNull();
-            assertThat(result.getArchitectureOverview()).contains("Error generating solution");
-            assertThat(result.getRiskFactors()).anyMatch(r -> r.contains("failed"));
+            assertThat(result.getArchitectureOverview()).contains("Failed to parse AI response");
+            assertThat(result.getRiskFactors()).anyMatch(r -> r.contains("Failed to parse AI response"));
+            // Must NOT leak internal exception details
+            assertThat(result.getArchitectureOverview()).doesNotContain("API error");
+        }
+
+        @Test
+        @DisplayName("should retry and succeed when initial response is non-JSON markdown")
+        void shouldRetryAndSucceedWhenInitialResponseIsMarkdown() {
+            String markdownResponse = """
+                # Solution Architecture
+                
+                ## Overview
+                We propose a RESTful API with clean architecture...
+                
+                ### Components
+                - TaskService: Manages tasks
+                - TaskRepository: Data access
+                """;
+
+            String validJsonOnRetry = """
+                {
+                    "architectureOverview": "RESTful API from retry",
+                    "reusableServices": [],
+                    "recommendedLibraries": [],
+                    "implementationSteps": [
+                        {"stepNumber": 1, "title": "Create API", "description": "Build endpoints", "estimatedHours": 4, "filesToCreate": ["TaskController.java"], "filesToModify": []}
+                    ],
+                    "riskFactors": ["Retry was needed"],
+                    "bestPractices": []
+                }
+                """;
+
+            // First call returns markdown, second call (retry) returns valid JSON
+            when(chatLanguageModel.generate(anyString()))
+                .thenReturn(markdownResponse)
+                .thenReturn(validJsonOnRetry);
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getArchitectureOverview()).isEqualTo("RESTful API from retry");
+            assertThat(result.getRiskFactors()).contains("Retry was needed");
+            assertThat(result.getEstimatedHours()).isEqualTo(4);
+            // LLM should have been called twice: initial + retry
+            verify(chatLanguageModel, times(2)).generate(anyString());
+        }
+
+        @Test
+        @DisplayName("should retry and succeed when initial JSON is malformed")
+        void shouldRetryAndSucceedWhenInitialJsonIsMalformed() {
+            // Valid-looking JSON start but truncated/malformed
+            String malformedJson = """
+                {"architectureOverview": "Test", "reusableServices": [, BROKEN }
+                """;
+
+            String validJsonOnRetry = """
+                {
+                    "architectureOverview": "Fixed on retry",
+                    "reusableServices": [],
+                    "recommendedLibraries": [],
+                    "implementationSteps": [
+                        {"stepNumber": 1, "title": "Setup", "description": "Init", "estimatedHours": 2, "filesToCreate": [], "filesToModify": []}
+                    ],
+                    "riskFactors": [],
+                    "bestPractices": []
+                }
+                """;
+
+            when(chatLanguageModel.generate(anyString()))
+                .thenReturn(malformedJson)
+                .thenReturn(validJsonOnRetry);
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getArchitectureOverview()).isEqualTo("Fixed on retry");
+            verify(chatLanguageModel, times(2)).generate(anyString());
+        }
+
+        @Test
+        @DisplayName("should return error solution when both initial and retry fail")
+        void shouldReturnErrorSolutionWhenBothAttemptsFail() {
+            String markdownResponse = "# Not JSON at all\nJust markdown text.";
+
+            // Both calls return non-JSON
+            when(chatLanguageModel.generate(anyString()))
+                .thenReturn(markdownResponse)
+                .thenReturn("Still not valid JSON, sorry!");
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getArchitectureOverview()).contains("AI returned non-JSON response after retry");
+            verify(chatLanguageModel, times(2)).generate(anyString());
+        }
+
+        @Test
+        @DisplayName("retry prompt should include JSON schema")
+        void retryPromptShouldIncludeJsonSchema() {
+            String markdownResponse = "# Markdown response without JSON";
+            String validJsonOnRetry = """
+                {
+                    "architectureOverview": "Schema-guided",
+                    "reusableServices": [],
+                    "recommendedLibraries": [],
+                    "implementationSteps": [],
+                    "riskFactors": [],
+                    "bestPractices": []
+                }
+                """;
+
+            when(chatLanguageModel.generate(anyString()))
+                .thenReturn(markdownResponse)
+                .thenReturn(validJsonOnRetry);
+
+            service.generateStackSolution(
+                testPitch, testStack, "", List.of(), null, null, null, null, null);
+
+            // Capture the retry prompt (second invocation)
+            org.mockito.ArgumentCaptor<String> promptCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+            verify(chatLanguageModel, times(2)).generate(promptCaptor.capture());
+            String retryPrompt = promptCaptor.getAllValues().get(1);
+            // Retry prompt must contain the schema fields
+            assertThat(retryPrompt).contains("architectureDetail");
+            assertThat(retryPrompt).contains("implementationSteps");
+            assertThat(retryPrompt).contains("riskFactors");
         }
 
         @Test
