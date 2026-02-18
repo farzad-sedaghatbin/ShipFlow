@@ -955,9 +955,15 @@ public class RiskAnalysisService {
    * cached results should be invalidated.
    */
   private String createPitchDataHash(Pitch pitch, Double totalHours, double progress, double cycleProgress) {
+    String cycleStart = "";
+    String cycleEnd = "";
+    if (pitch.getCycle() != null) {
+      if (pitch.getCycle().getStartDate() != null) cycleStart = pitch.getCycle().getStartDate().toString();
+      if (pitch.getCycle().getEndDate() != null) cycleEnd = pitch.getCycle().getEndDate().toString();
+    }
     String data = String.format("%d|%s|%.2f|%.2f|%.2f|%s|%s|%s", pitch.getId(), pitch.getStatus(), totalHours,
         progress, cycleProgress, pitch.getUpdatedAt() != null ? pitch.getUpdatedAt().toString() : "",
-        pitch.getCycle().getStartDate().toString(), pitch.getCycle().getEndDate().toString());
+        cycleStart, cycleEnd);
 
     try {
       MessageDigest digest = MessageDigest.getInstance("MD5");

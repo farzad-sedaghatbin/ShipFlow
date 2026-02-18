@@ -192,6 +192,12 @@ export default function WorkLogsPage() {
         });
       }
       
+      // Sort by date descending (newest first), then by id descending for same-date entries
+      logs.sort((a, b) => {
+        const dateCompare = (b.date || '').localeCompare(a.date || '');
+        return dateCompare !== 0 ? dateCompare : (b.id ?? 0) - (a.id ?? 0);
+      });
+      
       setWorkLogs(logs);
     } catch (error) {
       console.error('Failed to load work logs:', error);
