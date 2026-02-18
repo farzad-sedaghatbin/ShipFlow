@@ -132,9 +132,16 @@ public class RiskAnalysisService {
       // Calculate days elapsed and remaining in cycle
       Cycle cycle = pitch.getCycle();
       LocalDate today = LocalDate.now();
-      long daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
-      long totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
-      double cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+      long daysElapsed = 0;
+      long totalCycleDays = 0;
+      double cycleProgress = 0;
+      if (cycle != null && cycle.getStartDate() != null && cycle.getEndDate() != null) {
+        daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
+        totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+        cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+      } else {
+        log.debug("Pitch {} has no cycle assigned, using zero cycle progress", pitch.getId());
+      }
 
       // Create data hash for change detection
       String dataHash = createPitchDataHash(pitch, totalHours, progress, cycleProgress);
