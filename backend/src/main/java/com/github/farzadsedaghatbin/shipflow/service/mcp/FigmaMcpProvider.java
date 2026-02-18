@@ -317,9 +317,9 @@ public class FigmaMcpProvider implements McpClientService {
         String accessToken = context.get("accessToken");
         String nodeId = context.get("nodeId");  // Optional: specific node/frame to focus on
         
-        // Validate file key format (Figma file keys are 22 alphanumeric characters)
-        if (fileKey == null || fileKey.length() < 10 || fileKey.length() > 30) {
-            log.warn("Invalid Figma file key format: '{}'. Expected 22 alphanumeric characters.", 
+        // Validate file key format (Figma file keys are typically 22+ alphanumeric/dash characters)
+        if (fileKey == null || fileKey.length() < 10 || fileKey.length() > 50) {
+            log.warn("Invalid Figma file key format: '{}'. Expected 10-50 alphanumeric characters.", 
                 fileKey != null ? fileKey : "null");
             return Map.of("error", "Invalid Figma file key format");
         }
@@ -347,14 +347,17 @@ public class FigmaMcpProvider implements McpClientService {
             if (accessToken != null) {
                 arguments.put("access_token", accessToken);
             }
-            // Include node_id if provided to focus on specific frame/component
+            // Include node_id if provided to focus on specific frame/component.
+            // Always use get_design_context: it accepts an optional node_id argument to scope
+            // the result to a specific frame. The tool "get_node" does not exist on the MCP server.
             if (nodeId != null && !nodeId.isBlank()) {
-                arguments.put("node_id", nodeId);
+                // Normalize to colon-separated format expected by the Figma MCP server
+                arguments.put("node_id", nodeId.replace("-", ":"));
                 arguments.put("depth", 2); // Get some depth for the specific node
             }
             
             Map<String, Object> params = Map.of(
-                "name", nodeId != null && !nodeId.isBlank() ? "get_node" : "get_design_context",
+                "name", "get_design_context",
                 "arguments", arguments
             );
             

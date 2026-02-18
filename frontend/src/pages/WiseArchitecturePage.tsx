@@ -1202,7 +1202,13 @@ const WiseArchitecturePage: React.FC = () => {
                               : 'bg-muted'
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          {message.role === 'assistant' ? (
+                            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                              <Markdown>{message.content}</Markdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          )}
                           {message.copilotPrompt && (
                             <div className="mt-3 p-2 bg-background/50 rounded border">
                               <div className="flex items-center justify-between mb-1">
