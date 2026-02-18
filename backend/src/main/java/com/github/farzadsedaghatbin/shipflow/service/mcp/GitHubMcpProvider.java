@@ -112,18 +112,36 @@ public class GitHubMcpProvider implements McpClientService {
     }
 
     /**
-     * Heuristic: a string looks like a file path if it contains a '/' or '.'
-     * and does NOT look like a plain-english error message.
-     * Rejects lines like "missing required parameter: query" while accepting "src/main/App.java".
+     * Heuristic: a string looks like a file path if it either:
+     * - contains a '/' or '.', and does NOT look like a plain-english error message; or
+     * - is a single-token filename (no spaces) without obvious sentence-like patterns.
+     * Rejects lines like "missing required parameter: query" while accepting "src/main/App.java"
+     * and extensionless files like "README" or "LICENSE".
      */
     private boolean looksLikeFilePath(String line) {
-        // Must contain a path separator or file extension dot
-        if (!line.contains("/") && !line.contains(".")) {
+        if (line == null) {
             return false;
         }
+        String trimmed = line.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+
+        boolean hasPathOrDot = trimmed.contains("/") || trimmed.contains(".");
+
+        // Special-case: allow single-token filenames without '/' or '.', like "README" or "LICENSE"
+        if (!hasPathOrDot) {
+            // Reject if there is any internal whitespace (must be a single token)
+            if (trimmed.split("\\s+").length > 1) {
+                return false;
+            }
+            // Only allow common filename characters; reject lines with punctuation typical of sentences
+            return trimmed.matches("[A-Za-z0-9_\\-]+");
+        }
+
         // Reject lines with spaces that look like sentences/error messages
         // File paths rarely contain multiple spaces or colons followed by spaces
-        if (line.contains(": ") || (line.split("\\s+").length > 4)) {
+        if (trimmed.contains(": ") || (trimmed.split("\\s+").length > 4)) {
             return false;
         }
         return true;
