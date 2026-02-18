@@ -78,6 +78,28 @@ public class KnowledgeIngestionService {
     this.releaseRepository = releaseRepository;
   }
 
+  /** Ingest a cycle into the knowledge base for name-based resolution. */
+  @Transactional
+  @Async
+  public void ingestCycle(Long cycleId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Cycle> cycleOpt = cycleRepository.findByIdWithProject(cycleId);
+    if (cycleOpt.isEmpty()) {
+      log.warn("Cycle not found for ingestion: {}", cycleId);
+      return;
+    }
+
+    Cycle cycle = cycleOpt.get();
+    String content = buildCycleContent(cycle);
+
+    ingestEntity(KnowledgeEntityType.CYCLE, cycle.getId(), "Cycle: " + cycle.getName(), content,
+        cycle.getId(), null, null, null);
+
+    log.info("Ingested cycle: {} (ID: {})", cycle.getName(), cycle.getId());
+  }
+
   /** Ingest a pitch into the knowledge base. */
   @Transactional
   @Async
@@ -530,6 +552,15 @@ public class KnowledgeIngestionService {
 
     log.info("Starting full knowledge reindexing...");
 
+    // Reindex cycles
+    cycleRepository.findAll().forEach(cycle -> {
+      try {
+        ingestCycle(cycle.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex cycle {}: {}", cycle.getId(), e.getMessage());
+      }
+    });
+
     // Reindex pitches
     pitchRepository.findAll().forEach(pitch -> {
       try {
@@ -678,6 +709,12 @@ public class KnowledgeIngestionService {
       metadata.put("entityId", item.getEntityId().toString());
       if (item.getCycleId() != null) {
         metadata.put("cycleId", item.getCycleId().toString());
+        // Resolve cycle name for name-based vector search filtering
+        try {
+          cycleRepository.findById(item.getCycleId()).ifPresent(c -> metadata.put("cycleName", c.getName()));
+        } catch (Exception e) {
+          log.debug("Could not resolve cycle name for cycleId={}: {}", item.getCycleId(), e.getMessage());
+        }
       }
       if (item.getTeamId() != null) {
         metadata.put("teamId", item.getTeamId().toString());
@@ -763,6 +800,31 @@ public class KnowledgeIngestionService {
   }
 
   // ===== Content building methods =====
+
+  private String buildCycleContent(Cycle cycle) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Cycle: ").append(cycle.getName()).append("\n");
+    if (cycle.getProject() != null) {
+      sb.append("Project: ").append(cycle.getProject().getName()).append("\n");
+    }
+    sb.append("Phase: ").append(cycle.getPhase()).append("\n");
+    sb.append("Active: ").append(cycle.getIsActive()).append("\n");
+    sb.append("Start Date: ").append(cycle.getStartDate()).append("\n");
+    sb.append("End Date: ").append(cycle.getEndDate()).append("\n");
+    if (cycle.getPitches() != null && !cycle.getPitches().isEmpty()) {
+      sb.append("Pitches (" ).append(cycle.getPitches().size()).append("):\n");
+      for (Pitch p : cycle.getPitches()) {
+        sb.append("  - ").append(p.getTitle()).append(" [").append(p.getStatus()).append("]\n");
+      }
+    }
+    if (cycle.getTeams() != null && !cycle.getTeams().isEmpty()) {
+      sb.append("Teams (" ).append(cycle.getTeams().size()).append("):\n");
+      for (Team t : cycle.getTeams()) {
+        sb.append("  - ").append(t.getName()).append("\n");
+      }
+    }
+    return sb.toString();
+  }
 
   private String buildPitchContent(Pitch pitch) {
     StringBuilder sb = new StringBuilder();

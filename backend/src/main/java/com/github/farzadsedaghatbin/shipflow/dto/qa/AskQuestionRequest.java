@@ -30,6 +30,12 @@ public class AskQuestionRequest {
    */
   private Long contextId;
 
+  /**
+   * Display name of the context entity (e.g., cycle name). Optional - used to
+   * enrich prompt context and enable name-based entity resolution.
+   */
+  private String contextName;
+
   /** Optional cycle ID to scope the search. */
   private Long cycleId;
 

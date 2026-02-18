@@ -3,8 +3,10 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.config.QAConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.QAInteraction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.QAFeedbackType;
+import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.QAInteractionRepository;
 import com.github.farzadsedaghatbin.shipflow.service.qa.*;
@@ -63,6 +65,7 @@ public class QAService {
   private final LLMCacheService llmCacheService;
   private final PromptCompressor promptCompressor;
   private final ContentGuardrails contentGuardrails;
+  private final CycleRepository cycleRepository;
 
   @Autowired
   public QAService(KnowledgeItemRepository knowledgeItemRepository, QAInteractionRepository qaInteractionRepository,
@@ -80,7 +83,8 @@ public class QAService {
       @Autowired(required = false) FeedbackLearningService feedbackLearningService,
       @Autowired(required = false) LLMCacheService llmCacheService,
       @Autowired(required = false) PromptCompressor promptCompressor,
-      @Autowired(required = false) ContentGuardrails contentGuardrails, MessageService messageService) {
+      @Autowired(required = false) ContentGuardrails contentGuardrails, MessageService messageService,
+      @Autowired(required = false) CycleRepository cycleRepository) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
     this.embeddingModel = embeddingModel;
@@ -101,6 +105,7 @@ public class QAService {
     this.conversationManager = conversationManager;
     this.securityFilter = securityFilter;
     this.messageService = messageService;
+    this.cycleRepository = cycleRepository;
   }
 
   /**
@@ -133,23 +138,24 @@ public class QAService {
     }
 
     // Get or create conversation context early so it can be used for context
-    // inference
+    // inference. Also creates a new conversation on first question so the response
+    // includes a conversationId for multi-turn tracking.
     ConversationContext conversation = null;
-    if (conversationManager != null && request.getConversationId() != null) {
+    if (conversationManager != null) {
       try {
         conversation = conversationManager.getOrCreateConversation(request.getConversationId(), userId,
-            request.getContextType(), request.getContextId());
+            request.getContextType(), request.getContextId(), request.getContextName());
       } catch (Exception e) {
         log.warn("Failed to get/create conversation, continuing without history: {}", e.getMessage());
         // Continue without conversation memory - graceful degradation
       }
     }
 
-    // Note: We don't automatically extract IDs from questions like "cycle 4"
-    // because "cycle 4" could be part of a name (e.g., "Cycle 5 - Build Sprint")
-    // Let semantic search handle finding entities by name naturally.
-    // IDs should be provided explicitly via contextId parameter (e.g., from URL
-    // context)
+    // Entity resolution: extract contextId from question text when not provided
+    // Supports both numeric IDs ("cycle 6") and name-based lookup ("Build Season cycle")
+    if (request.getContextId() == null && request.getContextType() != null) {
+      resolveEntityFromQuestion(request);
+    }
 
     // Try to infer context from conversation history if not provided
     if (conversation != null && conversationManager != null && request.getContextId() == null
@@ -160,7 +166,11 @@ public class QAService {
         if (previousContext != null
             && previousContext.getContextType().equalsIgnoreCase(request.getContextType())) {
           request.setContextId(previousContext.getContextId());
-          log.info("Inferred contextId={} from conversation history", previousContext.getContextId());
+          if (previousContext.getContextName() != null && request.getContextName() == null) {
+            request.setContextName(previousContext.getContextName());
+          }
+          log.info("Inferred contextId={}, contextName='{}' from conversation history",
+              previousContext.getContextId(), previousContext.getContextName());
         }
       } catch (Exception e) {
         log.debug("Could not infer context from conversation: {}", e.getMessage());
@@ -253,7 +263,8 @@ public class QAService {
       }
 
       // 4. Filter by context
-      if (request.getCycleId() != null || request.getTeamId() != null || request.getContextId() != null) {
+      if (request.getCycleId() != null || request.getTeamId() != null
+          || request.getContextId() != null || request.getContextName() != null) {
         matches = filterMatchesByContext(matches, request);
       }
 
@@ -303,7 +314,8 @@ public class QAService {
       if (chatLanguageModel != null && !context.isEmpty()) {
         try {
           // Build and compress prompt
-          String prompt = buildPrompt(request.getQuestion(), context, conversationHistory);
+          String prompt = buildPrompt(request.getQuestion(), context, conversationHistory,
+              request.getContextType(), request.getContextName(), request.getContextId());
           if (promptCompressor != null) {
             prompt = promptCompressor.compress(prompt);
           }
@@ -407,7 +419,8 @@ public class QAService {
           if (chatLanguageModel != null && !context.isEmpty()) {
             try {
               // Build and compress prompt
-              String prompt = buildPrompt(request.getQuestion(), context, conversationHistory);
+              String prompt = buildPrompt(request.getQuestion(), context, conversationHistory,
+                  request.getContextType(), request.getContextName(), request.getContextId());
               if (promptCompressor != null) {
                 prompt = promptCompressor.compress(prompt);
               }
@@ -574,15 +587,25 @@ public class QAService {
         }
       }
 
-      // Filter by specific entity context
+      // Filter by cycle name when cycleId is not available but contextName is
+      if (request.getCycleId() == null && request.getContextName() != null
+          && "cycle".equalsIgnoreCase(request.getContextType())) {
+        String cycleName = segment.metadata().getString("cycleName");
+        if (cycleName != null && !cycleName.toLowerCase().contains(request.getContextName().toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filter by specific entity context (prioritize exact matches but allow related docs)
       if (request.getContextType() != null && request.getContextId() != null) {
         String entityType = segment.metadata().getString("entityType");
         String entityId = segment.metadata().getString("entityId");
-        if (!request.getContextType().equalsIgnoreCase(entityType)
-            || !request.getContextId().toString().equals(entityId)) {
-          // Allow if it's related (same cycle/team) even if not exact match
-          return true;
+        // Keep docs that match exactly OR belong to the same cycle/team
+        if (request.getContextType().equalsIgnoreCase(entityType)
+            && request.getContextId().toString().equals(entityId)) {
+          return true; // exact match — always keep
         }
+        // Related entities (same cycle) are kept by the cycleId filter above
       }
 
       return true;
@@ -712,16 +735,40 @@ public class QAService {
   }
 
   private String buildPrompt(String question, String context, String conversationHistory) {
+    return buildPrompt(question, context, conversationHistory, null, null, null);
+  }
+
+  private String buildPrompt(String question, String context, String conversationHistory,
+      String contextType, String contextName, Long contextId) {
     StringBuilder prompt = new StringBuilder();
 
     prompt.append(
         """
             You are a helpful assistant for the ShipFlow application, which helps teams manage their work using the Shape Up methodology.
 
+            Shape Up key concepts:
+            - A "Cycle" is a fixed time period (typically 6 weeks) for building features. Cycles have phases: SHAPING, BETTING, BUILD, COOLDOWN.
+            - A "Pitch" is a shaped proposal for work to be done in a cycle. Pitches have an appetite (time budget), problem statement, and solution.
+            - The "Betting Table" is where stakeholders decide which pitches to bet on for the next cycle.
+            - "Appetite" is the maximum time budget for a pitch (e.g., 2 weeks or 6 weeks).
+            - "Cooldown" is a period between cycles for fixing bugs, addressing technical debt, and exploring ideas.
+
             Use the following context to answer the user's question. If the context doesn't contain enough information to fully answer the question, say so and provide what information you can.
 
             Be concise but thorough. If referencing specific sources, mention them naturally in your response.
             """);
+
+    // Add entity context header if available
+    if (contextType != null && (contextName != null || contextId != null)) {
+      prompt.append("\nYou are answering about: ").append(contextType);
+      if (contextName != null) {
+        prompt.append(" '").append(contextName).append("'");
+      }
+      if (contextId != null) {
+        prompt.append(" (ID: ").append(contextId).append(")");
+      }
+      prompt.append(".\n");
+    }
 
     // Add conversation history if available
     if (conversationHistory != null && !conversationHistory.isEmpty()) {
@@ -1079,6 +1126,121 @@ public class QAService {
 
     // Short queries (1-2 words) are likely ID queries
     return trimmed.split("\\s+").length <= 2;
+  }
+
+  /**
+   * Resolve entity context (contextId, contextName, cycleId) from the question text.
+   * Tries numeric ID extraction first, then falls back to name-based DB lookup.
+   * Only runs when contextId is null and contextType is set.
+   */
+  private void resolveEntityFromQuestion(AskQuestionRequest request) {
+    String question = request.getQuestion();
+    String contextType = request.getContextType();
+
+    // Step 1: Try numeric ID extraction (e.g., "cycle 6" → 6)
+    Long extractedId = extractEntityIdFromQuestion(question, contextType);
+    if (extractedId != null) {
+      request.setContextId(extractedId);
+      if ("cycle".equalsIgnoreCase(contextType) && request.getCycleId() == null) {
+        request.setCycleId(extractedId);
+        // Also resolve the name for prompt enrichment
+        if (cycleRepository != null) {
+          try {
+            cycleRepository.findById(extractedId)
+                .ifPresent(c -> request.setContextName(c.getName()));
+          } catch (Exception e) {
+            log.debug("Could not resolve cycle name for ID {}: {}", extractedId, e.getMessage());
+          }
+        }
+      } else if ("team".equalsIgnoreCase(contextType) && request.getTeamId() == null) {
+        request.setTeamId(extractedId);
+      }
+      log.info("Resolved entity from question: contextType={}, contextId={}, contextName='{}'",
+          contextType, extractedId, request.getContextName());
+      return;
+    }
+
+    // Step 2: Try name-based resolution for cycles (e.g., "Build Season cycle")
+    if ("cycle".equalsIgnoreCase(contextType) && cycleRepository != null) {
+      String extractedName = extractEntityNameFromQuestion(question, contextType);
+      if (extractedName != null) {
+        try {
+          List<Cycle> matches = cycleRepository.findByNameContainingIgnoreCase(extractedName);
+          if (matches.size() == 1) {
+            Cycle cycle = matches.get(0);
+            request.setContextId(cycle.getId());
+            request.setCycleId(cycle.getId());
+            request.setContextName(cycle.getName());
+            log.info("Resolved cycle by name: '{}' → ID={}, name='{}'",
+                extractedName, cycle.getId(), cycle.getName());
+          } else if (matches.size() > 1) {
+            // Multiple matches — set the name for vector search filtering, don't set a single ID
+            request.setContextName(extractedName);
+            log.info("Multiple cycles match name '{}' ({}), using name-based vector filtering",
+                extractedName, matches.size());
+          } else {
+            // No match — set as contextName so semantic search can still use it
+            request.setContextName(extractedName);
+            log.debug("No cycle found for name '{}', relying on semantic search", extractedName);
+          }
+        } catch (Exception e) {
+          log.warn("Cycle name lookup failed for '{}': {}", extractedName, e.getMessage());
+        }
+      }
+    }
+  }
+
+  /**
+   * Extract entity name from question text (non-numeric references).
+   * Examples: "the Build Season cycle" → "Build Season",
+   *           "pitches in Q1 Sprint" → "Q1 Sprint"
+   */
+  private String extractEntityNameFromQuestion(String question, String contextType) {
+    if (question == null || contextType == null) {
+      return null;
+    }
+
+    String lowerQuestion = question.toLowerCase().trim();
+    String lowerType = contextType.toLowerCase();
+
+    // Pattern 1: "the XYZ cycle", "the XYZ pitch"
+    java.util.regex.Pattern p1 = java.util.regex.Pattern.compile(
+        "(?:the|this)\\s+(.+?)\\s+" + lowerType, java.util.regex.Pattern.CASE_INSENSITIVE);
+    java.util.regex.Matcher m1 = p1.matcher(question);
+    if (m1.find()) {
+      String name = m1.group(1).trim();
+      // Skip if it's just a number
+      if (!name.matches("\\d+")) {
+        return name;
+      }
+    }
+
+    // Pattern 2: "in/for/about XYZ cycle"
+    java.util.regex.Pattern p2 = java.util.regex.Pattern.compile(
+        "(?:in|for|about|from)\\s+(?:the\\s+)?(.+?)\\s+" + lowerType, java.util.regex.Pattern.CASE_INSENSITIVE);
+    java.util.regex.Matcher m2 = p2.matcher(question);
+    if (m2.find()) {
+      String name = m2.group(1).trim();
+      if (!name.matches("\\d+")) {
+        return name;
+      }
+    }
+
+    // Pattern 3: "cycle XYZ" where XYZ is not a number (e.g., "cycle Alpha")
+    java.util.regex.Pattern p3 = java.util.regex.Pattern.compile(
+        lowerType + "\\s+(?!\\d)(\\S.+?)(?:\\s*\\?|$)", java.util.regex.Pattern.CASE_INSENSITIVE);
+    java.util.regex.Matcher m3 = p3.matcher(question);
+    if (m3.find()) {
+      String name = m3.group(1).trim();
+      // Remove trailing question marks and common question words
+      name = name.replaceAll("\\s*\\?\\s*$", "").trim();
+      name = name.replaceAll("\\s+(?:has|have|is|are|was|were|do|does|did)$", "").trim();
+      if (!name.isEmpty() && !name.matches("\\d+")) {
+        return name;
+      }
+    }
+
+    return null;
   }
 
   /**

@@ -184,6 +184,29 @@ public class WiseArchitectureService {
             ? request.getRepositoryBranches() 
             : Map.of();
         
+        // ── Analysis pre-pass: understand project conventions before generating solutions ──
+        String projectConventions = "";
+        {
+            // Gather code context from the first available repo to analyse conventions
+            GitHubRepository firstRepo = repositories.isEmpty() ? null : repositories.get(0);
+            if (firstRepo != null) {
+                String branch = branchMap.getOrDefault(firstRepo.getId(), firstRepo.getDefaultBranch());
+                String sampleCode = getCodeContext(firstRepo, request.getSelectedStacks().get(0), branch);
+                if (sampleCode != null && !sampleCode.isBlank() 
+                    && !sampleCode.startsWith("// No code context")
+                    && !sampleCode.equals("// Code context will be populated via MCP integration")) {
+                    hasCodeContext = true;
+                    projectConventions = solutionGeneratorService.analyzeProjectConventions(sampleCode);
+                    log.debug("Project conventions analysis: {}", 
+                        projectConventions.length() > 100 ? projectConventions.substring(0, 100) + "..." : projectConventions);
+                }
+            }
+        }
+        
+        // ── Generate solutions sequentially for cross-stack awareness ──
+        // Each stack receives a summary of previously generated stacks' API contracts
+        StringBuilder previousStacksSummary = new StringBuilder();
+        
         for (TechStackType stackType : request.getSelectedStacks()) {
             // Find the repository for this stack (simplified - use first matching)
             GitHubRepository repo = repositories.isEmpty() ? null : repositories.get(0);
@@ -208,10 +231,24 @@ public class WiseArchitectureService {
             }
             
             StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
-                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
+                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext,
+                projectConventions, previousStacksSummary.toString());
             
             solutions.put(stackType, solution);
             totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
+            
+            // Build cross-stack summary for subsequent stacks
+            if (solution.getArchitectureDetail() != null && solution.getArchitectureDetail().getApiContracts() != null
+                    && !solution.getArchitectureDetail().getApiContracts().isEmpty()) {
+                previousStacksSummary.append("\n### ").append(stackType.getDisplayName()).append(" APIs:\n");
+                for (StackSolutionDTO.ApiContractDTO api : solution.getArchitectureDetail().getApiContracts()) {
+                    previousStacksSummary.append("- ").append(api.getMethod()).append(" ").append(api.getEndpoint());
+                    if (api.getDescription() != null) {
+                        previousStacksSummary.append(" — ").append(api.getDescription());
+                    }
+                    previousStacksSummary.append("\n");
+                }
+            }
         }
         
         // Calculate appetite
@@ -1032,6 +1069,24 @@ public class WiseArchitectureService {
             ? request.getRepositoryBranches() 
             : Map.of();
         
+        // Analysis pre-pass: understand project conventions
+        String projectConventions = "";
+        {
+            GitHubRepository firstRepo = repositories.isEmpty() ? null : repositories.get(0);
+            if (firstRepo != null) {
+                String branch = branchMap.getOrDefault(firstRepo.getId(), firstRepo.getDefaultBranch());
+                String sampleCode = getCodeContext(firstRepo, request.getSelectedStacks().get(0), branch);
+                if (sampleCode != null && !sampleCode.isBlank() 
+                    && !sampleCode.startsWith("// No code context")
+                    && !sampleCode.equals("// Code context will be populated via MCP integration")) {
+                    hasCodeContext = true;
+                    projectConventions = solutionGeneratorService.analyzeProjectConventions(sampleCode);
+                }
+            }
+        }
+        
+        StringBuilder previousStacksSummary = new StringBuilder();
+        
         int totalStacks = request.getSelectedStacks().size();
         int stackIndex = 0;
         
@@ -1073,10 +1128,24 @@ public class WiseArchitectureService {
                 String.format("AI generating architecture for %s...", stackType.getDisplayName()));
             
             StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
-                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
+                pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext,
+                projectConventions, previousStacksSummary.toString());
             
             solutions.put(stackType, solution);
             totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
+            
+            // Build cross-stack summary for subsequent stacks
+            if (solution.getArchitectureDetail() != null && solution.getArchitectureDetail().getApiContracts() != null
+                    && !solution.getArchitectureDetail().getApiContracts().isEmpty()) {
+                previousStacksSummary.append("\n### ").append(stackType.getDisplayName()).append(" APIs:\n");
+                for (StackSolutionDTO.ApiContractDTO api : solution.getArchitectureDetail().getApiContracts()) {
+                    previousStacksSummary.append("- ").append(api.getMethod()).append(" ").append(api.getEndpoint());
+                    if (api.getDescription() != null) {
+                        previousStacksSummary.append(" — ").append(api.getDescription());
+                    }
+                    previousStacksSummary.append("\n");
+                }
+            }
             
             callback.onProgress(progressEnd, 
                 String.format("Completed %s solution (%d hours estimated)", 

@@ -95,12 +95,39 @@ All AI-generated solutions are automatically saved for review and follow-up:
   - Pitch-specific conversation lists
   - Full conversation thread retrieval
 
-### 5. Technical Solution Generation
-- Generates architecture overviews for each selected stack
-- Identifies reusable services from your existing codebase
-- Recommends libraries and tools to accelerate development
-- Creates step-by-step implementation plans with time estimates
-- Provides best practices specific to your tech stack
+### 5. Technical Solution Generation (v1.3 — Structured & Actionable)
+
+Solutions are now structured with concrete, actionable detail rather than generic overviews:
+
+- **Architecture Detail Breakdown**: Each stack solution includes:
+  - **Summary**: Concise architecture overview rendered as markdown
+  - **Components**: Named architectural components with responsibilities and interaction maps
+  - **API Contracts**: Concrete endpoint definitions with method, path, request/response shapes
+  - **Data Model**: Entity definitions with fields and relationships
+  - **Configuration Changes**: Specific config keys/values to add or modify
+
+- **Enriched Implementation Steps**: Steps now include:
+  - Concrete sub-tasks with acceptance criteria (checklist-style)
+  - Method signatures to implement (code font in UI)
+  - Step dependencies (`dependsOnSteps`) for execution ordering
+  - Files to create (green `+` badges) and modify (purple `~` badges)
+
+- **Enriched Reusable Services**: Each identified service now shows:
+  - Specific methods to call (`methodsToCall`) as badges
+  - Import/injection statement (`importStatement`) in code format
+  - Usage instructions (`howToUse`)
+
+- **Enriched Libraries**: Each recommendation now shows:
+  - Version number and documentation URL with link
+  - "In project" badge when the library is already a dependency
+
+- **Project Convention Pre-pass**: Before generating solutions, a lightweight LLM call analyzes code context to detect naming conventions, patterns, and project structure preferences
+
+- **Cross-Stack Coordination**: When generating solutions for multiple stacks, API contracts from previous stacks are passed to subsequent ones to ensure interface consistency
+
+- **Risk Factors Section**: Dedicated UI section with warning icon for implementation risks
+
+- **History Alignment**: The enriched markdown format is persisted to advice history, so past solutions display with full structured detail (components, API contracts, data model, implementation steps with sub-tasks, etc.)
 
 ### 6. Appetite Validation
 - Checks if the estimated effort fits within the pitch's appetite
@@ -143,10 +170,19 @@ Wise Architecture is an experimental feature that must be enabled by an administ
 ### Step 4: Review Solution
 - **Appetite Check**: See if the estimated effort fits your timeline
 - **Stack Solutions**: Expand each stack to see:
-  - Architecture overview
-  - Reusable services from your codebase
-  - Recommended libraries with purposes
-  - Implementation steps with time estimates
+  - Architecture overview (rendered as markdown)
+  - Architecture components with responsibilities and interaction maps
+  - API contracts with method, endpoint, request/response shapes
+  - Data model entities with fields and relationships
+  - Configuration changes with key=value pairs
+  - Reusable services with import statements, methods to call, and usage instructions
+  - Recommended libraries with version, docs link, and "in project" badge
+  - Implementation steps with:
+    - Time estimates and step dependencies
+    - Files to create (green) and modify (purple)
+    - Method signatures in code font
+    - Sub-tasks with acceptance criteria
+  - Risk factors with warning indicators
   - Best practices
 - **Reduced Scope**: If appetite is exceeded, see suggestions for what to defer
 
@@ -324,4 +360,4 @@ As an experimental feature, we welcome feedback to improve Wise Architecture:
 
 ---
 
-*This documentation is for Wise Architecture v1.2 (Experimental) - Updated February 2026*
+*This documentation is for Wise Architecture v1.3 (Experimental) - Updated February 2026*

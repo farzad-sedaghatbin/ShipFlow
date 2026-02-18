@@ -38,7 +38,10 @@ export function CycleProgressWidget() {
       ]);
 
       const today = new Date();
-      const progressData = cyclesRes.data.map((cycle: Cycle) => {
+      const shapeUpCycles = cyclesRes.data.filter(
+        (cycle: Cycle) => !cycle.projectType || cycle.projectType === 'SHAPE_UP'
+      );
+      const progressData = shapeUpCycles.map((cycle: Cycle) => {
         const cyclePitches = pitchesRes.data.filter((p: Pitch) => p.cycleId === cycle.id);
         const completed = cyclePitches.filter((p: Pitch) => p.status === 'DONE').length;
         

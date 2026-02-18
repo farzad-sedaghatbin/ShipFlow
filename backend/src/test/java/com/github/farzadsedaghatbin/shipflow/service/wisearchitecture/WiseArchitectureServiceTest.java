@@ -288,7 +288,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .architectureOverview("Spring Boot REST API")
@@ -310,7 +310,7 @@ class WiseArchitectureServiceTest {
             assertThat(response.getSolutions()).containsKey(TechStackType.BACKEND_JAVA);
             assertThat(response.getTotalEstimatedHours()).isEqualTo(24);
             
-            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any());
+            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any());
             verify(conversationService).createSession(eq(testPitch), any());
         }
 
@@ -321,7 +321,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(32) // 5 days * 8 hours = 40, so 32 is within budget
@@ -349,7 +349,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(56) // Over 40 hour budget
@@ -383,7 +383,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(16)
@@ -494,7 +494,7 @@ class WiseArchitectureServiceTest {
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitchWithEpic));
             when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitchWithEpic));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -524,7 +524,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -568,7 +568,7 @@ class WiseArchitectureServiceTest {
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitch1));
             when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitch1, pitch2));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -590,7 +590,8 @@ class WiseArchitectureServiceTest {
                 any(), any(), any(), any(), any(), any(), 
                 argThat(roadmapContext -> roadmapContext != null && 
                     roadmapContext.contains("Payment Epic") &&
-                    roadmapContext.contains("Payment History")));
+                    roadmapContext.contains("Payment History")),
+                any(), any());
         }
     }
 }

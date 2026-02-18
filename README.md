@@ -250,10 +250,21 @@ A modern project management application implementing the [Shape Up](https://base
     - Job-based async execution: Long-running AI analysis runs in background
     - Polling API: Frontend polls for completion with exponential backoff
     - Dedicated thread pool: Prevents AI operations from blocking main threads
-- **Wise Architecture (Experimental)**: AI-powered technical solution generator for pitches
+- **Wise Architecture (Experimental)**: AI-powered technical solution generator for pitches (v1.3)
   - Analyzes project codebase to understand existing architecture, patterns, and conventions
   - Generates stack-specific solutions for Backend Java, Frontend React, and Database
-  - Identifies reusable services, recommended libraries, and implementation steps
+  - **Structured Solutions (v1.3)**: Concrete, actionable solution breakdowns including:
+    - Architecture components with responsibilities and interaction maps
+    - API contracts with method, path, request/response shapes
+    - Data model entities with fields and relationships
+    - Configuration changes with specific key=value pairs
+    - Enriched implementation steps with sub-tasks, acceptance criteria, and method signatures
+    - Enriched reusable services with import statements and methods to call
+    - Library recommendations with version, docs link, and "in project" detection
+    - Risk factors section with implementation warnings
+  - **Project Convention Pre-pass**: Lightweight LLM call detects naming conventions and patterns before solution generation
+  - **Cross-Stack Coordination**: API contracts from earlier stacks shared with subsequent ones for interface consistency
+  - **Markdown Rendering**: Architecture overviews and step descriptions rendered as markdown
   - **Async Processing**: Job-based execution for large repos (1000+ files) with polling API
   - **Granular Progress Tracking**: Real-time progress (0-100%) with descriptive status messages
   - **Performance Optimizations**: File caching, parallel processing, pre-indexed pattern matching

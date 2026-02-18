@@ -9,6 +9,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,8 @@ public class TechnicalSolutionGeneratorService {
      * @param teamSkills aggregated unique skills of team members (optional, can be null)
      * @param figmaContext design context from Figma (optional, can be null)
      * @param roadmapContext roadmap context including epic, initiative, and related pitches (optional, can be null)
+     * @param projectConventions analysis of project conventions from pre-pass (optional, can be null)
+     * @param previousStacksSummary summary of previously generated stacks' API contracts for cross-stack awareness (optional)
      * @return the generated stack solution
      */
     public StackSolutionDTO generateStackSolution(
@@ -46,14 +49,16 @@ public class TechnicalSolutionGeneratorService {
             List<String> existingServices,
             String teamSkills,
             String figmaContext,
-            String roadmapContext) {
+            String roadmapContext,
+            String projectConventions,
+            String previousStacksSummary) {
         
         if (chatLanguageModel == null) {
             log.warn("ChatLanguageModel not available, returning placeholder solution");
             return createPlaceholderSolution(stack);
         }
 
-        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext);
+        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext, projectConventions, previousStacksSummary);
         
         try {
             log.info("Generating solution for {} in pitch '{}'", stack.getStackType(), pitch.getTitle());
@@ -91,6 +96,39 @@ public class TechnicalSolutionGeneratorService {
         }
     }
 
+    /**
+     * Analyze project conventions from code context.
+     * Lightweight LLM call that feeds into all stack solution prompts.
+     */
+    public String analyzeProjectConventions(String codeContext) {
+        if (chatLanguageModel == null || codeContext == null || codeContext.isBlank()) {
+            return "";
+        }
+        
+        String prompt = """
+            Analyze the following code samples and return a concise summary of project conventions (max 300 words).
+            Cover:
+            1. Directory/package structure pattern (e.g. "controller → service → repository" layers)
+            2. Naming conventions (e.g. suffix patterns like *Service, *Controller, *DTO)
+            3. Design patterns used (e.g. Builder, Repository, Factory)
+            4. Base classes or interfaces to extend
+            5. Shared utilities or helpers available
+            6. Configuration approach (e.g. application.properties, @Value, @ConfigurationProperties)
+            
+            Return ONLY the conventions summary as plain text, no JSON, no markdown headings.
+            
+            ## Code Samples
+            """ + codeContext;
+        
+        try {
+            log.debug("Analyzing project conventions from {} chars of code", codeContext.length());
+            return chatLanguageModel.generate(prompt);
+        } catch (Exception e) {
+            log.warn("Failed to analyze project conventions: {}", e.getMessage());
+            return "";
+        }
+    }
+
     private String buildSolutionPrompt(
             Pitch pitch,
             DetectedStackDTO stack,
@@ -98,10 +136,14 @@ public class TechnicalSolutionGeneratorService {
             List<String> existingServices,
             String teamSkills,
             String figmaContext,
-            String roadmapContext) {
+            String roadmapContext,
+            String projectConventions,
+            String previousStacksSummary) {
         
         StringBuilder prompt = new StringBuilder();
-        prompt.append("You are a senior software architect. Generate a technical solution document for implementing a feature.\n\n");
+        prompt.append("You are a senior software architect producing an actionable implementation plan — not generic advice.\n");
+        prompt.append("Every recommendation MUST be specific: real file paths, real method signatures, real endpoint definitions.\n");
+        prompt.append("Do NOT produce vague descriptions like 'implement a modular architecture'. Instead, list exact components, endpoints, and data models.\n\n");
         
         prompt.append("## Pitch Information\n");
         prompt.append("Title: ").append(pitch.getTitle()).append("\n");
@@ -111,7 +153,6 @@ public class TechnicalSolutionGeneratorService {
         prompt.append("No-gos (out of scope): ").append(nullSafe(pitch.getNoGos())).append("\n");
         prompt.append("Appetite (days): ").append(pitch.getAppetiteDays()).append("\n");
         
-        // Add team skills if available (token-efficient: ~25-35 tokens)
         if (teamSkills != null && !teamSkills.isBlank()) {
             prompt.append("Team expertise: ").append(teamSkills).append("\n");
         }
@@ -123,13 +164,23 @@ public class TechnicalSolutionGeneratorService {
         prompt.append("Language: ").append(stack.getPrimaryLanguage()).append("\n");
         prompt.append("Repository: ").append(stack.getRepositoryName()).append("\n\n");
         
-        // Add Figma design context if available (token-efficient: ~100-200 tokens)
+        // Project conventions from pre-analysis pass
+        if (projectConventions != null && !projectConventions.isBlank()) {
+            prompt.append("## Project Conventions (follow these patterns)\n");
+            prompt.append(projectConventions).append("\n\n");
+        }
+        
+        // Cross-stack awareness: APIs from previously generated stacks
+        if (previousStacksSummary != null && !previousStacksSummary.isBlank()) {
+            prompt.append("## APIs Available From Other Stacks (reference these, do not re-create)\n");
+            prompt.append(previousStacksSummary).append("\n\n");
+        }
+        
         if (figmaContext != null && !figmaContext.isBlank()) {
             prompt.append("## Design Context (from Figma)\n");
             prompt.append(figmaContext).append("\n\n");
         }
         
-        // Add roadmap context if available (token-efficient: ~100-150 tokens)
         if (roadmapContext != null && !roadmapContext.isBlank()) {
             prompt.append("## Roadmap Context\n");
             prompt.append(roadmapContext).append("\n");
@@ -142,44 +193,76 @@ public class TechnicalSolutionGeneratorService {
         }
         
         if (existingServices != null && !existingServices.isEmpty()) {
-            prompt.append("## Existing Services to Reuse\n");
+            prompt.append("## Existing Services to Reuse (ONLY reference services from this list)\n");
             existingServices.forEach(s -> prompt.append("- ").append(s).append("\n"));
             prompt.append("\n");
         }
         
         prompt.append("## Response Format\n");
-        prompt.append("Respond with a JSON object containing:\n");
+        prompt.append("Respond with a JSON object. Be SPECIFIC — no vague descriptions.\n");
         prompt.append("```json\n");
         prompt.append("{\n");
-        prompt.append("  \"architectureOverview\": \"High-level architecture description following best practices\",\n");
+        prompt.append("  \"architectureDetail\": {\n");
+        prompt.append("    \"summary\": \"2-3 sentence overview of the approach\",\n");
+        prompt.append("    \"components\": [\n");
+        prompt.append("      {\"name\": \"CircleActivityService\", \"responsibility\": \"Manages CRUD for circle activities\", \"interactsWith\": [\"CircleRepository\", \"NotificationService\"]}\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"apiContracts\": [\n");
+        prompt.append("      {\"endpoint\": \"/api/v1/circles/{id}/activities\", \"method\": \"GET\", \"requestShape\": \"Query params: page (int), size (int)\", \"responseShape\": \"Page<ActivityDTO> with id, title, createdAt, createdBy\", \"description\": \"List activities for a circle\"}\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"dataModel\": [\n");
+        prompt.append("      {\"entityName\": \"CircleActivity\", \"fields\": [\"id: Long\", \"title: String\", \"circleId: Long\", \"createdAt: LocalDateTime\"], \"relationships\": [\"Circle ManyToOne\", \"User ManyToOne\"]}\n");
+        prompt.append("    ],\n");
+        prompt.append("    \"configChanges\": [\n");
+        prompt.append("      {\"key\": \"app.circles.max-activities\", \"value\": \"100\", \"description\": \"Maximum activities per circle\"}\n");
+        prompt.append("    ]\n");
+        prompt.append("  },\n");
         prompt.append("  \"reusableServices\": [\n");
-        prompt.append("    {\"serviceName\": \"...\", \"filePath\": \"...\", \"description\": \"...\", \"howToUse\": \"...\"}\n");
+        prompt.append("    {\"serviceName\": \"NotificationService\", \"filePath\": \"src/main/java/.../NotificationService.java\", \"description\": \"Sends push/email notifications\", \"howToUse\": \"Inject via constructor, call sendNotification(userId, message)\", \"methodsToCall\": [\"sendNotification(Long userId, String message)\", \"sendBatch(List<Long> userIds, String message)\"], \"importStatement\": \"@Autowired NotificationService notificationService\"}\n");
         prompt.append("  ],\n");
         prompt.append("  \"recommendedLibraries\": [\n");
-        prompt.append("    {\"name\": \"...\", \"version\": \"...\", \"purpose\": \"...\", \"documentationUrl\": \"...\", \"alreadyInProject\": true/false}\n");
+        prompt.append("    {\"name\": \"MapStruct\", \"version\": \"1.5.5\", \"purpose\": \"DTO-Entity mapping to reduce boilerplate\", \"documentationUrl\": \"https://mapstruct.org/\", \"alreadyInProject\": false}\n");
         prompt.append("  ],\n");
         prompt.append("  \"implementationSteps\": [\n");
-        prompt.append("    {\"stepNumber\": 1, \"title\": \"...\", \"description\": \"...\", \"estimatedHours\": 4, \"filesToCreate\": [...], \"filesToModify\": [...]}\n");
+        prompt.append("    {\n");
+        prompt.append("      \"stepNumber\": 1, \"title\": \"Create CircleActivity entity and repository\",\n");
+        prompt.append("      \"description\": \"Define the JPA entity with proper annotations and create the Spring Data repository\",\n");
+        prompt.append("      \"estimatedHours\": 3,\n");
+        prompt.append("      \"filesToCreate\": [\"src/main/java/.../entity/CircleActivity.java\", \"src/main/java/.../repository/CircleActivityRepository.java\"],\n");
+        prompt.append("      \"filesToModify\": [],\n");
+        prompt.append("      \"subTasks\": [\n");
+        prompt.append("        {\"task\": \"Create CircleActivity @Entity with JPA annotations\", \"acceptanceCriteria\": \"Entity compiles, has proper @Id, @ManyToOne for Circle and User\"},\n");
+        prompt.append("        {\"task\": \"Create CircleActivityRepository extending JpaRepository\", \"acceptanceCriteria\": \"findByCircleId method works, pagination supported\"}\n");
+        prompt.append("      ],\n");
+        prompt.append("      \"methodSignatures\": [\"CircleActivityRepository.findByCircleId(Long circleId, Pageable pageable): Page<CircleActivity>\"],\n");
+        prompt.append("      \"dependsOnSteps\": []\n");
+        prompt.append("    }\n");
         prompt.append("  ],\n");
-        prompt.append("  \"riskFactors\": [\"Risk 1\", \"Risk 2\"],\n");
-        prompt.append("  \"bestPractices\": [\"Best practice 1\", \"Best practice 2\", \"Best practice 3\"]\n");
+        prompt.append("  \"riskFactors\": [\"Database migration required — need Flyway script for new table\"],\n");
+        prompt.append("  \"bestPractices\": [\"Follow existing *Service → *Repository layer pattern\"]\n");
         prompt.append("}\n");
         prompt.append("```\n\n");
-        prompt.append("Focus on:\n");
-        prompt.append("1. Best practices for ").append(stack.getFramework()).append("\n");
-        prompt.append("2. Maximizing reuse of existing services\n");
-        prompt.append("3. Recommending libraries that reduce development time\n");
-        prompt.append("4. Realistic time estimates (total should fit within ").append(pitch.getAppetiteDays() * 8).append(" hours)\n");
-        prompt.append("5. Identifying potential risks\n");
-        int focusNumber = 6;
+        prompt.append("## CRITICAL CONSTRAINTS\n");
+        prompt.append("1. Every component, endpoint, and entity must be SPECIFIC to this pitch — no generic placeholders\n");
+        prompt.append("2. Every reusableService MUST come from the 'Existing Services' list above — do NOT invent services\n");
+        prompt.append("3. Every filesToCreate path must follow the project's directory convention");
+        if (projectConventions != null && !projectConventions.isBlank()) {
+            prompt.append(" as described in 'Project Conventions'");
+        }
+        prompt.append("\n");
+        prompt.append("4. Every implementation step must have at least 2 sub-tasks with acceptance criteria\n");
+        prompt.append("5. Every step must include at least one method signature\n");
+        prompt.append("6. Realistic time estimates — total must fit within ").append(pitch.getAppetiteDays() * 8).append(" hours\n");
+        prompt.append("7. If APIs from other stacks are listed above, reference them in your apiContracts or component interactions — do not duplicate them\n");
+        int constraintNumber = 8;
         if (teamSkills != null && !teamSkills.isBlank()) {
-            prompt.append(focusNumber++).append(". Leveraging the team's existing expertise where possible\n");
+            prompt.append(constraintNumber++).append(". Leverage the team's existing expertise where possible\n");
         }
         if (figmaContext != null && !figmaContext.isBlank()) {
-            prompt.append(focusNumber++).append(". Ensuring implementation aligns with the provided design specifications\n");
+            prompt.append(constraintNumber++).append(". Ensure implementation aligns with the provided design specifications\n");
         }
         if (roadmapContext != null && !roadmapContext.isBlank()) {
-            prompt.append(focusNumber++).append(". Designing for extensibility to support related work in the same epic\n");
+            prompt.append(constraintNumber++).append(". Design for extensibility to support related work in the same epic\n");
         }
         
         return prompt.toString();
@@ -237,20 +320,34 @@ public class TechnicalSolutionGeneratorService {
 
     private StackSolutionDTO parseSolutionResponse(String response, DetectedStackDTO stack) {
         try {
-            // Extract JSON from response
             String json = extractJson(response);
             
             var parsed = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
             
+            // Parse the structured architecture detail
+            StackSolutionDTO.ArchitectureDetailDTO architectureDetail = parseArchitectureDetail(parsed.get("architectureDetail"));
+            
+            // Backward compat: derive architectureOverview from the structured detail
+            String architectureOverview;
+            if (architectureDetail != null && architectureDetail.getSummary() != null) {
+                architectureOverview = architectureDetail.getSummary();
+            } else {
+                // Fallback if LLM returned old flat format
+                architectureOverview = (String) parsed.get("architectureOverview");
+            }
+            
+            var steps = parseImplementationSteps(parsed.get("implementationSteps"));
+            
             return StackSolutionDTO.builder()
                 .stackType(stack.getStackType())
-                .architectureOverview((String) parsed.get("architectureOverview"))
+                .architectureOverview(architectureOverview)
+                .architectureDetail(architectureDetail)
                 .reusableServices(parseReusableServices(parsed.get("reusableServices")))
                 .recommendedLibraries(parseRecommendedLibraries(parsed.get("recommendedLibraries")))
-                .implementationSteps(parseImplementationSteps(parsed.get("implementationSteps")))
+                .implementationSteps(steps)
                 .riskFactors(parseStringList(parsed.get("riskFactors")))
                 .bestPractices(parseStringList(parsed.get("bestPractices")))
-                .estimatedHours(calculateTotalHours(parseImplementationSteps(parsed.get("implementationSteps"))))
+                .estimatedHours(calculateTotalHours(steps))
                 .build();
                 
         } catch (Exception e) {
@@ -316,6 +413,8 @@ public class TechnicalSolutionGeneratorService {
                 .filePath((String) item.get("filePath"))
                 .description((String) item.get("description"))
                 .howToUse((String) item.get("howToUse"))
+                .methodsToCall(parseStringList(item.get("methodsToCall")))
+                .importStatement((String) item.get("importStatement"))
                 .build());
         }
         
@@ -357,10 +456,121 @@ public class TechnicalSolutionGeneratorService {
                 .estimatedHours(((Number) item.getOrDefault("estimatedHours", 0)).intValue())
                 .filesToCreate(parseStringList(item.get("filesToCreate")))
                 .filesToModify(parseStringList(item.get("filesToModify")))
+                .subTasks(parseSubTasks(item.get("subTasks")))
+                .methodSignatures(parseStringList(item.get("methodSignatures")))
+                .dependsOnSteps(parseIntegerList(item.get("dependsOnSteps")))
                 .build());
         }
         
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private StackSolutionDTO.ArchitectureDetailDTO parseArchitectureDetail(Object obj) {
+        if (obj == null) return null;
+        
+        Map<String, Object> map = (Map<String, Object>) obj;
+        
+        return StackSolutionDTO.ArchitectureDetailDTO.builder()
+            .summary((String) map.get("summary"))
+            .components(parseComponents(map.get("components")))
+            .apiContracts(parseApiContracts(map.get("apiContracts")))
+            .dataModel(parseDataModel(map.get("dataModel")))
+            .configChanges(parseConfigChanges(map.get("configChanges")))
+            .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<StackSolutionDTO.ComponentDTO> parseComponents(Object obj) {
+        if (obj == null) return List.of();
+        
+        List<StackSolutionDTO.ComponentDTO> result = new ArrayList<>();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+        
+        for (Map<String, Object> item : list) {
+            result.add(StackSolutionDTO.ComponentDTO.builder()
+                .name((String) item.get("name"))
+                .responsibility((String) item.get("responsibility"))
+                .interactsWith(parseStringList(item.get("interactsWith")))
+                .build());
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<StackSolutionDTO.ApiContractDTO> parseApiContracts(Object obj) {
+        if (obj == null) return List.of();
+        
+        List<StackSolutionDTO.ApiContractDTO> result = new ArrayList<>();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+        
+        for (Map<String, Object> item : list) {
+            result.add(StackSolutionDTO.ApiContractDTO.builder()
+                .endpoint((String) item.get("endpoint"))
+                .method((String) item.get("method"))
+                .requestShape((String) item.get("requestShape"))
+                .responseShape((String) item.get("responseShape"))
+                .description((String) item.get("description"))
+                .build());
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<StackSolutionDTO.DataModelDTO> parseDataModel(Object obj) {
+        if (obj == null) return List.of();
+        
+        List<StackSolutionDTO.DataModelDTO> result = new ArrayList<>();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+        
+        for (Map<String, Object> item : list) {
+            result.add(StackSolutionDTO.DataModelDTO.builder()
+                .entityName((String) item.get("entityName"))
+                .fields(parseStringList(item.get("fields")))
+                .relationships(parseStringList(item.get("relationships")))
+                .build());
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<StackSolutionDTO.ConfigChangeDTO> parseConfigChanges(Object obj) {
+        if (obj == null) return List.of();
+        
+        List<StackSolutionDTO.ConfigChangeDTO> result = new ArrayList<>();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+        
+        for (Map<String, Object> item : list) {
+            result.add(StackSolutionDTO.ConfigChangeDTO.builder()
+                .key((String) item.get("key"))
+                .value((String) item.get("value"))
+                .description((String) item.get("description"))
+                .build());
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<StackSolutionDTO.SubTaskDTO> parseSubTasks(Object obj) {
+        if (obj == null) return List.of();
+        
+        List<StackSolutionDTO.SubTaskDTO> result = new ArrayList<>();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+        
+        for (Map<String, Object> item : list) {
+            result.add(StackSolutionDTO.SubTaskDTO.builder()
+                .task((String) item.get("task"))
+                .acceptanceCriteria((String) item.get("acceptanceCriteria"))
+                .build());
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Integer> parseIntegerList(Object obj) {
+        if (obj == null) return List.of();
+        List<Number> numbers = (List<Number>) obj;
+        return numbers.stream().map(Number::intValue).collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")

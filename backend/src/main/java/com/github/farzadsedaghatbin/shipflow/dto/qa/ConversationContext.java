@@ -71,6 +71,9 @@ public class ConversationContext {
     private LocalDateTime timestamp;
   }
 
+  /** Context entity name (e.g., cycle name) for prompt enrichment. */
+  private String contextName;
+
   /** Lightweight context info for inferring context in follow-up questions. */
   @Data
   @NoArgsConstructor
@@ -78,5 +81,6 @@ public class ConversationContext {
   public static class ContextInfo {
     private String contextType;
     private Long contextId;
+    private String contextName;
   }
 }

@@ -268,18 +268,60 @@ public class WiseArchitectureConversationService {
         prompt.append("Title: ").append(session.getPitchTitle()).append("\n");
         prompt.append("Problem: ").append(nullSafe(session.getPitchProblem())).append("\n\n");
         
-        // Add solution summary
+        // Add solution summary with structured detail
         WiseArchitectureResponseDTO solution = session.getGeneratedSolution();
         if (solution != null && solution.getSolutions() != null) {
             prompt.append("## Generated Solution Summary\n");
             for (Map.Entry<TechStackType, StackSolutionDTO> entry : solution.getSolutions().entrySet()) {
+                StackSolutionDTO stackSol = entry.getValue();
                 prompt.append("### ").append(entry.getKey().getDisplayName()).append("\n");
-                prompt.append("Architecture: ").append(truncate(entry.getValue().getArchitectureOverview(), 300)).append("\n");
                 
-                if (entry.getValue().getImplementationSteps() != null) {
+                // Include structured detail if available
+                if (stackSol.getArchitectureDetail() != null) {
+                    StackSolutionDTO.ArchitectureDetailDTO detail = stackSol.getArchitectureDetail();
+                    prompt.append("Architecture: ").append(nullSafe(detail.getSummary())).append("\n\n");
+                    
+                    if (detail.getComponents() != null && !detail.getComponents().isEmpty()) {
+                        prompt.append("Components:\n");
+                        for (StackSolutionDTO.ComponentDTO comp : detail.getComponents()) {
+                            prompt.append("- ").append(comp.getName()).append(": ").append(comp.getResponsibility()).append("\n");
+                        }
+                    }
+                    if (detail.getApiContracts() != null && !detail.getApiContracts().isEmpty()) {
+                        prompt.append("API Contracts:\n");
+                        for (StackSolutionDTO.ApiContractDTO api : detail.getApiContracts()) {
+                            prompt.append("- ").append(api.getMethod()).append(" ").append(api.getEndpoint());
+                            if (api.getDescription() != null) prompt.append(" — ").append(api.getDescription());
+                            prompt.append("\n");
+                        }
+                    }
+                    if (detail.getDataModel() != null && !detail.getDataModel().isEmpty()) {
+                        prompt.append("Data Model:\n");
+                        for (StackSolutionDTO.DataModelDTO entity : detail.getDataModel()) {
+                            prompt.append("- ").append(entity.getEntityName());
+                            if (entity.getFields() != null) prompt.append(" (").append(String.join(", ", entity.getFields())).append(")");
+                            prompt.append("\n");
+                        }
+                    }
+                } else {
+                    prompt.append("Architecture: ").append(truncate(stackSol.getArchitectureOverview(), 500)).append("\n");
+                }
+                
+                if (stackSol.getImplementationSteps() != null) {
                     prompt.append("Steps:\n");
-                    for (StackSolutionDTO.ImplementationStepDTO step : entry.getValue().getImplementationSteps()) {
-                        prompt.append("- ").append(step.getTitle()).append(" (").append(step.getEstimatedHours()).append("h)\n");
+                    for (StackSolutionDTO.ImplementationStepDTO step : stackSol.getImplementationSteps()) {
+                        prompt.append("- ").append(step.getTitle()).append(" (").append(step.getEstimatedHours()).append("h)");
+                        if (step.getMethodSignatures() != null && !step.getMethodSignatures().isEmpty()) {
+                            prompt.append(" [").append(String.join(", ", step.getMethodSignatures())).append("]");
+                        }
+                        prompt.append("\n");
+                    }
+                }
+                
+                if (stackSol.getReusableServices() != null && !stackSol.getReusableServices().isEmpty()) {
+                    prompt.append("Reusable Services:\n");
+                    for (StackSolutionDTO.ReusableServiceDTO svc : stackSol.getReusableServices()) {
+                        prompt.append("- ").append(svc.getServiceName()).append(" (").append(svc.getFilePath()).append(")\n");
                     }
                 }
                 prompt.append("\n");

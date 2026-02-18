@@ -126,6 +126,7 @@ export interface Cycle {
   isActive: boolean;
   pitchCount?: number;
   teamCount?: number;
+  projectType?: ProjectType;
 }
 
 export interface CreateCycleRequest {
