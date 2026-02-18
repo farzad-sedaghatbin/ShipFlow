@@ -64,7 +64,7 @@ class CircuitBreakerControllerIntegrationTest {
         () -> personRepository.save(Person.builder().name("Test Person").email("test@example.com").build()));
 
     // Create test cycle
-    cycle = Cycle.builder().name("Test Cycle 1").phase(CyclePhase.BUILD).startDate(LocalDate.now().minusDays(10))
+    cycle = Cycle.builder().name("Test Cycle 1").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now().minusDays(10))
         .endDate(LocalDate.now().plusDays(32)).isActive(true).build();
     cycle = cycleRepository.save(cycle);
   }

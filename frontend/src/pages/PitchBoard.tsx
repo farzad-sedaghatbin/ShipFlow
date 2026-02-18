@@ -14,6 +14,7 @@ import {
   Link2,
   Search,
   ArrowUpDown,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
@@ -43,6 +44,12 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../components/ui/popover';
+import { Checkbox } from '../components/ui/checkbox';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -69,6 +76,13 @@ export default function PitchBoard() {
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
+  const [visibleColumns, setVisibleColumns] = useState<Set<PitchStatus>>(() => {
+    try {
+      const stored = localStorage.getItem('pitchBoard.visibleColumns');
+      if (stored) return new Set(JSON.parse(stored) as PitchStatus[]);
+    } catch {}
+    return new Set(statusColumns);
+  });
   const [loading, setLoading] = useState(true);
   const [createDialog, setCreateDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -101,7 +115,9 @@ export default function PitchBoard() {
   }, [currentProject, isAllProjectsSelected]);
 
   useEffect(() => {
-    if (selectedCycle) {
+    if (selectedCycle === 'all') {
+      loadAllPitches();
+    } else if (selectedCycle) {
       loadPitches(parseInt(selectedCycle));
     }
   }, [selectedCycle]);
@@ -145,10 +161,36 @@ export default function PitchBoard() {
     }
   };
 
+  const loadAllPitches = async () => {
+    try {
+      const response = await pitchService.getAll();
+      setPitches(response.data);
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.loadFailed')));
+    }
+  };
+
+  const toggleColumnVisibility = (status: PitchStatus) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      try {
+        localStorage.setItem('pitchBoard.visibleColumns', JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  };
+
   const handleStatusChange = async (pitchId: number, newStatus: string) => {
     try {
       await pitchService.updateStatus(pitchId, newStatus as PitchStatus);
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllPitches();
+      } else if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
@@ -254,7 +296,9 @@ export default function PitchBoard() {
       // Navigate after all state cleanup is complete to avoid visual issues
       navigate(`/pitches/${createdPitch.id}`);
       
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllPitches();
+      } else if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
@@ -396,6 +440,7 @@ export default function PitchBoard() {
                 <SelectValue placeholder={t('pitchBoard.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">{t('pitchBoard.allCycles')}</SelectItem>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={cycle.id.toString()}>
                     {cycle.name}
@@ -403,9 +448,33 @@ export default function PitchBoard() {
                 ))}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  {t('pitchBoard.columns')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-3" align="end">
+                <div className="space-y-2">
+                  {statusColumns.map((status) => (
+                    <div key={status} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`col-${status}`}
+                        checked={visibleColumns.has(status)}
+                        onCheckedChange={() => toggleColumnVisibility(status)}
+                      />
+                      <label htmlFor={`col-${status}`} className="text-sm cursor-pointer">
+                        {status.replace('_', ' ')}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button
               onClick={() => setCreateDialog(true)}
-              disabled={!selectedCycle}
+              disabled={!selectedCycle || selectedCycle === 'all'}
               data-tour="new-pitch-btn"
               size="sm"
             >
@@ -456,7 +525,7 @@ export default function PitchBoard() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
-          {statusColumns.map((status) => (
+          {statusColumns.filter(s => visibleColumns.has(s)).map((status) => (
             <div key={status} className="min-w-0">
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3">
@@ -478,6 +547,11 @@ export default function PitchBoard() {
                       >
                         {pitch.title}
                       </Link>
+                      {selectedCycle === 'all' && pitch.cycleName && (
+                        <Badge variant="outline" className="text-xs mt-1 mb-0 px-1 py-0">
+                          {pitch.cycleName}
+                        </Badge>
+                      )}
                       <p className="text-sm text-muted-foreground mb-3 mt-1">
                         {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                       </p>

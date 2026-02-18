@@ -93,7 +93,7 @@ class MyWorkLogControllerIntegrationTest {
     testUser = userRepository.save(testUser);
 
     // Create cycle and pitches
-    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 

@@ -67,7 +67,7 @@ class HillChartControllerIntegrationTest {
     cycle.setName("Test Cycle");
     cycle.setStartDate(LocalDate.now());
     cycle.setEndDate(LocalDate.now().plusDays(42));
-    cycle.setPhase(CyclePhase.BUILD);
+    cycle.setPhase(CyclePhase.SHAPING_BUILDING);
     cycle.setIsActive(true);
     cycle = cycleRepository.save(cycle);
 

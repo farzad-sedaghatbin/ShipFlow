@@ -95,7 +95,7 @@ class ReleaseControllerIntegrationTest {
         .project(testProject)
         .startDate(LocalDate.of(2025, 1, 1))
         .endDate(LocalDate.of(2025, 2, 28))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
     testCycle = cycleRepository.save(testCycle);

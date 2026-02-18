@@ -106,7 +106,7 @@ class ReleaseServiceTest {
         .project(testProject)
         .startDate(LocalDate.of(2026, 1, 1))
         .endDate(LocalDate.of(2026, 2, 14))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
 

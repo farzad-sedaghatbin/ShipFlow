@@ -28,5 +28,5 @@ public class CreateCycleRequest {
   private LocalDate endDate;
 
   @Builder.Default
-  private CyclePhase phase = CyclePhase.BUILD;
+  private CyclePhase phase = CyclePhase.SHAPING_BUILDING;
 }

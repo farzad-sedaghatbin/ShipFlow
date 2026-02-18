@@ -45,7 +45,7 @@ class PitchHealthServiceStagnationTest {
         .name("Test Cycle")
         .startDate(LocalDate.now().minusDays(30))
         .endDate(LocalDate.now().plusDays(12))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .build();
 
     testPitch = Pitch.builder()

@@ -84,7 +84,7 @@ class BettingTableServiceTest {
       return key.replace("error.", "").replace(".", " ");
     });
 
-    testCycle = Cycle.builder().id(1L).name("Q1 2024").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+    testCycle = Cycle.builder().id(1L).name("Q1 2024").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
 
     testTeam = Team.builder().id(1L).name("Alpha Team").cycle(testCycle).build();

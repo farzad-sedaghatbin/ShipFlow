@@ -94,7 +94,7 @@ class PitchHealthControllerIntegrationTest {
     testProject = Project.builder().name("Health Test Project").projectKey("HEALTH").build();
     testProject = projectRepository.save(testProject);
 
-    testCycle = Cycle.builder().name("Health Test Cycle").phase(CyclePhase.BUILD)
+    testCycle = Cycle.builder().name("Health Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
         .startDate(LocalDate.now().minusDays(14)).endDate(LocalDate.now().plusDays(14)).isActive(true)
         .project(testProject).build();
     testCycle = cycleRepository.save(testCycle);

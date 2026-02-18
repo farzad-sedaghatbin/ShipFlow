@@ -91,7 +91,7 @@ class BettingDecisionControllerIntegrationTest {
 
                 testCycle = Cycle.builder()
                                 .name("Test Cycle Q1")
-                                .phase(CyclePhase.BETTING)
+                                .phase(CyclePhase.SHAPING_BUILDING)
                                 .startDate(LocalDate.now())
                                 .endDate(LocalDate.now().plusWeeks(6))
                                 .isActive(true)
@@ -212,7 +212,7 @@ class BettingDecisionControllerIntegrationTest {
                 // Create a previous cycle for the old decision
                 Cycle previousCycle = Cycle.builder()
                                 .name("Previous Cycle")
-                                .phase(CyclePhase.COOLDOWN)
+                                .phase(CyclePhase.BETTING_COOLDOWN)
                                 .startDate(LocalDate.now().minusWeeks(12))
                                 .endDate(LocalDate.now().minusWeeks(6))
                                 .isActive(false)

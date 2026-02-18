@@ -41,7 +41,7 @@ class PitchRepositoryTest {
     cycleRepository.deleteAll();
 
     testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BUILD).isActive(true).build();
+        .phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
     testTeam = Team.builder().name("Test Team").cycle(testCycle).build();
@@ -194,7 +194,7 @@ class PitchRepositoryTest {
   void countByCycleIdNotDeleted_ShouldCountOnlyForSpecificCycle() {
     // Arrange - Create another cycle with pitches
     Cycle anotherCycle = Cycle.builder().name("Another Cycle").startDate(LocalDate.now())
-        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
     anotherCycle = cycleRepository.save(anotherCycle);
 
     // Create pitches for original cycle

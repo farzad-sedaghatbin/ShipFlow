@@ -1002,7 +1002,7 @@ public class PitchHealthService {
     
     // Get all active cycles (in BUILD phase)
     List<Cycle> activeCycles = cycleRepository.findAll().stream()
-        .filter(c -> c.getPhase() == com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.BUILD)
+        .filter(c -> c.getPhase() == com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.SHAPING_BUILDING)
         .collect(Collectors.toList());
     
     for (Cycle cycle : activeCycles) {

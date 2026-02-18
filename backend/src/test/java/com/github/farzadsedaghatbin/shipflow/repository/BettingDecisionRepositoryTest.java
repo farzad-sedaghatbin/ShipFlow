@@ -77,7 +77,7 @@ class BettingDecisionRepositoryTest {
         .name("Test Cycle Q1")
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BETTING)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
     testCycle = cycleRepository.save(testCycle);
@@ -87,7 +87,7 @@ class BettingDecisionRepositoryTest {
         .name("Test Cycle Q2")
         .startDate(LocalDate.now().plusWeeks(8))
         .endDate(LocalDate.now().plusWeeks(14))
-        .phase(CyclePhase.SHAPING)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(false)
         .build();
     testCycle2 = cycleRepository.save(testCycle2);
@@ -365,7 +365,7 @@ class BettingDecisionRepositoryTest {
             .name("Cycle " + i)
             .startDate(LocalDate.now().plusWeeks(i * 8))
             .endDate(LocalDate.now().plusWeeks((i + 1) * 8))
-            .phase(CyclePhase.BETTING)
+            .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(false)
             .build();
         cycle = cycleRepository.save(cycle);

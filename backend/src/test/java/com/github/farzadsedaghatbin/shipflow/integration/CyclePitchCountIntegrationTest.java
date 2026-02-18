@@ -84,7 +84,7 @@ class CyclePitchCountIntegrationTest {
 
     // Create test cycle
     testCycle = Cycle.builder().name("Test Cycle").project(testProject).startDate(LocalDate.now())
-        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
   }
 

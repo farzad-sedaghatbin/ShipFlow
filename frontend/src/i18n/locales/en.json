@@ -481,29 +481,21 @@
     "cyclesFound_plural": "cycles found",
     "searchCycles": "Search cycles...",
     "allPhases": "All Phases",
-    "shaping": "Shaping",
-    "betting": "Betting",
-    "build": "Build",
-    "cooldown": "Cooldown",
+    "shaping_building": "Shaping & Building",
+    "betting_cooldown": "Betting & Cooldown",
     "appetite": "Appetite",
     "phase": {
-      "shaping": "Shaping",
-      "betting": "Betting",
-      "build": "Build",
-      "cooldown": "Cooldown"
+      "shaping_building": "Shaping & Building",
+      "betting_cooldown": "Betting & Cooldown"
     },
     "phases": {
-      "shaping": "Shaping",
-      "betting": "Betting",
-      "build": "Build",
-      "cooldown": "Cooldown"
+      "shaping_building": "Shaping & Building",
+      "betting_cooldown": "Betting & Cooldown"
     },
     "totalDays": "Total Days",
     "phaseValues": {
-      "SHAPING": "Shaping",
-      "BETTING": "Betting",
-      "BUILD": "Build",
-      "COOLDOWN": "Cooldown"
+      "SHAPING_BUILDING": "Shaping & Building",
+      "BETTING_COOLDOWN": "Betting & Cooldown"
     },
     "allStatus": "All Status",
     "inactive": "Completed",
@@ -1958,10 +1950,8 @@
     "automaticallyCalculated": "Automatically calculated from start date",
     "endDateAutoAriaLabel": "End date - automatically calculated from start date",
     "endDateAriaLabel": "End date",
-    "shaping": "Shaping",
-    "betting": "Betting",
-    "build": "Build",
-    "cooldown": "Cooldown",
+    "shaping_building": "Shaping & Building",
+    "betting_cooldown": "Betting & Cooldown",
     "saving": "Saving...",
     "updateCycle": "Update Cycle",
     "createSuccess": "Cycle created successfully!",
@@ -2444,6 +2434,7 @@
     "notSet": "Not set",
     "created": "Created",
     "complete": "complete",
+    "completed": "completed",
     "completedPitches": "completed pitches",
     "noPitches": "No pitches yet"
   },
@@ -3682,7 +3673,9 @@
   "pitchBoard": {
     "title": "Pitch Board",
     "allProjects": "All Projects",
+    "allCycles": "All Cycles",
     "selectCycle": "Select Cycle",
+    "columns": "Columns",
     "newPitch": "New Pitch",
     "searchPlaceholder": "Search pitches...",
     "sortBy": "Sort By",

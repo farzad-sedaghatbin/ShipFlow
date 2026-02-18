@@ -41,20 +41,20 @@ INSERT INTO users (id, username, password, role, person_id, is_active, created_a
 
 -- ===========================================
 -- 4. CYCLES (Shape Up 6-week cycles)
--- Valid CyclePhase values: SHAPING, BETTING, BUILD, COOLDOWN
+-- Valid CyclePhase values: SHAPING_BUILDING, BETTING_COOLDOWN
 -- ===========================================
 INSERT INTO cycles (id, name, start_date, end_date, phase, project_id, is_active) OVERRIDING SYSTEM VALUE VALUES
 -- Past completed cycles
-(1, 'Cycle 1 - Foundation', '2025-06-01', '2025-07-12', 'COOLDOWN', 1, false),
-(2, 'Cycle 2 - Core Features', '2025-07-15', '2025-08-26', 'COOLDOWN', 1, false),
-(3, 'Cycle 3 - Polish', '2025-09-01', '2025-10-12', 'COOLDOWN', 1, false),
--- Current active cycle in BUILD phase
-(4, 'Cycle 4 - Integrations', '2025-10-15', '2025-11-26', 'BUILD', 1, true),
--- Future cycle in SHAPING
-(5, 'Cycle 5 - Mobile', '2025-12-01', '2026-01-12', 'SHAPING', 1, true),
+(1, 'Cycle 1 - Foundation', '2025-06-01', '2025-07-12', 'BETTING_COOLDOWN', 1, false),
+(2, 'Cycle 2 - Core Features', '2025-07-15', '2025-08-26', 'BETTING_COOLDOWN', 1, false),
+(3, 'Cycle 3 - Polish', '2025-09-01', '2025-10-12', 'BETTING_COOLDOWN', 1, false),
+-- Current active cycle in SHAPING_BUILDING phase
+(4, 'Cycle 4 - Integrations', '2025-10-15', '2025-11-26', 'SHAPING_BUILDING', 1, true),
+-- Future cycle in SHAPING_BUILDING
+(5, 'Cycle 5 - Mobile', '2025-12-01', '2026-01-12', 'SHAPING_BUILDING', 1, true),
 -- Mobile App project cycles
-(6, 'Mobile Cycle 1', '2025-09-01', '2025-10-12', 'COOLDOWN', 2, false),
-(7, 'Mobile Cycle 2', '2025-10-15', '2025-11-26', 'BUILD', 2, true);
+(6, 'Mobile Cycle 1', '2025-09-01', '2025-10-12', 'BETTING_COOLDOWN', 2, false),
+(7, 'Mobile Cycle 2', '2025-10-15', '2025-11-26', 'SHAPING_BUILDING', 2, true);
 
 -- ===========================================
 -- 5. TEAMS (Per-cycle teams)

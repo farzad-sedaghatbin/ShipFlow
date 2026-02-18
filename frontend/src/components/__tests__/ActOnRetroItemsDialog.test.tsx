@@ -70,7 +70,7 @@ const mockCycles: Cycle[] = [
     projectId: 1,
     startDate: '2026-02-01',
     endDate: '2026-02-14',
-    phase: 'BUILD',
+    phase: 'SHAPING_BUILDING',
     isActive: true,
   },
   {
@@ -79,7 +79,7 @@ const mockCycles: Cycle[] = [
     projectId: 1,
     startDate: '2026-02-17',
     endDate: '2026-03-02',
-    phase: 'SHAPING',
+    phase: 'SHAPING_BUILDING',
     isActive: false,
   },
 ];

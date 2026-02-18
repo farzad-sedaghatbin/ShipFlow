@@ -114,7 +114,7 @@ class DocumentControllerIntegrationTest {
     }
 
     testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusDays(42))
-        .phase(com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.SHAPING).isActive(true).build();
+        .phase(com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
     team.setCycle(testCycle);
     teamRepository.save(team);

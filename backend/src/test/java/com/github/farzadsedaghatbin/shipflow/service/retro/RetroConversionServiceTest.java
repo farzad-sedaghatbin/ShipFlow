@@ -63,7 +63,7 @@ class RetroConversionServiceTest {
     testProject = aProject().build();
     testCycle = aCycle().withId(1L).withName("Current Cycle").withProject(testProject).build();
     nextCycle = aCycle().withId(2L).withName("Next Cycle").withProject(testProject)
-        .withPhase(CyclePhase.SHAPING).startingIn(7).build();
+        .withPhase(CyclePhase.SHAPING_BUILDING).startingIn(7).build();
     testUser = aUser().build();
     
     setupMocks();
