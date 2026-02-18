@@ -111,6 +111,24 @@ public class GitHubMcpProvider implements McpClientService {
         return owner + "/" + repo + "@" + (branch != null ? branch : "main");
     }
 
+    /**
+     * Heuristic: a string looks like a file path if it contains a '/' or '.'
+     * and does NOT look like a plain-english error message.
+     * Rejects lines like "missing required parameter: query" while accepting "src/main/App.java".
+     */
+    private boolean looksLikeFilePath(String line) {
+        // Must contain a path separator or file extension dot
+        if (!line.contains("/") && !line.contains(".")) {
+            return false;
+        }
+        // Reject lines with spaces that look like sentences/error messages
+        // File paths rarely contain multiple spaces or colons followed by spaces
+        if (line.contains(": ") || (line.split("\\s+").length > 4)) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean isAvailable() {
         McpConfig.GitHubMcpConfig config = mcpConfig.getGithub();
@@ -277,7 +295,7 @@ public class GitHubMcpProvider implements McpClientService {
                                         for (String line : lines) {
                                             String trimmed = line.trim();
                                             if (!trimmed.isEmpty() && !trimmed.startsWith("{") 
-                                                    && !trimmed.startsWith("[")) {
+                                                    && !trimmed.startsWith("[") && looksLikeFilePath(trimmed)) {
                                                 files.add(trimmed);
                                             }
                                         }

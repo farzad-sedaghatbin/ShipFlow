@@ -63,7 +63,29 @@ public class TechnicalSolutionGeneratorService {
         try {
             log.info("Generating solution for {} in pitch '{}'", stack.getStackType(), pitch.getTitle());
             String response = chatLanguageModel.generate(prompt);
-            return parseSolutionResponse(response, stack);
+            
+            // Try parsing; if it fails, retry with a JSON-repair prompt
+            String json = extractJson(response);
+            if (json != null) {
+                try {
+                    return parseSolutionResponse(json, stack);
+                } catch (Exception parseEx) {
+                    log.warn("First parse attempt failed for {}: {}. Retrying with JSON-repair prompt.",
+                        stack.getStackType(), parseEx.getMessage());
+                }
+            } else {
+                log.warn("No JSON found in LLM response for {} (response starts with: '{}'). Retrying with JSON-repair prompt.",
+                    stack.getStackType(), response.substring(0, Math.min(200, response.length())));
+            }
+            
+            // Retry: ask the LLM to convert its own markdown response into the required JSON
+            String retryJson = retryAsJson(response);
+            if (retryJson != null) {
+                return parseSolutionResponse(retryJson, stack);
+            }
+            
+            log.error("Retry also failed for {}. Returning error solution.", stack.getStackType());
+            return createErrorSolution(stack, "AI returned non-JSON response after retry");
         } catch (Exception e) {
             log.error("Error generating solution for {}: {}", stack.getStackType(), e.getMessage(), e);
             return createErrorSolution(stack, e.getMessage());
@@ -199,7 +221,8 @@ public class TechnicalSolutionGeneratorService {
         }
         
         prompt.append("## Response Format\n");
-        prompt.append("Respond with a JSON object. Be SPECIFIC — no vague descriptions.\n");
+        prompt.append("Respond ONLY with a valid JSON object — no text before or after it, no markdown, no explanation.\n");
+        prompt.append("Be SPECIFIC — no vague descriptions.\n");
         prompt.append("```json\n");
         prompt.append("{\n");
         prompt.append("  \"architectureDetail\": {\n");
@@ -318,47 +341,83 @@ public class TechnicalSolutionGeneratorService {
         return prompt.toString();
     }
 
-    private StackSolutionDTO parseSolutionResponse(String response, DetectedStackDTO stack) {
+    /**
+     * Parse a pre-extracted JSON string into a StackSolutionDTO.
+     * Callers must pass already-extracted JSON (not raw LLM output).
+     * Throws on parse failure so callers can retry.
+     */
+    private StackSolutionDTO parseSolutionResponse(String json, DetectedStackDTO stack) throws Exception {
+        var parsed = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+        
+        // Parse the structured architecture detail
+        StackSolutionDTO.ArchitectureDetailDTO architectureDetail = parseArchitectureDetail(parsed.get("architectureDetail"));
+        
+        // Backward compat: derive architectureOverview from the structured detail
+        String architectureOverview;
+        if (architectureDetail != null && architectureDetail.getSummary() != null) {
+            architectureOverview = architectureDetail.getSummary();
+        } else {
+            // Fallback if LLM returned old flat format
+            architectureOverview = (String) parsed.get("architectureOverview");
+        }
+        
+        var steps = parseImplementationSteps(parsed.get("implementationSteps"));
+        
+        return StackSolutionDTO.builder()
+            .stackType(stack.getStackType())
+            .architectureOverview(architectureOverview)
+            .architectureDetail(architectureDetail)
+            .reusableServices(parseReusableServices(parsed.get("reusableServices")))
+            .recommendedLibraries(parseRecommendedLibraries(parsed.get("recommendedLibraries")))
+            .implementationSteps(steps)
+            .riskFactors(parseStringList(parsed.get("riskFactors")))
+            .bestPractices(parseStringList(parsed.get("bestPractices")))
+            .estimatedHours(calculateTotalHours(steps))
+            .build();
+    }
+
+    /**
+     * Retry: send the LLM's own markdown response back and ask it to emit pure JSON.
+     * Returns extracted JSON string, or null if retry also fails.
+     */
+    private String retryAsJson(String originalResponse) {
+        if (chatLanguageModel == null) return null;
+        
         try {
-            String json = extractJson(response);
+            // Truncate very long responses to stay within token limits
+            String truncated = originalResponse.length() > 6000
+                ? originalResponse.substring(0, 6000) + "\n... [truncated]"
+                : originalResponse;
             
-            var parsed = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+            String retryPrompt = "The following text is your previous response, but it is NOT valid JSON. " +
+                "Convert it into the EXACT JSON schema I originally requested. " +
+                "Output ONLY the JSON object — no markdown, no explanation, no code fences.\n\n" +
+                truncated;
             
-            // Parse the structured architecture detail
-            StackSolutionDTO.ArchitectureDetailDTO architectureDetail = parseArchitectureDetail(parsed.get("architectureDetail"));
+            log.info("Sending JSON-repair retry prompt ({} chars)", retryPrompt.length());
+            String retryResponse = chatLanguageModel.generate(retryPrompt);
             
-            // Backward compat: derive architectureOverview from the structured detail
-            String architectureOverview;
-            if (architectureDetail != null && architectureDetail.getSummary() != null) {
-                architectureOverview = architectureDetail.getSummary();
-            } else {
-                // Fallback if LLM returned old flat format
-                architectureOverview = (String) parsed.get("architectureOverview");
+            String json = extractJson(retryResponse);
+            if (json != null) {
+                // Quick smoke test: must parse as a Map
+                objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+                log.info("JSON-repair retry succeeded ({} chars)", json.length());
+                return json;
             }
-            
-            var steps = parseImplementationSteps(parsed.get("implementationSteps"));
-            
-            return StackSolutionDTO.builder()
-                .stackType(stack.getStackType())
-                .architectureOverview(architectureOverview)
-                .architectureDetail(architectureDetail)
-                .reusableServices(parseReusableServices(parsed.get("reusableServices")))
-                .recommendedLibraries(parseRecommendedLibraries(parsed.get("recommendedLibraries")))
-                .implementationSteps(steps)
-                .riskFactors(parseStringList(parsed.get("riskFactors")))
-                .bestPractices(parseStringList(parsed.get("bestPractices")))
-                .estimatedHours(calculateTotalHours(steps))
-                .build();
-                
+            log.warn("JSON-repair retry returned no extractable JSON");
+            return null;
         } catch (Exception e) {
-            log.error("Failed to parse solution response: {}", e.getMessage());
-            return createErrorSolution(stack, "Failed to parse AI response");
+            log.warn("JSON-repair retry failed: {}", e.getMessage());
+            return null;
         }
     }
 
     private WiseArchitectureResponseDTO.ReducedScopeDTO parseReducedScopeResponse(String response, int availableHours) {
         try {
             String json = extractJson(response);
+            if (json == null) {
+                throw new IllegalStateException("No JSON found in reduced scope response");
+            }
             var parsed = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
             
             return WiseArchitectureResponseDTO.ReducedScopeDTO.builder()
@@ -380,24 +439,79 @@ public class TechnicalSolutionGeneratorService {
     }
 
     private String extractJson(String response) {
-        // Try to find JSON block in response
-        int start = response.indexOf("{");
-        int end = response.lastIndexOf("}");
-        
-        if (start >= 0 && end > start) {
-            return response.substring(start, end + 1);
-        }
-        
-        // Try to find in code block
+        // 1. Try fenced code block first — most reliable
         if (response.contains("```json")) {
-            start = response.indexOf("```json") + 7;
-            end = response.indexOf("```", start);
+            int start = response.indexOf("```json") + 7;
+            int end = response.indexOf("```", start);
             if (end > start) {
                 return response.substring(start, end).trim();
             }
         }
+        // Also handle bare ``` blocks (LLM sometimes omits "json" tag)
+        if (response.contains("```")) {
+            int start = response.indexOf("```") + 3;
+            // Skip optional language tag on same line
+            int newline = response.indexOf('\n', start);
+            if (newline > start) {
+                start = newline + 1;
+            }
+            int end = response.indexOf("```", start);
+            if (end > start) {
+                String candidate = response.substring(start, end).trim();
+                if (candidate.startsWith("{")) {
+                    return candidate;
+                }
+            }
+        }
         
-        return response;
+        // 2. Find the start of an actual JSON object: look for '{"' pattern
+        //    This avoids matching {templateVar} in URL paths like /api/{circleId}/...
+        int searchFrom = 0;
+        while (searchFrom < response.length()) {
+            int bracePos = response.indexOf('{', searchFrom);
+            if (bracePos < 0) break;
+            
+            // Check next non-whitespace char is a double-quote (JSON object key)
+            int nextChar = bracePos + 1;
+            while (nextChar < response.length() && Character.isWhitespace(response.charAt(nextChar))) {
+                nextChar++;
+            }
+            if (nextChar < response.length() && response.charAt(nextChar) == '"') {
+                // Found a likely JSON start — find matching closing brace using balanced counting
+                int depth = 0;
+                boolean inString = false;
+                boolean escaped = false;
+                for (int i = bracePos; i < response.length(); i++) {
+                    char c = response.charAt(i);
+                    if (escaped) {
+                        escaped = false;
+                        continue;
+                    }
+                    if (c == '\\' && inString) {
+                        escaped = true;
+                        continue;
+                    }
+                    if (c == '"' && !escaped) {
+                        inString = !inString;
+                        continue;
+                    }
+                    if (!inString) {
+                        if (c == '{') depth++;
+                        else if (c == '}') {
+                            depth--;
+                            if (depth == 0) {
+                                return response.substring(bracePos, i + 1);
+                            }
+                        }
+                    }
+                }
+            }
+            searchFrom = bracePos + 1;
+        }
+        
+        // 3. No valid JSON found — return null so caller can retry
+        log.debug("extractJson found no valid JSON object in response of {} chars", response.length());
+        return null;
     }
 
     @SuppressWarnings("unchecked")
