@@ -1201,11 +1201,12 @@ public class QAService {
     }
 
     String lowerQuestion = question.toLowerCase().trim();
-    String lowerType = contextType.toLowerCase();
+    // Quote contextType so user-supplied values cannot inject regex metacharacters (ReDoS / regex-injection).
+    String quotedType = java.util.regex.Pattern.quote(contextType.toLowerCase());
 
     // Pattern 1: "the XYZ cycle", "the XYZ pitch"
     java.util.regex.Pattern p1 = java.util.regex.Pattern.compile(
-        "(?:the|this)\\s+(.+?)\\s+" + lowerType, java.util.regex.Pattern.CASE_INSENSITIVE);
+        "(?:the|this)\\s+(.+?)\\s+" + quotedType, java.util.regex.Pattern.CASE_INSENSITIVE);
     java.util.regex.Matcher m1 = p1.matcher(question);
     if (m1.find()) {
       String name = m1.group(1).trim();
@@ -1217,7 +1218,7 @@ public class QAService {
 
     // Pattern 2: "in/for/about XYZ cycle"
     java.util.regex.Pattern p2 = java.util.regex.Pattern.compile(
-        "(?:in|for|about|from)\\s+(?:the\\s+)?(.+?)\\s+" + lowerType, java.util.regex.Pattern.CASE_INSENSITIVE);
+        "(?:in|for|about|from)\\s+(?:the\\s+)?(.+?)\\s+" + quotedType, java.util.regex.Pattern.CASE_INSENSITIVE);
     java.util.regex.Matcher m2 = p2.matcher(question);
     if (m2.find()) {
       String name = m2.group(1).trim();
@@ -1226,15 +1227,24 @@ public class QAService {
       }
     }
 
-    // Pattern 3: "cycle XYZ" where XYZ is not a number (e.g., "cycle Alpha")
+    // Pattern 3: "cycle XYZ" where XYZ is not a number (e.g., "cycle Alpha").
+    // The terminal anchor uses a literal '?' rather than \s*\? to avoid polynomial backtracking.
     java.util.regex.Pattern p3 = java.util.regex.Pattern.compile(
-        lowerType + "\\s+(?!\\d)(\\S.+?)(?:\\s*\\?|$)", java.util.regex.Pattern.CASE_INSENSITIVE);
+        quotedType + "\\s+(?!\\d)(\\S.+?)(?:\\?|$)", java.util.regex.Pattern.CASE_INSENSITIVE);
     java.util.regex.Matcher m3 = p3.matcher(question);
     if (m3.find()) {
       String name = m3.group(1).trim();
-      // Remove trailing question marks and common question words
-      name = name.replaceAll("\\s*\\?\\s*$", "").trim();
-      name = name.replaceAll("\\s+(?:has|have|is|are|was|were|do|does|did)$", "").trim();
+      // Remove trailing '?' with a plain check — avoids polynomial backtracking from \s*\?\s*$.
+      if (name.endsWith("?")) {
+        name = name.substring(0, name.length() - 1).trim();
+      }
+      // Remove trailing auxiliary verb with plain suffix checks — avoids backtracking from \s+(...verb...)$.
+      for (String verb : new String[]{"has", "have", "is", "are", "was", "were", "do", "does", "did"}) {
+        if (name.endsWith(" " + verb)) {
+          name = name.substring(0, name.length() - verb.length()).trim();
+          break;
+        }
+      }
       if (!name.isEmpty() && !name.matches("\\d+")) {
         return name;
       }
@@ -1253,10 +1263,11 @@ public class QAService {
     }
 
     String lowerQuestion = question.toLowerCase().trim();
-    String lowerContextType = contextType.toLowerCase();
+    // Quote contextType to prevent regex injection from user-controlled values.
+    String quotedContextType = java.util.regex.Pattern.quote(contextType.toLowerCase());
 
     // Pattern 1: "cycle 4", "pitch 15", "team 2", "meeting 3"
-    java.util.regex.Pattern pattern1 = java.util.regex.Pattern.compile("\\b" + lowerContextType + "\\s+(\\d+)\\b");
+    java.util.regex.Pattern pattern1 = java.util.regex.Pattern.compile("\\b" + quotedContextType + "\\s+(\\d+)\\b");
     java.util.regex.Matcher matcher1 = pattern1.matcher(lowerQuestion);
     if (matcher1.find()) {
       try {
@@ -1277,7 +1288,7 @@ public class QAService {
 
     // Pattern 3: "in cycle 4", "for pitch 15", "about team 2"
     java.util.regex.Pattern pattern3 = java.util.regex.Pattern
-        .compile("\\b(?:in|for|about|from)\\s+" + lowerContextType + "\\s+(\\d+)\\b");
+        .compile("\\b(?:in|for|about|from)\\s+" + quotedContextType + "\\s+(\\d+)\\b");
     java.util.regex.Matcher matcher3 = pattern3.matcher(lowerQuestion);
     if (matcher3.find()) {
       try {

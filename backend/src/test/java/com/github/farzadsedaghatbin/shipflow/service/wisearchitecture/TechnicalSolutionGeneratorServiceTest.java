@@ -226,4 +226,170 @@ class TechnicalSolutionGeneratorServiceTest {
             assertThat(result.getReducedTotalHours()).isEqualTo(32);
         }
     }
+
+    @Nested
+    @DisplayName("analyzeProjectConventions")
+    class AnalyzeProjectConventions {
+
+        @Test
+        @DisplayName("should return empty string when LLM is not available")
+        void shouldReturnEmptyWhenLLMNotAvailable() {
+            ReflectionTestUtils.setField(service, "chatLanguageModel", null);
+
+            String result = service.analyzeProjectConventions("public class UserService {}");
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should return empty string when codeContext is null")
+        void shouldReturnEmptyWhenCodeContextIsNull() {
+            String result = service.analyzeProjectConventions(null);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should return empty string when codeContext is blank")
+        void shouldReturnEmptyWhenCodeContextIsBlank() {
+            String result = service.analyzeProjectConventions("   ");
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should invoke LLM with a prompt containing the code context")
+        void shouldInvokeLLMWithCodeContext() {
+            String codeSnippet = "public class UserService { @Autowired UserRepository repo; }";
+            String expectedConventions = "Uses @Service and @Autowired. Controller -> Service -> Repository layering.";
+            when(chatLanguageModel.generate(anyString())).thenReturn(expectedConventions);
+
+            String result = service.analyzeProjectConventions(codeSnippet);
+
+            assertThat(result).isEqualTo(expectedConventions);
+            // Verify that the code context was included in the LLM prompt
+            org.mockito.ArgumentCaptor<String> promptCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+            verify(chatLanguageModel).generate(promptCaptor.capture());
+            assertThat(promptCaptor.getValue()).contains(codeSnippet);
+        }
+
+        @Test
+        @DisplayName("should return empty string and not throw when LLM throws an exception")
+        void shouldReturnEmptyOnLLMException() {
+            when(chatLanguageModel.generate(anyString())).thenThrow(new RuntimeException("LLM unavailable"));
+
+            String result = service.analyzeProjectConventions("public class Foo {}");
+
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("parse method resilience")
+    class ParseMethodResilience {
+
+        private static final String MOCK_MALFORMED_ARCH_DETAIL = """
+            {
+                "architectureOverview": "Test",
+                "reusableServices": [],
+                "recommendedLibraries": [],
+                "implementationSteps": [],
+                "architectureDetail": {
+                    "summary": "Test summary",
+                    "components": "not-a-list",
+                    "apiContracts": "not-a-list",
+                    "dataModel": "not-a-list",
+                    "configChanges": "not-a-list"
+                },
+                "riskFactors": []
+            }
+            """;
+
+        @Test
+        @DisplayName("should return empty collections for components/apiContracts/dataModel/configChanges when LLM returns wrong type")
+        void shouldReturnEmptyCollectionsOnMalformedArchitectureDetail() {
+            when(chatLanguageModel.generate(anyString())).thenReturn(MOCK_MALFORMED_ARCH_DETAIL);
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            // architectureOverview is derived from architectureDetail.summary (see parseSolutionResponse)
+            assertThat(result.getArchitectureOverview()).isEqualTo("Test summary");
+            // Malformed sub-fields inside architectureDetail must fall back to empty, not throw
+            assertThat(result.getArchitectureDetail()).isNotNull();
+            assertThat(result.getArchitectureDetail().getComponents()).isEmpty();
+            assertThat(result.getArchitectureDetail().getApiContracts()).isEmpty();
+            assertThat(result.getArchitectureDetail().getDataModel()).isEmpty();
+            assertThat(result.getArchitectureDetail().getConfigChanges()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should return empty subTasks when implementation step has non-list subTasks")
+        void shouldReturnEmptySubTasksOnMalformedValue() {
+            String malformedStepsResponse = """
+                {
+                    "architectureOverview": "Test",
+                    "reusableServices": [],
+                    "recommendedLibraries": [],
+                    "implementationSteps": [
+                        {
+                            "stepNumber": 1,
+                            "title": "Step",
+                            "description": "Desc",
+                            "estimatedHours": 2,
+                            "filesToCreate": [],
+                            "filesToModify": [],
+                            "subTasks": "should-be-a-list",
+                            "methodSignatures": [],
+                            "dependsOnSteps": []
+                        }
+                    ],
+                    "riskFactors": []
+                }
+                """;
+            when(chatLanguageModel.generate(anyString())).thenReturn(malformedStepsResponse);
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getImplementationSteps()).hasSize(1);
+            // subTasks should fall back to empty rather than throw ClassCastException
+            assertThat(result.getImplementationSteps().get(0).getSubTasks()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should return empty dependsOnSteps when value is not a number list")
+        void shouldReturnEmptyDependsOnStepsOnMalformedValue() {
+            String malformedResponse = """
+                {
+                    "architectureOverview": "Test",
+                    "reusableServices": [],
+                    "recommendedLibraries": [],
+                    "implementationSteps": [
+                        {
+                            "stepNumber": 1,
+                            "title": "Step",
+                            "description": "Desc",
+                            "estimatedHours": 2,
+                            "filesToCreate": [],
+                            "filesToModify": [],
+                            "subTasks": [],
+                            "methodSignatures": [],
+                            "dependsOnSteps": "not-a-number-list"
+                        }
+                    ],
+                    "riskFactors": []
+                }
+                """;
+            when(chatLanguageModel.generate(anyString())).thenReturn(malformedResponse);
+
+            StackSolutionDTO result = service.generateStackSolution(
+                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getImplementationSteps().get(0).getDependsOnSteps()).isEmpty();
+        }
+    }
 }

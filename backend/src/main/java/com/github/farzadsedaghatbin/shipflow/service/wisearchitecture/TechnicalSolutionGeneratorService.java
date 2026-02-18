@@ -483,100 +483,132 @@ public class TechnicalSolutionGeneratorService {
     @SuppressWarnings("unchecked")
     private List<StackSolutionDTO.ComponentDTO> parseComponents(Object obj) {
         if (obj == null) return List.of();
-        
-        List<StackSolutionDTO.ComponentDTO> result = new ArrayList<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
-        
-        for (Map<String, Object> item : list) {
-            result.add(StackSolutionDTO.ComponentDTO.builder()
-                .name((String) item.get("name"))
-                .responsibility((String) item.get("responsibility"))
-                .interactsWith(parseStringList(item.get("interactsWith")))
-                .build());
+        try {
+            List<StackSolutionDTO.ComponentDTO> result = new ArrayList<>();
+            List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+            for (Map<String, Object> item : list) {
+                result.add(StackSolutionDTO.ComponentDTO.builder()
+                    .name((String) item.get("name"))
+                    .responsibility((String) item.get("responsibility"))
+                    .interactsWith(parseStringList(item.get("interactsWith")))
+                    .build());
+            }
+            return result;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for 'components': expected List<Map>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
         }
-        return result;
     }
 
     @SuppressWarnings("unchecked")
     private List<StackSolutionDTO.ApiContractDTO> parseApiContracts(Object obj) {
         if (obj == null) return List.of();
-        
-        List<StackSolutionDTO.ApiContractDTO> result = new ArrayList<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
-        
-        for (Map<String, Object> item : list) {
-            result.add(StackSolutionDTO.ApiContractDTO.builder()
-                .endpoint((String) item.get("endpoint"))
-                .method((String) item.get("method"))
-                .requestShape((String) item.get("requestShape"))
-                .responseShape((String) item.get("responseShape"))
-                .description((String) item.get("description"))
-                .build());
+        try {
+            List<StackSolutionDTO.ApiContractDTO> result = new ArrayList<>();
+            List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+            for (Map<String, Object> item : list) {
+                result.add(StackSolutionDTO.ApiContractDTO.builder()
+                    .endpoint((String) item.get("endpoint"))
+                    .method((String) item.get("method"))
+                    .requestShape((String) item.get("requestShape"))
+                    .responseShape((String) item.get("responseShape"))
+                    .description((String) item.get("description"))
+                    .build());
+            }
+            return result;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for 'apiContracts': expected List<Map>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
         }
-        return result;
     }
 
     @SuppressWarnings("unchecked")
     private List<StackSolutionDTO.DataModelDTO> parseDataModel(Object obj) {
         if (obj == null) return List.of();
-        
-        List<StackSolutionDTO.DataModelDTO> result = new ArrayList<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
-        
-        for (Map<String, Object> item : list) {
-            result.add(StackSolutionDTO.DataModelDTO.builder()
-                .entityName((String) item.get("entityName"))
-                .fields(parseStringList(item.get("fields")))
-                .relationships(parseStringList(item.get("relationships")))
-                .build());
+        try {
+            List<StackSolutionDTO.DataModelDTO> result = new ArrayList<>();
+            List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+            for (Map<String, Object> item : list) {
+                result.add(StackSolutionDTO.DataModelDTO.builder()
+                    .entityName((String) item.get("entityName"))
+                    .fields(parseStringList(item.get("fields")))
+                    .relationships(parseStringList(item.get("relationships")))
+                    .build());
+            }
+            return result;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for 'dataModel': expected List<Map>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
         }
-        return result;
     }
 
     @SuppressWarnings("unchecked")
     private List<StackSolutionDTO.ConfigChangeDTO> parseConfigChanges(Object obj) {
         if (obj == null) return List.of();
-        
-        List<StackSolutionDTO.ConfigChangeDTO> result = new ArrayList<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
-        
-        for (Map<String, Object> item : list) {
-            result.add(StackSolutionDTO.ConfigChangeDTO.builder()
-                .key((String) item.get("key"))
-                .value((String) item.get("value"))
-                .description((String) item.get("description"))
-                .build());
+        try {
+            List<StackSolutionDTO.ConfigChangeDTO> result = new ArrayList<>();
+            List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+            for (Map<String, Object> item : list) {
+                result.add(StackSolutionDTO.ConfigChangeDTO.builder()
+                    .key((String) item.get("key"))
+                    .value((String) item.get("value"))
+                    .description((String) item.get("description"))
+                    .build());
+            }
+            return result;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for 'configChanges': expected List<Map>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
         }
-        return result;
     }
 
     @SuppressWarnings("unchecked")
     private List<StackSolutionDTO.SubTaskDTO> parseSubTasks(Object obj) {
         if (obj == null) return List.of();
-        
-        List<StackSolutionDTO.SubTaskDTO> result = new ArrayList<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
-        
-        for (Map<String, Object> item : list) {
-            result.add(StackSolutionDTO.SubTaskDTO.builder()
-                .task((String) item.get("task"))
-                .acceptanceCriteria((String) item.get("acceptanceCriteria"))
-                .build());
+        try {
+            List<StackSolutionDTO.SubTaskDTO> result = new ArrayList<>();
+            List<Map<String, Object>> list = (List<Map<String, Object>>) obj;
+            for (Map<String, Object> item : list) {
+                result.add(StackSolutionDTO.SubTaskDTO.builder()
+                    .task((String) item.get("task"))
+                    .acceptanceCriteria((String) item.get("acceptanceCriteria"))
+                    .build());
+            }
+            return result;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for 'subTasks': expected List<Map>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
         }
-        return result;
     }
 
     @SuppressWarnings("unchecked")
     private List<Integer> parseIntegerList(Object obj) {
         if (obj == null) return List.of();
-        List<Number> numbers = (List<Number>) obj;
-        return numbers.stream().map(Number::intValue).collect(Collectors.toList());
+        try {
+            List<Number> numbers = (List<Number>) obj;
+            return numbers.stream().map(Number::intValue).collect(Collectors.toList());
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for integer list: expected List<Number>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     @SuppressWarnings("unchecked")
     private List<String> parseStringList(Object obj) {
         if (obj == null) return List.of();
-        return (List<String>) obj;
+        try {
+            return (List<String>) obj;
+        } catch (ClassCastException e) {
+            log.warn("Malformed LLM response for string list: expected List<String>, got {} - returning empty list",
+                obj.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     private int calculateTotalHours(List<StackSolutionDTO.ImplementationStepDTO> steps) {
