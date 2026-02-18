@@ -1204,7 +1204,7 @@ const WiseArchitecturePage: React.FC = () => {
                         >
                           {message.role === 'assistant' ? (
                             <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                              <Markdown>{message.content}</Markdown>
+                              <Markdown content={message.content} />
                             </div>
                           ) : (
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
