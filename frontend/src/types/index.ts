@@ -29,7 +29,7 @@ export interface Page<T> {
 }
 
 // Enums
-export type CyclePhase = 'SHAPING' | 'BETTING' | 'BUILD' | 'COOLDOWN';
+export type CyclePhase = 'SHAPING_BUILDING' | 'BETTING_COOLDOWN';
 /**
  * Shape Up pitch lifecycle statuses.
  * Pre-cycle: IDEA → DRAFT → SHAPED (no cycle required)

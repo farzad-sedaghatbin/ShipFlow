@@ -82,7 +82,7 @@ public class WorkLogTimerControllerIntegrationTest {
 
     testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now().minusDays(7))
         .endDate(LocalDate.now().plusDays(30))
-        .phase(com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.BUILD).isActive(true).build();
+        .phase(com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
     testPitch = Pitch.builder().title("Test Pitch").appetiteDays(14).cycle(testCycle)

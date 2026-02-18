@@ -273,13 +273,13 @@ class DashboardNotificationServiceTest {
     Team team = Team.builder().id(1L).name("Test Team")
         .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
 
-    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD)
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
         .teams(new ArrayList<>(Arrays.asList(team))).pitches(new ArrayList<>()).build();
 
     when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
     // Act
-    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.BETTING_COOLDOWN);
 
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
@@ -291,11 +291,11 @@ class DashboardNotificationServiceTest {
   @Test
   void notifyCyclePhaseChange_ShouldNotCreateNotificationsWhenPhaseUnchanged() {
     // Arrange
-    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD).teams(new ArrayList<>())
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).teams(new ArrayList<>())
         .pitches(new ArrayList<>()).build();
 
     // Act
-    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.BUILD);
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.SHAPING_BUILDING);
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
@@ -305,11 +305,11 @@ class DashboardNotificationServiceTest {
   @Test
   void notifyCyclePhaseChange_ShouldHandleCycleWithNoUsers() {
     // Arrange
-    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.BUILD).teams(new ArrayList<>())
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).teams(new ArrayList<>())
         .pitches(new ArrayList<>()).build();
 
     // Act
-    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.BETTING_COOLDOWN);
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));

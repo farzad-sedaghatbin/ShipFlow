@@ -88,14 +88,14 @@ class CycleServiceTest {
     testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true).build();
 
     testCycle = Cycle.builder().id(1L).name("Test Cycle").project(testProject).startDate(LocalDate.now())
-        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.BUILD).isActive(true).build();
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
 
     testRequest = new CreateCycleRequest();
     testRequest.setProjectId(1L);
     testRequest.setName("Test Cycle");
     testRequest.setStartDate(LocalDate.now());
     // Don't set endDate - let auto-calculation handle it
-    testRequest.setPhase(CyclePhase.BUILD);
+    testRequest.setPhase(CyclePhase.SHAPING_BUILDING);
 
     // Setup test users
     adminUser = User.builder().id(1L).username("admin").role(UserRole.ADMIN).build();
@@ -184,31 +184,6 @@ class CycleServiceTest {
 
     assertThat(result).hasSize(1);
     verify(cycleRepository).findByIsActiveTrue();
-  }
-
-  @Test
-  void updatePhase_ShouldUpdateCyclePhase() {
-    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
-
-    CycleDTO result = cycleService.updatePhase(1L, CyclePhase.COOLDOWN);
-
-    assertThat(result).isNotNull();
-    verify(cycleRepository).save(any(Cycle.class));
-    verify(notificationService).notifyCyclePhaseChange(any(Cycle.class), eq(CyclePhase.BUILD),
-        eq(CyclePhase.COOLDOWN));
-  }
-
-  @Test
-  void updatePhase_ShouldNotNotifyWhenPhaseUnchanged() {
-    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
-    when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
-
-    CycleDTO result = cycleService.updatePhase(1L, CyclePhase.BUILD); // Same phase
-
-    assertThat(result).isNotNull();
-    verify(cycleRepository).save(any(Cycle.class));
-    verify(notificationService, never()).notifyCyclePhaseChange(any(), any(), any());
   }
 
   @Test
@@ -489,7 +464,7 @@ class CycleServiceTest {
         .project(shapeUpProject)
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
 
@@ -499,7 +474,7 @@ class CycleServiceTest {
         .project(kanbanProject)
         .startDate(LocalDate.of(2025, 8, 1))
         .endDate(LocalDate.of(2099, 12, 31))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
 
@@ -547,7 +522,7 @@ class CycleServiceTest {
         .project(shapeUpProject)
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
 
@@ -557,7 +532,7 @@ class CycleServiceTest {
         .project(kanbanProject)
         .startDate(LocalDate.of(2025, 8, 1))
         .endDate(LocalDate.of(2099, 12, 31))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
 

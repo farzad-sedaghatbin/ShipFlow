@@ -153,10 +153,8 @@ export default function CycleDetail() {
 
   const getPhaseClasses = (phase: string) => {
     switch (phase) {
-      case 'BUILD': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'SHAPING': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-      case 'BETTING': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'COOLDOWN': return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+      case 'SHAPING_BUILDING': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'BETTING_COOLDOWN': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
       default: return '';
     }
   };
@@ -190,7 +188,7 @@ export default function CycleDetail() {
               {t('cycleDetailPage.circuitBreaker')}
             </Link>
           </Button>
-          {cycle.phase === 'COOLDOWN' && (
+          {cycle.phase === 'BETTING_COOLDOWN' && (
             <Button variant="outline" size="sm" asChild>
               <Link to={`/cycles/${cycle.id}/cooldown`}>
                 <Clock className="h-4 w-4 mr-2" />

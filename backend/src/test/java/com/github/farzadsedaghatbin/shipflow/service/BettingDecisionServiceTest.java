@@ -74,7 +74,7 @@ class BettingDecisionServiceTest {
     testCycle = Cycle.builder()
         .id(1L)
         .name("Q1 2026")
-        .phase(CyclePhase.BETTING)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
         .isActive(true)

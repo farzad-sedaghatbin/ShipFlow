@@ -165,7 +165,7 @@ class ProjectTypeTest {
     assertThat(createdCycle.getProject()).isEqualTo(savedProject);
     assertThat(createdCycle.getStartDate()).isEqualTo(LocalDate.now());
     assertThat(createdCycle.getEndDate()).isEqualTo(LocalDate.of(2099, 12, 31));
-    assertThat(createdCycle.getPhase()).isEqualTo(CyclePhase.BUILD);
+    assertThat(createdCycle.getPhase()).isEqualTo(CyclePhase.SHAPING_BUILDING);
     assertThat(createdCycle.getIsActive()).isTrue();
   }
 
@@ -266,7 +266,7 @@ class ProjectTypeTest {
     assertThat(createdCycle.getProject()).isEqualTo(updatedProject);
     assertThat(createdCycle.getStartDate()).isEqualTo(LocalDate.now());
     assertThat(createdCycle.getEndDate()).isEqualTo(LocalDate.of(2099, 12, 31));
-    assertThat(createdCycle.getPhase()).isEqualTo(CyclePhase.BUILD);
+    assertThat(createdCycle.getPhase()).isEqualTo(CyclePhase.SHAPING_BUILDING);
     assertThat(createdCycle.getIsActive()).isTrue();
   }
 

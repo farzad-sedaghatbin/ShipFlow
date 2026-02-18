@@ -102,45 +102,45 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     // Create active cycle for main project
     Cycle activeCycle = Cycle.builder().project(mainProject).name("Q1 2025 - Feature Sprint")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.BUILD)
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true).build();
     cycleRepository.save(activeCycle);
 
     // Create completed cycles for main project
     Cycle completedCycle1 = Cycle.builder().project(mainProject).name("Q4 2024 - Holiday Release")
-        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.COOLDOWN)
+        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.BETTING_COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(completedCycle1);
 
     Cycle completedCycle2 = Cycle.builder().project(mainProject).name("Q3 2024 - Summer Sprint")
-        .startDate(LocalDate.of(2024, 8, 5)).endDate(LocalDate.of(2024, 9, 20)).phase(CyclePhase.COOLDOWN)
+        .startDate(LocalDate.of(2024, 8, 5)).endDate(LocalDate.of(2024, 9, 20)).phase(CyclePhase.BETTING_COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(completedCycle2);
 
     Cycle completedCycle3 = Cycle.builder().project(mainProject).name("Q2 2024 - Mobile Expansion")
-        .startDate(LocalDate.of(2024, 5, 6)).endDate(LocalDate.of(2024, 6, 21)).phase(CyclePhase.COOLDOWN)
+        .startDate(LocalDate.of(2024, 5, 6)).endDate(LocalDate.of(2024, 6, 21)).phase(CyclePhase.BETTING_COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(completedCycle3);
 
     // Create cycles for Internal Tools project
     Cycle itCycle1 = Cycle.builder().project(internalToolsProject).name("IT Q1 2025 - Dashboard & Analytics")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.BUILD)
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true).build();
     cycleRepository.save(itCycle1);
 
     Cycle itCycle2 = Cycle.builder().project(internalToolsProject).name("IT Q4 2024 - Automation Tools")
-        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.COOLDOWN)
+        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.BETTING_COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(itCycle2);
 
     // Create cycles for Mobile App project
     Cycle maCycle1 = Cycle.builder().project(mobileAppProject).name("MA Q1 2025 - iOS & Android Launch")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 28)).phase(CyclePhase.BUILD)
+        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 28)).phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true).build();
     cycleRepository.save(maCycle1);
 
     Cycle maCycle2 = Cycle.builder().project(mobileAppProject).name("MA Q4 2024 - Beta Testing")
-        .startDate(LocalDate.of(2024, 10, 7)).endDate(LocalDate.of(2024, 12, 20)).phase(CyclePhase.COOLDOWN)
+        .startDate(LocalDate.of(2024, 10, 7)).endDate(LocalDate.of(2024, 12, 20)).phase(CyclePhase.BETTING_COOLDOWN)
         .isActive(false).build();
     cycleRepository.save(maCycle2);
 

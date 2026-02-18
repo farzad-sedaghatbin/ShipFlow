@@ -85,7 +85,7 @@ class TaskServiceTest {
         .name("Test Cycle")
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.BUILD)
+        .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
     testCycle = cycleRepository.save(testCycle);

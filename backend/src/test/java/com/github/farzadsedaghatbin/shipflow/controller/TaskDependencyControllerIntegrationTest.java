@@ -62,7 +62,7 @@ class TaskDependencyControllerIntegrationTest {
     taskRepository.deleteAll();
     cycleRepository.deleteAll();
 
-    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+    testCycle = Cycle.builder().name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 

@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -169,8 +170,13 @@ public class GitHubMcpProvider implements McpClientService {
             
             return allFiles;
 
+        } catch (HttpClientErrorException e) {
+            log.error("Failed to list files via GitHub MCP — HTTP {} from [{}]: {}",
+                e.getStatusCode(), mcpConfig.getGithub().getServerUrl(), e.getResponseBodyAsString());
+            return List.of();
         } catch (RestClientException e) {
-            log.error("Failed to list files via GitHub MCP: {}", e.getMessage());
+            log.error("Failed to list files via GitHub MCP [{}]: {}",
+                mcpConfig.getGithub().getServerUrl(), e.getMessage());
             return List.of();
         }
     }
@@ -292,8 +298,21 @@ public class GitHubMcpProvider implements McpClientService {
                     }
                 }
             }
+        } catch (HttpClientErrorException e) {
+            if (depth == 0) {
+                log.error("HTTP {} listing root of {}/{} via MCP [{}]: {}",
+                    e.getStatusCode(), owner, repo, mcpConfig.getGithub().getServerUrl(),
+                    e.getResponseBodyAsString());
+            } else {
+                log.debug("HTTP {} fetching path '{}' in {}/{}: {}",
+                    e.getStatusCode(), path, owner, repo, e.getResponseBodyAsString());
+            }
         } catch (Exception e) {
-            log.debug("Error fetching path '{}': {}", path, e.getMessage());
+            if (depth == 0) {
+                log.error("Error listing root of {}/{} via MCP: {}", owner, repo, e.getMessage());
+            } else {
+                log.debug("Error fetching path '{}': {}", path, e.getMessage());
+            }
         }
     }
 
@@ -366,8 +385,17 @@ public class GitHubMcpProvider implements McpClientService {
             log.debug("No content returned from GitHub MCP for file: {}", filePath);
             return Optional.empty();
 
+        } catch (HttpClientErrorException e) {
+            log.error("Failed to read file {} via GitHub MCP — HTTP {} from [{}]: {}",
+                filePath, e.getStatusCode(), mcpConfig.getGithub().getServerUrl(),
+                e.getResponseBodyAsString());
+            if (e.getStatusCode().value() == 403) {
+                log.error("403 on file read — verify the GitHub token has 'repo' scope and access to the repository");
+            }
+            return Optional.empty();
         } catch (RestClientException e) {
-            log.error("Failed to read file {} via GitHub MCP: {}", filePath, e.getMessage());
+            log.error("Failed to read file {} via GitHub MCP [{}]: {}",
+                filePath, mcpConfig.getGithub().getServerUrl(), e.getMessage());
             return Optional.empty();
         }
     }
@@ -457,8 +485,13 @@ public class GitHubMcpProvider implements McpClientService {
             log.debug("No matches returned from GitHub MCP for pattern: {}", pattern);
             return List.of();
 
+        } catch (HttpClientErrorException e) {
+            log.error("Failed to search files via GitHub MCP — HTTP {} from [{}]: {}",
+                e.getStatusCode(), mcpConfig.getGithub().getServerUrl(), e.getResponseBodyAsString());
+            return List.of();
         } catch (RestClientException e) {
-            log.error("Failed to search files via GitHub MCP: {}", e.getMessage());
+            log.error("Failed to search files via GitHub MCP [{}]: {}",
+                mcpConfig.getGithub().getServerUrl(), e.getMessage());
             return List.of();
         }
     }
@@ -520,8 +553,13 @@ public class GitHubMcpProvider implements McpClientService {
             log.debug("No context returned from GitHub MCP for {}/{}", owner, repo);
             return Map.of();
 
+        } catch (HttpClientErrorException e) {
+            log.error("Failed to get repo context via GitHub MCP — HTTP {} from [{}]: {}",
+                e.getStatusCode(), mcpConfig.getGithub().getServerUrl(), e.getResponseBodyAsString());
+            return Map.of();
         } catch (RestClientException e) {
-            log.error("Failed to get repo context via GitHub MCP: {}", e.getMessage());
+            log.error("Failed to get repo context via GitHub MCP [{}]: {}",
+                mcpConfig.getGithub().getServerUrl(), e.getMessage());
             return Map.of();
         }
     }
@@ -595,8 +633,11 @@ public class GitHubMcpProvider implements McpClientService {
                     }
                 }
             }
+        } catch (HttpClientErrorException e) {
+            log.warn("Batch file read returned HTTP {} from [{}] — falling back to individual reads: {}",
+                e.getStatusCode(), mcpConfig.getGithub().getServerUrl(), e.getResponseBodyAsString());
         } catch (RestClientException e) {
-            log.debug("Batch file read not available, falling back to individual reads: {}", 
+            log.debug("Batch file read not available, falling back to individual reads: {}",
                 e.getMessage());
         }
 
@@ -620,8 +661,11 @@ public class GitHubMcpProvider implements McpClientService {
         String githubToken = settingsService.getGithubAccessToken();
         if (githubToken != null && !githubToken.isBlank()) {
             headers.set("Authorization", "Bearer " + githubToken);
+            log.debug("GitHub token present: ***{} (len={})",
+                githubToken.substring(Math.max(0, githubToken.length() - 4)),
+                githubToken.length());
         } else {
-            log.warn("GitHub access token not configured, MCP requests may fail");
+            log.warn("GitHub access token not configured — MCP requests will be unauthenticated and will 403 on private repos");
         }
         
         return new HttpEntity<>(body, headers);

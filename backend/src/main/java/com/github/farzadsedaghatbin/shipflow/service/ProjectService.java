@@ -180,7 +180,7 @@ public class ProjectService {
   private void createDefaultKanbanCycle(Project project) {
     Cycle defaultCycle = Cycle.builder().name("Continuous Flow").project(project).startDate(LocalDate.now())
         .endDate(LocalDate.of(2099, 12, 31)) // Far future end date
-        .phase(CyclePhase.BUILD).isActive(true).build();
+        .phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
     cycleRepository.save(defaultCycle);
   }
 

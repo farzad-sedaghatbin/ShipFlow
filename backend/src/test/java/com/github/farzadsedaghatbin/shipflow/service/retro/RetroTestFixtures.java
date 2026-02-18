@@ -77,7 +77,7 @@ public class RetroTestFixtures {
     private Project project;
     private LocalDate startDate = LocalDate.now();
     private LocalDate endDate = LocalDate.now().plusWeeks(6);
-    private CyclePhase phase = CyclePhase.BUILD;
+    private CyclePhase phase = CyclePhase.SHAPING_BUILDING;
     private boolean isActive = true;
 
     public CycleFixtureBuilder withId(Long id) {

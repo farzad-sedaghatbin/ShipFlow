@@ -110,9 +110,8 @@ export function CycleProgressWidget() {
                   <Badge 
                     variant="secondary"
                     className={cn(
-                      cycle.phase === 'BUILD' && 'bg-primary/15 text-primary',
-                      cycle.phase === 'SHAPING' && 'bg-blue-500/15 text-blue-500',
-                      cycle.phase === 'BETTING' && 'bg-amber-500/15 text-amber-500',
+                      cycle.phase === 'SHAPING_BUILDING' && 'bg-primary/15 text-primary',
+                      cycle.phase === 'BETTING_COOLDOWN' && 'bg-amber-500/15 text-amber-500',
                     )}
                   >
                     {cycle.phase}

@@ -228,7 +228,7 @@ public class DashboardNotificationService {
     String message = String.format("Cycle '%s' has transitioned from %s to %s phase. %s", cycle.getName(),
         oldPhase.name(), newPhase.name(), phaseDescription);
 
-    String severity = (newPhase == CyclePhase.BUILD || newPhase == CyclePhase.COOLDOWN) ? "INFO" : "WARNING";
+    String severity = "INFO";
 
     // Notify all users involved in the cycle
     List<User> usersToNotify = getUsersInvolvedInCycle(cycle);
@@ -279,10 +279,8 @@ public class DashboardNotificationService {
   /** Get a description of what each phase means */
   private String getPhaseDescription(CyclePhase phase) {
     return switch (phase) {
-      case SHAPING -> "Time to shape and refine pitches for the next betting table.";
-      case BETTING -> "Evaluate and select pitches for the upcoming build cycle.";
-      case BUILD -> "Active development phase - teams are building their assigned pitches.";
-      case COOLDOWN -> "Reflection and planning phase - time to recover and prepare for the next cycle.";
+      case SHAPING_BUILDING -> "Active phase - shaping ideas and building assigned pitches.";
+      case BETTING_COOLDOWN -> "Reflection phase - evaluating pitches and planning the next cycle.";
     };
   }
 
@@ -418,7 +416,7 @@ public class DashboardNotificationService {
 
     List<Cycle> upcomingDeadlines = cycleRepository.findAll().stream()
         .filter(cycle -> cycle.getEndDate() != null && cycle.getEndDate().isBefore(warningDate)
-            && cycle.getEndDate().isAfter(LocalDate.now()) && cycle.getPhase() == CyclePhase.BUILD)
+            && cycle.getEndDate().isAfter(LocalDate.now()) && cycle.getPhase() == CyclePhase.SHAPING_BUILDING)
         .collect(Collectors.toList());
 
     for (Cycle cycle : upcomingDeadlines) {

@@ -60,7 +60,7 @@ class BettingTableControllerIntegrationTest {
     teamRepository.deleteAll();
     cycleRepository.deleteAll();
 
-    testCycle = Cycle.builder().name("Test Cycle Q1").phase(CyclePhase.BUILD).startDate(LocalDate.now())
+    testCycle = Cycle.builder().name("Test Cycle Q1").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 

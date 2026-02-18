@@ -871,6 +871,7 @@
     "notSet": "تنظیم نشده",
     "created": "ایجاد شده",
     "complete": "تکمیل",
+    "completed": "تکمیل شده",
     "completedPitches": "پیچ‌های تکمیل شده",
     "noPitches": "هنوز پیچی وجود ندارد"
   },
@@ -1321,9 +1322,8 @@
     "autoCalculateEndDate": "[TODO: Persian translation] Auto-calculate end date ({{weeks}} weeks from start date)",
     "autoEndDateInfo": "[TODO: Persian translation] End date will be automatically calculated as {{weeks}} weeks from the start date based on organization settings.",
     "automaticallyCalculated": "[TODO: Persian translation] Automatically calculated from start date",
-    "betting": "[TODO: Persian translation] Betting",
-    "build": "[TODO: Persian translation] Build",
-    "cooldown": "[TODO: Persian translation] Cooldown",
+    "betting_cooldown": "ارزیابی و خنک‌شدن",
+    "shaping_building": "شکل‌دهی و ساخت",
     "cooldownWeeks": "هفته‌های خنک‌سازی",
     "createCycle": "ایجاد چرخه",
     "createNewCycle": "[TODO: Persian translation] Create New Cycle",
@@ -1354,7 +1354,6 @@
     "projectRequired": "[TODO: Persian translation] Project *",
     "saving": "[TODO: Persian translation] Saving...",
     "selectProject": "[TODO: Persian translation] Select project",
-    "shaping": "[TODO: Persian translation] Shaping",
     "startDate": "تاریخ شروع",
     "startDateIsRequired": "[TODO: Persian translation] Start date is required",
     "startDateRequired": "[TODO: Persian translation] Start Date *",
@@ -1454,29 +1453,23 @@
     "pastCycles": "[TODO: Persian translation] Past Cycles",
     "pauseCycle": "توقف سیکل",
     "phase": {
-      "betting": "شرط‌بندی",
-      "build": "ساخت",
-      "cooldown": "خنک‌شدن",
-      "shaping": "شکل‌دهی"
+      "shaping_building": "شکل‌دهی و ساخت",
+      "betting_cooldown": "ارزیابی و خنک‌شدن"
     },
     "phases": {
-      "shaping": "شکل‌دهی",
-      "betting": "شرط‌بندی",
-      "build": "ساخت",
-      "cooldown": "خنک‌شدن"
+      "shaping_building": "شکل‌دهی و ساخت",
+      "betting_cooldown": "ارزیابی و خنک‌شدن"
     },
     "totalDays": "کل روزها",
     "phaseValues": {
-      "BETTING": "شرط‌بندی",
-      "BUILD": "ساخت",
-      "COOLDOWN": "خنک‌شدن",
-      "SHAPING": "شکل‌دهی"
+      "SHAPING_BUILDING": "شکل‌دهی و ساخت",
+      "BETTING_COOLDOWN": "ارزیابی و خنک‌شدن"
     },
     "pitches": "پیچ‌ها",
     "progress": "پیشرفت",
     "reactivateCycle": "فعال‌سازی مجدد",
     "searchCycles": "[TODO: Persian translation] Search cycles...",
-    "shaping": "شکل‌دهی",
+    "shaping_building": "شکل‌دهی و ساخت",
     "startDate": "تاریخ شروع",
     "status": "وضعیت",
     "teams": "تیم‌ها",
@@ -3762,6 +3755,8 @@
     "aiExtraction": "استخراج داده با هوش مصنوعی",
     "aiExtractionDescription": "یک سند را بارگذاری کنید تا اطلاعات پیچ به طور خودکار با استفاده از هوش مصنوعی استخراج شود",
     "allProjects": "[TODO: Persian translation] All Projects",
+    "allCycles": "همه سیکل‌ها",
+    "columns": "ستون‌ها",
     "appetite": "اشتها",
     "appetiteDays": "[TODO: Persian translation] Appetite (days)",
     "appetiteMax": "[TODO: Persian translation] Appetite cannot exceed 60 days",
