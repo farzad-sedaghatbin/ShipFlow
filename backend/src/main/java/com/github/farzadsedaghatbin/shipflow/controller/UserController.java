@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.AdminResetPasswordRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ChangePasswordRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateProfileRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
@@ -73,6 +74,15 @@ public class UserController {
   public ResponseEntity<Void> changePassword(@PathVariable Long id,
       @Valid @RequestBody ChangePasswordRequest request) {
     userService.changePassword(id, request);
+    return ResponseEntity.ok().build();
+  }
+
+  @PutMapping("/{id}/reset-password")
+  @Operation(summary = "Admin reset user password (no current password required)")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> adminResetPassword(@PathVariable Long id,
+      @Valid @RequestBody AdminResetPasswordRequest request) {
+    userService.adminResetPassword(id, request.getNewPassword());
     return ResponseEntity.ok().build();
   }
 

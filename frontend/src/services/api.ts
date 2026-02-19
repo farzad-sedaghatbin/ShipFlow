@@ -45,11 +45,15 @@ api.interceptors.response.use(
     const userMessage = getUserFriendlyError(error);
 
     if (status === 401) {
-      // Unauthorized - token expired or invalid
-      showGlobalToast(GLOBAL_ERROR_MESSAGES.unauthorized, 'error');
-      clearAuth();
-      // Redirect to login
-      window.location.href = '/login';
+      // Skip redirect if this is a login attempt (wrong credentials) — let the login form handle it
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      if (!isLoginRequest) {
+        // Unauthorized - token expired or invalid
+        showGlobalToast(GLOBAL_ERROR_MESSAGES.unauthorized, 'error');
+        clearAuth();
+        // Redirect to login
+        window.location.href = '/login';
+      }
     } else if (status === 403) {
       // Forbidden - no permission
       showGlobalToast(GLOBAL_ERROR_MESSAGES.forbidden, 'error');

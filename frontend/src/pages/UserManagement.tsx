@@ -261,8 +261,7 @@ export default function UserManagement() {
 
     setResettingPassword(true);
     try {
-      await api.put(`/users/${resetPasswordUser.id}/password`, {
-        currentPassword: 'admin-override', // Admin can reset without knowing current
+      await api.put(`/users/${resetPasswordUser.id}/reset-password`, {
         newPassword,
       });
       showToast(t('userManagement.passwordReset'), 'success');
