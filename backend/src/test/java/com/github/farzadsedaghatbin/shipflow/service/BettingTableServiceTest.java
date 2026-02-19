@@ -196,7 +196,8 @@ class BettingTableServiceTest {
     BettingSlotDTO result = bettingTableService.assignPitchToSlot(1L, 1L);
 
     assertThat(result).isNotNull();
-    verify(pitchRepository).save(argThat(pitch -> pitch.getStatus() == PitchStatus.STARTED));
+    verify(pitchRepository).save(argThat(pitch ->
+        pitch.getStatus() == PitchStatus.STARTED && pitch.getCycle() != null && pitch.getCycle().getId().equals(1L)));
   }
 
   @Test
@@ -227,7 +228,7 @@ class BettingTableServiceTest {
   }
 
   @Test
-  void removePitchFromSlot_ShouldRemoveAndRevertStatus() {
+  void removePitchFromSlot_ShouldClearCycleButPreserveStatus() {
     testSlot.setPitch(shapedPitch);
     shapedPitch.setStatus(PitchStatus.STARTED);
 
@@ -241,7 +242,10 @@ class BettingTableServiceTest {
     BettingSlotDTO result = bettingTableService.removePitchFromSlot(1L);
 
     assertThat(result.getPitchId()).isNull();
-    verify(pitchRepository).save(argThat(pitch -> pitch.getStatus() == PitchStatus.SHAPED));
+    // Status must NOT be reverted — pitch keeps whatever status it had (STARTED, IN_PROGRESS, etc.)
+    // Only the cycle assignment is cleared.
+    verify(pitchRepository).save(argThat(pitch ->
+        pitch.getStatus() == PitchStatus.STARTED && pitch.getCycle() == null));
   }
 
   @Test

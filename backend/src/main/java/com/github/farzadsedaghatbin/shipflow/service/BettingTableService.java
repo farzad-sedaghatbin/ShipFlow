@@ -223,9 +223,10 @@ public class BettingTableService {
     // Resize the original slot to match pitch appetite
     slot.setEndDate(newSlotEndDate);
 
-    // Assign pitch and update its team
+    // Assign pitch and update its team and cycle
     slot.setPitch(pitch);
     pitch.setTeam(slot.getTeam());
+    pitch.setCycle(slot.getCycle());
 
     // Update pitch status to STARTED when assigned to betting table
     if (pitch.getStatus() == PitchStatus.SHAPED) {
@@ -248,11 +249,11 @@ public class BettingTableService {
 
     if (slot.getPitch() != null) {
       Pitch pitch = slot.getPitch();
-      // Optionally revert status to SHAPED
-      if (pitch.getStatus() == PitchStatus.STARTED) {
-        pitch.setStatus(PitchStatus.SHAPED);
-        pitchRepository.save(pitch);
-      }
+      // Clear cycle assignment but do NOT revert status —
+      // since shaping and building happen in parallel, the pitch keeps
+      // whatever status it has (e.g. STARTED, IN_PROGRESS, TESTING).
+      pitch.setCycle(null);
+      pitchRepository.save(pitch);
     }
 
     slot.setPitch(null);
