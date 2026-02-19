@@ -39,7 +39,8 @@ class MaliciousHeaderFilterTest {
   void setUp() throws Exception {
     filter = new MaliciousHeaderFilter();
     responseWriter = new StringWriter();
-    when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
+    // lenient: not all tests call getWriter() (e.g. pass-through tests that don't write an error body)
+    lenient().when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
 
   @Test
@@ -135,5 +136,68 @@ class MaliciousHeaderFilterTest {
     // Then: Request is blocked
     verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
     verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockGponRouterExploitPath() throws Exception {
+    // Given: A POST to the GPON router RCE path (CVE-2018-10561 / CVE-2018-10562)
+    // Note: getHeaderNames() is NOT stubbed - the filter blocks this path before the header loop
+    when(request.getRequestURI()).thenReturn("/GponForm/diag_Form");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("45.33.32.156");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403 Forbidden, not escalated to DispatcherServlet
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(response).setContentType("application/json");
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockWordPressAdminProbe() throws Exception {
+    // Given: A probe targeting WordPress admin panel (common bot scanner)
+    when(request.getRequestURI()).thenReturn("/wp-admin/admin-ajax.php");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("103.0.0.1");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockDotEnvProbe() throws Exception {
+    // Given: A probe for the .env secrets file
+    when(request.getRequestURI()).thenReturn("/.env");
+    when(request.getMethod()).thenReturn("GET");
+    when(request.getRemoteAddr()).thenReturn("103.0.0.2");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldAllowLegitimateApiRequest() throws Exception {
+    // Given: A normal authenticated API call
+    when(request.getHeaderNames())
+        .thenReturn(Collections.enumeration(Collections.singletonList("Authorization")));
+    when(request.getHeader("Authorization")).thenReturn("Bearer eyJhbGciOiJIUzI1NiJ9.valid.token");
+    when(request.getRequestURI()).thenReturn("/api/projects");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request passes through to the next filter
+    verify(filterChain).doFilter(request, response);
+    verify(response, never()).setStatus(anyInt());
   }
 }

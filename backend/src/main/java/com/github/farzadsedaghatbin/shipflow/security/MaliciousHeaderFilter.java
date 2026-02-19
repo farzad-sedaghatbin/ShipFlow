@@ -5,14 +5,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * Security filter to detect and block malicious requests containing exploit
- * patterns such as Log4Shell (CVE-2021-44228), JNDI injection, and other common
- * attack vectors.
+ * patterns such as Log4Shell (CVE-2021-44228), JNDI injection, GPON router
+ * exploits (CVE-2018-10561/10562), and other common attack vectors.
  */
 @Slf4j
 @Component
@@ -36,12 +37,60 @@ public class MaliciousHeaderFilter implements Filter {
   private static final String[] SENSITIVE_HEADERS = {"X-Forwarded-Host", "X-Forwarded-For", "X-Forwarded-Proto",
       "Forwarded", "Host", "X-Real-IP", "User-Agent", "Referer"};
 
+  /**
+   * Known exploit/scanner URI path prefixes. Requests whose path starts with any
+   * of these are blocked immediately with 403 to stop the noisy 405 errors that
+   * arise when bots POST to GET-only resource paths and to prevent any accidental
+   * handler resolution of exploit routes.
+   *
+   * <p>Covered CVEs / attack families:
+   * <ul>
+   *   <li>CVE-2018-10561 / CVE-2018-10562 – GPON router RCE (/GponForm/)</li>
+   *   <li>Generic WordPress probes (/wp-admin/, /wp-login.php, /wp-includes/)</li>
+   *   <li>PHP info / eval probes (/phpinfo.php, /eval-stdin.php)</li>
+   *   <li>Shell upload probes (/shell, /cmd, /c99.php, /c100.php)</li>
+   *   <li>Admin panel probes (/admin/, /.env, /config/)</li>
+   *   <li>Actuator abuse from external scanners (/actuator/ except /actuator/health)</li>
+   *   <li>CGI vulnerability probes (/cgi-bin/)</li>
+   * </ul>
+   */
+  private static final List<String> BLOCKED_PATH_PREFIXES = List.of(
+      "/GponForm/",
+      "/Gpon/",
+      "/wp-admin/",
+      "/wp-login.php",
+      "/wp-includes/",
+      "/wp-content/",
+      "/phpinfo",
+      "/eval-stdin.php",
+      "/c99.php",
+      "/c100.php",
+      "/.env",
+      "/.git/",
+      "/shell",
+      "/cmd",
+      "/cgi-bin/",
+      "/config/",
+      "/admin.php"
+  );
+
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+    // Block well-known exploit/scanner paths before any further processing
+    String requestURI = httpRequest.getRequestURI();
+    if (isBlockedPath(requestURI)) {
+      log.debug("Blocked request to known exploit path: {} {} from {}",
+          httpRequest.getMethod(), requestURI, getClientIp(httpRequest));
+      httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      httpResponse.setContentType("application/json");
+      httpResponse.getWriter().write("{\"error\":\"Forbidden\"}");
+      return;
+    }
 
     // Check all headers for malicious patterns
     Enumeration<String> headerNames = httpRequest.getHeaderNames();
@@ -58,8 +107,7 @@ public class MaliciousHeaderFilter implements Filter {
       }
     }
 
-    // Check request URI and query string
-    String requestURI = httpRequest.getRequestURI();
+    // Check request URI and query string for inject-style patterns
     String queryString = httpRequest.getQueryString();
 
     if (isMalicious("RequestURI", requestURI) || (queryString != null && isMalicious("QueryString", queryString))) {
@@ -71,6 +119,18 @@ public class MaliciousHeaderFilter implements Filter {
     }
 
     chain.doFilter(request, response);
+  }
+
+  private boolean isBlockedPath(String uri) {
+    if (uri == null) {
+      return false;
+    }
+    for (String prefix : BLOCKED_PATH_PREFIXES) {
+      if (uri.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isMalicious(String headerName, String value) {
