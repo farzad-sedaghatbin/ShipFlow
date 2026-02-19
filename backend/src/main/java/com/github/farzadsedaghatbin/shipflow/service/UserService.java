@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,9 +140,13 @@ public class UserService {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+    String adminUsername = SecurityContextHolder.getContext().getAuthentication() != null
+        ? SecurityContextHolder.getContext().getAuthentication().getName()
+        : "unknown";
+
     user.setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(user);
-    log.info("Admin reset password for user: {}", user.getUsername());
+    log.info("Admin '{}' reset password for user: {}", adminUsername, user.getUsername());
   }
 
   @Transactional

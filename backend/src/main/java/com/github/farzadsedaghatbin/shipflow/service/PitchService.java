@@ -83,6 +83,9 @@ public class PitchService {
   }
 
   public List<PitchDTO> getPitchesByCycleId(Long cycleId) {
+    // Includes pitches directly assigned to the cycle AND pitches assigned
+    // to a betting slot that belongs to this cycle (handles cases where the
+    // pitch's cycle_id was not set but the slot's cycle_id is set).
     return pitchRepository.findByCycleIdNotDeleted(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 

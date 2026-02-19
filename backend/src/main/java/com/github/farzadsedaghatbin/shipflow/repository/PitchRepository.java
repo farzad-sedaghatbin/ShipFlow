@@ -29,7 +29,7 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p LEFT JOIN FETCH p.team t LEFT JOIN FETCH t.assignments WHERE p.id = :id AND p.deletedAt IS NULL")
   Optional<Pitch> findByIdWithTeamAndAssignments(@Param("id") Long id);
 
-  @Query("SELECT p FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
+  @Query("SELECT DISTINCT p FROM Pitch p WHERE p.deletedAt IS NULL AND (p.cycle.id = :cycleId OR EXISTS (SELECT s FROM BettingSlot s WHERE s.pitch = p AND s.cycle.id = :cycleId))") 
   List<Pitch> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
 
   @Query("SELECT COUNT(p) FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
