@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import { Markdown } from '../components/ui/markdown';
 import {
   ArrowLeft,
   Brain,
@@ -397,9 +397,7 @@ const AdviceHistoryPage: React.FC = () => {
                         <p className="text-sm">{item.userMessage}</p>
                       </div>
                     )}
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{item.aiResponse}</ReactMarkdown>
-                    </div>
+                    <Markdown content={item.aiResponse} className="text-sm" />
                     {item.feedbackText && (
                       <div className="mt-4 p-3 bg-muted rounded-lg">
                         <p className="text-sm font-medium mb-1">{t('wiseArchitecture.history.yourFeedback')}</p>
