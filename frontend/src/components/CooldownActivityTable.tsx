@@ -23,6 +23,7 @@ import {
   getStatusBadgeColor,
   getStatusIcon,
 } from '../utils/cooldownActivityUtils';
+import { MobileCardView, ResponsiveTable } from './ui/mobile-card-view';
 
 interface CooldownActivityTableProps {
   activities: CooldownActivityDTO[];
@@ -52,6 +53,54 @@ export default function CooldownActivityTable({
   }
 
   return (
+    <ResponsiveTable
+      mobileContent={
+        <MobileCardView
+          items={activities.map((activity) => ({
+            key: activity.id,
+            title: activity.title,
+            subtitle: activity.description,
+            fields: [
+              {
+                label: t('cooldownActivity.type'),
+                value: (
+                  <Badge variant="outline" className={getActivityTypeBadgeColor(activity.activityType)}>
+                    {getActivityTypeIcon(activity.activityType)} {t(`cooldownActivity.types.${activity.activityType.toLowerCase()}`)}
+                  </Badge>
+                ),
+              },
+              {
+                label: t('cooldownActivity.status'),
+                value: (
+                  <Badge variant="outline" className={`${getStatusBadgeColor(activity.status)} flex items-center gap-1 w-fit`}>
+                    {getStatusIcon(activity.status)}
+                    {t(`cooldownActivity.statuses.${activity.status === 'IN_PROGRESS' ? 'inprogress' : activity.status.toLowerCase()}`)}
+                  </Badge>
+                ),
+              },
+              {
+                label: t('cooldownActivity.assignee'),
+                value: activity.assigneeUsername || t('cooldownActivity.unassigned'),
+              },
+              {
+                label: t('cooldownActivity.estimated') + ' / ' + t('cooldownActivity.actual'),
+                value: `${activity.estimatedHours ? activity.estimatedHours + 'h' : '-'} / ${activity.actualHours ? activity.actualHours + 'h' : '-'}`,
+              },
+            ],
+            actions: (
+              <>
+                <Button variant="ghost" size="icon-sm" onClick={() => onEdit(activity)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => onDelete(activity)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            ),
+          }))}
+        />
+      }
+    >
     <Table>
       <TableHeader>
         <TableRow>
@@ -125,5 +174,6 @@ export default function CooldownActivityTable({
         ))}
       </TableBody>
     </Table>
+    </ResponsiveTable>
   );
 }

@@ -880,7 +880,7 @@ export default function BacklogPage() {
               value={selectedCycle === 'all' ? 'all' : selectedCycle?.toString() || ''}
               onValueChange={(value) => setSelectedCycle(value === 'all' ? 'all' : Number(value))}
             >
-              <SelectTrigger className="w-[250px]">
+              <SelectTrigger className="w-full sm:w-[250px]">
                 <SelectValue placeholder={t('backlogPage.selectCycle')} />
               </SelectTrigger>
               <SelectContent>

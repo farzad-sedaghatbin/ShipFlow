@@ -275,7 +275,7 @@ export default function RoadmapPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Target className="h-6 w-6" />
@@ -286,9 +286,9 @@ export default function RoadmapPage() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'quarterly' | 'yearly')}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -333,7 +333,8 @@ export default function RoadmapPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="relative">
+            <div className="relative overflow-x-auto">
+              <div className="min-w-[600px]">
               {/* Month headers */}
               <div className="flex border-b mb-2">
                 {monthHeaders.map((h, i) => (
@@ -385,6 +386,7 @@ export default function RoadmapPage() {
                   );
                 })}
               </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -399,6 +401,8 @@ export default function RoadmapPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
           {/* Month headers */}
           <div className="flex border-b mb-2">
             <div className="w-72 shrink-0" />
@@ -574,6 +578,8 @@ export default function RoadmapPage() {
               </div>
             </div>
           )}
+          </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -10,6 +10,7 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  TouchSensor,
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
@@ -295,6 +296,12 @@ export default function BettingTablePage() {
       activationConstraint: {
         distance: 8,
       },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
     })
   );
 
@@ -541,7 +548,7 @@ export default function BettingTablePage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Left Column - Shaped Pitches */}
             <div className="md:col-span-3">
-              <Card className="h-[calc(100vh-220px)] overflow-auto">
+              <Card className="md:h-[calc(100vh-220px)] max-h-[50vh] md:max-h-none overflow-auto">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-4">
                     <ClipboardList className="h-5 w-5 text-primary" />
@@ -580,7 +587,7 @@ export default function BettingTablePage() {
 
             {/* Main Area - Team Tracks */}
             <div className="md:col-span-9">
-              <Card className="h-[calc(100vh-220px)] overflow-auto">
+              <Card className="md:h-[calc(100vh-220px)] overflow-auto">
                 <CardContent className="p-4">
                   {/* Cycle Info Header */}
                   <div className="flex items-center justify-between mb-4">

@@ -522,6 +522,15 @@ html[dir="rtl"] ol {
 .driver-popover-close-btn:hover {
   color: var(--color-foreground) !important;
 }
+/* Hide scrollbar utility for mobile swipeable tabs */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Mobile Responsiveness - Touch-friendly utilities */
 @media (max-width: 768px) {
   /* Touch-friendly minimum sizes */

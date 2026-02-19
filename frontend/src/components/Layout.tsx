@@ -75,6 +75,7 @@ import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
+import MobileBottomNav from './MobileBottomNav';
 import packageJson from '../../package.json';
 
 interface LayoutProps {
@@ -276,6 +277,10 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
+        {/* Dashboard Switcher - shown in sidebar on mobile */}
+        <div className="lg:hidden mb-4 px-1">
+          <DashboardSwitcher onDashboardChange={() => {}} />
+        </div>
         <nav className="flex flex-col gap-1">
           {/* Overview Section */}
           <SectionHeader textKey="nav.sections.overview" />
@@ -590,8 +595,8 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Page Content - Responsive padding with scroll */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+        {/* Page Content - Responsive padding with scroll, extra bottom padding for mobile bottom nav */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 sm:pb-4 md:pb-6">
           <RouteProgressProvider>
             <Breadcrumbs />
             {children}
@@ -604,6 +609,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Q&A Floating Button - Available on all pages */}
       <QAFloatingButton contextType="cycle" contextName="your active cycles" />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
