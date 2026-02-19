@@ -346,7 +346,7 @@ export default function RetroBoard() {
         )}
 
         {/* Retro Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[500px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[300px] md:min-h-[500px]">
           {columns.map((column) => (
             <div
               key={column.type}

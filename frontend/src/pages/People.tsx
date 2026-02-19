@@ -63,6 +63,7 @@ import {
 } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { MobileCardView, ResponsiveTable } from '../components/ui/mobile-card-view';
 
 const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
 const MIN_PASSWORD_LENGTH = 6;
@@ -388,7 +389,93 @@ export default function People() {
 
         {/* People Table */}
         <div className="rounded-lg border bg-card">
-          <Table>
+          <ResponsiveTable
+            mobileContent={
+              <MobileCardView
+                items={filteredPeople.map((person) => ({
+                  key: person.id,
+                  title: person.name,
+                  subtitle: person.email,
+                  avatar: (
+                    <Avatar>
+                      <AvatarImage src={person.avatarUrl} alt={person.name} />
+                      <AvatarFallback>{person.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  ),
+                  fields: [
+                    {
+                      label: t('peopleManagement.skills'),
+                      value: (
+                        <div className="flex gap-1 flex-wrap">
+                          {person.skills?.split(',').slice(0, 3).map((skill, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                        </div>
+                      ),
+                      fullWidth: true,
+                    },
+                    {
+                      label: t('peopleManagement.status'),
+                      value: (
+                        <Badge variant={person.isActive ? 'default' : 'secondary'} className={cn(
+                          person.isActive && 'bg-green-500 hover:bg-green-600'
+                        )}>
+                          {person.isActive ? t('peopleManagement.active') : t('peopleManagement.inactive')}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      label: t('peopleManagement.joined'),
+                      value: formatLocalizedDate(new Date(person.createdAt), i18n.language),
+                    },
+                  ],
+                  actions: (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleViewActivity(person)}>
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleViewHistory(person)}>
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleOpenDialog(person)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {person.isActive && (
+                        <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => openDeleteConfirm(person)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </>
+                  ),
+                  onClick: () => handleViewActivity(person),
+                }))}
+                emptyState={
+                  people.length === 0 ? (
+                    <EmptyState
+                      illustration={<EmptyPeopleIllustration />}
+                      title={t('peopleManagement.noPeopleYet')}
+                      description={t('peopleManagement.noPeopleDescription')}
+                      action={{
+                        label: t('peopleManagement.addFirstPerson'),
+                        onClick: () => handleOpenDialog(),
+                        startIcon: <Plus className="h-4 w-4" />,
+                      }}
+                      size="medium"
+                    />
+                  ) : (
+                    <EmptyState
+                      title={t('peopleManagement.noMatches')}
+                      description={t('peopleManagement.tryDifferentSearch')}
+                      size="small"
+                    />
+                  )
+                }
+              />
+            }
+          >
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('peopleManagement.person')}</TableHead>
@@ -528,6 +615,7 @@ export default function People() {
               )}
             </TableBody>
           </Table>
+          </ResponsiveTable>
         </div>
 
         {/* Add/Edit Dialog */}

@@ -29,6 +29,7 @@ import { useProject, useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 import LoadingButton from '../components/LoadingButton';
+import { useBreakpointHelpers } from '../hooks/useBreakpoint';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -76,6 +77,7 @@ export default function PitchBoard() {
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
+  const [mobileActiveStatus, setMobileActiveStatus] = useState<PitchStatus>('IDEA');
   const [visibleColumns, setVisibleColumns] = useState<Set<PitchStatus>>(() => {
     try {
       const stored = localStorage.getItem('pitchBoard.visibleColumns');
@@ -423,6 +425,115 @@ export default function PitchBoard() {
   const getPitchesByStatus = (status: PitchStatus) =>
     filterAndSortPitches(pitches.filter((p) => p.status === status));
 
+  const { isMobile } = useBreakpointHelpers();
+
+  // Mobile: Render a single column at a time with horizontal tab switcher
+  const renderMobileBoard = () => {
+    const visibleStatuses = statusColumns.filter(s => visibleColumns.has(s));
+    const currentStatus = visibleStatuses.includes(mobileActiveStatus) ? mobileActiveStatus : visibleStatuses[0];
+    const currentPitches = getPitchesByStatus(currentStatus);
+
+    return (
+      <div className="space-y-4">
+        {/* Horizontal scrollable tab bar for statuses */}
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1 scrollbar-none">
+          {visibleStatuses.map((status) => {
+            const count = getPitchesByStatus(status).length;
+            return (
+              <button
+                key={status}
+                onClick={() => setMobileActiveStatus(status)}
+                className={cn(
+                  "flex-shrink-0 snap-start rounded-full px-3 py-2 text-xs font-medium transition-colors touch-manipulation min-h-[44px] flex items-center gap-1.5",
+                  currentStatus === status
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                )}
+              >
+                {status.replace('_', ' ')}
+                <Badge variant={currentStatus === status ? 'secondary' : 'outline'} className="text-[10px] h-5 px-1.5">{count}</Badge>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Single column content */}
+        <div className="space-y-3">
+          {currentPitches.map((pitch) => (
+            <Card
+              key={pitch.id}
+              className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
+            >
+              <CardContent className="p-4">
+                <Link
+                  to={`/pitches/${pitch.id}`}
+                  className="font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  {pitch.title}
+                </Link>
+                {selectedCycle === 'all' && pitch.cycleName && (
+                  <Badge variant="outline" className="text-xs mt-1 mb-0 px-1 py-0">
+                    {pitch.cycleName}
+                  </Badge>
+                )}
+                <p className="text-sm text-muted-foreground mb-3 mt-1">
+                  {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
+                </p>
+                {pitch.busiestPerson && (
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <span className="font-medium">👤 {pitch.busiestPerson.personName}</span>
+                    <span className={cn(
+                      pitch.busiestPerson.isOverBudget ? 'text-destructive' :
+                      pitch.busiestPerson.utilizationPercent > 80 ? 'text-orange-500' :
+                      'text-green-600'
+                    )}>
+                      ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}%)
+                    </span>
+                  </div>
+                )}
+                <ProgressBar
+                  value={pitch.progressPercentage || 0}
+                  label={`${pitch.totalHoursSpent?.toFixed(1) || 0}h / ${pitch.appetiteHours?.toFixed(0) || 0}h`}
+                />
+                <div className="mt-3">
+                  <Select
+                    value={pitch.status}
+                    onValueChange={(value) => handleStatusChange(pitch.id, value)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusColumns.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s.replace('_', ' ')}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="COOLDOWN">COOLDOWN</SelectItem>
+                      <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {currentPitches.length === 0 && (
+            <Card className="opacity-60 border-dashed">
+              <CardContent className="py-6">
+                <EmptyState
+                  title={t('pitchBoard.noPitches')}
+                  description={t('pitchBoard.noPitchesDescription', { status: currentStatus.toLowerCase().replace('_', ' ') })}
+                  size="small"
+                  compact
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -524,7 +635,14 @@ export default function PitchBoard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
+        <>
+          {/* Mobile: Tab-based single column view */}
+          {isMobile ? (
+            <div data-tour="pitch-board">
+              {renderMobileBoard()}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
           {statusColumns.filter(s => visibleColumns.has(s)).map((status) => (
             <div key={status} className="min-w-0">
               {/* Column Header */}
@@ -608,7 +726,9 @@ export default function PitchBoard() {
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Pitch Dialog */}

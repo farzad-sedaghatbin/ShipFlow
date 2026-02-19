@@ -44,6 +44,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { MobileCardView, ResponsiveTable } from '../components/ui/mobile-card-view';
 import {
   Tooltip,
   TooltipContent,
@@ -591,6 +592,63 @@ const BugReportsPage: React.FC = () => {
       {/* Bug Reports - List View */}
       {viewMode === 'list' && (
         <Card>
+          <ResponsiveTable
+            mobileContent={
+              <MobileCardView
+                className="p-3"
+                items={bugReports.map((bug) => ({
+                  key: bug.id,
+                  title: (
+                    <div className="flex items-center gap-2">
+                      <Bug className="h-4 w-4 text-destructive flex-shrink-0" />
+                      <span className="font-medium text-xs text-muted-foreground">{bug.bugKey}</span>
+                      <span className="truncate">{bug.title}</span>
+                    </div>
+                  ),
+                  subtitle: bug.pitchTitle ? `Pitch: ${bug.pitchTitle}` : undefined,
+                  fields: [
+                    {
+                      label: t('bugReports.table.severity'),
+                      value: <Badge variant={severityBadgeVariants[bug.severity]}>{bug.severity}</Badge>,
+                    },
+                    {
+                      label: t('bugReports.table.status'),
+                      value: <Badge variant={statusBadgeVariants[bug.status]}>{bug.status.replace('_', ' ')}</Badge>,
+                    },
+                    {
+                      label: t('bugReports.table.assignee'),
+                      value: bug.assigneeName || t('bugReports.unassigned'),
+                    },
+                    {
+                      label: t('bugReports.table.created'),
+                      value: formatLocalizedDate(new Date(bug.createdAt), i18n.language),
+                    },
+                  ],
+                  actions: (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openDetailModal(bug)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(bug)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => openDeleteConfirm(bug.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ),
+                  onClick: () => openDetailModal(bug),
+                }))}
+                emptyState={
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
+                      ? t('bugReports.emptyState.noMatches')
+                      : t('bugReports.emptyState.noBugs')}
+                  </div>
+                }
+              />
+            }
+          >
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -834,6 +892,7 @@ const BugReportsPage: React.FC = () => {
             </TableBody>
           </Table>
         </div>
+        </ResponsiveTable>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t">

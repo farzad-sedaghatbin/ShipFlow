@@ -30,7 +30,7 @@ export const QAFloatingButton: React.FC<QAFloatingButtonProps> = (props) => {
             aria-haspopup="dialog"
             aria-expanded={open}
             className={cn(
-              "fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full shadow-lg",
+              "fixed bottom-20 sm:bottom-6 left-6 z-50 h-14 w-14 rounded-full shadow-lg",
               "bg-primary hover:bg-primary/90",
               "transition-transform hover:scale-105",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
