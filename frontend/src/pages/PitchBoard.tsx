@@ -71,6 +71,7 @@ export default function PitchBoard() {
   const { t } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
+  const { isMobile } = useBreakpointHelpers();
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -424,8 +425,6 @@ export default function PitchBoard() {
 
   const getPitchesByStatus = (status: PitchStatus) =>
     filterAndSortPitches(pitches.filter((p) => p.status === status));
-
-  const { isMobile } = useBreakpointHelpers();
 
   // Mobile: Render a single column at a time with horizontal tab switcher
   const renderMobileBoard = () => {
