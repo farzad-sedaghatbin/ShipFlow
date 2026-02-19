@@ -42,7 +42,7 @@ interface NavSection {
 // Primary bottom bar tabs — the 4 most-used + More
 const primaryTabs: NavEntry[] = [
   { labelKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { labelKey: 'nav.cycles', icon: Repeat, path: '/cycles', matchPaths: ['/cycles', '/pitches', '/betting', '/health', '/retros'] },
+  { labelKey: 'nav.cycles', icon: Repeat, path: '/cycles', matchPaths: ['/cycles', '/betting', '/health', '/retros'] },
   { labelKey: 'nav.pitchBoard', icon: FileText, path: '/pitches', matchPaths: ['/pitches'] },
   { labelKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', matchPaths: ['/qa/bug-reports'] },
 ];
@@ -118,16 +118,19 @@ export default function MobileBottomNav() {
     return paths.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   };
 
-  const moreIsActive = !primaryTabs.some(tab => isActive(tab));
+  const moreHasActive = moreSections.some(section =>
+    section.items.some(item => isActive(item)),
+  );
+  const moreIsActive = !primaryTabs.some(tab => isActive(tab)) && moreHasActive;
 
   return (
     <>
       {/* "More" full-screen overlay */}
       {moreOpen && (
-        <div className="fixed inset-0 z-[60] bg-background flex flex-col">
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 h-14 border-b border-border">
-            <span className="text-lg font-semibold">{t('nav.menu', 'Menu')}</span>
+            <span className="text-lg font-semibold">{t('nav.menu')}</span>
             <button
               onClick={() => setMoreOpen(false)}
               className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-accent touch-manipulation"
@@ -152,7 +155,7 @@ export default function MobileBottomNav() {
                       <Link
                         key={item.path}
                         to={item.path}
-                        onClick={() => setMoreOpen(false)}
+                        onClick={() => { if (!active) setMoreOpen(false); }}
                         className={cn(
                           "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[72px] justify-center transition-colors touch-manipulation",
                           active
@@ -185,7 +188,7 @@ export default function MobileBottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => setMoreOpen(false)}
+                onClick={() => { if (moreOpen) setMoreOpen(false); }}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[56px] text-[10px] font-medium transition-colors touch-manipulation",
                   active
@@ -210,7 +213,7 @@ export default function MobileBottomNav() {
             )}
           >
             <MoreHorizontal className={cn("h-5 w-5", (moreOpen || moreIsActive) && "text-primary")} />
-            <span className="truncate max-w-[64px]">{t('nav.more', 'More')}</span>
+            <span className="truncate max-w-[64px]">{t('nav.more')}</span>
           </button>
         </div>
       </nav>
