@@ -135,6 +135,16 @@ public class UserService {
   }
 
   @Transactional
+  public void adminResetPassword(Long id, String newPassword) {
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+    user.setPassword(passwordEncoder.encode(newPassword));
+    userRepository.save(user);
+    log.info("Admin reset password for user: {}", user.getUsername());
+  }
+
+  @Transactional
   public String createPasswordResetToken(String email) {
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
