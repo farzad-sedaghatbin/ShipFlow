@@ -41,6 +41,10 @@ export default function WorkLogForm() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
   const [loading, setLoading] = useState(true);
+  const [wlPage, setWlPage] = useState(0);
+  const [wlTotalPages, setWlTotalPages] = useState(0);
+  const [wlTotalElements, setWlTotalElements] = useState(0);
+  const WL_PAGE_SIZE = 20;
   const { showSuccess, showError } = useToast();
 
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogRequest>({
@@ -61,7 +65,8 @@ export default function WorkLogForm() {
   useEffect(() => {
     const abortController = new AbortController();
     if (selectedCycle) {
-      loadWorkLogs(selectedCycle);
+      setWlPage(0);
+      loadWorkLogs(selectedCycle, 0);
       loadPitches(selectedCycle);
     }
     return () => abortController.abort();
@@ -85,10 +90,12 @@ export default function WorkLogForm() {
     }
   };
 
-  const loadWorkLogs = async (cycleId: number) => {
+  const loadWorkLogs = async (cycleId: number, page: number) => {
     try {
-      const response = await workLogService.getByCycleId(cycleId);
-      setWorkLogs(response.data);
+      const response = await workLogService.getByCycleId(cycleId, page, WL_PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setWlTotalPages(response.data.totalPages);
+      setWlTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
@@ -120,7 +127,8 @@ export default function WorkLogForm() {
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
       showSuccess(t('workLogForm.workLogAdded'));
       if (selectedCycle) {
-        loadWorkLogs(selectedCycle as number);
+        setWlPage(0);
+        loadWorkLogs(selectedCycle as number, 0);
       }
     } catch (error) {
       showError(t('workLogForm.workLogAddFailed'));
@@ -132,7 +140,9 @@ export default function WorkLogForm() {
       await workLogService.delete(id);
       showSuccess(t('workLogForm.workLogDeleted'));
       if (selectedCycle) {
-        loadWorkLogs(selectedCycle as number);
+        const newPage = workLogs.length === 1 && wlPage > 0 ? wlPage - 1 : wlPage;
+        setWlPage(newPage);
+        loadWorkLogs(selectedCycle as number, newPage);
       }
     } catch (error) {
       showError(t('workLogForm.workLogDeleteFailed'));
@@ -146,8 +156,6 @@ export default function WorkLogForm() {
       </div>
     );
   }
-
-  const totalHours = workLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);
 
   return (
     <div className="space-y-6">
@@ -266,9 +274,9 @@ export default function WorkLogForm() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold">{t('workLogForm.recentWorkLogs')}</CardTitle>
-            <span className="text-muted-foreground">
-              {t('workLogForm.total')}: <strong className="text-foreground">{totalHours.toFixed(1)} {t('workLogForm.hoursUnit')}</strong>
-            </span>
+            {wlTotalElements > 0 && (
+              <span className="text-sm text-muted-foreground">{wlTotalElements} {t('workLogForm.hoursUnit', { defaultValue: 'entries' })}</span>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -315,6 +323,32 @@ export default function WorkLogForm() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {wlTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <span className="text-xs text-muted-foreground">
+                {t('meetingList.pagination.showing', { from: wlPage * WL_PAGE_SIZE + 1, to: Math.min((wlPage + 1) * WL_PAGE_SIZE, wlTotalElements), total: wlTotalElements })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={wlPage === 0}
+                  onClick={() => { const p = wlPage - 1; setWlPage(p); if (selectedCycle) loadWorkLogs(selectedCycle as number, p); }}
+                >
+                  {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                </Button>
+                <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: wlPage + 1, total: wlTotalPages })}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={wlPage >= wlTotalPages - 1}
+                  onClick={() => { const p = wlPage + 1; setWlPage(p); if (selectedCycle) loadWorkLogs(selectedCycle as number, p); }}
+                >
+                  {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

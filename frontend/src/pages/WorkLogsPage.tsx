@@ -55,6 +55,10 @@ export default function WorkLogsPage() {
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const PAGE_SIZE = 20;
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -107,31 +111,40 @@ export default function WorkLogsPage() {
     return cycles.filter(c => c.projectId === currentProject?.id);
   }, [cycles, currentProject, isAllProjectsSelected]);
 
-  // Reset cycle filter when project changes
+  // Reset cycle filter and page when project changes
   useEffect(() => {
     setSelectedCycle('all');
+    setPage(0);
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // Reload data when project changes
+  // Reload pitches and tasks when cycle or project changes (not on page change)
   useEffect(() => {
     if (selectedCycle) {
       if (selectedCycle === 'all') {
-        loadWorkLogs('all');
-        // Load pitches and tasks from all active cycles for the form
         loadAllPitches();
         loadAllTasks();
       } else {
         const cycleId = parseInt(selectedCycle, 10);
-        loadWorkLogs(cycleId);
         loadPitches(cycleId);
         loadTasks(cycleId);
       }
     }
-  }, [selectedCycle, activeTab, currentProject?.id]);
+  }, [selectedCycle, currentProject?.id]);
+
+  // Reload work logs when page, cycle, tab, or project changes
+  useEffect(() => {
+    if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadWorkLogs('all');
+      } else {
+        loadWorkLogs(parseInt(selectedCycle, 10));
+      }
+    }
+  }, [page, selectedCycle, activeTab, currentProject?.id]);
 
   const loadInitialData = async () => {
     try {
@@ -152,53 +165,42 @@ export default function WorkLogsPage() {
   const loadWorkLogs = async (cycleIdOrAll: number | string) => {
     try {
       let logs: WorkLog[] = [];
+      let serverTotalPages = 0;
+      let serverTotalElements = 0;
       if (cycleIdOrAll === 'all') {
-        // Load all work logs across all cycles
+        // Load all work logs across all cycles, filtered by project on the server if one is selected
+        const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
         if (activeTab === 'my') {
-          const response = await workLogService.getMy();
-          logs = response.data;
+          const response = await workLogService.getMy(page, PAGE_SIZE, projectId);
+          logs = response.data.content;
+          serverTotalPages = response.data.totalPages;
+          serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getAll();
-          logs = response.data;
+          const response = await workLogService.getAll(page, PAGE_SIZE, projectId);
+          logs = response.data.content;
+          serverTotalPages = response.data.totalPages;
+          serverTotalElements = response.data.totalElements;
         }
       } else {
-        // Load work logs for specific cycle
+        // Load work logs for specific cycle (already scoped to a project's cycle)
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
-          const response = await workLogService.getMyByCycle(cycleId);
-          logs = response.data;
+          const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
+          logs = response.data.content;
+          serverTotalPages = response.data.totalPages;
+          serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getByCycleId(cycleId);
-          logs = response.data;
+          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE);
+          logs = response.data.content;
+          serverTotalPages = response.data.totalPages;
+          serverTotalElements = response.data.totalElements;
         }
       }
-      
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        // Filter logs that belong to tasks/pitches in cycles of the current project
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        logs = logs.filter(log => {
-          // If the log has a cycleId directly, check it
-          // Otherwise filter by pitch/task's cycle
-          if (log.pitchId) {
-            const pitch = pitches.find(p => p.id === log.pitchId);
-            return pitch && pitch.cycleId !== undefined ? projectCycleIds.has(pitch.cycleId) : false;
-          }
-          if (log.taskId) {
-            const task = tasks.find(t => t.id === log.taskId);
-            return task ? projectCycleIds.has(task.cycleId) : false;
-          }
-          return false;
-        });
-      }
-      
-      // Sort by date descending (newest first), then by id descending for same-date entries
-      logs.sort((a, b) => {
-        const dateCompare = (b.date || '').localeCompare(a.date || '');
-        return dateCompare !== 0 ? dateCompare : (b.id ?? 0) - (a.id ?? 0);
-      });
-      
+
+      // Server returns data sorted by date DESC; no client-side sort or filter needed
       setWorkLogs(logs);
+      setTotalPages(serverTotalPages);
+      setTotalElements(serverTotalElements);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     } finally {
@@ -217,14 +219,36 @@ export default function WorkLogsPage() {
 
   const loadAllPitches = async () => {
     try {
-      const response = await pitchService.getMyPitches();
-      let allPitches = response.data;
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        allPitches = allPitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
+      // Use ALL accessible cycles (not just active) so pitches from past/completed
+      // cycles are included when a user wants to log work retroactively.
+      // filteredCycles only contains active cycles from getMyActiveCycles(), which
+      // misses any cycle that has ended.
+      let allCycles: Cycle[];
+      if (isAllProjectsSelected) {
+        const res = await cycleService.getMyCycles();
+        allCycles = res.data;
+      } else if (currentProject) {
+        const res = await cycleService.getByProject(currentProject.id);
+        allCycles = res.data;
+      } else {
+        const res = await cycleService.getMyCycles();
+        allCycles = res.data;
       }
-      setPitches(allPitches);
+
+      if (allCycles.length === 0) {
+        setPitches([]);
+        return;
+      }
+
+      // Fetch pitches from every cycle in parallel using getByCycleId which
+      // handles both direct cycle_id FK and betting-slot assignments correctly.
+      const results = await Promise.all(
+        allCycles.map(cycle => pitchService.getByCycleId(cycle.id))
+      );
+      const merged = results.flatMap(r => r.data);
+      // Deduplicate – a pitch can appear in multiple cycles via betting slots
+      const unique = Array.from(new Map(merged.map(p => [p.id, p])).values());
+      setPitches(unique);
     } catch (error) {
       console.error('Failed to load pitches:', error);
     }
@@ -433,7 +457,7 @@ export default function WorkLogsPage() {
           {!isKanbanProject && (
             <Select
               value={selectedCycle}
-              onValueChange={setSelectedCycle}
+              onValueChange={(v) => { setSelectedCycle(v); setPage(0); }}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder={t('workLogsPage.selectCycle')} />
@@ -480,7 +504,7 @@ export default function WorkLogsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'my' | 'team')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'my' | 'team'); setPage(0); }} className="w-full">
         <TabsList>
           <TabsTrigger value="my" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -511,7 +535,7 @@ export default function WorkLogsPage() {
                   <CardTitle className="text-lg">{t('workLogs.quickLog')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-8 gap-4 items-end">
                     <div className="space-y-2">
                       <Label htmlFor="log-type">{t('workLogs.logType')} *</Label>
                       <Select
@@ -590,13 +614,15 @@ export default function WorkLogsPage() {
                         placeholder="0"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-3">
                       <Label htmlFor="my-note">{t('workLogs.note')}</Label>
-                      <Input
+                      <Textarea
                         id="my-note"
                         value={newWorkLog.note}
                         onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
                         placeholder={t('workLogs.optionalNote')}
+                        rows={2}
+                        className="resize-none"
                       />
                     </div>
                     <Button
@@ -617,6 +643,35 @@ export default function WorkLogsPage() {
                 onEdit={handleEditClick}
                 onDelete={handleDeleteMyWorkLog}
               />
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.max(0, page - 1))}
+                      disabled={page === 0}
+                    >
+                      {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                      {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                      disabled={page >= totalPages - 1}
+                    >
+                      {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </TabsContent>
@@ -630,7 +685,7 @@ export default function WorkLogsPage() {
                 <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-9 gap-4 items-end">
                   <div className="space-y-2">
                     <Label htmlFor="team-person">{t('workLogs.person')} *</Label>
                     <Select
@@ -727,13 +782,15 @@ export default function WorkLogsPage() {
                       placeholder="0"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-3">
                     <Label htmlFor="team-note">Note</Label>
-                    <Input
+                    <Textarea
                       id="team-note"
                       value={teamWorkLog.note}
                       onChange={(e) => setTeamWorkLog({ ...teamWorkLog, note: e.target.value })}
                       placeholder={t('workLogsPage.optionalNote')}
+                      rows={2}
+                      className="resize-none"
                     />
                   </div>
                   <Button
@@ -754,6 +811,35 @@ export default function WorkLogsPage() {
               onEdit={handleEditClick}
               onDelete={handleDeleteTeamWorkLog}
             />
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                  >
+                    {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                  >
+                    {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
         )}
       </Tabs>

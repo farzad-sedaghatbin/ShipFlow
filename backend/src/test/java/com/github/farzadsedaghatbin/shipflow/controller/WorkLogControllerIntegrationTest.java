@@ -117,8 +117,8 @@ class WorkLogControllerIntegrationTest {
   void getAllWorkLogs_ShouldReturnWorkLogs() throws Exception {
     mockMvc.perform(get("/api/worklogs")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-        .andExpect(jsonPath("$[0].note", is("Test Work")));
+        .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
+        .andExpect(jsonPath("$.content[0].note", is("Test Work")));
   }
 
   @WithMockUser(username = "workloguser", roles = "MEMBER")
@@ -172,15 +172,15 @@ class WorkLogControllerIntegrationTest {
   @Test
   void getWorkLogsByPerson_ShouldReturnWorkLogsForPerson() throws Exception {
     mockMvc.perform(get("/api/worklogs/person/{personId}", testPerson.getId())).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].note", is("Test Work")));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].note", is("Test Work")));
   }
 
   @WithMockUser(username = "workloguser", roles = "MEMBER")
   @Test
   void getWorkLogsByPitch_ShouldReturnWorkLogsForPitch() throws Exception {
     mockMvc.perform(get("/api/worklogs/pitch/{pitchId}", testPitch.getId())).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].note", is("Test Work")));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].note", is("Test Work")));
   }
 }

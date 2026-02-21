@@ -28,6 +28,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class WorkLogServiceTest {
@@ -84,11 +88,12 @@ class WorkLogServiceTest {
 
   @Test
   void getAllWorkLogs_ShouldReturnAllWorkLogs() {
-    when(workLogRepository.findAll()).thenReturn(Arrays.asList(testWorkLog));
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findAll(pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getAllWorkLogs();
+    Page<WorkLogDTO> result = workLogService.getAllWorkLogs(pageable);
 
-    assertThat(result).hasSize(1);
+    assertThat(result.getContent()).hasSize(1);
   }
 
   @Test
@@ -143,22 +148,22 @@ class WorkLogServiceTest {
 
   @Test
   void getWorkLogsByPitchId_ShouldReturnWorkLogs() {
-    when(workLogRepository.findByPitchId(1L)).thenReturn(Arrays.asList(testWorkLog));
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPitchId(1L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getWorkLogsByPitchId(1L);
+    Page<WorkLogDTO> result = workLogService.getWorkLogsByPitchId(1L, pageable);
 
-    assertThat(result).hasSize(1);
-    verify(workLogRepository).findByPitchId(1L);
+    assertThat(result.getContent()).hasSize(1);
   }
 
   @Test
   void getWorkLogsByPersonId_ShouldReturnWorkLogs() {
-    when(workLogRepository.findByPersonId(1L)).thenReturn(Arrays.asList(testWorkLog));
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonId(1L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getWorkLogsByPersonId(1L);
+    Page<WorkLogDTO> result = workLogService.getWorkLogsByPersonId(1L, pageable);
 
-    assertThat(result).hasSize(1);
-    verify(workLogRepository).findByPersonId(1L);
+    assertThat(result.getContent()).hasSize(1);
   }
 
   // ========== Task-based Work Log Tests ==========
@@ -223,11 +228,11 @@ class WorkLogServiceTest {
     WorkLog taskWorkLog = WorkLog.builder().id(2L).person(testPerson).task(testTask).date(LocalDate.now())
         .hoursSpent(BigDecimal.valueOf(4.0)).build();
 
-    when(workLogRepository.findByTaskId(1L)).thenReturn(Arrays.asList(taskWorkLog));
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByTaskId(1L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(taskWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getWorkLogsByTaskId(1L);
+    Page<WorkLogDTO> result = workLogService.getWorkLogsByTaskId(1L, pageable);
 
-    assertThat(result).hasSize(1);
-    verify(workLogRepository).findByTaskId(1L);
+    assertThat(result.getContent()).hasSize(1);
   }
 }

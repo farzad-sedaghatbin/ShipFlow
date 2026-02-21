@@ -82,6 +82,10 @@ export default function Teams() {
   const [activityPerson, setActivityPerson] = useState<{ id: number; name: string } | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityTotalPages, setActivityTotalPages] = useState(0);
+  const [activityTotalElements, setActivityTotalElements] = useState(0);
+  const ACTIVITY_PAGE_SIZE = 20;
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -238,23 +242,26 @@ export default function Teams() {
     }
   };
 
-  const handleViewActivity = async (personId: number, personName: string) => {
-    setActivityPerson({ id: personId, name: personName });
-    setActivityDialogOpen(true);
+  const fetchActivityWorkLogs = async (personId: number, page: number) => {
     setLoadingWorkLogs(true);
     try {
-      const response = await workLogService.getByPersonId(personId);
-      // Sort by date descending (most recent first)
-      const sortedLogs = response.data.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setWorkLogs(sortedLogs);
+      const response = await workLogService.getByPersonId(personId, page, ACTIVITY_PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setActivityTotalPages(response.data.totalPages);
+      setActivityTotalElements(response.data.totalElements);
     } catch (error) {
       showToast(t('teams.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);
     } finally {
       setLoadingWorkLogs(false);
     }
+  };
+
+  const handleViewActivity = async (personId: number, personName: string) => {
+    setActivityPerson({ id: personId, name: personName });
+    setActivityPage(0);
+    setActivityDialogOpen(true);
+    fetchActivityWorkLogs(personId, 0);
   };
 
   const getRoleClassName = (role: TeamMemberRole): string => {
@@ -741,7 +748,7 @@ export default function Teams() {
                 <Card className="border">
                   <CardContent className="py-3 text-center">
                     <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                      {workLogs.length}
+                      {activityTotalElements}
                     </p>
                     <p className="text-xs text-muted-foreground">{t('teams.logEntries')}</p>
                   </CardContent>
@@ -769,7 +776,7 @@ export default function Teams() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {workLogs.slice(0, 50).map((log) => (
+                    {workLogs.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -815,10 +822,37 @@ export default function Teams() {
                   </TableBody>
                 </Table>
               </ScrollArea>
-              {workLogs.length > 50 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {t('teams.showingFirstEntries', { count: workLogs.length })}
-                </p>
+              {activityTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xs text-muted-foreground">
+                    {t('meetingList.pagination.showing', { from: activityPage * ACTIVITY_PAGE_SIZE + 1, to: Math.min((activityPage + 1) * ACTIVITY_PAGE_SIZE, activityTotalElements), total: activityTotalElements })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline" size="sm"
+                      disabled={activityPage === 0 || loadingWorkLogs}
+                      onClick={() => {
+                        const p = activityPage - 1;
+                        setActivityPage(p);
+                        fetchActivityWorkLogs(activityPerson!.id, p);
+                      }}
+                    >
+                      {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: activityPage + 1, total: activityTotalPages })}</span>
+                    <Button
+                      variant="outline" size="sm"
+                      disabled={activityPage >= activityTotalPages - 1 || loadingWorkLogs}
+                      onClick={() => {
+                        const p = activityPage + 1;
+                        setActivityPage(p);
+                        fetchActivityWorkLogs(activityPerson!.id, p);
+                      }}
+                    >
+                      {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                    </Button>
+                  </div>
+                </div>
               )}
             </>
           )}

@@ -86,6 +86,10 @@ export default function PitchDetail() {
   const { showSuccess, showError } = useToast();
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [workLogPage, setWorkLogPage] = useState(0);
+  const [workLogTotalPages, setWorkLogTotalPages] = useState(0);
+  const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
+  const WORK_LOG_PAGE_SIZE = 20;
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
@@ -140,22 +144,21 @@ export default function PitchDetail() {
     const abortController = new AbortController();
     if (id) {
       loadData(id);
+      loadWorkLogs(id, 0);
     }
     return () => abortController.abort();
   }, [id]);
 
   const loadData = async (pitchId: number) => {
     try {
-      const [pitchRes, workLogsRes, meetingsRes, docsRes, orgSettingsRes] = await Promise.all([
+      const [pitchRes, meetingsRes, docsRes, orgSettingsRes] = await Promise.all([
         pitchService.getById(pitchId),
-        workLogService.getByPitchId(pitchId),
         meetingService.getByPitchId(pitchId),
         documentService.getDocumentsForPitch(pitchId),
         organizationSettingsService.getSettings(),
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
-      setWorkLogs(workLogsRes.data);
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
       setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
@@ -173,6 +176,17 @@ export default function PitchDetail() {
       console.error('Failed to load pitch:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadWorkLogs = async (pitchId: number, page: number) => {
+    try {
+      const res = await workLogService.getByPitchId(pitchId, page, WORK_LOG_PAGE_SIZE);
+      setWorkLogs(res.data.content);
+      setWorkLogTotalPages(res.data.totalPages);
+      setWorkLogTotalElements(res.data.totalElements);
+    } catch (error) {
+      console.error('Failed to load work logs:', error);
     }
   };
 
@@ -254,7 +268,9 @@ export default function PitchDetail() {
         note: '',
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
+      setWorkLogPage(0);
       loadData(pitch.id);
+      loadWorkLogs(pitch.id, 0);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogFailed')));
     } finally {
@@ -267,7 +283,11 @@ export default function PitchDetail() {
     try {
       await workLogService.delete(workLogId);
       showSuccess(t('pitchDetailPage.workLogDeleted'));
+      // If we deleted the last item on a non-first page, go back one page
+      const newPage = workLogs.length === 1 && workLogPage > 0 ? workLogPage - 1 : workLogPage;
+      setWorkLogPage(newPage);
       loadData(pitch.id);
+      loadWorkLogs(pitch.id, newPage);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogDeleteFailed')));
     }
@@ -436,7 +456,8 @@ export default function PitchDetail() {
     );
   }
 
-  const totalHours = workLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);
+  // Use server-computed totalHoursSpent from the pitch DTO (accurate across all pages)
+  const totalHours = pitch?.totalHoursSpent ?? 0;
 
   return (
     <div>
@@ -539,7 +560,7 @@ export default function PitchDetail() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground mb-1">{t('pitchDetailPage.workLogs')}</p>
-            <p className="text-3xl font-bold">{workLogs.length}</p>
+            <p className="text-3xl font-bold">{workLogTotalElements}</p>
           </CardContent>
         </Card>
       </div>
@@ -924,6 +945,38 @@ export default function PitchDetail() {
                       )}
                     </div>
                   ))}
+                  {workLogTotalPages > 1 && (
+                    <div className="flex items-center justify-between pt-3">
+                      <span className="text-xs text-muted-foreground">
+                        {t('meetingList.pagination.showing', { from: workLogPage * WORK_LOG_PAGE_SIZE + 1, to: Math.min((workLogPage + 1) * WORK_LOG_PAGE_SIZE, workLogTotalElements), total: workLogTotalElements })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={workLogPage === 0}
+                          onClick={() => {
+                            const p = workLogPage - 1;
+                            setWorkLogPage(p);
+                            loadWorkLogs(pitch.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                        </Button>
+                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: workLogPage + 1, total: workLogTotalPages })}</span>
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={workLogPage >= workLogTotalPages - 1}
+                          onClick={() => {
+                            const p = workLogPage + 1;
+                            setWorkLogPage(p);
+                            loadWorkLogs(pitch.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

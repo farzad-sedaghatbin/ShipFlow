@@ -20,8 +20,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -132,37 +135,40 @@ class MyWorkLogServiceTest {
 
   @Test
   void getMyWorkLogs_ShouldReturnOnlyCurrentUserWorkLogs() {
+    Pageable pageable = PageRequest.of(0, 20);
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
-    when(workLogRepository.findByPersonId(1L)).thenReturn(Arrays.asList(testWorkLog));
+    when(workLogRepository.findByPersonId(1L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getMyWorkLogs();
+    Page<WorkLogDTO> result = workLogService.getMyWorkLogs(pageable);
 
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getNote()).isEqualTo("My work log");
-    verify(workLogRepository).findByPersonId(1L);
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getNote()).isEqualTo("My work log");
+    verify(workLogRepository).findByPersonId(1L, pageable);
   }
 
   @Test
   void getMyWorkLogsByCycle_ShouldReturnUserWorkLogsForCycle() {
+    Pageable pageable = PageRequest.of(0, 20);
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
-    when(workLogRepository.findByPersonIdAndCycleId(1L, 10L)).thenReturn(Arrays.asList(testWorkLog));
+    when(workLogRepository.findByPersonIdAndCycleId(1L, 10L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getMyWorkLogsByCycle(10L);
+    Page<WorkLogDTO> result = workLogService.getMyWorkLogsByCycle(10L, pageable);
 
-    assertThat(result).hasSize(1);
-    verify(workLogRepository).findByPersonIdAndCycleId(1L, 10L);
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndCycleId(1L, 10L, pageable);
   }
 
   @Test
   void getMyWorkLogsByDate_ShouldReturnUserWorkLogsForDate() {
     LocalDate today = LocalDate.now();
+    Pageable pageable = PageRequest.of(0, 20);
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.of(testUser));
-    when(workLogRepository.findByPersonIdAndDate(1L, today)).thenReturn(Arrays.asList(testWorkLog));
+    when(workLogRepository.findByPersonIdAndDate(1L, today, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
 
-    List<WorkLogDTO> result = workLogService.getMyWorkLogsByDate(today);
+    Page<WorkLogDTO> result = workLogService.getMyWorkLogsByDate(today, pageable);
 
-    assertThat(result).hasSize(1);
-    verify(workLogRepository).findByPersonIdAndDate(1L, today);
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndDate(1L, today, pageable);
   }
 
   @Test
@@ -246,9 +252,10 @@ class MyWorkLogServiceTest {
 
   @Test
   void getMyWorkLogs_WhenUserNotFound_ShouldThrowException() {
+    Pageable pageable = PageRequest.of(0, 20);
     when(userRepository.findByUsernameWithPerson("testuser")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> workLogService.getMyWorkLogs()).isInstanceOf(RuntimeException.class)
+    assertThatThrownBy(() -> workLogService.getMyWorkLogs(pageable)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("User not found");
   }
 }

@@ -100,6 +100,10 @@ export default function People() {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityTotalPages, setActivityTotalPages] = useState(0);
+  const [activityTotalElements, setActivityTotalElements] = useState(0);
+  const ACTIVITY_PAGE_SIZE = 20;
   
   // Delete confirmation dialog
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -249,19 +253,18 @@ export default function People() {
 
   const handleViewActivity = (person: Person) => {
     setSelectedPerson(person);
-    fetchWorkLogs(person.id);
+    setActivityPage(0);
     setActivityDialogOpen(true);
+    fetchWorkLogs(person.id, 0);
   };
 
-  const fetchWorkLogs = async (personId: number) => {
+  const fetchWorkLogs = async (personId: number, page: number) => {
     setLoadingWorkLogs(true);
     try {
-      const response = await workLogService.getByPersonId(personId);
-      // Sort by date descending (most recent first)
-      const sortedLogs = response.data.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setWorkLogs(sortedLogs);
+      const response = await workLogService.getByPersonId(personId, page, ACTIVITY_PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setActivityTotalPages(response.data.totalPages);
+      setActivityTotalElements(response.data.totalElements);
     } catch (error) {
       showToast(t('peopleManagement.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);
@@ -896,7 +899,7 @@ export default function People() {
                     <Card className="border">
                       <CardContent className="text-center py-3">
                         <p className="text-2xl font-bold text-purple-600">
-                          {workLogs.length}
+                          {activityTotalElements}
                         </p>
                         <p className="text-xs text-muted-foreground">{t('peopleManagement.logEntries')}</p>
                       </CardContent>
@@ -924,7 +927,7 @@ export default function People() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {workLogs.slice(0, 50).map((log) => (
+                        {workLogs.map((log) => (
                           <TableRow key={log.id}>
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -972,10 +975,37 @@ export default function People() {
                       </TableBody>
                     </Table>
                   </ScrollArea>
-                  {workLogs.length > 50 && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t('peopleManagement.showingFirst', { count: workLogs.length })}
-                    </p>
+                  {activityTotalPages > 1 && (
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-xs text-muted-foreground">
+                        {t('meetingList.pagination.showing', { from: activityPage * ACTIVITY_PAGE_SIZE + 1, to: Math.min((activityPage + 1) * ACTIVITY_PAGE_SIZE, activityTotalElements), total: activityTotalElements })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={activityPage === 0 || loadingWorkLogs}
+                          onClick={() => {
+                            const p = activityPage - 1;
+                            setActivityPage(p);
+                            fetchWorkLogs(selectedPerson!.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                        </Button>
+                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: activityPage + 1, total: activityTotalPages })}</span>
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={activityPage >= activityTotalPages - 1 || loadingWorkLogs}
+                          onClick={() => {
+                            const p = activityPage + 1;
+                            setActivityPage(p);
+                            fetchWorkLogs(selectedPerson!.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               )}
