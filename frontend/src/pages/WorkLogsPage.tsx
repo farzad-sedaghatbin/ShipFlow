@@ -121,19 +121,27 @@ export default function WorkLogsPage() {
     loadInitialData();
   }, []);
 
-  // Reload data when project changes
+  // Reload pitches and tasks when cycle or project changes (not on page change)
   useEffect(() => {
     if (selectedCycle) {
       if (selectedCycle === 'all') {
-        loadWorkLogs('all');
-        // Load pitches and tasks from all active cycles for the form
         loadAllPitches();
         loadAllTasks();
       } else {
         const cycleId = parseInt(selectedCycle, 10);
-        loadWorkLogs(cycleId);
         loadPitches(cycleId);
         loadTasks(cycleId);
+      }
+    }
+  }, [selectedCycle, currentProject?.id]);
+
+  // Reload work logs when page, cycle, tab, or project changes
+  useEffect(() => {
+    if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadWorkLogs('all');
+      } else {
+        loadWorkLogs(parseInt(selectedCycle, 10));
       }
     }
   }, [page, selectedCycle, activeTab, currentProject?.id]);
