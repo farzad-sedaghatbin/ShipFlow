@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-21 - Provider Abstractions & Release Traceability
+
+### Theme
+> "Pluggable integrations and full release traceability across tasks and bugs."
+
+This release introduces **pluggable VCS and Notification provider interfaces**, **separated Dashboards and Reports routes**, and **enhanced Release tracking** with filters and cockpit views across Backlog, Bug Reports, and Release Detail pages.
+
+### Added
+- **VCS Provider Abstraction**
+  - New `VCSProvider` interface defining a standard contract for version-control integrations
+    - `getProviderName()`, `processCommit()`, `processPullRequest()`, `getTaskLinks()`, `getPitchLinks()`
+  - `GitHubIntegrationService` refactored to implement `VCSProvider`
+  - New `processCommitAndReturn` / `processPullRequestAndReturn` convenience methods that return the persisted entity
+  - Provider interface enables future integrations (GitLab, Bitbucket) without changing core logic
+- **Notification Provider Abstraction**
+  - New `NotificationProvider` interface defining a standard contract for messaging integrations
+    - `getProviderName()`, `sendNotification()`, `isActive()`
+  - `SlackIntegrationService` refactored to implement `NotificationProvider`
+  - Provider interface enables future integrations (Discord, PagerDuty) without changing notification routing
+- **Release Filters on Bug Reports Page**
+  - Combobox filter to narrow bug reports by target release
+  - Client-side filtering with badge count and clear-filter support
+- **Release Filter on Backlog Page**
+  - Target Release filter in the task filter bar
+  - Integrates with existing status, assignee, and search filters
+- **Target Release Field on Bug Report Modal**
+  - New Combobox field for assigning bugs to a target release
+  - Loads available releases from release service
+- **Enhanced Release Detail Cockpit**
+  - Task breakdown showing count and status distribution per release
+  - Bug breakdown showing count and severity distribution per release
+  - Slipped bugs warning section highlighting bugs that missed the release
+- **New i18n Keys**
+  - Added translation keys for release filters, target release field, breakdown labels, and slipped bugs section (en locale)
+
+### Changed
+- **Separated Dashboards and Reports Routes**
+  - Dashboards now live under `/dashboards` (previously shared `/reports` path)
+  - Reports remain at `/reports` (cycle reports, analytics)
+  - Updated `Layout.tsx` navigation with dedicated Dashboards menu item
+  - Updated `DashboardSwitcher.tsx` links to use `/dashboards/` prefix
+  - Fixed `DashboardManager.tsx` static route handling
+
+## [0.5.3] - 2026-02-21 - Wise AI & Strategic Planning
+
+### Theme
+> "Context-aware AI meets strategic roadmap planning."
+
+This release introduces **Wise Architecture** with multi-source context integration (team skills, Figma designs, GitHub code, roadmap relationships) and a comprehensive **Roadmap & Release Planning** system for strategic product management.
+
 ### Added
 - **Wise Architecture Structured Solutions (Phase 1 Overhaul)**
   - **Architecture Detail Breakdown**: Solutions now include structured components, API contracts, data models, and config changes instead of generic text
@@ -65,22 +115,6 @@ All notable changes to this project will be documented in this file.
     - Graceful timeout handling after 10 minutes
     - Repository search with 300ms debouncing
     - Memoized computed values (filteredRepositories, stacksByCategory)
-
-### Fixed
-- **Risk Factors Not Rendering**: Fixed field name mismatch (`risks` vs `riskFactors`) in TypeScript types that caused risk factors to be silently dropped in the UI
-- **Missing Context Source Flag**: Added `hasRoadmapContext` to frontend `ContextSources` interface to match backend DTO
-- **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
-- **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
-- **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions
-
-## [0.5.3] - 2026-02-16 - Wise AI & Strategic Planning
-
-### Theme
-> "Context-aware AI meets strategic roadmap planning."
-
-This release introduces **Wise Architecture** with multi-source context integration (team skills, Figma designs, GitHub code, roadmap relationships) and a comprehensive **Roadmap & Release Planning** system for strategic product management.
-
-### Added
 - **Wise Architecture Enhancements**
   - **Team Skills Integration**: AI solutions now consider team member skills when generating technical recommendations
     - Extracts unique skills from assigned team members (~25-35 tokens)
@@ -222,6 +256,11 @@ This release introduces **Wise Architecture** with multi-source context integrat
   - Aligns with existing permission matrix (REPORT write access for Admin/Manager only)
 
 ### Fixed
+- **Risk Factors Not Rendering**: Fixed field name mismatch (`risks` vs `riskFactors`) in TypeScript types that caused risk factors to be silently dropped in the UI
+- **Missing Context Source Flag**: Added `hasRoadmapContext` to frontend `ContextSources` interface to match backend DTO
+- **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
+- **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
+- **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions
 - **Meeting creation - project association for non-pitch meetings**
   - Added direct `project_id` column to meetings table (migration V89) to support project-level meetings without pitch association
   - Meetings can now be associated with a project directly, not just through pitch → cycle → project relationship
