@@ -29,7 +29,8 @@ public class WorkLogController {
 
   private final WorkLogService workLogService;
 
-  private static final Sort DATE_DESC = Sort.by(Sort.Direction.DESC, "date");
+  private static final Sort DATE_DESC = Sort.by(Sort.Direction.DESC, "date")
+      .and(Sort.by(Sort.Direction.DESC, "id"));
 
   private Pageable pageOf(int page, int size) {
     return PageRequest.of(page, size, DATE_DESC);
