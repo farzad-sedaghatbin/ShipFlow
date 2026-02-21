@@ -160,20 +160,21 @@ export default function WorkLogsPage() {
       let serverTotalPages = 0;
       let serverTotalElements = 0;
       if (cycleIdOrAll === 'all') {
-        // Load all work logs across all cycles
+        // Load all work logs across all cycles, filtered by project on the server if one is selected
+        const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
         if (activeTab === 'my') {
-          const response = await workLogService.getMy(page, PAGE_SIZE);
+          const response = await workLogService.getMy(page, PAGE_SIZE, projectId);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getAll(page, PAGE_SIZE);
+          const response = await workLogService.getAll(page, PAGE_SIZE, projectId);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         }
       } else {
-        // Load work logs for specific cycle
+        // Load work logs for specific cycle (already scoped to a project's cycle)
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
           const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
@@ -187,27 +188,8 @@ export default function WorkLogsPage() {
           serverTotalElements = response.data.totalElements;
         }
       }
-      
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        // Filter logs that belong to tasks/pitches in cycles of the current project
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        logs = logs.filter(log => {
-          // If the log has a cycleId directly, check it
-          // Otherwise filter by pitch/task's cycle
-          if (log.pitchId) {
-            const pitch = pitches.find(p => p.id === log.pitchId);
-            return pitch && pitch.cycleId !== undefined ? projectCycleIds.has(pitch.cycleId) : false;
-          }
-          if (log.taskId) {
-            const task = tasks.find(t => t.id === log.taskId);
-            return task ? projectCycleIds.has(task.cycleId) : false;
-          }
-          return false;
-        });
-      }
-      
-      // Server returns data sorted by date DESC; no client-side sort needed
+
+      // Server returns data sorted by date DESC; no client-side sort or filter needed
       setWorkLogs(logs);
       setTotalPages(serverTotalPages);
       setTotalElements(serverTotalElements);

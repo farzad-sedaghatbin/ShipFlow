@@ -44,7 +44,11 @@ public class WorkLogController {
       @ApiResponse(responseCode = "400", description = "User not linked to a person profile")})
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogs(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) Long projectId) {
+    if (projectId != null) {
+      return ResponseEntity.ok(workLogService.getMyWorkLogsByProjectId(projectId, pageOf(page, size)));
+    }
     return ResponseEntity.ok(workLogService.getMyWorkLogs(pageOf(page, size)));
   }
 
@@ -101,7 +105,11 @@ public class WorkLogController {
   @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use)")
   public ResponseEntity<Page<WorkLogDTO>> getAllWorkLogs(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) Long projectId) {
+    if (projectId != null) {
+      return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectId(projectId, pageOf(page, size)));
+    }
     return ResponseEntity.ok(workLogService.getAllWorkLogs(pageOf(page, size)));
   }
 

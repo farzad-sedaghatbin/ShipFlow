@@ -48,6 +48,14 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
          countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
   Page<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId, Pageable pageable);
 
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE (pc.project.id = :projectId OR tc.project.id = :projectId)",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  Page<WorkLog> findByProjectId(@Param("projectId") Long projectId, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId)",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  Page<WorkLog> findByPersonIdAndProjectId(@Param("personId") Long personId, @Param("projectId") Long projectId, Pageable pageable);
+
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);
 

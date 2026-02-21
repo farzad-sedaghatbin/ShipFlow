@@ -6,8 +6,8 @@ const DEFAULT_SIZE = 20;
 
 export const workLogService = {
   // Admin/Manager endpoints
-  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
-    api.get<Page<WorkLog>>('/worklogs', { params: { page, size } }),
+  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number) =>
+    api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}) } }),
   getByPitchId: (pitchId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}`, { params: { page, size } }),
   getByTaskId: (taskId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
@@ -24,8 +24,8 @@ export const workLogService = {
   delete: (id: number) => api.delete(`/worklogs/${id}`),
 
   // Current user's own work logs
-  getMy: (page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
-    api.get<Page<WorkLog>>('/worklogs/my', { params: { page, size } }),
+  getMy: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number) =>
+    api.get<Page<WorkLog>>('/worklogs/my', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}) } }),
   getMyByCycle: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/my/cycle/${cycleId}`, { params: { page, size } }),
   getMyByDate: (date: string, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>

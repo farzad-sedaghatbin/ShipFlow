@@ -62,6 +62,10 @@ public class WorkLogService {
     return workLogRepository.findByCycleId(cycleId, pageable).map(this::toDTO);
   }
 
+  public Page<WorkLogDTO> getAllWorkLogsByProjectId(Long projectId, Pageable pageable) {
+    return workLogRepository.findByProjectId(projectId, pageable).map(this::toDTO);
+  }
+
   public WorkLogDTO getWorkLogById(Long id) {
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
@@ -169,6 +173,12 @@ public class WorkLogService {
   public Page<WorkLogDTO> getMyWorkLogs(Pageable pageable) {
     Person person = getCurrentUserPerson();
     return workLogRepository.findByPersonId(person.getId(), pageable).map(this::toDTO);
+  }
+
+  /** Get all work logs for the current user filtered by project */
+  public Page<WorkLogDTO> getMyWorkLogsByProjectId(Long projectId, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndProjectId(person.getId(), projectId, pageable).map(this::toDTO);
   }
 
   /** Get work logs for the current user by cycle */
