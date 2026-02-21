@@ -3,6 +3,8 @@ package com.github.farzadsedaghatbin.shipflow.repository;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
+  // Non-pageable variants kept for internal aggregation use (BettingTableService, etc.)
   List<WorkLog> findByPitchId(Long pitchId);
 
   List<WorkLog> findByTaskId(Long taskId);
@@ -27,6 +30,23 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
 
   @Query("SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
   List<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
+
+  // Pageable variants for API endpoints
+  Page<WorkLog> findByPitchId(Long pitchId, Pageable pageable);
+
+  Page<WorkLog> findByTaskId(Long taskId, Pageable pageable);
+
+  Page<WorkLog> findByPersonId(Long personId, Pageable pageable);
+
+  Page<WorkLog> findByPersonIdAndDate(Long personId, LocalDate date, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  Page<WorkLog> findByCycleId(@Param("cycleId") Long cycleId, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  Page<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId, Pageable pageable);
 
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);

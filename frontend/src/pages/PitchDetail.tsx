@@ -155,7 +155,7 @@ export default function PitchDetail() {
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
-      setWorkLogs(workLogsRes.data);
+      setWorkLogs(workLogsRes.data.content);
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
       setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);

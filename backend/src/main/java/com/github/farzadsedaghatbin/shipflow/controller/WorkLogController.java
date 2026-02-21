@@ -10,8 +10,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +29,12 @@ public class WorkLogController {
 
   private final WorkLogService workLogService;
 
+  private static final Sort DATE_DESC = Sort.by(Sort.Direction.DESC, "date");
+
+  private Pageable pageOf(int page, int size) {
+    return PageRequest.of(page, size, DATE_DESC);
+  }
+
   // ========== Current User's Own Work Logs ==========
 
   @GetMapping("/my")
@@ -33,21 +42,27 @@ public class WorkLogController {
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Work logs retrieved successfully"),
       @ApiResponse(responseCode = "401", description = "User not authenticated"),
       @ApiResponse(responseCode = "400", description = "User not linked to a person profile")})
-  public ResponseEntity<List<WorkLogDTO>> getMyWorkLogs() {
-    return ResponseEntity.ok(workLogService.getMyWorkLogs());
+  public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getMyWorkLogs(pageOf(page, size)));
   }
 
   @GetMapping("/my/cycle/{cycleId}")
   @Operation(summary = "Get current user's work logs by cycle", description = "Returns work logs for the current user filtered by cycle ID")
-  public ResponseEntity<List<WorkLogDTO>> getMyWorkLogsByCycle(@PathVariable Long cycleId) {
-    return ResponseEntity.ok(workLogService.getMyWorkLogsByCycle(cycleId));
+  public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogsByCycle(@PathVariable Long cycleId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getMyWorkLogsByCycle(cycleId, pageOf(page, size)));
   }
 
   @GetMapping("/my/date/{date}")
   @Operation(summary = "Get current user's work logs by date", description = "Returns work logs for the current user on a specific date")
-  public ResponseEntity<List<WorkLogDTO>> getMyWorkLogsByDate(
-      @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    return ResponseEntity.ok(workLogService.getMyWorkLogsByDate(date));
+  public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogsByDate(
+      @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getMyWorkLogsByDate(date, pageOf(page, size)));
   }
 
   @PostMapping("/my")
@@ -84,44 +99,56 @@ public class WorkLogController {
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use)")
-  public ResponseEntity<List<WorkLogDTO>> getAllWorkLogs() {
-    return ResponseEntity.ok(workLogService.getAllWorkLogs());
+  public ResponseEntity<Page<WorkLogDTO>> getAllWorkLogs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getAllWorkLogs(pageOf(page, size)));
   }
 
   @GetMapping("/pitch/{pitchId}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by pitch ID")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPitchId(@PathVariable Long pitchId) {
-    return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId));
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPitchId(@PathVariable Long pitchId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId, pageOf(page, size)));
   }
 
   @GetMapping("/task/{taskId}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by task ID")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByTaskId(@PathVariable Long taskId) {
-    return ResponseEntity.ok(workLogService.getWorkLogsByTaskId(taskId));
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByTaskId(@PathVariable Long taskId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getWorkLogsByTaskId(taskId, pageOf(page, size)));
   }
 
   @GetMapping("/person/{personId}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by person ID")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonId(@PathVariable Long personId) {
-    return ResponseEntity.ok(workLogService.getWorkLogsByPersonId(personId));
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPersonId(@PathVariable Long personId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getWorkLogsByPersonId(personId, pageOf(page, size)));
   }
 
   @GetMapping("/person/{personId}/date/{date}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by person and date")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByPersonAndDate(@PathVariable Long personId,
-      @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    return ResponseEntity.ok(workLogService.getWorkLogsByPersonAndDate(personId, date));
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPersonAndDate(@PathVariable Long personId,
+      @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getWorkLogsByPersonAndDate(personId, date, pageOf(page, size)));
   }
 
   @GetMapping("/cycle/{cycleId}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by cycle ID")
-  public ResponseEntity<List<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId) {
-    return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId));
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId, pageOf(page, size)));
   }
 
   @GetMapping("/{id}")

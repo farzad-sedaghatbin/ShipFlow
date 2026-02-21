@@ -1,23 +1,35 @@
 import api from './api';
-import { WorkLog, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
+import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_SIZE = 20;
 
 export const workLogService = {
   // Admin/Manager endpoints
-  getAll: () => api.get<WorkLog[]>('/worklogs'),
-  getByPitchId: (pitchId: number) => api.get<WorkLog[]>(`/worklogs/pitch/${pitchId}`),
-  getByTaskId: (taskId: number) => api.get<WorkLog[]>(`/worklogs/task/${taskId}`),
-  getByPersonId: (personId: number) => api.get<WorkLog[]>(`/worklogs/person/${personId}`),
-  getByPersonAndDate: (personId: number, date: string) => api.get<WorkLog[]>(`/worklogs/person/${personId}/date/${date}`),
-  getByCycleId: (cycleId: number) => api.get<WorkLog[]>(`/worklogs/cycle/${cycleId}`),
+  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>('/worklogs', { params: { page, size } }),
+  getByPitchId: (pitchId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}`, { params: { page, size } }),
+  getByTaskId: (taskId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/task/${taskId}`, { params: { page, size } }),
+  getByPersonId: (personId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/person/${personId}`, { params: { page, size } }),
+  getByPersonAndDate: (personId: number, date: string, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/person/${personId}/date/${date}`, { params: { page, size } }),
+  getByCycleId: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/cycle/${cycleId}`, { params: { page, size } }),
   getById: (id: number) => api.get<WorkLog>(`/worklogs/${id}`),
   create: (data: CreateWorkLogRequest) => api.post<WorkLog>('/worklogs', data),
   update: (id: number, data: CreateWorkLogRequest) => api.put<WorkLog>(`/worklogs/${id}`, data),
   delete: (id: number) => api.delete(`/worklogs/${id}`),
-  
+
   // Current user's own work logs
-  getMy: () => api.get<WorkLog[]>('/worklogs/my'),
-  getMyByCycle: (cycleId: number) => api.get<WorkLog[]>(`/worklogs/my/cycle/${cycleId}`),
-  getMyByDate: (date: string) => api.get<WorkLog[]>(`/worklogs/my/date/${date}`),
+  getMy: (page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>('/worklogs/my', { params: { page, size } }),
+  getMyByCycle: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/my/cycle/${cycleId}`, { params: { page, size } }),
+  getMyByDate: (date: string, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/my/date/${date}`, { params: { page, size } }),
   createMy: (data: CreateWorkLogForSelfRequest) => api.post<WorkLog>('/worklogs/my', data),
   updateMy: (id: number, data: CreateWorkLogForSelfRequest) => api.put<WorkLog>(`/worklogs/my/${id}`, data),
   deleteMy: (id: number) => api.delete(`/worklogs/my/${id}`),

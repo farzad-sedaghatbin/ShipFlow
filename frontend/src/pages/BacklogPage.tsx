@@ -236,14 +236,27 @@ export default function BacklogPage() {
         cycleService.getMyActiveCycles(),
         personService.getAll(),
       ]);
-      setCycles(cyclesRes.data);
+      let allCycles = cyclesRes.data;
       setPersons(personsRes);
-      
-      // Auto-select the first cycle of current project
-      // (applies to both Kanban and Shape Up project types)
+
       if (currentProject) {
-        // Filter cycles to only those belonging to the current project
-        const projectCycles = cyclesRes.data.filter(c => c.projectId === currentProject.id);
+        let projectCycles = allCycles.filter(c => c.projectId === currentProject.id);
+
+        // getMyActiveCycles excludes KANBAN project cycles (they are hidden from the cycle
+        // progress views). For Kanban projects we still need the "Continuous Flow" cycle so
+        // the task-creation dialog can assign a cycleId. Fetch it directly from the
+        // project-scoped endpoint which has no project-type filter.
+        if (projectCycles.length === 0 && isKanbanProject) {
+          try {
+            const kanbanCyclesRes = await cycleService.getActiveByProject(currentProject.id);
+            allCycles = [...allCycles, ...kanbanCyclesRes.data];
+            projectCycles = kanbanCyclesRes.data;
+          } catch {
+            // best-effort – fall through to 'all' selection below
+          }
+        }
+
+        setCycles(allCycles);
         if (projectCycles.length > 0) {
           setSelectedCycle(projectCycles[0].id);
         } else {
@@ -252,6 +265,7 @@ export default function BacklogPage() {
         }
       } else {
         // No project selected (All Projects view), default to 'all'
+        setCycles(allCycles);
         setSelectedCycle('all');
       }
     } catch (error) {

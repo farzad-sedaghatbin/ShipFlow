@@ -257,11 +257,8 @@ export default function People() {
     setLoadingWorkLogs(true);
     try {
       const response = await workLogService.getByPersonId(personId);
-      // Sort by date descending (most recent first)
-      const sortedLogs = response.data.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setWorkLogs(sortedLogs);
+      // Server returns data sorted by date DESC
+      setWorkLogs(response.data.content);
     } catch (error) {
       showToast(t('peopleManagement.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);

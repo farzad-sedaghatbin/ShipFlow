@@ -51,6 +51,10 @@ export default function MyWorkLogs() {
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const PAGE_SIZE = 20;
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -101,7 +105,7 @@ export default function MyWorkLogs() {
       setPitches([]);
       setTasks([]);
     }
-  }, [selectedCycle]);
+  }, [page, selectedCycle]);
 
   const loadInitialData = async () => {
     try {
@@ -118,8 +122,10 @@ export default function MyWorkLogs() {
 
   const loadAllWorkLogs = async () => {
     try {
-      const response = await workLogService.getMy();
-      setWorkLogs(response.data);
+      const response = await workLogService.getMy(page, PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to load all work logs:', error);
     }
@@ -127,8 +133,10 @@ export default function MyWorkLogs() {
 
   const loadWorkLogs = async (cycleId: number) => {
     try {
-      const response = await workLogService.getMyByCycle(cycleId);
-      setWorkLogs(response.data);
+      const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
@@ -362,7 +370,7 @@ export default function MyWorkLogs() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-2">
             <Label htmlFor="cycle-select">Cycle</Label>
-            <Select value={selectedCycle} onValueChange={setSelectedCycle}>
+            <Select value={selectedCycle} onValueChange={(v) => { setSelectedCycle(v); setPage(0); }}>
               <SelectTrigger className="w-[300px]" id="cycle-select">
                 <SelectValue placeholder="Select a cycle" />
               </SelectTrigger>
@@ -606,6 +614,35 @@ export default function MyWorkLogs() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                {`Showing ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} of ${totalElements}`}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(Math.max(0, page - 1))}
+                  disabled={page === 0}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {`Page ${page + 1} of ${totalPages}`}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -122,25 +122,25 @@ class MyWorkLogControllerIntegrationTest {
   @WithMockUser(username = "testuser", roles = {"USER"})
   void getMyWorkLogs_ShouldReturnOnlyCurrentUserWorkLogs() throws Exception {
     mockMvc.perform(get("/api/worklogs/my")).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].note", is("My Work")))
-        .andExpect(jsonPath("$[0].personName", is("Test User")));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].note", is("My Work")))
+        .andExpect(jsonPath("$.content[0].personName", is("Test User")));
   }
 
   @Test
   @WithMockUser(username = "testuser", roles = {"USER"})
   void getMyWorkLogsByCycle_ShouldReturnUserWorkLogsForCycle() throws Exception {
     mockMvc.perform(get("/api/worklogs/my/cycle/{cycleId}", testCycle.getId())).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].note", is("My Work")));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].note", is("My Work")));
   }
 
   @Test
   @WithMockUser(username = "testuser", roles = {"USER"})
   void getMyWorkLogsByDate_ShouldReturnUserWorkLogsForDate() throws Exception {
     mockMvc.perform(get("/api/worklogs/my/date/{date}", LocalDate.now().toString())).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].note", is("My Work")));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].note", is("My Work")));
   }
 
   @Test
@@ -192,7 +192,7 @@ class MyWorkLogControllerIntegrationTest {
     mockMvc.perform(delete("/api/worklogs/my/{id}", testWorkLog.getId())).andExpect(status().isNoContent());
 
     // Verify it's deleted
-    mockMvc.perform(get("/api/worklogs/my")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)));
+    mockMvc.perform(get("/api/worklogs/my")).andExpect(status().isOk()).andExpect(jsonPath("$.content", hasSize(0)));
   }
 
   @Test

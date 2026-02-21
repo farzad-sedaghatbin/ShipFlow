@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,29 +38,28 @@ public class WorkLogService {
   private final AICacheService cacheService;
   private final MessageService messageService;
 
-  public List<WorkLogDTO> getAllWorkLogs() {
-    return workLogRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+  public Page<WorkLogDTO> getAllWorkLogs(Pageable pageable) {
+    return workLogRepository.findAll(pageable).map(this::toDTO);
   }
 
-  public List<WorkLogDTO> getWorkLogsByPitchId(Long pitchId) {
-    return workLogRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
+  public Page<WorkLogDTO> getWorkLogsByPitchId(Long pitchId, Pageable pageable) {
+    return workLogRepository.findByPitchId(pitchId, pageable).map(this::toDTO);
   }
 
-  public List<WorkLogDTO> getWorkLogsByTaskId(Long taskId) {
-    return workLogRepository.findByTaskId(taskId).stream().map(this::toDTO).collect(Collectors.toList());
+  public Page<WorkLogDTO> getWorkLogsByTaskId(Long taskId, Pageable pageable) {
+    return workLogRepository.findByTaskId(taskId, pageable).map(this::toDTO);
   }
 
-  public List<WorkLogDTO> getWorkLogsByPersonId(Long personId) {
-    return workLogRepository.findByPersonId(personId).stream().map(this::toDTO).collect(Collectors.toList());
+  public Page<WorkLogDTO> getWorkLogsByPersonId(Long personId, Pageable pageable) {
+    return workLogRepository.findByPersonId(personId, pageable).map(this::toDTO);
   }
 
-  public List<WorkLogDTO> getWorkLogsByPersonAndDate(Long personId, LocalDate date) {
-    return workLogRepository.findByPersonIdAndDate(personId, date).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+  public Page<WorkLogDTO> getWorkLogsByPersonAndDate(Long personId, LocalDate date, Pageable pageable) {
+    return workLogRepository.findByPersonIdAndDate(personId, date, pageable).map(this::toDTO);
   }
 
-  public List<WorkLogDTO> getWorkLogsByCycleId(Long cycleId) {
-    return workLogRepository.findByCycleId(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
+  public Page<WorkLogDTO> getWorkLogsByCycleId(Long cycleId, Pageable pageable) {
+    return workLogRepository.findByCycleId(cycleId, pageable).map(this::toDTO);
   }
 
   public WorkLogDTO getWorkLogById(Long id) {
@@ -165,23 +166,21 @@ public class WorkLogService {
   }
 
   /** Get all work logs for the current user */
-  public List<WorkLogDTO> getMyWorkLogs() {
+  public Page<WorkLogDTO> getMyWorkLogs(Pageable pageable) {
     Person person = getCurrentUserPerson();
-    return workLogRepository.findByPersonId(person.getId()).stream().map(this::toDTO).collect(Collectors.toList());
+    return workLogRepository.findByPersonId(person.getId(), pageable).map(this::toDTO);
   }
 
   /** Get work logs for the current user by cycle */
-  public List<WorkLogDTO> getMyWorkLogsByCycle(Long cycleId) {
+  public Page<WorkLogDTO> getMyWorkLogsByCycle(Long cycleId, Pageable pageable) {
     Person person = getCurrentUserPerson();
-    return workLogRepository.findByPersonIdAndCycleId(person.getId(), cycleId).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return workLogRepository.findByPersonIdAndCycleId(person.getId(), cycleId, pageable).map(this::toDTO);
   }
 
   /** Get work logs for the current user by date */
-  public List<WorkLogDTO> getMyWorkLogsByDate(LocalDate date) {
+  public Page<WorkLogDTO> getMyWorkLogsByDate(LocalDate date, Pageable pageable) {
     Person person = getCurrentUserPerson();
-    return workLogRepository.findByPersonIdAndDate(person.getId(), date).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return workLogRepository.findByPersonIdAndDate(person.getId(), date, pageable).map(this::toDTO);
   }
 
   /** Create a work log for the current user (for themselves) */

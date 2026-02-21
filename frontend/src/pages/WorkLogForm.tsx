@@ -88,7 +88,7 @@ export default function WorkLogForm() {
   const loadWorkLogs = async (cycleId: number) => {
     try {
       const response = await workLogService.getByCycleId(cycleId);
-      setWorkLogs(response.data);
+      setWorkLogs(response.data.content);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
