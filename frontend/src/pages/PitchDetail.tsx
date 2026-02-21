@@ -948,7 +948,7 @@ export default function PitchDetail() {
                   {workLogTotalPages > 1 && (
                     <div className="flex items-center justify-between pt-3">
                       <span className="text-xs text-muted-foreground">
-                        {`${workLogPage * WORK_LOG_PAGE_SIZE + 1}–${Math.min((workLogPage + 1) * WORK_LOG_PAGE_SIZE, workLogTotalElements)} of ${workLogTotalElements}`}
+                        {t('meetingList.pagination.showing', { from: workLogPage * WORK_LOG_PAGE_SIZE + 1, to: Math.min((workLogPage + 1) * WORK_LOG_PAGE_SIZE, workLogTotalElements), total: workLogTotalElements })}
                       </span>
                       <div className="flex items-center gap-2">
                         <Button
@@ -962,7 +962,7 @@ export default function PitchDetail() {
                         >
                           {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                         </Button>
-                        <span className="text-xs text-muted-foreground">{`${workLogPage + 1} / ${workLogTotalPages}`}</span>
+                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: workLogPage + 1, total: workLogTotalPages })}</span>
                         <Button
                           variant="outline" size="sm"
                           disabled={workLogPage >= workLogTotalPages - 1}

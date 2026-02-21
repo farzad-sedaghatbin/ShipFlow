@@ -47,7 +47,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 export default function MyWorkLogs() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
@@ -620,7 +620,7 @@ export default function MyWorkLogs() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
-                {`Showing ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} of ${totalElements}`}
+                {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -629,10 +629,10 @@ export default function MyWorkLogs() {
                   onClick={() => setPage(Math.max(0, page - 1))}
                   disabled={page === 0}
                 >
-                  Previous
+                  {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                  {`Page ${page + 1} of ${totalPages}`}
+                  {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
                 </div>
                 <Button
                   variant="outline"
@@ -640,7 +640,7 @@ export default function MyWorkLogs() {
                   onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                   disabled={page >= totalPages - 1}
                 >
-                  Next
+                  {t('meetingList.pagination.next', { defaultValue: 'Next' })}
                 </Button>
               </div>
             </div>

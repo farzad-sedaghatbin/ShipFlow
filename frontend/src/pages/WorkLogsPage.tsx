@@ -489,7 +489,7 @@ export default function WorkLogsPage() {
             </div>
             <div className="text-3xl font-bold">{totalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">
-              {t('workLogs.logsCount', { count: totalElements })}
+              {t('workLogs.logsCount', { count: workLogs.length })}
             </p>
           </CardContent>
         </Card>
@@ -639,7 +639,7 @@ export default function WorkLogsPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    {`Showing ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} of ${totalElements}`}
+                    {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -651,7 +651,7 @@ export default function WorkLogsPage() {
                       {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                     </Button>
                     <div className="text-sm text-muted-foreground">
-                      {`Page ${page + 1} of ${totalPages}`}
+                      {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
                     </div>
                     <Button
                       variant="outline"
@@ -807,7 +807,7 @@ export default function WorkLogsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-muted-foreground">
-                  {`Showing ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} of ${totalElements}`}
+                  {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -819,7 +819,7 @@ export default function WorkLogsPage() {
                     {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                   </Button>
                   <div className="text-sm text-muted-foreground">
-                    {`Page ${page + 1} of ${totalPages}`}
+                    {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
                   </div>
                   <Button
                     variant="outline"

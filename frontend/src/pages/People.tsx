@@ -978,7 +978,7 @@ export default function People() {
                   {activityTotalPages > 1 && (
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs text-muted-foreground">
-                        {`${activityPage * ACTIVITY_PAGE_SIZE + 1}–${Math.min((activityPage + 1) * ACTIVITY_PAGE_SIZE, activityTotalElements)} of ${activityTotalElements}`}
+                        {t('meetingList.pagination.showing', { from: activityPage * ACTIVITY_PAGE_SIZE + 1, to: Math.min((activityPage + 1) * ACTIVITY_PAGE_SIZE, activityTotalElements), total: activityTotalElements })}
                       </span>
                       <div className="flex items-center gap-2">
                         <Button
@@ -992,7 +992,7 @@ export default function People() {
                         >
                           {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                         </Button>
-                        <span className="text-xs text-muted-foreground">{`${activityPage + 1} / ${activityTotalPages}`}</span>
+                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: activityPage + 1, total: activityTotalPages })}</span>
                         <Button
                           variant="outline" size="sm"
                           disabled={activityPage >= activityTotalPages - 1 || loadingWorkLogs}

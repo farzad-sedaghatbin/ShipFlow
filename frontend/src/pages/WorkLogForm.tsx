@@ -328,7 +328,7 @@ export default function WorkLogForm() {
           {wlTotalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
               <span className="text-xs text-muted-foreground">
-                {`${wlPage * WL_PAGE_SIZE + 1}–${Math.min((wlPage + 1) * WL_PAGE_SIZE, wlTotalElements)} of ${wlTotalElements}`}
+                {t('meetingList.pagination.showing', { from: wlPage * WL_PAGE_SIZE + 1, to: Math.min((wlPage + 1) * WL_PAGE_SIZE, wlTotalElements), total: wlTotalElements })}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -339,7 +339,7 @@ export default function WorkLogForm() {
                 >
                   {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                 </Button>
-                <span className="text-xs text-muted-foreground">{`${wlPage + 1} / ${wlTotalPages}`}</span>
+                <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: wlPage + 1, total: wlTotalPages })}</span>
                 <Button
                   variant="outline"
                   size="sm"
