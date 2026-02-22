@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Generic Inbound Webhook Infrastructure** (v0.7.0)
+  - `InboundWebhookHandler` interface — 4-method contract (`getProviderName`, `validateSignature`, `handle`, `isActive`)
+  - `InboundWebhookRouter` service — auto-discovers handler beans, O(1) dispatch, signature validation, full lifecycle management
+  - `InboundWebhookController` — vendor-agnostic `POST /api/inbound/{provider}` and `GET /api/inbound` (list active providers)
+  - Auto-detects event type from common headers (X-Event-Type, X-GitHub-Event, X-Intercom-Event, X-PagerDuty-Event, X-GitLab-Event, X-Linear-Event)
+  - Status-to-HTTP mapping: success→200, unknown provider→404, invalid signature→401, inactive→503
+  - SecurityConfig updated: `/api/inbound/**` → `permitAll` (handlers validate signatures themselves)
+  - Full test suite: interface contract test + router unit tests (14 tests)
+  - Implement `InboundWebhookHandler` as a `@Component` to add any new provider — zero changes to existing code
+- **Expanded Webhooks Guide**: Complete rewrite with inbound webhook documentation, event headers reference, provider architecture diagram
+- **Updated Knowledge Base**: Inbound webhook docs added to `06-technical-features.md` for AI help search
+- **New Suggested Help Questions**: Added "How do inbound webhooks work?" and integration questions to AI help search
+- **AI-Powered Help Search**: Ask "how do I…" questions in the Help Guides and get guardrailed AI answers
+  - Dedicated `HelpGuideAIService` + `HelpGuideController` (fully separated from business Q&A)
+  - Vector store retrieval via `EmbeddingStore`/`EmbeddingModel` — only top-5 relevant chunks included per prompt for token efficiency
+  - 10 markdown knowledge base files auto-loaded and embedded at startup from `classpath:knowledgebase/help-guides/`
+  - Guardrailed system prompt restricts answers to ShipFlow documentation only
+  - Frontend `HelpSearch` component with suggested questions, follow-up chips, and markdown rendering
+  - New `helpGuideService.ts` frontend API client (separate from `qaService.ts`)
+  - i18n support (English + Persian) for all search UI elements
+- **Expanded Help Guides**: Added 4 new technical guides
+  - Export Data — Cycle summaries and data portability
+  - Webhooks — Incoming/outgoing event integrations
+  - Public API — REST API, OpenAPI, Personal Access Tokens
+  - MCP Server — Model Context Protocol integrations
+
 ## [0.6.0] - 2026-02-21 - Provider Abstractions & Release Traceability
 
 ### Theme

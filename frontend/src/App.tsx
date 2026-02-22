@@ -76,6 +76,10 @@ import CircuitBreakerGuide from './pages/guides/CircuitBreakerGuide';
 import CooldownActivitiesGuide from './pages/guides/CooldownActivitiesGuide';
 import ReportsGuide from './pages/guides/ReportsGuide';
 import WiseArchitectureGuide from './pages/guides/WiseArchitectureGuide';
+import ExportDataGuide from './pages/guides/ExportDataGuide';
+import WebhooksGuide from './pages/guides/WebhooksGuide';
+import PublicApiGuide from './pages/guides/PublicApiGuide';
+import McpServerGuide from './pages/guides/McpServerGuide';
 import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
@@ -92,11 +96,11 @@ function App() {
   useEffect(() => {
     const currentLang = i18n.language;
     const dir = isRTLLanguage(currentLang) ? 'rtl' : 'ltr';
-    
+
     if (document.documentElement.dir !== dir) {
       document.documentElement.dir = dir;
       document.documentElement.lang = currentLang;
-      
+
       if (dir === 'rtl') {
         document.body.classList.add('rtl');
         document.body.classList.remove('ltr');
@@ -231,6 +235,10 @@ function App() {
                     <Route path="help/cooldown-activities" element={<CooldownActivitiesGuide />} />
                     <Route path="help/reports" element={<ReportsGuide />} />
                     <Route path="help/wise-architecture" element={<WiseArchitectureGuide />} />
+                    <Route path="help/export-data" element={<ExportDataGuide />} />
+                    <Route path="help/webhooks" element={<WebhooksGuide />} />
+                    <Route path="help/public-api" element={<PublicApiGuide />} />
+                    <Route path="help/mcp-server" element={<McpServerGuide />} />
 
 
                     {/* Catch-all for unmatched routes within protected area */}

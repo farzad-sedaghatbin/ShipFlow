@@ -124,9 +124,14 @@ A modern project management application implementing the [Shape Up](https://base
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
-- **Help & Guides**: Built-in comprehensive documentation and interactive tour
+- **Help & Guides**: Built-in comprehensive documentation, interactive tour, and AI-powered search
   - **Interactive Tour**: Step-by-step walkthrough for new users
-  - **Rich Guides**: Detailed guides for Getting Started, Cycle Setup, Betting Meetings, Hill Charts, and AI Risk Advisor
+  - **Rich Guides**: 16 detailed guides covering all features (Cycles, Pitches, Hill Charts, Retrospectives, QA, Exports, Webhooks, API, MCP, and more)
+  - **AI Help Search**: Ask "how do I…" questions and get guardrailed answers from ShipFlow documentation
+    - Vector store retrieval (EmbeddingStore) for token-efficient prompts — only top-K relevant chunks included
+    - Dedicated backend service (`HelpGuideAIService`) completely separated from business Q&A logic
+    - Guardrailed system prompt ensures answers stay within ShipFlow scope
+    - 10 knowledge base files auto-loaded and embedded at startup
   - **Context-Aware**: Access relevant guides directly from related pages
 - **Comments & Collaboration**: Full commenting system for tasks and bug reports
   - **@Mentions**: Type `@` to mention users with autocomplete suggestions
@@ -286,6 +291,13 @@ A modern project management application implementing the [Shape Up](https://base
 - **Pluggable Notification Provider Architecture**: Abstract messaging behind `NotificationProvider` interface
   - Standard contract: `sendNotification()`, `isActive()`, `getProviderName()`
   - Slack ships as the built-in provider; add Discord, PagerDuty, or others by implementing the interface
+- **Generic Inbound Webhook Infrastructure**: Vendor-agnostic endpoint for receiving events from any external service
+  - `POST /api/inbound/{provider}` — single endpoint handles Intercom, Zendesk, PagerDuty, or any custom provider
+  - `InboundWebhookHandler` interface: `getProviderName()`, `validateSignature()`, `handle()`, `isActive()`
+  - Auto-discovery: implement the interface as a `@Component` and it self-registers — zero changes to existing code
+  - Auto-detects event type from common headers (X-Event-Type, X-GitHub-Event, X-Intercom-Event, X-PagerDuty-Event, X-GitLab-Event, X-Linear-Event)
+  - Per-handler signature validation (HMAC, shared secrets, etc.)
+  - `GET /api/inbound` lists all active inbound providers
 - **Release Traceability for Tasks & Bugs** (v0.6)
   - Filter backlog tasks by target release
   - Filter bug reports by target release
@@ -337,12 +349,14 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
+| **Generic Inbound Webhooks** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Release Traceability (Tasks & Bugs)** | ✅ | Partial | ❌ | ❌ | ✅ | ❌ |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |

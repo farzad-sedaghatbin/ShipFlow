@@ -14,10 +14,15 @@ import {
     Zap,
     Layers,
     Coffee,
-    Sparkles
+    Sparkles,
+    Download,
+    Webhook,
+    Code,
+    Server
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import HelpSearch from '@/components/HelpSearch';
 
 interface GuideCard {
     title: string;
@@ -117,6 +122,34 @@ export default function HelpGuides() {
             path: '/help/reports',
             color: 'text-yellow-500',
         },
+        {
+            title: t('helpGuides.exportData'),
+            description: t('helpGuides.exportDataDesc'),
+            icon: Download,
+            path: '/help/export-data',
+            color: 'text-emerald-500',
+        },
+        {
+            title: t('helpGuides.webhooks'),
+            description: t('helpGuides.webhooksDesc'),
+            icon: Webhook,
+            path: '/help/webhooks',
+            color: 'text-rose-500',
+        },
+        {
+            title: t('helpGuides.publicApi'),
+            description: t('helpGuides.publicApiDesc'),
+            icon: Code,
+            path: '/help/public-api',
+            color: 'text-lime-500',
+        },
+        {
+            title: t('helpGuides.mcpServer'),
+            description: t('helpGuides.mcpServerDesc'),
+            icon: Server,
+            path: '/help/mcp-server',
+            color: 'text-fuchsia-500',
+        },
     ];
     return (
         <div className="space-y-6">
@@ -132,6 +165,9 @@ export default function HelpGuides() {
                     </p>
                 </div>
             </div>
+
+            {/* AI Search */}
+            <HelpSearch />
 
             {/* Introduction */}
             <Card>

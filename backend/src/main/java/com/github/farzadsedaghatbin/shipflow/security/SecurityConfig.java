@@ -78,6 +78,8 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/public/**").permitAll()
             // Public REST API v1 (authenticated via X-API-Key header)
             .requestMatchers("/api/v1/public/**").permitAll()
+            // Inbound webhooks (each handler validates its own signature)
+            .requestMatchers("/api/inbound/**").permitAll()
             // Q&A status endpoint (public to check if feature is enabled)
             .requestMatchers("/api/qa/status").permitAll()
             // Swagger/OpenAPI endpoints

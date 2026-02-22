@@ -12,7 +12,6 @@ import {
   RotateCcw,
   ArrowRight,
   FileText,
-  BookOpen,
   Linkedin,
   Mail,
   Code2,
@@ -21,6 +20,7 @@ import {
   Layers,
   Calendar,
   Heart,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -110,7 +110,7 @@ export default function Landing() {
       description: t('landing.cycleSignalsDesc'),
     },
     {
-      icon: <BookOpen className="h-10 w-10" />,
+      icon: <Search className="h-10 w-10" />,
       title: t('landing.inAppGuides'),
       description: t('landing.inAppGuidesDesc'),
     },
@@ -390,7 +390,7 @@ export default function Landing() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 {/* Author Avatar */}
                 <div className="flex-shrink-0">
-                  <img 
+                  <img
                     src="https://media.licdn.com/dms/image/v2/D4E03AQEr4IZ0OrttkA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1715346862132?e=1772064000&v=beta&t=j2ylrKyVYfQGhbGFloCUyXG6lWxMKxlSe_hHxtr8RTk"
                     alt="Farzad Sedaghatbin"
                     className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
