@@ -220,9 +220,21 @@ public class MaliciousHeaderFilter implements Filter {
 
   /**
    * Check if the URI matches broader suspicious patterns (regex-based).
+   *
+   * <p>API paths ({@code /api/...}) are intentionally excluded from this broad
+   * check because they are already protected by Spring Security's authentication
+   * requirements. Applying broad patterns like {@code /(admin)/} or
+   * {@code /(metrics)/} to API paths produces false positives for legitimate
+   * application routes such as {@code /api/admin/settings} or
+   * {@code /api/metrics/custom}. BLOCKED_PATH_PREFIXES still apply to all
+   * paths (none of those prefixes start with {@code /api/}).
    */
   private boolean isSuspiciousPath(String uri) {
-    return uri != null && SUSPICIOUS_PATH_PATTERN.matcher(uri).find();
+    if (uri == null) return false;
+    // Skip the broad regex for application API paths – Spring Security handles
+    // authentication/authorisation for these routes.
+    if (uri.startsWith("/api/")) return false;
+    return SUSPICIOUS_PATH_PATTERN.matcher(uri).find();
   }
 
   // ---- IP rate-limiting helpers ----
