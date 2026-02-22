@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
@@ -31,9 +30,6 @@ class UserControllerIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @Autowired
   private UserRepository userRepository;

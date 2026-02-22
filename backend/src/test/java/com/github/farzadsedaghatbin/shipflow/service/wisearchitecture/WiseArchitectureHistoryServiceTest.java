@@ -427,7 +427,7 @@ class WiseArchitectureHistoryServiceTest {
             when(adviceRepository.save(any(WiseArchitectureAdvice.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-            AdviceHistoryDTO result = service.submitFeedback(adviceId, userId, false, "Didn't address my needs");
+            service.submitFeedback(adviceId, userId, false, "Didn't address my needs");
 
             ArgumentCaptor<WiseArchitectureAdvice> captor = ArgumentCaptor.forClass(WiseArchitectureAdvice.class);
             verify(adviceRepository).save(captor.capture());
@@ -474,7 +474,7 @@ class WiseArchitectureHistoryServiceTest {
             when(adviceRepository.save(any(WiseArchitectureAdvice.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-            AdviceHistoryDTO result = service.submitFeedback(adviceId, userId, true, null);
+            service.submitFeedback(adviceId, userId, true, null);
 
             ArgumentCaptor<WiseArchitectureAdvice> captor = ArgumentCaptor.forClass(WiseArchitectureAdvice.class);
             verify(adviceRepository).save(captor.capture());

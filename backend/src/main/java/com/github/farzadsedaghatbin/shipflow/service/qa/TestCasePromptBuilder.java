@@ -37,7 +37,6 @@ public class TestCasePromptBuilder {
       List<EmbeddingMatch<TextSegment>> historicalTests) {
 
     String historicalExamples = formatHistoricalExamples(historicalTests);
-    String cycleId = pitch.getCycle() != null ? pitch.getCycle().getId().toString() : "unknown";
 
     return String.format("""
         You are a QA expert for Shape Up methodology projects.

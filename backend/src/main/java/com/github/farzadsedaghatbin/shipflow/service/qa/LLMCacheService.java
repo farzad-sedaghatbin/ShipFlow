@@ -35,9 +35,6 @@ public class LLMCacheService {
   // Cache storage - uses Redis when configured, in-memory otherwise
   private final Map<String, CachedResponse> cache = new ConcurrentHashMap<>();
 
-  // Redis client (lazy initialized if provider=redis)
-  private Object redisClient; // Would be Jedis or Lettuce in production
-
   @PostConstruct
   public void init() {
     if (cacheConfig.isRedisProvider()) {

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Permission;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -47,9 +46,6 @@ class DocumentControllerIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @Autowired
   private PitchRepository pitchRepository;
@@ -183,8 +179,8 @@ class DocumentControllerIntegrationTest {
   @WithMockUser(username = "testuser", roles = {"USER"})
   void getDocumentsForPitch_shouldReturnAllDocuments() throws Exception {
     // Given
-    UploadedDocument doc1 = createDocument("doc1.txt", "PITCH", testPitch.getId());
-    UploadedDocument doc2 = createDocument("doc2.txt", "PITCH", testPitch.getId());
+    createDocument("doc1.txt", "PITCH", testPitch.getId());
+    createDocument("doc2.txt", "PITCH", testPitch.getId());
 
     // When/Then
     mockMvc.perform(get("/api/documents/pitch/{pitchId}", testPitch.getId())).andExpect(status().isOk())

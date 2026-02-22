@@ -1,11 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
-import com.github.farzadsedaghatbin.shipflow.entity.Task;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +12,6 @@ import org.springframework.data.domain.Pageable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class AuditServiceTest {
@@ -26,21 +19,8 @@ class AuditServiceTest {
   @Mock
   private EntityManager entityManager;
 
-  @Mock
-  private MessageService messageService;
-
   @InjectMocks
   private AuditService auditService;
-
-  private Task testTask;
-
-  @BeforeEach
-  void setUp() {
-    lenient().when(messageService.getMessage(anyString())).thenReturn("test message");
-
-    testTask = Task.builder().id(1L).title("Test Task").description("Test Description").status(TaskStatus.BACKLOG)
-        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).build();
-  }
 
   @Test
   @DisplayName("should handle null entity manager gracefully")
@@ -77,7 +57,6 @@ class AuditServiceTest {
   @DisplayName("service should be properly instantiated")
   void serviceShouldBeProperlyInstantiated() {
     assertThat(auditService).isNotNull();
-    assertThat(messageService).isNotNull();
     assertThat(entityManager).isNotNull();
   }
 }

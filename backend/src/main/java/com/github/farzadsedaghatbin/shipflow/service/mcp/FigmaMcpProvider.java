@@ -34,11 +34,7 @@ public class FigmaMcpProvider implements McpClientService {
     private final RestTemplate mcpRestTemplate;
     private final OrganizationSettingsService settingsService;
 
-    // Figma URL patterns - file keys are typically 22-24 characters: letters, numbers, hyphens
-    private static final Pattern FIGMA_FILE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/(?:file|design)/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
-    private static final Pattern FIGMA_PROTOTYPE_PATTERN = Pattern.compile(
-        "https?://(?:www\\.)?figma\\.com/proto/([a-zA-Z0-9-]{10,50})(?:/[^?]*)?(?:\\?.*)?" );
+
     // Pattern to extract node-id from URL query params
     private static final Pattern NODE_ID_PATTERN = Pattern.compile(
         "node-id=([0-9]+-[0-9]+|[0-9]+:[0-9]+)" );
@@ -165,6 +161,7 @@ public class FigmaMcpProvider implements McpClientService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Optional<String> readFile(Map<String, String> context, String nodePath) {
         if (!isAvailable()) {
             log.warn("Figma MCP not available, cannot read node: {}", nodePath);
@@ -306,6 +303,7 @@ public class FigmaMcpProvider implements McpClientService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getResourceContext(Map<String, String> context) {
         if (!isAvailable()) {
             log.warn("Figma MCP not available, cannot get design context. " +

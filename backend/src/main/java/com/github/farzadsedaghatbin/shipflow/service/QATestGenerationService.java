@@ -39,8 +39,6 @@ public class QATestGenerationService {
 
   private final PitchRepository pitchRepository;
   private final MeetingRepository meetingRepository;
-  private final UploadedDocumentRepository documentRepository;
-  private final TestCaseRepository testCaseRepository;
   private final EmbeddingModel embeddingModel;
   private final EmbeddingStore<TextSegment> embeddingStore;
   private final ChatLanguageModel chatLanguageModel;
@@ -49,7 +47,6 @@ public class QATestGenerationService {
 
   @Autowired
   public QATestGenerationService(PitchRepository pitchRepository, MeetingRepository meetingRepository,
-      UploadedDocumentRepository documentRepository, TestCaseRepository testCaseRepository,
       @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
@@ -57,8 +54,6 @@ public class QATestGenerationService {
       @Autowired(required = false) TestCaseValidator testCaseValidator) {
     this.pitchRepository = pitchRepository;
     this.meetingRepository = meetingRepository;
-    this.documentRepository = documentRepository;
-    this.testCaseRepository = testCaseRepository;
     this.embeddingModel = embeddingModel;
     this.embeddingStore = embeddingStore;
     this.chatLanguageModel = chatLanguageModel;

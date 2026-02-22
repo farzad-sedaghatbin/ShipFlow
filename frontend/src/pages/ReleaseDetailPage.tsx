@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   Rocket,
   AlertTriangle,
+  Bug,
+  ListTodo,
+  ShieldAlert,
 } from 'lucide-react';
 import { releaseService } from '../services/releaseService';
 import { pitchService } from '../services/pitchService';
@@ -319,20 +322,102 @@ export default function ReleaseDetailPage() {
             </div>
             
             {progress && (
-              <div className="grid grid-cols-2 gap-4 text-center pt-2 border-t">
-                <div>
-                  <div className="text-lg font-bold">{progress.totalTasks || 0}</div>
-                  <p className="text-xs text-muted-foreground">{t('releases.tasks')}</p>
+              <>
+                {/* Tasks breakdown */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
+                    <ListTodo className="h-4 w-4" />
+                    {t('releases.taskBreakdown', 'Tasks')}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <div className="text-lg font-bold">{progress.totalTasks || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.total', 'Total')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-green-600">{progress.completedTasks || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.completed')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">{progress.inProgressTasks || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.inProgress', 'In Progress')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-red-600">{progress.blockedTasks || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.blocked', 'Blocked')}</p>
+                    </div>
+                  </div>
+                  {(progress.totalTasks || 0) > 0 && (
+                    <Progress value={progress.taskCompletionPercentage || 0} className="h-2 mt-2" />
+                  )}
                 </div>
-                <div>
-                  <div className="text-lg font-bold text-orange-600">{progress.totalBugs || 0}</div>
-                  <p className="text-xs text-muted-foreground">{t('releases.bugs')}</p>
+
+                {/* Bugs breakdown */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
+                    <Bug className="h-4 w-4" />
+                    {t('releases.bugBreakdown', 'Bugs')}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <div className="text-lg font-bold">{progress.totalBugs || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.total', 'Total')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-orange-600">{progress.openBugs || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.open', 'Open')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-green-600">{progress.resolvedBugs || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.resolved', 'Resolved')}</p>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-red-600">{progress.slippedBugs || 0}</div>
+                      <p className="text-xs text-muted-foreground">{t('releases.slipped', 'Slipped')}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Slipped Bugs Warning */}
+      {progress && progress.slippedBugList && progress.slippedBugList.length > 0 && (
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <ShieldAlert className="h-5 w-5" />
+              {t('releases.slippedBugs', 'Slipped Bugs')} ({progress.slippedBugList.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              {t('releases.slippedBugsDescription', 'These bugs were targeted for this release but have slipped.')}
+            </p>
+            <div className="space-y-2">
+              {progress.slippedBugList.map((bug) => (
+                <div
+                  key={bug.id}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-background"
+                >
+                  <div className="flex items-center gap-3">
+                    <Bug className="h-4 w-4 text-destructive" />
+                    <span className="font-medium">{bug.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={bug.severity === 'CRITICAL' || bug.severity === 'BLOCKER' ? 'destructive' : 'secondary'}>
+                      {bug.severity}
+                    </Badge>
+                    <Badge variant="outline">{bug.status.replace('_', ' ')}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Targeted Pitches */}
       <Card>

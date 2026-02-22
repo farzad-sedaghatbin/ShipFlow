@@ -14,12 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
  * Tests for {@link MaliciousHeaderFilter} - security filter that blocks exploit
  * attempts. Verifies detection of Log4Shell, XSS, and other attack vectors.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class MaliciousHeaderFilterTest {
 
   private MaliciousHeaderFilter filter;
@@ -186,17 +189,140 @@ class MaliciousHeaderFilterTest {
   }
 
   @Test
+  void shouldBlockCryptoExchangeProbe() throws Exception {
+    // Given: A crypto exchange API probe (common in mass scanning)
+    when(request.getRequestURI()).thenReturn("/mms-api/coins/hot/tickers");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.1");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockJoinRoomProbe() throws Exception {
+    // Given: A chat room scanner probe
+    when(request.getRequestURI()).thenReturn("/join_room");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.2");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockGamblingVipDomainProbe() throws Exception {
+    // Given: A gambling/VIP domain probe
+    when(request.getRequestURI()).thenReturn("/site/api/v1/site/vipExclusiveDomain/getGuestDomain");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.3");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockRelayApiProbe() throws Exception {
+    // Given: A relay API scanner probe
+    when(request.getRequestURI()).thenReturn("/relayApi/api/notice/site_setting");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.4");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockMalwareInstallerProbe() throws Exception {
+    // Given: Malware installer probe with typo (as seen in real attacks)
+    when(request.getRequestURI()).thenReturn("/instatll?tag=matto");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.5");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockBizServerConfigProbe() throws Exception {
+    // Given: A config exposure probe
+    when(request.getRequestURI()).thenReturn("/biz/server/config");
+    when(request.getMethod()).thenReturn("POST");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.6");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void shouldBlockPhpFileProbeViaSuspiciousPattern() throws Exception {
+    // Given: A .php file probe not in the explicit prefix list
+    when(request.getRequestURI()).thenReturn("/some/random/page.php");
+    when(request.getMethod()).thenReturn("GET");
+    when(request.getRemoteAddr()).thenReturn("185.0.0.7");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request is rejected with 403 (caught by regex pattern)
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
   void shouldAllowLegitimateApiRequest() throws Exception {
     // Given: A normal authenticated API call
     when(request.getHeaderNames())
         .thenReturn(Collections.enumeration(Collections.singletonList("Authorization")));
     when(request.getHeader("Authorization")).thenReturn("Bearer eyJhbGciOiJIUzI1NiJ9.valid.token");
     when(request.getRequestURI()).thenReturn("/api/projects");
+    when(request.getRemoteAddr()).thenReturn("10.0.0.1");
 
     // When: Filter processes the request
     filter.doFilter(request, response, filterChain);
 
     // Then: Request passes through to the next filter
+    verify(filterChain).doFilter(request, response);
+    verify(response, never()).setStatus(anyInt());
+  }
+
+  @Test
+  void shouldAllowLegitimateStaticResource() throws Exception {
+    // Given: A legitimate SPA route request
+    when(request.getHeaderNames())
+        .thenReturn(Collections.enumeration(Collections.singletonList("Accept")));
+    when(request.getHeader("Accept")).thenReturn("text/html");
+    when(request.getRequestURI()).thenReturn("/dashboard");
+    when(request.getRemoteAddr()).thenReturn("10.0.0.2");
+
+    // When: Filter processes the request
+    filter.doFilter(request, response, filterChain);
+
+    // Then: Request passes through
     verify(filterChain).doFilter(request, response);
     verify(response, never()).setStatus(anyInt());
   }

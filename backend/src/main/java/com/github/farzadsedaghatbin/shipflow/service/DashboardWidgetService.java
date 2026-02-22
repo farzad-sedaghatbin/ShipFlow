@@ -27,20 +27,6 @@ public class DashboardWidgetService {
   private final UserRepository userRepository;
   private final EntityManager entityManager;
 
-  // Default widget types - organized by tab
-  // Overview tab widgets
-  private static final List<String> OVERVIEW_WIDGETS = Arrays.asList(
-      "ACTIVE_CYCLES", "HILL_CHART", "CYCLE_PROGRESS", "RECENT_PITCHES");
-  
-  // AI Insights tab widgets
-  private static final List<String> AI_INSIGHTS_WIDGETS = Arrays.asList(
-      "CYCLE_SUMMARY", "CYCLE_SIGNALS", "AI_RISK_ADVISORY");
-  
-  // Activity tab widgets
-  private static final List<String> ACTIVITY_WIDGETS = Arrays.asList(
-      "RECENT_ACTIVITY", "OVERDUE_TASKS", "BLOCKED_TASKS", 
-      "UPCOMING_DEADLINES", "MY_TASKS", "TEAM_WORKLOAD");
-  
   // All default widgets combined
   private static final List<String> DEFAULT_WIDGETS = Arrays.asList(
       "OVERDUE_TASKS", "BLOCKED_TASKS", "UPCOMING_DEADLINES", "MY_TASKS", 

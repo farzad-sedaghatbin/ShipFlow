@@ -4,8 +4,6 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.service.AICacheService;
@@ -37,13 +35,7 @@ class AICacheControllerIntegrationTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private ObjectMapper objectMapper;
-
-  @Autowired
   private AICacheService cacheService;
-
-  @Autowired
-  private AICacheConfig cacheConfig;
 
   @BeforeEach
   void setUp() {

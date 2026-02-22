@@ -57,7 +57,7 @@ public class DocumentReranker {
         entityTypeBoost * 0.10 + // Some entity types are more authoritative
         lengthPenalty * 0.05; // Penalize very short/long docs
 
-    return new ScoredMatch(match, compositeScore, embeddingScore);
+    return new ScoredMatch(match, compositeScore);
   }
 
   /** Boost recent documents (last 30 days = full boost, older = decay). */
@@ -134,12 +134,10 @@ public class DocumentReranker {
   private static class ScoredMatch {
     private final EmbeddingMatch<TextSegment> match;
     private final double compositeScore;
-    private final double originalScore;
 
-    public ScoredMatch(EmbeddingMatch<TextSegment> match, double compositeScore, double originalScore) {
+    public ScoredMatch(EmbeddingMatch<TextSegment> match, double compositeScore) {
       this.match = match;
       this.compositeScore = compositeScore;
-      this.originalScore = originalScore;
     }
 
     public EmbeddingMatch<TextSegment> getMatch() {

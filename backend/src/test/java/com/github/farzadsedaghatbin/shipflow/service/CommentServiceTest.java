@@ -59,7 +59,6 @@ class CommentServiceTest {
   private User testUser;
   private User adminUser;
   private Comment testComment;
-  private Task testTask;
 
   @BeforeEach
   void setUp() {
@@ -74,9 +73,6 @@ class CommentServiceTest {
 
     // Setup admin user
     adminUser = User.builder().id(2L).username("admin").role(UserRole.ADMIN).isActive(true).person(adminPerson).build();
-
-    // Setup test task
-    testTask = Task.builder().id(1L).title("Test Task").build();
 
     // Setup test comment
     testComment = Comment.builder().id(1L).content("Test comment content").entityType(CommentEntityType.TASK)

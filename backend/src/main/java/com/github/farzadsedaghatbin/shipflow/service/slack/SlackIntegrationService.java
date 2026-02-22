@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.*;
 import com.github.farzadsedaghatbin.shipflow.repository.slack.*;
 import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
+import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +27,23 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class SlackIntegrationService {
+public class SlackIntegrationService implements NotificationProvider {
 
   private final SlackConfigurationRepository slackConfigRepository;
   private final SlackChannelConfigRepository channelConfigRepository;
   private final SlackNotificationHistoryRepository historyRepository;
   private final RestTemplate restTemplate;
   private final LocalizationService localizationService;
+
+  @Override
+  public String getProviderName() {
+    return "slack";
+  }
+
+  @Override
+  public boolean isActive() {
+    return slackConfigRepository.findFirstByIsEnabledTrue().isPresent();
+  }
 
   /** Create or update Slack workspace configuration */
   public SlackConfigurationDTO createOrUpdateConfiguration(CreateSlackConfigurationRequest request) {
@@ -132,6 +143,7 @@ public class SlackIntegrationService {
   }
 
   /** Send a Slack notification */
+  @Override
   public void sendNotification(String notificationType, String message, String channel, String entityType,
       Long entityId) {
     Optional<SlackConfiguration> configOpt = slackConfigRepository.findFirstByIsEnabledTrue();

@@ -295,26 +295,6 @@ public class PitchHealthService {
     return hoursMap;
   }
 
-  /** Batch load work hours for multiple pitches to avoid N+1 queries. */
-  private Map<Long, Double> batchLoadWorkHours(List<Pitch> pitches) {
-    if (pitches.isEmpty()) {
-      return new HashMap<>();
-    }
-    List<Long> pitchIds = pitches.stream().map(Pitch::getId).collect(Collectors.toList());
-    Map<Long, Double> hoursMap = new HashMap<>();
-    List<Object[]> results = workLogRepository.getTotalHoursByPitchIds(pitchIds);
-    for (Object[] row : results) {
-      Long pitchId = (Long) row[0];
-      Double hours = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
-      hoursMap.put(pitchId, hours);
-    }
-    // Ensure all pitch IDs are in the map (even with 0 hours)
-    for (Pitch pitch : pitches) {
-      hoursMap.putIfAbsent(pitch.getId(), 0.0);
-    }
-    return hoursMap;
-  }
-
   private PitchHealthDTO buildPitchHealth(Pitch pitch, boolean includeAI, Map<Long, Double> hoursMap) {
     // Get risk level - use rule-based calculation for fast mode
     RiskLevel riskLevel;
@@ -897,6 +877,8 @@ public class PitchHealthService {
       case CANCELLED :
         summary.append("Cancelled");
         break;
+      default :
+        break;
     }
 
     // Add QA note if relevant
@@ -951,7 +933,6 @@ public class PitchHealthService {
     List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
     var thresholds = getThresholds();
     
-    LocalDateTime now = LocalDateTime.now();
     long totalDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
     long daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), LocalDate.now());
     double cycleProgress = totalDays > 0 ? (daysElapsed * 100.0 / totalDays) : 0;

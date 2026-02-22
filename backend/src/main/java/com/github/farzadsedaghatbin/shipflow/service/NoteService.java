@@ -21,14 +21,13 @@ public class NoteService {
   private final PitchRepository pitchRepository;
   private final MeetingRepository meetingRepository;
   private final TeamRepository teamRepository;
-  private final CycleRepository cycleRepository;
   private final UserRepository userRepository;
   private final KnowledgeIngestionService knowledgeIngestionService;
   private final LocalizationService localizationService;
 
   @Autowired
   public NoteService(ManualNoteRepository noteRepository, PitchRepository pitchRepository,
-      MeetingRepository meetingRepository, TeamRepository teamRepository, CycleRepository cycleRepository,
+      MeetingRepository meetingRepository, TeamRepository teamRepository,
       UserRepository userRepository,
       @Autowired(required = false) KnowledgeIngestionService knowledgeIngestionService,
       LocalizationService localizationService) {
@@ -36,7 +35,6 @@ public class NoteService {
     this.pitchRepository = pitchRepository;
     this.meetingRepository = meetingRepository;
     this.teamRepository = teamRepository;
-    this.cycleRepository = cycleRepository;
     this.userRepository = userRepository;
     this.knowledgeIngestionService = knowledgeIngestionService;
     this.localizationService = localizationService;

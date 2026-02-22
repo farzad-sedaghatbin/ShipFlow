@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
-import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,12 +41,6 @@ class CustomMetricControllerIntegrationTest {
 
   @Autowired
   private PersonRepository personRepository;
-
-  @Autowired
-  private CycleRepository cycleRepository;
-
-  @Autowired
-  private PitchRepository pitchRepository;
 
   @Autowired
   private WorkLogRepository workLogRepository;

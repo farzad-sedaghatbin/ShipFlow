@@ -166,6 +166,7 @@ class MeetingServiceTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void getMeetingsWithFilters_ShouldApplyFiltersAndReturnResults() {
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "dateHeld"));
     Page<Meeting> page = new PageImpl<>(Arrays.asList(testMeeting), pageable, 1);

@@ -4,8 +4,13 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,9 +32,6 @@ public class MaliciousHeaderFilter implements Filter {
   private static final Pattern SCRIPT_INJECTION_PATTERN = Pattern
       .compile(".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*", Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*",
-      Pattern.CASE_INSENSITIVE);
-
   private static final Pattern PATH_TRAVERSAL_PATTERN = Pattern.compile(".*(\\.\\./)|(\\.\\.\\\\).*",
       Pattern.CASE_INSENSITIVE);
 
@@ -46,33 +48,104 @@ public class MaliciousHeaderFilter implements Filter {
    * <p>Covered CVEs / attack families:
    * <ul>
    *   <li>CVE-2018-10561 / CVE-2018-10562 – GPON router RCE (/GponForm/)</li>
+   *   <li>Tenda/D-Link router RCE probes (/goform/)</li>
    *   <li>Generic WordPress probes (/wp-admin/, /wp-login.php, /wp-includes/)</li>
    *   <li>PHP info / eval probes (/phpinfo.php, /eval-stdin.php)</li>
    *   <li>Shell upload probes (/shell, /cmd, /c99.php, /c100.php)</li>
    *   <li>Admin panel probes (/admin/, /.env, /config/)</li>
    *   <li>Actuator abuse from external scanners (/actuator/ except /actuator/health)</li>
    *   <li>CGI vulnerability probes (/cgi-bin/)</li>
+   *   <li>Crypto exchange probes (/mms-api/, /coins/)</li>
+   *   <li>Gambling/VIP domain probes (/site/api/, /vipExclusiveDomain/)</li>
+   *   <li>Chat room scanners (/join_room)</li>
+   *   <li>Relay/proxy API probes (/relayApi/)</li>
+   *   <li>Malware installer probes (/instatll, /install)</li>
    * </ul>
    */
   private static final List<String> BLOCKED_PATH_PREFIXES = List.of(
+      // GPON / Tenda / D-Link router exploits
       "/GponForm/",
       "/Gpon/",
+      "/goform/",
+      // WordPress probes
       "/wp-admin/",
       "/wp-login.php",
       "/wp-includes/",
       "/wp-content/",
+      // PHP probes
       "/phpinfo",
       "/eval-stdin.php",
       "/c99.php",
       "/c100.php",
+      // Config/secrets probes
       "/.env",
       "/.git/",
+      "/.svn/",
+      "/.hg/",
+      "/.DS_Store",
+      "/config/",
+      "/biz/server/config",
+      // Shell/command probes
       "/shell",
       "/cmd",
       "/cgi-bin/",
-      "/config/",
-      "/admin.php"
+      "/admin.php",
+      // Crypto exchange / trading API probes
+      "/mms-api/",
+      "/coins/",
+      "/exchange/",
+      // Gambling / VIP domain probes
+      "/site/api/",
+      "/vipExclusiveDomain/",
+      // Chat / WebSocket scanner probes
+      "/join_room",
+      // Relay / proxy API probes
+      "/relayApi/",
+      // Malware installer probes (note the intentional typo variant from real attacks)
+      "/instatll",
+      "/install",
+      // Common Java/Spring exploit probes
+      "/console/",
+      "/manager/",
+      "/solr/",
+      "/druid/",
+      "/nacos/"
   );
+
+  /**
+   * Regex patterns that match broader families of suspicious bot/scanner paths.
+   * These catch variations not covered by exact prefixes.
+   */
+  private static final Pattern SUSPICIOUS_PATH_PATTERN = Pattern.compile(
+      "(?i)"
+      + "(/\\.(env|git|svn|htaccess|htpasswd|npmrc|dockerenv))"
+      + "|(/wp-(admin|login|includes|content|json|cron))"
+      + "|(\\.(php|asp|aspx|jsp|cgi)$)"
+      + "|(/api/(v\\d+/)?public$)"
+      + "|(/(admin|phpmyadmin|adminer|mysqladmin|pma)/)"
+      + "|(/(backup|dump|db|database|sql|mysql|postgres)/)"
+      + "|(/(test|debug|trace|status|info|metrics|env)/)"
+  );
+
+  // ---- IP-based rate limiting for suspicious requests ----
+
+  /** Maximum number of blocked requests from a single IP before auto-banning. */
+  private static final int SUSPICIOUS_IP_THRESHOLD = 10;
+
+  /** Duration (seconds) an IP stays banned after exceeding the threshold. */
+  private static final long BAN_DURATION_SECONDS = 3600; // 1 hour
+
+  /** Window (seconds) within which hits are counted before reset. */
+  private static final long COUNTER_WINDOW_SECONDS = 300; // 5 minutes
+
+  /** Tracks per-IP suspicious request counters and ban timestamps. */
+  private final Map<String, IpTracker> suspiciousIpMap = new ConcurrentHashMap<>();
+
+  private static class IpTracker {
+    final AtomicInteger hitCount = new AtomicInteger(0);
+    volatile long windowStart = Instant.now().getEpochSecond();
+    volatile long bannedUntil = 0;
+  }
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -81,11 +154,24 @@ public class MaliciousHeaderFilter implements Filter {
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-    // Block well-known exploit/scanner paths before any further processing
+    // Block well-known exploit/scanner paths before any further processing.
+    // Resolve client IP only when needed (after path check) to avoid touching
+    // headers prematurely.
     String requestURI = httpRequest.getRequestURI();
-    if (isBlockedPath(requestURI)) {
+    if (isBlockedPath(requestURI) || isSuspiciousPath(requestURI)) {
+      String clientIp = getClientIp(httpRequest);
+      recordSuspiciousHit(clientIp);
       log.debug("Blocked request to known exploit path: {} {} from {}",
-          httpRequest.getMethod(), requestURI, getClientIp(httpRequest));
+          httpRequest.getMethod(), requestURI, clientIp);
+      httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      httpResponse.setContentType("application/json");
+      httpResponse.getWriter().write("{\"error\":\"Forbidden\"}");
+      return;
+    }
+
+    // Check IP ban (for IPs that previously hit many suspicious paths)
+    String clientIp = getClientIp(httpRequest);
+    if (isIpBanned(clientIp)) {
       httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
       httpResponse.setContentType("application/json");
       httpResponse.getWriter().write("{\"error\":\"Forbidden\"}");
@@ -125,12 +211,88 @@ public class MaliciousHeaderFilter implements Filter {
     if (uri == null) {
       return false;
     }
+    String lowerUri = uri.toLowerCase();
     for (String prefix : BLOCKED_PATH_PREFIXES) {
-      if (uri.startsWith(prefix)) {
+      if (lowerUri.startsWith(prefix.toLowerCase())) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Check if the URI matches broader suspicious patterns (regex-based).
+   *
+   * <p>API paths ({@code /api/...}) are intentionally excluded from this broad
+   * check because they are already protected by Spring Security's authentication
+   * requirements. Applying broad patterns like {@code /(admin)/} or
+   * {@code /(metrics)/} to API paths produces false positives for legitimate
+   * application routes such as {@code /api/admin/settings} or
+   * {@code /api/metrics/custom}. BLOCKED_PATH_PREFIXES still apply to all
+   * paths (none of those prefixes start with {@code /api/}).
+   */
+  private boolean isSuspiciousPath(String uri) {
+    if (uri == null) return false;
+    // Skip the broad regex for application API paths – Spring Security handles
+    // authentication/authorisation for these routes.
+    if (uri.startsWith("/api/")) return false;
+    return SUSPICIOUS_PATH_PATTERN.matcher(uri).find();
+  }
+
+  // ---- IP rate-limiting helpers ----
+
+  private boolean isIpBanned(String ip) {
+    if (ip == null) {
+      return false;
+    }
+    IpTracker tracker = suspiciousIpMap.get(ip);
+    if (tracker == null) {
+      return false;
+    }
+    long now = Instant.now().getEpochSecond();
+    if (tracker.bannedUntil > now) {
+      return true;
+    }
+    // Ban expired – leave tracker for counter reuse; it resets on next window
+    return false;
+  }
+
+  private void recordSuspiciousHit(String ip) {
+    if (ip == null) {
+      return;
+    }
+    long now = Instant.now().getEpochSecond();
+    IpTracker tracker = suspiciousIpMap.computeIfAbsent(ip, k -> new IpTracker());
+
+    // Reset counter if window expired
+    if (now - tracker.windowStart > COUNTER_WINDOW_SECONDS) {
+      tracker.hitCount.set(0);
+      tracker.windowStart = now;
+    }
+
+    int hits = tracker.hitCount.incrementAndGet();
+    if (hits >= SUSPICIOUS_IP_THRESHOLD && tracker.bannedUntil <= now) {
+      tracker.bannedUntil = now + BAN_DURATION_SECONDS;
+      log.warn("\uD83D\uDEA8 AUTO-BAN: IP {} banned for {} seconds after {} suspicious requests",
+          ip, BAN_DURATION_SECONDS, hits);
+    }
+
+    // Periodically clean up stale entries (every ~100 hits across all IPs)
+    if (suspiciousIpMap.size() > 1000) {
+      evictStaleEntries(now);
+    }
+  }
+
+  private void evictStaleEntries(long now) {
+    Iterator<Map.Entry<String, IpTracker>> it = suspiciousIpMap.entrySet().iterator();
+    while (it.hasNext()) {
+      Map.Entry<String, IpTracker> entry = it.next();
+      IpTracker t = entry.getValue();
+      // Evict if not banned and window is long expired
+      if (t.bannedUntil <= now && now - t.windowStart > COUNTER_WINDOW_SECONDS * 2) {
+        it.remove();
+      }
+    }
   }
 
   private boolean isMalicious(String headerName, String value) {

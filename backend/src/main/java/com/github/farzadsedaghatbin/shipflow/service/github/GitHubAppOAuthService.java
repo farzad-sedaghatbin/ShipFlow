@@ -9,7 +9,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubAppInstallationRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -490,9 +489,9 @@ public class GitHubAppOAuthService {
       // Generate JWT
       long nowSeconds = System.currentTimeMillis() / 1000;
 
-      return Jwts.builder().setIssuer(appId).setIssuedAt(new Date((nowSeconds - 60) * 1000))
-          .setExpiration(new Date((nowSeconds + 600) * 1000)) // 10 minutes max
-          .signWith(privateKeyObj, SignatureAlgorithm.RS256).compact();
+      return Jwts.builder().issuer(appId).issuedAt(new Date((nowSeconds - 60) * 1000))
+          .expiration(new Date((nowSeconds + 600) * 1000)) // 10 minutes max
+          .signWith(privateKeyObj, Jwts.SIG.RS256).compact();
 
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate GitHub App JWT", e);

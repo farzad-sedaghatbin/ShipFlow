@@ -69,6 +69,8 @@ const comparisonFeatures: ComparisonFeature[] = [
   // Reporting
   { category: 'Reporting', feature: 'Detailed Cycle Reports', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Reporting', feature: 'Pitch Health Analytics', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release cockpit (task/bug breakdown)', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release traceability (tasks & bugs)', shipflow: true, linear: 'partial', asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
 
   // AI & Intelligence
   { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: 'partial' },
@@ -79,6 +81,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'AI Features', feature: 'Figma design analysis (MCP)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'AI-powered help search', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
 
   // QA & Testing
   { category: 'QA', feature: 'Integrated test management', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
@@ -94,13 +97,17 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Team', feature: 'Work log timers', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Team', feature: 'Task dependencies', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  { category: 'Team', feature: 'Interactive Help Guides', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Team', feature: 'Interactive Help Guides with AI Search', shipflow: true, linear: false, asana: 'partial', monday: 'partial', jira: 'partial', basecamp: 'partial', clickup: 'partial' },
 
   // Integrations
   { category: 'Integrations', feature: 'GitHub integration', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable VCS providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Slack notifications', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable notification providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Microsoft Teams', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  { category: 'Integrations', feature: 'Webhooks', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Webhooks (outgoing)', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Generic inbound webhooks', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Integrations', feature: 'Pluggable inbound webhook handlers', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
 
   // Deployment & Pricing
   { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
@@ -252,7 +259,7 @@ export default function CompetitorsComparison() {
                 <p className="text-sm text-muted-foreground">
                   Pluggable LLM architecture: Choose Ollama (local), OpenAI ChatGPT, or RunPod (cloud GPU).
                   Get automated risk analysis, AI-generated test cases, intelligent pitch
-                  document extraction, and Wise Architecture—AI-powered technical solution 
+                  document extraction, and Wise Architecture—AI-powered technical solution
                   generation with team skills, Figma design, and roadmap context integration.
                 </p>
               </CardContent>

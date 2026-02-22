@@ -287,7 +287,7 @@ public class ReleaseService {
     Map<String, Integer> bugsByStatus = new HashMap<>();
     for (BugReport bug : bugs) {
       String status = bug.getStatus().name();
-      bugsByStatus.merge(status, 1, Integer::sum);
+      bugsByStatus.merge(status, 1, (a, b) -> a + b);
     }
 
     // Calculate overall completion percentage (weighted: pitches 40%, tasks 40%, bugs 20%)

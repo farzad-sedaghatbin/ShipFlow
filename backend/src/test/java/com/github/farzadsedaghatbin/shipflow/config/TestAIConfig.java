@@ -84,7 +84,6 @@ public class TestAIConfig {
   @Bean
   @Primary
   public org.springframework.data.mapping.context.MappingContext<?, ?> jpaMappingContext() {
-    @SuppressWarnings("unchecked")
     org.springframework.data.mapping.context.MappingContext<?, ?> context =  
         mock(org.springframework.data.mapping.context.MappingContext.class);
     return context;

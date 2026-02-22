@@ -36,8 +36,6 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final PasswordEncoder passwordEncoder;
   private final TaskRepository taskRepository;
   private final HillChartPointRepository hillChartPointRepository;
-  private final RetrospectiveRepository retrospectiveRepository;
-  private final RetroItemRepository retroItemRepository;
   private final ManualNoteRepository manualNoteRepository;
   private final CustomDashboardRepository customDashboardRepository;
   private final UserPreferenceRepository userPreferenceRepository;
@@ -46,6 +44,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final InitiativeRepository initiativeRepository;
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
+  private final WiseArchitectureAdviceRepository wiseArchitectureAdviceRepository;
 
   @Override
   @Transactional
@@ -632,6 +631,11 @@ public class SampleDataInitializer implements CommandLineRunner {
     // Create dashboard notifications
     createDashboardNotifications(alice, bob, carol, dave, frank);
 
+    // Create WISE Architecture advice history
+    User bobUser = userRepository.findByUsername("bob").orElse(null);
+    User adminUser = userRepository.findByUsername("admin").orElse(null);
+    createWiseArchitectureHistory(aliceUser, bobUser, frankUser, adminUser, userDashboard, performanceOpt, apiIntegration, searchFeature, reportModule);
+
     log.info("Sample data initialized successfully!");
   }
 
@@ -1002,5 +1006,300 @@ public class SampleDataInitializer implements CommandLineRunner {
     releaseRepository.save(itRelease);
 
     log.info("Roadmap data created: 4 initiatives, 6 epics, 4 releases");
+  }
+
+  private void createWiseArchitectureHistory(User aliceUser, User bobUser, User frankUser, User adminUser,
+      Pitch userDashboard, Pitch performanceOpt, Pitch apiIntegration, Pitch searchFeature, Pitch reportModule) {
+
+    // ---- Conversation 1: Alice on User Dashboard Redesign ----
+    String conv1Id = "conv-wise-001";
+    LocalDateTime conv1Start = LocalDateTime.now().minusDays(5);
+
+    WiseArchitectureAdvice advice1Init = WiseArchitectureAdvice.builder()
+        .conversationId(conv1Id)
+        .pitch(userDashboard)
+        .userId(aliceUser.getId())
+        .messageType("INITIAL_SOLUTION")
+        .userMessage("Initial solution request")
+        .aiResponse("## Frontend React\n\n" +
+            "A component-driven dashboard redesign using React 18 with server components.\n\n" +
+            "### Key Components\n- **DashboardGrid**: Responsive grid layout using CSS Grid\n" +
+            "- **WidgetContainer**: Draggable widget wrapper with react-beautiful-dnd\n" +
+            "- **AnalyticsChart**: Chart.js integration for metrics visualisation\n\n" +
+            "### Implementation Steps\n1. **Setup layout system** (~4h)\n   Implement CSS Grid-based responsive layout\n" +
+            "2. **Build widget components** (~8h)\n   Create reusable widget shell components\n" +
+            "3. **Add drag-and-drop** (~5h)\n   Integrate react-beautiful-dnd for customisation\n" +
+            "4. **Connect analytics API** (~4h)\n   Wire up Chart.js to backend endpoints\n\n" +
+            "### Recommended Libraries\n- **react-beautiful-dnd** v13 — Drag-and-drop\n" +
+            "- **chart.js** v4 — Charting library\n- **@tanstack/react-query** v5 — Data fetching")
+        .techStacks("FRONTEND_REACT")
+        .hasFigmaContext(true)
+        .hasGitHubContext(true)
+        .hasRoadmapContext(false)
+        .processingTimeMs(4823L)
+        .feedbackHelpful(true)
+        .feedbackText("Very helpful! The drag-and-drop suggestion saved us a lot of time.")
+        .feedbackAt(conv1Start.plusHours(2))
+        .createdAt(conv1Start)
+        .updatedAt(conv1Start.plusHours(2))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice1Init);
+
+    WiseArchitectureAdvice advice1FollowUpQ = WiseArchitectureAdvice.builder()
+        .conversationId(conv1Id)
+        .pitch(userDashboard)
+        .userId(aliceUser.getId())
+        .messageType("FOLLOW_UP_QUESTION")
+        .userMessage("How should we handle real-time updates for chart widgets without overloading the server?")
+        .aiResponse(null)
+        .techStacks("FRONTEND_REACT")
+        .hasFigmaContext(false)
+        .hasGitHubContext(false)
+        .hasRoadmapContext(false)
+        .processingTimeMs(null)
+        .createdAt(conv1Start.plusDays(1))
+        .updatedAt(conv1Start.plusDays(1))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice1FollowUpQ);
+
+    WiseArchitectureAdvice advice1FollowUpA = WiseArchitectureAdvice.builder()
+        .conversationId(conv1Id)
+        .pitch(userDashboard)
+        .userId(aliceUser.getId())
+        .messageType("FOLLOW_UP_ANSWER")
+        .userMessage("How should we handle real-time updates for chart widgets without overloading the server?")
+        .aiResponse("For real-time chart updates without server overload, use a **WebSocket with SSE fallback** approach:\n\n" +
+            "1. **Server-Sent Events (SSE)** for read-only dashboards — lightweight, auto-reconnect, works with HTTP/2\n" +
+            "2. **Debounced polling** (30–60s) for less critical metrics\n" +
+            "3. **Optimistic UI updates** — update locally first, sync in background\n\n" +
+            "In Spring Boot use `SseEmitter`. On the frontend use the browser `EventSource` API. " +
+            "This keeps connections manageable and avoids overwhelming the server during peak usage.")
+        .techStacks("FRONTEND_REACT")
+        .hasFigmaContext(false)
+        .hasGitHubContext(false)
+        .hasRoadmapContext(false)
+        .processingTimeMs(3102L)
+        .createdAt(conv1Start.plusDays(1).plusMinutes(2))
+        .updatedAt(conv1Start.plusDays(1).plusMinutes(2))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice1FollowUpA);
+
+    // ---- Conversation 2: Bob on Performance Optimization ----
+    String conv2Id = "conv-wise-002";
+    LocalDateTime conv2Start = LocalDateTime.now().minusDays(3);
+
+    WiseArchitectureAdvice advice2Init = WiseArchitectureAdvice.builder()
+        .conversationId(conv2Id)
+        .pitch(performanceOpt)
+        .userId(bobUser.getId())
+        .messageType("INITIAL_SOLUTION")
+        .userMessage("Initial solution request")
+        .aiResponse("## Backend Spring\n\n" +
+            "A multi-layer performance strategy for the Spring Boot backend.\n\n" +
+            "### Key Areas\n- **Database**: Add composite indexes, rewrite N+1 queries with JOIN FETCH\n" +
+            "- **Caching**: Redis L2 cache for read-heavy endpoints (TTL 5 min)\n" +
+            "- **Connection Pooling**: Tune HikariCP pool size to match DB capacity\n\n" +
+            "### Implementation Steps\n1. **Profiling baseline** (~2h)\n   Use Spring Boot Actuator + Micrometer to capture slow endpoints\n" +
+            "2. **Database indexes** (~4h)\n   Analyse slow_query_log and add missing indexes on FK columns\n" +
+            "3. **Redis caching** (~6h)\n   Add @Cacheable to frequently called service methods\n" +
+            "4. **Connection pool tuning** (~2h)\n   Configure HikariCP max-pool-size based on load tests\n\n" +
+            "### Recommended Libraries\n- **spring-boot-starter-data-redis** — Redis cache integration\n" +
+            "- **micrometer-registry-prometheus** — Metrics export\n- **p6spy** — SQL query logging for profiling")
+        .techStacks("BACKEND_SPRING")
+        .hasFigmaContext(false)
+        .hasGitHubContext(true)
+        .hasRoadmapContext(true)
+        .processingTimeMs(5241L)
+        .createdAt(conv2Start)
+        .updatedAt(conv2Start)
+        .build();
+    wiseArchitectureAdviceRepository.save(advice2Init);
+
+    WiseArchitectureAdvice advice2FollowUpQ = WiseArchitectureAdvice.builder()
+        .conversationId(conv2Id)
+        .pitch(performanceOpt)
+        .userId(bobUser.getId())
+        .messageType("FOLLOW_UP_QUESTION")
+        .userMessage("What is the best cache eviction strategy when the underlying data changes frequently?")
+        .aiResponse(null)
+        .techStacks("BACKEND_SPRING")
+        .hasFigmaContext(false)
+        .hasGitHubContext(false)
+        .hasRoadmapContext(false)
+        .processingTimeMs(null)
+        .createdAt(conv2Start.plusDays(1))
+        .updatedAt(conv2Start.plusDays(1))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice2FollowUpQ);
+
+    WiseArchitectureAdvice advice2FollowUpA = WiseArchitectureAdvice.builder()
+        .conversationId(conv2Id)
+        .pitch(performanceOpt)
+        .userId(bobUser.getId())
+        .messageType("FOLLOW_UP_ANSWER")
+        .userMessage("What is the best cache eviction strategy when the underlying data changes frequently?")
+        .aiResponse("For frequently changing data, combine **Cache-Aside with event-driven eviction**:\n\n" +
+            "- **@CacheEvict on write operations** — immediately invalidate stale entries when data is mutated\n" +
+            "- **Short TTL (30–120s)** — safety net for missed evictions\n" +
+            "- **@CachePut for hot-write paths** — update cache on write instead of evicting (write-through)\n\n" +
+            "If multiple services write to the same data, use **Redis Pub/Sub** to broadcast invalidation events " +
+            "so all instances evict consistently. Avoid long TTLs on mutable data — prefer accuracy over cache hit rate.")
+        .techStacks("BACKEND_SPRING")
+        .hasFigmaContext(false)
+        .hasGitHubContext(false)
+        .hasRoadmapContext(false)
+        .processingTimeMs(2867L)
+        .createdAt(conv2Start.plusDays(1).plusMinutes(3))
+        .updatedAt(conv2Start.plusDays(1).plusMinutes(3))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice2FollowUpA);
+
+    // ---- Conversation 3: Frank on Third-party API Integration ----
+    String conv3Id = "conv-wise-003";
+    LocalDateTime conv3Start = LocalDateTime.now().minusDays(7);
+
+    WiseArchitectureAdvice advice3Init = WiseArchitectureAdvice.builder()
+        .conversationId(conv3Id)
+        .pitch(apiIntegration)
+        .userId(frankUser.getId())
+        .messageType("INITIAL_SOLUTION")
+        .userMessage("Initial solution request")
+        .aiResponse("## Backend Spring\n\n" +
+            "Resilient third-party payment API integration using a hexagonal architecture adapter pattern.\n\n" +
+            "### Architecture\n- **PaymentPort** interface — decouples business logic from provider details\n" +
+            "- **StripeAdapter** — concrete implementation encapsulating SDK calls\n" +
+            "- **OutboxPattern** — reliable event delivery even if provider is temporarily unavailable\n\n" +
+            "### Implementation Steps\n1. **Define port interface** (~2h)\n   Create `PaymentPort` with `charge()`, `refund()`, `getStatus()` methods\n" +
+            "2. **Implement Stripe adapter** (~6h)\n   Wrap Stripe Java SDK with proper error mapping\n" +
+            "3. **Webhook verification** (~3h)\n   Validate Stripe-Signature header with HMAC-SHA256\n" +
+            "4. **Outbox pattern** (~5h)\n   Persist payment events to outbox table, replay on recovery\n" +
+            "5. **Retry with exponential backoff** (~2h)\n   Use Resilience4j Retry for transient failures\n\n" +
+            "### Recommended Libraries\n- **stripe-java** v24 — Official Stripe SDK\n" +
+            "- **resilience4j-spring-boot3** — Circuit breaker and retry\n- **spring-retry** — Declarative retry support")
+        .techStacks("BACKEND_SPRING")
+        .hasFigmaContext(false)
+        .hasGitHubContext(true)
+        .hasRoadmapContext(false)
+        .processingTimeMs(6103L)
+        .feedbackHelpful(false)
+        .feedbackText("The Outbox pattern seems overkill for our scale. Would have preferred a simpler approach first.")
+        .feedbackAt(conv3Start.plusHours(5))
+        .createdAt(conv3Start)
+        .updatedAt(conv3Start.plusHours(5))
+        .build();
+    wiseArchitectureAdviceRepository.save(advice3Init);
+
+    // ---- Conversation 4: Admin on Enhanced Search Functionality ----
+    if (adminUser != null) {
+      String conv4Id = "conv-wise-004";
+      LocalDateTime conv4Start = LocalDateTime.now().minusDays(2);
+
+      WiseArchitectureAdvice advice4Init = WiseArchitectureAdvice.builder()
+          .conversationId(conv4Id)
+          .pitch(searchFeature)
+          .userId(adminUser.getId())
+          .messageType("INITIAL_SOLUTION")
+          .userMessage("Initial solution request")
+          .aiResponse("## Backend Spring\n\n" +
+              "Full-text search architecture using Elasticsearch with a Spring Data integration layer.\n\n" +
+              "### Architecture\n- **SearchService** — abstracts Elasticsearch queries behind a clean API\n" +
+              "- **IndexingPipeline** — event-driven index updates via Spring ApplicationEvents\n" +
+              "- **QueryBuilder** — composable filter/sort/pagination DSL\n\n" +
+              "### Implementation Steps\n1. **Elasticsearch setup** (~3h)\n   Configure `spring-boot-starter-data-elasticsearch`, define index mappings\n" +
+              "2. **Entity indexing** (~4h)\n   Map Pitch and Task entities to Elasticsearch documents\n" +
+              "3. **Search API endpoint** (~3h)\n   Build `/api/search?q=...&type=...&page=...` with relevance scoring\n" +
+              "4. **Autocomplete** (~2h)\n   Use Elasticsearch completion suggester for prefix matching\n" +
+              "5. **Sync strategy** (~3h)\n   Dual-write on save + nightly full reindex job for consistency\n\n" +
+              "### Recommended Libraries\n- **spring-data-elasticsearch** — Repository abstraction\n" +
+              "- **co.elastic.clients:elasticsearch-java** v8 — Official Java client\n" +
+              "- **spring-batch** — Scheduled bulk reindex jobs")
+          .techStacks("BACKEND_SPRING")
+          .hasFigmaContext(false)
+          .hasGitHubContext(true)
+          .hasRoadmapContext(true)
+          .processingTimeMs(5820L)
+          .createdAt(conv4Start)
+          .updatedAt(conv4Start)
+          .build();
+      wiseArchitectureAdviceRepository.save(advice4Init);
+
+      WiseArchitectureAdvice advice4FollowUpQ = WiseArchitectureAdvice.builder()
+          .conversationId(conv4Id)
+          .pitch(searchFeature)
+          .userId(adminUser.getId())
+          .messageType("FOLLOW_UP_QUESTION")
+          .userMessage("How do we keep the Elasticsearch index in sync when records are updated or deleted?")
+          .aiResponse(null)
+          .techStacks("BACKEND_SPRING")
+          .hasFigmaContext(false)
+          .hasGitHubContext(false)
+          .hasRoadmapContext(false)
+          .processingTimeMs(null)
+          .createdAt(conv4Start.plusHours(3))
+          .updatedAt(conv4Start.plusHours(3))
+          .build();
+      wiseArchitectureAdviceRepository.save(advice4FollowUpQ);
+
+      WiseArchitectureAdvice advice4FollowUpA = WiseArchitectureAdvice.builder()
+          .conversationId(conv4Id)
+          .pitch(searchFeature)
+          .userId(adminUser.getId())
+          .messageType("FOLLOW_UP_ANSWER")
+          .userMessage("How do we keep the Elasticsearch index in sync when records are updated or deleted?")
+          .aiResponse("Use a **CDC (Change Data Capture) + outbox** approach for reliable sync:\n\n" +
+              "1. **@EntityListeners** — hook JPA `@PostPersist`, `@PostUpdate`, `@PostRemove` to publish `EntityChangedEvent`\n" +
+              "2. **Async listener** — `@EventListener(condition = ...)` with `@Async` applies the change to Elasticsearch\n" +
+              "3. **Soft-delete guard** — never hard-delete from the index; mark as `status=DELETED` and filter in queries\n" +
+              "4. **Nightly reconciliation job** — Spring Batch job compares DB checksums with ES docs and re-indexes diverged records\n\n" +
+              "This gives near-real-time sync for normal operations and safety-net consistency for edge cases.")
+          .techStacks("BACKEND_SPRING")
+          .hasFigmaContext(false)
+          .hasGitHubContext(false)
+          .hasRoadmapContext(false)
+          .processingTimeMs(3418L)
+          .feedbackHelpful(true)
+          .feedbackText("Perfect, the outbox approach is exactly what we needed.")
+          .feedbackAt(conv4Start.plusHours(4))
+          .createdAt(conv4Start.plusHours(3).plusMinutes(2))
+          .updatedAt(conv4Start.plusHours(4))
+          .build();
+      wiseArchitectureAdviceRepository.save(advice4FollowUpA);
+
+      // ---- Conversation 5: Admin on Advanced Reporting Module ----
+      String conv5Id = "conv-wise-005";
+      LocalDateTime conv5Start = LocalDateTime.now().minusDays(1);
+
+      WiseArchitectureAdvice advice5Init = WiseArchitectureAdvice.builder()
+          .conversationId(conv5Id)
+          .pitch(reportModule)
+          .userId(adminUser.getId())
+          .messageType("INITIAL_SOLUTION")
+          .userMessage("Initial solution request")
+          .aiResponse("## Backend Spring\n\n" +
+              "A scalable reporting engine using async PDF generation and scheduled delivery.\n\n" +
+              "### Architecture\n- **ReportDefinition** entity — stores template config (fields, filters, schedule)\n" +
+              "- **ReportGenerationService** — async job triggered via `@Async` or Spring Batch\n" +
+              "- **PdfRenderEngine** — JasperReports or iText for PDF output\n" +
+              "- **SchedulerService** — `@Scheduled` cron-based report dispatch\n\n" +
+              "### Implementation Steps\n1. **Report definition schema** (~3h)\n   Design flexible JSON-configurable report template model\n" +
+              "2. **PDF generation** (~5h)\n   Integrate JasperReports, build template for cycle summaries\n" +
+              "3. **Async execution** (~3h)\n   Run generation in background thread pool, stream result to S3\n" +
+              "4. **Email dispatch** (~3h)\n   Send finished reports via Spring Mail\n" +
+              "5. **Scheduler** (~2h)\n   Cron-based trigger with per-report configurable schedule\n\n" +
+              "### Recommended Libraries\n- **jasperreports** v6 — PDF/XLSX report templates\n" +
+              "- **spring-boot-starter-mail** — Email delivery\n" +
+              "- **spring-batch** — Batch report generation pipeline")
+          .techStacks("BACKEND_SPRING")
+          .hasFigmaContext(false)
+          .hasGitHubContext(false)
+          .hasRoadmapContext(true)
+          .processingTimeMs(4990L)
+          .createdAt(conv5Start)
+          .updatedAt(conv5Start)
+          .build();
+      wiseArchitectureAdviceRepository.save(advice5Init);
+    }
+
+    log.info("WISE Architecture advice history created: 5 conversations, 12 entries");
   }
 }

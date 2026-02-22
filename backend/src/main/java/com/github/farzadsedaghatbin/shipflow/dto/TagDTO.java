@@ -1,7 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.*;
 
 /**

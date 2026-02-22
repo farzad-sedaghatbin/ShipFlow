@@ -327,7 +327,6 @@ public class TechStackDetectorService {
             
             List<String> matchedFiles = new ArrayList<>();
             int matchCount = 0;
-            boolean earlyTerminated = false;
             
             // OPTIMIZATION: First check files with relevant extensions only
             extensionLoop:
@@ -345,7 +344,6 @@ public class TechStackDetectorService {
                             }
                             // OPTIMIZATION: Stop early if we have enough high-confidence matches
                             if (matchCount >= 20 && alreadyQuickDetected) {
-                                earlyTerminated = true;
                                 break extensionLoop;
                             }
                         }
@@ -725,6 +723,7 @@ public class TechStackDetectorService {
         return "Node.js";
     }
 
+    @SuppressWarnings("null")
     private List<DetectedStackDTO> filterOverlappingStacks(List<DetectedStackDTO> stacks) {
         // First pass: Check if React Native is detected in any repository and get its confidence
         Map<Long, Integer> reactNativeConfidenceByRepo = stacks.stream()

@@ -19,5 +19,6 @@ public class CreatePersonRequest {
   private String department;
   private String skills;
   private String bio;
+  @Builder.Default
   private Boolean isActive = true;
 }

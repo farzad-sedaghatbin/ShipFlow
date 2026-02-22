@@ -327,9 +327,6 @@ class PitchHealthServiceTest {
   @Test
   void getAllActiveCycleHealth_ShouldReturnAllActiveCycles() {
     // Given
-    Cycle cycle2 = Cycle.builder().id(2L).name("Cycle 2").startDate(LocalDate.now().minusDays(14))
-        .endDate(LocalDate.now().plusDays(14)).project(testProject).isActive(true).build();
-
     when(cycleRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(testCycle));
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(pitchRepository.findByCycleIdNotDeleted(1L)).thenReturn(Arrays.asList());

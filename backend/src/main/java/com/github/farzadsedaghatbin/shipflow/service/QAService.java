@@ -152,7 +152,8 @@ public class QAService {
     }
 
     // Entity resolution: extract contextId from question text when not provided
-    // Supports both numeric IDs ("cycle 6") and name-based lookup ("Build Season cycle")
+    // Supports both numeric IDs ("cycle 6") and name-based lookup ("Build Season
+    // cycle")
     if (request.getContextId() == null && request.getContextType() != null) {
       resolveEntityFromQuestion(request);
     }
@@ -192,15 +193,12 @@ public class QAService {
     try {
       // 0. Query decomposition for complex questions
       List<String> subQueries = List.of(request.getQuestion());
-      boolean wasDecomposed = false;
-
       if (queryDecomposer != null && queryDecomposer.shouldDecompose(request.getQuestion())) {
         try {
           QueryDecomposer.DecompositionResult decomposition = queryDecomposer
               .decomposeWithMetadata(request.getQuestion());
           if (decomposition.wasDecomposed()) {
             subQueries = decomposition.getSubQueries();
-            wasDecomposed = true;
             log.info("Decomposed query into {} sub-queries", subQueries.size());
           }
         } catch (Exception e) {
@@ -287,12 +285,10 @@ public class QAService {
 
       // 7. Build context with token management
       String context;
-      boolean contextTruncated = false;
       if (contextWindowManager != null) {
         ContextWindowManager.ContextResult contextResult = contextWindowManager.buildManagedContext(matches,
             request.getQuestion(), 4000);
         context = contextResult.getContext();
-        contextTruncated = contextResult.isWasTruncated();
       } else {
         context = buildContext(matches);
       }
@@ -549,8 +545,10 @@ public class QAService {
   }
 
   /**
-   * Save QA interaction. Note: @Transactional removed because it has no effect on private methods
-   * called internally (Spring AOP proxy limitation). The repository save already participates
+   * Save QA interaction. Note: @Transactional removed because it has no effect on
+   * private methods
+   * called internally (Spring AOP proxy limitation). The repository save already
+   * participates
    * in any existing transaction from the caller if present.
    */
   private QAInteraction saveInteraction(QAInteraction interaction) {
@@ -596,7 +594,8 @@ public class QAService {
         }
       }
 
-      // Filter by specific entity context (prioritize exact matches but allow related docs)
+      // Filter by specific entity context (prioritize exact matches but allow related
+      // docs)
       if (request.getContextType() != null && request.getContextId() != null) {
         String entityType = segment.metadata().getString("entityType");
         String entityId = segment.metadata().getString("entityId");
@@ -635,7 +634,7 @@ public class QAService {
     return matches.stream()
         .map(match -> {
           double boostFactor = 1.0;
-          
+
           if (match.embedded() != null && match.embedded().metadata() != null) {
             String updatedAtStr = match.embedded().metadata().getString("updatedAt");
             if (updatedAtStr != null) {
@@ -654,7 +653,7 @@ public class QAService {
               }
             }
           }
-          
+
           // Create new match with boosted score (capped at 1.0)
           double boostedScore = Math.min(1.0, match.score() * boostFactor);
           return new EmbeddingMatch<>(boostedScore, match.embeddingId(), match.embedding(), match.embedded());
@@ -734,10 +733,6 @@ public class QAService {
     }).filter(id -> id != null).collect(Collectors.joining(","));
   }
 
-  private String buildPrompt(String question, String context, String conversationHistory) {
-    return buildPrompt(question, context, conversationHistory, null, null, null);
-  }
-
   private String buildPrompt(String question, String context, String conversationHistory,
       String contextType, String contextName, Long contextId) {
     StringBuilder prompt = new StringBuilder();
@@ -808,20 +803,20 @@ public class QAService {
     // Generate context-aware follow-up suggestions
     if (request.getContextType() != null) {
       switch (request.getContextType().toLowerCase()) {
-        case "pitch" :
+        case "pitch":
           suggestions.add("What is the current status of this pitch?");
           suggestions.add("Are there any risks associated with this pitch?");
           suggestions.add("What meetings have been held for this pitch?");
           break;
-        case "meeting" :
+        case "meeting":
           suggestions.add("What decisions were made in this meeting?");
           suggestions.add("What are the action items from this meeting?");
           break;
-        case "team" :
+        case "team":
           suggestions.add("What pitches is this team working on?");
           suggestions.add("How is the team progressing in the current cycle?");
           break;
-        case "cycle" :
+        case "cycle":
           suggestions.add("What pitches are in this cycle?");
           suggestions.add("How is the cycle progressing overall?");
           suggestions.add("Are there any at-risk pitches in this cycle?");
@@ -994,7 +989,8 @@ public class QAService {
     String lowerQuestion = question.toLowerCase().trim();
 
     // Extract entity + number patterns (cycle 5, pitch 4, etc.)
-    java.util.regex.Pattern entityPattern = java.util.regex.Pattern.compile("(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+");
+    java.util.regex.Pattern entityPattern = java.util.regex.Pattern
+        .compile("(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+");
     java.util.regex.Matcher entityMatcher = entityPattern.matcher(lowerQuestion);
     while (entityMatcher.find()) {
       terms.add(entityMatcher.group().trim());
@@ -1098,38 +1094,8 @@ public class QAService {
   }
 
   /**
-   * Check if a question is likely asking for an entity by ID only, vs. being part
-   * of a name (e.g., "cycle 4" vs "Cycle 4 Planning").
-   */
-  private boolean isLikelyIdOnlyQuery(String question) {
-    if (question == null) {
-      return false;
-    }
-
-    String trimmed = question.trim();
-    String lowerQuestion = trimmed.toLowerCase();
-
-    // Just a number: "4"
-    if (lowerQuestion.matches("^\\d+$")) {
-      return true;
-    }
-
-    // Entity type + number with nothing else: "cycle 4", "pitch 15"
-    if (lowerQuestion.matches("^(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+$")) {
-      return true;
-    }
-
-    // Has additional text that looks like a name/title
-    if (lowerQuestion.matches(".*(planning|build|q\\d|phase|sprint|\\w{5,}).*")) {
-      return false; // Likely contains a name
-    }
-
-    // Short queries (1-2 words) are likely ID queries
-    return trimmed.split("\\s+").length <= 2;
-  }
-
-  /**
-   * Resolve entity context (contextId, contextName, cycleId) from the question text.
+   * Resolve entity context (contextId, contextName, cycleId) from the question
+   * text.
    * Tries numeric ID extraction first, then falls back to name-based DB lookup.
    * Only runs when contextId is null and contextType is set.
    */
@@ -1174,7 +1140,8 @@ public class QAService {
             log.info("Resolved cycle by name: '{}' → ID={}, name='{}'",
                 extractedName, cycle.getId(), cycle.getName());
           } else if (matches.size() > 1) {
-            // Multiple matches — set the name for vector search filtering, don't set a single ID
+            // Multiple matches — set the name for vector search filtering, don't set a
+            // single ID
             request.setContextName(extractedName);
             log.info("Multiple cycles match name '{}' ({}), using name-based vector filtering",
                 extractedName, matches.size());
@@ -1193,15 +1160,15 @@ public class QAService {
   /**
    * Extract entity name from question text (non-numeric references).
    * Examples: "the Build Season cycle" → "Build Season",
-   *           "pitches in Q1 Sprint" → "Q1 Sprint"
+   * "pitches in Q1 Sprint" → "Q1 Sprint"
    */
   private String extractEntityNameFromQuestion(String question, String contextType) {
     if (question == null || contextType == null) {
       return null;
     }
 
-    String lowerQuestion = question.toLowerCase().trim();
-    // Quote contextType so user-supplied values cannot inject regex metacharacters (ReDoS / regex-injection).
+    // Quote contextType so user-supplied values cannot inject regex metacharacters
+    // (ReDoS / regex-injection).
     String quotedType = java.util.regex.Pattern.quote(contextType.toLowerCase());
 
     // Pattern 1: "the XYZ cycle", "the XYZ pitch"
@@ -1228,18 +1195,21 @@ public class QAService {
     }
 
     // Pattern 3: "cycle XYZ" where XYZ is not a number (e.g., "cycle Alpha").
-    // The terminal anchor uses a literal '?' rather than \s*\? to avoid polynomial backtracking.
+    // The terminal anchor uses a literal '?' rather than \s*\? to avoid polynomial
+    // backtracking.
     java.util.regex.Pattern p3 = java.util.regex.Pattern.compile(
         quotedType + "\\s+(?!\\d)(\\S.+?)(?:\\?|$)", java.util.regex.Pattern.CASE_INSENSITIVE);
     java.util.regex.Matcher m3 = p3.matcher(question);
     if (m3.find()) {
       String name = m3.group(1).trim();
-      // Remove trailing '?' with a plain check — avoids polynomial backtracking from \s*\?\s*$.
+      // Remove trailing '?' with a plain check — avoids polynomial backtracking from
+      // \s*\?\s*$.
       if (name.endsWith("?")) {
         name = name.substring(0, name.length() - 1).trim();
       }
-      // Remove trailing auxiliary verb with plain suffix checks — avoids backtracking from \s+(...verb...)$.
-      for (String verb : new String[]{"has", "have", "is", "are", "was", "were", "do", "does", "did"}) {
+      // Remove trailing auxiliary verb with plain suffix checks — avoids backtracking
+      // from \s+(...verb...)$.
+      for (String verb : new String[] { "has", "have", "is", "are", "was", "were", "do", "does", "did" }) {
         if (name.endsWith(" " + verb)) {
           name = name.substring(0, name.length() - verb.length()).trim();
           break;
@@ -1302,50 +1272,6 @@ public class QAService {
   }
 
   /**
-   * Expand vague questions into more searchable queries. Examples: "cycle 4" →
-   * "What pitches are in cycle 4?"
-   */
-  private String expandVagueQuestion(String question, String contextType, Long contextId) {
-    if (question == null || question.trim().isEmpty()) {
-      return question;
-    }
-
-    String trimmed = question.trim();
-    String lowerQuestion = trimmed.toLowerCase();
-
-    // Check if question is very short (just entity name/number or 1-2 words)
-    String[] words = trimmed.split("\\s+");
-    boolean isVague = words.length <= 2 || lowerQuestion
-        .matches("^(\\d+|" + (contextType != null ? contextType.toLowerCase() + "\\s*\\d+" : "\\d+") + ")$");
-
-    if (!isVague) {
-      return question; // Question is detailed enough
-    }
-
-    // Expand based on context type
-    if (contextType != null && contextId != null) {
-      switch (contextType.toLowerCase()) {
-        case "cycle" :
-          return "What pitches are in cycle " + contextId + "?";
-        case "pitch" :
-          return "Tell me about pitch " + contextId;
-        case "team" :
-          return "What is team " + contextId + " working on?";
-        case "meeting" :
-          return "What was discussed in meeting " + contextId + "?";
-        default :
-          return "Tell me about " + contextType + " " + contextId;
-      }
-    } else if (contextType != null) {
-      // Has context type but no ID
-      return question; // Already handled by ambiguity check
-    }
-
-    // No context - return as is
-    return question;
-  }
-
-  /**
    * Check if the question contains ambiguous contextual references without
    * providing context. Returns a clarification message if ambiguous, null
    * otherwise.
@@ -1403,25 +1329,25 @@ public class QAService {
 
     if (request.getContextType() != null) {
       switch (request.getContextType().toLowerCase()) {
-        case "cycle" :
+        case "cycle":
           suggestions.add("What pitches are in cycle 5?");
           suggestions.add("Show me the latest cycle");
           suggestions.add("List all active cycles");
           break;
-        case "pitch" :
+        case "pitch":
           suggestions.add("Tell me about the Email Notification System pitch");
           suggestions.add("What pitches need attention?");
           suggestions.add("List all pitches");
           break;
-        case "team" :
+        case "team":
           suggestions.add("What is the Frontend Team working on?");
           suggestions.add("Show me all teams");
           break;
-        case "meeting" :
+        case "meeting":
           suggestions.add("What was discussed in the latest kickoff meeting?");
           suggestions.add("Show recent meetings");
           break;
-        default :
+        default:
           suggestions.add("Tell me about the current cycle");
           suggestions.add("What pitches need attention?");
           break;

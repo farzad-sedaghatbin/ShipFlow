@@ -33,10 +33,12 @@ public class DashboardWidget {
   private String widgetType;
 
   /** Whether this widget is visible on the dashboard */
+  @Builder.Default
   @Column(name = "is_visible", nullable = false)
   private Boolean isVisible = true;
 
   /** Display order position (lower numbers appear first) */
+  @Builder.Default
   @Column(name = "display_order", nullable = false)
   private Integer displayOrder = 0;
 

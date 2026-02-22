@@ -76,8 +76,9 @@ import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { pitchService } from '../services/pitchService';
+import { releaseService } from '../services/releaseService';
 import timerService from '../services/timerService';
-import { Task, Cycle, Person, Pitch, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
+import { Task, Cycle, Person, Pitch, Release, CreateTaskRequest, TaskStatus, TaskPriority, TaskStatistics, TaskCategory } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyTasksIllustration } from '../components/illustrations';
 import TimerWidget from '../components/TimerWidget';
@@ -134,6 +135,8 @@ export default function BacklogPage() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
   const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
+  const [releases, setReleases] = useState<Release[]>([]);
   const [excludeMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status' | 'dueDate' | 'title'>('createdAt');
@@ -221,7 +224,7 @@ export default function BacklogPage() {
       setTasksLoading(false);
       setStatistics(null);
     }
-  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter, searchQuery, viewMode]);
+  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter, releaseFilter, searchQuery, viewMode]);
 
   // Sync URL param to state when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -273,6 +276,18 @@ export default function BacklogPage() {
     } finally {
       setLoading(false);
       notifyProjectSwitchComplete();
+    }
+
+    // Load releases for the current project
+    if (currentProject?.id) {
+      try {
+        const releasesRes = await releaseService.getByProject(currentProject.id);
+        setReleases(releasesRes.data);
+      } catch {
+        setReleases([]);
+      }
+    } else {
+      setReleases([]);
     }
   };
 
@@ -337,6 +352,11 @@ export default function BacklogPage() {
           filteredTasks = filteredTasks.filter((t: Task) => t.blockingTasks && t.blockingTasks.length > 0);
         }
         
+        // Apply release filter (client-side)
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+        }
+        
         // Apply search query (client-side for now)
         if (searchQuery.trim()) {
           const query = searchQuery.toLowerCase();
@@ -398,6 +418,10 @@ export default function BacklogPage() {
               (t.description && t.description.toLowerCase().includes(query))
             );
           }
+          // Apply release filter
+          if (releaseFilter !== undefined) {
+            filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+          }
           setTasks(filteredTasks);
           setTotalElements(response?.data?.totalElements || 0);
         } else {
@@ -415,6 +439,10 @@ export default function BacklogPage() {
               t.title.toLowerCase().includes(query) || 
               (t.description && t.description.toLowerCase().includes(query))
             );
+          }
+          // Apply release filter
+          if (releaseFilter !== undefined) {
+            filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
           }
           setTasks(filteredTasks);
           setTotalElements(filteredTasks.length);
@@ -463,6 +491,11 @@ export default function BacklogPage() {
           );
         }
         
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -497,6 +530,11 @@ export default function BacklogPage() {
           );
         }
         
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else {
@@ -518,6 +556,11 @@ export default function BacklogPage() {
             t.title.toLowerCase().includes(query) || 
             (t.description && t.description.toLowerCase().includes(query))
           );
+        }
+        
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
         }
         
         setTasks(filteredTasks);
@@ -1204,7 +1247,21 @@ export default function BacklogPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all' || searchQuery.trim()) && (
+            {/* Release Filter */}
+            {releases.length > 0 && (
+              <Combobox
+                options={[
+                  { value: 'all', label: t('backlogPage.filters.allReleases', 'All Releases') },
+                  ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` }))
+                ]}
+                value={releaseFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                placeholder={t('backlogPage.filters.release', 'Release')}
+                searchPlaceholder="Search releases..."
+              />
+            )}
+
+            {(statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || dependencyFilter !== 'all' || releaseFilter !== undefined || searchQuery.trim()) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1213,6 +1270,7 @@ export default function BacklogPage() {
                   setPriorityFilter([]);
                   setAssigneeFilter([]);
                   setDependencyFilter('all');
+                  setReleaseFilter(undefined);
                   setSearchQuery('');
                 }}
               >

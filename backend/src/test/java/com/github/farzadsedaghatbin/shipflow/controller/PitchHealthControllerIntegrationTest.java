@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
@@ -37,9 +36,6 @@ class PitchHealthControllerIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @Autowired
   private PitchRepository pitchRepository;
@@ -145,14 +141,14 @@ class PitchHealthControllerIntegrationTest {
   @Test
   void getPitchHealth_ShouldDetectHighRisk_ForOverBudgetPitch() throws Exception {
     mockMvc.perform(get("/api/health/pitch/{pitchId}", atRiskPitch.getId())).andExpect(status().isOk())
-        .andExpect(jsonPath("$.riskLevel").value(isOneOf("MEDIUM", "HIGH", "CRITICAL")))
+        .andExpect(jsonPath("$.riskLevel").value(anyOf(is("MEDIUM"), is("HIGH"), is("CRITICAL"))))
         .andExpect(jsonPath("$.appetiteUsedPercent").value(greaterThan(100.0)));
   }
 
   @Test
   void getPitchHealth_ShouldDetectCriticalRisk_ForMultipleIssues() throws Exception {
     mockMvc.perform(get("/api/health/pitch/{pitchId}", criticalPitch.getId())).andExpect(status().isOk())
-        .andExpect(jsonPath("$.riskLevel").value(isOneOf("HIGH", "CRITICAL")));
+        .andExpect(jsonPath("$.riskLevel").value(anyOf(is("HIGH"), is("CRITICAL"))));
   }
 
   @Test

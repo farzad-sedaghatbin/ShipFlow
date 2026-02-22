@@ -214,7 +214,6 @@ class CycleServiceTest {
   void createCycle_WithNullEndDate_ShouldAutoCalculateFromConfiguration() {
     // Arrange
     testRequest.setEndDate(null);
-    LocalDate expectedEndDate = testRequest.getStartDate().plusWeeks(6);
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
     when(organizationSettingsService.getSettings()).thenReturn(orgSettings);
@@ -293,7 +292,6 @@ class CycleServiceTest {
     // Arrange
     testRequest.setEndDate(null);
     orgSettings = OrganizationSettingsDTO.builder().defaultCycleLengthWeeks(8).build();
-    LocalDate expectedEndDate = testRequest.getStartDate().plusWeeks(8);
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
     when(organizationSettingsService.getSettings()).thenReturn(orgSettings);
@@ -312,7 +310,6 @@ class CycleServiceTest {
     // Arrange
     testRequest.setEndDate(null);
     orgSettings = OrganizationSettingsDTO.builder().defaultCycleLengthWeeks(null).build();
-    LocalDate expectedEndDate = testRequest.getStartDate().plusWeeks(6);
 
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
     when(organizationSettingsService.getSettings()).thenReturn(orgSettings);
@@ -450,30 +447,12 @@ class CycleServiceTest {
         .isActive(true)
         .build();
 
-    Project kanbanProject = Project.builder()
-        .id(2L)
-        .name("Kanban Project")
-        .projectKey("KANBAN")
-        .projectType(ProjectType.KANBAN)
-        .isActive(true)
-        .build();
-
     Cycle shapeUpCycle = Cycle.builder()
         .id(1L)
         .name("Shape Up Cycle")
         .project(shapeUpProject)
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.SHAPING_BUILDING)
-        .isActive(true)
-        .build();
-
-    Cycle kanbanCycle = Cycle.builder()
-        .id(2L)
-        .name("Kanban Continuous Flow")
-        .project(kanbanProject)
-        .startDate(LocalDate.of(2025, 8, 1))
-        .endDate(LocalDate.of(2099, 12, 31))
         .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();
@@ -508,30 +487,12 @@ class CycleServiceTest {
         .isActive(true)
         .build();
 
-    Project kanbanProject = Project.builder()
-        .id(2L)
-        .name("Kanban Project")
-        .projectKey("KANBAN")
-        .projectType(ProjectType.KANBAN)
-        .isActive(true)
-        .build();
-
     Cycle shapeUpCycle = Cycle.builder()
         .id(1L)
         .name("Shape Up Active Cycle")
         .project(shapeUpProject)
         .startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6))
-        .phase(CyclePhase.SHAPING_BUILDING)
-        .isActive(true)
-        .build();
-
-    Cycle kanbanCycle = Cycle.builder()
-        .id(2L)
-        .name("Kanban Continuous Flow")
-        .project(kanbanProject)
-        .startDate(LocalDate.of(2025, 8, 1))
-        .endDate(LocalDate.of(2099, 12, 31))
         .phase(CyclePhase.SHAPING_BUILDING)
         .isActive(true)
         .build();

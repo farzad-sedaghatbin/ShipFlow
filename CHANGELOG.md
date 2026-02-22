@@ -4,6 +4,96 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+<!-- Nothing yet -->
+
+## [0.6.0] - 2026-02-22 - Provider Abstractions, Release Traceability & Inbound Webhooks
+
+### Theme
+> "Pluggable integrations, full release traceability, and context-aware help."
+
+This release introduces **pluggable VCS and Notification provider interfaces**, **generic inbound webhook infrastructure**, **AI-powered Help Search**, **Public API with scoped API keys**, **separated Dashboards and Reports routes**, and **enhanced Release tracking** with filters and cockpit views across Backlog, Bug Reports, and Release Detail pages.
+
+### Added
+- **VCS Provider Abstraction**
+  - New `VCSProvider` interface defining a standard contract for version-control integrations
+    - `getProviderName()`, `processCommit()`, `processPullRequest()`, `getTaskLinks()`, `getPitchLinks()`
+  - `GitHubIntegrationService` refactored to implement `VCSProvider`
+  - New `processCommitAndReturn` / `processPullRequestAndReturn` convenience methods that return the persisted entity
+  - Provider interface enables future integrations (GitLab, Bitbucket) without changing core logic
+- **Notification Provider Abstraction**
+  - New `NotificationProvider` interface defining a standard contract for messaging integrations
+    - `getProviderName()`, `sendNotification()`, `isActive()`
+  - `SlackIntegrationService` refactored to implement `NotificationProvider`
+  - Provider interface enables future integrations (Discord, PagerDuty) without changing notification routing
+- **Release Filters on Bug Reports Page**
+  - Combobox filter to narrow bug reports by target release
+  - Client-side filtering with badge count and clear-filter support
+- **Release Filter on Backlog Page**
+  - Target Release filter in the task filter bar
+  - Integrates with existing status, assignee, and search filters
+- **Target Release Field on Bug Report Modal**
+  - New Combobox field for assigning bugs to a target release
+  - Loads available releases from release service
+- **Enhanced Release Detail Cockpit**
+  - Task breakdown showing count and status distribution per release
+  - Bug breakdown showing count and severity distribution per release
+  - Slipped bugs warning section highlighting bugs that missed the release
+- **New i18n Keys**
+  - Added translation keys for release filters, target release field, breakdown labels, and slipped bugs section (en locale)
+- **Generic Inbound Webhook Infrastructure**
+  - `InboundWebhookHandler` interface — 4-method contract (`getProviderName`, `validateSignature`, `handle`, `isActive`)
+  - `InboundWebhookRouter` service — auto-discovers handler beans, O(1) dispatch, signature validation, full lifecycle management
+  - `InboundWebhookController` — vendor-agnostic `POST /api/inbound/{provider}` and `GET /api/inbound` (list active providers)
+  - Auto-detects event type from common headers (X-Event-Type, X-GitHub-Event, X-Intercom-Event, X-PagerDuty-Event, X-GitLab-Event, X-Linear-Event)
+  - Status-to-HTTP mapping: success→200, unknown provider→404, invalid signature→401, inactive→503
+  - SecurityConfig updated: `/api/inbound/**` → `permitAll` (handlers validate signatures themselves)
+  - Full test suite: interface contract test + router unit tests (14 tests)
+  - Implement `InboundWebhookHandler` as a `@Component` to add any new provider — zero changes to existing code
+- **AI-Powered Help Search**
+  - Ask "how do I…" questions in the Help Guides and get guardrailed AI answers
+  - Dedicated `HelpGuideAIService` + `HelpGuideController` (fully separated from business Q&A)
+  - Vector store retrieval via `EmbeddingStore`/`EmbeddingModel` — only top-5 relevant chunks included per prompt for token efficiency
+  - 10 markdown knowledge base files auto-loaded and embedded at startup from `classpath:knowledgebase/help-guides/`
+  - Guardrailed system prompt restricts answers to ShipFlow documentation only
+  - Frontend `HelpSearch` component with suggested questions, follow-up chips, and markdown rendering
+  - New `helpGuideService.ts` frontend API client (separate from `qaService.ts`)
+  - i18n support (English + Persian) for all search UI elements
+- **Expanded Help Guides**: Added 4 new technical guides
+  - Export Data — Cycle summaries and data portability
+  - Webhooks — Incoming/outgoing event integrations
+  - Public API — REST API, OpenAPI, Personal Access Tokens
+  - MCP Server — Model Context Protocol integrations
+- **Expanded Webhooks Guide**: Complete rewrite with inbound webhook documentation, event headers reference, and provider architecture diagram
+- **Updated Knowledge Base**: Inbound webhook docs added to `06-technical-features.md` for AI help search; new suggested help questions added
+- **Public API & API Key Management**
+  - `PublicTaskController` — paginated task listing and status update via `PATCH /api/v1/public/tasks/{id}/status`
+  - `ApiKeyController` — create, list, and revoke scoped API keys (JWT-authenticated)
+  - `WebhookController` — create, list, toggle, and delete outgoing webhook subscriptions (JWT-authenticated)
+  - `ApiKeyAuthenticationFilter` — authenticates `X-API-Key` header on `/api/v1/public/**`; enforces `READ`/`WRITE`/`ADMIN` scopes (mutating methods require WRITE or ADMIN); SecurityContext authorities derived from key scopes, not full user authorities
+  - `UpdateTaskStatusRequest` `comment` field now threaded through `TaskService.updateTaskStatus` and logged
+  - `SecurityException` → 403 handler added to `ApiKeyController` and `WebhookController`
+  - `IllegalArgumentException` → 404 handler added to `WebhookController`
+
+### Security
+- Silenced bot-probe multipart flood errors; blocked `/goform/` router exploits
+- Excluded `/api/` paths from suspicious-path regex to prevent false-positive 403s
+- Hardened against common bot/scanner probe patterns
+
+### Changed
+- **Separated Dashboards and Reports Routes**
+  - Dashboards now live under `/dashboards` (previously shared `/reports` path)
+  - Reports remain at `/reports` (cycle reports, analytics)
+  - Updated `Layout.tsx` navigation with dedicated Dashboards menu item
+  - Updated `DashboardSwitcher.tsx` links to use `/dashboards/` prefix
+  - Fixed `DashboardManager.tsx` static route handling
+
+## [0.5.3] - 2026-02-21 - Wise AI & Strategic Planning
+
+### Theme
+> "Context-aware AI meets strategic roadmap planning."
+
+This release introduces **Wise Architecture** with multi-source context integration (team skills, Figma designs, GitHub code, roadmap relationships) and a comprehensive **Roadmap & Release Planning** system for strategic product management.
+
 ### Added
 - **Wise Architecture Structured Solutions (Phase 1 Overhaul)**
   - **Architecture Detail Breakdown**: Solutions now include structured components, API contracts, data models, and config changes instead of generic text
@@ -65,22 +155,6 @@ All notable changes to this project will be documented in this file.
     - Graceful timeout handling after 10 minutes
     - Repository search with 300ms debouncing
     - Memoized computed values (filteredRepositories, stacksByCategory)
-
-### Fixed
-- **Risk Factors Not Rendering**: Fixed field name mismatch (`risks` vs `riskFactors`) in TypeScript types that caused risk factors to be silently dropped in the UI
-- **Missing Context Source Flag**: Added `hasRoadmapContext` to frontend `ContextSources` interface to match backend DTO
-- **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
-- **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
-- **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions
-
-## [0.5.3] - 2026-02-16 - Wise AI & Strategic Planning
-
-### Theme
-> "Context-aware AI meets strategic roadmap planning."
-
-This release introduces **Wise Architecture** with multi-source context integration (team skills, Figma designs, GitHub code, roadmap relationships) and a comprehensive **Roadmap & Release Planning** system for strategic product management.
-
-### Added
 - **Wise Architecture Enhancements**
   - **Team Skills Integration**: AI solutions now consider team member skills when generating technical recommendations
     - Extracts unique skills from assigned team members (~25-35 tokens)
@@ -222,6 +296,11 @@ This release introduces **Wise Architecture** with multi-source context integrat
   - Aligns with existing permission matrix (REPORT write access for Admin/Manager only)
 
 ### Fixed
+- **Risk Factors Not Rendering**: Fixed field name mismatch (`risks` vs `riskFactors`) in TypeScript types that caused risk factors to be silently dropped in the UI
+- **Missing Context Source Flag**: Added `hasRoadmapContext` to frontend `ContextSources` interface to match backend DTO
+- **React Native Detection**: Now correctly identifies React Native projects via `react-native` in package.json dependencies
+- **Figma MCP 404 Handling**: Gracefully handles missing Figma pages instead of failing entire analysis
+- **Frontend Null Safety**: Added null checks for missing `bestPractices` field in stack solutions
 - **Meeting creation - project association for non-pitch meetings**
   - Added direct `project_id` column to meetings table (migration V89) to support project-level meetings without pitch association
   - Meetings can now be associated with a project directly, not just through pitch → cycle → project relationship

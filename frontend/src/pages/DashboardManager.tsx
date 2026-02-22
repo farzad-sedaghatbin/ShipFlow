@@ -190,7 +190,7 @@ export default function DashboardManager() {
       id: -1,
       name: t('dashboardManager.cycleReports'),
       description: t('dashboardManager.cycleReportsDesc'),
-      url: '/reports/cycle-reports',
+      url: '/reports',
       isStatic: true
     }
   ];

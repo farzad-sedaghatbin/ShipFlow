@@ -61,6 +61,7 @@ public class VectorStoreInitializer implements CommandLineRunner {
   }
 
   /** Initializes the Qdrant collection if it doesn't exist. */
+  @SuppressWarnings("null")
   private void initializeQdrantCollection() {
     QdrantClient client = null;
     try {

@@ -25,9 +25,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,9 +54,6 @@ class TaskServiceTest {
 
   @Autowired
   private UserRepository userRepository;
-
-  @Autowired
-  private MessageService messageService;
 
   @Autowired
   private TaskService taskService;

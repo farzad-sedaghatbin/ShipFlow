@@ -67,6 +67,12 @@ export default function WorkLogsPage() {
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
 
+  // Summary stats (aggregated from server, not from paginated data)
+  const [summaryTodayHours, setSummaryTodayHours] = useState(0);
+  const [summaryTodayCount, setSummaryTodayCount] = useState(0);
+  const [summaryTotalHours, setSummaryTotalHours] = useState(0);
+  const [summaryTotalCount, setSummaryTotalCount] = useState(0);
+
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
     pitchId: 0,
@@ -145,6 +151,34 @@ export default function WorkLogsPage() {
       }
     }
   }, [page, selectedCycle, activeTab, currentProject?.id]);
+
+  // Reload summary stats when cycle, tab, or project changes (no page dependency)
+  useEffect(() => {
+    if (activeTab === 'my') {
+      loadSummaryStats();
+    } else {
+      // Team tab: reset summary to avoid stale "my" stats being shown
+      setSummaryTodayHours(0);
+      setSummaryTodayCount(0);
+      setSummaryTotalHours(0);
+      setSummaryTotalCount(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCycle, activeTab, currentProject?.id, isAllProjectsSelected]);
+
+  const loadSummaryStats = async () => {
+    try {
+      const cycleId = selectedCycle !== 'all' ? parseInt(selectedCycle, 10) : undefined;
+      const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
+      const response = await workLogService.getMySummary(cycleId, projectId);
+      setSummaryTodayHours(response.data.todayHours);
+      setSummaryTodayCount(response.data.todayCount);
+      setSummaryTotalHours(response.data.totalHours);
+      setSummaryTotalCount(response.data.totalCount);
+    } catch (error) {
+      console.error('Failed to load work log summary:', error);
+    }
+  };
 
   const loadInitialData = async () => {
     try {
@@ -440,10 +474,6 @@ export default function WorkLogsPage() {
     return <WorkLogsSkeleton />;
   }
 
-  const totalHours = workLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);
-  const todayLogs = workLogs.filter(wl => wl.date === dayjs().format('YYYY-MM-DD'));
-  const todayHours = todayLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -483,9 +513,9 @@ export default function WorkLogsPage() {
               <CalendarDays className="h-5 w-5 text-primary" />
               <span className="text-sm text-muted-foreground">{t('workLogs.today')}</span>
             </div>
-            <div className="text-3xl font-bold">{todayHours.toFixed(1)}h</div>
+            <div className="text-3xl font-bold">{summaryTodayHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">
-              {t('workLogs.logsToday', { count: todayLogs.length })}
+              {t('workLogs.logsToday', { count: summaryTodayCount })}
             </p>
           </CardContent>
         </Card>
@@ -495,9 +525,9 @@ export default function WorkLogsPage() {
               <Clock className="h-5 w-5 text-secondary-foreground" />
               <span className="text-sm text-muted-foreground">{t('workLogs.thisCycle')}</span>
             </div>
-            <div className="text-3xl font-bold">{totalHours.toFixed(1)}h</div>
+            <div className="text-3xl font-bold">{summaryTotalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">
-              {t('workLogs.logsCount', { count: workLogs.length })}
+              {t('workLogs.logsCount', { count: summaryTotalCount })}
             </p>
           </CardContent>
         </Card>

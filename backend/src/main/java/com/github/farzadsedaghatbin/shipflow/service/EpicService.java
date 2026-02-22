@@ -11,7 +11,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
@@ -35,7 +34,6 @@ public class EpicService {
 
   private final EpicRepository epicRepository;
   private final InitiativeRepository initiativeRepository;
-  private final PitchRepository pitchRepository;
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;

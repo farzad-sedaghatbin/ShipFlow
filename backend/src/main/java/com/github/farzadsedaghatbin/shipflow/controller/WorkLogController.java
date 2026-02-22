@@ -3,12 +3,16 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogForSelfRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.WorkLogSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.service.WorkLogService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/worklogs")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Work Logs", description = "Work log management APIs for tracking time spent on pitches and tasks")
 public class WorkLogController {
 
@@ -44,8 +49,8 @@ public class WorkLogController {
       @ApiResponse(responseCode = "401", description = "User not authenticated"),
       @ApiResponse(responseCode = "400", description = "User not linked to a person profile")})
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogs(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
       @RequestParam(required = false) Long projectId) {
     if (projectId != null) {
       return ResponseEntity.ok(workLogService.getMyWorkLogsByProjectId(projectId, pageOf(page, size)));
@@ -56,8 +61,8 @@ public class WorkLogController {
   @GetMapping("/my/cycle/{cycleId}")
   @Operation(summary = "Get current user's work logs by cycle", description = "Returns work logs for the current user filtered by cycle ID")
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogsByCycle(@PathVariable Long cycleId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getMyWorkLogsByCycle(cycleId, pageOf(page, size)));
   }
 
@@ -65,8 +70,8 @@ public class WorkLogController {
   @Operation(summary = "Get current user's work logs by date", description = "Returns work logs for the current user on a specific date")
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogsByDate(
       @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getMyWorkLogsByDate(date, pageOf(page, size)));
   }
 
@@ -99,14 +104,22 @@ public class WorkLogController {
     return ResponseEntity.noContent().build();
   }
 
+  @GetMapping("/my/summary")
+  @Operation(summary = "Get current user's work log summary", description = "Returns aggregated stats (today's hours, today's count, total hours, total count) for the current user. Optionally filter totals by cycleId or projectId.")
+  public ResponseEntity<WorkLogSummaryDTO> getMyWorkLogsSummary(
+      @RequestParam(required = false) Long cycleId,
+      @RequestParam(required = false) Long projectId) {
+    return ResponseEntity.ok(workLogService.getMyWorkLogsSummary(cycleId, projectId));
+  }
+
   // ========== Admin/Manager Work Log Management ==========
 
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use)")
   public ResponseEntity<Page<WorkLogDTO>> getAllWorkLogs(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
       @RequestParam(required = false) Long projectId) {
     if (projectId != null) {
       return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectId(projectId, pageOf(page, size)));
@@ -118,8 +131,8 @@ public class WorkLogController {
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by pitch ID")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPitchId(@PathVariable Long pitchId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId, pageOf(page, size)));
   }
 
@@ -127,8 +140,8 @@ public class WorkLogController {
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by task ID")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByTaskId(@PathVariable Long taskId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByTaskId(taskId, pageOf(page, size)));
   }
 
@@ -136,8 +149,8 @@ public class WorkLogController {
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by person ID")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPersonId(@PathVariable Long personId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByPersonId(personId, pageOf(page, size)));
   }
 
@@ -146,8 +159,8 @@ public class WorkLogController {
   @Operation(summary = "Get work logs by person and date")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPersonAndDate(@PathVariable Long personId,
       @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByPersonAndDate(personId, date, pageOf(page, size)));
   }
 
@@ -155,8 +168,8 @@ public class WorkLogController {
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get work logs by cycle ID")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId, pageOf(page, size)));
   }
 

@@ -403,6 +403,13 @@ export interface CreateWorkLogForSelfRequest {
   note?: string;
 }
 
+export interface WorkLogSummary {
+  todayHours: number;
+  todayCount: number;
+  totalHours: number;
+  totalCount: number;
+}
+
 export interface MeetingAction {
   id?: number;
   description: string;
