@@ -24,6 +24,9 @@ import {
   Github,
   Activity,
   Layers,
+  Key,
+  Webhook,
+  Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -41,6 +44,48 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '0.6.0',
+    date: 'February 22, 2026',
+    title: 'Provider Abstractions, Release Traceability & Inbound Webhooks',
+    highlights: [
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'Pluggable VCS & Notification Providers',
+        description: 'New VCSProvider and NotificationProvider interfaces let you swap GitHub for GitLab/Bitbucket or Slack for Discord/PagerDuty without touching core logic. GitHubIntegrationService and SlackIntegrationService now implement these contracts.',
+      },
+      {
+        icon: <Webhook className="h-5 w-5" />,
+        title: 'Generic Inbound Webhook Infrastructure',
+        description: 'Implement InboundWebhookHandler as a Spring @Component to receive events from any provider. O(1) dispatch, signature validation, auto event-type detection from common headers (X-GitHub-Event, X-GitLab-Event, X-Linear-Event…).',
+      },
+      {
+        icon: <Key className="h-5 w-5" />,
+        title: 'Public API with Scoped API Keys',
+        description: 'Create READ/WRITE/ADMIN-scoped API keys for CI/CD and external integrations. Update task status via PATCH /api/v1/public/tasks/{id}/status from GitHub Actions. Scope enforcement rejects mutating requests on READ-only keys.',
+      },
+      {
+        icon: <Search className="h-5 w-5" />,
+        title: 'AI-Powered Help Search',
+        description: 'Ask "how do I…" questions in Help Guides and get guardrailed AI answers. Top-5 vector-store retrieval from 10 embedded knowledge-base files. Suggested questions, follow-up chips, and markdown rendering — fully bilingual (EN/FA).',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Enhanced Release Traceability',
+        description: 'Filter bug reports and the backlog by target release. Assign bugs to a release from the Bug Report modal. Release Detail Cockpit shows task/bug breakdowns by status and severity, plus a slipped-bugs warning section.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Separated Dashboards & Reports',
+        description: 'Dashboards now live at /dashboards with their own navigation entry. Reports remain at /reports. Cleaner navigation and no more shared routes.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Security Hardening',
+        description: 'Blocked /goform/ router exploits, silenced multipart bot-probe flood errors, and excluded /api/ paths from suspicious-path detection to eliminate false-positive 403s.',
+      },
+    ],
+  },
   {
     version: '0.5.3',
     date: 'February 16, 2026',
