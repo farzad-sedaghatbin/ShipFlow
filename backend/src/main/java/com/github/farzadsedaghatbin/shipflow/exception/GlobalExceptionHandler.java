@@ -372,22 +372,22 @@ public class GlobalExceptionHandler {
       return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).build();
     }
 
-    // Check for malformed stream (incomplete upload)
+    // Check for malformed stream (incomplete upload or bot probe sending truncated multipart).
+    // The outer MultipartException message is generic; the actual cause text is in the chain.
     String message = ex.getMessage();
-    if (message != null && (message.contains("Stream ended unexpectedly") 
-        || message.contains("MalformedStreamException"))) {
-      log.warn("Incomplete file upload detected: {}", message);
-      
+    if (isMalformedMultipartCause(ex)) {
+      log.warn("Incomplete/malformed multipart upload (possible bot probe): {}", message);
+
       Map<String, Object> error = new HashMap<>();
       error.put("timestamp", LocalDateTime.now());
       error.put("status", HttpStatus.BAD_REQUEST.value());
       error.put("message", "File upload was incomplete. Please try again.");
       error.put("messageKey", "error.file.upload.incomplete");
-      
+
       return ResponseEntity.badRequest().body(error);
     }
 
-    log.error("Multipart request parsing failed: {}", message, ex);
+    log.warn("Multipart request parsing failed: {}", message);
     
     Map<String, Object> error = new HashMap<>();
     error.put("timestamp", LocalDateTime.now());
@@ -396,5 +396,27 @@ public class GlobalExceptionHandler {
     error.put("messageKey", "error.file.upload.failed");
 
     return ResponseEntity.badRequest().body(error);
+  }
+
+  /**
+   * Traverses the full exception cause chain to detect a malformed/truncated
+   * multipart stream, which is the fingerprint of bot probes that send a valid
+   * Content-Type: multipart/form-data header but an incomplete body.
+   */
+  private boolean isMalformedMultipartCause(Throwable ex) {
+    Throwable cause = ex;
+    while (cause != null) {
+      String msg = cause.getMessage();
+      if (msg != null && (msg.contains("Stream ended unexpectedly")
+          || msg.contains("MalformedStreamException")
+          || msg.contains("stream ended unexpectedly"))) {
+        return true;
+      }
+      if (cause.getClass().getSimpleName().contains("MalformedStreamException")) {
+        return true;
+      }
+      cause = cause.getCause();
+    }
+    return false;
   }
 }

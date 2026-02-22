@@ -48,6 +48,7 @@ public class MaliciousHeaderFilter implements Filter {
    * <p>Covered CVEs / attack families:
    * <ul>
    *   <li>CVE-2018-10561 / CVE-2018-10562 – GPON router RCE (/GponForm/)</li>
+   *   <li>Tenda/D-Link router RCE probes (/goform/)</li>
    *   <li>Generic WordPress probes (/wp-admin/, /wp-login.php, /wp-includes/)</li>
    *   <li>PHP info / eval probes (/phpinfo.php, /eval-stdin.php)</li>
    *   <li>Shell upload probes (/shell, /cmd, /c99.php, /c100.php)</li>
@@ -62,9 +63,10 @@ public class MaliciousHeaderFilter implements Filter {
    * </ul>
    */
   private static final List<String> BLOCKED_PATH_PREFIXES = List.of(
-      // GPON router exploits
+      // GPON / Tenda / D-Link router exploits
       "/GponForm/",
       "/Gpon/",
+      "/goform/",
       // WordPress probes
       "/wp-admin/",
       "/wp-login.php",
