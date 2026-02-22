@@ -9,41 +9,41 @@
   /* Linear-style color palette */
   --color-background: #0A0A0B;
   --color-foreground: #FAFAFA;
-  
+
   --color-card: #141415;
   --color-card-foreground: #FAFAFA;
-  
+
   --color-popover: #141415;
   --color-popover-foreground: #FAFAFA;
-  
+
   --color-primary: #8B5CF6;
   --color-primary-foreground: #FFFFFF;
-  
+
   --color-secondary: #1F1F22;
   --color-secondary-foreground: #FAFAFA;
-  
+
   --color-muted: #1F1F22;
   --color-muted-foreground: #71717A;
-  
+
   --color-accent: #27272A;
   --color-accent-foreground: #FAFAFA;
-  
+
   --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
-  
+
   --color-success: #22C55E;
   --color-success-foreground: #FFFFFF;
-  
+
   --color-warning: #F59E0B;
   --color-warning-foreground: #000000;
-  
+
   --color-info: #3B82F6;
   --color-info-foreground: #FFFFFF;
-  
+
   --color-border: #27272A;
   --color-input: #27272A;
   --color-ring: #8B5CF6;
-  
+
   /* Sidebar colors */
   --color-sidebar: #0F0F10;
   --color-sidebar-foreground: #FAFAFA;
@@ -52,20 +52,20 @@
   --color-sidebar-accent-foreground: #FAFAFA;
   --color-sidebar-primary: #8B5CF6;
   --color-sidebar-primary-foreground: #FFFFFF;
-  
+
   /* Chart colors */
   --color-chart-1: #8B5CF6;
   --color-chart-2: #22C55E;
   --color-chart-3: #3B82F6;
   --color-chart-4: #F59E0B;
   --color-chart-5: #EF4444;
-  
+
   /* Border radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  
+
   /* Fonts */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
@@ -75,41 +75,41 @@
 .light {
   --color-background: #FAFAFA;
   --color-foreground: #0A0A0B;
-  
+
   --color-card: #FFFFFF;
   --color-card-foreground: #0A0A0B;
-  
+
   --color-popover: #FFFFFF;
   --color-popover-foreground: #0A0A0B;
-  
+
   --color-primary: #7C3AED;
   --color-primary-foreground: #FFFFFF;
-  
+
   --color-secondary: #F4F4F5;
   --color-secondary-foreground: #0A0A0B;
-  
+
   --color-muted: #F4F4F5;
   --color-muted-foreground: #71717A;
-  
+
   --color-accent: #F4F4F5;
   --color-accent-foreground: #0A0A0B;
-  
+
   --color-destructive: #DC2626;
   --color-destructive-foreground: #FFFFFF;
-  
+
   --color-success: #16A34A;
   --color-success-foreground: #FFFFFF;
-  
+
   --color-warning: #D97706;
   --color-warning-foreground: #FFFFFF;
-  
+
   --color-info: #2563EB;
   --color-info-foreground: #FFFFFF;
-  
+
   --color-border: #E4E4E7;
   --color-input: #E4E4E7;
   --color-ring: #7C3AED;
-  
+
   --color-sidebar: #FAFAFA;
   --color-sidebar-foreground: #0A0A0B;
   --color-sidebar-border: #E4E4E7;
@@ -218,7 +218,8 @@ html[dir="rtl"] select {
 }
 
 html[dir="rtl"] input[type="number"] {
-  text-align: left; /* Numbers stay LTR */
+  text-align: left;
+  /* Numbers stay LTR */
   direction: ltr;
 }
 
@@ -242,6 +243,14 @@ html[dir="rtl"] ol {
 /* Focus styles - Linear-style subtle ring */
 *:focus-visible {
   @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+[cmdk-input]:focus-visible,
+[cmdk-list]:focus-visible,
+[cmdk-group]:focus-visible,
+[data-radix-popper-content-wrapper] *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Custom scrollbar - Linear-style */
@@ -271,15 +280,19 @@ html[dir="rtl"] ol {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 @keyframes pulse-subtle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -289,6 +302,7 @@ html[dir="rtl"] ol {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -299,6 +313,7 @@ html[dir="rtl"] ol {
     transform: translateY(-10px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -310,6 +325,7 @@ html[dir="rtl"] ol {
     transform: translateY(10px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -317,9 +333,12 @@ html[dir="rtl"] ol {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -329,15 +348,19 @@ html[dir="rtl"] ol {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes typing {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.3;
   }
+
   50% {
     opacity: 1;
   }
@@ -346,12 +369,10 @@ html[dir="rtl"] ol {
 /* Animation utilities */
 .animate-shimmer {
   animation: shimmer 2s linear infinite;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-muted) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      var(--color-muted) 50%,
+      transparent 100%);
   background-size: 200% 100%;
 }
 
@@ -385,19 +406,15 @@ html[dir="rtl"] ol {
 
 /* Linear-style subtle gradient backgrounds */
 .gradient-subtle {
-  background: linear-gradient(
-    180deg,
-    var(--color-background) 0%,
-    color-mix(in srgb, var(--color-background) 95%, var(--color-primary)) 100%
-  );
+  background: linear-gradient(180deg,
+      var(--color-background) 0%,
+      color-mix(in srgb, var(--color-background) 95%, var(--color-primary)) 100%);
 }
 
 .gradient-card {
-  background: linear-gradient(
-    135deg,
-    var(--color-card) 0%,
-    color-mix(in srgb, var(--color-card) 98%, var(--color-primary)) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--color-card) 0%,
+      color-mix(in srgb, var(--color-card) 98%, var(--color-primary)) 100%);
 }
 
 /* Dense data display utilities */
@@ -448,12 +465,12 @@ html[dir="rtl"] ol {
   @apply flex items-center gap-2;
 }
 
-.input-group > * {
+.input-group>* {
   @apply flex-shrink-0;
 }
 
-.input-group > input,
-.input-group > select {
+.input-group>input,
+.input-group>select {
   @apply flex-1;
 }
 
@@ -522,43 +539,46 @@ html[dir="rtl"] ol {
 .driver-popover-close-btn:hover {
   color: var(--color-foreground) !important;
 }
+
 /* Hide scrollbar utility for mobile swipeable tabs */
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 
 /* Mobile Responsiveness - Touch-friendly utilities */
 @media (max-width: 768px) {
+
   /* Touch-friendly minimum sizes */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Larger tap targets for buttons */
   button:not(.no-touch-expand) {
     min-height: 44px;
   }
-  
+
   /* Improve spacing on mobile */
   .mobile-spacing {
     padding: 0.75rem;
   }
-  
+
   /* Full-width containers on mobile */
   .mobile-full-width {
     width: 100%;
   }
-  
+
   /* Stack elements vertically on mobile */
   .mobile-stack {
     flex-direction: column;
   }
-  
+
   /* Hide on mobile */
   .hide-mobile {
     display: none;
@@ -583,15 +603,15 @@ html[dir="rtl"] ol {
   .safe-top {
     padding-top: max(env(safe-area-inset-top), 1rem);
   }
-  
+
   .safe-bottom {
     padding-bottom: max(env(safe-area-inset-bottom), 1rem);
   }
-  
+
   .safe-left {
     padding-left: max(env(safe-area-inset-left), 1rem);
   }
-  
+
   .safe-right {
     padding-right: max(env(safe-area-inset-right), 1rem);
   }
@@ -743,13 +763,13 @@ html[dir="rtl"] ol {
   z-index: 100;
 }
 
-.react-grid-item > .react-resizable-handle {
+.react-grid-item>.react-resizable-handle {
   position: absolute;
   width: 20px;
   height: 20px;
 }
 
-.react-grid-item > .react-resizable-handle::after {
+.react-grid-item>.react-resizable-handle::after {
   content: "";
   position: absolute;
   right: 3px;
@@ -769,7 +789,7 @@ html[dir="rtl"] ol {
   direction: rtl;
 }
 
-[dir="rtl"] .react-grid-item > .react-resizable-handle::after {
+[dir="rtl"] .react-grid-item>.react-resizable-handle::after {
   left: 3px;
   right: auto;
   border-left: 2px solid rgba(0, 0, 0, 0.4);
