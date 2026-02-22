@@ -104,7 +104,7 @@ class GitHubIntegrationServiceTest {
     });
 
     // When
-    GitHubCommit result = service.processCommit("testorg/testrepo", sha, commitMessage, "John Doe",
+    GitHubCommit result = service.processCommitAndReturn("testorg/testrepo", sha, commitMessage, "John Doe",
         "john@example.com", "johndoe", LocalDateTime.now(), "main",
         "https://github.com/testorg/testrepo/commit/abc123");
 
@@ -133,7 +133,7 @@ class GitHubIntegrationServiceTest {
     });
 
     // When
-    GitHubCommit result = service.processCommit("testorg/testrepo", sha, commitMessage, "John Doe",
+    GitHubCommit result = service.processCommitAndReturn("testorg/testrepo", sha, commitMessage, "John Doe",
         "john@example.com", "johndoe", LocalDateTime.now(), "main",
         "https://github.com/testorg/testrepo/commit/abc123");
 
@@ -304,7 +304,7 @@ class GitHubIntegrationServiceTest {
     when(commitRepository.findBySha(sha)).thenReturn(Optional.of(existingCommit));
 
     // When
-    GitHubCommit result = service.processCommit("testorg/testrepo", sha, "Test message", "John Doe",
+    GitHubCommit result = service.processCommitAndReturn("testorg/testrepo", sha, "Test message", "John Doe",
         "john@example.com", "johndoe", LocalDateTime.now(), "main", "https://github.com/test/commit/abc123");
 
     // Then

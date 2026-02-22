@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.*;
+import com.github.farzadsedaghatbin.shipflow.service.vcs.VCSProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 @Transactional
-public class GitHubIntegrationService {
+public class GitHubIntegrationService implements VCSProvider {
 
   private final GitHubRepositoryRepository githubRepoRepository;
   private final GitHubCommitRepository commitRepository;
@@ -54,6 +55,21 @@ public class GitHubIntegrationService {
   private static final Pattern CLOSES_PATTERN = Pattern.compile(
       "(?:closes|fixes|resolves|close|fix|resolve)\\s+(?:task|TASK|Task|#T)?\\s*#?(\\d+)",
       Pattern.CASE_INSENSITIVE);
+
+  @Override
+  public String getProviderName() {
+    return "github";
+  }
+
+  @Override
+  public List<?> getTaskLinks(Long taskId) {
+    return getTaskGitHubLinks(taskId);
+  }
+
+  @Override
+  public List<?> getPitchLinks(Long pitchId) {
+    return getPitchGitHubLinks(pitchId);
+  }
 
   /** Create or update a GitHub repository */
   public GitHubRepository createOrUpdateRepository(CreateGitHubRepositoryRequest request) {
@@ -108,7 +124,15 @@ public class GitHubIntegrationService {
   }
 
   /** Process a commit from a webhook event */
-  public GitHubCommit processCommit(String repositoryFullName, String sha, String message, String authorName,
+  @Override
+  public void processCommit(String repositoryFullName, String sha, String message, String authorName,
+      String authorEmail, String authorUsername, LocalDateTime commitDate, String branch, String url) {
+    processCommitAndReturn(repositoryFullName, sha, message, authorName, authorEmail, authorUsername, commitDate,
+        branch, url);
+  }
+
+  /** Process a commit from a webhook event and return the entity */
+  public GitHubCommit processCommitAndReturn(String repositoryFullName, String sha, String message, String authorName,
       String authorEmail, String authorUsername, LocalDateTime commitDate, String branch, String url) {
 
     GitHubRepository repo = githubRepoRepository.findByFullName(repositoryFullName)
@@ -135,7 +159,16 @@ public class GitHubIntegrationService {
   }
 
   /** Process a pull request from a webhook event */
-  public GitHubPullRequest processPullRequest(String repositoryFullName, Integer prNumber, String title,
+  @Override
+  public void processPullRequest(String repositoryFullName, Integer prNumber, String title,
+      String description, String state, String headBranch, String baseBranch, String authorUsername, String url,
+      LocalDateTime openedAt, LocalDateTime closedAt, LocalDateTime mergedAt, String mergedByUsername) {
+    processPullRequestAndReturn(repositoryFullName, prNumber, title, description, state, headBranch, baseBranch,
+        authorUsername, url, openedAt, closedAt, mergedAt, mergedByUsername);
+  }
+
+  /** Process a pull request from a webhook event and return the entity */
+  public GitHubPullRequest processPullRequestAndReturn(String repositoryFullName, Integer prNumber, String title,
       String description, String state, String headBranch, String baseBranch, String authorUsername, String url,
       LocalDateTime openedAt, LocalDateTime closedAt, LocalDateTime mergedAt, String mergedByUsername) {
 

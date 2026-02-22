@@ -69,6 +69,8 @@ const comparisonFeatures: ComparisonFeature[] = [
   // Reporting
   { category: 'Reporting', feature: 'Detailed Cycle Reports', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Reporting', feature: 'Pitch Health Analytics', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release cockpit (task/bug breakdown)', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release traceability (tasks & bugs)', shipflow: true, linear: 'partial', asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
 
   // AI & Intelligence
   { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: 'partial' },
@@ -98,7 +100,9 @@ const comparisonFeatures: ComparisonFeature[] = [
 
   // Integrations
   { category: 'Integrations', feature: 'GitHub integration', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable VCS providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Slack notifications', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable notification providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Microsoft Teams', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Integrations', feature: 'Webhooks', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
 

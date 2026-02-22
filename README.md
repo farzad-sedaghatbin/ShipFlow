@@ -279,6 +279,18 @@ A modern project management application implementing the [Shape Up](https://base
   - Automated quality validation
   - Historical test pattern learning
   - Completeness scoring (0-100)
+- **Pluggable VCS Provider Architecture**: Abstract VCS integration behind `VCSProvider` interface
+  - Standard contract: `processCommit()`, `processPullRequest()`, `getTaskLinks()`, `getPitchLinks()`
+  - GitHub ships as the built-in provider; add GitLab, Bitbucket, or others by implementing the interface
+  - No changes to core commit/PR linking or task auto-close logic when swapping providers
+- **Pluggable Notification Provider Architecture**: Abstract messaging behind `NotificationProvider` interface
+  - Standard contract: `sendNotification()`, `isActive()`, `getProviderName()`
+  - Slack ships as the built-in provider; add Discord, PagerDuty, or others by implementing the interface
+- **Release Traceability for Tasks & Bugs** (v0.6)
+  - Filter backlog tasks by target release
+  - Filter bug reports by target release
+  - Assign target release when filing or editing bugs
+  - Release Detail cockpit shows task/bug breakdown and slipped-bugs warning
 - **GitHub Integration**: Seamless integration with GitHub repositories
   - **Two Integration Methods**:
     - **GitHub App** (Recommended): Organization-wide OAuth consent for bulk access to 50+ repos
@@ -329,6 +341,9 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
+| **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
+| **Release Traceability (Tasks & Bugs)** | ✅ | Partial | ❌ | ❌ | ✅ | ❌ |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |

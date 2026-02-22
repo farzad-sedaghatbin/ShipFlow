@@ -143,9 +143,11 @@ function App() {
                     <Route path="health" element={<HealthOverview />} />
                     <Route path="retros" element={<RetroList />} />
                     <Route path="retros/:id" element={<RetroBoard />} />
-                    <Route path="reports" element={<DashboardManager />} />
-                    <Route path="reports/cycle-reports" element={<Reports />} />
-                    <Route path="reports/:id" element={<DashboardView />} />
+                    <Route path="dashboards" element={<DashboardManager />} />
+                    <Route path="dashboards/:id" element={<DashboardView />} />
+                    <Route path="reports" element={<Reports />} />
+                    {/* Legacy route redirects */}
+                    <Route path="reports/cycle-reports" element={<Navigate to="/reports" replace />} />
 
                     {/* Backlog */}
                     <Route path="backlog" element={<BacklogPage />} />

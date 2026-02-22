@@ -11,8 +11,10 @@ import {
   BugStatus,
   Task,
   Person,
+  Release,
 } from '../types';
 import { taskService } from '../services/taskService';
+import { releaseService } from '../services/releaseService';
 import { documentService } from '../services/documentService';
 import api from '../services/api';
 import {
@@ -62,6 +64,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
   const [loadingPeople, setLoadingPeople] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
@@ -88,11 +91,13 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         testRunId: bugReport?.testRunId || testRunId,
         assigneeId: bugReport?.assigneeId,
         taskId: bugReport?.taskId,
+        targetReleaseId: bugReport?.targetReleaseId,
       });
       setTagInput('');
       setError(null);
       setPendingAttachments([]);
       loadPeople();
+      loadReleases();
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
@@ -107,6 +112,18 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       console.error('Failed to load people:', err);
     } finally {
       setLoadingPeople(false);
+    }
+  };
+
+  // Load releases for target release selection
+  const loadReleases = async () => {
+    if (!currentProject?.id) return;
+    try {
+      const response = await releaseService.getByProject(currentProject.id);
+      setReleases(response.data);
+    } catch (err) {
+      console.error('Failed to load releases:', err);
+      setReleases([]);
     }
   };
 
@@ -297,7 +314,25 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
               {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Select a cycle to see available tasks'}
             </p>
           </div>
-
+          {/* Target Release */}
+          {releases.length > 0 && (
+            <div className="space-y-2">
+              <Label>{t('bugReports.targetRelease', 'Target Release')}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('bugReports.noRelease', 'No target release') },
+                  ...releases.map(r => ({ value: String(r.id), label: `${r.name} (${r.version})` }))
+                ]}
+                value={formData.targetReleaseId ? String(formData.targetReleaseId) : 'none'}
+                onValueChange={(value) => handleChange('targetReleaseId', value === 'none' ? undefined : Number(value))}
+                placeholder={t('bugReports.selectRelease', 'Select target release')}
+                searchPlaceholder="Search releases..."
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('bugReports.targetReleaseHint', 'Associate this bug with a release for tracking')}
+              </p>
+            </div>
+          )}
           {/* Steps to Reproduce */}
           <div className="space-y-2">
             <Label htmlFor="steps-to-reproduce">Steps to Reproduce</Label>

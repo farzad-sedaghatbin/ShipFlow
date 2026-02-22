@@ -56,8 +56,9 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
+import { releaseService } from '../services/releaseService';
 import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
+import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
@@ -95,8 +96,10 @@ const BugReportsPage: React.FC = () => {
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
   const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
   const [excludeMode, setExcludeMode] = useState(false);
   const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -129,16 +132,17 @@ const BugReportsPage: React.FC = () => {
   useEffect(() => {
     setCycleFilter(undefined);
     setPitchFilter(undefined);
+    setReleaseFilter(undefined);
     setPage(0); // Reset to first page when project changes
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id, isAllProjectsSelected]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadCyclesAndPitches();
-  }, []);
+  }, [currentProject?.id]);
 
   const loadCyclesAndPitches = async () => {
     try {
@@ -148,6 +152,15 @@ const BugReportsPage: React.FC = () => {
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);
+      // Load releases for current project
+      if (currentProject?.id) {
+        try {
+          const releasesRes = await releaseService.getByProject(currentProject.id);
+          setReleases(releasesRes.data);
+        } catch {
+          setReleases([]);
+        }
+      }
     } catch (err) {
       console.error('Failed to load cycles and pitches', err);
     }
@@ -175,8 +188,15 @@ const BugReportsPage: React.FC = () => {
         sortOrder
       );
       
-      setBugReports(response.data.content);
-      setTotalElements(response.data.totalElements);
+      let bugData = response.data.content;
+      
+      // Client-side filter by release (not yet supported by backend filter endpoint)
+      if (releaseFilter !== undefined) {
+        bugData = bugData.filter(bug => bug.targetReleaseId === releaseFilter);
+      }
+      
+      setBugReports(bugData);
+      setTotalElements(releaseFilter !== undefined ? bugData.length : response.data.totalElements);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
@@ -520,6 +540,7 @@ const BugReportsPage: React.FC = () => {
                 setAssigneeFilter([]);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
+                setReleaseFilter(undefined);
                 setExcludeMode(false);
               }}
             >
@@ -585,6 +606,22 @@ const BugReportsPage: React.FC = () => {
                 searchPlaceholder="Search pitches..."
               />
             </div>
+
+            {releases.length > 0 && (
+              <div className="min-w-[180px]">
+                <Label className="text-xs mb-1 block">{t('bugReports.filters.release', 'Release')}</Label>
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
+                    ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` }))
+                  ]}
+                  value={releaseFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allReleases', 'All Releases')}
+                  searchPlaceholder="Search releases..."
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
