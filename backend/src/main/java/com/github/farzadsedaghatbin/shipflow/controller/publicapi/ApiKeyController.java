@@ -60,4 +60,9 @@ public class ApiKeyController {
     return userRepository.findByUsername(principal.getUsername())
         .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
   }
+
+  @ExceptionHandler(SecurityException.class)
+  public ResponseEntity<Void> handleSecurityException(SecurityException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+  }
 }

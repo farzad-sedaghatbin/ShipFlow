@@ -18,7 +18,7 @@ import java.util.Map;
  *   <li>Router calls {@link #handle} – handler maps payload → ShipFlow action</li>
  * </ol>
  *
- * @since 0.7.0
+ * @since 0.6.0
  */
 public interface InboundWebhookHandler {
 

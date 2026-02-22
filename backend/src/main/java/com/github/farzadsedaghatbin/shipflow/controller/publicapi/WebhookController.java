@@ -69,4 +69,14 @@ public class WebhookController {
     return userRepository.findByUsername(principal.getUsername())
         .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
   }
+
+  @ExceptionHandler(SecurityException.class)
+  public ResponseEntity<Void> handleSecurityException(SecurityException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Void> handleIllegalArgument(IllegalArgumentException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+  }
 }

@@ -1,13 +1,19 @@
 package com.github.farzadsedaghatbin.shipflow.security;
 
 import com.github.farzadsedaghatbin.shipflow.entity.ApiKey;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
 import com.github.farzadsedaghatbin.shipflow.service.ApiKeyService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -73,12 +79,28 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
     ApiKey apiKey = apiKeyOpt.get();
     apiKeyService.recordUsage(apiKey);
 
-    // Authenticate as the API key owner
+    // Enforce scope: mutating methods require WRITE or ADMIN scope
+    Set<ApiKeyScope> scopes = apiKey.getScopes();
+    String method = request.getMethod().toUpperCase();
+    boolean isMutating = List.of("POST", "PUT", "PATCH", "DELETE").contains(method);
+    if (isMutating && !scopes.contains(ApiKeyScope.WRITE) && !scopes.contains(ApiKeyScope.ADMIN)) {
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      response.setContentType("application/json");
+      response.getWriter().write("{\"error\":\"API key scope is insufficient for this operation. WRITE or ADMIN scope required.\"}");
+      return;
+    }
+
+    // Build authorities from the key's own scopes, not the user's full authority set,
+    // so a READ-scoped key cannot act with full user privileges.
+    List<GrantedAuthority> authorities = scopes.stream()
+        .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
+        .collect(Collectors.toList());
+
     UserDetails userDetails = userDetailsService
         .loadUserByUsername(apiKey.getUser().getUsername());
 
     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-        userDetails, null, userDetails.getAuthorities());
+        userDetails, null, authorities);
     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
     SecurityContextHolder.getContext().setAuthentication(auth);
 

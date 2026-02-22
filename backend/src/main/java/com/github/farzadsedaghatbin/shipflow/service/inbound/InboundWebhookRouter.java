@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  * every bean that implements {@link InboundWebhookHandler}). Lookup is O(1) by
  * provider name.</p>
  *
- * @since 0.7.0
+ * @since 0.6.0
  */
 @Service
 @Slf4j

@@ -63,7 +63,7 @@ public class PublicTaskController {
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().build();
     }
-    TaskDTO updated = taskService.updateTaskStatus(id, newStatus);
+    TaskDTO updated = taskService.updateTaskStatus(id, newStatus, request.getComment());
     return taskRepository.findByIdNotDeleted(updated.getId())
         .map(this::toDTO)
         .map(ResponseEntity::ok)

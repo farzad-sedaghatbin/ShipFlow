@@ -390,6 +390,10 @@ public class TaskService {
   }
 
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
+    return updateTaskStatus(id, status, null);
+  }
+
+  public TaskDTO updateTaskStatus(Long id, TaskStatus status, String comment) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
@@ -403,6 +407,10 @@ public class TaskService {
     }
 
     Task saved = taskRepository.save(task);
+
+    if (comment != null && !comment.isBlank()) {
+      log.info("Task {} status set to {} via public API. Comment: {}", id, status, comment);
+    }
 
     // Publish task status changed event for scope progress sync
     if (!status.equals(oldStatus)) {

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  * <p>No authentication filter is applied – each handler validates its own
  * provider-specific signature.</p>
  *
- * @since 0.7.0
+ * @since 0.6.0
  */
 @RestController
 @RequestMapping("/api/inbound")

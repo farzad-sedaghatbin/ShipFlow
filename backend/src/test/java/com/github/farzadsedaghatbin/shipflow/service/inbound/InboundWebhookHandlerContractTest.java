@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  * <p>Ensures the interface surface is stable and the method signatures
  * match the documented contract.</p>
  *
- * @since 0.7.0
+ * @since 0.6.0
  */
 class InboundWebhookHandlerContractTest {
 
