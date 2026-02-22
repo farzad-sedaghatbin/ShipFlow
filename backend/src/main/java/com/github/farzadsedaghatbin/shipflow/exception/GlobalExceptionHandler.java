@@ -29,6 +29,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -197,7 +198,8 @@ public class GlobalExceptionHandler {
     String queryString = request.getQueryString();
     String fullUrl = queryString != null ? requestUrl + "?" + queryString : requestUrl;
     
-    log.error("HTTP Method Not Supported - Method: {}, URL: {}, Supported Methods: {}", 
+    // Bot/scanner probes: log at WARN without stack trace to reduce noise
+    log.warn("HTTP 405 - Method: {}, URL: {}, Supported: {} [likely bot probe]", 
         method, fullUrl, String.join(", ", ex.getSupportedMethods() != null ? ex.getSupportedMethods() : new String[]{"UNKNOWN"}));
     
     Map<String, Object> error = new HashMap<>();
@@ -208,6 +210,24 @@ public class GlobalExceptionHandler {
     error.put("supportedMethods", ex.getSupportedMethods());
     error.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
+  }
+
+  /**
+   * Handle NoResourceFoundException – typically triggered by bots probing
+   * non-existent static resources (e.g., /api/public). Log at WARN (no stack
+   * trace) to keep logs clean.
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<Map<String, Object>> handleNoResourceFound(
+      NoResourceFoundException ex, HttpServletRequest request) {
+    log.warn("HTTP 404 - No resource: {} {} [likely bot probe]",
+        request.getMethod(), request.getRequestURI());
+    
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", "Resource not found");
+    error.put("status", HttpStatus.NOT_FOUND.value());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
 
   @ExceptionHandler(Exception.class)
