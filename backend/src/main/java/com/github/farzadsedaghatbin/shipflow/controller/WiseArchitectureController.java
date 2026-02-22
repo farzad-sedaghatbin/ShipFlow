@@ -4,7 +4,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.AsyncWiseArchitectureService;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureHistoryService;
-import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureJob;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

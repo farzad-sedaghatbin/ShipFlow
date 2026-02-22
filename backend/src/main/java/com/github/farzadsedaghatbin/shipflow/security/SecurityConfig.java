@@ -34,6 +34,7 @@ public class SecurityConfig {
   private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final MaliciousHeaderFilter maliciousHeaderFilter;
+  private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
   @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
   private String allowedOrigins;
@@ -75,6 +76,8 @@ public class SecurityConfig {
             .permitAll()
             // Public API endpoints
             .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/public/**").permitAll()
+            // Public REST API v1 (authenticated via X-API-Key header)
+            .requestMatchers("/api/v1/public/**").permitAll()
             // Q&A status endpoint (public to check if feature is enabled)
             .requestMatchers("/api/qa/status").permitAll()
             // Swagger/OpenAPI endpoints
@@ -90,6 +93,8 @@ public class SecurityConfig {
         .authenticationProvider(authenticationProvider())
         // Add malicious header filter before JWT filter
         .addFilterBefore(maliciousHeaderFilter, UsernamePasswordAuthenticationFilter.class)
+        // Add API key filter before JWT filter for /api/v1/public/** paths
+        .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

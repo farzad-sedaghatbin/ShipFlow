@@ -3,8 +3,6 @@ package com.github.farzadsedaghatbin.shipflow.validation;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateMeetingRequest;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

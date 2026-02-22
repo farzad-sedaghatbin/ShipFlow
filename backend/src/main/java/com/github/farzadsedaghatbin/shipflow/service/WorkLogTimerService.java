@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class WorkLogTimerService {
 
   private final WorkLogTimerRepository timerRepository;
-  private final PersonRepository personRepository;
   private final PitchRepository pitchRepository;
   private final TaskRepository taskRepository;
   private final WorkLogRepository workLogRepository;

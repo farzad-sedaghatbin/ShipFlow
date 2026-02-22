@@ -65,6 +65,27 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.person.id = :personId")
   Double getTotalHoursByPersonId(@Param("personId") Long personId);
 
+  // ---- Summary aggregation queries (used by /my/summary endpoint) ----
+
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.person.id = :personId AND w.date = :date")
+  Double sumHoursByPersonIdAndDate(@Param("personId") Long personId, @Param("date") java.time.LocalDate date);
+
+  long countByPersonId(Long personId);
+
+  long countByPersonIdAndDate(Long personId, java.time.LocalDate date);
+
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  Double sumHoursByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
+
+  @Query("SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  long countByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
+
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  Double sumHoursByPersonIdAndProjectId(@Param("personId") Long personId, @Param("projectId") Long projectId);
+
+  @Query("SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  long countByPersonIdAndProjectId(@Param("personId") Long personId, @Param("projectId") Long projectId);
+
   /**
    * Batch query to get total hours for multiple pitches at once. Returns a list
    * of Object[] where [0] is pitchId and [1] is total hours.

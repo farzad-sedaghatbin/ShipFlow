@@ -29,8 +29,6 @@ public class QASampleDataInitializer implements CommandLineRunner {
   private final BugReportRepository bugReportRepository;
   private final TestRunRepository testRunRepository;
   private final PitchRepository pitchRepository;
-  private final CycleRepository cycleRepository;
-  private final TeamRepository teamRepository;
   private final UserRepository userRepository;
 
   @Override
@@ -103,7 +101,7 @@ public class QASampleDataInitializer implements CommandLineRunner {
         .createdBy(qaUser).aiGenerated(false).build());
 
     // Test Case 4 - AI Generated
-    TestCase tc4 = testCaseRepository.save(TestCase.builder().testCaseKey(generateTestCaseKey(pitch.getId(), 4))
+    testCaseRepository.save(TestCase.builder().testCaseKey(generateTestCaseKey(pitch.getId(), 4))
         .title("Verify " + pitch.getTitle() + " - Performance under load")
         .description("AI-generated test case for performance validation")
         .preconditions("Load testing tools configured")

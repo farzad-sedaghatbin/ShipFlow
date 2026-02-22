@@ -44,7 +44,6 @@ public class KnowledgeIngestionService {
   private final PitchRepository pitchRepository;
   private final MeetingRepository meetingRepository;
   private final WorkLogRepository workLogRepository;
-  private final TeamRepository teamRepository;
   private final CycleRepository cycleRepository;
   private final EvidenceRepository evidenceRepository;
   private final ManualNoteRepository manualNoteRepository;
@@ -57,7 +56,7 @@ public class KnowledgeIngestionService {
       QAInteractionRepository qaInteractionRepository, @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
       @Autowired(required = false) QAConfig qaConfig, PitchRepository pitchRepository,
-      MeetingRepository meetingRepository, WorkLogRepository workLogRepository, TeamRepository teamRepository,
+      MeetingRepository meetingRepository, WorkLogRepository workLogRepository,
       CycleRepository cycleRepository, EvidenceRepository evidenceRepository,
       ManualNoteRepository manualNoteRepository, InitiativeRepository initiativeRepository,
       EpicRepository epicRepository, ReleaseRepository releaseRepository) {
@@ -69,7 +68,6 @@ public class KnowledgeIngestionService {
     this.pitchRepository = pitchRepository;
     this.meetingRepository = meetingRepository;
     this.workLogRepository = workLogRepository;
-    this.teamRepository = teamRepository;
     this.cycleRepository = cycleRepository;
     this.evidenceRepository = evidenceRepository;
     this.manualNoteRepository = manualNoteRepository;

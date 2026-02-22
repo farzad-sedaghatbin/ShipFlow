@@ -39,9 +39,6 @@ class TeamsIntegrationServiceTest {
   private TeamsNotificationHistoryRepository historyRepository;
 
   @Mock
-  private RestTemplate restTemplate;
-
-  @Mock
   private RestTemplate webhookRestTemplate;
 
   private TeamsIntegrationService teamsService;
@@ -51,9 +48,9 @@ class TeamsIntegrationServiceTest {
 
   @BeforeEach
   void setUp() {
-    // Manually create service with both RestTemplate mocks
+    // Manually create service with webhook RestTemplate mock
     teamsService = new TeamsIntegrationService(teamsConfigRepository, channelConfigRepository, historyRepository,
-        restTemplate, webhookRestTemplate);
+        webhookRestTemplate);
 
     testConfig = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
         .webhookUrl("https://outlook.office.com/webhook/test").defaultChannel("General").isEnabled(true)
@@ -339,6 +336,7 @@ class TeamsIntegrationServiceTest {
   }
 
   @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
   void sendTestNotification_PowerAutomate_ShouldSendAdaptiveCard() {
     // Given - Power Automate URL
     String powerAutomateUrl = "https://default300eebd4b8694d1a8df6e0a23ad188.d7.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/7c0029b148734b5981552a0d53a30348/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qsqEJmEOgq_ELpcPu3sPxVnhO0aAASIQbYi4s2tgb6A";
@@ -426,6 +424,7 @@ class TeamsIntegrationServiceTest {
   }
 
   @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
   void sendTestNotification_TraditionalWebhook_ShouldSendMessageCard() {
     // Given - Traditional Teams webhook URL
     String webhookUrl = "https://outlook.office.com/webhook/abc123/IncomingWebhook/xyz789";

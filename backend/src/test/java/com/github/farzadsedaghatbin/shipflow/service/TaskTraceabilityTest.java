@@ -56,7 +56,6 @@ class TaskTraceabilityTest {
   private Cycle cycle;
   private Pitch pitch;
   private HillChartPoint scope;
-  private Person person;
 
   @BeforeEach
   void setUp() {
@@ -66,8 +65,6 @@ class TaskTraceabilityTest {
 
     scope = HillChartPoint.builder().id(1L).scope("Login Form").description("Build login form UI").pitch(pitch)
         .build();
-
-    person = Person.builder().id(1L).name("John Doe").build();
   }
 
   @Test

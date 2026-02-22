@@ -6,16 +6,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -226,7 +222,7 @@ public class RoadmapService {
     }
     LocalDate start = itemStart != null ? itemStart : itemEnd;
     LocalDate end = itemEnd != null ? itemEnd : itemStart;
-    return !start.isAfter(rangeEnd) && !end.isBefore(rangeStart);
+    return start != null && end != null && !start.isAfter(rangeEnd) && !end.isBefore(rangeStart);
   }
 
   private LocalDate calculateMinDate(

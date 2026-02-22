@@ -12,8 +12,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.ConvertRetroToPitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
@@ -214,6 +212,7 @@ class RetroConversionServiceTest {
 
     @Test
     @DisplayName("filters out merged items")
+    @SuppressWarnings("unchecked")
     void convertToPitchDraft_FiltersMergedItems() {
       RetroItem targetItem = aRetroItem().withId(1L).action()
           .withContent("Target").build();
@@ -399,7 +398,7 @@ class RetroConversionServiceTest {
           .customTitle("Custom Title")
           .build();
 
-      PitchDTO result = service.convertToPitchDraft(request);
+      service.convertToPitchDraft(request);
 
       ArgumentCaptor<Pitch> captor = ArgumentCaptor.forClass(Pitch.class);
       verify(pitchRepository).save(captor.capture());

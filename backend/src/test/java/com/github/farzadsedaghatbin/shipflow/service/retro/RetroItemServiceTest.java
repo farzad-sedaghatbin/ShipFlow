@@ -4,7 +4,6 @@ import static com.github.farzadsedaghatbin.shipflow.service.retro.RetroTestFixtu
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateRetroItemRequest;
@@ -12,7 +11,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.RetroItemDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
-import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
@@ -263,7 +261,7 @@ class RetroItemServiceTest {
       when(retroItemRepository.save(any())).thenReturn(item);
       when(retroMapper.toItemDTOWithLookup(any(), any())).thenReturn(dto);
 
-      RetroItemDTO result = service.toggleVote(1L);
+      service.toggleVote(1L);
 
       verify(retroItemVoteRepository).deleteByRetroItemIdAndUserId(1L, testUser.getId());
     }

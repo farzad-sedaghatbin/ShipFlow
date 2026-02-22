@@ -32,9 +32,6 @@ public class FeedbackLearningService {
   private final Map<String, FeedbackStats> queryPatternStats = new ConcurrentHashMap<>();
   private final Map<String, SourceRelevanceStats> sourceStats = new ConcurrentHashMap<>();
 
-  // Redis client (lazy initialized if provider=redis)
-  private Object redisClient; // Would be Jedis or Lettuce in production
-
   @PostConstruct
   public void init() {
     if (cacheConfig.isRedisProvider()) {

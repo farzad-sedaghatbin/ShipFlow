@@ -192,15 +192,12 @@ public class QAService {
     try {
       // 0. Query decomposition for complex questions
       List<String> subQueries = List.of(request.getQuestion());
-      boolean wasDecomposed = false;
-
       if (queryDecomposer != null && queryDecomposer.shouldDecompose(request.getQuestion())) {
         try {
           QueryDecomposer.DecompositionResult decomposition = queryDecomposer
               .decomposeWithMetadata(request.getQuestion());
           if (decomposition.wasDecomposed()) {
             subQueries = decomposition.getSubQueries();
-            wasDecomposed = true;
             log.info("Decomposed query into {} sub-queries", subQueries.size());
           }
         } catch (Exception e) {
@@ -287,12 +284,10 @@ public class QAService {
 
       // 7. Build context with token management
       String context;
-      boolean contextTruncated = false;
       if (contextWindowManager != null) {
         ContextWindowManager.ContextResult contextResult = contextWindowManager.buildManagedContext(matches,
             request.getQuestion(), 4000);
         context = contextResult.getContext();
-        contextTruncated = contextResult.isWasTruncated();
       } else {
         context = buildContext(matches);
       }
@@ -734,10 +729,6 @@ public class QAService {
     }).filter(id -> id != null).collect(Collectors.joining(","));
   }
 
-  private String buildPrompt(String question, String context, String conversationHistory) {
-    return buildPrompt(question, context, conversationHistory, null, null, null);
-  }
-
   private String buildPrompt(String question, String context, String conversationHistory,
       String contextType, String contextName, Long contextId) {
     StringBuilder prompt = new StringBuilder();
@@ -1098,37 +1089,6 @@ public class QAService {
   }
 
   /**
-   * Check if a question is likely asking for an entity by ID only, vs. being part
-   * of a name (e.g., "cycle 4" vs "Cycle 4 Planning").
-   */
-  private boolean isLikelyIdOnlyQuery(String question) {
-    if (question == null) {
-      return false;
-    }
-
-    String trimmed = question.trim();
-    String lowerQuestion = trimmed.toLowerCase();
-
-    // Just a number: "4"
-    if (lowerQuestion.matches("^\\d+$")) {
-      return true;
-    }
-
-    // Entity type + number with nothing else: "cycle 4", "pitch 15"
-    if (lowerQuestion.matches("^(cycle|pitch|team|meeting|initiative|epic|release)\\s+\\d+$")) {
-      return true;
-    }
-
-    // Has additional text that looks like a name/title
-    if (lowerQuestion.matches(".*(planning|build|q\\d|phase|sprint|\\w{5,}).*")) {
-      return false; // Likely contains a name
-    }
-
-    // Short queries (1-2 words) are likely ID queries
-    return trimmed.split("\\s+").length <= 2;
-  }
-
-  /**
    * Resolve entity context (contextId, contextName, cycleId) from the question text.
    * Tries numeric ID extraction first, then falls back to name-based DB lookup.
    * Only runs when contextId is null and contextType is set.
@@ -1200,7 +1160,6 @@ public class QAService {
       return null;
     }
 
-    String lowerQuestion = question.toLowerCase().trim();
     // Quote contextType so user-supplied values cannot inject regex metacharacters (ReDoS / regex-injection).
     String quotedType = java.util.regex.Pattern.quote(contextType.toLowerCase());
 
@@ -1299,50 +1258,6 @@ public class QAService {
     }
 
     return null;
-  }
-
-  /**
-   * Expand vague questions into more searchable queries. Examples: "cycle 4" →
-   * "What pitches are in cycle 4?"
-   */
-  private String expandVagueQuestion(String question, String contextType, Long contextId) {
-    if (question == null || question.trim().isEmpty()) {
-      return question;
-    }
-
-    String trimmed = question.trim();
-    String lowerQuestion = trimmed.toLowerCase();
-
-    // Check if question is very short (just entity name/number or 1-2 words)
-    String[] words = trimmed.split("\\s+");
-    boolean isVague = words.length <= 2 || lowerQuestion
-        .matches("^(\\d+|" + (contextType != null ? contextType.toLowerCase() + "\\s*\\d+" : "\\d+") + ")$");
-
-    if (!isVague) {
-      return question; // Question is detailed enough
-    }
-
-    // Expand based on context type
-    if (contextType != null && contextId != null) {
-      switch (contextType.toLowerCase()) {
-        case "cycle" :
-          return "What pitches are in cycle " + contextId + "?";
-        case "pitch" :
-          return "Tell me about pitch " + contextId;
-        case "team" :
-          return "What is team " + contextId + " working on?";
-        case "meeting" :
-          return "What was discussed in meeting " + contextId + "?";
-        default :
-          return "Tell me about " + contextType + " " + contextId;
-      }
-    } else if (contextType != null) {
-      // Has context type but no ID
-      return question; // Already handled by ambiguity check
-    }
-
-    // No context - return as is
-    return question;
   }
 
   /**

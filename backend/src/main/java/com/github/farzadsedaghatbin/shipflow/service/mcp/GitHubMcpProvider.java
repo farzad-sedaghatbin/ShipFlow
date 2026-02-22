@@ -1,7 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp;
 
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -167,7 +166,6 @@ public class GitHubMcpProvider implements McpClientService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<String> listFiles(Map<String, String> context) {
         if (!isAvailable()) {
             log.warn("GitHub MCP not available, cannot list files");
@@ -575,7 +573,9 @@ public class GitHubMcpProvider implements McpClientService {
                 Object result = response.getBody().get("result");
                 if (result instanceof Map) {
                     log.debug("Retrieved repository context for {}/{}", owner, repo);
-                    return (Map<String, Object>) result;
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> resultMap = (Map<String, Object>) result;
+                    return resultMap;
                 }
             } else {
                 Map<String, Object> body = response.getBody();
@@ -658,7 +658,6 @@ public class GitHubMcpProvider implements McpClientService {
                             String text = (String) contentList.get(0).get("text");
                             // Parse the text as JSON map of file paths to contents
                             try {
-                                @SuppressWarnings("unchecked")
                                 Map<String, String> filesMap = new com.fasterxml.jackson.databind.ObjectMapper()
                                     .readValue(text, Map.class);
                                 return filesMap;

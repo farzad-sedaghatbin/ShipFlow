@@ -4635,6 +4635,7 @@
     "recentWorkLogs": "Recent Work Logs",
     "total": "Total",
     "hoursUnit": "hours",
+    "entries": "entries",
     "noWorkLogs": "No work logs yet",
     "noWorkLogsDesc": "Start logging work to track progress",
     "teamMember": "Team Member",

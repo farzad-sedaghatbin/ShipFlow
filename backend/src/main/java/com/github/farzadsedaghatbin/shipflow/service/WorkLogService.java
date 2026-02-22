@@ -3,6 +3,8 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogForSelfRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.WorkLogSummaryDTO;
+import java.util.Optional;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
@@ -14,8 +16,6 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -283,6 +283,34 @@ public class WorkLogService {
     }
 
     workLogRepository.deleteById(id);
+  }
+
+  /** Get aggregated summary stats for the current user's work logs */
+  public WorkLogSummaryDTO getMyWorkLogsSummary(Long cycleId, Long projectId) {
+    Person person = getCurrentUserPerson();
+    LocalDate today = LocalDate.now();
+
+    double todayHours = Optional.ofNullable(
+        workLogRepository.sumHoursByPersonIdAndDate(person.getId(), today)).orElse(0.0);
+    long todayCount = workLogRepository.countByPersonIdAndDate(person.getId(), today);
+
+    double totalHours;
+    long totalCount;
+    if (cycleId != null) {
+      totalHours = Optional.ofNullable(
+          workLogRepository.sumHoursByPersonIdAndCycleId(person.getId(), cycleId)).orElse(0.0);
+      totalCount = workLogRepository.countByPersonIdAndCycleId(person.getId(), cycleId);
+    } else if (projectId != null) {
+      totalHours = Optional.ofNullable(
+          workLogRepository.sumHoursByPersonIdAndProjectId(person.getId(), projectId)).orElse(0.0);
+      totalCount = workLogRepository.countByPersonIdAndProjectId(person.getId(), projectId);
+    } else {
+      totalHours = Optional.ofNullable(
+          workLogRepository.getTotalHoursByPersonId(person.getId())).orElse(0.0);
+      totalCount = workLogRepository.countByPersonId(person.getId());
+    }
+
+    return new WorkLogSummaryDTO(todayHours, todayCount, totalHours, totalCount);
   }
 
   private WorkLogDTO toDTO(WorkLog workLog) {

@@ -27,9 +27,6 @@ public class MaliciousHeaderFilter implements Filter {
   private static final Pattern SCRIPT_INJECTION_PATTERN = Pattern
       .compile(".*<script.*>.*</script>.*|.*javascript:.*|.*onerror=.*|.*onload=.*", Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(".*('|(\\-\\-)|(;)|(\\|\\|)|(\\*)).*",
-      Pattern.CASE_INSENSITIVE);
-
   private static final Pattern PATH_TRAVERSAL_PATTERN = Pattern.compile(".*(\\.\\./)|(\\.\\.\\\\).*",
       Pattern.CASE_INSENSITIVE);
 

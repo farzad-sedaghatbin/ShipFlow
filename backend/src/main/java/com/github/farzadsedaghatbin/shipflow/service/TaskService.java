@@ -18,7 +18,6 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
@@ -45,7 +44,6 @@ public class TaskService {
   private final CycleRepository cycleRepository;
   private final PersonRepository personRepository;
   private final UserRepository userRepository;
-  private final TaskDependencyRepository taskDependencyRepository;
   private final PitchRepository pitchRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final DashboardNotificationService notificationService;

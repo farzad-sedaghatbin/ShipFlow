@@ -9,7 +9,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.github.*;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.*;
 import com.github.farzadsedaghatbin.shipflow.service.vcs.VCSProvider;
 import java.time.LocalDateTime;
@@ -32,13 +31,11 @@ public class GitHubIntegrationService implements VCSProvider {
   private final GitHubRepositoryRepository githubRepoRepository;
   private final GitHubCommitRepository commitRepository;
   private final GitHubPullRequestRepository pullRequestRepository;
-  private final GitHubBranchRepository branchRepository;
   private final TaskGitHubLinkRepository taskLinkRepository;
   private final PitchGitHubLinkRepository pitchLinkRepository;
   private final GitHubConfigurationRepository configurationRepository;
   private final TaskRepository taskRepository;
   private final PitchRepository pitchRepository;
-  private final UserRepository userRepository;
 
   // Patterns to detect task/pitch references in commit messages and PR
   // descriptions

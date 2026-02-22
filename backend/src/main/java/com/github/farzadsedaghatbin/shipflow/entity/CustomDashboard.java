@@ -68,6 +68,7 @@ public class CustomDashboard {
    * tasks) When disabled, widgets show organization-wide data
    */
   @Column(name = "user_context_filter")
+  @Builder.Default
   private Boolean userContextFilter = false;
 
   /** Template category (for predefined templates) */

@@ -10,7 +10,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
-import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
@@ -40,7 +39,6 @@ public class WiseArchitectureService {
 
     private final OrganizationSettingsService settingsService;
     private final PitchRepository pitchRepository;
-    private final EpicRepository epicRepository;
     private final GitHubRepositoryRepository repositoryRepository;
     private final TechStackDetectorService techStackDetectorService;
     private final TechnicalSolutionGeneratorService solutionGeneratorService;
@@ -916,7 +914,6 @@ public class WiseArchitectureService {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             
             for (int i = 0; i < repositories.size(); i++) {
-                final int repoIndex = i;
                 final GitHubRepository repo = repositories.get(i);
                 final List<String> fileList = repoFileLists.getOrDefault(repo, List.of());
                 final String packageJsonContent = repoPackageJsons.get(repo);

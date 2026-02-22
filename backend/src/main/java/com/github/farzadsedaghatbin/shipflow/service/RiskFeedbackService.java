@@ -135,6 +135,7 @@ public class RiskFeedbackService {
         .missedFactors(entity.getMissedFactors()).createdAt(entity.getCreatedAt()).build();
   }
 
+  @SuppressWarnings("null")
   private List<String> extractCommonFactors(List<String> allMissedFactors) {
     // Simple word frequency analysis
     Map<String, Integer> wordCount = new HashMap<>();

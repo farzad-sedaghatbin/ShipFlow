@@ -20,7 +20,6 @@ import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -332,7 +331,7 @@ class RetroCrudServiceTest {
       when(retroItemRepository.countByRetrospectiveId(1L)).thenReturn(0L);
       when(retroMapper.toDTO(any(), eq(0L))).thenReturn(dto);
 
-      RetroDTO result = service.openRetro(1L);
+      service.openRetro(1L);
 
       assertThat(retro.getStatus()).isEqualTo(RetroStatus.OPEN);
     }

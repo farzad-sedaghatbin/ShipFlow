@@ -7,19 +7,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
-import com.github.farzadsedaghatbin.shipflow.entity.*;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.retro.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -80,12 +76,6 @@ class RetroServiceTest {
   @InjectMocks
   private RetroService retroService;
 
-  private Project testProject;
-  private Cycle testCycle;
-  private Retrospective testRetro;
-  private RetroItem testItem;
-  private User testUser;
-
   @BeforeEach
   void setUp() {
     lenient().when(messageService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
@@ -141,20 +131,6 @@ class RetroServiceTest {
         return "Cannot delete items from a closed retrospective";
       return key;
     });
-
-    testProject = Project.builder().id(1L).name("Test Project").projectKey("TST").isActive(true)
-        .enableRetrospectives(true).build();
-
-    testCycle = Cycle.builder().id(1L).name("Test Cycle").project(testProject).startDate(LocalDate.now())
-        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
-
-    testUser = User.builder().id(1L).username("testuser").build();
-
-    testRetro = Retrospective.builder().id(1L).title("Test Retro").notes("Test notes").status(RetroStatus.DRAFT)
-        .cycle(testCycle).project(testProject).createdBy(testUser).createdAt(LocalDateTime.now()).build();
-
-    testItem = RetroItem.builder().id(1L).content("Test item").columnType(RetroColumnType.WENT_WELL)
-        .retrospective(testRetro).author(testUser).createdAt(LocalDateTime.now()).build();
 
     // Mock SecurityContext
     SecurityContext securityContext = mock(SecurityContext.class);
@@ -464,7 +440,7 @@ class RetroServiceTest {
 
       when(retroItemService.updateRetroItem(1L, "Updated content")).thenReturn(itemDTO);
 
-      RetroItemDTO result = retroService.updateRetroItem(1L, "Updated content");
+      retroService.updateRetroItem(1L, "Updated content");
 
       verify(retroItemService).updateRetroItem(1L, "Updated content");
     }

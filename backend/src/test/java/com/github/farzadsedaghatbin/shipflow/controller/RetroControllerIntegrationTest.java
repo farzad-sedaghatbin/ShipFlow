@@ -59,8 +59,6 @@ class RetroControllerIntegrationTest {
 
   private Project testProject;
   private Cycle testCycle;
-  private Retrospective testRetro;
-  private User adminUser;
 
   @BeforeEach
   void setUp() {
@@ -69,7 +67,7 @@ class RetroControllerIntegrationTest {
     retroRepository.deleteAll();
 
     // Ensure admin user exists for authentication
-    adminUser = userRepository.findByUsername("admin")
+    userRepository.findByUsername("admin")
         .orElseGet(() -> userRepository.save(User.builder().username("admin").password("password") // In real
             // test,
             // would be

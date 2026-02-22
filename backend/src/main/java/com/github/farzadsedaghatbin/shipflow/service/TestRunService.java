@@ -24,7 +24,6 @@ public class TestRunService {
   private final PitchRepository pitchRepository;
   private final CycleRepository cycleRepository;
   private final UserRepository userRepository;
-  private final BugReportRepository bugReportRepository;
   private final LocalizationService localizationService;
 
   @Value("${app.qa.test-management.enabled:true}")

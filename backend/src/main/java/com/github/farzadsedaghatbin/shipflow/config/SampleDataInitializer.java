@@ -36,8 +36,6 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final PasswordEncoder passwordEncoder;
   private final TaskRepository taskRepository;
   private final HillChartPointRepository hillChartPointRepository;
-  private final RetrospectiveRepository retrospectiveRepository;
-  private final RetroItemRepository retroItemRepository;
   private final ManualNoteRepository manualNoteRepository;
   private final CustomDashboardRepository customDashboardRepository;
   private final UserPreferenceRepository userPreferenceRepository;

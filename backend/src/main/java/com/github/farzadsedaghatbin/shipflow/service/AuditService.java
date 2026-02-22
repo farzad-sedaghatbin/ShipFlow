@@ -35,8 +35,6 @@ public class AuditService {
   @PersistenceContext
   private EntityManager entityManager;
 
-  private final MessageService messageService;
-
   /**
    * Get the change history for a Task entity.
    */

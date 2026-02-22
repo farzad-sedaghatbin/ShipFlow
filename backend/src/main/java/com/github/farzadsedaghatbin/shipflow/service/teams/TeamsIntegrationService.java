@@ -32,7 +32,6 @@ public class TeamsIntegrationService {
   private final TeamsConfigurationRepository teamsConfigRepository;
   private final TeamsChannelConfigRepository channelConfigRepository;
   private final TeamsNotificationHistoryRepository historyRepository;
-  private final RestTemplate restTemplate;
 
   @Qualifier("webhookRestTemplate")
   private final RestTemplate webhookRestTemplate;

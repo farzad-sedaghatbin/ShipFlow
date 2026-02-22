@@ -64,9 +64,11 @@ public class OrganizationSettings {
 
   // Other Settings
   @Column(nullable = false, name = "time_zone")
+  @Builder.Default
   private String timeZone = "UTC";
 
   @Column(nullable = false, name = "date_format")
+  @Builder.Default
   private String dateFormat = "MM/DD/YYYY";
 
   @Column(nullable = false, name = "enable_notifications")

@@ -1,5 +1,5 @@
 import api from './api';
-import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest } from '../types';
+import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest, WorkLogSummary } from '../types';
 
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 20;
@@ -33,4 +33,6 @@ export const workLogService = {
   createMy: (data: CreateWorkLogForSelfRequest) => api.post<WorkLog>('/worklogs/my', data),
   updateMy: (id: number, data: CreateWorkLogForSelfRequest) => api.put<WorkLog>(`/worklogs/my/${id}`, data),
   deleteMy: (id: number) => api.delete(`/worklogs/my/${id}`),
+  getMySummary: (cycleId?: number, projectId?: number) =>
+    api.get<WorkLogSummary>('/worklogs/my/summary', { params: { ...(cycleId !== undefined ? { cycleId } : {}), ...(projectId !== undefined ? { projectId } : {}) } }),
 };

@@ -82,7 +82,7 @@ class RetroActionServiceTest {
       when(retroItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
       when(retroMapper.toItemDTOWithLookup(any(), any())).thenReturn(dto);
 
-      RetroItemDTO result = service.markActedOn(1L, true, "Done in sprint");
+      service.markActedOn(1L, true, "Done in sprint");
 
       assertThat(item.getActedOn()).isTrue();
       assertThat(item.getActedOnNotes()).isEqualTo("Done in sprint");

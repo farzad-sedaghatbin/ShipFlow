@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import com.github.farzadsedaghatbin.shipflow.service.TestCaseService;
@@ -32,9 +31,6 @@ class SoftDeleteIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @MockBean
   private PitchService pitchService;

@@ -43,6 +43,7 @@ public class DashboardNotification {
   private String message;
 
   /** Severity level: INFO, WARNING, ERROR, CRITICAL */
+  @Builder.Default
   @Column(name = "severity", nullable = false, length = 20)
   private String severity = "INFO";
 
@@ -59,6 +60,7 @@ public class DashboardNotification {
   private Long entityId;
 
   /** Whether the notification has been read */
+  @Builder.Default
   @Column(name = "is_read", nullable = false)
   private Boolean isRead = false;
 

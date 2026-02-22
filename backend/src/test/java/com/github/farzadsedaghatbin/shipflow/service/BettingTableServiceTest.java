@@ -57,7 +57,6 @@ class BettingTableServiceTest {
   private Cycle testCycle;
   private Team testTeam;
   private Pitch shapedPitch;
-  private Pitch pendingPitch;
   private BettingSlot testSlot;
 
   @BeforeEach
@@ -92,9 +91,6 @@ class BettingTableServiceTest {
     shapedPitch = Pitch.builder().id(1L).title("User Auth Feature").description("OAuth2 implementation")
         .appetiteDays(14).status(PitchStatus.SHAPED).cycle(testCycle).createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now()).build();
-
-    pendingPitch = Pitch.builder().id(2L).title("Pending Feature").appetiteDays(7).status(PitchStatus.PENDING)
-        .cycle(testCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     testSlot = BettingSlot.builder().id(1L).cycle(testCycle).team(testTeam).position(0)
         .startDate(testCycle.getStartDate()).endDate(testCycle.getEndDate()).build();

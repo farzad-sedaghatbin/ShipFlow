@@ -30,7 +30,6 @@ public class BugReportService {
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
   private final PersonRepository personRepository;
-  private final HillChartPointRepository hillChartPointRepository;
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
 

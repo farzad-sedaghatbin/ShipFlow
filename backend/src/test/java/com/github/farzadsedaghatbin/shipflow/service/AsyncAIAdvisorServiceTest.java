@@ -1,14 +1,10 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
-import com.github.farzadsedaghatbin.shipflow.dto.risk.RiskQuestionResponse;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.service.AsyncAIAdvisorService.JobStatus;
 import com.github.farzadsedaghatbin.shipflow.service.AsyncAIAdvisorService.JobStatusResponse;

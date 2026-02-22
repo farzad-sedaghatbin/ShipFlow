@@ -1,7 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

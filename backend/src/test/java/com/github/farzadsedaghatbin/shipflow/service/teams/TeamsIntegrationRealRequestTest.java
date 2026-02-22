@@ -1,6 +1,5 @@
 package com.github.farzadsedaghatbin.shipflow.service.teams;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.teams.TestTeamsNotificationRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.teams.TeamsConfiguration;
 import com.github.farzadsedaghatbin.shipflow.repository.teams.TeamsChannelConfigRepository;
@@ -36,7 +35,6 @@ class TeamsIntegrationRealRequestTest {
   private TeamsNotificationHistoryRepository historyRepository;
 
   private MockWebServer mockWebServer;
-  private ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() throws IOException {

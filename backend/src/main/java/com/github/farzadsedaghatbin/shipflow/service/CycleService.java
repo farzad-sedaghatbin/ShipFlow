@@ -36,7 +36,6 @@ public class CycleService {
   private final ProjectRepository projectRepository;
   private final PitchRepository pitchRepository;
   private final RetroRepository retroRepository;
-  private final DashboardNotificationService notificationService;
   private final UserRepository userRepository;
   private final OrganizationSettingsService organizationSettingsService;
   private final MessageService messageService;

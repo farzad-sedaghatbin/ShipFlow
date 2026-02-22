@@ -149,6 +149,11 @@ export default function WorkLogForm() {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setWlPage(newPage);
+    if (selectedCycle) loadWorkLogs(selectedCycle as number, newPage);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -275,7 +280,7 @@ export default function WorkLogForm() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold">{t('workLogForm.recentWorkLogs')}</CardTitle>
             {wlTotalElements > 0 && (
-              <span className="text-sm text-muted-foreground">{wlTotalElements} {t('workLogForm.hoursUnit', { defaultValue: 'entries' })}</span>
+              <span className="text-sm text-muted-foreground">{wlTotalElements} {t('workLogForm.entries', { defaultValue: 'entries' })}</span>
             )}
           </div>
         </CardHeader>
@@ -335,7 +340,7 @@ export default function WorkLogForm() {
                   variant="outline"
                   size="sm"
                   disabled={wlPage === 0}
-                  onClick={() => { const p = wlPage - 1; setWlPage(p); if (selectedCycle) loadWorkLogs(selectedCycle as number, p); }}
+                  onClick={() => handlePageChange(wlPage - 1)}
                 >
                   {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
                 </Button>
@@ -344,7 +349,7 @@ export default function WorkLogForm() {
                   variant="outline"
                   size="sm"
                   disabled={wlPage >= wlTotalPages - 1}
-                  onClick={() => { const p = wlPage + 1; setWlPage(p); if (selectedCycle) loadWorkLogs(selectedCycle as number, p); }}
+                  onClick={() => handlePageChange(wlPage + 1)}
                 >
                   {t('meetingList.pagination.next', { defaultValue: 'Next' })}
                 </Button>
