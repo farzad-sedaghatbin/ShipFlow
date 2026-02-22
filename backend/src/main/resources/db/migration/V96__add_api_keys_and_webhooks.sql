@@ -24,6 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_user_id  ON api_keys(user_id);
 CREATE TABLE IF NOT EXISTS api_key_scopes (
     api_key_id BIGINT       NOT NULL,
     scope      VARCHAR(50)  NOT NULL,
+    PRIMARY KEY (api_key_id, scope),
     CONSTRAINT fk_key_scopes_api_key FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE
 );
 

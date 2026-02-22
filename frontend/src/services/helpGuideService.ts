@@ -7,19 +7,19 @@ import api from './api';
  */
 
 export interface HelpAIResponse {
-    question: string;
-    answer?: string;
-    aiEnabled?: boolean;
-    processingTimeMs?: number;
-    errorMessage?: string;
-    suggestedFollowUps?: string[];
+  question: string;
+  answer?: string;
+  aiEnabled?: boolean;
+  processingTimeMs?: number;
+  errorMessage?: string;
+  suggestedFollowUps?: string[];
 }
 
 export const helpGuideService = {
-    /** Check if Help AI is available */
-    getStatus: () => api.get<{ available: boolean }>('/help/ai/status'),
+  /** Check if Help AI is available */
+  getStatus: () => api.get<{ available: boolean }>('/help/ai/status'),
 
-    /** Ask a ShipFlow how-to question */
-    ask: (question: string) =>
-        api.post<HelpAIResponse>('/help/ai/ask', { question }),
+  /** Ask a ShipFlow how-to question */
+  ask: (question: string) =>
+    api.post<HelpAIResponse>('/help/ai/ask', { question }),
 };

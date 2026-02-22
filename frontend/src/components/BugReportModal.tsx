@@ -326,7 +326,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                 value={formData.targetReleaseId ? String(formData.targetReleaseId) : 'none'}
                 onValueChange={(value) => handleChange('targetReleaseId', value === 'none' ? undefined : Number(value))}
                 placeholder={t('bugReports.selectRelease', 'Select target release')}
-                searchPlaceholder="Search releases..."
+                searchPlaceholder={t('bugReports.searchRelease', 'Search releases...')}
               />
               <p className="text-xs text-muted-foreground">
                 {t('bugReports.targetReleaseHint', 'Associate this bug with a release for tracking')}
