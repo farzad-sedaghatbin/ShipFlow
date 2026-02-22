@@ -34,7 +34,11 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    // Only apply to paths that start with the public API prefix
+    // Only apply to paths that start with the public API prefix.
+    // Always skip OPTIONS so CORS preflight requests are not rejected with 401.
+    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+      return true;
+    }
     return !request.getRequestURI().startsWith(PUBLIC_API_PREFIX);
   }
 

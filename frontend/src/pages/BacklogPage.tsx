@@ -418,6 +418,10 @@ export default function BacklogPage() {
               (t.description && t.description.toLowerCase().includes(query))
             );
           }
+          // Apply release filter
+          if (releaseFilter !== undefined) {
+            filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+          }
           setTasks(filteredTasks);
           setTotalElements(response?.data?.totalElements || 0);
         } else {
@@ -435,6 +439,10 @@ export default function BacklogPage() {
               t.title.toLowerCase().includes(query) || 
               (t.description && t.description.toLowerCase().includes(query))
             );
+          }
+          // Apply release filter
+          if (releaseFilter !== undefined) {
+            filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
           }
           setTasks(filteredTasks);
           setTotalElements(filteredTasks.length);
@@ -483,6 +491,11 @@ export default function BacklogPage() {
           );
         }
         
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
@@ -517,6 +530,11 @@ export default function BacklogPage() {
           );
         }
         
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
+        }
+        
         setTasks(filteredTasks);
         setTotalElements(response?.data?.totalElements || 0);
       } else {
@@ -538,6 +556,11 @@ export default function BacklogPage() {
             t.title.toLowerCase().includes(query) || 
             (t.description && t.description.toLowerCase().includes(query))
           );
+        }
+        
+        // Apply release filter
+        if (releaseFilter !== undefined) {
+          filteredTasks = filteredTasks.filter((t: Task) => t.targetReleaseId === releaseFilter);
         }
         
         setTasks(filteredTasks);

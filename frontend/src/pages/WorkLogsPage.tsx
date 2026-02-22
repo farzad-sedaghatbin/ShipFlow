@@ -164,7 +164,7 @@ export default function WorkLogsPage() {
       setSummaryTotalCount(0);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCycle, activeTab, currentProject?.id]);
+  }, [selectedCycle, activeTab, currentProject?.id, isAllProjectsSelected]);
 
   const loadSummaryStats = async () => {
     try {

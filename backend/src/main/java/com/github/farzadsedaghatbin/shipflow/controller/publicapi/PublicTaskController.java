@@ -31,7 +31,6 @@ public class PublicTaskController {
   @Operation(summary = "List tasks with pagination")
   public ResponseEntity<Page<PublicTaskDTO>> listTasks(
       @RequestParam(required = false) Long cycleId,
-      @RequestParam(required = false) Long pitchId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
     Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));

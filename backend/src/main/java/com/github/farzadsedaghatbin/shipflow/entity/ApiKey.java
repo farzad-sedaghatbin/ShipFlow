@@ -13,7 +13,7 @@ import lombok.*;
  */
 @Entity
 @Table(name = "api_keys", indexes = {
-    @Index(name = "idx_api_keys_key_hash", columnList = "keyHash", unique = true),
+    @Index(name = "idx_api_keys_key_hash", columnList = "key_hash", unique = true),
     @Index(name = "idx_api_keys_user_id", columnList = "user_id")
 })
 @Getter
@@ -36,7 +36,7 @@ public class ApiKey {
   private String keyPrefix;
 
   /** SHA-256 hash of the full key. Used for look-ups. */
-  @Column(nullable = false, unique = true)
+  @Column(name = "key_hash", nullable = false, unique = true)
   private String keyHash;
 
   @ManyToOne(fetch = FetchType.LAZY)

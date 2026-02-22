@@ -70,6 +70,18 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.person.id = :personId AND w.date = :date")
   Double sumHoursByPersonIdAndDate(@Param("personId") Long personId, @Param("date") java.time.LocalDate date);
 
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND w.date = :date AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  Double sumHoursByPersonIdAndDateAndCycleId(@Param("personId") Long personId, @Param("date") java.time.LocalDate date, @Param("cycleId") Long cycleId);
+
+  @Query("SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND w.date = :date AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId)")
+  long countByPersonIdAndDateAndCycleId(@Param("personId") Long personId, @Param("date") java.time.LocalDate date, @Param("cycleId") Long cycleId);
+
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND w.date = :date AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  Double sumHoursByPersonIdAndDateAndProjectId(@Param("personId") Long personId, @Param("date") java.time.LocalDate date, @Param("projectId") Long projectId);
+
+  @Query("SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND w.date = :date AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
+  long countByPersonIdAndDateAndProjectId(@Param("personId") Long personId, @Param("date") java.time.LocalDate date, @Param("projectId") Long projectId);
+
   long countByPersonId(Long personId);
 
   long countByPersonIdAndDate(Long personId, java.time.LocalDate date);

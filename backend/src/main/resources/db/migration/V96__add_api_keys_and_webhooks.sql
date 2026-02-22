@@ -4,7 +4,7 @@
 
 -- API Keys table: stores hashed keys for external integrations
 CREATE TABLE IF NOT EXISTS api_keys (
-    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,
     key_prefix      VARCHAR(8)   NOT NULL,
     key_hash        VARCHAR(64)  NOT NULL UNIQUE,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS api_key_scopes (
 
 -- Webhook Subscriptions table: stores outgoing webhook endpoints
 CREATE TABLE IF NOT EXISTS webhook_subscriptions (
-    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id            BIGSERIAL PRIMARY KEY,
     name          VARCHAR(255) NOT NULL,
     target_url    VARCHAR(2048) NOT NULL,
     secret        VARCHAR(255)  NOT NULL,

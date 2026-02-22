@@ -174,6 +174,11 @@ const BugReportsPage: React.FC = () => {
       // Always use the filter endpoint for consistent server-side filtering
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
       
+      // When release filter is active, fetch a large page so client-side
+      // filtering covers all records (no reliable backend support yet).
+      const effectivePage = releaseFilter !== undefined ? 0 : page;
+      const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
+
       response = await qaTestManagementService.getBugReportsWithFilters(
         projectId,
         cycleFilter,
@@ -182,8 +187,8 @@ const BugReportsPage: React.FC = () => {
         severityFilter.length > 0 ? severityFilter : undefined,
         assigneeFilter.length > 0 ? assigneeFilter : undefined,
         excludeMode,
-        page,
-        rowsPerPage,
+        effectivePage,
+        effectiveSize,
         sortBy,
         sortOrder
       );

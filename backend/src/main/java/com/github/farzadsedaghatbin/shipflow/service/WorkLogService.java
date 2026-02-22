@@ -290,9 +290,21 @@ public class WorkLogService {
     Person person = getCurrentUserPerson();
     LocalDate today = LocalDate.now();
 
-    double todayHours = Optional.ofNullable(
-        workLogRepository.sumHoursByPersonIdAndDate(person.getId(), today)).orElse(0.0);
-    long todayCount = workLogRepository.countByPersonIdAndDate(person.getId(), today);
+    double todayHours;
+    long todayCount;
+    if (cycleId != null) {
+      todayHours = Optional.ofNullable(
+          workLogRepository.sumHoursByPersonIdAndDateAndCycleId(person.getId(), today, cycleId)).orElse(0.0);
+      todayCount = workLogRepository.countByPersonIdAndDateAndCycleId(person.getId(), today, cycleId);
+    } else if (projectId != null) {
+      todayHours = Optional.ofNullable(
+          workLogRepository.sumHoursByPersonIdAndDateAndProjectId(person.getId(), today, projectId)).orElse(0.0);
+      todayCount = workLogRepository.countByPersonIdAndDateAndProjectId(person.getId(), today, projectId);
+    } else {
+      todayHours = Optional.ofNullable(
+          workLogRepository.sumHoursByPersonIdAndDate(person.getId(), today)).orElse(0.0);
+      todayCount = workLogRepository.countByPersonIdAndDate(person.getId(), today);
+    }
 
     double totalHours;
     long totalCount;
