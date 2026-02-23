@@ -397,10 +397,9 @@ export default function Landing() {
                 {/* Author Avatar */}
                 <div className="flex-shrink-0">
                   <img
-                    src="https://github.com/farzadsedaghatbin.png"
+                    src="https://avatars.githubusercontent.com/farzad-sedaghatbin?v=4"
                     alt="Farzad Sedaghatbin"
                     className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
-                    referrerPolicy="no-referrer"
                   />
                 </div>
 
