@@ -292,12 +292,16 @@ A modern project management application implementing the [Shape Up](https://base
   - Standard contract: `sendNotification()`, `isActive()`, `getProviderName()`
   - Slack ships as the built-in provider; add Discord, PagerDuty, or others by implementing the interface
 - **Generic Inbound Webhook Infrastructure**: Vendor-agnostic endpoint for receiving events from any external service
-  - `POST /api/inbound/{provider}` — single endpoint handles Intercom, Zendesk, PagerDuty, or any custom provider
+  - `POST /api/inbound/{provider}` — single endpoint handles Zendesk, PagerDuty, or any custom provider
   - `InboundWebhookHandler` interface: `getProviderName()`, `validateSignature()`, `handle()`, `isActive()`
   - Auto-discovery: implement the interface as a `@Component` and it self-registers — zero changes to existing code
-  - Auto-detects event type from common headers (X-Event-Type, X-GitHub-Event, X-Intercom-Event, X-PagerDuty-Event, X-GitLab-Event, X-Linear-Event)
+  - Auto-detects event type from common headers (X-Event-Type, X-GitHub-Event, X-PagerDuty-Event, X-GitLab-Event, X-Linear-Event)
   - Per-handler signature validation (HMAC, shared secrets, etc.)
   - `GET /api/inbound` lists all active inbound providers
+  - **Admin UI**: configure DB-backed providers without code via **Integrations → Inbound Webhooks** in the app
+    - Create/edit/delete provider configs with HMAC algorithm, secret, and signature header
+    - Auto-generated webhook URL is displayed and copyable from the admin page
+    - Fallback `GenericInboundWebhookHandler` validates HMAC and accepts events for any DB-configured provider
 - **Release Traceability for Tasks & Bugs** (v0.6)
   - Filter backlog tasks by target release
   - Filter bug reports by target release

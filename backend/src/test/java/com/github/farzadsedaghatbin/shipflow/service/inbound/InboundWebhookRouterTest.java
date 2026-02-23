@@ -1,7 +1,12 @@
 package com.github.farzadsedaghatbin.shipflow.service.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.github.farzadsedaghatbin.shipflow.repository.inbound.InboundWebhookConfigRepository;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,12 +24,19 @@ class InboundWebhookRouterTest {
   private InboundWebhookRouter router;
   private StubHandler activeHandler;
   private StubHandler inactiveHandler;
+  private GenericInboundWebhookHandler genericHandler;
+  private InboundWebhookConfigRepository configRepository;
 
   @BeforeEach
   void setUp() {
     activeHandler = new StubHandler("test-provider", true, true);
     inactiveHandler = new StubHandler("disabled-provider", false, true);
-    router = new InboundWebhookRouter(List.of(activeHandler, inactiveHandler));
+    genericHandler = mock(GenericInboundWebhookHandler.class);
+    configRepository = mock(InboundWebhookConfigRepository.class);
+    when(genericHandler.supports(anyString())).thenReturn(false);
+    when(configRepository.findByIsEnabledTrue()).thenReturn(Collections.emptyList());
+    router = new InboundWebhookRouter(List.of(activeHandler, inactiveHandler),
+        genericHandler, configRepository);
   }
 
   // ── resolve ────────────────────────────────────────────────────────────
@@ -105,7 +117,8 @@ class InboundWebhookRouterTest {
           throw new RuntimeException("boom");
         }
       };
-      InboundWebhookRouter r = new InboundWebhookRouter(List.of(failing));
+      InboundWebhookRouter r = new InboundWebhookRouter(List.of(failing),
+          genericHandler, configRepository);
       Map<String, Object> result = r.route("fail-provider", "e", "{}", Map.of());
       assertThat(result)
           .containsEntry("status", "error")

@@ -21,6 +21,7 @@ import {
   Calendar,
   Heart,
   Search,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -113,6 +114,11 @@ export default function Landing() {
       icon: <Search className="h-10 w-10" />,
       title: t('landing.inAppGuides'),
       description: t('landing.inAppGuidesDesc'),
+    },
+    {
+      icon: <ArrowDownToLine className="h-10 w-10" />,
+      title: t('landing.inboundWebhooks'),
+      description: t('landing.inboundWebhooksDesc'),
     },
   ];
 

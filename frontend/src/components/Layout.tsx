@@ -37,6 +37,7 @@ import {
   Map,
   Layers,
   PackageCheck,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -154,6 +155,7 @@ const integrationItems: NavItemConfig[] = [
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
   { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
+  { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
 
 function NavItem({
@@ -245,6 +247,9 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
   const { isKanbanProject, isAllProjectsSelected } = useProject();
   const { hasPermissionSync, hasPermission } = usePermission();
+  const { startTour, hasCompletedTour } = useTour();
+  const { actualMode, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const currentPath = location.pathname;
 
   // Preload essential admin permissions for menu visibility
@@ -281,6 +286,36 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
         {/* Dashboard Switcher - shown in sidebar on mobile */}
         <div className="lg:hidden mb-4 px-1">
           <DashboardSwitcher onDashboardChange={() => {}} />
+        </div>
+
+        {/* Mobile-only quick actions (hidden from header on small screens) */}
+        <div className="sm:hidden mb-4 px-1 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={startTour}
+            className={cn(
+              "h-9 w-9 touch-manipulation",
+              !hasCompletedTour && "text-primary animate-pulse"
+            )}
+            aria-label={hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+          <LanguageSelector className="h-9 w-9 touch-manipulation" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9 touch-manipulation"
+            aria-label={t('layout.toggleTheme')}
+          >
+            {actualMode === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
         </div>
         <nav className="flex flex-col gap-1">
           {/* Overview Section */}
@@ -484,7 +519,7 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Right side actions - Touch-friendly */}
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Tour Help Button */}
+            {/* Tour Help Button - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -492,7 +527,7 @@ export default function Layout({ children }: LayoutProps) {
                   size="icon"
                   onClick={startTour}
                   className={cn(
-                    "h-11 w-11 touch-manipulation",
+                    "hidden sm:inline-flex h-11 w-11 touch-manipulation",
                     !hasCompletedTour && "text-primary animate-pulse"
                   )}
                   aria-label={hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
@@ -508,10 +543,10 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Language Selector */}
+            {/* Language Selector - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div>
+                <div className="hidden sm:block">
                   <LanguageSelector className="h-11 w-11 touch-manipulation" />
                 </div>
               </TooltipTrigger>
@@ -520,14 +555,14 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleTheme}
-                  className="h-11 w-11 touch-manipulation"
+                  className="hidden sm:inline-flex h-11 w-11 touch-manipulation"
                   aria-label={t('layout.toggleTheme')}
                 >
                   {actualMode === 'dark' ? (
