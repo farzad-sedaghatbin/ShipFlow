@@ -140,11 +140,6 @@ export interface CreateCycleRequest {
 export interface Team {
   id: number;
   name: string;
-  cycleId?: number;
-  cycleName?: string;
-  projectId?: number;
-  projectName?: string;
-  projectKey?: string;
   assignments?: TeamAssignment[];
   // Capacity overrides
   hoursPerDayOverride?: number;
@@ -155,7 +150,6 @@ export interface Team {
 
 export interface CreateTeamRequest {
   name: string;
-  cycleId?: number;
   hoursPerDayOverride?: number;
   workingDaysPerWeekOverride?: number;
 }

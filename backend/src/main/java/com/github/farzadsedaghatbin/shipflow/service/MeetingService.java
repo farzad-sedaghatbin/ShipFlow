@@ -41,10 +41,6 @@ public class MeetingService {
   private final ApplicationEventPublisher eventPublisher;
   private final ObjectMapper objectMapper;
 
-  public List<MeetingDTO> getAllMeetings() {
-    return meetingRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
-  }
-
   public Page<MeetingDTO> getAllMeetingsPaginated(Pageable pageable) {
     return meetingRepository.findAll(pageable).map(this::toDTO);
   }

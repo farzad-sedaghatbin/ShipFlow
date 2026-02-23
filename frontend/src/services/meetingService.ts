@@ -27,7 +27,6 @@ export interface PageResponse<T> {
 }
 
 export const meetingService = {
-  getAll: () => api.get<Meeting[]>('/meetings'),
   getPaginated: (params: MeetingFilterParams = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page !== undefined) queryParams.append('page', params.page.toString());

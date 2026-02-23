@@ -4,7 +4,6 @@ import { Project, CreateProjectRequest, ProjectRole, ProjectMember } from '../ty
 export const projectService = {
   /**
    * Get all projects (Admin only)
-   * @deprecated Use getMyProjects() for scoped access
    */
   getAll: async (): Promise<Project[]> => {
     const response = await api.get<Project[]>('/projects');

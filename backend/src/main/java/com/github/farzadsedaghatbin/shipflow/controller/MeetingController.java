@@ -27,13 +27,6 @@ public class MeetingController {
 
   private final MeetingService meetingService;
 
-  @GetMapping
-  @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
-  @Operation(summary = "Get all meetings (deprecated - use /paginated)")
-  public ResponseEntity<List<MeetingDTO>> getAllMeetings() {
-    return ResponseEntity.ok(meetingService.getAllMeetings());
-  }
-
   @GetMapping("/paginated")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
   @Operation(summary = "Get all meetings with pagination and sorting")
