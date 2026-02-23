@@ -8,14 +8,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTeamRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Permission;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
@@ -50,6 +53,9 @@ class TeamControllerIntegrationTest {
   private CycleRepository cycleRepository;
 
   @Autowired
+  private PitchRepository pitchRepository;
+
+  @Autowired
   private PermissionRepository permissionRepository;
 
   @Autowired
@@ -62,6 +68,7 @@ class TeamControllerIntegrationTest {
   void setUp() {
     permissionRepository.deleteAll();
     userRepository.deleteAll();
+    pitchRepository.deleteAll();
     teamRepository.deleteAll();
     cycleRepository.deleteAll();
 
@@ -89,8 +96,13 @@ class TeamControllerIntegrationTest {
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testTeam = Team.builder().name("Test Team").cycle(testCycle).build();
+    testTeam = Team.builder().name("Test Team").build();
     testTeam = teamRepository.save(testTeam);
+
+    // Link testTeam to testCycle via a pitch so findByCycleId works
+    Pitch testPitch = Pitch.builder().title("Test Pitch").description("Desc").appetiteDays(14)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.PENDING).build();
+    pitchRepository.save(testPitch);
   }
 
   @Test
@@ -116,7 +128,7 @@ class TeamControllerIntegrationTest {
 
   @Test
   void createTeam_WithValidData_ShouldCreateTeam() throws Exception {
-    CreateTeamRequest request = CreateTeamRequest.builder().name("New Team").cycleId(testCycle.getId()).build();
+    CreateTeamRequest request = CreateTeamRequest.builder().name("New Team").build();
 
     mockMvc.perform(post("/api/teams").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
@@ -125,7 +137,7 @@ class TeamControllerIntegrationTest {
 
   @Test
   void updateTeam_WhenExists_ShouldUpdateTeam() throws Exception {
-    CreateTeamRequest request = CreateTeamRequest.builder().name("Updated Team").cycleId(testCycle.getId()).build();
+    CreateTeamRequest request = CreateTeamRequest.builder().name("Updated Team").build();
 
     mockMvc.perform(put("/api/teams/{id}", testTeam.getId()).contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())

@@ -3,10 +3,8 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTeamRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamAssignmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
-import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
-import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamService {
 
   private final TeamRepository teamRepository;
-  private final CycleRepository cycleRepository;
   private final CapacityConfigService capacityConfigService;
 
   public List<TeamDTO> getAllTeams() {
@@ -39,12 +36,6 @@ public class TeamService {
 
   public TeamDTO createTeam(CreateTeamRequest request) {
     Team team = Team.builder().name(request.getName()).build();
-
-    if (request.getCycleId() != null) {
-      Cycle cycle = cycleRepository.findById(request.getCycleId()).orElseThrow(
-          () -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
-      team.setCycle(cycle);
-    }
 
     // Set capacity overrides if provided
     if (request.getHoursPerDayOverride() != null) {
@@ -69,12 +60,6 @@ public class TeamService {
         .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + id));
 
     team.setName(request.getName());
-
-    if (request.getCycleId() != null) {
-      Cycle cycle = cycleRepository.findById(request.getCycleId()).orElseThrow(
-          () -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
-      team.setCycle(cycle);
-    }
 
     // Update capacity overrides
     if (request.getHoursPerDayOverride() != null) {
@@ -132,17 +117,6 @@ public class TeamService {
         .build();
 
     return TeamDTO.builder().id(team.getId()).name(team.getName())
-        .cycleId(team.getCycle() != null ? team.getCycle().getId() : null)
-        .cycleName(team.getCycle() != null ? team.getCycle().getName() : null)
-        .projectId(team.getCycle() != null && team.getCycle().getProject() != null
-            ? team.getCycle().getProject().getId()
-            : null)
-        .projectName(team.getCycle() != null && team.getCycle().getProject() != null
-            ? team.getCycle().getProject().getName()
-            : null)
-        .projectKey(team.getCycle() != null && team.getCycle().getProject() != null
-            ? team.getCycle().getProject().getProjectKey()
-            : null)
         .hoursPerDayOverride(team.getHoursPerDayOverride())
         .workingDaysPerWeekOverride(team.getWorkingDaysPerWeekOverride())
         .effectiveHoursPerDay(hoursResolution.value())

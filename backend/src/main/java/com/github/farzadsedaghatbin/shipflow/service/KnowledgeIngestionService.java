@@ -815,9 +815,13 @@ public class KnowledgeIngestionService {
         sb.append("  - ").append(p.getTitle()).append(" [").append(p.getStatus()).append("]\n");
       }
     }
-    if (cycle.getTeams() != null && !cycle.getTeams().isEmpty()) {
-      sb.append("Teams (" ).append(cycle.getTeams().size()).append("):\n");
-      for (Team t : cycle.getTeams()) {
+    List<Team> cycleTeams = cycle.getPitches() != null
+        ? cycle.getPitches().stream().map(Pitch::getTeam).filter(java.util.Objects::nonNull)
+            .distinct().collect(java.util.stream.Collectors.toList())
+        : java.util.List.of();
+    if (!cycleTeams.isEmpty()) {
+      sb.append("Teams (" ).append(cycleTeams.size()).append("):\n");
+      for (Team t : cycleTeams) {
         sb.append("  - ").append(t.getName()).append("\n");
       }
     }

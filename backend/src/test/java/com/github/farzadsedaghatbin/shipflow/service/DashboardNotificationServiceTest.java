@@ -273,8 +273,10 @@ class DashboardNotificationServiceTest {
     Team team = Team.builder().id(1L).name("Test Team")
         .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
 
+    Pitch pitch = Pitch.builder().id(1L).title("Test Pitch").team(team).build();
+
     Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
-        .teams(new ArrayList<>(Arrays.asList(team))).pitches(new ArrayList<>()).build();
+        .pitches(new ArrayList<>(Arrays.asList(pitch))).build();
 
     when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
@@ -291,7 +293,7 @@ class DashboardNotificationServiceTest {
   @Test
   void notifyCyclePhaseChange_ShouldNotCreateNotificationsWhenPhaseUnchanged() {
     // Arrange
-    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).teams(new ArrayList<>())
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
         .pitches(new ArrayList<>()).build();
 
     // Act
@@ -305,7 +307,7 @@ class DashboardNotificationServiceTest {
   @Test
   void notifyCyclePhaseChange_ShouldHandleCycleWithNoUsers() {
     // Arrange
-    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING).teams(new ArrayList<>())
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
         .pitches(new ArrayList<>()).build();
 
     // Act

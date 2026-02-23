@@ -148,20 +148,20 @@ public class SampleDataInitializer implements CommandLineRunner {
         activeCycle, itCycle1, maCycle1);
 
     // Create teams for active cycle
-    Team alphaTeam = Team.builder().name("Alpha Team").cycle(activeCycle).build();
+    Team alphaTeam = Team.builder().name("Alpha Team").build();
     teamRepository.save(alphaTeam);
 
-    Team betaTeam = Team.builder().name("Beta Team").cycle(activeCycle).build();
+    Team betaTeam = Team.builder().name("Beta Team").build();
     teamRepository.save(betaTeam);
 
     // Create teams for past cycles
-    Team pastTeam1 = Team.builder().name("Release Team").cycle(completedCycle1).build();
+    Team pastTeam1 = Team.builder().name("Release Team").build();
     teamRepository.save(pastTeam1);
 
-    Team pastTeam2 = Team.builder().name("Summer Squad").cycle(completedCycle2).build();
+    Team pastTeam2 = Team.builder().name("Summer Squad").build();
     teamRepository.save(pastTeam2);
 
-    Team pastTeam3 = Team.builder().name("Mobile Team").cycle(completedCycle3).build();
+    Team pastTeam3 = Team.builder().name("Mobile Team").build();
     teamRepository.save(pastTeam3);
 
     // Create team assignments for active cycle - Alpha Team

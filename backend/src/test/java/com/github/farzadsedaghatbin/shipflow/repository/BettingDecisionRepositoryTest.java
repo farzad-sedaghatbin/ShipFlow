@@ -93,7 +93,6 @@ class BettingDecisionRepositoryTest {
     // Create test team
     testTeam = Team.builder()
         .name("Test Team Alpha")
-        .cycle(testCycle)
         .build();
     testTeam = teamRepository.save(testTeam);
 

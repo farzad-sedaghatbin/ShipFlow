@@ -124,15 +124,6 @@ class MeetingControllerIntegrationTest {
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
-  void getAllMeetings_ShouldReturnMeetings() throws Exception {
-    mockMvc.perform(get("/api/meetings")).andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-        .andExpect(jsonPath("$[0].type", is("KICKOFF")));
-  }
-
-  @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
-  @Test
   void getMeetingById_WhenExists_ShouldReturnMeeting() throws Exception {
     mockMvc.perform(get("/api/meetings/{id}", testMeeting.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))

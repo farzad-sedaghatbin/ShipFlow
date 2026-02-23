@@ -64,8 +64,13 @@ class BettingTableControllerIntegrationTest {
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testTeam = Team.builder().name("Alpha Team").cycle(testCycle).build();
+    testTeam = Team.builder().name("Alpha Team").build();
     testTeam = teamRepository.save(testTeam);
+
+    // Membership pitch: links testTeam to testCycle for findByCycleId to work
+    Pitch membershipPitch = Pitch.builder().title("Alpha Team Membership").description("Team link").appetiteDays(42)
+        .cycle(testCycle).team(testTeam).status(PitchStatus.SHAPED).build();
+    pitchRepository.save(membershipPitch);
 
     // Shape Up workflow: shaped pitches ready for betting have NO cycle assigned yet
     shapedPitch = Pitch.builder().title("User Authentication").description("Implement OAuth2 login flow")
@@ -128,8 +133,13 @@ class BettingTableControllerIntegrationTest {
   @Test
   void generateSlots_ShouldCreateSlotsForAllTeams() throws Exception {
     // Create a second team without slots
-    Team secondTeam = Team.builder().name("Beta Team").cycle(testCycle).build();
+    Team secondTeam = Team.builder().name("Beta Team").build();
     teamRepository.save(secondTeam);
+
+    // Link secondTeam to testCycle via a pitch so findByCycleId includes it
+    Pitch secondMembershipPitch = Pitch.builder().title("Beta Team Membership").description("Team link").appetiteDays(42)
+        .cycle(testCycle).team(secondTeam).status(PitchStatus.SHAPED).build();
+    pitchRepository.save(secondMembershipPitch);
 
     mockMvc.perform(post("/api/betting/cycle/{cycleId}/generate-slots", testCycle.getId()))
         .andExpect(status().isCreated()).andExpect(jsonPath("$", hasSize(1))) // Only Beta Team should get a

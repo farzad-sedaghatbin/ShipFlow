@@ -337,8 +337,7 @@ class WidgetDataService {
         id: team.id,
         name: team.name,
         members: team.assignments?.length || 0,
-        cycle: team.cycleName || 'Not assigned',
-        project: team.projectName || 'N/A'
+        activeMembers: team.assignments?.filter((a: any) => a.isActive).length || 0
       }));
 
       return {

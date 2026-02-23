@@ -48,13 +48,13 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
           WHERE proj.owner.id = :userId
           OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR proj.id IN (
-              SELECT DISTINCT cyc.project.id
-              FROM Cycle cyc
-              JOIN cyc.teams t
+              SELECT DISTINCT pit.cycle.project.id
+              FROM Pitch pit
+              JOIN pit.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND pit.cycle IS NOT NULL AND pit.deletedAt IS NULL
           )
       )
       ORDER BY c.startDate DESC
@@ -72,13 +72,13 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
           WHERE proj.owner.id = :userId
           OR proj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR proj.id IN (
-              SELECT DISTINCT cyc.project.id
-              FROM Cycle cyc
-              JOIN cyc.teams t
+              SELECT DISTINCT pit.cycle.project.id
+              FROM Pitch pit
+              JOIN pit.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND pit.cycle IS NOT NULL AND pit.deletedAt IS NULL
           )
       )
       ORDER BY c.startDate DESC

@@ -86,7 +86,7 @@ class BettingTableServiceTest {
     testCycle = Cycle.builder().id(1L).name("Q1 2024").phase(CyclePhase.SHAPING_BUILDING).startDate(LocalDate.now())
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
 
-    testTeam = Team.builder().id(1L).name("Alpha Team").cycle(testCycle).build();
+    testTeam = Team.builder().id(1L).name("Alpha Team").build();
 
     shapedPitch = Pitch.builder().id(1L).title("User Auth Feature").description("OAuth2 implementation")
         .appetiteDays(14).status(PitchStatus.SHAPED).cycle(testCycle).createdAt(LocalDateTime.now())
@@ -321,7 +321,7 @@ class BettingTableServiceTest {
 
   @Test
   void generateSlotsForCycle_ShouldCreateSlotsForTeamsWithoutSlots() {
-    Team team2 = Team.builder().id(2L).name("Beta Team").cycle(testCycle).build();
+    Team team2 = Team.builder().id(2L).name("Beta Team").build();
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.findByCycleId(1L)).thenReturn(Arrays.asList(testTeam, team2));

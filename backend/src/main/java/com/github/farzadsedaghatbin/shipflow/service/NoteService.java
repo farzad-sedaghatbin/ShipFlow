@@ -161,11 +161,7 @@ public class NoteService {
         break;
       case "team" :
         note.setTeamId(contextId);
-        teamRepository.findById(contextId).ifPresent(team -> {
-          if (team.getCycle() != null) {
-            note.setCycleId(team.getCycle().getId());
-          }
-        });
+        // Teams are org-level; cycleId is not auto-derived from the team
         break;
       case "cycle" :
         note.setCycleId(contextId);

@@ -7,10 +7,8 @@ import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTeamRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
-import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
-import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,27 +31,20 @@ class TeamServiceTest {
   private TeamRepository teamRepository;
 
   @Mock
-  private CycleRepository cycleRepository;
-
-  @Mock
   private CapacityConfigService capacityConfigService;
 
   @InjectMocks
   private TeamService teamService;
 
   private Team testTeam;
-  private Cycle testCycle;
   private CreateTeamRequest testRequest;
 
   @BeforeEach
   void setUp() {
-    testCycle = Cycle.builder().id(1L).name("Test Cycle").build();
-
-    testTeam = Team.builder().id(1L).name("Test Team").cycle(testCycle).assignments(new ArrayList<>()).build();
+    testTeam = Team.builder().id(1L).name("Test Team").assignments(new ArrayList<>()).build();
 
     testRequest = new CreateTeamRequest();
     testRequest.setName("Test Team");
-    testRequest.setCycleId(1L);
 
     // Setup capacity config mock - default 8 hours/day
     lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
@@ -94,7 +85,6 @@ class TeamServiceTest {
 
   @Test
   void createTeam_ShouldSaveTeam() {
-    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
 
     TeamDTO result = teamService.createTeam(testRequest);
@@ -107,7 +97,6 @@ class TeamServiceTest {
   @Test
   void updateTeam_WhenExists_ShouldUpdateTeam() {
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
-    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
     when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
 
     testRequest.setName("Updated Team");

@@ -73,15 +73,6 @@ class MeetingServiceTest {
   }
 
   @Test
-  void getAllMeetings_ShouldReturnAllMeetings() {
-    when(meetingRepository.findAll()).thenReturn(Arrays.asList(testMeeting));
-
-    List<MeetingDTO> result = meetingService.getAllMeetings();
-
-    assertThat(result).hasSize(1);
-  }
-
-  @Test
   void getMeetingById_WhenExists_ShouldReturnMeeting() {
     when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
 

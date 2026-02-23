@@ -112,10 +112,9 @@ class DocumentControllerIntegrationTest {
     testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusDays(42))
         .phase(com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
-    team.setCycle(testCycle);
-    teamRepository.save(team);
 
     testPitch = Pitch.builder().title("Test Pitch").description("Test pitch for documents").cycle(testCycle)
+        .team(team)
         .appetiteDays(14).status(com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus.PENDING)
         .build();
     testPitch = pitchRepository.save(testPitch);
