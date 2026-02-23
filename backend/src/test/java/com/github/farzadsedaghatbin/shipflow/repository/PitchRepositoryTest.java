@@ -44,7 +44,7 @@ class PitchRepositoryTest {
         .phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testTeam = Team.builder().name("Test Team").cycle(testCycle).build();
+    testTeam = Team.builder().name("Test Team").build();
     testTeam = teamRepository.save(testTeam);
 
     testPitch = Pitch.builder().title("Test Pitch").description("Test Description").appetiteDays(14)

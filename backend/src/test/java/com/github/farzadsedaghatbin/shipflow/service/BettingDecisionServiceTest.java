@@ -83,7 +83,6 @@ class BettingDecisionServiceTest {
     testTeam = Team.builder()
         .id(1L)
         .name("Alpha Team")
-        .cycle(testCycle)
         .build();
 
     testPitch = Pitch.builder()
@@ -400,7 +399,7 @@ class BettingDecisionServiceTest {
     @DisplayName("Should compare appetite for all teams")
     void compareAppetiteAllTeams_ShouldReturnSortedList() {
       // Given
-      Team team2 = Team.builder().id(2L).name("Beta Team").cycle(testCycle).build();
+      Team team2 = Team.builder().id(2L).name("Beta Team").build();
       List<Team> teams = Arrays.asList(testTeam, team2);
 
       when(teamRepository.findByCycleId(1L)).thenReturn(teams);

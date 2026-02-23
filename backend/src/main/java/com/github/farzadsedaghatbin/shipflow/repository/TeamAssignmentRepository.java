@@ -24,10 +24,10 @@ public interface TeamAssignmentRepository extends JpaRepository<TeamAssignment, 
   @Query("SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
   Optional<TeamAssignment> findActiveByPersonAndTeam(@Param("personId") Long personId, @Param("teamId") Long teamId);
 
-  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.cycle.id = :cycleId")
+  @Query("SELECT DISTINCT ta FROM TeamAssignment ta JOIN ta.team t JOIN t.pitches p WHERE ta.person.id = :personId AND p.cycle.id = :cycleId AND p.deletedAt IS NULL")
   List<TeamAssignment> findByPersonAndCycle(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
 
-  @Query("SELECT ta FROM TeamAssignment ta WHERE ta.team.cycle.id = :cycleId AND ta.isActive = true")
+  @Query("SELECT DISTINCT ta FROM TeamAssignment ta JOIN ta.team t JOIN t.pitches p WHERE p.cycle.id = :cycleId AND ta.isActive = true AND p.deletedAt IS NULL")
   List<TeamAssignment> findActiveByCycle(@Param("cycleId") Long cycleId);
 
   List<TeamAssignment> findByRole(TeamMemberRole role);
@@ -38,6 +38,6 @@ public interface TeamAssignmentRepository extends JpaRepository<TeamAssignment, 
   @Query("SELECT COUNT(ta) > 0 FROM TeamAssignment ta WHERE ta.person.id = :personId AND ta.team.id = :teamId AND ta.isActive = true")
   boolean existsActiveAssignment(@Param("personId") Long personId, @Param("teamId") Long teamId);
 
-  @Query("SELECT ta FROM TeamAssignment ta JOIN FETCH ta.team t JOIN FETCH t.cycle WHERE ta.person.id = :personId ORDER BY ta.startDate DESC")
+  @Query("SELECT ta FROM TeamAssignment ta JOIN FETCH ta.team t WHERE ta.person.id = :personId ORDER BY ta.startDate DESC")
   List<TeamAssignment> findByPersonIdWithTeamAndCycle(@Param("personId") Long personId);
 }

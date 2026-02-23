@@ -21,10 +21,6 @@ public class Team {
   @Column(nullable = false)
   private String name;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "cycle_id")
-  private Cycle cycle;
-
   // Capacity Configuration Overrides (null = inherit from organization)
   @Column(name = "hours_per_day_override", columnDefinition = "NUMERIC")
   private Double hoursPerDayOverride;

@@ -25,7 +25,7 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
   @Query("SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.id = :teamId AND a.isActive = true")
   List<Person> findByCurrentTeam(@Param("teamId") Long teamId);
 
-  @Query("SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a WHERE a.team.cycle.id = :cycleId AND a.isActive = true")
+  @Query("SELECT DISTINCT p FROM Person p JOIN p.teamAssignments a JOIN a.team t JOIN t.pitches pt WHERE pt.cycle.id = :cycleId AND a.isActive = true AND pt.deletedAt IS NULL")
   List<Person> findByCurrentCycle(@Param("cycleId") Long cycleId);
 
   @Query("SELECT p FROM Person p WHERE p.skills LIKE %:skill%")

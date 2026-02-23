@@ -48,13 +48,13 @@ public interface UserProjectRepository extends JpaRepository<UserProject, Long> 
           p.owner.id = :userId
           OR p.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR p.id IN (
-              SELECT DISTINCT c.project.id
-              FROM Cycle c
-              JOIN c.teams t
+              SELECT DISTINCT pit.cycle.project.id
+              FROM Pitch pit
+              JOIN pit.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND pit.cycle IS NOT NULL AND pit.deletedAt IS NULL
           )
       )
       ORDER BY p.name
@@ -69,13 +69,13 @@ public interface UserProjectRepository extends JpaRepository<UserProject, Long> 
           p.owner.id = :userId
           OR p.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR p.id IN (
-              SELECT DISTINCT c.project.id
-              FROM Cycle c
-              JOIN c.teams t
+              SELECT DISTINCT pit.cycle.project.id
+              FROM Pitch pit
+              JOIN pit.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND pit.cycle IS NOT NULL AND pit.deletedAt IS NULL
           )
       )
       ORDER BY p.name
@@ -90,13 +90,13 @@ public interface UserProjectRepository extends JpaRepository<UserProject, Long> 
           p.owner.id = :userId
           OR p.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR p.id IN (
-              SELECT DISTINCT c.project.id
-              FROM Cycle c
-              JOIN c.teams t
+              SELECT DISTINCT pit.cycle.project.id
+              FROM Pitch pit
+              JOIN pit.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND pit.cycle IS NOT NULL AND pit.deletedAt IS NULL
           )
       )
       """)

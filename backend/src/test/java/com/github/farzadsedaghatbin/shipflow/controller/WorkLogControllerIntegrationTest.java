@@ -81,7 +81,7 @@ class WorkLogControllerIntegrationTest {
         .endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
 
-    testTeam = Team.builder().name("Test Team").cycle(testCycle).build();
+    testTeam = Team.builder().name("Test Team").build();
     testTeam = teamRepository.save(testTeam);
 
     testPerson = Person.builder().name("John Doe").email("john.doe@example.com").isActive(true)

@@ -11,8 +11,6 @@ public class CreateTeamRequest {
   @NotBlank(message = "Team name is required")
   private String name;
 
-  private Long cycleId;
-
   // Capacity Configuration Overrides (null = inherit from organization)
   private Double hoursPerDayOverride;
   private Integer workingDaysPerWeekOverride;

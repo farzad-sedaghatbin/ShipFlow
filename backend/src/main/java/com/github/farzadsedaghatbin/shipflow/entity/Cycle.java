@@ -48,9 +48,5 @@ public class Cycle {
 
   @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
-  private List<Team> teams = new ArrayList<>();
-
-  @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
-  @Builder.Default
   private List<Retrospective> retrospectives = new ArrayList<>();
 }

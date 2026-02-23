@@ -101,7 +101,6 @@ class BettingDecisionControllerIntegrationTest {
 
                 testTeam = Team.builder()
                                 .name("Alpha Team")
-                                .cycle(testCycle)
                                 .build();
                 testTeam = teamRepository.save(testTeam);
 
@@ -115,6 +114,12 @@ class BettingDecisionControllerIntegrationTest {
                                 .updatedAt(LocalDateTime.now())
                                 .build();
                 shapedPitch = pitchRepository.save(shapedPitch);
+
+                // Membership pitch: links testTeam to testCycle for findByCycleId to work
+                Pitch membershipPitch = Pitch.builder().title("Alpha Team Membership").description("Team link")
+                                .appetiteDays(42).cycle(testCycle).team(testTeam).status(PitchStatus.SHAPED)
+                                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+                pitchRepository.save(membershipPitch);
         }
 
         // === Record Decision Tests ===
@@ -448,9 +453,14 @@ class BettingDecisionControllerIntegrationTest {
                 // Create a second team
                 Team secondTeam = Team.builder()
                                 .name("Beta Team")
-                                .cycle(testCycle)
                                 .build();
                 teamRepository.save(secondTeam);
+
+                // Link secondTeam to testCycle via membership pitch
+                Pitch secondMembershipPitch = Pitch.builder().title("Beta Team Membership").description("Team link")
+                                .appetiteDays(42).cycle(testCycle).team(secondTeam).status(PitchStatus.SHAPED)
+                                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+                pitchRepository.save(secondMembershipPitch);
 
                 mockMvc.perform(get("/api/betting/decisions/compare/pitch/{pitchId}/all-teams", shapedPitch.getId())
                                 .param("cycleId", testCycle.getId().toString()))

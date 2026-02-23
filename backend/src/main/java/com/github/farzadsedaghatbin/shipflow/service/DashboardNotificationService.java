@@ -254,17 +254,21 @@ public class DashboardNotificationService {
   private List<User> getUsersInvolvedInCycle(Cycle cycle) {
     List<User> users = new ArrayList<>();
 
-    // Add users from team assignments
-    if (cycle.getTeams() != null) {
-      cycle.getTeams().forEach(team -> {
-        if (team.getAssignments() != null) {
-          team.getAssignments().forEach(assignment -> {
-            if (assignment.getPerson() != null && assignment.getPerson().getUser() != null) {
-              users.add(assignment.getPerson().getUser());
+    // Add users from team assignments (teams derived from pitches in this cycle)
+    if (cycle.getPitches() != null) {
+      cycle.getPitches().stream()
+          .map(p -> p.getTeam())
+          .filter(team -> team != null)
+          .distinct()
+          .forEach(team -> {
+            if (team.getAssignments() != null) {
+              team.getAssignments().forEach(assignment -> {
+                if (assignment.getPerson() != null && assignment.getPerson().getUser() != null) {
+                  users.add(assignment.getPerson().getUser());
+                }
+              });
             }
           });
-        }
-      });
     }
 
     // Add project owner if the cycle belongs to a project

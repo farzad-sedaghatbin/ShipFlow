@@ -94,13 +94,13 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
           WHERE prj.owner.id = :userId
           OR prj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR prj.id IN (
-              SELECT DISTINCT cyc.project.id
-              FROM Cycle cyc
-              JOIN cyc.teams t
+              SELECT DISTINCT p2.cycle.project.id
+              FROM Pitch p2
+              JOIN p2.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND p2.cycle IS NOT NULL AND p2.deletedAt IS NULL
           )
       )
       ORDER BY p.id DESC
@@ -119,13 +119,13 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
           WHERE prj.owner.id = :userId
           OR prj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           OR prj.id IN (
-              SELECT DISTINCT cyc.project.id
-              FROM Cycle cyc
-              JOIN cyc.teams t
+              SELECT DISTINCT p2.cycle.project.id
+              FROM Pitch p2
+              JOIN p2.team t
               JOIN TeamAssignment ta ON ta.team.id = t.id
               JOIN ta.person per
               JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId
+              WHERE u.id = :userId AND p2.cycle IS NOT NULL AND p2.deletedAt IS NULL
           )
       )
       ORDER BY p.id DESC
