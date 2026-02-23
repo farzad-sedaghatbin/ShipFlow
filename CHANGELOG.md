@@ -4,18 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- **Inbound Webhook Admin UI**: DB-backed provider configuration through "Integrations → Inbound Webhooks" — no environment variables required
-  - Create, edit, enable/disable, and delete webhook provider configs via the admin page
-  - HMAC signature validation (HmacSHA256, HmacSHA1, HmacSHA512) configured per provider through the UI
-  - Auto-generated, copyable webhook URL displayed for each provider
-  - `InboundWebhookConfig` JPA entity + Flyway migration `V98`
-  - `InboundWebhookConfigService` — upsert by provider name, secret masking, toggle enabled, webhook URL builder
-  - `InboundWebhookConfigController` — REST API at `GET/POST/PATCH/DELETE /api/inbound-webhooks/configurations`; ADMIN/MANAGER gated
-  - `GenericInboundWebhookHandler` — DB-driven fallback handler; `InboundWebhookRouter` falls through to it when no code-level handler exists
-  - `InboundWebhooksIntegration.tsx` frontend admin page with full CRUD dialog, enable/disable toggle, copy-URL button
-  - Navigation entry under Integrations sidebar (`integrations/inbound-webhooks`)
-  - i18n keys added (English and Persian)
+<!-- Nothing yet -->
 
 ## [0.6.0] - 2026-02-22 - Provider Abstractions, Release Traceability & Inbound Webhooks
 

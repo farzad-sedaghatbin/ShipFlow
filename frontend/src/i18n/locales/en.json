@@ -200,7 +200,6 @@
     "slack": "Slack",
     "teams": "Microsoft Teams",
     "mcp": "MCP Servers",
-    "inboundWebhooks": "Inbound Webhooks",
     "connect": "Connect",
     "disconnect": "Disconnect",
     "connected": "Connected",
@@ -1462,8 +1461,8 @@
     "suggestedQ1": "How do I create a new cycle?",
     "suggestedQ2": "How do I run a betting meeting?",
     "suggestedQ3": "How do I use hill charts?",
-    "suggestedQ4": "How do I connect an external service to ShipFlow?",
-    "suggestedQ5": "How do inbound webhooks work?"
+    "suggestedQ4": "How do inbound webhooks work?",
+    "suggestedQ5": "How do I connect an external service to ShipFlow?"
   },
   "pitchDetail": {
     "title": "Pitch Details",
@@ -4464,8 +4463,6 @@
     "cycleSignalsDesc": "Decision support from historical patterns: appetite accuracy, shaping quality, risk prediction, and retrospective follow-through.",
     "inAppGuides": "AI Help Search & Guides",
     "inAppGuidesDesc": "Ask how-to questions and get AI-powered answers from ShipFlow documentation, plus interactive tour and detailed guides.",
-    "inboundWebhooks": "Inbound Webhook Integrations",
-    "inboundWebhooksDesc": "Connect any external service — Zendesk, PagerDuty, or custom — via the admin UI. Configure per-provider HMAC secrets and get a ready-to-use webhook URL without writing code.",
     "aboutAuthorTitle": "About the Author",
     "aboutAuthorSubtitle": "Meet the creator behind ShipFlow",
     "authorName": "Farzad Sedaghatbin",

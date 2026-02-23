@@ -26,7 +26,6 @@ import SlackIntegration from './pages/SlackIntegration';
 import GitHubIntegration from './pages/integrations/GitHubIntegration';
 import TeamsIntegration from './pages/integrations/TeamsIntegration';
 import McpIntegration from './pages/integrations/McpIntegration';
-import InboundWebhooksIntegration from './pages/integrations/InboundWebhooksIntegration';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import HealthOverview from './pages/HealthOverview';
@@ -186,7 +185,6 @@ function App() {
                     <Route path="integrations/github" element={<GitHubIntegration />} />
                     <Route path="integrations/teams" element={<TeamsIntegration />} />
                     <Route path="integrations/mcp" element={<McpIntegration />} />
-                    <Route path="integrations/inbound-webhooks" element={<InboundWebhooksIntegration />} />
                     {/* Legacy route redirects */}
                     <Route path="slack" element={<Navigate to="/integrations/slack" replace />} />
 

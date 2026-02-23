@@ -38,35 +38,38 @@ ShipFlow can send event notifications to external systems.
 ### Pluggable Notification Providers
 Outgoing notifications use a `NotificationProvider` interface. Slack ships as the built-in provider, but you can add Discord, PagerDuty, or any other service by implementing the interface.
 
-## Incoming Webhooks (Inbound Integrations)
-External services can automatically send events to ShipFlow via a **generic, vendor-agnostic inbound webhook endpoint** — turning support tickets, incidents, or any external event into bug reports or tasks without manual data entry.
+## Incoming Webhooks
+External services can push events into ShipFlow via a **generic, vendor-agnostic inbound endpoint**.
 
-> **Looking for setup instructions?** See the full guide: **"11 – Connect External Services to ShipFlow (Inbound Integrations)"** for step-by-step instructions on connecting any external service.
+### Generic Inbound Webhook Endpoint
+ShipFlow exposes `POST /api/inbound/{provider}` — a single endpoint that accepts events from any external service.
 
-### Quick Summary
-- Any service that supports outgoing webhooks can push events into ShipFlow
-- The inbound endpoint is `POST /api/inbound/{provider}` — provider-agnostic by design
-- Each provider handler validates signatures, maps payloads, and creates ShipFlow items automatically
-- Configuration is done through the admin UI at **Integrations → Inbound Webhooks** — no server access needed
+**How It Works:**
+1. An external service (Intercom, Zendesk, PagerDuty, etc.) sends a POST to `/api/inbound/{provider}`
+2. ShipFlow's **InboundWebhookRouter** looks up the handler for that provider
+3. The handler validates the request signature (HMAC, shared secret, etc.)
+4. The handler maps the payload to a ShipFlow action (create bug, create task, etc.)
+5. The controller returns an appropriate HTTP response (200 OK, 401 Invalid Signature, 404 Unknown Provider)
 
-### How Inbound Integrations Work
-1. Something happens in your external service (new ticket, incident, conversation, etc.)
-2. The external service sends the event as a webhook to `POST /api/inbound/{provider}`
-3. ShipFlow validates the signature, maps the event to a ShipFlow action (create bug report, task, etc.)
-4. The result appears in ShipFlow — with source details and a reference back to the external system
+### Supported Event Type Headers
+The endpoint auto-detects the event type from common header conventions:
+- `X-Event-Type` (generic)
+- `X-GitHub-Event` (GitHub)
+- `X-Intercom-Event` (Intercom)
+- `X-Hook-Event` (generic hook systems)
+- `X-PagerDuty-Event` (PagerDuty)
+- `X-GitLab-Event` (GitLab)
+- `X-Linear-Event` (Linear)
 
-### Connecting a Service
-The general pattern for **any** external service:
-1. Go to **Integrations → Inbound Webhooks** and click "Add Provider"
-2. Copy the generated webhook URL and paste it in the external service's webhook settings
-3. Enter the shared secret from the external service in ShipFlow's provider settings
-4. The provider is active immediately — check the Inbound Webhooks page to verify
+### Listing Active Providers
+Call `GET /api/inbound` to see which inbound providers are currently active and accepting events.
 
-### Managing Providers
-Go to **Integrations → Inbound Webhooks** to view, enable/disable, edit, or delete inbound webhook providers.
+### Pre-Built Integrations
+- **GitHub** — Commit and PR updates linked to pitches (via dedicated webhook controller)
+- **Slack** — Create pitches or log notes from Slack commands
 
-### For Developers: Adding a Custom Provider
-Developers can add a new provider by implementing the `InboundWebhookHandler` interface as a Spring `@Component`. The router auto-discovers it — zero changes to existing code. See the developer documentation for details.
+### Adding a Custom Inbound Provider
+Developers can add a new provider by implementing the `InboundWebhookHandler` interface as a Spring `@Component`. The router auto-discovers it — zero changes to existing code.
 
 # Public API
 

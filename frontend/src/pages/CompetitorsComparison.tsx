@@ -108,7 +108,6 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'Integrations', feature: 'Webhooks (outgoing)', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   { category: 'Integrations', feature: 'Generic inbound webhooks', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Pluggable inbound webhook handlers', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
-  { category: 'Integrations', feature: 'No-code inbound webhook setup (admin UI)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
 
   // Deployment & Pricing
   { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
