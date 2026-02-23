@@ -37,6 +37,7 @@ import {
   Map,
   Layers,
   PackageCheck,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -154,6 +155,7 @@ const integrationItems: NavItemConfig[] = [
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
   { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
+  { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
 
 function NavItem({

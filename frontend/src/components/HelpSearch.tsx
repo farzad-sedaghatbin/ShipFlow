@@ -19,8 +19,8 @@ export default function HelpSearch() {
         t('helpGuides.suggestedQ1', 'How do I create a new cycle?'),
         t('helpGuides.suggestedQ2', 'How do I run a betting meeting?'),
         t('helpGuides.suggestedQ3', 'How do I use hill charts?'),
-        t('helpGuides.suggestedQ4', 'How do inbound webhooks work?'),
-        t('helpGuides.suggestedQ5', 'How do I connect an external service to ShipFlow?'),
+        t('helpGuides.suggestedQ4', 'How do I connect an external service to ShipFlow?'),
+        t('helpGuides.suggestedQ5', 'How do inbound webhooks work?'),
     ];
 
     const handleSubmit = async (e?: React.FormEvent) => {
