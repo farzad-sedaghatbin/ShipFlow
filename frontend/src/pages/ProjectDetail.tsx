@@ -456,11 +456,6 @@ export default function ProjectDetail() {
                     </div>
                     <div>
                       <p className="font-medium">{team.name}</p>
-                      {team.cycleName && (
-                        <p className="text-sm text-muted-foreground">
-                          {t('projectDetail.cycle')}: {team.cycleName}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <Badge variant="outline">

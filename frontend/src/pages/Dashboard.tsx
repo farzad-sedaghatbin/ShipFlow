@@ -72,14 +72,11 @@ export default function Dashboard() {
       const cycles = cyclesRes.data;
       setActiveCycles(cycles);
 
-      const cycleIds = new Set(cycles.map((c: Cycle) => c.id));
-
       let filteredPitches = pitchesRes.data;
-      let filteredTeams = teamsRes.data;
+      const filteredTeams = teamsRes.data;
 
       if (!isAllProjectsSelected && currentProject) {
         filteredPitches = pitchesRes.data.filter((p: Pitch) => p.projectId === currentProject.id);
-        filteredTeams = teamsRes.data.filter((t: Team) => cycleIds.has(t.cycleId!));
       }
 
       setRecentPitches(filteredPitches.slice(0, 5));

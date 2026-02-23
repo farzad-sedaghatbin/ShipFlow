@@ -228,8 +228,9 @@ public class CycleService {
     CycleDTO.CycleDTOBuilder builder = CycleDTO.builder().id(cycle.getId()).name(cycle.getName())
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).phase(cycle.getPhase())
         .isActive(cycle.getIsActive()).pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
-        .teamCount((int) cycle.getPitches().stream()
-            .map(p -> p.getTeam()).filter(t -> t != null).distinct().count());
+        .teamCount((int) (cycle.getPitches() != null
+            ? cycle.getPitches().stream().map(p -> p.getTeam()).filter(t -> t != null).distinct().count()
+            : 0));
 
     if (cycle.getProject() != null) {
       builder.projectId(cycle.getProject().getId()).projectName(cycle.getProject().getName())
