@@ -7,9 +7,11 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 public class LLMCacheService {
 
   private final AICacheConfig cacheConfig;
+  private final StringRedisTemplate redisTemplate;
 
   @Value("${llm.cache.ttl.minutes:60}")
   private int cacheTtlMinutes = 60; // Default value for non-Spring contexts
@@ -51,21 +54,24 @@ public class LLMCacheService {
    * would use Spring Data Redis or Jedis/Lettuce client.
    */
   private void initializeRedis() {
-    try {
-      AICacheConfig.RedisConfig redis = cacheConfig.getRedis();
-      log.info("Initializing Redis for LLM cache at {}:{}", redis.getHost(), redis.getPort());
-      // In production implementation:
-      // RedisTemplate<String, CachedResponse> redisTemplate = new RedisTemplate<>();
-      // redisTemplate.setConnectionFactory(redisConnectionFactory);
-      log.warn("Redis provider configured but full Redis integration pending - using in-memory for now");
-    } catch (Exception e) {
-      log.error("Failed to initialize Redis for LLM cache, using in-memory: {}", e.getMessage());
-    }
+    AICacheConfig.RedisConfig redis = cacheConfig.getRedis();
+    log.info("LLMCacheService connected to Redis at {}:{}", redis.getHost(), redis.getPort());
   }
 
   /** Gets a cached LLM response if available and not expired. */
   public String getCachedResponse(String prompt) {
     String hash = hashPrompt(prompt);
+
+    if (cacheConfig.isRedisProvider()) {
+      String response = redisTemplate.opsForValue().get("llm:" + hash);
+      if (response != null) {
+        log.debug("Cache HIT (Redis) for prompt hash: {}", hash.substring(0, 8));
+        return response;
+      }
+      log.debug("Cache MISS (Redis) for prompt hash: {}", hash.substring(0, 8));
+      return null;
+    }
+
     CachedResponse cached = cache.get(hash);
 
     if (cached != null) {
@@ -91,6 +97,13 @@ public class LLMCacheService {
     }
 
     String hash = hashPrompt(prompt);
+
+    if (cacheConfig.isRedisProvider()) {
+      redisTemplate.opsForValue().set("llm:" + hash, response, cacheTtlMinutes, TimeUnit.MINUTES);
+      log.debug("Cached response (Redis) for prompt hash: {}", hash.substring(0, 8));
+      return;
+    }
+
     cache.put(hash, new CachedResponse(response));
     log.debug("Cached response for prompt hash: {}", hash.substring(0, 8));
 
@@ -149,6 +162,13 @@ public class LLMCacheService {
 
   /** Clears the cache. */
   public void clearCache() {
+    if (cacheConfig.isRedisProvider()) {
+      java.util.Set<String> keys = redisTemplate.keys("llm:*");
+      int size = keys != null ? keys.size() : 0;
+      if (keys != null && !keys.isEmpty()) redisTemplate.delete(keys);
+      log.info("Cleared LLM cache (Redis): {} entries removed", size);
+      return;
+    }
     int size = cache.size();
     cache.clear();
     log.info("Cleared LLM cache: {} entries removed", size);

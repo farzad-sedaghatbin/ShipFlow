@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
@@ -12,7 +13,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * Tests for Risk Analysis caching integration. Tests cover: - Pitch risk
@@ -22,6 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Risk Analysis Caching Tests")
 class RiskAnalysisCacheTest {
+
+  @Mock private StringRedisTemplate redisTemplate;
+  @Mock private ObjectMapper objectMapper;
 
   private AICacheConfig cacheConfig;
   private AICacheService cacheService;
@@ -43,7 +49,7 @@ class RiskAnalysisCacheTest {
     qaConfig.setEnabled(true);
     cacheConfig.setQa(qaConfig);
 
-    cacheService = new AICacheService(cacheConfig);
+    cacheService = new AICacheService(cacheConfig, redisTemplate, objectMapper);
     cacheService.init();
   }
 

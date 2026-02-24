@@ -6,6 +6,10 @@ import com.github.farzadsedaghatbin.shipflow.config.vectorstore.VectorStoreProvi
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
+import io.qdrant.client.QdrantClient;
+import io.qdrant.client.QdrantGrpcClient;
+import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.Collections.VectorParams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -59,6 +63,8 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
     log.info("Creating Qdrant embedding store - Host: {}, Port: {}, Collection: {}, Dimension: {}", host, port,
         collectionName, dimension);
 
+    ensureCollectionExists(host, port, collectionName, dimension, config.hasApiKey() ? config.getApiKey() : null);
+
     QdrantEmbeddingStore.Builder builder = QdrantEmbeddingStore.builder().host(host).port(port)
         .collectionName(collectionName);
 
@@ -78,6 +84,43 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
     }
 
     return builder.build();
+  }
+
+  /**
+   * Ensures the Qdrant collection exists, creating it with cosine distance
+   * if it does not. Uses a short-lived QdrantClient for the check/create,
+   * then closes it — the EmbeddingStore manages its own connection pool.
+   */
+  private void ensureCollectionExists(String host, int port, String collectionName, int dimension, String apiKey) {
+    QdrantGrpcClient.Builder grpcBuilder = QdrantGrpcClient.newBuilder(host, port, false);
+    if (apiKey != null && !apiKey.isBlank()) {
+      grpcBuilder.withApiKey(apiKey);
+    }
+
+    try (QdrantClient qdrantClient = new QdrantClient(grpcBuilder.build())) {
+      boolean exists = qdrantClient.listCollectionsAsync().get().contains(collectionName);
+      if (exists) {
+        log.info("Qdrant collection '{}' already exists", collectionName);
+        return;
+      }
+
+      log.info("Qdrant collection '{}' not found — creating with dimension {} and Cosine distance",
+          collectionName, dimension);
+
+      qdrantClient.createCollectionAsync(
+          collectionName,
+          VectorParams.newBuilder()
+              .setSize(dimension)
+              .setDistance(Distance.Cosine)
+              .build()
+      ).get();
+
+      log.info("Qdrant collection '{}' created successfully", collectionName);
+
+    } catch (Exception e) {
+      throw new IllegalStateException(
+          "Failed to ensure Qdrant collection '" + collectionName + "' exists: " + e.getMessage(), e);
+    }
   }
 
   @Override
