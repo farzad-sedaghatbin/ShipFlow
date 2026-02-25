@@ -170,7 +170,7 @@ export default function EpicFormPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('epics.descriptionLabel')}</Label>
+              <Label htmlFor="description">{t('epics.descriptionLabel')}</Label>
               <MarkdownEditor
                 id="description"
                 value={formData.description}

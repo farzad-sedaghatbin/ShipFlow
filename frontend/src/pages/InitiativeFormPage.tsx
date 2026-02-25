@@ -172,7 +172,7 @@ export default function InitiativeFormPage() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>{t('initiatives.descriptionLabel')}</Label>
+              <Label htmlFor="description">{t('initiatives.descriptionLabel')}</Label>
               <MarkdownEditor
                 id="description"
                 value={formData.description}

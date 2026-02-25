@@ -39,7 +39,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MEMBER', 'BACKLOG', 'CREATE', 'Members can create tasks', NOW()),
 ('MEMBER', 'BACKLOG', 'READ', 'Members can view tasks', NOW()),
 ('MEMBER', 'BACKLOG', 'UPDATE', 'Members can update own tasks', NOW()),
-('READONLY', 'BACKLOG', 'READ', 'Read-only users can view tasks', NOW());
+('READONLY', 'BACKLOG', 'READ', 'Read-only users can view tasks', NOW())
+ON CONFLICT DO NOTHING;
 
 -- WORKLOG (Time tracking)
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -57,7 +58,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MEMBER', 'WORKLOG', 'READ', 'Members can view work logs', NOW()),
 ('MEMBER', 'WORKLOG', 'UPDATE', 'Members can update own work logs', NOW()),
 ('MEMBER', 'WORKLOG', 'DELETE', 'Members can delete own work logs', NOW()),
-('READONLY', 'WORKLOG', 'READ', 'Read-only users can view work logs', NOW());
+('READONLY', 'WORKLOG', 'READ', 'Read-only users can view work logs', NOW())
+ON CONFLICT DO NOTHING;
 
 -- MEETING
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -72,7 +74,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MEMBER', 'MEETING', 'CREATE', 'Members can create meetings', NOW()),
 ('MEMBER', 'MEETING', 'READ', 'Members can view meetings', NOW()),
 ('MEMBER', 'MEETING', 'UPDATE', 'Members can update own meetings', NOW()),
-('READONLY', 'MEETING', 'READ', 'Read-only users can view meetings', NOW());
+('READONLY', 'MEETING', 'READ', 'Read-only users can view meetings', NOW())
+ON CONFLICT DO NOTHING;
 
 -- METRIC (Custom Metrics)
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -85,7 +88,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MANAGER', 'METRIC', 'UPDATE', 'Managers can update metrics', NOW()),
 ('MANAGER', 'METRIC', 'DELETE', 'Managers can delete metrics', NOW()),
 ('MEMBER', 'METRIC', 'READ', 'Members can view metrics', NOW()),
-('READONLY', 'METRIC', 'READ', 'Read-only users can view metrics', NOW());
+('READONLY', 'METRIC', 'READ', 'Read-only users can view metrics', NOW())
+ON CONFLICT DO NOTHING;
 
 -- TEST_CASE (QA Test Cases)
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -103,7 +107,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MEMBER', 'TEST_CASE', 'READ', 'Members can view test cases', NOW()),
 ('MEMBER', 'TEST_CASE', 'UPDATE', 'Members can update test cases', NOW()),
 ('MEMBER', 'TEST_CASE', 'EXECUTE', 'Members can execute test runs', NOW()),
-('READONLY', 'TEST_CASE', 'READ', 'Read-only users can view test cases', NOW());
+('READONLY', 'TEST_CASE', 'READ', 'Read-only users can view test cases', NOW())
+ON CONFLICT DO NOTHING;
 
 -- INTEGRATION
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -113,7 +118,8 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('ADMIN', 'INTEGRATION', 'DELETE', 'Admins can delete integrations', NOW()),
 ('ADMIN', 'INTEGRATION', 'MANAGE', 'Admins can manage integrations', NOW()),
 ('MANAGER', 'INTEGRATION', 'READ', 'Managers can view integrations', NOW()),
-('MEMBER', 'INTEGRATION', 'READ', 'Members can view integrations', NOW());
+('MEMBER', 'INTEGRATION', 'READ', 'Members can view integrations', NOW())
+ON CONFLICT DO NOTHING;
 
 -- WISE_ARCHITECTURE (R&D)
 INSERT INTO permissions (role, resource_type, permission_type, description, created_at) VALUES
@@ -123,4 +129,5 @@ INSERT INTO permissions (role, resource_type, permission_type, description, crea
 ('MANAGER', 'WISE_ARCHITECTURE', 'READ', 'Managers can view WISE architecture', NOW()),
 ('MANAGER', 'WISE_ARCHITECTURE', 'EXECUTE', 'Managers can run architecture analysis', NOW()),
 ('MEMBER', 'WISE_ARCHITECTURE', 'READ', 'Members can view WISE architecture', NOW()),
-('MEMBER', 'WISE_ARCHITECTURE', 'EXECUTE', 'Members can run architecture analysis', NOW());
+('MEMBER', 'WISE_ARCHITECTURE', 'EXECUTE', 'Members can run architecture analysis', NOW())
+ON CONFLICT DO NOTHING;

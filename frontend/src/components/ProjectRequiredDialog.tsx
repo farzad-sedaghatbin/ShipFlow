@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { FolderOpen } from 'lucide-react';
 import { useProject } from '../contexts';
+import type { Project } from '../types';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import {
   Dialog,
@@ -30,7 +31,7 @@ export default function ProjectRequiredDialog({
   const { t } = useTranslation();
   const { projects, selectProject, currentProject } = useProject();
 
-  const handleSelectProject = (project: typeof projects[0]) => {
+  const handleSelectProject = (project: Project) => {
     selectProject(project);
   };
 
