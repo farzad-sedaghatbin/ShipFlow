@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,10 @@ public class RiskAnalysisService {
   private final OrganizationSettingsService organizationSettingsService;
   private final RiskHistoryService riskHistoryService;
   private final CapacityConfigService capacityConfigService;
+
+  @Autowired(required = false)
+  @Lazy
+  private PitchHealthService pitchHealthService;
 
   @Autowired
   public RiskAnalysisService(AIConfig aiConfig, @Autowired(required = false) ChatLanguageModel chatLanguageModel,
@@ -151,8 +156,16 @@ public class RiskAnalysisService {
       List<RiskFactor> riskFactors = identifyRiskFactors(pitch, progress, cycleProgress, totalHours,
           appetiteHours);
 
-      // Calculate risk score based on factors
-      int baseRiskScore = calculateBaseRiskScore(riskFactors, pitch, progress, cycleProgress);
+      // Calculate risk score using PitchHealthService's comprehensive 4-factor
+      // weighted algorithm (budget, bugs, scope, time) for consistency between
+      // /api/risk and /api/health endpoints. Falls back to legacy factor-based
+      // calculation if PitchHealthService is not available.
+      int baseRiskScore;
+      if (pitchHealthService != null) {
+        baseRiskScore = pitchHealthService.calculateRuleBasedRiskScore(pitch, null);
+      } else {
+        baseRiskScore = calculateBaseRiskScore(riskFactors, pitch, progress, cycleProgress);
+      }
 
       // Generate insights - ONLY when AI is requested (useAI=true)
       // In fast mode, leave empty so UI shows loading state for AI sections
