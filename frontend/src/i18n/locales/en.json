@@ -2397,7 +2397,20 @@
     "pitches": "Pitches",
     "completedPitches": "completed pitches",
     "selectProject": "Select a Project",
-    "selectProjectDescription": "Choose a project to view its initiatives"
+    "selectProjectDescription": "Choose a project to view its initiatives",
+    "completed": "completed",
+    "filterStatus": "Filter by status",
+    "loadError": "Failed to load initiative",
+    "statusUpdated": "Status updated",
+    "updateError": "Failed to update initiative",
+    "deleted": "Initiative deleted",
+    "deleteError": "Failed to delete initiative",
+    "notFound": "Initiative not found",
+    "notAssigned": "Not assigned",
+    "deleteWarning": "Are you sure you want to delete initiative {{name}}? This action cannot be undone.",
+    "nameRequired": "Name is required",
+    "updated": "Initiative updated",
+    "createError": "Failed to create initiative"
   },
   "epics": {
     "title": "Epics",
