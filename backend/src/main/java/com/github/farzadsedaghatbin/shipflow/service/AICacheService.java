@@ -730,6 +730,23 @@ public class AICacheService {
   }
 
   /**
+   * Periodically attempts to reconnect to Redis when it has been marked unavailable.
+   * Runs every 60 seconds but only acts when Redis is configured and currently down.
+   * On success, {@code redisAvailable} is flipped back to {@code true} so that
+   * subsequent cache operations transparently switch back to Redis without a restart.
+   */
+  @Scheduled(fixedRate = 60000)
+  public void retryRedisConnectionIfDown() {
+    if (cacheConfig.isRedisProvider() && !redisAvailable) {
+      log.debug("Redis marked unavailable – attempting reconnect...");
+      initializeRedis();
+      if (redisAvailable) {
+        log.info("Redis reconnected successfully – switching back from in-memory fallback to Redis cache");
+      }
+    }
+  }
+
+  /**
    * Clear all caches.
    *
    * <p>In Redis mode, this method makes a best-effort attempt to clear Redis
