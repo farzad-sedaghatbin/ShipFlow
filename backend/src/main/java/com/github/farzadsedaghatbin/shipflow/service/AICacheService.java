@@ -175,7 +175,10 @@ public class AICacheService {
         return null;
       });
     } catch (Exception e) {
-      log.warn("Redis SCAN failed for pattern {}: {}", pattern, e.getMessage());
+      // Mark Redis as unavailable so subsequent operations fall back to in-memory cache
+      redisAvailable = false;
+      log.warn("Redis SCAN failed for pattern {}. Marking Redis as unavailable and falling back to in-memory cache: {}",
+          pattern, e.getMessage());
     }
     return keys;
   }

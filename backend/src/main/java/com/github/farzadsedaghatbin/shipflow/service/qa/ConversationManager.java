@@ -72,24 +72,28 @@ public class ConversationManager {
   }
 
   private void saveToRedis(String conversationId, ConversationContext context) {
+    // Write-through: always update in-memory so reads never lose data if Redis write fails
+    conversations.put(conversationId, context);
     try {
       String json = objectMapper.writeValueAsString(context);
       redisTemplate.opsForValue().set(CONV_KEY_PREFIX + conversationId, json, CONV_TTL_MINUTES, TimeUnit.MINUTES);
     } catch (Exception e) {
-      log.warn("Failed to save conversation to Redis: {}", e.getMessage());
-      conversations.put(conversationId, context);
+      log.warn("Failed to save conversation to Redis (in-memory copy preserved): {}", e.getMessage());
     }
   }
 
   private ConversationContext loadFromRedis(String conversationId) {
     try {
       String json = redisTemplate.opsForValue().get(CONV_KEY_PREFIX + conversationId);
-      if (json == null || json.isBlank()) return null;
+      if (json == null || json.isBlank()) {
+        // Fall back to in-memory copy (write-through cache keeps it fresh)
+        return conversations.get(conversationId);
+      }
       return objectMapper.readValue(json, ConversationContext.class);
     } catch (Exception e) {
-      log.warn("Failed to load conversation from Redis: {}", e.getMessage());
-      // Fail fast: do not return stale in-memory data that may differ from Redis state
-      return null;
+      log.warn("Failed to load conversation from Redis, falling back to in-memory: {}", e.getMessage());
+      // Return in-memory copy kept current by write-through in saveToRedis
+      return conversations.get(conversationId);
     }
   }
 

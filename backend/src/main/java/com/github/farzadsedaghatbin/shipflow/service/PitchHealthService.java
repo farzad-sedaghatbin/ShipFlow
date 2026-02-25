@@ -482,6 +482,10 @@ public class PitchHealthService {
    * 4-factor weighted algorithm. This is the canonical risk scoring method used
    * by both the health check and risk advisory endpoints for consistency.
    *
+   * <p><b>Visibility note:</b> This method is {@code public} to support cross-service
+   * integration (e.g. {@code RiskAnalysisService}). All risk scoring across the
+   * application should delegate to this single method to ensure consistent results.
+   *
    * @param pitch    The pitch to score
    * @param hoursMap Optional pre-loaded hours map for batch optimization (can be null)
    * @return Risk score 0-100

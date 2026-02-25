@@ -93,6 +93,11 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
    * Ensures the Qdrant collection exists, creating it with cosine distance
    * if it does not. Uses a short-lived QdrantClient for the check/create,
    * then closes it — the EmbeddingStore manages its own connection pool.
+   *
+   * <p><b>Important:</b> This method is called synchronously during bean initialization
+   * via {@link #createStore(VectorStoreProviderConfig)}. If Qdrant is unavailable or
+   * slow to respond, application startup will block for up to {@value #QDRANT_TIMEOUT_SECONDS}
+   * seconds before throwing an {@link IllegalStateException}.
    */
   private void ensureCollectionExists(String host, int port, boolean useTls, String collectionName, int dimension, String apiKey) {
     QdrantGrpcClient.Builder grpcBuilder = QdrantGrpcClient.newBuilder(host, port, useTls);
