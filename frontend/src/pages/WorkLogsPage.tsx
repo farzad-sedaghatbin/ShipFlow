@@ -904,7 +904,7 @@ export default function WorkLogsPage() {
                   <SelectContent>
                     <SelectItem value="all">{t('workLogsPage.allPersons', 'All People')}</SelectItem>
                     {persons.map(p => (
-                      <SelectItem key={p.id} value={p.id.toString()}>{p.fullName}</SelectItem>
+                      <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
