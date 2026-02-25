@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -38,15 +37,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     /**
-     * ObjectMapper configured for Redis value serialization.
-     * Handles {@link java.time.LocalDateTime} and other JSR-310 types correctly,
-     * and embeds type info so polymorphic values round-trip safely.
-     * <p>
-     * NOT marked {@code @Primary} — Spring Boot's auto-configured ObjectMapper
-     * remains primary for REST/MVC serialization.
+     * Creates a dedicated ObjectMapper for Redis value serialization.
+     * This is intentionally NOT exposed as a Spring bean to avoid interfering
+     * with Spring Boot's auto-configured primary ObjectMapper (used by MVC/REST).
+     * Exposes an ObjectMapper bean in the context would suppress
+     * JacksonAutoConfiguration's @ConditionalOnMissingBean(ObjectMapper.class),
+     * causing the typed Redis mapper to be used for @RequestBody deserialization.
      */
-    @Bean("redisObjectMapper")
-    public ObjectMapper redisObjectMapper() {
+    private ObjectMapper createRedisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -63,14 +61,12 @@ public class RedisConfig {
      * Keys are plain strings; values are JSON with embedded type info.
      */
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(
-            RedisConnectionFactory connectionFactory,
-            @Qualifier("redisObjectMapper") ObjectMapper objectMapper) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
         GenericJackson2JsonRedisSerializer jsonSerializer =
-                new GenericJackson2JsonRedisSerializer(objectMapper);
+                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
 
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
@@ -94,12 +90,10 @@ public class RedisConfig {
      * Default TTL: 1 hour. Key prefix: {@code shipflow:}.
      */
     @Bean
-    public RedisCacheManager cacheManager(
-            RedisConnectionFactory connectionFactory,
-            @Qualifier("redisObjectMapper") ObjectMapper objectMapper) {
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
         GenericJackson2JsonRedisSerializer jsonSerializer =
-                new GenericJackson2JsonRedisSerializer(objectMapper);
+                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
 
         RedisCacheConfiguration config =
                 RedisCacheConfiguration.defaultCacheConfig()
