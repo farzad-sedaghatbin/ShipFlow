@@ -22,6 +22,7 @@ import {
   Heart,
   Search,
   ArrowDownToLine,
+  Pencil,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -119,6 +120,11 @@ export default function Landing() {
       icon: <ArrowDownToLine className="h-10 w-10" />,
       title: t('landing.inboundWebhooks'),
       description: t('landing.inboundWebhooksDesc'),
+    },
+    {
+      icon: <Pencil className="h-10 w-10" />,
+      title: t('landing.markdownEditor'),
+      description: t('landing.markdownEditorDesc'),
     },
   ];
 

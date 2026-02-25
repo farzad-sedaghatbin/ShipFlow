@@ -111,16 +111,34 @@ export default function WorkLogsPage() {
   const [editTaskId, setEditTaskId] = useState<string>('');
   const [editWorkLogType, setEditWorkLogType] = useState<'pitch' | 'task'>('task');
 
+  // Table filter state
+  const [filterPersonId, setFilterPersonId] = useState<string>('all');
+  const [filterPitchId, setFilterPitchId] = useState<string>('all');
+  const [filterTaskId, setFilterTaskId] = useState<string>('all');
+
+  // Filtered work logs
+  const filteredWorkLogs = useMemo(() => {
+    return workLogs.filter(wl => {
+      if (filterPersonId !== 'all' && wl.personId !== parseInt(filterPersonId, 10)) return false;
+      if (filterPitchId !== 'all' && wl.pitchId !== parseInt(filterPitchId, 10)) return false;
+      if (filterTaskId !== 'all' && wl.taskId !== parseInt(filterTaskId, 10)) return false;
+      return true;
+    });
+  }, [workLogs, filterPersonId, filterPitchId, filterTaskId]);
+
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
     if (isAllProjectsSelected) return cycles;
     return cycles.filter(c => c.projectId === currentProject?.id);
   }, [cycles, currentProject, isAllProjectsSelected]);
 
-  // Reset cycle filter and page when project changes
+  // Reset cycle filter, page, and table filters when project changes
   useEffect(() => {
     setSelectedCycle('all');
     setPage(0);
+    setFilterPersonId('all');
+    setFilterPitchId('all');
+    setFilterTaskId('all');
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
@@ -666,9 +684,50 @@ export default function WorkLogsPage() {
                 </CardContent>
               </Card>
 
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
+                  <Select value={filterPitchId} onValueChange={setFilterPitchId}>
+                    <SelectTrigger className="w-[180px] h-9">
+                      <SelectValue placeholder={t('workLogsPage.allPitches', 'All Pitches')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('workLogsPage.allPitches', 'All Pitches')}</SelectItem>
+                      {pitches.map(p => (
+                        <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('workLogsPage.filterByTask', 'Task')}</Label>
+                  <Select value={filterTaskId} onValueChange={setFilterTaskId}>
+                    <SelectTrigger className="w-[180px] h-9">
+                      <SelectValue placeholder={t('workLogsPage.allTasks', 'All Tasks')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('workLogsPage.allTasks', 'All Tasks')}</SelectItem>
+                      {tasks.map(tk => (
+                        <SelectItem key={tk.id} value={tk.id.toString()}>{tk.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); }}
+                  >
+                    {t('workLogsPage.clearFilters', 'Clear Filters')}
+                  </Button>
+                )}
+              </div>
+
               {/* Work Logs Table */}
               <WorkLogsTable
-                workLogs={workLogs}
+                workLogs={filteredWorkLogs}
                 showPerson={false}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteMyWorkLog}
@@ -834,9 +893,64 @@ export default function WorkLogsPage() {
               </CardContent>
             </Card>
 
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="space-y-1">
+                <Label className="text-xs">{t('workLogsPage.filterByPerson', 'Person')}</Label>
+                <Select value={filterPersonId} onValueChange={setFilterPersonId}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder={t('workLogsPage.allPersons', 'All People')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('workLogsPage.allPersons', 'All People')}</SelectItem>
+                    {persons.map(p => (
+                      <SelectItem key={p.id} value={p.id.toString()}>{p.fullName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
+                <Select value={filterPitchId} onValueChange={setFilterPitchId}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder={t('workLogsPage.allPitches', 'All Pitches')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('workLogsPage.allPitches', 'All Pitches')}</SelectItem>
+                    {pitches.map(p => (
+                      <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t('workLogsPage.filterByTask', 'Task')}</Label>
+                <Select value={filterTaskId} onValueChange={setFilterTaskId}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder={t('workLogsPage.allTasks', 'All Tasks')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('workLogsPage.allTasks', 'All Tasks')}</SelectItem>
+                    {tasks.map(tk => (
+                      <SelectItem key={tk.id} value={tk.id.toString()}>{tk.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); }}
+                >
+                  {t('workLogsPage.clearFilters', 'Clear Filters')}
+                </Button>
+              )}
+            </div>
+
             {/* Work Logs Table */}
             <WorkLogsTable
-              workLogs={workLogs}
+              workLogs={filteredWorkLogs}
               showPerson={true}
               onEdit={handleEditClick}
               onDelete={handleDeleteTeamWorkLog}

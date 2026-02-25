@@ -36,6 +36,7 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import Comments from './Comments';
+import { Markdown } from './ui/markdown';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType } from '../types';
@@ -473,8 +474,8 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
                       <FileText className="h-3 w-3" />
                       {t('bugs.description')}
                     </Label>
-                    <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                      {bug.description}
+                    <div className="p-3 bg-muted rounded-md text-sm">
+                      <Markdown content={bug.description} />
                     </div>
                   </div>
 

@@ -31,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -326,10 +327,13 @@ public class PitchHealthService {
     double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double appetiteUsed = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
-    // Calculate days left
+    // Calculate days left (pitches in idea phase may have no cycle)
     Cycle cycle = pitch.getCycle();
     LocalDate today = LocalDate.now();
-    int daysLeft = (int) Math.max(0, ChronoUnit.DAYS.between(today, cycle.getEndDate()));
+    int daysLeft = 0;
+    if (cycle != null && cycle.getEndDate() != null) {
+      daysLeft = (int) Math.max(0, ChronoUnit.DAYS.between(today, cycle.getEndDate()));
+    }
 
     // Determine QA status
     String qaStatus = determineQAStatus(pitch);
@@ -346,9 +350,9 @@ public class PitchHealthService {
     return PitchHealthDTO.builder()
         .pitchId(pitch.getId())
         .pitchName(pitch.getTitle())
-        .projectName(cycle.getProject() != null ? cycle.getProject().getName() : null)
-        .projectKey(cycle.getProject() != null ? cycle.getProject().getProjectKey() : null)
-        .cycleName(cycle.getName())
+        .projectName(cycle != null && cycle.getProject() != null ? cycle.getProject().getName() : null)
+        .projectKey(cycle != null && cycle.getProject() != null ? cycle.getProject().getProjectKey() : null)
+        .cycleName(cycle != null ? cycle.getName() : null)
         .riskLevel(riskLevel)
         .riskColor(getRiskColor(riskLevel))
         .riskTrend(riskTrend)
@@ -360,7 +364,7 @@ public class PitchHealthService {
         .appetiteHours(appetiteHours)
         .actualHours(totalHours)
         .qaStatus(qaStatus)
-        .cycleEndDate(cycle.getEndDate())
+        .cycleEndDate(cycle != null ? cycle.getEndDate() : null)
         // Team budget fields
         .teamMemberCount(teamBudgetInfo.memberCount)
         .appetiteDays(pitch.getAppetiteDays())
@@ -490,6 +494,7 @@ public class PitchHealthService {
    * @param hoursMap Optional pre-loaded hours map for batch optimization (can be null)
    * @return Risk score 0-100
    */
+  @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
   public int calculateRuleBasedRiskScore(Pitch pitch, Map<Long, Double> hoursMap) {
     // Get configurable thresholds and weights from organization settings
     var thresholds = getThresholds();
@@ -508,12 +513,17 @@ public class PitchHealthService {
     double appetiteHours = capacityConfigService.calculatePitchAppetiteHours(pitch);
     double appetiteUsed = appetiteHours > 0 ? (totalHours / appetiteHours) * 100 : 0;
 
-    // Calculate cycle progress
+    // Calculate cycle progress (pitches in idea phase may have no cycle)
     Cycle cycle = pitch.getCycle();
-    LocalDate today = LocalDate.now();
-    long daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
-    long totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
-    double cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+    long daysElapsed = 0;
+    long totalCycleDays = 0;
+    double cycleProgress = 0;
+    if (cycle != null && cycle.getStartDate() != null && cycle.getEndDate() != null) {
+      LocalDate today = LocalDate.now();
+      daysElapsed = ChronoUnit.DAYS.between(cycle.getStartDate(), today);
+      totalCycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
+      cycleProgress = totalCycleDays > 0 ? (double) daysElapsed / totalCycleDays * 100 : 0;
+    }
 
     // Enhanced rule-based risk calculation with weighted scoring
     // Calculate individual risk factor scores (0-100 scale)

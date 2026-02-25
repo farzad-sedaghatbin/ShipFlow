@@ -51,5 +51,26 @@ public enum ResourceType {
   EPIC,
 
   /** Release/milestone resource */
-  RELEASE
+  RELEASE,
+
+  /** Backlog/task management resource */
+  BACKLOG,
+
+  /** Work log / time tracking resource */
+  WORKLOG,
+
+  /** Meeting management resource */
+  MEETING,
+
+  /** Custom metrics resource */
+  METRIC,
+
+  /** QA test case resource */
+  TEST_CASE,
+
+  /** Integration management resource */
+  INTEGRATION,
+
+  /** WISE architecture / R&D resource */
+  WISE_ARCHITECTURE
 }

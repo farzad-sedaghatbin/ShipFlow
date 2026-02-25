@@ -36,6 +36,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Label } from '../components/ui/label';
 import {
   Select,
@@ -775,13 +776,13 @@ export default function PitchBoard() {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-description">{t('pitchBoard.description')}</Label>
-                <Textarea
+                <Label>{t('pitchBoard.description')}</Label>
+                <MarkdownEditor
                   id="pitch-description"
                   value={newPitch.description}
-                  onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
+                  onChange={(value) => setNewPitch({ ...newPitch, description: value })}
                   placeholder={t('pitchBoard.descriptionPlaceholder')}
-                  rows={3}
+                  rows={4}
                 />
               </div>
 

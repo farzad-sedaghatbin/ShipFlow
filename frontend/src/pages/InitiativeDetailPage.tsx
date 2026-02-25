@@ -39,6 +39,7 @@ import {
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
+import { Markdown } from '../components/ui/markdown';
 
 const getStatusBadgeVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (status) {
@@ -192,7 +193,7 @@ export default function InitiativeDetailPage() {
             {initiative.description && (
               <div>
                 <h4 className="font-medium mb-1">{t('initiatives.description')}</h4>
-                <p className="text-muted-foreground">{initiative.description}</p>
+                <Markdown content={initiative.description} className="text-muted-foreground" />
               </div>
             )}
             

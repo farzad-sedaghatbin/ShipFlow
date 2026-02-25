@@ -181,6 +181,12 @@ public class TaskController {
     return ResponseEntity.ok(taskService.getTasksByPersonId(personId));
   }
 
+  @GetMapping("/pitch/{pitchId}")
+  @Operation(summary = "Get tasks by pitch ID", description = "Returns all tasks linked to a specific pitch")
+  public ResponseEntity<List<TaskDTO>> getTasksByPitchId(@PathVariable Long pitchId) {
+    return ResponseEntity.ok(taskService.getTasksByPitchId(pitchId));
+  }
+
   @GetMapping("/project/{projectId}")
   @Operation(summary = "Get tasks by project ID")
   public ResponseEntity<List<TaskDTO>> getTasksByProjectId(@PathVariable Long projectId) {

@@ -140,6 +140,19 @@ A modern project management application implementing the [Shape Up](https://base
   - **CRUD Operations**: Create, edit, delete comments with permission checks
   - **Edit Tracking**: Comments show "edited" badge when modified
   - **Author Controls**: Only authors can edit; authors and admins can delete
+- **Markdown Descriptions**: Rich text editing with live preview for all description fields
+  - **Write/Preview Editor**: Toggle between raw Markdown editing and rendered preview
+  - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
+  - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
+  - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Smart Project Selection**: Mandatory project selection dialog for project-scoped pages
+  - Modal popup replaces the subtle empty-state card when "All Projects" is selected
+  - Shows project list with avatar, name, and project key for one-click selection
+  - Cannot be dismissed — ensures users always have a project context
+  - Applied to: Epics, Initiatives, Releases, Roadmap, Retrospectives
+- **Expanded Color Palette**: 42 colors for Epics and Initiatives
+  - 7 hue groups (Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals) × 6 shades each
+  - Hover scale effect and ring indicator on selected color
 - **Retrospectives**: Team retros with voting and merging
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
   - Checkbox option to hide author attribution on sensitive items
@@ -362,6 +375,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Generic Inbound Webhooks** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Release Traceability (Tasks & Bugs)** | ✅ | Partial | ❌ | ❌ | ✅ | ❌ |
+| **Markdown Descriptions** | ✅ | ✅ | Partial | Partial | ✅ | Partial |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |

@@ -17,6 +17,7 @@ import { Initiative, InitiativeStatus } from '../types';
 import { useProject, useToast } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import ProjectRequiredDialog from '../components/ProjectRequiredDialog';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
@@ -120,15 +121,10 @@ export default function InitiativeListPage() {
 
   if (isAllProjectsSelected) {
     return (
-      <div className="container mx-auto py-8">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium">{t('initiatives.selectProject')}</h3>
-            <p className="text-muted-foreground">{t('initiatives.selectProjectDescription')}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <ProjectRequiredDialog
+        open={true}
+        featureDescription={t('initiatives.selectProjectDescription')}
+      />
     );
   }
 

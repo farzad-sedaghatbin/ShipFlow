@@ -77,6 +77,7 @@ export const taskService = {
   },
   getByAssigneeId: (assigneeId: number) => api.get<Task[]>(`/tasks/assignee/${assigneeId}`),
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
+  getByPitchId: (pitchId: number) => api.get<Task[]>(`/tasks/pitch/${pitchId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
   getByProjectIdPaged: (projectId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/project/${projectId}/paged`, {

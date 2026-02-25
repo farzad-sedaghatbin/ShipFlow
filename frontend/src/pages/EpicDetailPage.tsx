@@ -41,6 +41,7 @@ import {
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
+import { Markdown } from '../components/ui/markdown';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
@@ -269,7 +270,7 @@ export default function EpicDetailPage() {
             {epic.description && (
               <div>
                 <h4 className="font-medium mb-1">{t('epics.description')}</h4>
-                <p className="text-muted-foreground">{epic.description}</p>
+                <Markdown content={epic.description} className="text-muted-foreground" />
               </div>
             )}
             

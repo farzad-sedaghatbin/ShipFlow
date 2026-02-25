@@ -27,9 +27,10 @@ import {
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
 import { meetingService } from '../services/meetingService';
+import { taskService } from '../services/taskService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
-import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem } from '../types';
+import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
@@ -49,6 +50,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { Markdown } from '../components/ui/markdown';
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
 import {
@@ -91,8 +93,9 @@ export default function PitchDetail() {
   const [workLogPage, setWorkLogPage] = useState(0);
   const [workLogTotalPages, setWorkLogTotalPages] = useState(0);
   const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
-  const WORK_LOG_PAGE_SIZE = 20;
+  const WORK_LOG_PAGE_SIZE = 5;
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [meetingTypeConfigs, setMeetingTypeConfigs] = useState<MeetingTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,16 +160,18 @@ export default function PitchDetail() {
 
   const loadData = async (pitchId: number) => {
     try {
-      const [pitchRes, meetingsRes, docsRes, orgSettingsRes] = await Promise.all([
+      const [pitchRes, meetingsRes, docsRes, orgSettingsRes, tasksRes] = await Promise.all([
         pitchService.getById(pitchId),
         meetingService.getByPitchId(pitchId),
         documentService.getDocumentsForPitch(pitchId),
         organizationSettingsService.getSettings(),
+        taskService.getByPitchId(pitchId).catch(() => ({ data: [] })),
       ]);
       const pitchData = pitchRes.data;
       setPitch(pitchData);
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
       setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
       
       // Sync Shape Up fields
@@ -274,8 +279,10 @@ export default function PitchDetail() {
         if (!editingShapeUp) {
           setEditingShapeUp(true);
         }
-        // Refresh documents list since the file was saved
-        loadData(pitch.id);
+        // Refresh only the documents list — do NOT call loadData() here because
+        // that would re-sync shapeUpFields from the server (still empty) and
+        // overwrite the extracted data we just applied to the form.
+        documentService.getDocumentsForPitch(pitch.id).then(res => setDocuments(res.data));
         showSuccess(t('pitchDetailPage.dataExtracted'));
       } else {
         setExtractedDocumentName('');
@@ -516,9 +523,9 @@ export default function PitchDetail() {
             {pitch.teamName || t('common.unassigned')} • {pitch.cycleName}
           </p>
           {pitch.description && (
-            <p className="text-muted-foreground mt-4">
-              {pitch.description}
-            </p>
+            <div className="mt-4">
+              <Markdown content={pitch.description} className="text-muted-foreground" />
+            </div>
           )}
         </div>
         <div className="flex gap-2 items-center flex-wrap">
@@ -880,7 +887,7 @@ export default function PitchDetail() {
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
                     {t('pitchDetailPage.problemStatement')}
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.problemStatement}</p>
+                  <Markdown content={pitch.problemStatement} className="text-muted-foreground" />
                 </div>
               )}
 
@@ -890,7 +897,7 @@ export default function PitchDetail() {
                     <Lightbulb className="h-4 w-4 text-yellow-500" />
                     {t('pitchDetailPage.solution')}
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.solution}</p>
+                  <Markdown content={pitch.solution} className="text-muted-foreground" />
                 </div>
               )}
 
@@ -900,7 +907,7 @@ export default function PitchDetail() {
                     <Ban className="h-4 w-4 text-red-500" />
                     {t('pitchDetailPage.rabbitHoles')}
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.rabbitHoles}</p>
+                  <Markdown content={pitch.rabbitHoles} className="text-muted-foreground" />
                 </div>
               )}
 
@@ -910,7 +917,7 @@ export default function PitchDetail() {
                     <AlertTriangle className="h-4 w-4 text-amber-500" />
                     {t('pitchDetailPage.risks')}
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.risks}</p>
+                  <Markdown content={pitch.risks} className="text-muted-foreground" />
                 </div>
               )}
 
@@ -920,7 +927,7 @@ export default function PitchDetail() {
                     <X className="h-4 w-4 text-red-500" />
                     {t('pitchDetailPage.noGos')}
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{pitch.noGos}</p>
+                  <Markdown content={pitch.noGos} className="text-muted-foreground" />
                 </div>
               )}
 
@@ -1002,6 +1009,58 @@ export default function PitchDetail() {
           title={t('pitchDetailPage.notes')}
         />
 
+        {/* Tasks Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>{t('pitchDetailPage.tasks', 'Tasks')}</CardTitle>
+              {pitch.cycleId && (
+                <Link to={`/cycles/${pitch.cycleId}/tasks`}>
+                  <Button variant="outline" size="sm">
+                    {t('pitchDetailPage.viewAllTasks', 'View All Tasks')}
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {tasks.length === 0 ? (
+              <p className="text-muted-foreground">{t('pitchDetailPage.noTasks', 'No tasks linked to this pitch yet.')}</p>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map(task => (
+                  <div key={task.id} className="flex items-center justify-between py-2 px-3 rounded-md border border-border hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Badge
+                        variant={
+                          task.status === 'DONE' ? 'success' :
+                          task.status === 'IN_PROGRESS' ? 'default' :
+                          task.status === 'BLOCKED' ? 'destructive' :
+                          'secondary'
+                        }
+                        className="text-[10px] px-1.5 py-0 shrink-0"
+                      >
+                        {task.status?.replace(/_/g, ' ')}
+                      </Badge>
+                      <span className="text-sm truncate">{task.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      {task.assigneeName && (
+                        <span className="text-xs text-muted-foreground">{task.assigneeName}</span>
+                      )}
+                      {task.priority && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {task.priority}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Work Logs */}
@@ -1046,36 +1105,11 @@ export default function PitchDetail() {
                       )}
                     </div>
                   ))}
-                  {workLogTotalPages > 1 && (
-                    <div className="flex items-center justify-between pt-3">
-                      <span className="text-xs text-muted-foreground">
-                        {t('meetingList.pagination.showing', { from: workLogPage * WORK_LOG_PAGE_SIZE + 1, to: Math.min((workLogPage + 1) * WORK_LOG_PAGE_SIZE, workLogTotalElements), total: workLogTotalElements })}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline" size="sm"
-                          disabled={workLogPage === 0}
-                          onClick={() => {
-                            const p = workLogPage - 1;
-                            setWorkLogPage(p);
-                            loadWorkLogs(pitch.id, p);
-                          }}
-                        >
-                          {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
-                        </Button>
-                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: workLogPage + 1, total: workLogTotalPages })}</span>
-                        <Button
-                          variant="outline" size="sm"
-                          disabled={workLogPage >= workLogTotalPages - 1}
-                          onClick={() => {
-                            const p = workLogPage + 1;
-                            setWorkLogPage(p);
-                            loadWorkLogs(pitch.id, p);
-                          }}
-                        >
-                          {t('meetingList.pagination.next', { defaultValue: 'Next' })}
-                        </Button>
-                      </div>
+                  {workLogTotalElements > WORK_LOG_PAGE_SIZE && (
+                    <div className="pt-3 text-center">
+                      <Link to="/time/logs" className="text-sm text-primary hover:underline">
+                        {t('pitchDetailPage.viewAllWorkLogs', { total: workLogTotalElements, defaultValue: 'View all {{total}} work logs →' })}
+                      </Link>
                     </div>
                   )}
                 </div>

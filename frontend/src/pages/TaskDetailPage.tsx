@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import MarkdownEditor from '@/components/MarkdownEditor';
+import { Markdown } from '@/components/ui/markdown';
 import {
   Dialog,
   DialogContent,
@@ -403,8 +404,8 @@ export default function TaskDetailPage() {
           {task.description && (
             <div>
               <Label className="text-sm font-semibold">{t('common.description')}</Label>
-              <div className="mt-2 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                {task.description}
+              <div className="mt-2 p-4 bg-muted rounded-md text-sm">
+                <Markdown content={task.description} />
               </div>
             </div>
           )}
@@ -569,8 +570,8 @@ export default function TaskDetailPage() {
               {viewSubtask.description && (
                 <div>
                   <Label className="text-sm font-semibold">Description</Label>
-                  <div className="mt-2 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                    {viewSubtask.description}
+                  <div className="mt-2 p-4 bg-muted rounded-md text-sm">
+                    <Markdown content={viewSubtask.description} />
                   </div>
                 </div>
               )}
@@ -631,13 +632,13 @@ export default function TaskDetailPage() {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="edit-description">{t('common.description')}</Label>
-              <Textarea
+              <Label>{t('common.description')}</Label>
+              <MarkdownEditor
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder={t('backlogPage.taskDescription')}
-                rows={3}
+                rows={4}
               />
             </div>
 

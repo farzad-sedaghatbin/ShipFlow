@@ -43,6 +43,9 @@ public class CycleService {
   @Autowired(required = false)
   private KnowledgeIngestionService knowledgeIngestionService;
 
+  @Autowired(required = false)
+  private RiskAnalysisService riskAnalysisService;
+
   public List<CycleDTO> getAllCycles() {
     return cycleRepository.findAllByOrderByStartDateDesc().stream().map(this::toDTO).collect(Collectors.toList());
   }
@@ -131,6 +134,10 @@ public class CycleService {
     Cycle cycle = cycleRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
 
+    // Track whether dates changed for cache invalidation
+    boolean datesChanged = !cycle.getStartDate().equals(request.getStartDate())
+        || !cycle.getEndDate().equals(calculateOrValidateEndDate(request.getStartDate(), request.getEndDate()));
+
     // Allow changing project
     if (request.getProjectId() != null
         && (cycle.getProject() == null || !cycle.getProject().getId().equals(request.getProjectId()))) {
@@ -148,6 +155,25 @@ public class CycleService {
     cycle.setPhase(request.getPhase());
 
     Cycle saved = cycleRepository.save(cycle);
+
+    // Invalidate risk analysis caches when cycle dates change
+    if (datesChanged && riskAnalysisService != null) {
+      try {
+        riskAnalysisService.invalidateCycleCache(saved.getId());
+        // Also invalidate pitch-level caches since pitch risk data includes cycle dates
+        pitchRepository.findByCycleId(saved.getId()).forEach(pitch -> {
+          try {
+            riskAnalysisService.invalidatePitchCache(pitch.getId());
+          } catch (Exception e) {
+            log.warn("Failed to invalidate pitch risk cache for pitch {}: {}", pitch.getId(), e.getMessage());
+          }
+        });
+        log.info("Invalidated risk caches for cycle {} and its pitches due to date change", saved.getId());
+      } catch (Exception e) {
+        log.warn("Failed to invalidate risk caches for cycle {}: {}", saved.getId(), e.getMessage());
+      }
+    }
+
     // Re-ingest into knowledge base for QA
     if (knowledgeIngestionService != null) {
       try {
