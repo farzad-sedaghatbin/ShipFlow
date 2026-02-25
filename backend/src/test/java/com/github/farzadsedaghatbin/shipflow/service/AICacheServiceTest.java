@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.QAResponse;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
@@ -12,14 +13,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Comprehensive tests for AICacheService. Tests cover: - Pitch risk caching
  * with TTL and invalidation - Cycle risk caching - Q&A caching with fuzzy
  * matching - Feature flags (enable/disable) - Cache statistics - Cache cleanup
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AICacheService Tests")
 class AICacheServiceTest {
+
+  @Mock private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+  @Mock private ObjectMapper objectMapper;
 
   private AICacheConfig cacheConfig;
   private AICacheService cacheService;
@@ -46,7 +54,7 @@ class AICacheServiceTest {
     qaConfig.setMaxEntriesPerContext(100);
     cacheConfig.setQa(qaConfig);
 
-    cacheService = new AICacheService(cacheConfig);
+    cacheService = new AICacheService(cacheConfig, redisTemplate, objectMapper);
     cacheService.init();
   }
 

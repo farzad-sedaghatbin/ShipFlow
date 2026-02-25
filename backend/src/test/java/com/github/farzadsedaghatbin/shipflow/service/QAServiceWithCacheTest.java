@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.config.QAConfig;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * Tests for QAService with caching integration. Tests cover: - Cache hit
@@ -55,6 +57,12 @@ class QAServiceWithCacheTest {
   @Mock
   private AIConfig aiConfig;
 
+  @Mock
+  private StringRedisTemplate redisTemplate;
+
+  @Mock
+  private ObjectMapper objectMapper;
+
   private AICacheConfig cacheConfig;
   private AICacheService cacheService;
 
@@ -76,7 +84,7 @@ class QAServiceWithCacheTest {
     riskCache.setEnabled(true);
     cacheConfig.setRisk(riskCache);
 
-    cacheService = new AICacheService(cacheConfig);
+    cacheService = new AICacheService(cacheConfig, redisTemplate, objectMapper);
     cacheService.init();
   }
 

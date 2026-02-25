@@ -5,11 +5,19 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,6 +33,15 @@ import org.springframework.stereotype.Service;
 public class LLMCacheService {
 
   private final AICacheConfig cacheConfig;
+  private final StringRedisTemplate redisTemplate;
+
+  // Tracks whether Redis is actually reachable; allows graceful fallback to in-memory
+  private volatile boolean redisAvailable;
+
+  // Circuit-breaker: consecutive SCAN failures before Redis is marked unavailable.
+  // A single transient error will not trip the circuit; it resets on any successful SCAN.
+  private static final int SCAN_FAILURE_THRESHOLD = 3;
+  private final AtomicInteger scanFailureCount = new AtomicInteger(0);
 
   @Value("${llm.cache.ttl.minutes:60}")
   private int cacheTtlMinutes = 60; // Default value for non-Spring contexts
@@ -39,11 +56,53 @@ public class LLMCacheService {
   public void init() {
     if (cacheConfig.isRedisProvider()) {
       initializeRedis();
-      log.info("LLMCacheService initialized with Redis provider ({}:{})", cacheConfig.getRedis().getHost(),
-          cacheConfig.getRedis().getPort());
+      log.info("LLMCacheService initialized with Redis provider ({}:{}){}",
+          cacheConfig.getRedis().getHost(), cacheConfig.getRedis().getPort(),
+          redisAvailable ? "" : " [FALLBACK to in-memory]");
     } else {
       log.info("LLMCacheService initialized with in-memory provider");
     }
+  }
+
+  private boolean isRedisActive() {
+    return cacheConfig.isRedisProvider() && redisAvailable;
+  }
+
+  /**
+   * Non-blocking key scan using SCAN command instead of KEYS.
+   *
+   * <p>Circuit-breaker: consecutive failures are counted; Redis is only
+   * marked unavailable after {@value #SCAN_FAILURE_THRESHOLD} consecutive
+   * failures so transient network blips do not permanently disable the cache.
+   * The counter resets on every successful scan.
+   */
+  private Set<String> scanKeys(String pattern) {
+    Set<String> keys = new HashSet<>();
+    try {
+      redisTemplate.execute((RedisCallback<Void>) connection -> {
+        try (Cursor<byte[]> cursor = connection.keyCommands().scan(
+            ScanOptions.scanOptions().match(pattern).count(200).build())) {
+          cursor.forEachRemaining(key -> keys.add(new String(key, StandardCharsets.UTF_8)));
+        }
+        return null;
+      });
+      // Success – reset the consecutive-failure counter
+      scanFailureCount.set(0);
+    } catch (Exception e) {
+      int failures = scanFailureCount.incrementAndGet();
+      if (failures >= SCAN_FAILURE_THRESHOLD) {
+        redisAvailable = false;
+        log.warn(
+            "Redis SCAN failed {} consecutive times for pattern '{}'. Marking Redis as unavailable "
+                + "and falling back to in-memory cache: {}",
+            failures, pattern, e.getMessage());
+      } else {
+        log.warn(
+            "Redis SCAN failed (attempt {}/{}) for pattern '{}': {}",
+            failures, SCAN_FAILURE_THRESHOLD, pattern, e.getMessage());
+      }
+    }
+    return keys;
   }
 
   /**
@@ -53,19 +112,31 @@ public class LLMCacheService {
   private void initializeRedis() {
     try {
       AICacheConfig.RedisConfig redis = cacheConfig.getRedis();
-      log.info("Initializing Redis for LLM cache at {}:{}", redis.getHost(), redis.getPort());
-      // In production implementation:
-      // RedisTemplate<String, CachedResponse> redisTemplate = new RedisTemplate<>();
-      // redisTemplate.setConnectionFactory(redisConnectionFactory);
-      log.warn("Redis provider configured but full Redis integration pending - using in-memory for now");
+      redisTemplate.opsForValue().set("shipflow:llm-health", "ok");
+      redisTemplate.delete("shipflow:llm-health");
+      redisAvailable = true;
+      log.info("LLMCacheService Redis connection verified at {}:{}", redis.getHost(), redis.getPort());
     } catch (Exception e) {
-      log.error("Failed to initialize Redis for LLM cache, using in-memory: {}", e.getMessage());
+      redisAvailable = false;
+      log.error("Failed to connect to Redis for LLMCacheService, falling back to in-memory: {}",
+          e.getMessage());
     }
   }
 
   /** Gets a cached LLM response if available and not expired. */
   public String getCachedResponse(String prompt) {
     String hash = hashPrompt(prompt);
+
+    if (isRedisActive()) {
+      String response = redisTemplate.opsForValue().get("llm:" + hash);
+      if (response != null) {
+        log.debug("Cache HIT (Redis) for prompt hash: {}", hash.substring(0, 8));
+        return response;
+      }
+      log.debug("Cache MISS (Redis) for prompt hash: {}", hash.substring(0, 8));
+      return null;
+    }
+
     CachedResponse cached = cache.get(hash);
 
     if (cached != null) {
@@ -91,6 +162,13 @@ public class LLMCacheService {
     }
 
     String hash = hashPrompt(prompt);
+
+    if (isRedisActive()) {
+      redisTemplate.opsForValue().set("llm:" + hash, response, cacheTtlMinutes, TimeUnit.MINUTES);
+      log.debug("Cached response (Redis) for prompt hash: {}", hash.substring(0, 8));
+      return;
+    }
+
     cache.put(hash, new CachedResponse(response));
     log.debug("Cached response for prompt hash: {}", hash.substring(0, 8));
 
@@ -149,6 +227,13 @@ public class LLMCacheService {
 
   /** Clears the cache. */
   public void clearCache() {
+    if (isRedisActive()) {
+      Set<String> keys = scanKeys("llm:*");
+      int size = keys.size();
+      if (!keys.isEmpty()) redisTemplate.delete(keys);
+      log.info("Cleared LLM cache (Redis): {} entries removed", size);
+      return;
+    }
     int size = cache.size();
     cache.clear();
     log.info("Cleared LLM cache: {} entries removed", size);

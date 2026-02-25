@@ -9,12 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class LLMCacheServiceTest {
 
   @Mock
   private AICacheConfig cacheConfig;
+
+  @Mock
+  private StringRedisTemplate redisTemplate;
 
   private LLMCacheService llmCacheService;
 
@@ -23,7 +27,7 @@ class LLMCacheServiceTest {
     // Configure mock to use in-memory provider (avoid Redis initialization in
     // tests)
     lenient().when(cacheConfig.isRedisProvider()).thenReturn(false);
-    llmCacheService = new LLMCacheService(cacheConfig);
+    llmCacheService = new LLMCacheService(cacheConfig, redisTemplate);
   }
 
   @Test
@@ -56,7 +60,7 @@ class LLMCacheServiceTest {
   void getCachedResponse_expiredEntry_returnsNull() throws InterruptedException {
     // Given
     lenient().when(cacheConfig.isRedisProvider()).thenReturn(false);
-    LLMCacheService shortTtlService = new LLMCacheService(cacheConfig);
+    LLMCacheService shortTtlService = new LLMCacheService(cacheConfig, redisTemplate);
     String prompt = "What are the checkout risks?";
     String response = "Checkout risks include cart abandonment.";
 
@@ -113,7 +117,7 @@ class LLMCacheServiceTest {
   void evictOldestEntries_maxSizeExceeded_removesOldest() {
     // Given
     lenient().when(cacheConfig.isRedisProvider()).thenReturn(false);
-    LLMCacheService smallCacheService = new LLMCacheService(cacheConfig);
+    LLMCacheService smallCacheService = new LLMCacheService(cacheConfig, redisTemplate);
 
     // When
     for (int i = 0; i < 1100; i++) {

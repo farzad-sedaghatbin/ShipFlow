@@ -370,7 +370,9 @@
     "viewMode": {
       "kanban": "نمای کانبان",
       "list": "نمای لیست"
-    }
+    },
+    "hillChartAutoCreate": "ایجاد خودکار محدوده نمودار تپه",
+    "searchPersons": "جستجوی افراد..."
   },
   "betting": {
     "availablePitches": "پیچ‌های موجود",
@@ -813,7 +815,23 @@
     "complete": "تکمیل",
     "completedEpics": "اپیک‌های تکمیل شده",
     "pitches": "پیچ‌ها",
-    "completedPitches": "پیچ‌های تکمیل شده"
+    "completedPitches": "پیچ‌های تکمیل شده",
+    "selectProject": "یک پروژه انتخاب کنید",
+    "selectProjectDescription": "یک پروژه را برای مشاهده ابتکارات انتخاب کنید",
+    "noEpics": "هیچ اپیکی در این ابتکار وجود ندارد",
+    "completed": "تکمیل",
+    "filterStatus": "فیلتر بر اساس وضعیت",
+    "loadError": "بارگیری ابتکار ناموفق بود",
+    "statusUpdated": "وضعیت به‌روزرسانی شد",
+    "updateError": "به‌روزرسانی ابتکار ناموفق بود",
+    "deleted": "ابتکار حذف شد",
+    "deleteError": "حذف ابتکار ناموفق بود",
+    "notFound": "ابتکار یافت نشد",
+    "notAssigned": "تخصیص نیافته",
+    "deleteWarning": "آیا مطمئن هستید که می‌خواهید ابتکار {{name}} را حذف کنید؟ این عملیات قابل بازگشت نیست.",
+    "nameRequired": "نام الزامی است",
+    "updated": "ابتکار به‌روزرسانی شد",
+    "createError": "ایجاد ابتکار ناموفق بود"
   },
   "epics": {
     "title": "اپیک‌ها",
@@ -880,7 +898,25 @@
     "complete": "تکمیل",
     "completed": "تکمیل شده",
     "completedPitches": "پیچ‌های تکمیل شده",
-    "noPitches": "هنوز پیچی وجود ندارد"
+    "noPitches": "هنوز پیچی وجود ندارد",
+    "selectProject": "یک پروژه انتخاب کنید",
+    "selectProjectDescription": "یک پروژه را برای مشاهده اپیک‌ها انتخاب کنید",
+    "edit": "ویرایش اپیک",
+    "filterStatus": "فیلتر بر اساس وضعیت",
+    "filterInitiative": "فیلتر بر اساس ابتکار",
+    "loadError": "بارگیری اپیک ناموفق بود",
+    "statusUpdated": "وضعیت به‌روزرسانی شد",
+    "updateError": "به‌روزرسانی اپیک ناموفق بود",
+    "deleted": "اپیک حذف شد",
+    "deleteError": "حذف اپیک ناموفق بود",
+    "notFound": "اپیک یافت نشد",
+    "deleteWarning": "آیا مطمئن هستید که می‌خواهید اپیک {{name}} را حذف کنید؟ این عملیات قابل بازگشت نیست.",
+    "pitchUnlinked": "پیچ از اپیک جدا شد",
+    "unlinkError": "جدا کردن پیچ ناموفق بود",
+    "unlinkPitch": "جدا کردن پیچ",
+    "nameRequired": "نام الزامی است",
+    "updated": "اپیک به‌روزرسانی شد",
+    "createError": "ایجاد اپیک ناموفق بود"
   },
   "releases": {
     "title": "انتشارها",
@@ -992,7 +1028,11 @@
       "MEDIUM": "متوسط",
       "HIGH": "زیاد",
       "CRITICAL": "بحرانی"
-    }
+    },
+    "nameVersionRequired": "نام و نسخه الزامی هستند",
+    "updated": "نسخه با موفقیت به‌روزرسانی شد",
+    "createError": "خطا در ایجاد نسخه",
+    "noCyclesAvailable": "هیچ چرخه‌ای در دسترس نیست"
   },
   "chartConfig": {
     "advancedTab": "پیشرفته",
@@ -1039,7 +1079,12 @@
     "executingDesc": "پیشرفت خوب در پیاده‌سازی راه‌حل",
     "makingProgress": "در حال پیشرفت",
     "makingProgressDesc": "کار در حال پیشرفت در پیاده‌سازی است",
-    "lastUpdated": "به‌روزرسانی {{days}} روز پیش"
+    "lastUpdated": "به‌روزرسانی {{days}} روز پیش",
+    "autoProgress": "پیشرفت خودکار",
+    "autoProgressDesc": "پیشرفت به صورت خودکار بر اساس تکمیل تسک مرتبط محاسبه می‌شود",
+    "linkedTask": "تسک مرتبط",
+    "linkedTaskDesc": "تسک مرتبط با این محدوده",
+    "suggestedPosition": "موقعیت پیشنهادی"
   },
   "circuitBreaker": {
     "activeBreakers": "مدار شکن‌های فعال",
@@ -1177,7 +1222,12 @@
     "selectPriority": "انتخاب اولویت",
     "searchPersons": "جستجوی افراد...",
     "searchPitches": "جستجوی پیچ‌ها...",
-    "searchCycles": "جستجوی چرخه‌ها..."
+    "searchCycles": "جستجوی چرخه‌ها...",
+    "download": "دانلود",
+    "pitch": "پیچ",
+    "saving": "در حال ذخیره...",
+    "noResults": "نتیجه‌ای یافت نشد",
+    "new": "جدید"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -1493,7 +1543,8 @@
     "title": "سیکل‌ها",
     "upcoming": "آینده",
     "viewDetails": "مشاهده جزئیات",
-    "members": "اعضا"
+    "members": "اعضا",
+    "betting_cooldown": "ارزیابی و خنک‌شدن"
   },
   "dashboard": {
     "activeCycles": "سیکل‌های فعال",
@@ -2800,7 +2851,9 @@
     "tipText": "تازه وارد ShipFlow شده‌اید؟ با «شروع کار با ShipFlow» شروع کنید تا اصول را یاد بگیرید، سپس سایر راهنماها را بر اساس نیازهایتان کاوش کنید.",
     "title": "راهنما و آموزش",
     "welcomeDesc": "ShipFlow به تیم‌ها کمک می‌کند تا روش Shape Up را برای توسعه محصول پیاده‌سازی کنند. این راهنماها به شما کمک می‌کنند تا تمام ویژگی‌های پلتفرم را درک و به طور مؤثر استفاده کنید.",
-    "welcomeTitle": "به مستندات ShipFlow خوش آمدید"
+    "welcomeTitle": "به مستندات ShipFlow خوش آمدید",
+    "wiseArchitecture": "معماری هوشمند",
+    "wiseArchitectureDesc": "با دستیار معماری هوشمند راه‌حل‌های فنی بهینه برای پیچ‌های خود دریافت کنید."
   },
   "hillChart": {
     "figureOut": "در حال کشف",
@@ -2930,7 +2983,9 @@
     "authorBio": "رهبر فناوری با بیش از یک دهه تجربه در ساخت سیستم‌های بانکداری دیجیتال و فین‌تک در مقیاس بزرگ. به عنوان CTO بنیان‌گذار بانک بلو، پلتفرم بانکداری دیجیتال با بیش از ۵ میلیون مشتری را ساختم. در حال حاضر CTO در Kixy، یک فین‌تک انگلیسی پیشرو در امور مالی اجتماعی و محصولات مالی مبتنی بر هوش مصنوعی. مدافع متدولوژی Shape Up، با دستیابی به ۴۰٪ بهبود بهره‌وری با پیاده‌سازی آن در تیم‌های مهندسی با بیش از ۱۸۰ مهندس.",
     "authorExpertise": "تخصص فنی",
     "contact": "تماس",
-    "whatsNew": "تازه‌ها"
+    "whatsNew": "تازه‌ها",
+    "scopeTaskBridge": "پل محدوده-تسک",
+    "scopeTaskBridgeDesc": "ارتباط مستقیم بین محدوده‌های نمودار تپه و تسک‌ها با پیشرفت خودکار."
   },
   "releaseNotes": {
     "title": "یادداشت‌های انتشار",
@@ -2986,7 +3041,9 @@
     "teamManagement": "مدیریت تیم",
     "teamManagementDesc": "سازماندهی تیم‌ها، تخصیص وظایف، ردیابی زمان و همکاری با پشتیبانی برنامه‌نویسی جفتی.",
     "viewLicense": "مشاهده مجوز",
-    "viewOnGitHub": "مشاهده در GitHub"
+    "viewOnGitHub": "مشاهده در GitHub",
+    "wiseArchitecture": "معماری هوشمند",
+    "wiseArchitectureDesc": "تولیدکننده راه‌حل فنی مبتنی بر هوش مصنوعی که کدبیس، مهارت‌های تیم و طراحی‌های فیگما را تحلیل می‌کند."
   },
   "layout": {
     "changeLanguage": "تغییر زبان",
@@ -3116,7 +3173,8 @@
       "operations": "عملیات",
       "pitch": "پیچ",
       "type": "نوع",
-      "yes": "بله"
+      "yes": "بله",
+      "viewTooltip": "مشاهده جلسه"
     },
     "title": "جلسات",
     "toast": {
@@ -3311,7 +3369,7 @@
     "customMetrics": "متریک‌های سفارشی",
     "cycles": "سیکل‌ها",
     "dashboard": "داشبورد",
-    "dashboards": "داشبوردها",
+    "dashboards": "گزارش پویا",
     "groups": {
       "cycleTools": "ابزارهای سیکل",
       "integrations": "یکپارچه‌سازی‌ها",
@@ -3577,7 +3635,10 @@
     "website": "[TODO: Persian translation] Website",
     "weekly": "[TODO: Persian translation] Weekly",
     "weights": "وزن‌های ریسک",
-    "weightsChangeNote": "تغییرات وزن بر نحوه محاسبه امتیازات ریسک تأثیر می‌گذارد. وزن‌های بالاتر آن فاکتور را تأثیرگذارتر می‌کنند."
+    "weightsChangeNote": "تغییرات وزن بر نحوه محاسبه امتیازات ریسک تأثیر می‌گذارد. وزن‌های بالاتر آن فاکتور را تأثیرگذارتر می‌کنند.",
+    "capacityDesc": "تنظیم مقادیر پیش‌فرض ظرفیت تیم برای برنامه‌ریزی",
+    "defaultHoursPerDayNote": "ساعات کاری روزانه پیش‌فرض برای محاسبات ظرفیت سازمان",
+    "defaultWorkingDaysPerWeekNote": "روزهای کاری پیش‌فرض در هفته برای محاسبات ظرفیت"
   },
   "people": {
     "addPerson": "افزودن فرد",
@@ -3706,7 +3767,8 @@
     "viewHistory": "مشاهده تاریخچه",
     "workActivityTitle": "فعالیت کاری اخیر",
     "workLogActivity": "فعالیت گزارش کار",
-    "workingHere": "در حال کار اینجا"
+    "workingHere": "در حال کار اینجا",
+    "tryDifferentSearch": "یک عبارت جستجوی دیگر امتحان کنید"
   },
   "permissionManagement": {
     "actions": "عملیات‌ها",
@@ -3837,7 +3899,9 @@
       "pending": "[TODO: Persian translation] Pending",
       "shaped": "[TODO: Persian translation] Shaped",
       "started": "[TODO: Persian translation] Started",
-      "testing": "[TODO: Persian translation] Testing"
+      "testing": "[TODO: Persian translation] Testing",
+      "idea": "ایده",
+      "draft": "پیش‌نویس"
     }
   },
   "pitchBoard": {
@@ -3946,7 +4010,8 @@
     "wireframeLinks": "[TODO: Persian translation] Wireframe Links",
     "wireframeLinksPlaceholder": "[TODO: Persian translation] Add wireframe or design links",
     "replaceExtracted": "جایگزینی با داده‌های استخراج شده",
-    "extracting": "استخراج داده از سند..."
+    "extracting": "استخراج داده از سند...",
+    "cycleRequired": "لطفاً یک چرخه انتخاب کنید"
   },
   "pitchComparison": {
     "actualHours": "ساعات واقعی",
@@ -4115,7 +4180,14 @@
     "no": "خیر",
     "ready": "آماده",
     "pending": "در انتظار",
-    "youCanEnable": "می‌توانید این ویژگی را در تنظیمات سازمان فعال کنید"
+    "youCanEnable": "می‌توانید این ویژگی را در تنظیمات سازمان فعال کنید",
+    "aiExtraction": "استخراج داده هوش مصنوعی",
+    "aiExtractionDescription": "یک سند (PDF، DOCX، TXT) بارگذاری کنید تا فیلدهای Shape Up به صورت خودکار با هوش مصنوعی پر شوند",
+    "dropDocument": "سند را اینجا بکشید یا کلیک کنید",
+    "extracting": "در حال استخراج داده از سند...",
+    "dataExtracted": "داده‌های سند با موفقیت استخراج شد! فیلدها را بررسی و ویرایش کنید.",
+    "extractionFailed": "استخراج داده از سند ناموفق بود",
+    "extractionError": "خطا در استخراج داده از سند"
   },
   "pitchHillChart": {
     "addScope": "افزودن محدوده",
@@ -4136,7 +4208,8 @@
     "scopeName": "نام محدوده",
     "scopePlaceholder": "مثلاً احراز هویت کاربر",
     "title": "نمودار تپه پیشرفت",
-    "updateFailed": "به‌روزرسانی موقعیت ناموفق بود"
+    "updateFailed": "به‌روزرسانی موقعیت ناموفق بود",
+    "taskAutoCreate": "ایجاد خودکار تسک از محدوده"
   },
   "pitchTest": {
     "addTestCase": "افزودن مورد تست",
@@ -4235,8 +4308,32 @@
       "testing": "در حال تست",
       "done": "انجام شده",
       "cooldown": "خنک‌شدن",
-      "cancelled": "لغو شده"
-    }
+      "cancelled": "لغو شده",
+      "idea": "ایده",
+      "draft": "پیش‌نویس",
+      "in_progress": "در حال انجام"
+    },
+    "all": "همه",
+    "ideas": "ایده‌ها",
+    "shaping": "در حال شکل‌دهی",
+    "readyForBetting": "آماده برای شرط‌بندی",
+    "noIdeas": "هنوز ایده‌ای وجود ندارد — ایده‌های خام خود را اینجا ثبت کنید",
+    "noDrafts": "هیچ پیچی در حال شکل‌گیری نیست",
+    "noShaped": "هیچ پیچ شکل‌گرفته‌ای برای شرط‌بندی آماده نیست",
+    "quickAddIdea": "افزودن سریع ایده",
+    "quickAddIdeaDescription": "یک ایده خام را سریع ثبت کنید. بعداً می‌توانید آن را با جزئیات بیشتر شکل دهید.",
+    "ideaCreated": "ایده با موفقیت ایجاد شد",
+    "addIdea": "افزودن ایده",
+    "addIdeaHint": "با افزودن ایده‌ها شروع کنید، سپس آن‌ها را به پیچ تبدیل کنید",
+    "titleRequired": "عنوان الزامی است",
+    "titlePlaceholder": "یک عنوان کوتاه برای ایده خود وارد کنید",
+    "ideaDescriptionPlaceholder": "اختیاری: افکار اولیه یا زمینه را اضافه کنید",
+    "shapingStarted": "شکل‌دهی آغاز شد — جزئیات را برای شکل‌دادن به این پیچ اضافه کنید",
+    "startShaping": "شروع شکل‌دهی",
+    "shape": "شکل‌دادن",
+    "noCycleAssigned": "به هیچ چرخه‌ای اختصاص داده نشده",
+    "createError": "خطا در ایجاد پیچ",
+    "updateError": "خطا در به‌روزرسانی پیچ"
   },
   "profile": {
     "accountInfo": "اطلاعات حساب کاربری",
@@ -5867,7 +5964,8 @@
     "noWorkLogs": "هنوز گزارش کاری ثبت نشده",
     "noWorkLogsDesc": "شروع به ثبت کار برای پیگیری پیشرفت",
     "teamMember": "عضو تیم",
-    "actions": "عملیات"
+    "actions": "عملیات",
+    "entries": "ورودی‌ها"
   },
   "workLogs": {
     "addSuccess": "گزارش کار با موفقیت افزوده شد",
@@ -5967,7 +6065,9 @@
     "testing": "در حال تست",
     "done": "انجام شده",
     "cooldown": "دوره آرامش",
-    "cancelled": "لغو شده"
+    "cancelled": "لغو شده",
+    "idea": "ایده",
+    "draft": "پیش‌نویس"
   },
   "competitors": {
     "ctaTitle": "آماده استفاده از Shape Up هستید؟",
@@ -6097,7 +6197,9 @@
       "completed": "تکمیل شده",
       "skipped": "رد شده",
       "blocked": "مسدود شده"
-    }
+    },
+    "createError": "خطا در ایجاد فعالیت",
+    "updateError": "خطا در به‌روزرسانی فعالیت"
   },
   "wiseArchitecture": {
     "title": "معماری هوشمند",
@@ -6209,8 +6311,30 @@
         "failed": "ارسال بازخورد ناموفق بود",
         "placeholder": "اختیاری: درباره تجربه خود بیشتر بگویید...",
         "submit": "ارسال بازخورد",
-        "cancel": "لغو"
-      }
+        "cancel": "لغو",
+        "description": "توضیحات بازخورد",
+        "helpful": "مفید بود",
+        "notHelpful": "مفید نبود"
+      },
+      "subtitle": "تمام جلسات مشاوره معماری شما",
+      "yourHistory": "تاریخچه شما",
+      "yourHistoryDesc": "مشاوره‌های معماری قبلی دریافت شده",
+      "noHistoryYet": "هنوز تاریخچه‌ای وجود ندارد",
+      "refresh": "بازنشانی",
+      "message": "پیام",
+      "messages_one": "{{count}} پیام",
+      "messages_other": "{{count}} پیام",
+      "started": "شروع شد",
+      "initialSolution": "راه‌حل اولیه",
+      "followUp": "پیگیری",
+      "yourQuestion": "سوال شما",
+      "yourFeedback": "بازخورد شما",
+      "rateAdvice": "ارزیابی مشاوره",
+      "continueInWise": "ادامه در Wise",
+      "goToWise": "رفتن به Wise",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "pageOf": "صفحه {{current}} از {{total}}"
     }
   },
   "mcpIntegration": {
@@ -6254,5 +6378,92 @@
     "serverConfigurationDescription": "سرورهای MCP باید توسط مدیر سیستم با استفاده از متغیرهای محیطی پیکربندی شوند. برای فعال‌سازی یکپارچه‌سازی MCP با مدیر خود تماس بگیرید:",
     "tokens": "توکن‌های دسترسی",
     "tokensDescription": "توکن‌های دسترسی به صورت امن برای هر سازمان ذخیره می‌شوند و برای احراز هویت با GitHub و Figma API استفاده می‌شوند. توکن‌ها پس از ذخیره هرگز نمایش داده نمی‌شوند."
+  },
+  "conversation": "مکالمه",
+  "inboundWebhooks": {
+    "title": "ارائه‌دهندگان وب‌هوک ورودی",
+    "subtitle": "سرویس‌های خارجی را برای ارسال رویدادها به ShipFlow پیکربندی کنید",
+    "addProvider": "افزودن ارائه‌دهنده",
+    "howItWorks": "نحوه عملکرد",
+    "howItWorksDesc": "سرویس‌های خارجی درخواست‌های POST HTTP امضاشده را به ShipFlow ارسال می‌کنند. نام ارائه‌دهنده، URL وب‌هوک، رمز HMAC و هدر امضا را بدون نوشتن کد پیکربندی کنید.",
+    "step1": "URL وب‌هوک را کپی کرده و در سرویس خارجی پیکربندی کنید",
+    "step2": "یک رمز مشترک برای تأیید امضای HMAC تنظیم کنید",
+    "step3": "هدر امضا را پیکربندی کنید (مثلاً X-Hub-Signature-256)",
+    "step4": "ارائه‌دهنده را فعال کنید تا شروع به دریافت رویدادها کنید",
+    "configurations": "ارائه‌دهندگان پیکربندی شده",
+    "configurationsDesc": "پیکربندی‌های وب‌هوک ورودی خود را مدیریت کنید",
+    "empty": "هنوز ارائه‌دهنده‌ای پیکربندی نشده",
+    "provider": "ارائه‌دهنده",
+    "webhookUrl": "URL وب‌هوک",
+    "algorithm": "الگوریتم",
+    "status": "وضعیت",
+    "copyUrl": "کپی URL",
+    "editProvider": "ویرایش ارائه‌دهنده",
+    "providerNameLabel": "نام ارائه‌دهنده",
+    "providerNameHint": "یک شناسه منحصر به فرد برای این ارائه‌دهنده (مثلاً zendesk، pagerduty)",
+    "displayNameLabel": "نام نمایشی",
+    "webhookSecretLabel": "رمز وب‌هوک",
+    "leaveBlank": "برای نگه داشتن رمز فعلی خالی بگذارید",
+    "secretPlaceholder": "رمز وب‌هوک را وارد کنید",
+    "secretHint": "رمز مشترک برای تأیید امضاهای HMAC این ارائه‌دهنده",
+    "signatureHeaderLabel": "هدر امضا",
+    "algorithmLabel": "الگوریتم امضا",
+    "descriptionLabel": "توضیحات",
+    "descriptionPlaceholder": "توضیحات اختیاری برای این ارائه‌دهنده",
+    "enabledLabel": "فعال",
+    "create": "ایجاد ارائه‌دهنده",
+    "deleteTitle": "حذف ارائه‌دهنده",
+    "deleteDescription": "آیا مطمئن هستید که می‌خواهید این ارائه‌دهنده وب‌هوک را حذف کنید؟ این عمل قابل بازگشت نیست.",
+    "fetchError": "خطا در بارگذاری ارائه‌دهندگان وب‌هوک",
+    "updated": "ارائه‌دهنده با موفقیت به‌روزرسانی شد",
+    "created": "ارائه‌دهنده با موفقیت ایجاد شد",
+    "saveError": "خطا در ذخیره ارائه‌دهنده",
+    "toggleError": "خطا در تغییر وضعیت ارائه‌دهنده",
+    "deleted": "ارائه‌دهنده با موفقیت حذف شد",
+    "deleteError": "خطا در حذف ارائه‌دهنده",
+    "copied": "URL وب‌هوک در کلیپ‌بورد کپی شد"
+  },
+  "webhooksGuide": {
+    "outgoing": "وب‌هوک‌های خروجی",
+    "outgoingDesc": "ارسال رویدادها از ShipFlow به سرویس‌های خارجی مانند Slack و Microsoft Teams",
+    "outgoingIntro": "ShipFlow می‌تواند اعلان‌ها را به Slack و MS Teams ارسال کند.",
+    "slackSetup": "راه‌اندازی اعلان‌های Slack",
+    "slackStep1": "به تنظیمات سازمان → یکپارچه‌سازی‌ها → Slack بروید",
+    "slackStep2": "یک URL Incoming Webhook از فضای کاری Slack خود ایجاد کنید",
+    "slackStep3": "URL را جای‌گذاری کرده و رویدادهای مورد نظر را پیکربندی کنید",
+    "slackStep4": "ذخیره کرده و اتصال را آزمایش کنید",
+    "stagnation": "هشدارهای رکود",
+    "stagnationDesc": "اعلان‌های خودکار ارسال می‌شود زمانی که یک محدوده برای مدت طولانی از قله نمودار تپه عبور نکرده باشد.",
+    "supportedEvents": "رویدادهای پشتیبانی شده",
+    "inbound": "وب‌هوک‌های ورودی",
+    "inboundDesc": "دریافت رویدادها از سرویس‌های خارجی و اجرای عملیات در ShipFlow",
+    "inboundIntro": "وب‌هوک‌های ورودی به سرویس‌هایی مانند Zendesk، PagerDuty یا سیستم‌های سفارشی اجازه می‌دهند رویدادها را به صورت امن به ShipFlow ارسال کنند.",
+    "howToConnect": "نحوه اتصال سرویس خارجی",
+    "step1Title": "ایجاد یک ارائه‌دهنده",
+    "step1Desc": "به یکپارچه‌سازی‌ها → وب‌هوک‌های ورودی بروید و روی افزودن ارائه‌دهنده کلیک کنید",
+    "openSettings": "باز کردن تنظیمات",
+    "step2Title": "پیکربندی سرویس خارجی",
+    "step2Desc": "URL وب‌هوک را کپی کرده و همراه با رمز مشترک در سرویس خارجی خود وارد کنید",
+    "step3Title": "تأیید امضاها",
+    "step3a": "ShipFlow هر درخواست را با استفاده از تأیید امضای HMAC بررسی می‌کند",
+    "step3b": "الگوریتم‌های پشتیبانی شده: SHA-256 (توصیه شده)، SHA-1، MD5",
+    "step3c": "نام هدر امضا باید با آنچه سرویس خارجی ارسال می‌کند مطابقت داشته باشد",
+    "step3d": "درخواست‌هایی با امضاهای نامعتبر با خطای 401 رد می‌شوند",
+    "step4Title": "آزمایش یکپارچه‌سازی",
+    "step4Desc": "یک رویداد آزمایشی از سرویس خارجی ارسال کرده و لاگ‌های ShipFlow را بررسی کنید",
+    "security": "امنیت",
+    "securityDesc": "تمام درخواست‌های وب‌هوک ورودی با استفاده از امضاهای HMAC تأیید می‌شوند.",
+    "endpoint": "نقطه پایانی وب‌هوک",
+    "endpointExample": "POST /api/webhooks/inbound/{providerName}",
+    "listProviders": "فهرست ارائه‌دهندگان",
+    "listProvidersDesc": "GET /api/webhooks/providers — همه ارائه‌دهندگان وب‌هوک پیکربندی شده سازمان را برمی‌گرداند",
+    "eventHeaders": "هدرهای رویداد",
+    "eventHeadersDesc": "هر درخواست ورودی شامل هدرهای متادیتای ارائه‌دهنده برای مسیریابی و حسابرسی است",
+    "providers": "انواع ارائه‌دهنده",
+    "providersDesc": "ShipFlow از هر ارائه‌دهنده وب‌هوک مبتنی بر HTTP که می‌تواند درخواست‌های امضاشده HMAC ارسال کند پشتیبانی می‌کند",
+    "providersIntro": "یکپارچه‌سازی‌های رایج عبارتند از:",
+    "vcsLabel": "کنترل نسخه و DevOps",
+    "notifLabel": "اعلان و هشدار",
+    "inboundLabel": "راهنمای وب‌هوک‌های ورودی"
   }
 }

@@ -51,9 +51,14 @@ services:
       APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
       APP_AI_RUNPOD_TIMEOUT: ${APP_AI_RUNPOD_TIMEOUT:-180}
       APP_AI_RUNPOD_POLL_INTERVAL: ${APP_AI_RUNPOD_POLL_INTERVAL:-2}
+      # Redis Configuration
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
       QA_VECTORSTORE_PROVIDER: qdrant
+      # Force Qdrant even in dev profile (overrides application-dev.properties in-memory default)
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
       QDRANT_API_KEY: ${QDRANT_API_KEY:-shipflow_qdrant_key}
@@ -73,6 +78,8 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_started
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -107,6 +114,33 @@ services:
       - shipflow-network
     restart: unless-stopped
 
+  # Redis Cache (with RDB + AOF persistence)
+  redis:
+    image: redis:7-alpine
+    container_name: shipflow-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
   # ChromaDB (Alternative - uncomment if preferred over Qdrant)
   # chromadb:
   #   image: chromadb/chroma:latest
@@ -132,6 +166,7 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
+  redis_data:
   # chromadb_data:  # Uncomment if using ChromaDB
 
 networks:

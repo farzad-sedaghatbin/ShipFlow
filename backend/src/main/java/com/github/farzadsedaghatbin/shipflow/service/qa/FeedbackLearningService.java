@@ -44,21 +44,14 @@ public class FeedbackLearningService {
   }
 
   /**
-   * Initialize Redis connection for distributed feedback storage. In production,
-   * this would use Spring Data Redis or Jedis/Lettuce client.
+   * Feedback stats (queryPatternStats, sourceStats) are intentionally kept in-memory.
+   * The durable feedback data is persisted to PostgreSQL via QAInteractionRepository.
+   * In-memory aggregations are session-level optimisations for re-ranking and are
+   * rebuilt automatically as users give feedback during a session.
    */
   private void initializeRedis() {
-    try {
-      AICacheConfig.RedisConfig redis = cacheConfig.getRedis();
-      log.info("Initializing Redis for feedback learning at {}:{}", redis.getHost(), redis.getPort());
-      // In production implementation:
-      // RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-      // redisTemplate.setConnectionFactory(redisConnectionFactory);
-      // or: JedisPool pool = new JedisPool(redis.getHost(), redis.getPort())
-      log.warn("Redis provider configured but full Redis integration pending - using in-memory for now");
-    } catch (Exception e) {
-      log.error("Failed to initialize Redis for feedback learning, using in-memory: {}", e.getMessage());
-    }
+    // Stats aggregation stays in-memory by design — durable data is in PostgreSQL.
+    log.info("FeedbackLearningService: stats kept in-memory (durable feedback → PostgreSQL)");
   }
 
   /** Records feedback for a Q&A interaction. */

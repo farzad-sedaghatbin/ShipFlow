@@ -477,7 +477,20 @@ public class PitchHealthService {
    * <p>
    * This provides immediate, data-driven risk assessment without manual input.
    */
-  private RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
+  /**
+   * Calculate a rule-based risk score (0-100) for a pitch using the comprehensive
+   * 4-factor weighted algorithm. This is the canonical risk scoring method used
+   * by both the health check and risk advisory endpoints for consistency.
+   *
+   * <p><b>Visibility note:</b> This method is {@code public} to support cross-service
+   * integration (e.g. {@code RiskAnalysisService}). All risk scoring across the
+   * application should delegate to this single method to ensure consistent results.
+   *
+   * @param pitch    The pitch to score
+   * @param hoursMap Optional pre-loaded hours map for batch optimization (can be null)
+   * @return Risk score 0-100
+   */
+  public int calculateRuleBasedRiskScore(Pitch pitch, Map<Long, Double> hoursMap) {
     // Get configurable thresholds and weights from organization settings
     var thresholds = getThresholds();
     var weights = getWeights();
@@ -525,12 +538,19 @@ public class PitchHealthService {
     // risk level
     double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * MAX_RISK_FACTOR_WEIGHT);
 
-    // Determine risk level from blended score (using configurable thresholds)
-    if (finalRiskScore > thresholds.getHighMax()) {
+    return (int) Math.round(Math.max(0, Math.min(100, finalRiskScore)));
+  }
+
+  private RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
+    int score = calculateRuleBasedRiskScore(pitch, hoursMap);
+    var thresholds = getThresholds();
+
+    // Determine risk level from score (using configurable thresholds)
+    if (score > thresholds.getHighMax()) {
       return RiskLevel.CRITICAL;
-    } else if (finalRiskScore > thresholds.getMediumMax()) {
+    } else if (score > thresholds.getMediumMax()) {
       return RiskLevel.HIGH;
-    } else if (finalRiskScore > thresholds.getLowMax()) {
+    } else if (score > thresholds.getLowMax()) {
       return RiskLevel.MEDIUM;
     }
     return RiskLevel.LOW;

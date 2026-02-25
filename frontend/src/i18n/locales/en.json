@@ -99,7 +99,11 @@
     "selectPriority": "Select priority",
     "searchPersons": "Search persons...",
     "searchPitches": "Search pitches...",
-    "searchCycles": "Search cycles..."
+    "searchCycles": "Search cycles...",
+    "pitch": "Pitch",
+    "saving": "Saving...",
+    "noResults": "No results found",
+    "new": "New"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -120,7 +124,7 @@
     "retrospectives": "Retrospectives",
     "workLogs": "Work Logs",
     "customMetrics": "Custom Metrics",
-    "dashboards": "Dashboards",
+    "dashboards": "Dynamic Report",
     "helpGuides": "Help & Guides",
     "menu": "Menu",
     "more": "More",
@@ -524,7 +528,10 @@
     "failedToUpdate": "Failed to update cycle status",
     "failedToDelete": "Failed to delete cycle",
     "failedToLoad": "Failed to load cycles",
-    "members": "Members"
+    "members": "Members",
+    "betting": "Betting",
+    "build": "Build",
+    "cooldown": "Cooldown"
   },
   "pitches": {
     "title": "Pitches",
@@ -585,7 +592,8 @@
       "testing": "Testing",
       "done": "Done",
       "cooldown": "Cooldown",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "inProgress": "In Progress"
     }
   },
   "pitch": {
@@ -1247,7 +1255,12 @@
     "executingDesc": "Making good progress implementing the solution",
     "makingProgress": "Making Progress",
     "makingProgressDesc": "Work is progressing through implementation",
-    "lastUpdated": "Updated {{days}} days ago"
+    "lastUpdated": "Updated {{days}} days ago",
+    "autoProgress": "Auto Progress",
+    "autoProgressDesc": "Automatically calculates progress based on linked task completion",
+    "linkedTask": "Linked Task",
+    "linkedTaskDesc": "Task linked to this scope",
+    "suggestedPosition": "Suggested Position"
   },
   "circuitBreaker": {
     "title": "Circuit Breaker Monitor",
@@ -1818,7 +1831,8 @@
       "no": "No",
       "documentsTooltip": "Documents",
       "editTooltip": "Edit",
-      "deleteTooltip": "Delete"
+      "deleteTooltip": "Delete",
+      "viewTooltip": "View meeting"
     },
     "pagination": {
       "showing": "Showing {{from}} to {{to}} of {{total}} meetings",
@@ -2395,7 +2409,22 @@
     "complete": "complete",
     "completedEpics": "completed epics",
     "pitches": "Pitches",
-    "completedPitches": "completed pitches"
+    "completedPitches": "completed pitches",
+    "selectProject": "Select a Project",
+    "selectProjectDescription": "Choose a project to view its initiatives",
+    "completed": "completed",
+    "filterStatus": "Filter by status",
+    "loadError": "Failed to load initiative",
+    "statusUpdated": "Status updated",
+    "updateError": "Failed to update initiative",
+    "deleted": "Initiative deleted",
+    "deleteError": "Failed to delete initiative",
+    "notFound": "Initiative not found",
+    "notAssigned": "Not assigned",
+    "deleteWarning": "Are you sure you want to delete initiative {{name}}? This action cannot be undone.",
+    "nameRequired": "Name is required",
+    "updated": "Initiative updated",
+    "createError": "Failed to create initiative"
   },
   "epics": {
     "title": "Epics",
@@ -2462,7 +2491,25 @@
     "complete": "complete",
     "completed": "completed",
     "completedPitches": "completed pitches",
-    "noPitches": "No pitches yet"
+    "noPitches": "No pitches yet",
+    "selectProject": "Select a Project",
+    "selectProjectDescription": "Choose a project to view its epics",
+    "edit": "Edit Epic",
+    "filterStatus": "Filter by status",
+    "filterInitiative": "Filter by initiative",
+    "loadError": "Failed to load epic",
+    "statusUpdated": "Status updated",
+    "updateError": "Failed to update epic",
+    "deleted": "Epic deleted",
+    "deleteError": "Failed to delete epic",
+    "notFound": "Epic not found",
+    "deleteWarning": "Are you sure you want to delete epic {{name}}? This action cannot be undone.",
+    "pitchUnlinked": "Pitch unlinked from epic",
+    "unlinkError": "Failed to unlink pitch",
+    "unlinkPitch": "Unlink Pitch",
+    "nameRequired": "Name is required",
+    "updated": "Epic updated",
+    "createError": "Failed to create epic"
   },
   "releases": {
     "title": "Releases",
@@ -2574,7 +2621,11 @@
       "MEDIUM": "Medium",
       "HIGH": "High",
       "CRITICAL": "Critical"
-    }
+    },
+    "nameVersionRequired": "Name and version are required",
+    "updated": "Release updated successfully",
+    "createError": "Failed to create release",
+    "noCyclesAvailable": "No cycles available"
   },
   "bugAttachments": {
     "title": "Attachments",
@@ -3266,7 +3317,9 @@
     "timerRunning": "Timer is running for this task",
     "totalTasks": "Total Tasks",
     "update": "Update",
-    "uploadFile": "Upload File"
+    "uploadFile": "Upload File",
+    "hillChartAutoCreate": "Auto-create hill chart scope",
+    "searchPersons": "Search persons..."
   },
   "healthOverview": {
     "title": "Pitch Health Overview",
@@ -3508,7 +3561,10 @@
     "permissionDenied": "You don't have permission to access this page. Admin role required.",
     "settingsReset": "Settings reset to defaults",
     "settingsSaved": "Organization settings saved successfully",
-    "updatedBy": "by {{user}}"
+    "updatedBy": "by {{user}}",
+    "capacityDesc": "Configure team capacity defaults for planning",
+    "defaultHoursPerDayNote": "Default hours per day used for capacity calculations across the organization",
+    "defaultWorkingDaysPerWeekNote": "Default working days per week used for capacity calculations"
   },
   "userManagement": {
     "title": "User Management",
@@ -3706,7 +3762,8 @@
     "viewActivity": "View Activity",
     "viewHistory": "View History",
     "workLogActivity": "Work Log Activity",
-    "workingHere": "Working Here"
+    "workingHere": "Working Here",
+    "tryDifferentSearch": "Try a different search term"
   },
   "pitchBoard": {
     "title": "Pitch Board",
@@ -3814,7 +3871,8 @@
       "createFailed": "Failed to create pitch"
     },
     "replaceExtracted": "Replace with Extracted Data",
-    "extracting": "Extracting data from document..."
+    "extracting": "Extracting data from document...",
+    "cycleRequired": "Please select a cycle"
   },
   "profilePage": {
     "title": "My Profile",
@@ -4052,7 +4110,14 @@
     "workLogDeleteFailed": "Failed to delete work log",
     "documentUploadFailed": "Some meeting documents failed to upload",
     "meetingFailed": "Failed to create meeting",
-    "youCanEnable": "You can enable this feature in organization settings"
+    "youCanEnable": "You can enable this feature in organization settings",
+    "aiExtraction": "AI Data Extraction",
+    "aiExtractionDescription": "Upload a document (PDF, DOCX, TXT) to automatically fill in the Shape Up fields using AI",
+    "dropDocument": "Drop document here or click to upload",
+    "extracting": "Extracting data from document...",
+    "dataExtracted": "Document data extracted successfully! Review and edit the fields below.",
+    "extractionFailed": "Failed to extract data from document",
+    "extractionError": "Error extracting document data"
   },
   "cycleDetailPage": {
     "title": "Cycle Details",
@@ -4522,7 +4587,9 @@
     "techStack": "Tech Stack",
     "viewLicense": "View License",
     "wcag21AA": "WCAG 2.1 AA",
-    "whatsNew": "What's New"
+    "whatsNew": "What's New",
+    "wiseArchitecture": "Wise Architecture",
+    "wiseArchitectureDesc": "AI-powered architecture advisor that analyzes codebases, team skills, and Figma designs to recommend optimal implementation strategies."
   },
   "releaseNotes": {
     "title": "Release Notes",
@@ -5152,7 +5219,8 @@
     "figuringOut": "🔍 Figuring things out (Uphill)",
     "makingHappen": "🚀 Making it happen (Downhill)",
     "deleteTitle": "Delete Hill Chart Point",
-    "deleteConfirm": "Are you sure you want to delete \"{scope}\"? This action cannot be undone."
+    "deleteConfirm": "Are you sure you want to delete \"{scope}\"? This action cannot be undone.",
+    "taskAutoCreate": "Auto-create task from scope"
   },
   "cycleHillChart": {
     "title": "Cycle Hill Chart",
@@ -6129,7 +6197,9 @@
       "completed": "Completed",
       "skipped": "Skipped",
       "blocked": "Blocked"
-    }
+    },
+    "createError": "Failed to create activity",
+    "updateError": "Failed to update activity"
   },
   "wiseArchitecture": {
     "title": "Wise Architecture",
@@ -6308,5 +6378,92 @@
     "serverConfigurationDescription": "MCP servers must be configured by your system administrator using environment variables. Contact your admin to enable MCP integration:",
     "tokens": "Access Tokens",
     "tokensDescription": "Access tokens are stored securely per-organization and are used to authenticate with GitHub and Figma APIs. Tokens are never displayed after being saved."
+  },
+  "conversation": "Conversation",
+  "inboundWebhooks": {
+    "title": "Inbound Webhook Providers",
+    "subtitle": "Configure external services to send events to ShipFlow",
+    "addProvider": "Add Provider",
+    "howItWorks": "How It Works",
+    "howItWorksDesc": "External services send signed HTTP POST requests to ShipFlow. Configure a provider's name, webhook URL, HMAC secret, and signature header without writing any code.",
+    "step1": "Copy the webhook URL and configure it in the external service",
+    "step2": "Set a shared secret for HMAC signature verification",
+    "step3": "Configure the signature header (e.g. X-Hub-Signature-256)",
+    "step4": "Enable the provider to start receiving events",
+    "configurations": "Configured Providers",
+    "configurationsDesc": "Manage your inbound webhook configurations",
+    "empty": "No providers configured yet",
+    "provider": "Provider",
+    "webhookUrl": "Webhook URL",
+    "algorithm": "Algorithm",
+    "status": "Status",
+    "copyUrl": "Copy URL",
+    "editProvider": "Edit Provider",
+    "providerNameLabel": "Provider Name",
+    "providerNameHint": "A unique identifier for this provider (e.g. zendesk, pagerduty)",
+    "displayNameLabel": "Display Name",
+    "webhookSecretLabel": "Webhook Secret",
+    "leaveBlank": "Leave blank to keep existing secret",
+    "secretPlaceholder": "Enter webhook secret",
+    "secretHint": "The shared secret used to verify HMAC signatures from this provider",
+    "signatureHeaderLabel": "Signature Header",
+    "algorithmLabel": "Signature Algorithm",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description for this provider",
+    "enabledLabel": "Enabled",
+    "create": "Create Provider",
+    "deleteTitle": "Delete Provider",
+    "deleteDescription": "Are you sure you want to delete this webhook provider? This action cannot be undone.",
+    "fetchError": "Failed to load webhook providers",
+    "updated": "Provider updated successfully",
+    "created": "Provider created successfully",
+    "saveError": "Failed to save provider",
+    "toggleError": "Failed to toggle provider status",
+    "deleted": "Provider deleted successfully",
+    "deleteError": "Failed to delete provider",
+    "copied": "Webhook URL copied to clipboard"
+  },
+  "webhooksGuide": {
+    "outgoing": "Outgoing Webhooks",
+    "outgoingDesc": "Send events from ShipFlow to external services like Slack and Microsoft Teams",
+    "outgoingIntro": "ShipFlow can send notifications to Slack and MS Teams when important events occur in your cycles and pitches.",
+    "slackSetup": "Setting up Slack Notifications",
+    "slackStep1": "Go to Organization Settings → Integrations → Slack",
+    "slackStep2": "Generate an Incoming Webhook URL from your Slack workspace",
+    "slackStep3": "Paste the URL and configure which events trigger notifications",
+    "slackStep4": "Save and test the connection",
+    "stagnation": "Stagnation Alerts",
+    "stagnationDesc": "Automatic notifications are sent when a scope has not progressed past the peak of the hill chart for an extended period.",
+    "supportedEvents": "Supported Events",
+    "inbound": "Inbound Webhooks",
+    "inboundDesc": "Receive events from external services and trigger actions in ShipFlow",
+    "inboundIntro": "Inbound webhooks allow external services like Zendesk, PagerDuty, or custom systems to push events into ShipFlow securely.",
+    "howToConnect": "How to Connect an External Service",
+    "step1Title": "Create a Provider",
+    "step1Desc": "Go to Integrations → Inbound Webhooks and click Add Provider",
+    "openSettings": "Open Settings",
+    "step2Title": "Configure the External Service",
+    "step2Desc": "Copy the webhook URL and paste it into your external service, along with the shared secret",
+    "step3Title": "Verify Signatures",
+    "step3a": "ShipFlow verifies each request using HMAC signature validation",
+    "step3b": "Supported algorithms: SHA-256 (recommended), SHA-1, MD5",
+    "step3c": "The signature header name must match what the external service sends",
+    "step3d": "Requests with invalid signatures are rejected with a 401 error",
+    "step4Title": "Test the Integration",
+    "step4Desc": "Send a test event from the external service and check ShipFlow logs",
+    "security": "Security",
+    "securityDesc": "All inbound webhook requests are verified using HMAC signatures. Each provider has its own unique secret, and the signature is checked before any event is processed.",
+    "endpoint": "Webhook Endpoint",
+    "endpointExample": "POST /api/webhooks/inbound/{providerName}",
+    "listProviders": "List Providers",
+    "listProvidersDesc": "GET /api/webhooks/providers — Returns all configured webhook providers for your organization",
+    "eventHeaders": "Event Headers",
+    "eventHeadersDesc": "Each inbound request includes provider metadata headers for routing and auditing",
+    "providers": "Provider Types",
+    "providersDesc": "ShipFlow supports any HTTP-based webhook provider that can send HMAC-signed requests",
+    "providersIntro": "Common integrations include:",
+    "vcsLabel": "VCS & DevOps",
+    "notifLabel": "Notifications & Alerting",
+    "inboundLabel": "Inbound Webhooks Guide"
   }
 }

@@ -63,6 +63,7 @@ const moreSections: NavSection[] = [
       { labelKey: 'nav.betting', icon: Dices, path: '/betting' },
       { labelKey: 'nav.health', icon: Activity, path: '/health' },
       { labelKey: 'nav.retrospectives', icon: Brain, path: '/retros' },
+      { labelKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards' },
       { labelKey: 'nav.reports', icon: BarChart3, path: '/reports' },
     ],
   },
