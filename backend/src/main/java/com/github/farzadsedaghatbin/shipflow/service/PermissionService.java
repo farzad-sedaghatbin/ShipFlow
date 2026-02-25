@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Service for managing and checking permissions in the RBAC system. */
@@ -26,6 +27,9 @@ public class PermissionService {
   private final PermissionRepository permissionRepository;
   private final UserRepository userRepository;
   private final LocalizationService localizationService;
+
+  @Value("${app.security.rbac.enabled:true}")
+  private boolean rbacEnabled;
 
   /**
    * Check if a user has a specific permission on a resource
@@ -40,6 +44,10 @@ public class PermissionService {
    */
   @Transactional(readOnly = true)
   public boolean hasPermission(String username, ResourceType resourceType, PermissionType permissionType) {
+    if (!rbacEnabled) {
+      log.debug("RBAC disabled — granting access to user: {} on {}/{}", username, resourceType, permissionType);
+      return true;
+    }
     try {
       Optional<User> userOpt = userRepository.findByUsername(username);
       if (userOpt.isEmpty()) {
@@ -96,6 +104,10 @@ public class PermissionService {
    */
   @Transactional(readOnly = true)
   public boolean hasPermission(ResourceType resourceType, PermissionType permissionType) {
+    if (!rbacEnabled) {
+      log.debug("RBAC disabled — granting access on {}/{}", resourceType, permissionType);
+      return true;
+    }
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
       log.warn("No authenticated user found");

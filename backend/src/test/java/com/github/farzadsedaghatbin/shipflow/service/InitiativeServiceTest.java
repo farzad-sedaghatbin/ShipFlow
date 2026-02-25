@@ -24,6 +24,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -298,7 +299,7 @@ class InitiativeServiceTest {
 
     when(initiativeRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(init1));
     when(initiativeRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(init2));
-    when(initiativeRepository.save(any(Initiative.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(initiativeRepository.saveAll(any())).thenAnswer(inv -> new ArrayList<>(inv.getArgument(0)));
 
     ReorderRequest request = ReorderRequest.builder()
         .items(Arrays.asList(
@@ -309,8 +310,12 @@ class InitiativeServiceTest {
 
     initiativeService.reorder(request);
 
-    verify(initiativeRepository).save(argThat(i -> i.getId().equals(1L) && i.getSortOrder() == 1));
-    verify(initiativeRepository).save(argThat(i -> i.getId().equals(2L) && i.getSortOrder() == 0));
+    verify(initiativeRepository).saveAll(argThat(iterable -> {
+      List<Initiative> saved = new java.util.ArrayList<>();
+      iterable.forEach(saved::add);
+      return saved.stream().anyMatch(i -> i.getId().equals(1L) && i.getSortOrder() == 1)
+          && saved.stream().anyMatch(i -> i.getId().equals(2L) && i.getSortOrder() == 0);
+    }));
   }
 
   @Test

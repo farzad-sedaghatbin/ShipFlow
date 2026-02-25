@@ -316,7 +316,7 @@ class EpicServiceTest {
 
     when(epicRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(epic1));
     when(epicRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(epic2));
-    when(epicRepository.save(any(Epic.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(epicRepository.saveAll(any())).thenAnswer(inv -> new ArrayList<>(inv.getArgument(0)));
 
     ReorderRequest request = ReorderRequest.builder()
         .items(Arrays.asList(
@@ -327,8 +327,12 @@ class EpicServiceTest {
 
     epicService.reorder(request);
 
-    verify(epicRepository).save(argThat(e -> e.getId().equals(1L) && e.getSortOrder() == 0));
-    verify(epicRepository).save(argThat(e -> e.getId().equals(2L) && e.getSortOrder() == 1));
+    verify(epicRepository).saveAll(argThat(iterable -> {
+      List<Epic> saved = new java.util.ArrayList<>();
+      iterable.forEach(saved::add);
+      return saved.stream().anyMatch(e -> e.getId().equals(1L) && e.getSortOrder() == 0)
+          && saved.stream().anyMatch(e -> e.getId().equals(2L) && e.getSortOrder() == 1);
+    }));
   }
 
   @Test
