@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { FolderOpen } from 'lucide-react';
 import { useProject } from '../contexts';
-import type { Project } from '../types';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import {
   Dialog,
@@ -31,10 +30,6 @@ export default function ProjectRequiredDialog({
   const { t } = useTranslation();
   const { projects, selectProject, currentProject } = useProject();
 
-  const handleSelectProject = (project: Project) => {
-    selectProject(project);
-  };
-
   return (
     <Dialog open={open}>
       <DialogContent
@@ -55,32 +50,39 @@ export default function ProjectRequiredDialog({
         </DialogHeader>
 
         <div className="mt-2 max-h-[300px] overflow-y-auto">
-          <div className="space-y-1">
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                onClick={() => handleSelectProject(project)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                  'hover:bg-accent focus-visible:bg-accent focus-visible:outline-none',
-                  currentProject?.id === project.id && 'bg-accent'
-                )}
-              >
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarFallback
-                    className="text-xs font-medium text-white"
-                    style={{ backgroundColor: project.color || '#8B5CF6' }}
-                  >
-                    {project.projectKey.substring(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{project.name}</span>
-                  <span className="text-xs text-muted-foreground">{project.projectKey}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          {projects.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              <p className="font-medium">{t('projects.noProjects')}</p>
+              <p className="mt-1">{t('projects.noProjectsDescription')}</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => selectProject(project)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                    'hover:bg-accent focus-visible:bg-accent focus-visible:outline-none',
+                    currentProject?.id === project.id && 'bg-accent'
+                  )}
+                >
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarFallback
+                      className="text-xs font-medium text-white"
+                      style={{ backgroundColor: project.color || '#8B5CF6' }}
+                    >
+                      {project.projectKey.substring(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium truncate">{project.name}</span>
+                    <span className="text-xs text-muted-foreground">{project.projectKey}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -270,7 +270,7 @@ class PitchServiceTest {
 
     when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitch1));
     when(pitchRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(pitch2));
-    when(pitchRepository.save(any(Pitch.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(pitchRepository.saveAll(any())).thenReturn(List.of(pitch1, pitch2));
 
     ReorderRequest request = ReorderRequest.builder()
         .items(Arrays.asList(
@@ -281,8 +281,12 @@ class PitchServiceTest {
 
     pitchService.reorder(request);
 
-    verify(pitchRepository).save(argThat(p -> p.getId().equals(1L) && p.getSortOrder() == 0));
-    verify(pitchRepository).save(argThat(p -> p.getId().equals(2L) && p.getSortOrder() == 1));
+    verify(pitchRepository).saveAll(argThat(iterable -> {
+      List<Pitch> saved = new java.util.ArrayList<>();
+      iterable.forEach(saved::add);
+      return saved.stream().anyMatch(p -> p.getId().equals(1L) && p.getSortOrder() == 0)
+          && saved.stream().anyMatch(p -> p.getId().equals(2L) && p.getSortOrder() == 1);
+    }));
   }
 
   @Test
@@ -296,4 +300,5 @@ class PitchServiceTest {
     assertThatThrownBy(() -> pitchService.reorder(request))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Pitch not found");
-  }}
+  }
+}

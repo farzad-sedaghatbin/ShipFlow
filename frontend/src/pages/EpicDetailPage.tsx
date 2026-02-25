@@ -171,13 +171,18 @@ export default function EpicDetailPage() {
       const response = await pitchService.getByEpicId(Number(id));
       setPitches(response.data);
     }
-  }, [pitches, id, showError, t]);
+  }, [id, showError, t]);
 
   const handlePriorityChange = useCallback(async (pitchId: number, priority: BusinessValue) => {
-    const pitch = pitches.find(p => p.id === pitchId);
+    // Capture current pitch via functional update to avoid stale closure
+    let snapshot: Pitch | undefined;
+    setPitches(prev => {
+      snapshot = prev.find(p => p.id === pitchId);
+      if (!snapshot) return prev;
+      return prev.map(p => p.id === pitchId ? { ...p, priority } : p);
+    });
+    const pitch = snapshot;
     if (!pitch) return;
-    // Optimistic update
-    setPitches(pitches.map(p => p.id === pitchId ? { ...p, priority } : p));
     try {
       await pitchService.update(pitchId, {
         title: pitch.title,
@@ -201,10 +206,10 @@ export default function EpicDetailPage() {
     } catch (error) {
       console.error('Failed to update priority:', error);
       showError(t('pitches.updateError'));
-      // Revert
+      // Revert optimistic update
       setPitches(prev => prev.map(p => p.id === pitchId ? { ...p, priority: pitch.priority } : p));
     }
-  }, [pitches, showError, showSuccess, t]);
+  }, [showError, showSuccess, t]);
 
   if (loading) {
     return (

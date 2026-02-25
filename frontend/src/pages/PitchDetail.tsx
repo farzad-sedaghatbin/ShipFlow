@@ -91,7 +91,7 @@ export default function PitchDetail() {
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [workLogPage, setWorkLogPage] = useState(0);
-  const [_workLogTotalPages, setWorkLogTotalPages] = useState(0);
+  const [, setWorkLogTotalPages] = useState(0);
   const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
   const WORK_LOG_PAGE_SIZE = 5;
   const [meetings, setMeetings] = useState<Meeting[]>([]);

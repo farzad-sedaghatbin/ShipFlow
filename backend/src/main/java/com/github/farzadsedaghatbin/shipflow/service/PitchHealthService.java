@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -494,7 +493,7 @@ public class PitchHealthService {
    * @param hoursMap Optional pre-loaded hours map for batch optimization (can be null)
    * @return Risk score 0-100
    */
-  @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+  @Transactional(readOnly = true)
   public int calculateRuleBasedRiskScore(Pitch pitch, Map<Long, Double> hoursMap) {
     // Get configurable thresholds and weights from organization settings
     var thresholds = getThresholds();

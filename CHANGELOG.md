@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.6.2] - 2026-02-25 - Pitch Prioritization & Release Version Visibility
+## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog, Expanded Color Palette & Pitch Prioritization
 
 ### Added
 - **Pitch Prioritization inside Epics**: Drag-and-drop reordering and priority labels for pitches within an epic
@@ -22,10 +22,6 @@ All notable changes to this project will be documented in this file.
 - **Priority Sort Option in PitchBoard**: Sort pitches by priority (HIGH → MEDIUM → LOW → unset)
   - Added `sortPriority` sort option to the Sort By dropdown
 - **i18n**: Added `priority.{high,medium,low,set,label}`, `pitches.reorderError`, `pitches.priorityUpdated`, `pitchBoard.sortPriority` keys to English and Persian locale files
-
-## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog & Expanded Color Palette
-
-### Added
 - **Permission Matrix — New Resources**: Added 13 new resource types to the RBAC permission matrix covering all recent features
   - Backend `ResourceType` enum extended with `BACKLOG`, `WORKLOG`, `MEETING`, `METRIC`, `TEST_CASE`, `INTEGRATION`, `WISE_ARCHITECTURE`
   - Frontend `permissionService.ts` updated with 10 new types (`INITIATIVE`, `EPIC`, `RELEASE`, `BACKLOG`, `WORKLOG`, `MEETING`, `METRIC`, `TEST_CASE`, `INTEGRATION`, `WISE_ARCHITECTURE`) including labels

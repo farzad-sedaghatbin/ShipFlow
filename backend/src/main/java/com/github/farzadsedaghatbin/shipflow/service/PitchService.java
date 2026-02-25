@@ -434,12 +434,13 @@ public class PitchService {
    * Batch-update sort order for pitches (used by drag-and-drop reordering).
    */
   public void reorder(ReorderRequest request) {
-    for (ReorderRequest.ReorderItem item : request.getItems()) {
+    List<Pitch> pitchesToSave = request.getItems().stream().map(item -> {
       Pitch pitch = pitchRepository.findByIdNotDeleted(item.getId())
           .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + item.getId()));
       pitch.setSortOrder(item.getSortOrder());
-      pitchRepository.save(pitch);
-    }
+      return pitch;
+    }).collect(Collectors.toList());
+    pitchRepository.saveAll(pitchesToSave);
     log.info("Reordered {} pitches", request.getItems().size());
   }
 

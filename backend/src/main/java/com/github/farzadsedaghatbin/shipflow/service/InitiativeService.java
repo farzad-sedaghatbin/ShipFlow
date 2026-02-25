@@ -166,12 +166,13 @@ public class InitiativeService {
    * Batch-update sort order for initiatives (used by drag-and-drop reordering).
    */
   public void reorder(ReorderRequest request) {
-    for (ReorderRequest.ReorderItem item : request.getItems()) {
+    List<Initiative> initiativesToSave = request.getItems().stream().map(item -> {
       Initiative initiative = initiativeRepository.findByIdNotDeleted(item.getId())
           .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + item.getId()));
       initiative.setSortOrder(item.getSortOrder());
-      initiativeRepository.save(initiative);
-    }
+      return initiative;
+    }).collect(Collectors.toList());
+    initiativeRepository.saveAll(initiativesToSave);
     log.info("Reordered {} initiatives", request.getItems().size());
   }
 

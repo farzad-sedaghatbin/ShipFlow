@@ -193,12 +193,13 @@ public class EpicService {
    * Batch-update sort order for epics (used by drag-and-drop reordering).
    */
   public void reorder(ReorderRequest request) {
-    for (ReorderRequest.ReorderItem item : request.getItems()) {
+    List<Epic> epicsToSave = request.getItems().stream().map(item -> {
       Epic epic = epicRepository.findByIdNotDeleted(item.getId())
           .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + item.getId()));
       epic.setSortOrder(item.getSortOrder());
-      epicRepository.save(epic);
-    }
+      return epic;
+    }).collect(Collectors.toList());
+    epicRepository.saveAll(epicsToSave);
     log.info("Reordered {} epics", request.getItems().size());
   }
 
