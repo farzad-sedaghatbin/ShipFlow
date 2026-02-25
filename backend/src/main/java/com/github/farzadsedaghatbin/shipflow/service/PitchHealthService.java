@@ -534,7 +534,7 @@ public class PitchHealthService {
     // risk level
     double finalRiskScore = Math.max(weightedRiskScore, maxIndividualRisk * MAX_RISK_FACTOR_WEIGHT);
 
-    return (int) Math.max(0, Math.min(100, finalRiskScore));
+    return (int) Math.round(Math.max(0, Math.min(100, finalRiskScore)));
   }
 
   private RiskLevel calculateRuleBasedRiskLevel(Pitch pitch, Map<Long, Double> hoursMap) {
