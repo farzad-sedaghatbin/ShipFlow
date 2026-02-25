@@ -10,6 +10,8 @@ import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
 import io.qdrant.client.grpc.Collections.Distance;
 import io.qdrant.client.grpc.Collections.VectorParams;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +47,7 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
 
   private static final String DEFAULT_HOST = "localhost";
   private static final int DEFAULT_GRPC_PORT = 6334;
+  private static final int QDRANT_TIMEOUT_SECONDS = 30;
 
   @Override
   public VectorStoreProviderType getProviderType() {
@@ -63,7 +66,8 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
     log.info("Creating Qdrant embedding store - Host: {}, Port: {}, Collection: {}, Dimension: {}", host, port,
         collectionName, dimension);
 
-    ensureCollectionExists(host, port, collectionName, dimension, config.hasApiKey() ? config.getApiKey() : null);
+    Boolean useTls = config.getExtraParam("useTls", false);
+    ensureCollectionExists(host, port, useTls, collectionName, dimension, config.hasApiKey() ? config.getApiKey() : null);
 
     QdrantEmbeddingStore.Builder builder = QdrantEmbeddingStore.builder().host(host).port(port)
         .collectionName(collectionName);
@@ -77,7 +81,6 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
     }
 
     // Handle extra parameters
-    Boolean useTls = config.getExtraParam("useTls", false);
     if (useTls) {
       builder.useTls(true);
       log.info("Qdrant TLS enabled");
@@ -91,14 +94,16 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
    * if it does not. Uses a short-lived QdrantClient for the check/create,
    * then closes it — the EmbeddingStore manages its own connection pool.
    */
-  private void ensureCollectionExists(String host, int port, String collectionName, int dimension, String apiKey) {
-    QdrantGrpcClient.Builder grpcBuilder = QdrantGrpcClient.newBuilder(host, port, false);
+  private void ensureCollectionExists(String host, int port, boolean useTls, String collectionName, int dimension, String apiKey) {
+    QdrantGrpcClient.Builder grpcBuilder = QdrantGrpcClient.newBuilder(host, port, useTls);
     if (apiKey != null && !apiKey.isBlank()) {
       grpcBuilder.withApiKey(apiKey);
     }
 
     try (QdrantClient qdrantClient = new QdrantClient(grpcBuilder.build())) {
-      boolean exists = qdrantClient.listCollectionsAsync().get().contains(collectionName);
+      boolean exists = qdrantClient.listCollectionsAsync()
+          .get(QDRANT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+          .contains(collectionName);
       if (exists) {
         log.info("Qdrant collection '{}' already exists", collectionName);
         return;
@@ -113,13 +118,18 @@ public class QdrantVectorStoreProvider implements VectorStoreProvider {
               .setSize(dimension)
               .setDistance(Distance.Cosine)
               .build()
-      ).get();
+      ).get(QDRANT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
       log.info("Qdrant collection '{}' created successfully", collectionName);
 
+    } catch (TimeoutException e) {
+      throw new IllegalStateException(
+          "Timed out after " + QDRANT_TIMEOUT_SECONDS + "s connecting to Qdrant at " + host + ":" + port
+              + " while ensuring collection '" + collectionName + "' exists", e);
     } catch (Exception e) {
       throw new IllegalStateException(
-          "Failed to ensure Qdrant collection '" + collectionName + "' exists: " + e.getMessage(), e);
+          "Failed to ensure Qdrant collection '" + collectionName + "' exists on " + host + ":" + port
+              + ": " + e.getMessage(), e);
     }
   }
 

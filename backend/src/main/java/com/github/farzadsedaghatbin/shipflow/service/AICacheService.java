@@ -316,7 +316,13 @@ public class AICacheService {
     if (isRedisActive()) {
       redisSet(cacheKey, riskData, ttlMinutes);
       if (dataHash != null) {
-        redisSet(cacheKey + ":hash", dataHash, ttlMinutes);
+        // Store hash as a plain string (not JSON-encoded) so it can be compared
+        // directly with the raw version key read via opsForValue().get().
+        if (ttlMinutes > 0) {
+          redisTemplate.opsForValue().set(cacheKey + ":hash", dataHash, ttlMinutes, TimeUnit.MINUTES);
+        } else {
+          redisTemplate.opsForValue().set(cacheKey + ":hash", dataHash);
+        }
         // Persist version in Redis so it survives restarts and is shared across instances
         redisTemplate.opsForValue().set(buildPitchVersionKey(pitchId), dataHash);
       }

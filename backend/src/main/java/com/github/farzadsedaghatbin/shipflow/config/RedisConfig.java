@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -93,18 +94,22 @@ public class RedisConfig {
 
     /**
      * {@link RedisCacheManager} backing Spring's {@code @Cacheable} support.
-     * Default TTL: 1 hour. Key prefix: {@code shipflow:}.
+     * TTL and key prefix are read from {@code spring.cache.redis.*} in application.properties.
      */
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, CacheProperties cacheProperties) {
 
         GenericJackson2JsonRedisSerializer jsonSerializer =
                 new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
 
+        CacheProperties.Redis redisProps = cacheProperties.getRedis();
+        Duration ttl = redisProps.getTimeToLive() != null ? redisProps.getTimeToLive() : Duration.ofHours(1);
+        String keyPrefix = redisProps.getKeyPrefix() != null ? redisProps.getKeyPrefix() : "shipflow:";
+
         RedisCacheConfiguration config =
                 RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofHours(1))
-                        .prefixCacheNameWith("shipflow:")
+                        .entryTtl(ttl)
+                        .prefixCacheNameWith(keyPrefix)
                         .serializeKeysWith(
                                 RedisSerializationContext.SerializationPair.fromSerializer(
                                         new StringRedisSerializer()))
