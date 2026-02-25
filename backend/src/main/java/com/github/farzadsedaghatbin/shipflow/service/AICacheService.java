@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.AICacheConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.QAResponse;
@@ -7,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.PitchRiskDTO;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +19,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -43,6 +48,10 @@ public class AICacheService {
 
   private final AICacheConfig cacheConfig;
   private final StringRedisTemplate redisTemplate;
+
+  // The primary (auto-configured) ObjectMapper is used here intentionally.
+  // It already has JSR-310 and date formatting configured via application.properties.
+  // Default typing is NOT needed because we always specify the target class explicitly.
   private final ObjectMapper objectMapper;
 
   // In-memory cache storage (used when provider != redis)
@@ -53,10 +62,22 @@ public class AICacheService {
   // Track data versions for change detection
   private final ConcurrentHashMap<Long, DataVersion> pitchDataVersions = new ConcurrentHashMap<>();
 
+  // Tracks whether Redis is actually reachable; allows graceful fallback to in-memory
+  private volatile boolean redisAvailable;
+
   public AICacheService(AICacheConfig cacheConfig, StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
     this.cacheConfig = cacheConfig;
     this.redisTemplate = redisTemplate;
     this.objectMapper = objectMapper;
+  }
+
+  /**
+   * Returns true only when Redis is both configured AND verified reachable.
+   * If the health-check in {@link #initializeRedis()} failed, this returns
+   * false so all cache operations fall back to in-memory automatically.
+   */
+  private boolean isRedisActive() {
+    return cacheConfig.isRedisProvider() && redisAvailable;
   }
 
   @PostConstruct
@@ -85,8 +106,11 @@ public class AICacheService {
       String json = redisTemplate.opsForValue().get(key);
       if (json == null || json.isBlank()) return Optional.empty();
       return Optional.of(objectMapper.readValue(json, type));
+    } catch (JsonProcessingException e) {
+      log.warn("Redis deserialization failed for key {}: {}", key, e.getMessage());
+      return Optional.empty();
     } catch (Exception e) {
-      log.warn("Redis get failed for key {}: {}", key, e.getMessage());
+      log.error("Redis infrastructure error for key {}: {}", key, e.getMessage());
       return Optional.empty();
     }
   }
@@ -127,10 +151,33 @@ public class AICacheService {
       log.info("Initializing Redis cache at {}:{}", redis.getHost(), redis.getPort());
       redisTemplate.opsForValue().set("shipflow:health-check", "ok");
       redisTemplate.delete("shipflow:health-check");
+      redisAvailable = true;
       log.info("Redis connection verified successfully");
     } catch (Exception e) {
-      log.error("Failed to connect to Redis: {}", e.getMessage());
+      redisAvailable = false;
+      log.error("Failed to connect to Redis, falling back to in-memory: {}", e.getMessage());
     }
+  }
+
+  /**
+   * Non-blocking key scan using SCAN command instead of KEYS.
+   * KEYS blocks the Redis server while scanning the entire keyspace;
+   * SCAN iterates incrementally and is safe for production use.
+   */
+  private Set<String> scanKeys(String pattern) {
+    Set<String> keys = new HashSet<>();
+    try {
+      redisTemplate.execute((RedisCallback<Void>) connection -> {
+        try (Cursor<byte[]> cursor = connection.keyCommands().scan(
+            ScanOptions.scanOptions().match(pattern).count(200).build())) {
+          cursor.forEachRemaining(key -> keys.add(new String(key, StandardCharsets.UTF_8)));
+        }
+        return null;
+      });
+    } catch (Exception e) {
+      log.warn("Redis SCAN failed for pattern {}: {}", pattern, e.getMessage());
+    }
+    return keys;
   }
 
   // ===========================================
@@ -202,7 +249,7 @@ public class AICacheService {
 
     String cacheKey = buildPitchRiskCacheKey(pitchId, withAI);
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       Optional<PitchRiskDTO> result = redisGet(cacheKey, PitchRiskDTO.class);
       if (result.isEmpty()) {
         log.debug("Cache miss (Redis): pitch risk {} (withAI={})", pitchId, withAI);
@@ -210,8 +257,13 @@ public class AICacheService {
       }
       if (cacheConfig.getRisk().isInvalidateOnDataChange()) {
         String storedHash = redisTemplate.opsForValue().get(cacheKey + ":hash");
-        DataVersion currentVersion = pitchDataVersions.get(pitchId);
-        if (currentVersion != null && storedHash != null && !storedHash.equals(currentVersion.getHash())) {
+        // Check Redis-stored version first, fall back to in-memory
+        String currentHash = redisTemplate.opsForValue().get(buildPitchVersionKey(pitchId));
+        if (currentHash == null) {
+          DataVersion localVersion = pitchDataVersions.get(pitchId);
+          currentHash = localVersion != null ? localVersion.getHash() : null;
+        }
+        if (currentHash != null && storedHash != null && !storedHash.equals(currentHash)) {
           log.debug("Cache invalidated (Redis) due to data change: pitch {}", pitchId);
           redisTemplate.delete(List.of(cacheKey, cacheKey + ":hash"));
           return Optional.empty();
@@ -261,10 +313,12 @@ public class AICacheService {
     // Store data version for change detection (both modes)
     pitchDataVersions.put(pitchId, new DataVersion(dataHash, LocalDateTime.now()));
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       redisSet(cacheKey, riskData, ttlMinutes);
       if (dataHash != null) {
         redisSet(cacheKey + ":hash", dataHash, ttlMinutes);
+        // Persist version in Redis so it survives restarts and is shared across instances
+        redisTemplate.opsForValue().set(buildPitchVersionKey(pitchId), dataHash);
       }
       log.debug("Cached pitch risk {} in Redis (withAI={}, TTL={})", pitchId, withAI,
           ttlMinutes == 0 ? "infinite" : ttlMinutes + " min");
@@ -286,8 +340,9 @@ public class AICacheService {
   public void invalidatePitchRiskCache(Long pitchId) {
     String keyAI = buildPitchRiskCacheKey(pitchId, true);
     String keyRule = buildPitchRiskCacheKey(pitchId, false);
-    if (cacheConfig.isRedisProvider()) {
-      redisTemplate.delete(List.of(keyAI, keyRule, keyAI + ":hash", keyRule + ":hash"));
+    if (isRedisActive()) {
+      redisTemplate.delete(List.of(keyAI, keyRule, keyAI + ":hash", keyRule + ":hash",
+          buildPitchVersionKey(pitchId)));
     } else {
       pitchRiskCache.remove(keyAI);
       pitchRiskCache.remove(keyRule);
@@ -306,6 +361,10 @@ public class AICacheService {
     return String.format("pitch_risk_%d_%s", pitchId, withAI ? "ai" : "rule");
   }
 
+  private String buildPitchVersionKey(Long pitchId) {
+    return "pitch_version_" + pitchId;
+  }
+
   // ===========================================
   // CYCLE RISK CACHING
   // ===========================================
@@ -318,7 +377,7 @@ public class AICacheService {
 
     String cacheKey = buildCycleRiskCacheKey(cycleId, withAI);
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       Optional<CycleRiskOverviewDTO> result = redisGet(cacheKey, CycleRiskOverviewDTO.class);
       result.ifPresentOrElse(
           r -> log.debug("Cache hit (Redis): cycle risk {} (withAI={})", cycleId, withAI),
@@ -349,7 +408,7 @@ public class AICacheService {
     String cacheKey = buildCycleRiskCacheKey(cycleId, withAI);
     int ttlMinutes = cacheConfig.getRisk().getCycleTtlMinutes();
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       redisSet(cacheKey, riskData, ttlMinutes);
       log.debug("Cached cycle risk {} in Redis (withAI={}, TTL={})", cycleId, withAI,
           ttlMinutes == 0 ? "infinite" : ttlMinutes + " min");
@@ -371,7 +430,7 @@ public class AICacheService {
   public void invalidateCycleRiskCache(Long cycleId) {
     String keyAI = buildCycleRiskCacheKey(cycleId, true);
     String keyRule = buildCycleRiskCacheKey(cycleId, false);
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       redisTemplate.delete(List.of(keyAI, keyRule));
     } else {
       cycleRiskCache.remove(keyAI);
@@ -415,18 +474,18 @@ public class AICacheService {
     String normalizedQuestion = normalizeQuestion(question);
     String exactKey = buildQACacheKey(normalizedQuestion, contextKey);
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       // Try exact match first
       Optional<QAResponse> exact = redisGet(exactKey, QAResponse.class);
       if (exact.isPresent()) {
         log.debug("Q&A cache exact hit (Redis)");
         return exact;
       }
-      // Try fuzzy matching by scanning keys in the same context
+      // Try fuzzy matching by scanning keys in the same context (SCAN is non-blocking)
       double threshold = cacheConfig.getQa().getSimilarityThreshold();
       if (threshold < 1.0) {
-        Set<String> matchingKeys = redisTemplate.keys("qa_*_" + contextKey);
-        if (matchingKeys != null) {
+        Set<String> matchingKeys = scanKeys("qa_*_" + contextKey);
+        if (!matchingKeys.isEmpty()) {
           for (String key : matchingKeys) {
             Optional<QAResponse> candidate = redisGet(key, QAResponse.class);
             if (candidate.isPresent() && candidate.get().getQuestion() != null) {
@@ -496,7 +555,7 @@ public class AICacheService {
     String cacheKey = buildQACacheKey(normalizedQuestion, contextKey);
     int ttlHours = cacheConfig.getQa().getTtlHours();
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       redisSetWithHours(cacheKey, response, ttlHours);
       log.debug("Cached Q&A response in Redis (context={}, TTL={})", contextKey,
           ttlHours == 0 ? "infinite" : ttlHours + " hours");
@@ -521,9 +580,9 @@ public class AICacheService {
   /** Invalidate Q&A cache for a specific context */
   public void invalidateQACache(String contextType, Long contextId) {
     String contextKeyPart = contextType + "_" + (contextId != null ? contextId : "");
-    if (cacheConfig.isRedisProvider()) {
-      Set<String> keys = redisTemplate.keys("qa_*" + contextKeyPart + "*");
-      if (keys != null && !keys.isEmpty()) {
+    if (isRedisActive()) {
+      Set<String> keys = scanKeys("qa_*" + contextKeyPart + "*");
+      if (!keys.isEmpty()) {
         redisTemplate.delete(keys);
       }
     } else {
@@ -635,16 +694,24 @@ public class AICacheService {
     }
   }
 
-  /** Clear all caches */
+  /**
+   * Clear all caches. In Redis mode, Redis is cleared first; if that fails the
+   * exception propagates and local tracking structures are NOT cleared, keeping
+   * them consistent with the (partially) surviving Redis state.
+   */
   public void clearAllCaches() {
-    if (cacheConfig.isRedisProvider()) {
-      Set<String> pitchKeys = redisTemplate.keys("pitch_risk_*");
-      if (pitchKeys != null && !pitchKeys.isEmpty()) redisTemplate.delete(pitchKeys);
-      Set<String> cycleKeys = redisTemplate.keys("cycle_risk_*");
-      if (cycleKeys != null && !cycleKeys.isEmpty()) redisTemplate.delete(cycleKeys);
-      Set<String> qaKeys = redisTemplate.keys("qa_*");
-      if (qaKeys != null && !qaKeys.isEmpty()) redisTemplate.delete(qaKeys);
+    if (isRedisActive()) {
+      // Use SCAN (non-blocking) instead of KEYS to avoid blocking the Redis server
+      Set<String> pitchKeys = scanKeys("pitch_risk_*");
+      if (!pitchKeys.isEmpty()) redisTemplate.delete(pitchKeys);
+      Set<String> cycleKeys = scanKeys("cycle_risk_*");
+      if (!cycleKeys.isEmpty()) redisTemplate.delete(cycleKeys);
+      Set<String> qaKeys = scanKeys("qa_*");
+      if (!qaKeys.isEmpty()) redisTemplate.delete(qaKeys);
+      Set<String> versionKeys = scanKeys("pitch_version_*");
+      if (!versionKeys.isEmpty()) redisTemplate.delete(versionKeys);
     }
+    // Clear local tracking structures only after Redis operations succeed
     pitchRiskCache.clear();
     cycleRiskCache.clear();
     qaCache.clear();

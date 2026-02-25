@@ -74,7 +74,7 @@ export default function ProjectDetail() {
       setProject(projectRes);
       setCycles(cyclesRes.data || []);
       const allTeams = Array.isArray(teamsRes) ? teamsRes : teamsRes.data || [];
-      setTeams(allTeams);
+      setTeams(allTeams.filter((t: Team) => t.projectId === projectId));
     } catch (error) {
       showToast(getUserFriendlyError(error, 'Failed to load project details'), 'error');
       navigate('/projects');

@@ -109,8 +109,8 @@ const cycleWorkspaceItems: NavItemConfig[] = [
   { textKey: 'nav.betting', icon: Dices, path: '/betting', tourId: 'betting-menu' },
   { textKey: 'nav.health', icon: Activity, path: '/health', tourId: 'health-menu' },
   { textKey: 'nav.retrospectives', icon: Brain, path: '/retros', tourId: 'retros-menu' },
-  { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
   { textKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards', tourId: 'dashboards-menu' },
+  { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
 ];
 
 // People & Teams

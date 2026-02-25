@@ -25,20 +25,32 @@ public class ConversationManager {
 
   private final AICacheConfig cacheConfig;
   private final StringRedisTemplate redisTemplate;
+
+  // The primary (auto-configured) ObjectMapper is used here intentionally.
+  // It has JSR-310 and date formatting configured via application.properties.
+  // Default typing is not needed because we specify target classes explicitly.
   private final ObjectMapper objectMapper;
 
   // In-memory fallback / in-memory mode storage
   private final Map<String, ConversationContext> conversations = new ConcurrentHashMap<>();
 
+  // Tracks whether Redis is actually reachable; allows graceful fallback to in-memory
+  private volatile boolean redisAvailable;
+
   private static final String CONV_KEY_PREFIX = "conv:";
   private static final int CONV_TTL_MINUTES = 30;
+
+  private boolean isRedisActive() {
+    return cacheConfig.isRedisProvider() && redisAvailable;
+  }
 
   @PostConstruct
   public void init() {
     if (cacheConfig.isRedisProvider()) {
       initializeRedis();
-      log.info("ConversationManager initialized with Redis provider ({}:{})", cacheConfig.getRedis().getHost(),
-          cacheConfig.getRedis().getPort());
+      log.info("ConversationManager initialized with Redis provider ({}:{}){}",
+          cacheConfig.getRedis().getHost(), cacheConfig.getRedis().getPort(),
+          redisAvailable ? "" : " [FALLBACK to in-memory]");
     } else {
       log.info("ConversationManager initialized with in-memory provider");
     }
@@ -50,9 +62,12 @@ public class ConversationManager {
       log.info("Initializing Redis for conversation management at {}:{}", redis.getHost(), redis.getPort());
       redisTemplate.opsForValue().set("shipflow:conv-health", "ok");
       redisTemplate.delete("shipflow:conv-health");
+      redisAvailable = true;
       log.info("ConversationManager Redis connection verified");
     } catch (Exception e) {
-      log.error("Failed to connect to Redis for ConversationManager: {}", e.getMessage());
+      redisAvailable = false;
+      log.error("Failed to connect to Redis for ConversationManager, falling back to in-memory: {}",
+          e.getMessage());
     }
   }
 
@@ -73,7 +88,8 @@ public class ConversationManager {
       return objectMapper.readValue(json, ConversationContext.class);
     } catch (Exception e) {
       log.warn("Failed to load conversation from Redis: {}", e.getMessage());
-      return conversations.get(conversationId);
+      // Fail fast: do not return stale in-memory data that may differ from Redis state
+      return null;
     }
   }
 
@@ -91,7 +107,7 @@ public class ConversationManager {
         .contextType(contextType).contextId(contextId).contextName(contextName).startedAt(LocalDateTime.now())
         .lastInteractionAt(LocalDateTime.now()).isActive(true).build();
 
-    if (cacheConfig.isRedisProvider()) {
+    if (isRedisActive()) {
       saveToRedis(conversationId, context);
     } else {
       conversations.put(conversationId, context);
@@ -113,7 +129,7 @@ public class ConversationManager {
       Long contextId, String contextName) {
 
     if (conversationId != null) {
-      ConversationContext existing = cacheConfig.isRedisProvider()
+      ConversationContext existing = isRedisActive()
           ? loadFromRedis(conversationId) : conversations.get(conversationId);
       if (existing != null && !existing.isExpired()) {
         // Update context name if newly provided
@@ -129,11 +145,11 @@ public class ConversationManager {
 
   /** Add a turn to the conversation. */
   public void addTurn(String conversationId, String question, String answer) {
-    ConversationContext context = cacheConfig.isRedisProvider()
+    ConversationContext context = isRedisActive()
         ? loadFromRedis(conversationId) : conversations.get(conversationId);
     if (context != null) {
       context.addTurn(question, answer);
-      if (cacheConfig.isRedisProvider()) {
+      if (isRedisActive()) {
         saveToRedis(conversationId, context);
       }
       log.debug("Added turn to conversation {}, total turns: {}", conversationId, context.getHistory().size());
@@ -142,7 +158,7 @@ public class ConversationManager {
 
   /** Build conversation history context for prompt. */
   public String buildConversationHistory(String conversationId, int maxTurns) {
-    ConversationContext context = cacheConfig.isRedisProvider()
+    ConversationContext context = isRedisActive()
         ? loadFromRedis(conversationId) : conversations.get(conversationId);
     if (context == null || context.getHistory().isEmpty()) {
       return "";
@@ -161,11 +177,11 @@ public class ConversationManager {
 
   /** End a conversation. */
   public void endConversation(String conversationId) {
-    ConversationContext context = cacheConfig.isRedisProvider()
+    ConversationContext context = isRedisActive()
         ? loadFromRedis(conversationId) : conversations.get(conversationId);
     if (context != null) {
       context.setIsActive(false);
-      if (cacheConfig.isRedisProvider()) {
+      if (isRedisActive()) {
         saveToRedis(conversationId, context);
       }
       log.debug("Ended conversation {}", conversationId);
@@ -177,7 +193,7 @@ public class ConversationManager {
    * history. Useful for inferring context when user asks follow-up questions.
    */
   public ConversationContext.ContextInfo getMostRecentContext(String conversationId) {
-    ConversationContext context = cacheConfig.isRedisProvider()
+    ConversationContext context = isRedisActive()
         ? loadFromRedis(conversationId) : conversations.get(conversationId);
     if (context != null) {
       return new ConversationContext.ContextInfo(context.getContextType(), context.getContextId(),

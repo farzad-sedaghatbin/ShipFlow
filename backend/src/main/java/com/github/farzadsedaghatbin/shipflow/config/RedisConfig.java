@@ -48,9 +48,15 @@ public class RedisConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // Embed type info so deserialization can reconstruct the correct class
+        // Embed type info so deserialization can reconstruct the correct class.
+        // Restrict allowed types to our package and common JDK types to mitigate
+        // deserialization gadget-chain attacks (CWE-502).
         mapper.activateDefaultTyping(
-                BasicPolymorphicTypeValidator.builder().allowIfSubType(Object.class).build(),
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.github.farzadsedaghatbin.shipflow")
+                        .allowIfSubType("java.util")
+                        .allowIfSubType("java.time")
+                        .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
         return mapper;
