@@ -21,6 +21,8 @@ import {
   Loader2,
   History,
   Users,
+  Sparkles,
+  FileUp,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
@@ -115,6 +117,10 @@ export default function PitchDetail() {
   const [viewMeeting, setViewMeeting] = useState<Meeting | null>(null);
   const [meetingPendingDocs, setMeetingPendingDocs] = useState<File[]>([]);
   const [showMeetingDocUpload, setShowMeetingDocUpload] = useState(false);
+
+  // AI extraction state
+  const [extracting, setExtracting] = useState(false);
+  const [extractedDocumentName, setExtractedDocumentName] = useState('');
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
     pitchId: 0,
     date: dayjs().format('YYYY-MM-DD'),
@@ -241,7 +247,46 @@ export default function PitchDetail() {
         wireframeLinks: pitch.wireframeLinks || '',
       });
     }
+    setExtractedDocumentName('');
     setEditingShapeUp(false);
+  };
+
+  // Extract Shape Up fields from uploaded document using AI
+  const handleExtractFromDocument = async (file: File) => {
+    if (!pitch) return;
+    try {
+      setExtracting(true);
+      const response = await documentService.extractPitchData(file, pitch.id, true);
+      const extracted = response.data;
+
+      if (extracted.extractionSuccessful) {
+        setExtractedDocumentName(file.name);
+        // Apply extracted data to form fields (only fills empty fields by default)
+        setShapeUpFields(prev => ({
+          problemStatement: extracted.problemStatement || prev.problemStatement,
+          solution: extracted.solution || prev.solution,
+          rabbitHoles: extracted.rabbitHoles || prev.rabbitHoles,
+          risks: extracted.risks || prev.risks,
+          noGos: extracted.noGos || prev.noGos,
+          wireframeLinks: extracted.wireframeLinks || prev.wireframeLinks,
+        }));
+        // Enter edit mode so user can review/modify the extracted fields
+        if (!editingShapeUp) {
+          setEditingShapeUp(true);
+        }
+        // Refresh documents list since the file was saved
+        loadData(pitch.id);
+        showSuccess(t('pitchDetailPage.dataExtracted'));
+      } else {
+        setExtractedDocumentName('');
+        showError(extracted.errorMessage || t('pitchDetailPage.extractionFailed'));
+      }
+    } catch (error) {
+      setExtractedDocumentName('');
+      showError(getUserFriendlyError(error, t('pitchDetailPage.extractionError')));
+    } finally {
+      setExtracting(false);
+    }
   };
 
   // Check if pitch has any Shape Up content
@@ -686,6 +731,62 @@ export default function PitchDetail() {
           {editingShapeUp ? (
             // Edit Mode
             <div className="space-y-4">
+              {/* AI Extraction Section */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  <h4 className="font-semibold">{t('pitchDetailPage.aiExtraction')}</h4>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {t('pitchDetailPage.aiExtractionDescription')}
+                </p>
+                {extractedDocumentName && (
+                  <div className="mb-3 bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2">
+                      <FileUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">{t('pitchBoard.documentExtracted')}</p>
+                        <p className="text-xs text-green-700 dark:text-green-300">{extractedDocumentName}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">
+                        {t('pitchBoard.processed')}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                <div
+                  className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/50 transition-colors"
+                  onClick={() => !extracting && document.getElementById('detail-extract-upload')?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files.length > 0) {
+                      handleExtractFromDocument(e.dataTransfer.files[0]);
+                    }
+                  }}
+                >
+                  <input
+                    id="detail-extract-upload"
+                    type="file"
+                    hidden
+                    accept=".pdf,.doc,.docx,.txt,.md"
+                    onChange={(e) => e.target.files?.[0] && handleExtractFromDocument(e.target.files[0])}
+                    disabled={extracting}
+                  />
+                  {extracting ? (
+                    <>
+                      <Loader2 className="h-8 w-8 mx-auto text-purple-500 animate-spin mb-2" />
+                      <p className="text-sm text-purple-600 dark:text-purple-400">{t('pitchDetailPage.extracting')}</p>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-8 w-8 mx-auto text-purple-400 mb-2" />
+                      <p className="text-sm text-muted-foreground">{t('pitchDetailPage.dropDocument')}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
               {/* Problem Statement */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
