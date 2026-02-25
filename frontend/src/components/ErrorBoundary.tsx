@@ -104,7 +104,7 @@ User Agent: ${navigator.userAgent}
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="h-screen overflow-y-auto flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">

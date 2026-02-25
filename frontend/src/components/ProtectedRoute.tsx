@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requiredRoles }: ProtectedRou
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );

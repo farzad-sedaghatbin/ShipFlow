@@ -81,7 +81,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="h-screen overflow-y-auto flex items-center justify-center bg-background p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 pointer-events-none" />
       
       <Card className="w-full max-w-4xl overflow-hidden shadow-2xl relative">
