@@ -92,6 +92,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   // Team & Collaboration
   { category: 'Team', feature: 'Configurable team capacity', shipflow: true, linear: false, asana: 'partial', monday: 'partial', jira: 'partial', basecamp: false, clickup: 'partial' },
   { category: 'Team', feature: 'Per-person budget tracking', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Team', feature: 'Markdown descriptions (write/preview)', shipflow: true, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: 'partial', clickup: true },
   { category: 'Team', feature: 'Retrospectives', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Team', feature: 'Anonymous retro submissions', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },

@@ -384,6 +384,13 @@
       "noActivityWidgets": "No activity widgets are currently visible. Enable them in widget settings."
     }
   },
+  "priority": {
+    "label": "Priority",
+    "set": "Set Priority",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
   "projects": {
     "title": "Projects",
     "createProject": "Create Project",
@@ -582,6 +589,8 @@
     "noCycleAssigned": "Not assigned to a cycle",
     "createError": "Failed to create pitch",
     "updateError": "Failed to update pitch",
+    "reorderError": "Failed to reorder pitches",
+    "priorityUpdated": "Priority updated successfully",
     "status": {
       "idea": "Idea",
       "draft": "Draft",
@@ -3777,6 +3786,7 @@
     "sortTitle": "Title",
     "sortAppetite": "Appetite",
     "sortTeam": "Team",
+    "sortPriority": "Priority",
     "noCycleSelected": "No Cycle Selected",
     "noCycleDescription": "Please select a cycle to view pitches",
     "unassigned": "Unassigned",

@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEpicRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.EpicDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
@@ -111,6 +112,7 @@ public class EpicService {
         .targetEndDate(request.getTargetEndDate())
         .project(project)
         .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
+        .priority(request.getPriority())
         .build();
 
     if (request.getInitiativeId() != null) {
@@ -149,6 +151,7 @@ public class EpicService {
     if (request.getSortOrder() != null) {
       epic.setSortOrder(request.getSortOrder());
     }
+    epic.setPriority(request.getPriority());
 
     if (request.getInitiativeId() != null) {
       Initiative initiative = initiativeRepository.findByIdNotDeleted(request.getInitiativeId())
@@ -184,6 +187,20 @@ public class EpicService {
     epic.setDeletedBy(currentUser);
     epicRepository.save(epic);
     log.info("Soft deleted epic: {}", epic.getName());
+  }
+
+  /**
+   * Batch-update sort order for epics (used by drag-and-drop reordering).
+   */
+  public void reorder(ReorderRequest request) {
+    List<Epic> epicsToSave = request.getItems().stream().map(item -> {
+      Epic epic = epicRepository.findByIdNotDeleted(item.getId())
+          .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + item.getId()));
+      epic.setSortOrder(item.getSortOrder());
+      return epic;
+    }).collect(Collectors.toList());
+    epicRepository.saveAll(epicsToSave);
+    log.info("Reordered {} epics", request.getItems().size());
   }
 
   public EpicDTO updateStatus(Long id, EpicStatus status) {
@@ -274,6 +291,7 @@ public class EpicService {
         .description(epic.getDescription())
         .status(epic.getStatus())
         .color(epic.getColor())
+        .priority(epic.getPriority())
         .targetStartDate(epic.getTargetStartDate())
         .targetEndDate(epic.getTargetEndDate())
         .sortOrder(epic.getSortOrder())

@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class EpicDTO {
   private String description;
   private EpicStatus status;
   private String color;
+  private BusinessValue priority;
   private LocalDate targetStartDate;
   private LocalDate targetEndDate;
   private Integer sortOrder;

@@ -4,7 +4,8 @@ import { Plus, AlertCircle, Info, X } from 'lucide-react';
 import { HillChart } from '../components/HillChart';
 import { hillChartApi } from '../services/hillChartApi';
 import { pitchService } from '../services/pitchService';
-import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest, Pitch } from '../types';
+import { taskService } from '../services/taskService';
+import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest, Pitch, Task } from '../types';
 import { useParams, useLocation } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import { HillChartSkeleton } from '../components/Skeletons';
@@ -13,6 +14,9 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Slider } from '../components/ui/slider';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { cn } from '../lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +57,7 @@ export const PitchHillChart: React.FC = () => {
     description: '',
     position: 0,
   });
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -77,6 +82,16 @@ export const PitchHillChart: React.FC = () => {
       ]);
       setPitch(pitchData.data);
       setPoints(hillChartData);
+      
+      // Load tasks for this pitch
+      try {
+        const tasksRes = await taskService.getByPitchId(pitchId);
+        setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+      } catch {
+        // Tasks loading is non-critical
+        setTasks([]);
+      }
+      
       setError(null);
     } catch (err) {
       setError(t('pitchHillChart.loadFailed'));
@@ -249,6 +264,64 @@ export const PitchHillChart: React.FC = () => {
             onPointDelete={(point) => setDeleteDialog({ open: true, point })}
             animateEntrance
           />
+        </div>
+      )}
+
+      {/* Scope Summary Section */}
+      {points.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">{t('pitchHillChart.scopeSummary', 'Scope Summary')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {points.map(point => {
+              // Find tasks linked to this scope
+              const linkedTasks = tasks.filter(task => 
+                task.scopeId === point.id || task.autoCreatedScopeId === point.id
+              );
+              return (
+                <Card key={point.id} className="hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold truncate">{point.scope}</h3>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "text-xs shrink-0 ml-2",
+                          point.position >= 50 
+                            ? "bg-green-500/10 text-green-500" 
+                            : "bg-amber-500/10 text-amber-500"
+                        )}
+                      >
+                        {point.position}%
+                      </Badge>
+                    </div>
+                    {point.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{point.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {point.position < 50 
+                        ? t('pitchHillChart.figuringOut')
+                        : t('pitchHillChart.makingHappen')}
+                    </p>
+                    {linkedTasks.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs font-medium mb-1">{t('pitchHillChart.linkedTasks', 'Linked Tasks')}:</p>
+                        <div className="space-y-1">
+                          {linkedTasks.map(task => (
+                            <div key={task.id} className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {task.status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate">{task.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       )}
 

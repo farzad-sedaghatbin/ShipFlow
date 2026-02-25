@@ -19,6 +19,7 @@ import { usePermission } from '../hooks/usePermission';
 import { Retrospective, Cycle, RetroStatus } from '../types';
 import EmptyState from '../components/EmptyState';
 import { RetroListSkeleton } from '../components/Skeletons';
+import ProjectRequiredDialog from '../components/ProjectRequiredDialog';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -180,14 +181,10 @@ export default function RetroList() {
   // Check for "All Projects" first before loading check
   if (isAllProjectsSelected || !currentProject) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">{t('retroListPage.title')}</h1>
-        <Alert variant="info">
-          <AlertDescription>
-            {t('retroListPage.selectProject')}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <ProjectRequiredDialog
+        open={true}
+        featureDescription={t('retroListPage.selectProject')}
+      />
     );
   }
 

@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +37,10 @@ public class CreatePitchRequest {
   // Epic and Release linking (roadmap)
   private Long epicId;
   private Long targetReleaseId;
+
+  // Priority and ordering
+  private BusinessValue priority;
+  private Integer sortOrder;
 
   /** Default to IDEA for new pitches (lightweight capture). */
   @Builder.Default

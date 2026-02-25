@@ -3,10 +3,12 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEpicRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.EpicDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -14,6 +16,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
@@ -279,5 +282,65 @@ class EpicServiceTest {
 
     assertThat(result).hasSize(2);
     verify(epicRepository).findByProjectIdAndStatusInNotDeleted(any(), any());
+  }
+
+  @Test
+  void createEpic_WithPriority_ShouldPersistPriority() {
+    testRequest.setPriority(BusinessValue.HIGH);
+
+    Epic savedEpic = Epic.builder()
+        .id(1L).name("New Epic").description("Test epic description")
+        .status(EpicStatus.DRAFT).color("#10B981")
+        .project(testProject).initiative(testInitiative)
+        .priority(BusinessValue.HIGH).sortOrder(2)
+        .pitches(new ArrayList<>())
+        .build();
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(initiativeRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testInitiative));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testOwner));
+    when(epicRepository.save(any(Epic.class))).thenReturn(savedEpic);
+
+    EpicDTO result = epicService.createEpic(testRequest);
+
+    assertThat(result.getPriority()).isEqualTo(BusinessValue.HIGH);
+    verify(epicRepository).save(argThat(e -> e.getPriority() == BusinessValue.HIGH));
+  }
+
+  @Test
+  void reorder_ShouldUpdateSortOrderForEachEpic() {
+    Epic epic1 = Epic.builder().id(1L).name("Epic 1").status(EpicStatus.DRAFT)
+        .project(testProject).pitches(new ArrayList<>()).build();
+    Epic epic2 = Epic.builder().id(2L).name("Epic 2").status(EpicStatus.DRAFT)
+        .project(testProject).pitches(new ArrayList<>()).build();
+
+    when(epicRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(epic1));
+    when(epicRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(epic2));
+    when(epicRepository.save(any(Epic.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(Arrays.asList(
+            ReorderRequest.ReorderItem.builder().id(1L).sortOrder(0).build(),
+            ReorderRequest.ReorderItem.builder().id(2L).sortOrder(1).build()
+        ))
+        .build();
+
+    epicService.reorder(request);
+
+    verify(epicRepository).save(argThat(e -> e.getId().equals(1L) && e.getSortOrder() == 0));
+    verify(epicRepository).save(argThat(e -> e.getId().equals(2L) && e.getSortOrder() == 1));
+  }
+
+  @Test
+  void reorder_WhenEpicNotFound_ShouldThrowException() {
+    when(epicRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(List.of(ReorderRequest.ReorderItem.builder().id(999L).sortOrder(0).build()))
+        .build();
+
+    assertThatThrownBy(() -> epicService.reorder(request))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Epic not found");
   }
 }

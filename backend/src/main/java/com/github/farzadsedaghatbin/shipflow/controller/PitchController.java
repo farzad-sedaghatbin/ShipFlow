@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateIdeaRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
@@ -140,6 +141,14 @@ public class PitchController {
   @Operation(summary = "Clear target release from pitch")
   public ResponseEntity<PitchDTO> clearTargetRelease(@PathVariable Long id) {
     return ResponseEntity.ok(pitchService.clearTargetRelease(id));
+  }
+
+  @PatchMapping("/reorder")
+  @RequirePermission(resource = ResourceType.PITCH, permission = PermissionType.UPDATE)
+  @Operation(summary = "Reorder pitches (batch update sort order)")
+  public ResponseEntity<Void> reorderPitches(@Valid @RequestBody ReorderRequest request) {
+    pitchService.reorder(request);
+    return ResponseEntity.noContent().build();
   }
 
   // ===== Shape Up Workflow: Ideas Pool =====

@@ -15,12 +15,14 @@ import {
   Search,
   ArrowUpDown,
   SlidersHorizontal,
+  Tag,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
 import { teamService } from '../services/teamService';
 import { documentService } from '../services/documentService';
 import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest } from '../types';
+import PriorityBadge from '../components/PriorityBadge';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import EmptyState from '../components/EmptyState';
@@ -36,6 +38,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Label } from '../components/ui/label';
 import {
   Select,
@@ -77,7 +80,7 @@ export default function PitchBoard() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
+  const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team' | 'priority'>('title');
   const [mobileActiveStatus, setMobileActiveStatus] = useState<PitchStatus>('IDEA');
   const [visibleColumns, setVisibleColumns] = useState<Set<PitchStatus>>(() => {
     try {
@@ -417,6 +420,12 @@ export default function PitchBoard() {
             return (a.appetiteDays || 0) - (b.appetiteDays || 0);
           case 'team':
             return (a.teamName || '').localeCompare(b.teamName || '');
+          case 'priority': {
+            const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+            const aOrder = a.priority ? priorityOrder[a.priority] ?? 3 : 3;
+            const bOrder = b.priority ? priorityOrder[b.priority] ?? 3 : 3;
+            return aOrder - bOrder;
+          }
           default:
             return 0;
         }
@@ -464,17 +473,28 @@ export default function PitchBoard() {
               className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
             >
               <CardContent className="p-4">
-                <Link
-                  to={`/pitches/${pitch.id}`}
-                  className="font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  {pitch.title}
-                </Link>
-                {selectedCycle === 'all' && pitch.cycleName && (
-                  <Badge variant="outline" className="text-xs mt-1 mb-0 px-1 py-0">
-                    {pitch.cycleName}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2 mb-1">
+                  <Link
+                    to={`/pitches/${pitch.id}`}
+                    className="font-semibold text-foreground hover:text-primary transition-colors flex-1"
+                  >
+                    {pitch.title}
+                  </Link>
+                  {pitch.priority && <PriorityBadge priority={pitch.priority} />}
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                  {selectedCycle === 'all' && pitch.cycleName && (
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      {pitch.cycleName}
+                    </Badge>
+                  )}
+                  {pitch.targetReleaseVersion && (
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 gap-0.5">
+                      <Tag className="h-3 w-3" />
+                      v{pitch.targetReleaseVersion}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mb-3 mt-1">
                   {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                 </p>
@@ -615,6 +635,7 @@ export default function PitchBoard() {
                 <SelectItem value="title">{t('pitchBoard.sortTitle')}</SelectItem>
                 <SelectItem value="appetite">{t('pitchBoard.sortAppetite')}</SelectItem>
                 <SelectItem value="team">{t('pitchBoard.sortTeam')}</SelectItem>
+                <SelectItem value="priority">{t('pitchBoard.sortPriority')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -658,17 +679,28 @@ export default function PitchBoard() {
                     className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
                   >
                     <CardContent className="p-4">
-                      <Link
-                        to={`/pitches/${pitch.id}`}
-                        className="font-semibold text-foreground hover:text-primary transition-colors"
-                      >
-                        {pitch.title}
-                      </Link>
-                      {selectedCycle === 'all' && pitch.cycleName && (
-                        <Badge variant="outline" className="text-xs mt-1 mb-0 px-1 py-0">
-                          {pitch.cycleName}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link
+                          to={`/pitches/${pitch.id}`}
+                          className="font-semibold text-foreground hover:text-primary transition-colors flex-1 min-w-0 truncate"
+                        >
+                          {pitch.title}
+                        </Link>
+                        {pitch.priority && <PriorityBadge priority={pitch.priority} />}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        {selectedCycle === 'all' && pitch.cycleName && (
+                          <Badge variant="outline" className="text-xs px-1 py-0">
+                            {pitch.cycleName}
+                          </Badge>
+                        )}
+                        {pitch.targetReleaseVersion && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0 gap-0.5">
+                            <Tag className="h-3 w-3" />
+                            v{pitch.targetReleaseVersion}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground mb-3 mt-1">
                         {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                       </p>
@@ -775,13 +807,13 @@ export default function PitchBoard() {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-description">{t('pitchBoard.description')}</Label>
-                <Textarea
+                <Label>{t('pitchBoard.description')}</Label>
+                <MarkdownEditor
                   id="pitch-description"
                   value={newPitch.description}
-                  onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
+                  onChange={(value) => setNewPitch({ ...newPitch, description: value })}
                   placeholder={t('pitchBoard.descriptionPlaceholder')}
-                  rows={3}
+                  rows={4}
                 />
               </div>
 

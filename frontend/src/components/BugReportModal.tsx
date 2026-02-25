@@ -29,6 +29,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Combobox } from './ui/combobox';
+import MarkdownEditor from './MarkdownEditor';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 
@@ -247,14 +248,13 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="bug-description">Description *</Label>
-            <Textarea
+            <MarkdownEditor
               id="bug-description"
               value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Detailed description of the bug (Markdown supported)"
-              rows={4}
+              onChange={(value) => handleChange('description', value)}
+              placeholder="Detailed description of the bug"
+              rows={5}
             />
-            <p className="text-xs text-muted-foreground">Detailed description (Markdown supported)</p>
           </div>
 
           {/* Severity & Status */}

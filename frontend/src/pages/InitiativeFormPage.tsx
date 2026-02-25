@@ -10,7 +10,7 @@ import { useProject, useToast } from '../contexts';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Label } from '../components/ui/label';
 import {
   Select,
@@ -22,16 +22,20 @@ import {
 import { Skeleton } from '../components/ui/skeleton';
 
 const COLORS = [
-  '#6366f1', // Indigo
-  '#8b5cf6', // Violet
-  '#ec4899', // Pink
-  '#ef4444', // Red
-  '#f97316', // Orange
-  '#eab308', // Yellow
-  '#22c55e', // Green
-  '#14b8a6', // Teal
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
+  // Reds & Pinks
+  '#ef4444', '#dc2626', '#f43f5e', '#e11d48', '#ec4899', '#db2777',
+  // Oranges & Ambers
+  '#f97316', '#ea580c', '#f59e0b', '#d97706', '#eab308', '#ca8a04',
+  // Greens
+  '#22c55e', '#16a34a', '#10b981', '#059669', '#84cc16', '#65a30d',
+  // Teals & Cyans
+  '#14b8a6', '#0d9488', '#06b6d4', '#0891b2', '#22d3ee', '#67e8f9',
+  // Blues
+  '#3b82f6', '#2563eb', '#6366f1', '#4f46e5', '#0ea5e9', '#0284c7',
+  // Purples & Violets
+  '#8b5cf6', '#7c3aed', '#a855f7', '#9333ea', '#d946ef', '#c026d3',
+  // Neutrals
+  '#78716c', '#57534e', '#64748b', '#475569', '#6b7280', '#4b5563',
 ];
 
 interface Person {
@@ -169,12 +173,12 @@ export default function InitiativeFormPage() {
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">{t('initiatives.descriptionLabel')}</Label>
-              <Textarea
+              <MarkdownEditor
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder={t('initiatives.descriptionPlaceholder')}
-                rows={4}
+                rows={6}
               />
             </div>
 
@@ -202,12 +206,12 @@ export default function InitiativeFormPage() {
             {/* Color */}
             <div className="space-y-2">
               <Label>{t('initiatives.color')}</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-foreground' : 'border-transparent'}`}
+                    className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${formData.color === color ? 'border-foreground ring-2 ring-foreground/20' : 'border-transparent'}`}
                     style={{ backgroundColor: color }}
                     onClick={() => setFormData({ ...formData, color })}
                   />

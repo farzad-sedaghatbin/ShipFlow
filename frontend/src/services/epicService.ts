@@ -1,5 +1,5 @@
 import api from './api';
-import { Epic, CreateEpicRequest, EpicStatus } from '../types';
+import { Epic, CreateEpicRequest, EpicStatus, ReorderRequest } from '../types';
 
 export const epicService = {
   getByProject: (projectId: number) => 
@@ -37,4 +37,8 @@ export const epicService = {
   
   delete: (id: number) => 
     api.delete(`/epics/${id}`),
+
+  // ===== Prioritization & Reordering =====
+  /** Batch update sort order for epics */
+  reorder: (data: ReorderRequest) => api.patch<void>('/epics/reorder', data),
 };

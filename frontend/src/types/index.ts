@@ -46,6 +46,14 @@ export type RetroStatus = 'DRAFT' | 'OPEN' | 'CLOSED';
 export type RetroColumnType = 'WENT_WELL' | 'DID_NOT_GO_WELL' | 'TRY_NEXT' | 'ACTIONS';
 export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
+/** Business value priority level */
+export type BusinessValue = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/** Request to batch-reorder entities by sort order */
+export interface ReorderRequest {
+  items: { id: number; sortOrder: number }[];
+}
+
 /**
  * Project methodology type.
  * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
@@ -253,6 +261,9 @@ export interface Pitch {
   targetReleaseId?: number;
   targetReleaseName?: string;
   targetReleaseVersion?: string;
+  // Prioritization
+  priority?: BusinessValue;
+  sortOrder?: number;
 }
 
 export interface BusiestPerson {
@@ -286,6 +297,9 @@ export interface CreatePitchRequest {
   risks?: string;
   noGos?: string;
   wireframeLinks?: string;
+  // Prioritization
+  priority?: BusinessValue;
+  sortOrder?: number;
 }
 
 /**
@@ -1410,6 +1424,8 @@ export interface Initiative {
   progressPercentage?: number;
   // Nested epics
   epics?: EpicSummary[];
+  // Prioritization
+  priority?: BusinessValue;
 }
 
 /**
@@ -1424,6 +1440,8 @@ export interface CreateInitiativeRequest {
   ownerId?: number;
   targetStartDate?: string;
   targetEndDate?: string;
+  // Prioritization
+  priority?: BusinessValue;
 }
 
 /**
@@ -1433,6 +1451,8 @@ export interface PitchSummary {
   id: number;
   title: string;
   status: PitchStatus;
+  priority?: BusinessValue;
+  sortOrder?: number;
 }
 
 /**
@@ -1458,6 +1478,8 @@ export interface Epic {
   progressPercentage?: number;
   // Nested pitches
   pitches?: PitchSummary[];
+  // Prioritization
+  priority?: BusinessValue;
 }
 
 /**
@@ -1472,6 +1494,8 @@ export interface CreateEpicRequest {
   initiativeId?: number;
   targetStartDate?: string;
   targetEndDate?: string;
+  // Prioritization
+  priority?: BusinessValue;
 }
 
 /**

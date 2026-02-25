@@ -101,6 +101,10 @@ public class TaskService {
     return taskRepository.searchTasks(query.trim(), pageable).map(this::toDTO);
   }
 
+  public List<TaskDTO> getTasksByPitchId(Long pitchId) {
+    return taskRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
     return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }

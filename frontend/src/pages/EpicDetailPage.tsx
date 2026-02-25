@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 import { epicService } from '../services/epicService';
 import { pitchService } from '../services/pitchService';
-import { Epic, EpicStatus, Pitch, PitchStatusUtils } from '../types';
+import { Epic, EpicStatus, Pitch, BusinessValue } from '../types';
 import { useToast } from '../contexts';
+import SortablePitchList from '../components/SortablePitchList';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -41,26 +41,11 @@ import {
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
+import { Markdown } from '../components/ui/markdown';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-
-const getPitchStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
-  switch (status) {
-    case 'DONE': return 'default';
-    case 'IN_PROGRESS': return 'secondary';
-    case 'TESTING': return 'secondary';
-    case 'STARTED': return 'secondary';
-    case 'PENDING': return 'outline';
-    case 'SHAPED': return 'default';
-    case 'DRAFT': return 'secondary';
-    case 'IDEA': return 'outline';
-    case 'COOLDOWN': return 'outline';
-    case 'CANCELLED': return 'destructive';
-    default: return 'outline';
-  }
-};
 
 export default function EpicDetailPage() {
   const { t, i18n } = useTranslation();
@@ -173,6 +158,59 @@ export default function EpicDetailPage() {
     }
   };
 
+  const handleReorder = useCallback(async (reorderedPitches: Pitch[]) => {
+    setPitches(reorderedPitches);
+    try {
+      await pitchService.reorder({
+        items: reorderedPitches.map((p, index) => ({ id: p.id, sortOrder: index })),
+      });
+    } catch (error) {
+      console.error('Failed to save order:', error);
+      showError(t('pitches.reorderError'));
+      // Reload to get server state
+      const response = await pitchService.getByEpicId(Number(id));
+      setPitches(response.data);
+    }
+  }, [id, showError, t]);
+
+  const handlePriorityChange = useCallback(async (pitchId: number, priority: BusinessValue) => {
+    // Capture current pitch via functional update to avoid stale closure
+    let snapshot: Pitch | undefined;
+    setPitches(prev => {
+      snapshot = prev.find(p => p.id === pitchId);
+      if (!snapshot) return prev;
+      return prev.map(p => p.id === pitchId ? { ...p, priority } : p);
+    });
+    const pitch = snapshot;
+    if (!pitch) return;
+    try {
+      await pitchService.update(pitchId, {
+        title: pitch.title,
+        description: pitch.description,
+        appetiteDays: pitch.appetiteDays,
+        cycleId: pitch.cycleId,
+        teamId: pitch.teamId,
+        epicId: pitch.epicId,
+        targetReleaseId: pitch.targetReleaseId,
+        status: pitch.status,
+        problemStatement: pitch.problemStatement,
+        solution: pitch.solution,
+        rabbitHoles: pitch.rabbitHoles,
+        risks: pitch.risks,
+        noGos: pitch.noGos,
+        wireframeLinks: pitch.wireframeLinks,
+        priority,
+        sortOrder: pitch.sortOrder,
+      });
+      showSuccess(t('pitches.priorityUpdated'));
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      showError(t('pitches.updateError'));
+      // Revert optimistic update
+      setPitches(prev => prev.map(p => p.id === pitchId ? { ...p, priority: pitch.priority } : p));
+    }
+  }, [showError, showSuccess, t]);
+
   if (loading) {
     return (
       <div className="container mx-auto py-8 space-y-6">
@@ -269,7 +307,7 @@ export default function EpicDetailPage() {
             {epic.description && (
               <div>
                 <h4 className="font-medium mb-1">{t('epics.description')}</h4>
-                <p className="text-muted-foreground">{epic.description}</p>
+                <Markdown content={epic.description} className="text-muted-foreground" />
               </div>
             )}
             
@@ -385,40 +423,53 @@ export default function EpicDetailPage() {
               </TabsList>
               
               <TabsContent value="all" className="mt-4">
-                <PitchList 
-                  pitches={pitches} 
-                  t={t}
+                <SortablePitchList
+                  pitches={pitches}
+                  onReorder={handleReorder}
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
+                  onPriorityChange={handlePriorityChange}
                 />
               </TabsContent>
               
               <TabsContent value="ideas" className="mt-4">
-                <PitchList 
-                  pitches={pitches.filter(p => p.status === 'IDEA')} 
-                  t={t}
+                <SortablePitchList
+                  pitches={pitches.filter(p => p.status === 'IDEA')}
+                  onReorder={(reordered) => {
+                    const others = pitches.filter(p => p.status !== 'IDEA');
+                    handleReorder([...reordered, ...others]);
+                  }}
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
+                  onPriorityChange={handlePriorityChange}
                   emptyMessage={t('pitches.noIdeas')}
                 />
               </TabsContent>
               
               <TabsContent value="shaping" className="mt-4">
-                <PitchList 
-                  pitches={pitches.filter(p => p.status === 'DRAFT')} 
-                  t={t}
+                <SortablePitchList
+                  pitches={pitches.filter(p => p.status === 'DRAFT')}
+                  onReorder={(reordered) => {
+                    const others = pitches.filter(p => p.status !== 'DRAFT');
+                    handleReorder([...reordered, ...others]);
+                  }}
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
+                  onPriorityChange={handlePriorityChange}
                   emptyMessage={t('pitches.noDrafts')}
                 />
               </TabsContent>
               
               <TabsContent value="ready" className="mt-4">
-                <PitchList 
-                  pitches={pitches.filter(p => p.status === 'SHAPED')} 
-                  t={t}
+                <SortablePitchList
+                  pitches={pitches.filter(p => p.status === 'SHAPED')}
+                  onReorder={(reordered) => {
+                    const others = pitches.filter(p => p.status !== 'SHAPED');
+                    handleReorder([...reordered, ...others]);
+                  }}
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
+                  onPriorityChange={handlePriorityChange}
                   emptyMessage={t('pitches.noShaped')}
                 />
               </TabsContent>
@@ -494,96 +545,4 @@ export default function EpicDetailPage() {
   );
 }
 
-// Helper component for pitch list
-interface PitchListProps {
-  pitches: Pitch[];
-  t: (key: string) => string;
-  onUnlink: (id: number) => void;
-  onStartShaping: (id: number) => void;
-  emptyMessage?: string;
-}
 
-function PitchList({ pitches, t, onUnlink, onStartShaping, emptyMessage }: PitchListProps) {
-  if (pitches.length === 0) {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        <Lightbulb className="h-8 w-8 mx-auto mb-2" />
-        <p>{emptyMessage || t('epics.noPitches')}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {pitches.map((pitch) => (
-        <div
-          key={pitch.id}
-          className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50"
-        >
-          <div className="flex-1">
-            <Link
-              to={`/pitches/${pitch.id}`}
-              className="font-medium hover:underline"
-            >
-              {pitch.title}
-            </Link>
-            {pitch.description && (
-              <p className="text-sm text-muted-foreground line-clamp-1">
-                {pitch.description}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-              {pitch.cycleName && <span>{pitch.cycleName}</span>}
-              {!pitch.cycleName && pitch.status && PitchStatusUtils.isPreCycle(pitch.status) && (
-                <span className="italic">{t('pitches.noCycleAssigned')}</span>
-              )}
-              {pitch.teamName && (
-                <>
-                  <span>•</span>
-                  <span>{pitch.teamName}</span>
-                </>
-              )}
-              {pitch.appetiteDays && (
-                <>
-                  <span>•</span>
-                  <span>{pitch.appetiteDays} {t('pitches.days')}</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant={getPitchStatusVariant(pitch.status)}>
-              {t(`pitches.status.${pitch.status.toLowerCase()}`)}
-            </Badge>
-            {/* Show start shaping button for IDEAS */}
-            {pitch.status === 'IDEA' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onStartShaping(pitch.id)}
-                title={t('pitches.startShaping')}
-              >
-                <FileEdit className="h-4 w-4 mr-1" />
-                {t('pitches.shape')}
-              </Button>
-            )}
-            {/* Show progress for in-cycle pitches */}
-            {pitch.cycleId && (
-              <div className="w-24">
-                <Progress value={pitch.progressPercentage || 0} className="h-2" />
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onUnlink(pitch.id)}
-              title={t('epics.unlinkPitch')}
-            >
-              <Trash2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}

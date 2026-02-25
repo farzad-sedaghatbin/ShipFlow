@@ -376,12 +376,12 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           ))}
 
-          {/* Organization Section */}
-          <SectionHeader textKey="nav.sections.organization" />
+          {/* Roadmap & Planning Section - moved up for daily relevance */}
+          <SectionHeader textKey="nav.sections.roadmap" />
           <NavGroup
-            titleKey="nav.groups.people"
-            icon={Users2}
-            items={peopleItems}
+            titleKey="nav.groups.planning"
+            icon={Map}
+            items={roadmapItems}
             currentPath={currentPath}
             onItemClick={onItemClick}
           />
@@ -406,22 +406,22 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onItemClick={onItemClick}
           />
 
-          {/* Roadmap & Planning Section */}
-          <SectionHeader textKey="nav.sections.roadmap" />
-          <NavGroup
-            titleKey="nav.groups.planning"
-            icon={Map}
-            items={roadmapItems}
-            currentPath={currentPath}
-            onItemClick={onItemClick}
-          />
-
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
           <NavItem
             item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
             onClick={onItemClick}
+          />
+
+          {/* Organization Section - moved down (less frequently used) */}
+          <SectionHeader textKey="nav.sections.organization" />
+          <NavGroup
+            titleKey="nav.groups.people"
+            icon={Users2}
+            items={peopleItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
           />
         </nav>
 

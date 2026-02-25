@@ -4,18 +4,68 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog, Expanded Color Palette & Pitch Prioritization
+
 ### Added
-- **Inbound Webhook Admin UI**: DB-backed provider configuration through "Integrations → Inbound Webhooks" — no environment variables required
-  - Create, edit, enable/disable, and delete webhook provider configs via the admin page
-  - HMAC signature validation (HmacSHA256, HmacSHA1, HmacSHA512) configured per provider through the UI
-  - Auto-generated, copyable webhook URL displayed for each provider
-  - `InboundWebhookConfig` JPA entity + Flyway migration `V98`
-  - `InboundWebhookConfigService` — upsert by provider name, secret masking, toggle enabled, webhook URL builder
-  - `InboundWebhookConfigController` — REST API at `GET/POST/PATCH/DELETE /api/inbound-webhooks/configurations`; ADMIN/MANAGER gated
-  - `GenericInboundWebhookHandler` — DB-driven fallback handler; `InboundWebhookRouter` falls through to it when no code-level handler exists
-  - `InboundWebhooksIntegration.tsx` frontend admin page with full CRUD dialog, enable/disable toggle, copy-URL button
-  - Navigation entry under Integrations sidebar (`integrations/inbound-webhooks`)
+- **Pitch Prioritization inside Epics**: Drag-and-drop reordering and priority labels for pitches within an epic
+  - `PATCH /api/pitches/reorder`, `PATCH /api/epics/reorder`, `PATCH /api/initiatives/reorder` endpoints accept ordered `{id, sortOrder}` lists
+  - `BusinessValue` enum (`HIGH`, `MEDIUM`, `LOW`) wired to Pitch, Epic, and Initiative entities
+  - Color-coded `PriorityBadge` component: red = HIGH, amber = MEDIUM, green = LOW
+  - Inline priority selector on each pitch row in the epic detail list
+  - Optimistic UI updates with rollback on API error
+  - `SortablePitchList` component built on `@dnd-kit/sortable` v10 with drag handles, keyboard navigation, and `closestCenter` collision detection
+  - `PitchRepository.findByEpicIdNotDeleted` now sorts by `sort_order ASC, id ASC`
+  - Flyway migration `V2026_02_25_0002`: adds `sort_order` and `priority` columns to `pitches`, `epics`, and `initiatives` tables with covering indexes
+- **Release Version Badge on Pitch Cards**: Target release version now visible on PitchBoard and epic pitch lists
+  - Shows `v{version}` badge (Tag icon) wherever pitch cards are rendered — both mobile and desktop paths in PitchBoard
+  - Reads the existing `targetReleaseVersion` field already present in `PitchDTO`
+- **Priority Sort Option in PitchBoard**: Sort pitches by priority (HIGH → MEDIUM → LOW → unset)
+  - Added `sortPriority` sort option to the Sort By dropdown
+- **i18n**: Added `priority.{high,medium,low,set,label}`, `pitches.reorderError`, `pitches.priorityUpdated`, `pitchBoard.sortPriority` keys to English and Persian locale files
+- **Permission Matrix — New Resources**: Added 13 new resource types to the RBAC permission matrix covering all recent features
+  - Backend `ResourceType` enum extended with `BACKLOG`, `WORKLOG`, `MEETING`, `METRIC`, `TEST_CASE`, `INTEGRATION`, `WISE_ARCHITECTURE`
+  - Frontend `permissionService.ts` updated with 10 new types (`INITIATIVE`, `EPIC`, `RELEASE`, `BACKLOG`, `WORKLOG`, `MEETING`, `METRIC`, `TEST_CASE`, `INTEGRATION`, `WISE_ARCHITECTURE`) including labels
+  - Flyway migration `V2026_02_25_0001` inserts default permissions for all new resources
+  - `PERMISSION_MATRIX.md` documentation updated
+- **Pitch Hill Chart — Scope Summary**: Single-pitch hill chart now displays a scope summary section below the chart
+  - Each scope shows name, hill position percentage, description, and linked tasks with status badges
+  - Tasks loaded via new `GET /api/tasks/pitch/{pitchId}` endpoint
   - i18n keys added (English and Persian)
+- **Pitch Detail — Tasks Section & Compact Work Logs**: Pitch detail page now includes a tasks section and a streamlined work log widget
+  - New tasks card shows task title, status badge, assignee, and priority for all tasks in the pitch
+  - Work log display reduced from 20 to 5 entries with a "View all work logs" link to the Work Logs page
+  - Backend endpoint `GET /api/tasks/pitch/{pitchId}` added (`TaskController` + `TaskService`)
+  - i18n keys added (English and Persian)
+- **Work Logs Page — Filters**: Added filter dropdowns to the Work Logs page for both My Logs and Team Logs tabs
+  - Filter by person (Team Logs tab), pitch, and task with client-side filtering
+  - Clear Filters button to reset all active filters
+  - Filters reset automatically when the active project changes
+  - i18n keys added (English and Persian)
+- **Markdown Editor for Descriptions**: All description fields now support Markdown editing with live preview
+  - Write/Preview tab toggle with monospace editing and rendered markdown preview
+  - New `MarkdownEditor` component wraps the existing `Markdown` renderer (react-markdown + GFM)
+  - Form pages updated: EpicForm, InitiativeForm, BugReportModal, PitchBoard (create), TaskDetail (edit)
+  - View/detail pages render descriptions as rich Markdown: EpicDetail, InitiativeDetail, BugViewDialog, TaskDetail (task + subtasks), PitchDetail (description, problemStatement, solution, rabbitHoles, risks, noGos)
+  - i18n keys added (English and Persian)
+- **Project Selection Dialog**: Modal popup when navigating to pages that require a specific project
+  - Replaces the previous empty-state card (users often mistook it for a blank page)
+  - `ProjectRequiredDialog` component shows a project list with avatar, name, and key
+  - Cannot be dismissed — forces users to select a project before continuing
+  - Applied to: EpicList, InitiativeList, ReleaseList, Roadmap, RetroList
+  - i18n keys added (English and Persian)
+- **Expanded Color Palette for Epics & Initiatives**: 42 colors organized by hue groups
+  - Expanded from 10 to 42 colors (7 hue groups × 6 each: Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals)
+  - Improved UX: flex-wrap layout, smaller circles, hover scale effect, ring indicator on selected
+
+### Changed
+- **Sidebar Menu Reorganization**: Reordered sidebar navigation for better workflow alignment
+  - Roadmap & Planning moved up (after Work Management) for quicker access
+  - Organization (People/Teams) moved down (after Help, before Administration) since it's less frequently used
+
+### Fixed
+- **Cycle Cache Invalidation on Date Change**: Changing a cycle's start or end date now properly invalidates risk analysis caches
+  - `CycleService.updateCycle()` detects date changes and invalidates both the cycle cache and all associated pitch caches via `RiskAnalysisService`
+  - Prevents stale risk advisory data after cycle duration adjustments
 
 ## [0.6.0] - 2026-02-22 - Provider Abstractions, Release Traceability & Inbound Webhooks
 

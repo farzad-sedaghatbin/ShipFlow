@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEpicRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.EpicDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
@@ -101,6 +102,14 @@ public class EpicController {
   @Operation(summary = "Unlink epic from its initiative")
   public ResponseEntity<EpicDTO> unlinkFromInitiative(@PathVariable Long id) {
     return ResponseEntity.ok(epicService.unlinkFromInitiative(id));
+  }
+
+  @PatchMapping("/reorder")
+  @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
+  @Operation(summary = "Reorder epics (batch update sort order)")
+  public ResponseEntity<Void> reorderEpics(@Valid @RequestBody ReorderRequest request) {
+    epicService.reorder(request);
+    return ResponseEntity.noContent().build();
   }
 
   @DeleteMapping("/{id}")

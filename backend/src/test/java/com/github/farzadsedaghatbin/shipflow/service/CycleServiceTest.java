@@ -336,7 +336,8 @@ class CycleServiceTest {
     CycleDTO result = cycleService.updateCycle(1L, testRequest);
 
     // Assert
-    verify(organizationSettingsService).getSettings();
+    // getSettings() is called twice: once for date-change detection, once for actual end-date calculation
+    verify(organizationSettingsService, times(2)).getSettings();
     verify(cycleRepository).save(any(Cycle.class));
     assertThat(result).isNotNull();
   }

@@ -73,6 +73,48 @@ ShapeUp Tracker uses a 4-tier role model with fine-grained permissions:
 | | DELETE | ✅ | ✅ | ❌ | ❌ |
 | | MANAGE | ✅ | ✅ | ❌ | ❌ |
 | **SYSTEM** | MANAGE | ✅ | ❌ | ❌ | ❌ |
+| **INITIATIVE** | CREATE | ✅ | ✅ | ❌ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ❌ | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **EPIC** | CREATE | ✅ | ✅ | ❌ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ❌ | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **RELEASE** | CREATE | ✅ | ✅ | ❌ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ❌ | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **BACKLOG** | CREATE | ✅ | ✅ | ✅ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ✅ (own) | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **WORKLOG** | CREATE | ✅ | ✅ | ✅ (own) | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ✅ (own) | ❌ |
+| | DELETE | ✅ | ✅ | ✅ (own) | ❌ |
+| | MANAGE | ✅ | ✅ | ❌ | ❌ |
+| **MEETING** | CREATE | ✅ | ✅ | ✅ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ✅ (own) | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **METRIC** | CREATE | ✅ | ✅ | ❌ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ❌ | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| **TEST_CASE** | CREATE | ✅ | ✅ | ✅ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ✅ |
+| | UPDATE | ✅ | ✅ | ✅ | ❌ |
+| | DELETE | ✅ | ✅ | ❌ | ❌ |
+| | EXECUTE | ✅ | ✅ | ✅ | ❌ |
+| **INTEGRATION** | CREATE | ✅ | ❌ | ❌ | ❌ |
+| | READ | ✅ | ✅ | ✅ | ❌ |
+| | UPDATE | ✅ | ❌ | ❌ | ❌ |
+| | DELETE | ✅ | ❌ | ❌ | ❌ |
+| | MANAGE | ✅ | ❌ | ❌ | ❌ |
+| **WISE_ARCHITECTURE** | READ | ✅ | ✅ | ✅ | ❌ |
+| | EXECUTE | ✅ | ✅ | ✅ | ❌ |
+| | MANAGE | ✅ | ❌ | ❌ | ❌ |
 
 ---
 

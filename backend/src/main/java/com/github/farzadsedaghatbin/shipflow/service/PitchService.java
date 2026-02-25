@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -225,6 +226,14 @@ public class PitchService {
       pitch.setTargetRelease(release);
     }
 
+    // Priority and sort order
+    if (request.getPriority() != null) {
+      pitch.setPriority(request.getPriority());
+    }
+    if (request.getSortOrder() != null) {
+      pitch.setSortOrder(request.getSortOrder());
+    }
+
     Pitch saved = pitchRepository.save(pitch);
 
     // Publish event for knowledge ingestion
@@ -421,6 +430,20 @@ public class PitchService {
     return pitchRepository.findUnassignedByEpicId(epicId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  /**
+   * Batch-update sort order for pitches (used by drag-and-drop reordering).
+   */
+  public void reorder(ReorderRequest request) {
+    List<Pitch> pitchesToSave = request.getItems().stream().map(item -> {
+      Pitch pitch = pitchRepository.findByIdNotDeleted(item.getId())
+          .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + item.getId()));
+      pitch.setSortOrder(item.getSortOrder());
+      return pitch;
+    }).collect(Collectors.toList());
+    pitchRepository.saveAll(pitchesToSave);
+    log.info("Reordered {} pitches", request.getItems().size());
+  }
+
   public PitchDTO updatePitch(Long id, CreatePitchRequest request) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
@@ -467,6 +490,12 @@ public class PitchService {
       pitch.setTargetRelease(release);
     } else {
       pitch.setTargetRelease(null);
+    }
+
+    // Priority and sort order
+    pitch.setPriority(request.getPriority());
+    if (request.getSortOrder() != null) {
+      pitch.setSortOrder(request.getSortOrder());
     }
 
     Pitch saved = pitchRepository.save(pitch);
@@ -676,6 +705,9 @@ public class PitchService {
         .targetReleaseId(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getId() : null)
         .targetReleaseName(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getName() : null)
         .targetReleaseVersion(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getVersion() : null)
+        // Priority and ordering
+        .priority(pitch.getPriority())
+        .sortOrder(pitch.getSortOrder())
         // Circuit breaker fields
         .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
         .circuitBreakerReason(pitch.getCircuitBreakerReason()).circuitBreakerDate(pitch.getCircuitBreakerDate())

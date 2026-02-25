@@ -79,10 +79,19 @@ A modern project management application implementing the [Shape Up](https://base
     - Status tracking: DRAFT, PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED
     - Color-coded timeline visualization with target dates
     - Owner assignment and project association
+    - **Priority weighting**: HIGH / MEDIUM / LOW business value labels
+    - **Drag-and-drop reordering**: Sort initiatives by strategic priority
   - **Epics**: Large feature groups organizing related pitches (e.g., "Mobile Checkout Redesign")
     - Optional parent initiative for strategic alignment
     - Progress tracking from linked pitches
     - Flexible status management matching initiative workflow
+    - **Priority weighting**: HIGH / MEDIUM / LOW business value labels
+    - **Drag-and-drop reordering**: Re-sequence epics within an initiative
+  - **Pitches inside Epics**: Fully sortable pitch lists per epic
+    - **Drag-and-drop reordering**: Persist sort order via `PATCH /api/pitches/reorder`
+    - **Priority badges**: Color-coded HIGH (red) / MEDIUM (amber) / LOW (green) inline selector
+    - **Release version badge**: Shows the target release version (e.g., `v3.0.0`) directly on the pitch row
+    - Available in both list and board views
   - **Releases**: Versioned delivery milestones with multi-cycle support
     - Version tracking (e.g., "v2.4.0", "2026.Q2")
     - Risk level indicators: LOW, MEDIUM, HIGH, CRITICAL
@@ -140,6 +149,19 @@ A modern project management application implementing the [Shape Up](https://base
   - **CRUD Operations**: Create, edit, delete comments with permission checks
   - **Edit Tracking**: Comments show "edited" badge when modified
   - **Author Controls**: Only authors can edit; authors and admins can delete
+- **Markdown Descriptions**: Rich text editing with live preview for all description fields
+  - **Write/Preview Editor**: Toggle between raw Markdown editing and rendered preview
+  - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
+  - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
+  - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Smart Project Selection**: Mandatory project selection dialog for project-scoped pages
+  - Modal popup replaces the subtle empty-state card when "All Projects" is selected
+  - Shows project list with avatar, name, and project key for one-click selection
+  - Cannot be dismissed — ensures users always have a project context
+  - Applied to: Epics, Initiatives, Releases, Roadmap, Retrospectives
+- **Expanded Color Palette**: 42 colors for Epics and Initiatives
+  - 7 hue groups (Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals) × 6 shades each
+  - Hover scale effect and ring indicator on selected color
 - **Retrospectives**: Team retros with voting and merging
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
   - Checkbox option to hide author attribution on sensitive items
@@ -341,6 +363,13 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## 🔀 How ShipFlow Compares
 
+| Feature | ShipFlow | Linear | Jira | Shortcut |
+|---|---|---|---|---|
+| Shape Up native workflow | ✅ Full | ❌ | ❌ | Partial |
+| Pitch prioritization (DnD) | ✅ Epic/Initiative/Pitch | ❌ | ❌ | ❌ |
+| Release version on pitch cards | ✅ | ✅ | ✅ | ✅ |
+| AI pitch extraction | ✅ | ❌ | ❌ | ❌ |
+
 ShipFlow is the **only project management tool** built specifically for the [Shape Up](https://basecamp.com/shapeup) methodology:
 
 | Feature | ShipFlow | Linear | Asana | Monday.com | Jira | Basecamp |
@@ -362,6 +391,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Generic Inbound Webhooks** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Release Traceability (Tasks & Bugs)** | ✅ | Partial | ❌ | ❌ | ✅ | ❌ |
+| **Markdown Descriptions** | ✅ | ✅ | Partial | Partial | ✅ | Partial |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |

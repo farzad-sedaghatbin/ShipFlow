@@ -18,6 +18,7 @@ import {
 import { releaseService } from '../services/releaseService';
 import { Release, ReleaseStatus, ReleaseRiskLevel } from '../types';
 import { useProject, useToast } from '../contexts';
+import ProjectRequiredDialog from '../components/ProjectRequiredDialog';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -146,15 +147,10 @@ export default function ReleaseListPage() {
 
   if (isAllProjectsSelected) {
     return (
-      <div className="container mx-auto py-8">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium">{t('releases.selectProject')}</h3>
-            <p className="text-muted-foreground">{t('releases.selectProjectDescription')}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <ProjectRequiredDialog
+        open={true}
+        featureDescription={t('releases.selectProjectDescription')}
+      />
     );
   }
 

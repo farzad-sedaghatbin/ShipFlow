@@ -4001,6 +4001,7 @@
     "sortByName": "نام",
     "sortTeam": "[TODO: Persian translation] Team",
     "sortTitle": "[TODO: Persian translation] Title",
+    "sortPriority": "اولویت",
     "supportingDescription": "اسناد پشتیبان اضافی برای این پیچ بارگذاری کنید",
     "supportingDocuments": "اسناد پشتیبان",
     "team": "[TODO: Persian translation] Team",
@@ -4333,7 +4334,9 @@
     "shape": "شکل‌دادن",
     "noCycleAssigned": "به هیچ چرخه‌ای اختصاص داده نشده",
     "createError": "خطا در ایجاد پیچ",
-    "updateError": "خطا در به‌روزرسانی پیچ"
+    "updateError": "خطا در به‌روزرسانی پیچ",
+    "reorderError": "خطا در مرتب‌سازی مجدد پیچ‌ها",
+    "priorityUpdated": "اولویت با موفقیت به‌روزرسانی شد"
   },
   "profile": {
     "accountInfo": "اطلاعات حساب کاربری",
@@ -4467,6 +4470,13 @@
     "viewBacklog": "مشاهده باکلاگ",
     "viewCycle": "[TODO: Persian translation] View Cycle",
     "viewTeam": "[TODO: Persian translation] View Team"
+  },
+  "priority": {
+    "label": "اولویت",
+    "set": "تعیین اولویت",
+    "high": "بالا",
+    "medium": "متوسط",
+    "low": "پایین"
   },
   "projects": {
     "activate": "[TODO: Persian translation] Activate",

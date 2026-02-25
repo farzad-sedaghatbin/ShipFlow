@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateInitiativeRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.InitiativeDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
@@ -98,6 +99,7 @@ public class InitiativeService {
         .targetEndDate(request.getTargetEndDate())
         .project(project)
         .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
+        .priority(request.getPriority())
         .build();
 
     if (request.getOwnerId() != null) {
@@ -130,6 +132,7 @@ public class InitiativeService {
     if (request.getSortOrder() != null) {
       initiative.setSortOrder(request.getSortOrder());
     }
+    initiative.setPriority(request.getPriority());
 
     if (request.getOwnerId() != null) {
       User owner = userRepository.findById(request.getOwnerId())
@@ -157,6 +160,20 @@ public class InitiativeService {
     initiative.setDeletedBy(currentUser);
     initiativeRepository.save(initiative);
     log.info("Soft deleted initiative: {}", initiative.getName());
+  }
+
+  /**
+   * Batch-update sort order for initiatives (used by drag-and-drop reordering).
+   */
+  public void reorder(ReorderRequest request) {
+    List<Initiative> initiativesToSave = request.getItems().stream().map(item -> {
+      Initiative initiative = initiativeRepository.findByIdNotDeleted(item.getId())
+          .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + item.getId()));
+      initiative.setSortOrder(item.getSortOrder());
+      return initiative;
+    }).collect(Collectors.toList());
+    initiativeRepository.saveAll(initiativesToSave);
+    log.info("Reordered {} initiatives", request.getItems().size());
   }
 
   public InitiativeDTO updateStatus(Long id, InitiativeStatus status) {
@@ -201,6 +218,7 @@ public class InitiativeService {
         .description(initiative.getDescription())
         .status(initiative.getStatus())
         .color(initiative.getColor())
+        .priority(initiative.getPriority())
         .targetStartDate(initiative.getTargetStartDate())
         .targetEndDate(initiative.getTargetEndDate())
         .sortOrder(initiative.getSortOrder())

@@ -3,14 +3,17 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateInitiativeRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.InitiativeDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
@@ -262,5 +265,64 @@ class InitiativeServiceTest {
 
     assertThat(result).hasSize(1);
     verify(initiativeRepository).findByProjectIdAndStatusInNotDeleted(eq(1L), any());
+  }
+
+  @Test
+  void createInitiative_WithPriority_ShouldPersistPriority() {
+    CreateInitiativeRequest req = new CreateInitiativeRequest();
+    req.setName("New Initiative"); req.setStatus(InitiativeStatus.PLANNED);
+    req.setProjectId(1L); req.setSortOrder(1); req.setPriority(BusinessValue.HIGH);
+
+    Initiative saved = Initiative.builder()
+        .id(2L).name("New Initiative").status(InitiativeStatus.PLANNED)
+        .project(testProject).sortOrder(1).priority(BusinessValue.HIGH)
+        .build();
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(initiativeRepository.save(any(Initiative.class))).thenReturn(saved);
+    when(epicRepository.countByInitiativeIdNotDeleted(any())).thenReturn(0L);
+    when(epicRepository.countByInitiativeIdAndStatusNotDeleted(any(), any())).thenReturn(0L);
+
+    InitiativeDTO result = initiativeService.createInitiative(req);
+
+    assertThat(result.getPriority()).isEqualTo(BusinessValue.HIGH);
+    verify(initiativeRepository).save(argThat(i -> i.getPriority() == BusinessValue.HIGH));
+  }
+
+  @Test
+  void reorder_ShouldUpdateSortOrderForEachInitiative() {
+    Initiative init1 = Initiative.builder().id(1L).name("Init 1")
+        .status(InitiativeStatus.PLANNED).project(testProject).sortOrder(0).build();
+    Initiative init2 = Initiative.builder().id(2L).name("Init 2")
+        .status(InitiativeStatus.PLANNED).project(testProject).sortOrder(1).build();
+
+    when(initiativeRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(init1));
+    when(initiativeRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(init2));
+    when(initiativeRepository.save(any(Initiative.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(Arrays.asList(
+            ReorderRequest.ReorderItem.builder().id(1L).sortOrder(1).build(),
+            ReorderRequest.ReorderItem.builder().id(2L).sortOrder(0).build()
+        ))
+        .build();
+
+    initiativeService.reorder(request);
+
+    verify(initiativeRepository).save(argThat(i -> i.getId().equals(1L) && i.getSortOrder() == 1));
+    verify(initiativeRepository).save(argThat(i -> i.getId().equals(2L) && i.getSortOrder() == 0));
+  }
+
+  @Test
+  void reorder_WhenInitiativeNotFound_ShouldThrowException() {
+    when(initiativeRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(List.of(ReorderRequest.ReorderItem.builder().id(999L).sortOrder(0).build()))
+        .build();
+
+    assertThatThrownBy(() -> initiativeService.reorder(request))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Initiative not found");
   }
 }

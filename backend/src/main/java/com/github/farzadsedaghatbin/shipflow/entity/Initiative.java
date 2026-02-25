@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -81,6 +82,12 @@ public class Initiative {
   @Builder.Default
   @org.hibernate.annotations.BatchSize(size = 25)
   private List<Epic> epics = new ArrayList<>();
+
+  /** Business value priority (HIGH, MEDIUM, LOW) */
+  @NotAudited
+  @Enumerated(EnumType.STRING)
+  @Column(length = 10)
+  private BusinessValue priority;
 
   /** Sort order for display in roadmap views */
   @NotAudited
