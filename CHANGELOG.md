@@ -23,7 +23,7 @@ All notable changes to this project will be documented in this file.
   - Added `sortPriority` sort option to the Sort By dropdown
 - **i18n**: Added `priority.{high,medium,low,set,label}`, `pitches.reorderError`, `pitches.priorityUpdated`, `pitchBoard.sortPriority` keys to English and Persian locale files
 
-
+## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog & Expanded Color Palette
 
 ### Added
 - **Permission Matrix — New Resources**: Added 13 new resource types to the RBAC permission matrix covering all recent features
@@ -45,7 +45,6 @@ All notable changes to this project will be documented in this file.
   - Clear Filters button to reset all active filters
   - Filters reset automatically when the active project changes
   - i18n keys added (English and Persian)
-
 - **Markdown Editor for Descriptions**: All description fields now support Markdown editing with live preview
   - Write/Preview tab toggle with monospace editing and rendered markdown preview
   - New `MarkdownEditor` component wraps the existing `Markdown` renderer (react-markdown + GFM)
@@ -71,44 +70,6 @@ All notable changes to this project will be documented in this file.
 - **Cycle Cache Invalidation on Date Change**: Changing a cycle's start or end date now properly invalidates risk analysis caches
   - `CycleService.updateCycle()` detects date changes and invalidates both the cycle cache and all associated pitch caches via `RiskAnalysisService`
   - Prevents stale risk advisory data after cycle duration adjustments
-
-- **Inbound Webhook Admin UI**: DB-backed provider configuration through "Integrations → Inbound Webhooks" — no environment variables required
-  - Create, edit, enable/disable, and delete webhook provider configs via the admin page
-  - HMAC signature validation (HmacSHA256, HmacSHA1, HmacSHA512) configured per provider through the UI
-  - Auto-generated, copyable webhook URL displayed for each provider
-  - `InboundWebhookConfig` JPA entity + Flyway migration `V98`
-  - `InboundWebhookConfigService` — upsert by provider name, secret masking, toggle enabled, webhook URL builder
-  - `InboundWebhookConfigController` — REST API at `GET/POST/PATCH/DELETE /api/inbound-webhooks/configurations`; ADMIN/MANAGER gated
-  - `GenericInboundWebhookHandler` — DB-driven fallback handler; `InboundWebhookRouter` falls through to it when no code-level handler exists
-  - `InboundWebhooksIntegration.tsx` frontend admin page with full CRUD dialog, enable/disable toggle, copy-URL button
-  - Navigation entry under Integrations sidebar (`integrations/inbound-webhooks`)
-  - i18n keys added (English and Persian)
-- **Redis Persistence & Qdrant Auto-Create**: Redis AOF/RDB persistence enabled in `docker-compose.yml`; Qdrant collection is now auto-created at startup if it does not exist
-- **Redis Cache Improvements**
-  - Enhanced cache management with improved TTL handling and hash-based storage for `AICacheService` and `LLMCacheService`
-  - Non-blocking key scanning using `SCAN` cursor API to prevent Redis timeouts under high load
-  - Circuit-breaker for Redis `SCAN` failures in `AICacheService` and `LLMCacheService` — falls back gracefully without crashing
-  - Improved error handling and unit tests for `ConversationManager`
-  - `ObjectMapper` usage streamlined for Redis serialization (removed redundant instances)
-  - Redis password configuration updated for both `application-dev.properties` and `application-prod.properties`
-  - `CacheProperties` bean registered explicitly in `RedisConfig` to fix Spring Boot auto-configuration conflict
-- **Risk Scoring**: `PitchHealthService` integrated across all risk-scoring endpoints for consistent score computation
-- **Security**: JWT token handling enhanced with improved serialization, parsing, and edge-case safety
-- **Frontend Navigation**: Navigation items and dashboard route labels updated with localization support; separated Dashboards sidebar entry
-- **i18n Additions**
-  - Project selection prompt keys added (English and Persian)
-  - Initiative-related message keys added (English and Persian)
-  - Epic-related message keys added (English and Persian)
-
-### Changed
-- **Teams — `cycle_id` removal**: `cycle_id` column and all related fields removed from the `teams` entity, migration, and API; deprecation markers and dead code cleaned up
-- **UI**: `CommandInput` focus ring styles simplified for consistency
-
-### Fixed
-- **Risk Score Calculation**: Score now uses rounding instead of clamping, producing more accurate values at boundary conditions
-- **`PitchRiskHistory` serialization**: `JsonIgnoreProperties` updated to include `epic` and `targetRelease` to prevent circular serialization
-- **Project Detail — Team filter**: Invalid `projectId` filter on the `Team` GraphQL type removed; teams are now filtered server-side by project ID
-- **Landing page**: Author avatar restored with correct GitHub username; `no-referrer` referrer policy removed to allow avatar image loading
 
 ## [0.6.0] - 2026-02-22 - Provider Abstractions, Release Traceability & Inbound Webhooks
 

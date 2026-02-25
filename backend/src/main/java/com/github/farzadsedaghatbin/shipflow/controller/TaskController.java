@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +51,7 @@ public class TaskController {
   // ========== Current User's Tasks ==========
 
   @GetMapping("/my")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get current user's tasks", description = "Returns all tasks assigned to the currently authenticated user (as assignee or pair) with pagination")
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Tasks retrieved successfully"),
       @ApiResponse(responseCode = "401", description = "User not authenticated"),
@@ -64,6 +66,7 @@ public class TaskController {
   }
 
   @GetMapping("/my/cycle/{cycleId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get current user's tasks by cycle", description = "Returns tasks for the current user filtered by cycle ID with pagination")
   public ResponseEntity<Page<TaskDTO>> getMyTasksByCycle(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -78,6 +81,7 @@ public class TaskController {
   // ========== General Task Management ==========
 
   @GetMapping
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get all tasks", description = "Returns all tasks in the system with pagination and sorting")
   public ResponseEntity<Page<TaskDTO>> getAllTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -89,6 +93,7 @@ public class TaskController {
   }
 
   @GetMapping("/search")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Search tasks", description = "Search tasks by title or description. Minimum 3 characters required.")
   public ResponseEntity<?> searchTasks(@RequestParam String q, @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -103,12 +108,14 @@ public class TaskController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task by ID")
   public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
     return ResponseEntity.ok(taskService.getTaskById(id));
   }
 
   @GetMapping("/{id}/history")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   public ResponseEntity<Page<EntityHistoryDTO>> getTaskHistory(@PathVariable Long id,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     Pageable pageable = PageRequest.of(page, size);
@@ -116,6 +123,7 @@ public class TaskController {
   }
 
   @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by cycle ID", description = "Returns all tasks for a specific cycle with pagination and sorting")
   public ResponseEntity<Page<TaskDTO>> getTasksByCycleId(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -128,6 +136,7 @@ public class TaskController {
   }
 
   @GetMapping("/cycle/{cycleId}/status/{status}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by cycle ID and status")
   public ResponseEntity<Page<TaskDTO>> getTasksByCycleIdAndStatus(@PathVariable Long cycleId,
       @PathVariable TaskStatus status, @RequestParam(defaultValue = "0") int page,
@@ -140,6 +149,7 @@ public class TaskController {
   }
 
   @GetMapping("/cycle/{cycleId}/filter")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks with multi-selection filters", description = "Filter tasks by multiple statuses, priorities, assignees, and category with optional exclusion")
   public ResponseEntity<Page<TaskDTO>> getTasksWithFilters(@PathVariable Long cycleId,
       @RequestParam(required = false) List<TaskStatus> statuses,
@@ -158,6 +168,7 @@ public class TaskController {
   }
 
   @GetMapping("/cycle/{cycleId}/category/{category}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by cycle ID and category", description = "Returns tasks for a cycle filtered by category (PITCH_SCOPE or DEBT_IMPROVEMENT)")
   public ResponseEntity<Page<TaskDTO>> getTasksByCycleIdAndCategory(@PathVariable Long cycleId,
       @PathVariable TaskCategory category, @RequestParam(defaultValue = "0") int page,
@@ -170,30 +181,35 @@ public class TaskController {
   }
 
   @GetMapping("/assignee/{assigneeId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by assignee ID")
   public ResponseEntity<List<TaskDTO>> getTasksByAssigneeId(@PathVariable Long assigneeId) {
     return ResponseEntity.ok(taskService.getTasksByAssigneeId(assigneeId));
   }
 
   @GetMapping("/person/{personId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by person ID (assignee or pair)")
   public ResponseEntity<List<TaskDTO>> getTasksByPersonId(@PathVariable Long personId) {
     return ResponseEntity.ok(taskService.getTasksByPersonId(personId));
   }
 
   @GetMapping("/pitch/{pitchId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by pitch ID", description = "Returns all tasks linked to a specific pitch")
   public ResponseEntity<List<TaskDTO>> getTasksByPitchId(@PathVariable Long pitchId) {
     return ResponseEntity.ok(taskService.getTasksByPitchId(pitchId));
   }
 
   @GetMapping("/project/{projectId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by project ID")
   public ResponseEntity<List<TaskDTO>> getTasksByProjectId(@PathVariable Long projectId) {
     return ResponseEntity.ok(taskService.getTasksByProjectId(projectId));
   }
 
   @GetMapping("/project/{projectId}/paged")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by project ID with pagination")
   public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdPaged(@PathVariable Long projectId,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -206,6 +222,7 @@ public class TaskController {
   }
 
   @GetMapping("/project/{projectId}/category/{category}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by project ID and category with pagination")
   public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdAndCategory(@PathVariable Long projectId,
       @PathVariable TaskCategory category, @RequestParam(defaultValue = "0") int page,
@@ -218,6 +235,7 @@ public class TaskController {
   }
 
   @GetMapping("/project/{projectId}/filter")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks with multi-selection filters for a project", 
       description = "Filter tasks by multiple statuses, priorities, assignees, and category with optional exclusion")
   public ResponseEntity<Page<TaskDTO>> getTasksByProjectIdWithFilters(@PathVariable Long projectId,
@@ -237,18 +255,21 @@ public class TaskController {
   }
 
   @GetMapping("/project/{projectId}/statistics")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task statistics for a project")
   public ResponseEntity<TaskStatisticsDTO> getTaskStatisticsByProjectId(@PathVariable Long projectId) {
     return ResponseEntity.ok(taskService.getTaskStatisticsByProjectId(projectId));
   }
 
   @GetMapping("/cycle/{cycleId}/statistics")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task statistics for a cycle", description = "Returns aggregated statistics about tasks in a cycle")
   public ResponseEntity<TaskStatisticsDTO> getTaskStatisticsByCycleId(@PathVariable Long cycleId) {
     return ResponseEntity.ok(taskService.getTaskStatisticsByCycleId(cycleId));
   }
 
   @PostMapping
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'CREATE')")
   @Operation(summary = "Create a new task")
   @ApiResponses({@ApiResponse(responseCode = "201", description = "Task created successfully"),
       @ApiResponse(responseCode = "400", description = "Invalid data")})
@@ -257,12 +278,14 @@ public class TaskController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(summary = "Update a task")
   public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @Valid @RequestBody CreateTaskRequest request) {
     return ResponseEntity.ok(taskService.updateTask(id, request));
   }
 
   @PatchMapping("/{id}/status")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(summary = "Update task status", description = "Quick update of task status only")
   public ResponseEntity<TaskDTO> updateTaskStatus(@PathVariable Long id,
       @RequestBody Map<String, String> statusUpdate) {
@@ -271,6 +294,7 @@ public class TaskController {
   }
 
   @PatchMapping("/{id}/priority")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(summary = "Update task priority", description = "Quick update of task priority only")
   public ResponseEntity<TaskDTO> updateTaskPriority(@PathVariable Long id,
       @RequestBody Map<String, String> priorityUpdate) {
@@ -279,6 +303,7 @@ public class TaskController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'DELETE')")
   @Operation(summary = "Delete a task")
   @ApiResponses({@ApiResponse(responseCode = "204", description = "Task deleted successfully"),
       @ApiResponse(responseCode = "404", description = "Task not found")})
@@ -290,18 +315,21 @@ public class TaskController {
   // ========== Sub-task Hierarchy Endpoints ==========
 
   @GetMapping("/{id}/subtasks")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get sub-tasks", description = "Returns all direct children of the specified parent task")
   public ResponseEntity<List<TaskDTO>> getSubTasks(@PathVariable Long id) {
     return ResponseEntity.ok(taskService.getSubTasks(id));
   }
 
   @GetMapping("/cycle/{cycleId}/roots")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get root tasks", description = "Returns all tasks in the cycle that have no parent (root level tasks)")
   public ResponseEntity<List<TaskDTO>> getRootTasks(@PathVariable Long cycleId) {
     return ResponseEntity.ok(taskService.getRootTasksByCycleId(cycleId));
   }
 
   @GetMapping("/cycle/{cycleId}/tree")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task tree", description = "Returns the complete task hierarchy for a cycle with nested children")
   public ResponseEntity<List<TaskDTO>> getTaskTree(@PathVariable Long cycleId) {
     return ResponseEntity.ok(taskService.getTaskTreeByCycleId(cycleId));
