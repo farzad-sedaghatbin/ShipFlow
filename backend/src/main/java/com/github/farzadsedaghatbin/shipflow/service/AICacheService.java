@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,6 +65,11 @@ public class AICacheService {
 
   // Tracks whether Redis is actually reachable; allows graceful fallback to in-memory
   private volatile boolean redisAvailable;
+
+  // Circuit-breaker: consecutive SCAN failures before Redis is marked unavailable.
+  // A single transient error will not trip the circuit; it resets on any successful SCAN.
+  private static final int SCAN_FAILURE_THRESHOLD = 3;
+  private final AtomicInteger scanFailureCount = new AtomicInteger(0);
 
   public AICacheService(AICacheConfig cacheConfig, StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
     this.cacheConfig = cacheConfig;
@@ -164,6 +170,16 @@ public class AICacheService {
    * KEYS blocks the Redis server while scanning the entire keyspace;
    * SCAN iterates incrementally and is safe for production use.
    */
+  /**
+   * Non-blocking key scan using SCAN command instead of KEYS.
+   * KEYS blocks the Redis server while scanning the entire keyspace;
+   * SCAN iterates incrementally and is safe for production use.
+   *
+   * <p>Circuit-breaker: consecutive failures are counted; Redis is only
+   * marked unavailable after {@value #SCAN_FAILURE_THRESHOLD} consecutive
+   * failures so transient network blips do not permanently disable the cache.
+   * The counter resets on every successful scan.
+   */
   private Set<String> scanKeys(String pattern) {
     Set<String> keys = new HashSet<>();
     try {
@@ -174,11 +190,21 @@ public class AICacheService {
         }
         return null;
       });
+      // Success – reset the consecutive-failure counter
+      scanFailureCount.set(0);
     } catch (Exception e) {
-      // Mark Redis as unavailable so subsequent operations fall back to in-memory cache
-      redisAvailable = false;
-      log.warn("Redis SCAN failed for pattern {}. Marking Redis as unavailable and falling back to in-memory cache: {}",
-          pattern, e.getMessage());
+      int failures = scanFailureCount.incrementAndGet();
+      if (failures >= SCAN_FAILURE_THRESHOLD) {
+        redisAvailable = false;
+        log.warn(
+            "Redis SCAN failed {} consecutive times for pattern '{}'. Marking Redis as unavailable "
+                + "and falling back to in-memory cache: {}",
+            failures, pattern, e.getMessage());
+      } else {
+        log.warn(
+            "Redis SCAN failed (attempt {}/{}) for pattern '{}': {}",
+            failures, SCAN_FAILURE_THRESHOLD, pattern, e.getMessage());
+      }
     }
     return keys;
   }
