@@ -54,6 +54,7 @@ services:
       # Redis Configuration
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
       QA_VECTORSTORE_PROVIDER: qdrant
@@ -126,12 +127,13 @@ services:
       --save 60 10000
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
