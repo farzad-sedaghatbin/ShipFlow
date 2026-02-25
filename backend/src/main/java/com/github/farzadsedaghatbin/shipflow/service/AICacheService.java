@@ -695,9 +695,13 @@ public class AICacheService {
   }
 
   /**
-   * Clear all caches. In Redis mode, Redis is cleared first; if that fails the
-   * exception propagates and local tracking structures are NOT cleared, keeping
-   * them consistent with the (partially) surviving Redis state.
+   * Clear all caches.
+   *
+   * <p>In Redis mode, this method makes a best-effort attempt to clear Redis
+   * keys first (using SCAN to avoid blocking the server) and then clears the
+   * in-memory tracking structures. If Redis operations fail silently or
+   * return no keys, local caches may still be cleared, which can temporarily
+   * leave Redis and in-memory state inconsistent.
    */
   public void clearAllCaches() {
     if (isRedisActive()) {
