@@ -2395,7 +2395,9 @@
     "complete": "complete",
     "completedEpics": "completed epics",
     "pitches": "Pitches",
-    "completedPitches": "completed pitches"
+    "completedPitches": "completed pitches",
+    "selectProject": "Select a Project",
+    "selectProjectDescription": "Choose a project to view its initiatives"
   },
   "epics": {
     "title": "Epics",
@@ -2462,7 +2464,9 @@
     "complete": "complete",
     "completed": "completed",
     "completedPitches": "completed pitches",
-    "noPitches": "No pitches yet"
+    "noPitches": "No pitches yet",
+    "selectProject": "Select a Project",
+    "selectProjectDescription": "Choose a project to view its epics"
   },
   "releases": {
     "title": "Releases",

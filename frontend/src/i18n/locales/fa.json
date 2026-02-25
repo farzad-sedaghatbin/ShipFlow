@@ -813,7 +813,9 @@
     "complete": "تکمیل",
     "completedEpics": "اپیک‌های تکمیل شده",
     "pitches": "پیچ‌ها",
-    "completedPitches": "پیچ‌های تکمیل شده"
+    "completedPitches": "پیچ‌های تکمیل شده",
+    "selectProject": "یک پروژه انتخاب کنید",
+    "selectProjectDescription": "یک پروژه را برای مشاهده ابتکارات انتخاب کنید"
   },
   "epics": {
     "title": "اپیک‌ها",
@@ -880,7 +882,9 @@
     "complete": "تکمیل",
     "completed": "تکمیل شده",
     "completedPitches": "پیچ‌های تکمیل شده",
-    "noPitches": "هنوز پیچی وجود ندارد"
+    "noPitches": "هنوز پیچی وجود ندارد",
+    "selectProject": "یک پروژه انتخاب کنید",
+    "selectProjectDescription": "یک پروژه را برای مشاهده اپیک‌ها انتخاب کنید"
   },
   "releases": {
     "title": "انتشارها",
