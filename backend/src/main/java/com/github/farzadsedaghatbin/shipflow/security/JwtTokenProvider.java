@@ -2,8 +2,12 @@ package com.github.farzadsedaghatbin.shipflow.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.jackson.io.JacksonDeserializer;
+import io.jsonwebtoken.jackson.io.JacksonSerializer;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import java.util.Date;
+import java.util.Map;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -19,9 +23,21 @@ public class JwtTokenProvider {
   @Value("${app.jwt.expiration-ms:86400000}")
   private long jwtExpirationMs;
 
-  private SecretKey getSigningKey() {
+  // Cache signing key and parser to avoid ServiceLoader lookup on every request.
+  // JJWT 0.12.x uses java.util.ServiceLoader to find its JSON provider, which can
+  // fail inside a Spring Boot fat JAR classloader. Explicitly providing
+  // JacksonDeserializer/JacksonSerializer bypasses ServiceLoader entirely.
+  private SecretKey signingKey;
+  private JwtParser jwtParser;
+
+  @PostConstruct
+  private void init() {
     byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-    return Keys.hmacShaKeyFor(keyBytes);
+    signingKey = Keys.hmacShaKeyFor(keyBytes);
+    jwtParser = Jwts.parser()
+        .json(new JacksonDeserializer<>(Map.of()))
+        .verifyWith(signingKey)
+        .build();
   }
 
   public String generateToken(Authentication authentication) {
@@ -33,19 +49,22 @@ public class JwtTokenProvider {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-    return Jwts.builder().subject(username).issuedAt(now).expiration(expiryDate).signWith(getSigningKey())
+    return Jwts.builder()
+        .json(new JacksonSerializer<>())
+        .subject(username)
+        .issuedAt(now)
+        .expiration(expiryDate)
+        .signWith(signingKey)
         .compact();
   }
 
   public String getUsernameFromToken(String token) {
-    Claims claims = Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
-
-    return claims.getSubject();
+    return jwtParser.parseSignedClaims(token).getPayload().getSubject();
   }
 
   public boolean validateToken(String authToken) {
     try {
-      Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(authToken);
+      jwtParser.parseSignedClaims(authToken);
       return true;
     } catch (MalformedJwtException e) {
       // Invalid JWT token
