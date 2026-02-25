@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -103,6 +104,18 @@ public class Pitch {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "target_release_id")
   private Release targetRelease;
+
+  /** Business value priority (HIGH, MEDIUM, LOW) for ordering within an epic */
+  @NotAudited
+  @Enumerated(EnumType.STRING)
+  @Column(length = 10)
+  private BusinessValue priority;
+
+  /** Sort order for display within epic or list views */
+  @NotAudited
+  @Column(name = "sort_order")
+  @Builder.Default
+  private Integer sortOrder = 0;
 
   @NotAudited
   @Column(nullable = false)

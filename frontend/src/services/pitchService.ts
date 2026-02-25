@@ -1,5 +1,5 @@
 import api from './api';
-import { Pitch, CreatePitchRequest, CreateIdeaRequest, PitchStatus, Page, EntityHistory } from '../types';
+import { Pitch, CreatePitchRequest, CreateIdeaRequest, PitchStatus, Page, EntityHistory, ReorderRequest } from '../types';
 
 export const pitchService = {
   getAll: () => api.get<Pitch[]>('/pitches'),
@@ -61,4 +61,8 @@ export const pitchService = {
   assignToCycle: (id: number, cycleId: number) => api.patch<Pitch>(`/pitches/${id}/assign-cycle/${cycleId}`),
   /** Unassign pitch from cycle (PENDING → SHAPED) */
   unassignFromCycle: (id: number) => api.patch<Pitch>(`/pitches/${id}/unassign-cycle`),
+
+  // ===== Prioritization & Reordering =====
+  /** Batch update sort order for pitches */
+  reorder: (data: ReorderRequest) => api.patch<void>('/pitches/reorder', data),
 };

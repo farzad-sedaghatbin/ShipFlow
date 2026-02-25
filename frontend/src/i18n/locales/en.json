@@ -384,17 +384,15 @@
       "noActivityWidgets": "No activity widgets are currently visible. Enable them in widget settings."
     }
   },
-  "projectRequired": {
-    "title": "Project Selection Required",
-    "description": "Please select a specific project to continue."
-  },
-  "markdownEditor": {
-    "write": "Write",
-    "preview": "Preview",
-    "markdownSupported": "Markdown supported",
-    "nothingToPreview": "Nothing to preview"
+  "priority": {
+    "label": "Priority",
+    "set": "Set Priority",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
   },
   "projects": {
+    "title": "Projects",
     "createProject": "Create Project",
     "editProject": "Edit Project",
     "deleteProject": "Delete Project",
@@ -591,6 +589,8 @@
     "noCycleAssigned": "Not assigned to a cycle",
     "createError": "Failed to create pitch",
     "updateError": "Failed to update pitch",
+    "reorderError": "Failed to reorder pitches",
+    "priorityUpdated": "Priority updated successfully",
     "status": {
       "idea": "Idea",
       "draft": "Draft",
@@ -3786,6 +3786,7 @@
     "sortTitle": "Title",
     "sortAppetite": "Appetite",
     "sortTeam": "Team",
+    "sortPriority": "Priority",
     "noCycleSelected": "No Cycle Selected",
     "noCycleDescription": "Please select a cycle to view pitches",
     "unassigned": "Unassigned",
@@ -4126,11 +4127,7 @@
     "extracting": "Extracting data from document...",
     "dataExtracted": "Document data extracted successfully! Review and edit the fields below.",
     "extractionFailed": "Failed to extract data from document",
-    "extractionError": "Error extracting document data",
-    "tasks": "Tasks",
-    "noTasks": "No tasks linked to this pitch yet.",
-    "viewAllTasks": "View All Tasks",
-    "viewAllWorkLogs": "View all {{total}} work logs →"
+    "extractionError": "Error extracting document data"
   },
   "cycleDetailPage": {
     "title": "Cycle Details",
@@ -4217,14 +4214,7 @@
     "member": "Member",
     "logged": "Logged",
     "details": "Details",
-    "actions": "Actions",
-    "filterByPerson": "Person",
-    "filterByPitch": "Pitch",
-    "filterByTask": "Task",
-    "allPersons": "All People",
-    "allPitches": "All Pitches",
-    "allTasks": "All Tasks",
-    "clearFilters": "Clear Filters"
+    "actions": "Actions"
   },
   "myWorkLogsPage": {
     "title": "My Work Logs",
@@ -4551,8 +4541,6 @@
     "inAppGuidesDesc": "Ask how-to questions and get AI-powered answers from ShipFlow documentation, plus interactive tour and detailed guides.",
     "inboundWebhooks": "Inbound Webhook Integrations",
     "inboundWebhooksDesc": "Connect any external service — Zendesk, PagerDuty, or custom — via the admin UI. Configure per-provider HMAC secrets and get a ready-to-use webhook URL without writing code.",
-    "markdownEditor": "Markdown Descriptions",
-    "markdownEditorDesc": "Write rich descriptions with a live Markdown editor. Toggle between Write and Preview modes with full GFM support — headings, lists, code blocks, tables, and links.",
     "aboutAuthorTitle": "About the Author",
     "aboutAuthorSubtitle": "Meet the creator behind ShipFlow",
     "authorName": "Farzad Sedaghatbin",
@@ -5242,10 +5230,7 @@
     "makingHappen": "🚀 Making it happen (Downhill)",
     "deleteTitle": "Delete Hill Chart Point",
     "deleteConfirm": "Are you sure you want to delete \"{scope}\"? This action cannot be undone.",
-    "taskAutoCreate": "Auto-create task from scope",
-    "scopeSummary": "Scope Summary",
-    "linkedTasks": "Linked Tasks",
-    "noTasks": "No tasks linked"
+    "taskAutoCreate": "Auto-create task from scope"
   },
   "cycleHillChart": {
     "title": "Cycle Hill Chart",

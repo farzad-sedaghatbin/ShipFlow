@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -42,4 +43,6 @@ public class CreateEpicRequest {
   private Long ownerId;
 
   private Integer sortOrder;
+
+  private BusinessValue priority;
 }

@@ -3,13 +3,16 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -220,4 +223,77 @@ class PitchServiceTest {
     assertThat(result).isNotNull();
     verify(pitchRepository).save(any(Pitch.class));
   }
-}
+
+  @Test
+  void createPitch_WithPriority_ShouldPersistPriority() {
+    testRequest.setPriority(BusinessValue.HIGH);
+    testRequest.setSortOrder(3);
+
+    Pitch savedPitch = Pitch.builder()
+        .id(1L).title("Test Pitch").description("Test Description")
+        .appetiteDays(14)
+        .cycle(testCycle).team(testTeam)
+        .status(PitchStatus.PENDING)
+        .priority(BusinessValue.HIGH)
+        .sortOrder(3)
+        .build();
+
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(savedPitch);
+
+    PitchDTO result = pitchService.createPitch(testRequest);
+
+    assertThat(result.getPriority()).isEqualTo(BusinessValue.HIGH);
+    assertThat(result.getSortOrder()).isEqualTo(3);
+    verify(pitchRepository).save(argThat(p -> p.getPriority() == BusinessValue.HIGH && p.getSortOrder() == 3));
+  }
+
+  @Test
+  void updatePitch_WithPriority_ShouldUpdatePriority() {
+    testPitch.setPriority(BusinessValue.MEDIUM);
+    testRequest.setPriority(BusinessValue.LOW);
+
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
+
+    pitchService.updatePitch(1L, testRequest);
+
+    verify(pitchRepository).save(argThat(p -> p.getPriority() == BusinessValue.LOW));
+  }
+
+  @Test
+  void reorder_ShouldUpdateSortOrderForEachItem() {
+    Pitch pitch1 = Pitch.builder().id(1L).title("Pitch 1").status(PitchStatus.PENDING).build();
+    Pitch pitch2 = Pitch.builder().id(2L).title("Pitch 2").status(PitchStatus.PENDING).build();
+
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitch1));
+    when(pitchRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(pitch2));
+    when(pitchRepository.save(any(Pitch.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(Arrays.asList(
+            ReorderRequest.ReorderItem.builder().id(1L).sortOrder(0).build(),
+            ReorderRequest.ReorderItem.builder().id(2L).sortOrder(1).build()
+        ))
+        .build();
+
+    pitchService.reorder(request);
+
+    verify(pitchRepository).save(argThat(p -> p.getId().equals(1L) && p.getSortOrder() == 0));
+    verify(pitchRepository).save(argThat(p -> p.getId().equals(2L) && p.getSortOrder() == 1));
+  }
+
+  @Test
+  void reorder_WhenPitchNotFound_ShouldThrowException() {
+    when(pitchRepository.findByIdNotDeleted(999L)).thenReturn(Optional.empty());
+
+    ReorderRequest request = ReorderRequest.builder()
+        .items(List.of(ReorderRequest.ReorderItem.builder().id(999L).sortOrder(0).build()))
+        .build();
+
+    assertThatThrownBy(() -> pitchService.reorder(request))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Pitch not found");
+  }}

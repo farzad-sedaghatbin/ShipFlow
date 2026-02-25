@@ -79,10 +79,19 @@ A modern project management application implementing the [Shape Up](https://base
     - Status tracking: DRAFT, PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED
     - Color-coded timeline visualization with target dates
     - Owner assignment and project association
+    - **Priority weighting**: HIGH / MEDIUM / LOW business value labels
+    - **Drag-and-drop reordering**: Sort initiatives by strategic priority
   - **Epics**: Large feature groups organizing related pitches (e.g., "Mobile Checkout Redesign")
     - Optional parent initiative for strategic alignment
     - Progress tracking from linked pitches
     - Flexible status management matching initiative workflow
+    - **Priority weighting**: HIGH / MEDIUM / LOW business value labels
+    - **Drag-and-drop reordering**: Re-sequence epics within an initiative
+  - **Pitches inside Epics**: Fully sortable pitch lists per epic
+    - **Drag-and-drop reordering**: Persist sort order via `PATCH /api/pitches/reorder`
+    - **Priority badges**: Color-coded HIGH (red) / MEDIUM (amber) / LOW (green) inline selector
+    - **Release version badge**: Shows the target release version (e.g., `v3.0.0`) directly on the pitch row
+    - Available in both list and board views
   - **Releases**: Versioned delivery milestones with multi-cycle support
     - Version tracking (e.g., "v2.4.0", "2026.Q2")
     - Risk level indicators: LOW, MEDIUM, HIGH, CRITICAL
@@ -353,6 +362,13 @@ A modern project management application implementing the [Shape Up](https://base
   - **Role-based Access Control**: ADMIN/MANAGER only configuration
 
 ## 🔀 How ShipFlow Compares
+
+| Feature | ShipFlow | Linear | Jira | Shortcut |
+|---|---|---|---|---|
+| Shape Up native workflow | ✅ Full | ❌ | ❌ | Partial |
+| Pitch prioritization (DnD) | ✅ Epic/Initiative/Pitch | ❌ | ❌ | ❌ |
+| Release version on pitch cards | ✅ | ✅ | ✅ | ✅ |
+| AI pitch extraction | ✅ | ❌ | ❌ | ❌ |
 
 ShipFlow is the **only project management tool** built specifically for the [Shape Up](https://basecamp.com/shapeup) methodology:
 

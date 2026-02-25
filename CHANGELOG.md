@@ -4,7 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog & Expanded Color Palette
+## [0.6.2] - 2026-02-25 - Pitch Prioritization & Release Version Visibility
+
+### Added
+- **Pitch Prioritization inside Epics**: Drag-and-drop reordering and priority labels for pitches within an epic
+  - `PATCH /api/pitches/reorder`, `PATCH /api/epics/reorder`, `PATCH /api/initiatives/reorder` endpoints accept ordered `{id, sortOrder}` lists
+  - `BusinessValue` enum (`HIGH`, `MEDIUM`, `LOW`) wired to Pitch, Epic, and Initiative entities
+  - Color-coded `PriorityBadge` component: red = HIGH, amber = MEDIUM, green = LOW
+  - Inline priority selector on each pitch row in the epic detail list
+  - Optimistic UI updates with rollback on API error
+  - `SortablePitchList` component built on `@dnd-kit/sortable` v10 with drag handles, keyboard navigation, and `closestCenter` collision detection
+  - `PitchRepository.findByEpicIdNotDeleted` now sorts by `sort_order ASC, id ASC`
+  - Flyway migration `V2026_02_25_0002`: adds `sort_order` and `priority` columns to `pitches`, `epics`, and `initiatives` tables with covering indexes
+- **Release Version Badge on Pitch Cards**: Target release version now visible on PitchBoard and epic pitch lists
+  - Shows `v{version}` badge (Tag icon) wherever pitch cards are rendered — both mobile and desktop paths in PitchBoard
+  - Reads the existing `targetReleaseVersion` field already present in `PitchDTO`
+- **Priority Sort Option in PitchBoard**: Sort pitches by priority (HIGH → MEDIUM → LOW → unset)
+  - Added `sortPriority` sort option to the Sort By dropdown
+- **i18n**: Added `priority.{high,medium,low,set,label}`, `pitches.reorderError`, `pitches.priorityUpdated`, `pitchBoard.sortPriority` keys to English and Persian locale files
+
+
 
 ### Added
 - **Permission Matrix — New Resources**: Added 13 new resource types to the RBAC permission matrix covering all recent features

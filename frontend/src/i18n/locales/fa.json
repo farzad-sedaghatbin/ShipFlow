@@ -2976,8 +2976,6 @@
     "inAppGuidesDesc": "سوالات خود درباره نحوه استفاده از ShipFlow را بپرسید و پاسخ‌های هوشمند مبتنی بر مستندات دریافت کنید، به همراه تور تعاملی و راهنماهای جامع.",
     "inboundWebhooks": "یکپارچه‌سازی وب‌هوک‌های ورودی",
     "inboundWebhooksDesc": "هر سرویس خارجی را — Zendesk، PagerDuty یا سفارشی — از طریق پنل مدیریت متصل کنید. رمز HMAC و سرآیند امضا را بدون نوشتن کد پیکربندی کنید.",
-    "markdownEditor": "توضیحات مارک‌داون",
-    "markdownEditorDesc": "توضیحات غنی با ویرایشگر مارک‌داون زنده بنویسید. بین حالت‌های نوشتن و پیش‌نمایش با پشتیبانی کامل GFM — سرتیترها، لیست‌ها، بلوک‌های کد، جداول و لینک‌ها جابه‌جا شوید.",
     "aboutAuthorTitle": "درباره نویسنده",
     "aboutAuthorSubtitle": "با خالق ShipFlow آشنا شوید",
     "authorName": "فرزاد صداقت‌بین",
@@ -4003,6 +4001,7 @@
     "sortByName": "نام",
     "sortTeam": "[TODO: Persian translation] Team",
     "sortTitle": "[TODO: Persian translation] Title",
+    "sortPriority": "اولویت",
     "supportingDescription": "اسناد پشتیبان اضافی برای این پیچ بارگذاری کنید",
     "supportingDocuments": "اسناد پشتیبان",
     "team": "[TODO: Persian translation] Team",
@@ -4189,11 +4188,7 @@
     "extracting": "در حال استخراج داده از سند...",
     "dataExtracted": "داده‌های سند با موفقیت استخراج شد! فیلدها را بررسی و ویرایش کنید.",
     "extractionFailed": "استخراج داده از سند ناموفق بود",
-    "extractionError": "خطا در استخراج داده از سند",
-    "tasks": "تسک‌ها",
-    "noTasks": "هنوز تسکی به این پیچ متصل نشده است.",
-    "viewAllTasks": "مشاهده همه تسک‌ها",
-    "viewAllWorkLogs": "مشاهده همه {{total}} ساعت کاری →"
+    "extractionError": "خطا در استخراج داده از سند"
   },
   "pitchHillChart": {
     "addScope": "افزودن محدوده",
@@ -4215,10 +4210,7 @@
     "scopePlaceholder": "مثلاً احراز هویت کاربر",
     "title": "نمودار تپه پیشرفت",
     "updateFailed": "به‌روزرسانی موقعیت ناموفق بود",
-    "taskAutoCreate": "ایجاد خودکار تسک از محدوده",
-    "scopeSummary": "خلاصه محدوده‌ها",
-    "linkedTasks": "تسک‌های مرتبط",
-    "noTasks": "تسکی مرتبط نیست"
+    "taskAutoCreate": "ایجاد خودکار تسک از محدوده"
   },
   "pitchTest": {
     "addTestCase": "افزودن مورد تست",
@@ -4342,7 +4334,9 @@
     "shape": "شکل‌دادن",
     "noCycleAssigned": "به هیچ چرخه‌ای اختصاص داده نشده",
     "createError": "خطا در ایجاد پیچ",
-    "updateError": "خطا در به‌روزرسانی پیچ"
+    "updateError": "خطا در به‌روزرسانی پیچ",
+    "reorderError": "خطا در مرتب‌سازی مجدد پیچ‌ها",
+    "priorityUpdated": "اولویت با موفقیت به‌روزرسانی شد"
   },
   "profile": {
     "accountInfo": "اطلاعات حساب کاربری",
@@ -4477,17 +4471,15 @@
     "viewCycle": "[TODO: Persian translation] View Cycle",
     "viewTeam": "[TODO: Persian translation] View Team"
   },
-  "projectRequired": {
-    "title": "انتخاب پروژه الزامی است",
-    "description": "لطفاً یک پروژه مشخص را برای ادامه انتخاب کنید."
-  },
-  "markdownEditor": {
-    "write": "نوشتن",
-    "preview": "پیش‌نمایش",
-    "markdownSupported": "مارک‌داون پشتیبانی می‌شود",
-    "nothingToPreview": "چیزی برای پیش‌نمایش نیست"
+  "priority": {
+    "label": "اولویت",
+    "set": "تعیین اولویت",
+    "high": "بالا",
+    "medium": "متوسط",
+    "low": "پایین"
   },
   "projects": {
+    "activate": "[TODO: Persian translation] Activate",
     "activateProjectSuccess": "[TODO: Persian translation] Project activated successfully",
     "active": "فعال",
     "activeCycles": "چرخه‌های فعال",
@@ -6074,14 +6066,7 @@
     "totalHours": "کل ساعات",
     "workLogAdded": "گزارش کار با موفقیت افزوده شد",
     "workLogDeleted": "گزارش کار با موفقیت حذف شد",
-    "workLogUpdated": "گزارش کار با موفقیت به‌روزرسانی شد",
-    "filterByPerson": "فرد",
-    "filterByPitch": "پیچ",
-    "filterByTask": "تسک",
-    "allPersons": "همه افراد",
-    "allPitches": "همه پیچ‌ها",
-    "allTasks": "همه تسک‌ها",
-    "clearFilters": "پاک کردن فیلترها"
+    "workLogUpdated": "گزارش کار با موفقیت به‌روزرسانی شد"
   },
   "status": {
     "pending": "در انتظار",

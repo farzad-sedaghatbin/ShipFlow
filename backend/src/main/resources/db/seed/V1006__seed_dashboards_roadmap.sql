@@ -44,22 +44,22 @@ INSERT INTO dashboard_widget_configs (id, dashboard_id, widget_type, settings, p
 -- ROADMAP: INITIATIVES
 -- Status: DRAFT, PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD
 -- ===========================================
-INSERT INTO initiatives (id, name, description, status, color, target_start_date, target_end_date, project_id, owner_id, sort_order, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
-(1, 'Developer Experience 2026', 'Improve developer productivity and satisfaction', 'IN_PROGRESS', '#3B82F6', '2025-10-01', '2026-06-30', 1, 7, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'Mobile Platform', 'Launch mobile apps for iOS and Android', 'PLANNED', '#10B981', '2025-12-01', '2026-09-30', 1, 7, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'Enterprise Features', 'Enterprise-grade security and compliance', 'DRAFT', '#8B5CF6', '2026-07-01', '2027-06-30', 1, 7, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO initiatives (id, name, description, status, color, target_start_date, target_end_date, project_id, owner_id, sort_order, priority, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
+(1, 'Developer Experience 2026', 'Improve developer productivity and satisfaction', 'IN_PROGRESS', '#3B82F6', '2025-10-01', '2026-06-30', 1, 7, 1, 'HIGH', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Mobile Platform', 'Launch mobile apps for iOS and Android', 'PLANNED', '#10B981', '2025-12-01', '2026-09-30', 1, 7, 2, 'HIGH', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Enterprise Features', 'Enterprise-grade security and compliance', 'DRAFT', '#8B5CF6', '2026-07-01', '2027-06-30', 1, 7, 3, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===========================================
 -- ROADMAP: EPICS
 -- ===========================================
-INSERT INTO epics (id, name, description, status, color, target_start_date, target_end_date, project_id, initiative_id, owner_id, sort_order, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
+INSERT INTO epics (id, name, description, status, color, target_start_date, target_end_date, project_id, initiative_id, owner_id, sort_order, priority, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 -- Developer Experience epics
-(1, 'Third-Party Integrations', 'GitHub, Slack, and other tool integrations', 'IN_PROGRESS', '#60A5FA', '2025-10-01', '2025-12-31', 1, 1, 7, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'Custom Dashboards', 'User-configurable dashboard system', 'IN_PROGRESS', '#34D399', '2025-10-01', '2025-11-30', 1, 1, 7, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'API Improvements', 'Developer API enhancements and docs', 'PLANNED', '#A78BFA', '2026-01-01', '2026-03-31', 1, 1, 7, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'Third-Party Integrations', 'GitHub, Slack, and other tool integrations', 'IN_PROGRESS', '#60A5FA', '2025-10-01', '2025-12-31', 1, 1, 7, 1, 'HIGH', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Custom Dashboards', 'User-configurable dashboard system', 'IN_PROGRESS', '#34D399', '2025-10-01', '2025-11-30', 1, 1, 7, 2, 'HIGH', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'API Improvements', 'Developer API enhancements and docs', 'PLANNED', '#A78BFA', '2026-01-01', '2026-03-31', 1, 1, 7, 3, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 -- Mobile Platform epics
-(4, 'Mobile Foundation', 'Core mobile app infrastructure', 'PLANNED', '#10B981', '2025-12-01', '2026-02-28', 1, 2, 7, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 'Offline Support', 'Offline data sync capabilities', 'DRAFT', '#22D3EE', '2026-03-01', '2026-05-31', 1, 2, 7, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(4, 'Mobile Foundation', 'Core mobile app infrastructure', 'PLANNED', '#10B981', '2025-12-01', '2026-02-28', 1, 2, 7, 1, 'HIGH', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Offline Support', 'Offline data sync capabilities', 'DRAFT', '#22D3EE', '2026-03-01', '2026-05-31', 1, 2, 7, 2, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Link pitches to epics
 UPDATE pitches SET epic_id = 1 WHERE id IN (1, 2);  -- GitHub & Slack to Integrations epic

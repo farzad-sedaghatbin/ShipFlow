@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateInitiativeRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.InitiativeDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
@@ -73,6 +74,14 @@ public class InitiativeController {
       @PathVariable Long id,
       @RequestParam InitiativeStatus status) {
     return ResponseEntity.ok(initiativeService.updateStatus(id, status));
+  }
+
+  @PatchMapping("/reorder")
+  @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
+  @Operation(summary = "Reorder initiatives (batch update sort order)")
+  public ResponseEntity<Void> reorderInitiatives(@Valid @RequestBody ReorderRequest request) {
+    initiativeService.reorder(request);
+    return ResponseEntity.noContent().build();
   }
 
   @DeleteMapping("/{id}")

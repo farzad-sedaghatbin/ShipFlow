@@ -1,5 +1,5 @@
 import api from './api';
-import { Initiative, CreateInitiativeRequest, InitiativeStatus } from '../types';
+import { Initiative, CreateInitiativeRequest, InitiativeStatus, ReorderRequest } from '../types';
 
 export const initiativeService = {
   getByProject: (projectId: number) => 
@@ -25,4 +25,8 @@ export const initiativeService = {
   
   delete: (id: number) => 
     api.delete(`/initiatives/${id}`),
+
+  // ===== Prioritization & Reordering =====
+  /** Batch update sort order for initiatives */
+  reorder: (data: ReorderRequest) => api.patch<void>('/initiatives/reorder', data),
 };

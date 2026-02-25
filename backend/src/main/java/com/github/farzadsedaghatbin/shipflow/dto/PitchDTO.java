@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.dto;
 
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -65,6 +66,10 @@ public class PitchDTO {
   private Long targetReleaseId;
   private String targetReleaseName;
   private String targetReleaseVersion;
+
+  // Priority and ordering
+  private BusinessValue priority;
+  private Integer sortOrder;
   
   /**
    * Summary of the busiest team member (closest to exhausting their budget).
