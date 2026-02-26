@@ -10,7 +10,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/queryClient';
+import { queryKeys, STALE_TIMES } from '@/lib/queryClient';
 import { authService } from '@/services/authService';
 
 export interface CurrentUser {
@@ -36,7 +36,7 @@ export function useCurrentUser(enabled = true) {
       return response.data;
     },
     enabled,
-    staleTime: 1000 * 60, // 1 minute — short enough to detect deactivation quickly
+    staleTime: STALE_TIMES.user, // 1 minute — short enough to detect deactivation quickly
     gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: true, // Re-check when user returns to the tab
   });

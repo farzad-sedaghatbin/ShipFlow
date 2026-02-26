@@ -12,12 +12,15 @@ export function TeamWorkloadWidget() {
   const { t } = useTranslation();
 
   const { data: teams = [], isLoading: loading } = useQuery({
-    queryKey: queryKeys.teams.lists(),
+    // Use a widget-specific key so this query's result (full list) is cached
+    // independently from any other teams.lists() consumer, and slicing is done
+    // via `select` to avoid polluting the shared cache with a truncated list.
+    queryKey: [...queryKeys.teams.lists(), { widget: 'teamWorkload', limit: 5 }] as const,
     queryFn: async () => {
       const res = await teamService.getAll();
-      const allTeams: Team[] = res.data || [];
-      return allTeams.slice(0, 5);
+      return (res.data || []) as Team[];
     },
+    select: (allTeams) => allTeams.slice(0, 5),
     staleTime: STALE_TIMES.reference,
   });
 
