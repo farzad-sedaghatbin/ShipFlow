@@ -126,21 +126,11 @@
 
 html {
   @apply scroll-smooth;
-  height: 100%;
-  overflow: hidden;
 }
 
 body {
   @apply bg-background text-foreground antialiased;
   font-feature-settings: "rlig" 1, "calt" 1;
-  height: 100%;
-  overflow: hidden;
-  margin: 0;
-}
-
-#root {
-  height: 100%;
-  overflow: hidden;
 }
 
 /* ============================================

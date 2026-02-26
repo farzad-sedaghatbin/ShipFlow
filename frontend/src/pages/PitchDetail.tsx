@@ -232,6 +232,8 @@ export default function PitchDetail() {
         teamId: pitch.teamId,
         epicId: pitch.epicId,
         status: pitch.status,
+        targetReleaseId: pitch.targetReleaseId,
+        priority: pitch.priority,
         ...shapeUpFields,
         // appetiteDays comes from shapeUpFields (overrides nothing above)
       });

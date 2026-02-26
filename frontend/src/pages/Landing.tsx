@@ -157,7 +157,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto bg-background">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
         <div className="container mx-auto px-4 max-w-6xl">

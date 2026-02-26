@@ -138,8 +138,9 @@ export default function InitiativeDetailPage() {
 
   const handleEpicDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id || reordering) return;
 
+    const snapshot = epics;
     const oldIndex = epics.findIndex((e) => e.id === active.id);
     const newIndex = epics.findIndex((e) => e.id === over.id);
     const reordered = arrayMove(epics, oldIndex, newIndex);
@@ -153,11 +154,11 @@ export default function InitiativeDetailPage() {
       await epicService.reorder(payload);
     } catch (err) {
       console.error('Failed to reorder epics', err);
-      setEpics(epics); // rollback
+      setEpics(snapshot); // rollback to pre-drag state
     } finally {
       setReordering(false);
     }
-  }, [epics]);
+  }, [epics, reordering]);
 
   useEffect(() => {
     if (id) {
