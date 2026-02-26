@@ -5,6 +5,7 @@ import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import timerService from '../services/timerService';
+import { STALE_TIMES } from '../lib/queryClient';
 import { 
   Task, 
   TaskStatus, 
@@ -59,7 +60,7 @@ export function useBacklogCycles() {
       const response = await cycleService.getMyActiveCycles();
       return response.data;
     },
-    staleTime: 60000, // 1 minute
+    staleTime: STALE_TIMES.entities, // 5 minutes for entity data
   });
 }
 
@@ -72,7 +73,7 @@ export function useBacklogPersons() {
     queryFn: async () => {
       return await personService.getAll();
     },
-    staleTime: 60000,
+    staleTime: STALE_TIMES.reference, // 10 minutes — persons are static reference data
   });
 }
 
@@ -196,7 +197,7 @@ export function useBacklogTasks(params: TaskQueryParams) {
       return applyDependencyFilter(tasks, response?.data?.totalElements || 0, dependencyFilter);
     },
     enabled,
-    staleTime: 30000,
+    staleTime: STALE_TIMES.tasks,
   });
 }
 
@@ -292,7 +293,7 @@ export function useBacklogStatistics(params: StatisticsQueryParams) {
       return null;
     },
     enabled,
-    staleTime: 30000,
+    staleTime: STALE_TIMES.tasks,
   });
 }
 
@@ -307,7 +308,7 @@ export function useSubtasks(taskId: number | null) {
       return response.data;
     },
     enabled: taskId !== null,
-    staleTime: 30000,
+    staleTime: STALE_TIMES.tasks,
   });
 }
 

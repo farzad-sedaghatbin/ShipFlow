@@ -9,6 +9,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +22,24 @@ public class TeamService {
   private final TeamRepository teamRepository;
   private final CapacityConfigService capacityConfigService;
 
+  @Cacheable(value = "teams", key = "'all'")
   public List<TeamDTO> getAllTeams() {
     return teamRepository.findAllWithAssignments().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  @Cacheable(value = "teams", key = "'byCycle:' + #cycleId")
   public List<TeamDTO> getTeamsByCycleId(Long cycleId) {
     return teamRepository.findByCycleId(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  @Cacheable(value = "teams", key = "'detail:' + #id")
   public TeamDTO getTeamById(Long id) {
     Team team = teamRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + id));
     return toDTO(team);
   }
 
+  @CacheEvict(value = "teams", allEntries = true)
   public TeamDTO createTeam(CreateTeamRequest request) {
     Team team = Team.builder().name(request.getName()).build();
 
@@ -55,6 +61,7 @@ public class TeamService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "teams", allEntries = true)
   public TeamDTO updateTeam(Long id, CreateTeamRequest request) {
     Team team = teamRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + id));
@@ -79,6 +86,7 @@ public class TeamService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "teams", allEntries = true)
   public void deleteTeam(Long id) {
     teamRepository.deleteById(id);
   }

@@ -21,6 +21,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,15 +40,26 @@ public class ProjectService {
   private final UserRepository userRepository;
   private final UserProjectRepository userProjectRepository;
   private final CycleRepository cycleRepository;
+
+  /**
+   * Self-reference injected lazily so that calls to cached internal methods
+   * go through the Spring AOP proxy (required for @Cacheable to work when
+   * called from within the same bean).
+   */
+  @Lazy
+  @Autowired
+  private ProjectService self;
   private final LocalizationService localizationService;
 
   /** Find all projects - ADMIN only, returns all projects */
+  @Cacheable(value = "projects", key = "'all'")
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAll() {
     return projectRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Find all active projects - ADMIN only, returns all active projects */
+  @Cacheable(value = "projects", key = "'allActive'")
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAllActive() {
     return projectRepository.findAllActiveOrderByName().stream().map(this::toDTO).collect(Collectors.toList());
@@ -124,11 +139,24 @@ public class ProjectService {
     return userProjectRepository.findProjectRoleByUserIdAndProjectId(currentUser.getId(), projectId);
   }
 
+  /**
+   * Public entry point: enforces authorization on every call (cache hits included),
+   * then delegates to {@link #findByIdCached(Long)} which is wrapped by @Cacheable
+   * via the Spring AOP proxy (through {@code self}).
+   */
   @Transactional(readOnly = true)
   public ProjectDTO findById(Long id) {
-    // Check access first
-    requireProjectAccess(id);
+    requireProjectAccess(id);   // always runs — never bypassed by the cache
+    return self.findByIdCached(id);
+  }
 
+  /**
+   * Internal cacheable method. Must only be invoked AFTER access has been verified
+   * by {@link #findById(Long)}. Package-private to discourage direct calls.
+   */
+  @Cacheable(value = "projects", key = "'detail:' + #id")
+  @Transactional(readOnly = true)
+  public ProjectDTO findByIdCached(Long id) {
     Project project = projectRepository.findByIdWithOwner(id)
         .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
     return toDTO(project);
@@ -145,6 +173,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO create(CreateProjectRequest request) {
     if (projectRepository.existsByProjectKey(request.getProjectKey().toUpperCase())) {
@@ -184,6 +213,7 @@ public class ProjectService {
     cycleRepository.save(defaultCycle);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO update(Long id, CreateProjectRequest request) {
     Project project = projectRepository.findById(id)
@@ -236,6 +266,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO deactivate(Long id) {
     Project project = projectRepository.findById(id)
@@ -245,6 +276,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO activate(Long id) {
     Project project = projectRepository.findById(id)
@@ -254,6 +286,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public void delete(Long id) {
     Project project = projectRepository.findById(id)

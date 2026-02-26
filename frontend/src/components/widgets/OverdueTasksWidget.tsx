@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
@@ -7,40 +7,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { taskService } from '../../services/taskService';
 import { Task } from '../../types';
+import { STALE_TIMES } from '../../lib/queryClient';
 
 export function OverdueTasksWidget() {
   const { t, i18n } = useTranslation();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadOverdueTasks();
-  }, []);
-
-  const loadOverdueTasks = async () => {
-    try {
-      setLoading(true);
+  const { data: tasks = [], isLoading: loading } = useQuery({
+    queryKey: ['widgets', 'overdue-tasks'],
+    queryFn: async () => {
       const response = await taskService.getAll(0, 100);
-      const allTasks = response.data.content || [];
+      const allTasks: Task[] = response.data.content || [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
-      const overdue = allTasks.filter((task: Task) => {
-        if (!task.dueDate || task.status === 'DONE' || task.status === 'CANCELLED') {
-          return false;
-        }
-        const dueDate = new Date(task.dueDate);
-        dueDate.setHours(0, 0, 0, 0);
-        return dueDate < today;
-      });
-
-      setTasks(overdue.slice(0, 5));
-    } catch (error) {
-      console.error('Failed to load overdue tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return allTasks
+        .filter((task) => {
+          if (!task.dueDate || task.status === 'DONE' || task.status === 'CANCELLED') return false;
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate < today;
+        })
+        .slice(0, 5);
+    },
+    staleTime: STALE_TIMES.tasks,
+  });
 
   const getDaysOverdue = (dueDate: string) => {
     const today = new Date();

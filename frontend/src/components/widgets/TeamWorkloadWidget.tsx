@@ -1,21 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { teamService } from '../../services/teamService';
 import { Team } from '../../types';
+import { STALE_TIMES, queryKeys } from '../../lib/queryClient';
 
 export function TeamWorkloadWidget() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    teamService.getAll()
-      .then((res) => setTeams((res.data || []).slice(0, 5)))
-      .catch((err) => console.error('Failed to load teams:', err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: teams = [], isLoading: loading } = useQuery({
+    // Use a widget-specific key so this query's result (full list) is cached
+    // independently from any other teams.lists() consumer, and slicing is done
+    // via `select` to avoid polluting the shared cache with a truncated list.
+    queryKey: [...queryKeys.teams.lists(), { widget: 'teamWorkload', limit: 5 }] as const,
+    queryFn: async () => {
+      const res = await teamService.getAll();
+      return (res.data || []) as Team[];
+    },
+    select: (allTeams) => allTeams.slice(0, 5),
+    staleTime: STALE_TIMES.reference,
+  });
 
   if (loading) {
     return (
@@ -23,11 +30,11 @@ export function TeamWorkloadWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="w-4 h-4 text-violet-500" />
-            Teams
+            {t('widgets.teamWorkload')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('widgets.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -38,12 +45,12 @@ export function TeamWorkloadWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Users className="w-4 h-4 text-violet-500" />
-          Teams
+          {t('widgets.teamWorkload')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {teams.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No teams available</p>
+          <p className="text-sm text-muted-foreground">{t('widgets.noTeamData')}</p>
         ) : (
           <div className="space-y-2">
             {teams.map((team) => {

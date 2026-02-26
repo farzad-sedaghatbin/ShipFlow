@@ -10,6 +10,10 @@ export { useMediaQuery } from './useMediaQuery';
 export { useBreakpoint, useBreakpointHelpers, BREAKPOINTS } from './useBreakpoint';
 export type { Breakpoint } from './useBreakpoint';
 
+// Current user live sync
+export { useCurrentUser, useInvalidateCurrentUser } from './useCurrentUser';
+export type { CurrentUser } from './useCurrentUser';
+
 // React Query hooks
 export {
   // Project hooks

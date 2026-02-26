@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -52,18 +54,20 @@ public class RedisConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         // Embed type info so deserialization can reconstruct the correct class.
-        // Restrict allowed types to our package and specific common JDK base types
-        // (collections and time types) to mitigate deserialization gadget-chain attacks (CWE-502).
+        // Restrict allowed types to mitigate deserialization gadget-chain attacks (CWE-502).
+        //
+        // IMPORTANT: must use allowIfSubType (checks the concrete resolved type) rather than
+        // allowIfBaseType (checks the statically declared type). Spring Cache wraps return values
+        // as Object, so the base type is always Object — allowIfBaseType(Collection.class) would
+        // never match and Jackson throws InvalidTypeIdException for java.util.ArrayList etc.
         mapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
+                        // Our own DTOs
                         .allowIfSubType("com.github.farzadsedaghatbin.shipflow")
-                        // Allow standard Java collections
-                        .allowIfBaseType(java.util.Collection.class)
-                        .allowIfBaseType(java.util.Map.class)
-                        // Allow common Java time abstractions
-                        .allowIfBaseType(java.time.temporal.Temporal.class)
-                        .allowIfBaseType(java.time.ZoneId.class)
-                        .allowIfBaseType(java.time.ZoneOffset.class)
+                        // Standard JDK collections / maps (ArrayList, HashMap, LinkedHashMap …)
+                        .allowIfSubType("java.util.")
+                        // java.time types (LocalDate, Instant, ZoneId …)
+                        .allowIfSubType("java.time.")
                         .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
@@ -102,6 +106,7 @@ public class RedisConfig {
     /**
      * {@link RedisCacheManager} backing Spring's {@code @Cacheable} support.
      * TTL and key prefix are read from {@code spring.cache.redis.*} in application.properties.
+     * Per-cache TTLs are configured here to match the expected rate of change for each domain.
      */
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, CacheProperties cacheProperties) {
@@ -113,7 +118,7 @@ public class RedisConfig {
         Duration ttl = redisProps.getTimeToLive() != null ? redisProps.getTimeToLive() : Duration.ofHours(1);
         String keyPrefix = redisProps.getKeyPrefix() != null ? redisProps.getKeyPrefix() : "shipflow:";
 
-        RedisCacheConfiguration config =
+        RedisCacheConfiguration defaultConfig =
                 RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(ttl)
                         .prefixCacheNameWith(keyPrefix)
@@ -124,8 +129,20 @@ public class RedisConfig {
                                 RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                         .disableCachingNullValues();
 
+        // Per-cache TTL configurations — tuned to each domain's rate of change
+        Map<String, RedisCacheConfiguration> perCacheConfig = new HashMap<>();
+        perCacheConfig.put("permissions", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("projects", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("cycles", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("teams", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("tags", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("persons", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("users", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("roadmap", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(perCacheConfig)
                 .build();
     }
 }

@@ -5,7 +5,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/queryClient';
+import { queryKeys, STALE_TIMES } from '@/lib/queryClient';
 import api from '@/services/api';
 import { AxiosError } from 'axios';
 import { 
@@ -35,6 +35,7 @@ export function useProjects(options?: Omit<UseQueryOptions<Project[], AxiosError
       const response = await api.get<Project[]>('/projects');
       return response.data;
     },
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -49,6 +50,7 @@ export function useActiveProjects(options?: Omit<UseQueryOptions<Project[], Axio
       const response = await api.get<Project[]>('/projects/active');
       return response.data;
     },
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -67,6 +69,7 @@ export function useProject(
       return response.data;
     },
     enabled: !!id,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -149,6 +152,7 @@ export function useCycles(options?: Omit<UseQueryOptions<Cycle[], AxiosError>, '
       const response = await api.get<Cycle[]>('/cycles');
       return response.data;
     },
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -163,6 +167,7 @@ export function useActiveCycles(options?: Omit<UseQueryOptions<Cycle[], AxiosErr
       const response = await api.get<Cycle[]>('/cycles/active');
       return response.data;
     },
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -181,6 +186,7 @@ export function useCyclesByProject(
       return response.data;
     },
     enabled: !!projectId,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -199,6 +205,7 @@ export function useActiveCyclesByProject(
       return response.data;
     },
     enabled: !!projectId,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -217,6 +224,7 @@ export function useCycle(
       return response.data;
     },
     enabled: !!id,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -327,6 +335,7 @@ export function usePitches(options?: Omit<UseQueryOptions<Pitch[], AxiosError>, 
       const response = await api.get<Pitch[]>('/pitches');
       return response.data;
     },
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -345,6 +354,7 @@ export function usePitchesByCycle(
       return response.data;
     },
     enabled: !!cycleId,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -363,6 +373,7 @@ export function usePitchesByTeam(
       return response.data;
     },
     enabled: !!teamId,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -381,6 +392,7 @@ export function usePitch(
       return response.data;
     },
     enabled: !!id,
+    staleTime: STALE_TIMES.entities,
     ...options,
   });
 }
@@ -512,6 +524,7 @@ export function useTeams(options?: Omit<UseQueryOptions<Team[], AxiosError>, 'qu
       const response = await api.get<Team[]>('/teams');
       return response.data;
     },
+    staleTime: STALE_TIMES.reference,
     ...options,
   });
 }
@@ -530,6 +543,7 @@ export function useTeam(
       return response.data;
     },
     enabled: !!id,
+    staleTime: STALE_TIMES.reference,
     ...options,
   });
 }

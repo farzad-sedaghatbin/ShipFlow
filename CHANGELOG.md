@@ -4,7 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.6.2] - 2026-02-26 - Global Search & Command Palette
+## [0.6.2] - 2026-02-26 - Multi-Layer Caching & Performance
+
+### Added
+- **HTTP ETag / 304 Caching**: `ShallowEtagHeaderFilter` computes response ETags; browsers and API clients receive `304 Not Modified` when resources are unchanged, eliminating redundant payload transfers
+- **Cache-Control headers**: All API responses include `no-cache, must-revalidate` to force client revalidation on each request
+- **Spring Service-Layer Caching** — `@Cacheable` / `@CacheEvict` annotations on eight domain services with per-domain TTLs:
+  - `PermissionService` (10 min), `ProjectService` (5 min), `CycleService` (5 min)
+  - `TeamService` (10 min), `TagService` (10 min), `PersonService` (10 min)
+  - `UserService` (5 min), `RoadmapService` (2 min)
+- **Redis distributed cache** via `spring.cache.type=redis` in production — shared across multiple instances, survives restarts; automatic failover to in-memory if Redis is unavailable
+- **In-memory fallback** (`SimpleCacheConfig`) via `spring.cache.type=simple` for development and tests — zero infrastructure overhead
+- **Axios ETag interceptor**: stores `ETag` header per endpoint URL; replays `If-None-Match` on subsequent GETs; 304 responses return the in-memory cached body transparently to callers
+- **React Query staleTime tuning** — per-domain constants in `queryClient.ts`:
+  - Tasks (30 s), Entities — cycles/pitches/teams (5 min), Reference — tags/people/permissions (10 min), User profile (1 min), Analytics / roadmap (10 min)
+- **Dashboard widgets migrated to React Query**: `OverdueTasksWidget`, `BlockedTasksWidget`, `MyTasksWidget`, `TeamWorkloadWidget`, `UpcomingDeadlinesWidget`, `CycleProgressWidget`, and `Dashboard.tsx` now use `useQuery` / `useQueries` — eliminates redundant fetch-on-mount loops, shares cached data across widget mounts, and enables automatic background refetch
+- **`useCurrentUser` hook**: background-synced current-user query with 1-minute staleTime, replacing direct auth-context reads in components that only need user data
+
+### Fixed
+- **CycleService compile error**: Removed malformed `/**` Javadoc fragment inserted before `@CacheEvict` on `closeCycle()`, which caused the compiler to treat the annotation and method signature as Javadoc body, resulting in a `cannot find symbol: method closeCycle(Long)` error in `CycleController`
+- **UserService `findByUsername` caching incompatibility**: Removed `@Cacheable` from `findByUsername()` — this auth-critical method is called inside `@SpringBootTest + @Transactional` integration tests where `ConcurrentMapCacheManager` persists across DB rollbacks, causing stale user IDs and 500 errors in `DashboardWidgetControllerIntegrationTest`, `DashboardNotificationControllerIntegrationTest`, and `BettingDecisionControllerIntegrationTest`
+- **Hardcoded English strings in dashboard widgets**: `MyTasksWidget`, `TeamWorkloadWidget`, and `CycleProgressWidget` now use `t('widgets.*')` i18n keys instead of literal English strings ("My Tasks", "Loading...", "Completion Rate", "Work Progress", "Time Progress", "Behind schedule", "Teams", "No teams available", "No active cycles")
+
+### Technical Notes
+- All 1820 backend tests pass (0 failures, 0 errors, 4 skipped) after fixes
+- `@Cacheable` was intentionally NOT added to `findByUsername()` because it serves authentication-path lookups that must always reflect the live DB state
+
+
 
 ### Added
 - **Global Search (Cmd+K)**: Project-scoped instant search across all entities from the top bar

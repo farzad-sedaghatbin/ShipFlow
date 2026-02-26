@@ -367,6 +367,50 @@ A modern project management application implementing the [Shape Up](https://base
   - **Adaptive Card Support**: Rich formatting for both traditional and Power Automate flows
   - **Role-based Access Control**: ADMIN/MANAGER only configuration
 
+## ⚡ Performance & Caching
+
+ShipFlow implements a multi-layer caching strategy to minimize latency, reduce backend load, and deliver a snappy experience.
+
+### HTTP Layer (ETag / 304 Not Modified)
+
+- `ShallowEtagHeaderFilter` computes ETags for every API response
+- Clients that send `If-None-Match` receive a **304 Not Modified** when the resource hasn't changed — no body payload transmitted
+- A `Cache-Control` filter adds `no-cache` + `must-revalidate` so browsers always revalidate before using cached responses
+
+### Service Layer (Spring Cache — Redis / In-Memory)
+
+Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services with per-domain TTLs:
+
+| Cache | TTL | Services |
+|-------|-----|----------|
+| `permissions` | 10 min | PermissionService |
+| `projects` | 5 min | ProjectService |
+| `cycles` | 5 min | CycleService |
+| `teams` | 10 min | TeamService |
+| `tags` | 10 min | TagService |
+| `persons` | 10 min | PersonService |
+| `users` | 5 min | UserService |
+| `roadmap` | 2 min | RoadmapService |
+
+- **Production**: Redis-backed distributed cache (shared across instances, survives restarts)
+- **Development / tests**: In-memory `ConcurrentMapCacheManager` (zero infrastructure required)
+- Cache entries are evicted on mutation (create / update / delete) to prevent stale reads
+
+### Frontend Layer (React Query + Axios ETag)
+
+- **Axios interceptor**: stores ETags per endpoint URL and replays `If-None-Match` on GET requests; 304 responses return the cached body transparently
+- **React Query** with per-domain `staleTime` constants:
+
+| Domain | `staleTime` |
+|--------|-------------|
+| Tasks / active work | 30 s |
+| Entities (cycles, pitches, teams) | 5 min |
+| Reference (tags, people, permissions) | 10 min |
+| User profile | 1 min |
+| Analytics / roadmap | 10 min |
+
+- **Dashboard widgets** — `OverdueTasksWidget`, `BlockedTasksWidget`, `MyTasksWidget`, `TeamWorkloadWidget`, `UpcomingDeadlinesWidget`, `CycleProgressWidget`, and `Dashboard.tsx` itself — all use `useQuery` / `useQueries` with appropriate `staleTime`, replacing manual `useState + useEffect` fetch loops
+
 ## 🔀 How ShipFlow Compares
 
 | Feature | ShipFlow | Linear | Jira | Shortcut |
@@ -401,6 +445,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Markdown Descriptions** | ✅ | ✅ | Partial | Partial | ✅ | Partial |
 | **Internationalization** | ✅ | Partial | Partial | ✅ | ✅ | Partial |
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Multi-Layer Caching (ETag + Redis + React Query)** | ✅ | Partial | ❌ | ❌ | Partial | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 

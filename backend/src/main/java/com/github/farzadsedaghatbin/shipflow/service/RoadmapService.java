@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class RoadmapService {
    * @param endDate end of the timeline window
    * @return timeline data for Gantt chart rendering
    */
+  @Cacheable(value = "roadmap", key = "#projectId + ':' + #startDate + ':' + #endDate")
   public RoadmapTimelineDTO getRoadmapTimeline(Long projectId, LocalDate startDate, LocalDate endDate) {
     List<Initiative> initiatives =
         initiativeRepository.findByProjectIdAndDateRangeNotDeleted(projectId, startDate, endDate);

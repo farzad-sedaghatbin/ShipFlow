@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -147,6 +149,7 @@ public class PermissionService {
    *            The user role
    * @return List of permissions
    */
+  @Cacheable(value = "permissions", key = "'role:' + #role.name()")
   @Transactional(readOnly = true)
   public List<Permission> getPermissionsForRole(UserRole role) {
     return permissionRepository.findByRole(role);
@@ -159,6 +162,7 @@ public class PermissionService {
    *            The resource type
    * @return List of permissions
    */
+  @Cacheable(value = "permissions", key = "'resource:' + #resourceType.name()")
   @Transactional(readOnly = true)
   public List<Permission> getPermissionsForResource(ResourceType resourceType) {
     return permissionRepository.findByResourceType(resourceType);
@@ -187,6 +191,7 @@ public class PermissionService {
    *
    * @return List of all permissions
    */
+  @Cacheable(value = "permissions", key = "'all'")
   @Transactional(readOnly = true)
   public List<Permission> getAllPermissions() {
     return permissionRepository.findAll();
@@ -205,6 +210,7 @@ public class PermissionService {
    *            Optional description
    * @return The created permission
    */
+  @CacheEvict(value = "permissions", allEntries = true)
   @Transactional
   public Permission createPermission(UserRole role, ResourceType resourceType, PermissionType permissionType,
       String description) {
@@ -235,6 +241,7 @@ public class PermissionService {
    *            New description
    * @return The updated permission
    */
+  @CacheEvict(value = "permissions", allEntries = true)
   @Transactional
   public Permission updatePermission(Long id, String description) {
     Permission permission = permissionRepository.findById(id).orElseThrow(
@@ -253,6 +260,7 @@ public class PermissionService {
    * @param id
    *            The permission ID
    */
+  @CacheEvict(value = "permissions", allEntries = true)
   @Transactional
   public void deletePermission(Long id) {
     if (!permissionRepository.existsById(id)) {
