@@ -52,6 +52,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Markdown } from '../components/ui/markdown';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
 import {
@@ -809,9 +810,9 @@ export default function PitchDetail() {
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
                   {t('pitchDetailPage.problemStatement')}
                 </Label>
-                <Textarea
+                <MarkdownEditor
                   value={shapeUpFields.problemStatement}
-                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, problemStatement: e.target.value }))}
+                  onChange={(value) => setShapeUpFields(prev => ({ ...prev, problemStatement: value }))}
                   placeholder={t('pitchDetailPage.problemPlaceholder')}
                   rows={3}
                 />
@@ -823,9 +824,9 @@ export default function PitchDetail() {
                   <Lightbulb className="h-4 w-4 text-yellow-500" />
                   {t('pitchDetailPage.solution')}
                 </Label>
-                <Textarea
+                <MarkdownEditor
                   value={shapeUpFields.solution}
-                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, solution: e.target.value }))}
+                  onChange={(value) => setShapeUpFields(prev => ({ ...prev, solution: value }))}
                   placeholder={t('pitchDetailPage.solutionPlaceholder')}
                   rows={4}
                 />
@@ -837,9 +838,9 @@ export default function PitchDetail() {
                   <Ban className="h-4 w-4 text-red-500" />
                   {t('pitchDetailPage.rabbitHoles')}
                 </Label>
-                <Textarea
+                <MarkdownEditor
                   value={shapeUpFields.rabbitHoles}
-                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, rabbitHoles: e.target.value }))}
+                  onChange={(value) => setShapeUpFields(prev => ({ ...prev, rabbitHoles: value }))}
                   placeholder={t('pitchDetailPage.rabbitHolesPlaceholder')}
                   rows={3}
                 />
@@ -851,9 +852,9 @@ export default function PitchDetail() {
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   {t('pitchDetailPage.risks')}
                 </Label>
-                <Textarea
+                <MarkdownEditor
                   value={shapeUpFields.risks}
-                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, risks: e.target.value }))}
+                  onChange={(value) => setShapeUpFields(prev => ({ ...prev, risks: value }))}
                   placeholder={t('pitchDetailPage.risksPlaceholder')}
                   rows={3}
                 />
@@ -865,9 +866,9 @@ export default function PitchDetail() {
                   <X className="h-4 w-4 text-red-500" />
                   {t('pitchDetailPage.noGos')}
                 </Label>
-                <Textarea
+                <MarkdownEditor
                   value={shapeUpFields.noGos}
-                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, noGos: e.target.value }))}
+                  onChange={(value) => setShapeUpFields(prev => ({ ...prev, noGos: value }))}
                   placeholder={t('pitchDetailPage.noGosPlaceholder')}
                   rows={2}
                 />

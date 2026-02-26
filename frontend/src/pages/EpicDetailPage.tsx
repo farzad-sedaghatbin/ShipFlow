@@ -45,6 +45,7 @@ import { Markdown } from '../components/ui/markdown';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 export default function EpicDetailPage() {
@@ -502,10 +503,10 @@ export default function EpicDetailPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ideaDescription">{t('pitches.description')}</Label>
-              <Textarea
+              <MarkdownEditor
                 id="ideaDescription"
                 value={ideaDescription}
-                onChange={(e) => setIdeaDescription(e.target.value)}
+                onChange={(value) => setIdeaDescription(value)}
                 placeholder={t('pitches.ideaDescriptionPlaceholder')}
                 rows={3}
               />
