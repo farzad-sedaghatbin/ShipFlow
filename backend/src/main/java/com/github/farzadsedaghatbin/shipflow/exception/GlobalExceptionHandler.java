@@ -23,6 +23,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -347,6 +348,20 @@ public class GlobalExceptionHandler {
     error.put("status", HttpStatus.BAD_REQUEST.value());
     error.put("message", String.format("Missing required header: %s", ex.getHeaderName()));
     error.put("header", ex.getHeaderName());
+
+    return ResponseEntity.badRequest().body(error);
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<Map<String, Object>> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException ex) {
+    log.warn("Missing required request parameter: {}", ex.getParameterName());
+
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    error.put("message", String.format("Missing required parameter: '%s'", ex.getParameterName()));
+    error.put("parameter", ex.getParameterName());
 
     return ResponseEntity.badRequest().body(error);
   }

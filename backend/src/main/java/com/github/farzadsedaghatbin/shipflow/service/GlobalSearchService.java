@@ -41,7 +41,9 @@ public class GlobalSearchService {
 
     Query nativeQuery = entityManager.createNativeQuery(sql);
     nativeQuery.setParameter("query", trimmedQuery);
-    nativeQuery.setParameter("queryPattern", "%" + trimmedQuery + "%");
+    // Escape LIKE special chars using '!' as escape character (see ESCAPE '!' in SQL)
+    String escapedForLike = trimmedQuery.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    nativeQuery.setParameter("queryPattern", "%" + escapedForLike + "%");
     nativeQuery.setParameter("projectId", projectId);
     nativeQuery.setParameter("resultLimit", limit);
 
@@ -72,16 +74,13 @@ public class GlobalSearchService {
             t.id AS entity_id,
             t.title AS title,
             t.status AS subtitle,
-            CASE WHEN t.parent_task_id IS NULL
-              THEN CONCAT('/backlog/', t.id)
-              ELSE CONCAT('/backlog/', t.id)
-            END AS route,
+            CONCAT('/backlog/', t.id) AS route,
             GREATEST(
               similarity(t.title, :query),
-              CASE WHEN LOWER(t.title) LIKE LOWER(:queryPattern) THEN 0.6 ELSE 0.0 END
+              CASE WHEN LOWER(t.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END
             ) AS score,
             CASE
-              WHEN LOWER(t.title) LIKE LOWER(:queryPattern) THEN 'TRIGRAM'
+              WHEN LOWER(t.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_TITLE'
               ELSE 'TRIGRAM'
             END AS matched_by
           FROM tasks t
@@ -90,7 +89,7 @@ public class GlobalSearchService {
             AND t.deleted_at IS NULL
             AND (
               similarity(t.title, :query) > 0.1
-              OR LOWER(t.title) LIKE LOWER(:queryPattern)
+              OR LOWER(t.title) LIKE LOWER(:queryPattern) ESCAPE '!'
             )
 
           UNION ALL
@@ -105,20 +104,20 @@ public class GlobalSearchService {
             GREATEST(
               similarity(br.title, :query),
               CASE WHEN LOWER(br.bug_key) = LOWER(:query) THEN 1.0 ELSE 0.0 END,
-              CASE WHEN LOWER(br.bug_key) LIKE LOWER(:queryPattern) THEN 0.9 ELSE 0.0 END,
-              CASE WHEN LOWER(br.title) LIKE LOWER(:queryPattern) THEN 0.6 ELSE 0.0 END
+              CASE WHEN LOWER(br.bug_key) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.9 ELSE 0.0 END,
+              CASE WHEN LOWER(br.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END
             ) AS score,
             CASE
               WHEN LOWER(br.bug_key) = LOWER(:query) THEN 'EXACT_KEY'
-              WHEN LOWER(br.bug_key) LIKE LOWER(:queryPattern) THEN 'EXACT_KEY'
+              WHEN LOWER(br.bug_key) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'PARTIAL_KEY'
               ELSE 'TRIGRAM'
             END AS matched_by
           FROM bug_reports br
           WHERE br.project_id = :projectId
             AND (
               similarity(br.title, :query) > 0.1
-              OR LOWER(br.title) LIKE LOWER(:queryPattern)
-              OR LOWER(br.bug_key) LIKE LOWER(:queryPattern)
+              OR LOWER(br.title) LIKE LOWER(:queryPattern) ESCAPE '!'
+              OR LOWER(br.bug_key) LIKE LOWER(:queryPattern) ESCAPE '!'
             )
 
           UNION ALL
@@ -132,20 +131,26 @@ public class GlobalSearchService {
             CONCAT('/pitches/', p.id) AS route,
             GREATEST(
               similarity(p.title, :query),
-              CASE WHEN LOWER(p.title) LIKE LOWER(:queryPattern) THEN 0.6 ELSE 0.0 END
+              CASE WHEN LOWER(p.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END
             ) AS score,
             CASE
-              WHEN LOWER(p.title) LIKE LOWER(:queryPattern) THEN 'TRIGRAM'
+              WHEN LOWER(p.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_TITLE'
               ELSE 'TRIGRAM'
             END AS matched_by
           FROM pitches p
             LEFT JOIN cycles c ON p.cycle_id = c.id
             LEFT JOIN epics e ON p.epic_id = e.id
           WHERE p.deleted_at IS NULL
-            AND (c.project_id = :projectId OR e.project_id = :projectId)
+            AND (
+              (p.cycle_id IS NOT NULL OR p.epic_id IS NOT NULL)
+              AND (
+                (p.cycle_id IS NULL OR c.project_id = :projectId)
+                AND (p.epic_id IS NULL OR e.project_id = :projectId)
+              )
+            )
             AND (
               similarity(p.title, :query) > 0.1
-              OR LOWER(p.title) LIKE LOWER(:queryPattern)
+              OR LOWER(p.title) LIKE LOWER(:queryPattern) ESCAPE '!'
             )
 
           UNION ALL
@@ -159,10 +164,10 @@ public class GlobalSearchService {
             CONCAT('/epics/', e.id) AS route,
             GREATEST(
               similarity(e.name, :query),
-              CASE WHEN LOWER(e.name) LIKE LOWER(:queryPattern) THEN 0.6 ELSE 0.0 END
+              CASE WHEN LOWER(e.name) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END
             ) AS score,
             CASE
-              WHEN LOWER(e.name) LIKE LOWER(:queryPattern) THEN 'TRIGRAM'
+              WHEN LOWER(e.name) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE'
               ELSE 'TRIGRAM'
             END AS matched_by
           FROM epics e
@@ -170,7 +175,7 @@ public class GlobalSearchService {
             AND e.deleted_at IS NULL
             AND (
               similarity(e.name, :query) > 0.1
-              OR LOWER(e.name) LIKE LOWER(:queryPattern)
+              OR LOWER(e.name) LIKE LOWER(:queryPattern) ESCAPE '!'
             )
         )
         SELECT entity_type, entity_id, title, subtitle, route, score, matched_by

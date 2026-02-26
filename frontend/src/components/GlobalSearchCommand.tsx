@@ -185,11 +185,14 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
                         </span>
                       )}
                     </div>
-                    {item.matchedBy === 'EXACT_KEY' && (
-                      <span className="text-xs text-primary font-mono shrink-0">
-                        {item.subtitle?.split(' · ')[0]}
-                      </span>
-                    )}
+                    {item.matchedBy === 'EXACT_KEY' &&
+                      item.entityType === 'BUG_REPORT' &&
+                      typeof item.subtitle === 'string' &&
+                      item.subtitle.includes(' · ') && (
+                        <span className="text-xs text-primary font-mono shrink-0">
+                          {item.subtitle.split(' · ')[0]}
+                        </span>
+                      )}
                     <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />
                   </CommandItem>
                 ))}

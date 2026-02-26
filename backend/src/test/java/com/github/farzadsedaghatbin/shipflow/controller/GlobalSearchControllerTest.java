@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.github.farzadsedaghatbin.shipflow.dto.GlobalSearchResultDTO;
 import com.github.farzadsedaghatbin.shipflow.service.GlobalSearchService;
+import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class GlobalSearchControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockBean private GlobalSearchService globalSearchService;
+  @MockBean private ProjectService projectService;
 
   @Test
   void globalSearch_WithValidParams_ShouldReturn200() throws Exception {
@@ -161,14 +163,14 @@ class GlobalSearchControllerTest {
   void globalSearch_WithMissingProjectId_ShouldReturnError() throws Exception {
     mockMvc
         .perform(get("/api/search/global").param("q", "test"))
-        .andExpect(status().isInternalServerError());
+        .andExpect(status().isBadRequest());
   }
 
   @Test
   void globalSearch_WithMissingQuery_ShouldReturnError() throws Exception {
     mockMvc
         .perform(get("/api/search/global").param("projectId", "1"))
-        .andExpect(status().isInternalServerError());
+        .andExpect(status().isBadRequest());
   }
 
   @Test
