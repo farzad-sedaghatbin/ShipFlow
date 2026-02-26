@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,7 @@ public class CycleService {
   @Autowired(required = false)
   private RiskAnalysisService riskAnalysisService;
 
+  @Cacheable(value = "cycles", key = "'all'")
   public List<CycleDTO> getAllCycles() {
     return cycleRepository.findAllByOrderByStartDateDesc().stream().map(this::toDTO).collect(Collectors.toList());
   }
@@ -87,6 +90,7 @@ public class CycleService {
         .collect(Collectors.toList());
   }
 
+  @Cacheable(value = "cycles", key = "'byProject:' + #projectId")
   public List<CycleDTO> getCyclesByProject(Long projectId) {
     return cycleRepository.findByProjectIdOrderByStartDateDesc(projectId).stream().map(this::toDTO)
         .collect(Collectors.toList());
@@ -101,12 +105,14 @@ public class CycleService {
     return cycleRepository.findByIsActiveTrue().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  @Cacheable(value = "cycles", key = "'detail:' + #id")
   public CycleDTO getCycleById(Long id) {
     Cycle cycle = cycleRepository.findByIdWithProject(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
     return toDTO(cycle);
   }
 
+  @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)
   public CycleDTO createCycle(CreateCycleRequest request) {
     Project project = projectRepository.findById(request.getProjectId()).orElseThrow(
         () -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
@@ -130,6 +136,7 @@ public class CycleService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)
   public CycleDTO updateCycle(Long id, CreateCycleRequest request) {
     Cycle cycle = cycleRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
@@ -186,6 +193,7 @@ public class CycleService {
   }
 
 
+  @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)
   public CycleDTO toggleActive(Long id) {
     Cycle cycle = cycleRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
@@ -195,10 +203,7 @@ public class CycleService {
     return toDTO(saved);
   }
 
-  /**
-   * Close/Deactivate a cycle with retro enforcement. Requires at least one closed
-   * retrospective if retrospectives are enabled for the project.
-   */
+  @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)
   public CycleDTO closeCycle(Long id) {
     Cycle cycle = cycleRepository.findByIdWithProject(id)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
@@ -243,6 +248,7 @@ public class CycleService {
         .closedRetros((int) closedRetros).canCloseCycle(canClose).message(message).build();
   }
 
+  @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)
   public void deleteCycle(Long id) {
     if (!cycleRepository.existsById(id)) {
       throw new ResourceNotFoundException("Cycle not found with id: " + id);

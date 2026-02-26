@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 interface User {
   userId: number;
@@ -47,6 +48,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false);
   }, []);
+
+  // ─── Live user sync via React Query ────────────────────────────────
+  // Runs alongside the localStorage bootstrap: once the server responds,
+  // we merge any changes (role change, deactivation, linked person, etc.)
+  // back into the auth state *and* localStorage. When the response body
+  // hasn't changed, the ETag 304 path ensures zero body transfer.
+  const { data: serverUser } = useCurrentUser(!!token);
+
+  useEffect(() => {
+    if (!serverUser || !token) return;
+
+    const merged: User = {
+      userId: serverUser.userId,
+      username: serverUser.username,
+      role: serverUser.role,
+      personId: serverUser.personId,
+      personName: serverUser.personName,
+    };
+
+    // Only update state if something actually changed
+    const changed =
+      !user ||
+      user.userId !== merged.userId ||
+      user.username !== merged.username ||
+      user.role !== merged.role ||
+      user.personId !== merged.personId ||
+      user.personName !== merged.personName;
+
+    if (changed) {
+      setUser(merged);
+      localStorage.setItem(USER_KEY, JSON.stringify(merged));
+    }
+  }, [serverUser, token]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ───────────────────────────────────────────────────────────────────
 
   const login = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem(TOKEN_KEY, newToken);

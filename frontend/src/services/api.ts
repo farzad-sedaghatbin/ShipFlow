@@ -1,6 +1,23 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getStoredToken, clearAuth, showGlobalToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
+
+// ─── ETag Cache ──────────────────────────────────────────────────────────────
+// Stores the last ETag and response body for each GET URL so we can replay
+// If-None-Match on the next request and resolve from cache on 304.
+
+interface ETagEntry {
+  etag: string;
+  data: unknown;
+}
+
+const etagCache = new Map<string, ETagEntry>();
+
+/** Build a stable cache key from HTTP method + URL (ignoring query params order). */
+function etagKey(method: string, url: string): string {
+  return `${method.toUpperCase()}:${url}`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Hard-coded messages for global error handling (interceptor doesn't have access to i18n)
 const GLOBAL_ERROR_MESSAGES = {
@@ -17,7 +34,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token + ETag
 api.interceptors.request.use(
   (config) => {
     const token = getStoredToken();
@@ -29,6 +46,15 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
+
+    // Inject If-None-Match for GET requests when we have a cached ETag
+    if (config.method?.toUpperCase() === 'GET' && config.url) {
+      const key = etagKey(config.method, config.url);
+      const cached = etagCache.get(key);
+      if (cached) {
+        config.headers['If-None-Match'] = cached.etag;
+      }
+    }
     
     return config;
   },
@@ -37,11 +63,37 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle errors with user-friendly messages
+// Response interceptor - handle ETags, errors with user-friendly messages
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => {
+    // Store ETag for successful GET responses
+    if (response.config.method?.toUpperCase() === 'GET' && response.config.url) {
+      const etag = response.headers['etag'];
+      if (etag) {
+        const key = etagKey(response.config.method, response.config.url);
+        etagCache.set(key, { etag, data: response.data });
+      }
+    }
+    return response;
+  },
   (error: AxiosError<{ message?: string; error?: string; errorCode?: string; errors?: Record<string, string[]> }>) => {
     const status = error.response?.status;
+
+    // Handle 304 Not Modified — return cached data as if it were 200
+    if (status === 304 && error.config?.method && error.config?.url) {
+      const key = etagKey(error.config.method, error.config.url);
+      const cached = etagCache.get(key);
+      if (cached) {
+        return Promise.resolve({
+          data: cached.data,
+          status: 304,
+          statusText: 'Not Modified',
+          headers: error.response?.headers ?? {},
+          config: error.config,
+        } as AxiosResponse);
+      }
+    }
+
     const userMessage = getUserFriendlyError(error);
 
     if (status === 401) {

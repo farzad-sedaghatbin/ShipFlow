@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,7 @@ public class TagService {
   private final PitchRepository pitchRepository;
   private final UserRepository userRepository;
 
+  @Cacheable(value = "tags", key = "'byProject:' + #projectId")
   @Transactional(readOnly = true)
   public List<TagDTO> getTagsByProject(Long projectId) {
     return tagRepository.findByProjectIdOrderByNameAsc(projectId)
@@ -53,6 +56,7 @@ public class TagService {
         .collect(Collectors.toList());
   }
 
+  @CacheEvict(value = "tags", allEntries = true)
   @Transactional
   public TagDTO createTag(TagRequest request) {
     if (tagRepository.existsByNameAndProjectId(request.getName(), request.getProjectId())) {
@@ -73,6 +77,7 @@ public class TagService {
     return toDTO(tagRepository.save(tag));
   }
 
+  @CacheEvict(value = "tags", allEntries = true)
   @Transactional
   public TagDTO updateTag(Long tagId, TagRequest request) {
     Tag tag = tagRepository.findById(tagId)
@@ -95,6 +100,7 @@ public class TagService {
     return toDTO(tagRepository.save(tag));
   }
 
+  @CacheEvict(value = "tags", allEntries = true)
   @Transactional
   public void deleteTag(Long tagId) {
     tagRepository.deleteById(tagId);

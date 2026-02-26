@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,12 +41,14 @@ public class ProjectService {
   private final LocalizationService localizationService;
 
   /** Find all projects - ADMIN only, returns all projects */
+  @Cacheable(value = "projects", key = "'all'")
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAll() {
     return projectRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Find all active projects - ADMIN only, returns all active projects */
+  @Cacheable(value = "projects", key = "'allActive'")
   @Transactional(readOnly = true)
   public List<ProjectDTO> findAllActive() {
     return projectRepository.findAllActiveOrderByName().stream().map(this::toDTO).collect(Collectors.toList());
@@ -124,6 +128,7 @@ public class ProjectService {
     return userProjectRepository.findProjectRoleByUserIdAndProjectId(currentUser.getId(), projectId);
   }
 
+  @Cacheable(value = "projects", key = "'detail:' + #id")
   @Transactional(readOnly = true)
   public ProjectDTO findById(Long id) {
     // Check access first
@@ -145,6 +150,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO create(CreateProjectRequest request) {
     if (projectRepository.existsByProjectKey(request.getProjectKey().toUpperCase())) {
@@ -184,6 +190,7 @@ public class ProjectService {
     cycleRepository.save(defaultCycle);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO update(Long id, CreateProjectRequest request) {
     Project project = projectRepository.findById(id)
@@ -236,6 +243,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO deactivate(Long id) {
     Project project = projectRepository.findById(id)
@@ -245,6 +253,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public ProjectDTO activate(Long id) {
     Project project = projectRepository.findById(id)
@@ -254,6 +263,7 @@ public class ProjectService {
     return toDTO(project);
   }
 
+  @CacheEvict(value = "projects", allEntries = true)
   @Transactional
   public void delete(Long id) {
     Project project = projectRepository.findById(id)

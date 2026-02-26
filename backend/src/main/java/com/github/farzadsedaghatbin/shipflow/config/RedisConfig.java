@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -102,6 +104,7 @@ public class RedisConfig {
     /**
      * {@link RedisCacheManager} backing Spring's {@code @Cacheable} support.
      * TTL and key prefix are read from {@code spring.cache.redis.*} in application.properties.
+     * Per-cache TTLs are configured here to match the expected rate of change for each domain.
      */
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, CacheProperties cacheProperties) {
@@ -113,7 +116,7 @@ public class RedisConfig {
         Duration ttl = redisProps.getTimeToLive() != null ? redisProps.getTimeToLive() : Duration.ofHours(1);
         String keyPrefix = redisProps.getKeyPrefix() != null ? redisProps.getKeyPrefix() : "shipflow:";
 
-        RedisCacheConfiguration config =
+        RedisCacheConfiguration defaultConfig =
                 RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(ttl)
                         .prefixCacheNameWith(keyPrefix)
@@ -124,8 +127,20 @@ public class RedisConfig {
                                 RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                         .disableCachingNullValues();
 
+        // Per-cache TTL configurations — tuned to each domain's rate of change
+        Map<String, RedisCacheConfiguration> perCacheConfig = new HashMap<>();
+        perCacheConfig.put("permissions", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("projects", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("cycles", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("teams", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("tags", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("persons", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        perCacheConfig.put("users", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        perCacheConfig.put("roadmap", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(perCacheConfig)
                 .build();
     }
 }

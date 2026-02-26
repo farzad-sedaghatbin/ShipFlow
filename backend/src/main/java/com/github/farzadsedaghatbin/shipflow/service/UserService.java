@@ -15,6 +15,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class UserService {
     return userRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  @Cacheable(value = "users", key = "'detail:' + #id")
   @Transactional(readOnly = true)
   public UserDTO findById(Long id) {
     User user = userRepository.findById(id)
@@ -76,6 +79,7 @@ public class UserService {
     return toDTO(user);
   }
 
+  @CacheEvict(value = "users", allEntries = true)
   @Transactional
   public UserDTO updateRole(Long id, UserRole role) {
     User user = userRepository.findById(id)
@@ -85,6 +89,7 @@ public class UserService {
     return toDTO(user);
   }
 
+  @CacheEvict(value = "users", allEntries = true)
   @Transactional
   public UserDTO linkToPerson(Long userId, Long personId) {
     User user = userRepository.findById(userId)
@@ -96,6 +101,7 @@ public class UserService {
     return toDTO(user);
   }
 
+  @CacheEvict(value = "users", allEntries = true)
   @Transactional
   public UserDTO deactivate(Long id) {
     User user = userRepository.findById(id)
@@ -105,6 +111,7 @@ public class UserService {
     return toDTO(user);
   }
 
+  @CacheEvict(value = "users", allEntries = true)
   @Transactional
   public UserDTO activate(Long id) {
     User user = userRepository.findById(id)
@@ -195,6 +202,7 @@ public class UserService {
         .orElse(false);
   }
 
+  @Cacheable(value = "users", key = "'profile:' + #userId")
   @Transactional(readOnly = true)
   public UserProfileDTO getProfile(Long userId) {
     User user = userRepository.findById(userId)
@@ -202,6 +210,7 @@ public class UserService {
     return toProfileDTO(user);
   }
 
+  @Cacheable(value = "users", key = "'profileByUsername:' + #username")
   @Transactional(readOnly = true)
   public UserProfileDTO getProfileByUsername(String username) {
     User user = userRepository.findByUsername(username)
@@ -209,6 +218,7 @@ public class UserService {
     return toProfileDTO(user);
   }
 
+  @CacheEvict(value = "users", allEntries = true)
   @Transactional
   public UserProfileDTO updateProfile(Long userId, UpdateProfileRequest request) {
     User user = userRepository.findById(userId)

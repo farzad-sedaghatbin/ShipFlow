@@ -4131,7 +4131,11 @@
     "extracting": "Extracting data from document...",
     "dataExtracted": "Document data extracted successfully! Review and edit the fields below.",
     "extractionFailed": "Failed to extract data from document",
-    "extractionError": "Error extracting document data"
+    "extractionError": "Error extracting document data",
+    "tasks": "Tasks",
+    "viewAllTasks": "View All Tasks",
+    "noTasks": "No tasks linked to this pitch yet.",
+    "viewAllWorkLogs": "View all {{total}} work logs →"
   },
   "cycleDetailPage": {
     "title": "Cycle Details",
@@ -4218,7 +4222,14 @@
     "member": "Member",
     "logged": "Logged",
     "details": "Details",
-    "actions": "Actions"
+    "actions": "Actions",
+    "filterByPitch": "Pitch",
+    "allPitches": "All Pitches",
+    "filterByTask": "Task",
+    "allTasks": "All Tasks",
+    "clearFilters": "Clear Filters",
+    "filterByPerson": "Person",
+    "allPersons": "All People"
   },
   "myWorkLogsPage": {
     "title": "My Work Logs",
@@ -5238,7 +5249,9 @@
     "makingHappen": "🚀 Making it happen (Downhill)",
     "deleteTitle": "Delete Hill Chart Point",
     "deleteConfirm": "Are you sure you want to delete \"{scope}\"? This action cannot be undone.",
-    "taskAutoCreate": "Auto-create task from scope"
+    "taskAutoCreate": "Auto-create task from scope",
+    "scopeSummary": "Scope Summary",
+    "linkedTasks": "Linked Tasks"
   },
   "cycleHillChart": {
     "title": "Cycle Hill Chart",
@@ -6497,5 +6510,10 @@
     "minChars": "Type at least 2 characters",
     "bugNotFound": "Bug report not found",
     "backToBugs": "Back to Bug Reports"
+  },
+  "markdownEditor": {
+    "write": "Write",
+    "preview": "Preview",
+    "nothingToPreview": "Nothing to preview yet."
   }
 }

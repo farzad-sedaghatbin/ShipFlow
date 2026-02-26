@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQueries } from '@tanstack/react-query';
 import {
   RefreshCw,
   FileText,
@@ -28,77 +29,75 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DashboardCustomizer } from '../components/DashboardCustomizer';
 import { DashboardTabs } from '../components/DashboardTabs';
+import { STALE_TIMES, queryKeys } from '../lib/queryClient';
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
-  const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
-  const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    loadData();
-    return () => abortController.abort();
-  }, [currentProject, isAllProjectsSelected]);
+  const cyclesQueryKey = isAllProjectsSelected
+    ? [...queryKeys.cycles.active(), 'my']
+    : currentProject
+    ? queryKeys.cycles.byProject(currentProject.id)
+    : ['cycles', 'none'];
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
+  const [cyclesQuery, pitchesQuery, teamsQuery, widgetsQuery] = useQueries({
+    queries: [
+      {
+        queryKey: cyclesQueryKey,
+        queryFn: async (): Promise<Cycle[]> => {
+          if (!isAllProjectsSelected && !currentProject) return [];
+          const res = isAllProjectsSelected
+            ? await cycleService.getMyActiveCycles()
+            : await cycleService.getActiveByProject(currentProject!.id);
+          return res.data;
+        },
+        staleTime: STALE_TIMES.entities,
+      },
+      {
+        queryKey: [...queryKeys.pitches.lists(), 'my'],
+        queryFn: async (): Promise<Pitch[]> => {
+          const res = await pitchService.getMyPitches();
+          const pitches: Pitch[] = res.data;
+          if (!isAllProjectsSelected && currentProject) {
+            return pitches.filter((p) => p.projectId === currentProject.id);
+          }
+          return pitches;
+        },
+        staleTime: STALE_TIMES.entities,
+      },
+      {
+        queryKey: queryKeys.teams.lists(),
+        queryFn: async (): Promise<Team[]> => {
+          const res = await teamService.getAll();
+          return res.data;
+        },
+        staleTime: STALE_TIMES.reference,
+      },
+      {
+        queryKey: queryKeys.dashboard.widgets(),
+        queryFn: async (): Promise<DashboardWidget[]> => {
+          try {
+            return await dashboardWidgetApi.getAllWidgets();
+          } catch (error) {
+            console.error('Failed to load dashboard widgets:', error);
+            return [];
+          }
+        },
+        staleTime: STALE_TIMES.reference,
+      },
+    ],
+  });
 
-      let cyclesPromise;
-      if (isAllProjectsSelected) {
-        cyclesPromise = cycleService.getMyActiveCycles();
-      } else if (currentProject) {
-        cyclesPromise = cycleService.getActiveByProject(currentProject.id);
-      } else {
-        cyclesPromise = Promise.resolve({ data: [] });
-      }
+  const loading = cyclesQuery.isLoading || pitchesQuery.isLoading || teamsQuery.isLoading || widgetsQuery.isLoading;
+  const activeCycles: Cycle[] = cyclesQuery.data ?? [];
+  const recentPitches: Pitch[] = (pitchesQuery.data ?? []).slice(0, 5);
+  const teams: Team[] = teamsQuery.data ?? [];
+  const widgets: DashboardWidget[] = widgetsQuery.data ?? [];
 
-      const [cyclesRes, pitchesRes, teamsRes, widgetsData] = await Promise.all([
-        cyclesPromise,
-        pitchService.getMyPitches(),
-        teamService.getAll(),
-        dashboardWidgetApi.getAllWidgets().catch((error) => {
-          console.error('Failed to load dashboard widgets:', error);
-          return [];
-        }),
-      ]);
-
-      const cycles = cyclesRes.data;
-      setActiveCycles(cycles);
-
-      let filteredPitches = pitchesRes.data;
-      const filteredTeams = teamsRes.data;
-
-      if (!isAllProjectsSelected && currentProject) {
-        filteredPitches = pitchesRes.data.filter((p: Pitch) => p.projectId === currentProject.id);
-      }
-
-      setRecentPitches(filteredPitches.slice(0, 5));
-      setTeams(filteredTeams);
-      setWidgets(widgetsData);
-    } catch (error: any) {
-      if (error.name !== 'CanceledError') {
-        console.error('Failed to load dashboard data:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshWidgets = async () => {
-    try {
-      const widgetsData = await dashboardWidgetApi.getAllWidgets();
-      setWidgets(widgetsData);
-    } catch (error) {
-      console.error('Failed to refresh widgets:', error);
-    }
-  };
+  const refreshWidgets = () => { widgetsQuery.refetch(); };
 
   if (loading) {
     return <DashboardSkeleton />;

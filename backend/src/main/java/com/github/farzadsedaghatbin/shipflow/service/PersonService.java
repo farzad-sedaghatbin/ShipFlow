@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class PersonService {
   private final TeamRepository teamRepository;
   private final MessageService messageService;
 
+  @CacheEvict(value = "persons", allEntries = true)
   public PersonDTO createPerson(CreatePersonRequest request) {
     if (personRepository.existsByEmail(request.getEmail())) {
       throw new IllegalArgumentException(
@@ -40,6 +43,7 @@ public class PersonService {
     return mapToDTO(saved);
   }
 
+  @Cacheable(value = "persons", key = "'detail:' + #id")
   @Transactional(readOnly = true)
   public PersonDTO getPersonById(Long id) {
     Person person = personRepository.findById(id)
@@ -54,11 +58,13 @@ public class PersonService {
     return mapToDTO(person);
   }
 
+  @Cacheable(value = "persons", key = "'all'")
   @Transactional(readOnly = true)
   public List<PersonDTO> getAllPersons() {
     return personRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
   }
 
+  @Cacheable(value = "persons", key = "'active'")
   @Transactional(readOnly = true)
   public List<PersonDTO> getActivePersons() {
     return personRepository.findByIsActiveTrue().stream().map(this::mapToDTO).collect(Collectors.toList());
@@ -79,6 +85,7 @@ public class PersonService {
     return personRepository.findByCurrentCycle(cycleId).stream().map(this::mapToDTO).collect(Collectors.toList());
   }
 
+  @CacheEvict(value = "persons", allEntries = true)
   public PersonDTO updatePerson(Long id, CreatePersonRequest request) {
     Person person = personRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
@@ -98,6 +105,7 @@ public class PersonService {
     return mapToDTO(saved);
   }
 
+  @CacheEvict(value = "persons", allEntries = true)
   public PersonDTO deactivatePerson(Long id) {
     Person person = personRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
@@ -116,6 +124,7 @@ public class PersonService {
     return mapToDTO(saved);
   }
 
+  @CacheEvict(value = "persons", allEntries = true)
   public PersonDTO activatePerson(Long id) {
     Person person = personRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
@@ -125,6 +134,7 @@ public class PersonService {
     return mapToDTO(saved);
   }
 
+  @CacheEvict(value = "persons", allEntries = true)
   public void deletePerson(Long id) {
     if (!personRepository.existsById(id)) {
       throw new EntityNotFoundException("Person not found with id: " + id);
