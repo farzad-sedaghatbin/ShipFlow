@@ -23,6 +23,7 @@ import {
   Users,
   Sparkles,
   FileUp,
+  Clock,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { workLogService } from '../services/workLogService';
@@ -81,6 +82,7 @@ interface ShapeUpFields {
   risks: string;
   noGos: string;
   wireframeLinks: string;
+  appetiteDays?: number;
 }
 
 export default function PitchDetail() {
@@ -112,6 +114,7 @@ export default function PitchDetail() {
     risks: '',
     noGos: '',
     wireframeLinks: '',
+    appetiteDays: undefined,
   });
 
   const [workLogDialog, setWorkLogDialog] = useState(false);
@@ -182,6 +185,7 @@ export default function PitchDetail() {
         risks: pitchData.risks || '',
         noGos: pitchData.noGos || '',
         wireframeLinks: pitchData.wireframeLinks || '',
+        appetiteDays: pitchData.appetiteDays ?? undefined,
       });
     } catch (error) {
       console.error('Failed to load pitch:', error);
@@ -224,11 +228,14 @@ export default function PitchDetail() {
       await pitchService.update(pitch.id, {
         title: pitch.title,
         description: pitch.description,
-        appetiteDays: pitch.appetiteDays,
         cycleId: pitch.cycleId,
         teamId: pitch.teamId,
+        epicId: pitch.epicId,
         status: pitch.status,
+        targetReleaseId: pitch.targetReleaseId,
+        priority: pitch.priority,
         ...shapeUpFields,
+        // appetiteDays comes from shapeUpFields (overrides nothing above)
       });
       showSuccess(t('pitchDetailPage.shapeUpSaved'));
       setEditingShapeUp(false);
@@ -240,7 +247,7 @@ export default function PitchDetail() {
     }
   };
 
-  // Cancel editing and reset fields
+      // Cancel editing and reset fields
   const handleCancelShapeUpEdit = () => {
     if (pitch) {
       setShapeUpFields({
@@ -250,6 +257,7 @@ export default function PitchDetail() {
         risks: pitch.risks || '',
         noGos: pitch.noGos || '',
         wireframeLinks: pitch.wireframeLinks || '',
+        appetiteDays: pitch.appetiteDays ?? undefined,
       });
     }
     setExtractedDocumentName('');
@@ -274,6 +282,7 @@ export default function PitchDetail() {
           risks: extracted.risks || prev.risks,
           noGos: extracted.noGos || prev.noGos,
           wireframeLinks: extracted.wireframeLinks || prev.wireframeLinks,
+          appetiteDays: extracted.appetiteDays ?? prev.appetiteDays,
         }));
         // Enter edit mode so user can review/modify the extracted fields
         if (!editingShapeUp) {
@@ -875,6 +884,23 @@ export default function PitchDetail() {
                   onChange={(e) => setShapeUpFields(prev => ({ ...prev, wireframeLinks: e.target.value }))}
                   placeholder={t('pitchDetailPage.wireframeLinksPlaceholder')}
                   rows={2}
+                />
+              </div>
+
+              {/* Appetite */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  {t('pitches.appetite')} ({t('common.days')})
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={shapeUpFields.appetiteDays ?? ''}
+                  onChange={(e) => setShapeUpFields(prev => ({ ...prev, appetiteDays: e.target.value ? Number(e.target.value) : undefined }))}
+                  placeholder="e.g. 6"
+                  className="w-40"
                 />
               </div>
             </div>

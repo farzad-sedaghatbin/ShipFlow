@@ -27,6 +27,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class PermissionServiceTest {
@@ -51,6 +52,10 @@ class PermissionServiceTest {
 
   @BeforeEach
   void setUp() {
+    // Enable RBAC so that permission checks are enforced (mirrors production behaviour).
+    // Without this, the @Value field defaults to false under Mockito and bypasses all checks.
+    ReflectionTestUtils.setField(permissionService, "rbacEnabled", true);
+
     lenient().when(localizationService.getMessage(anyString(), any(Object[].class))).thenAnswer(i -> {
       String key = i.getArgument(0);
       if (key.contains("permission.already.exists"))

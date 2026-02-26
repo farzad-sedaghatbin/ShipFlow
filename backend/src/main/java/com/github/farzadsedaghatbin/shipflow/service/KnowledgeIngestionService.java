@@ -114,7 +114,8 @@ public class KnowledgeIngestionService {
     Pitch pitch = pitchOpt.get();
     String content = buildPitchContent(pitch);
 
-    ingestEntity(KnowledgeEntityType.PITCH, pitch.getId(), pitch.getTitle(), content, pitch.getCycle().getId(),
+    Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    ingestEntity(KnowledgeEntityType.PITCH, pitch.getId(), pitch.getTitle(), content, cycleId,
         pitch.getTeam() != null ? pitch.getTeam().getId() : null, pitch.getId(), null);
 
     log.info("Ingested pitch: {} (ID: {})", pitch.getTitle(), pitch.getId());
@@ -136,7 +137,9 @@ public class KnowledgeIngestionService {
     Meeting meeting = meetingOpt.get();
     String content = buildMeetingContent(meeting);
 
-    Long cycleId = meeting.getPitch() != null ? meeting.getPitch().getCycle().getId() : null;
+    Long cycleId = meeting.getPitch() != null && meeting.getPitch().getCycle() != null
+        ? meeting.getPitch().getCycle().getId()
+        : null;
     Long teamId = meeting.getPitch() != null && meeting.getPitch().getTeam() != null
         ? meeting.getPitch().getTeam().getId()
         : null;
