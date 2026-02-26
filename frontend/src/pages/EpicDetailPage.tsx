@@ -43,7 +43,6 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
 import { Markdown } from '../components/ui/markdown';
 import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import MarkdownEditor from '../components/MarkdownEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
