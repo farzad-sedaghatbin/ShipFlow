@@ -54,18 +54,20 @@ public class RedisConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         // Embed type info so deserialization can reconstruct the correct class.
-        // Restrict allowed types to our package and specific common JDK base types
-        // (collections and time types) to mitigate deserialization gadget-chain attacks (CWE-502).
+        // Restrict allowed types to mitigate deserialization gadget-chain attacks (CWE-502).
+        //
+        // IMPORTANT: must use allowIfSubType (checks the concrete resolved type) rather than
+        // allowIfBaseType (checks the statically declared type). Spring Cache wraps return values
+        // as Object, so the base type is always Object — allowIfBaseType(Collection.class) would
+        // never match and Jackson throws InvalidTypeIdException for java.util.ArrayList etc.
         mapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
+                        // Our own DTOs
                         .allowIfSubType("com.github.farzadsedaghatbin.shipflow")
-                        // Allow standard Java collections
-                        .allowIfBaseType(java.util.Collection.class)
-                        .allowIfBaseType(java.util.Map.class)
-                        // Allow common Java time abstractions
-                        .allowIfBaseType(java.time.temporal.Temporal.class)
-                        .allowIfBaseType(java.time.ZoneId.class)
-                        .allowIfBaseType(java.time.ZoneOffset.class)
+                        // Standard JDK collections / maps (ArrayList, HashMap, LinkedHashMap …)
+                        .allowIfSubType("java.util.")
+                        // java.time types (LocalDate, Instant, ZoneId …)
+                        .allowIfSubType("java.time.")
                         .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
