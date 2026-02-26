@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.6.3] - 2026-03-01 - Multi-Layer Caching & Performance
+## [0.6.2] - 2026-02-26 - Multi-Layer Caching & Performance
 
 ### Added
 - **HTTP ETag / 304 Caching**: `ShallowEtagHeaderFilter` computes response ETags; browsers and API clients receive `304 Not Modified` when resources are unchanged, eliminating redundant payload transfers
