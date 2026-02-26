@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -106,6 +107,7 @@ public class ReleaseService {
     return toDTOWithCycles(release);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public ReleaseDTO createRelease(CreateReleaseRequest request) {
     Project project = projectRepository.findById(request.getProjectId())
         .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
@@ -141,6 +143,7 @@ public class ReleaseService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public ReleaseDTO updateRelease(Long id, CreateReleaseRequest request) {
     Release release = releaseRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + id));
@@ -170,6 +173,7 @@ public class ReleaseService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteRelease(Long id) {
     Release release = releaseRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + id));
@@ -181,6 +185,7 @@ public class ReleaseService {
     log.info("Soft deleted release: {}", release.getName());
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public ReleaseDTO updateStatus(Long id, ReleaseStatus status) {
     Release release = releaseRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + id));
@@ -194,6 +199,7 @@ public class ReleaseService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public ReleaseDTO linkCycle(Long releaseId, Long cycleId) {
     Release release = releaseRepository.findByIdWithCyclesNotDeleted(releaseId)
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + releaseId));
@@ -206,6 +212,7 @@ public class ReleaseService {
     return toDTOWithCycles(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public ReleaseDTO unlinkCycle(Long releaseId, Long cycleId) {
     Release release = releaseRepository.findByIdWithCyclesNotDeleted(releaseId)
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + releaseId));

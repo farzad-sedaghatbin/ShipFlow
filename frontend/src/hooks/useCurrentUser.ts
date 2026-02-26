@@ -39,7 +39,6 @@ export function useCurrentUser(enabled = true) {
     staleTime: 1000 * 60, // 1 minute — short enough to detect deactivation quickly
     gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: true, // Re-check when user returns to the tab
-    refetchInterval: 1000 * 60 * 5, // Background poll every 5 minutes
   });
 }
 

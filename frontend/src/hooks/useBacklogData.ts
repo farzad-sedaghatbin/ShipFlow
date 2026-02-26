@@ -60,7 +60,7 @@ export function useBacklogCycles() {
       const response = await cycleService.getMyActiveCycles();
       return response.data;
     },
-    staleTime: STALE_TIMES.user, // 1 minute
+    staleTime: STALE_TIMES.entities, // 5 minutes for entity data
   });
 }
 
@@ -73,7 +73,7 @@ export function useBacklogPersons() {
     queryFn: async () => {
       return await personService.getAll();
     },
-    staleTime: STALE_TIMES.user,
+    staleTime: STALE_TIMES.reference, // 10 minutes — persons are static reference data
   });
 }
 

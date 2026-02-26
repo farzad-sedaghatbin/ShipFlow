@@ -13,9 +13,33 @@ interface ETagEntry {
 
 const etagCache = new Map<string, ETagEntry>();
 
-/** Build a stable cache key from HTTP method + URL (ignoring query params order). */
+/** Build a stable cache key from HTTP method + URL with query params sorted for consistency. */
 function etagKey(method: string, url: string): string {
-  return `${method.toUpperCase()}:${url}`;
+  try {
+    // Use URL/URLSearchParams to normalize query parameters order.
+    const parsed = new URL(url, window.location.origin);
+    const originalParams = new URLSearchParams(parsed.search);
+
+    const sortedParamNames = Array.from(new Set(originalParams.keys())).sort();
+    const normalizedParams = new URLSearchParams();
+
+    for (const name of sortedParamNames) {
+      const values = originalParams.getAll(name);
+      values.sort();
+      for (const value of values) {
+        normalizedParams.append(name, value);
+      }
+    }
+
+    const normalizedSearch = normalizedParams.toString();
+    const normalizedUrl =
+      parsed.pathname + (normalizedSearch ? `?${normalizedSearch}` : '');
+
+    return `${method.toUpperCase()}:${normalizedUrl}`;
+  } catch {
+    // Fallback to the raw URL if parsing fails for any reason.
+    return `${method.toUpperCase()}:${url}`;
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -99,6 +100,7 @@ public class EpicService {
     return toDTOWithPitches(epic);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO createEpic(CreateEpicRequest request) {
     Project project = projectRepository.findById(request.getProjectId())
         .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
@@ -136,6 +138,7 @@ public class EpicService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO updateEpic(Long id, CreateEpicRequest request) {
     Epic epic = epicRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));
@@ -178,6 +181,7 @@ public class EpicService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteEpic(Long id) {
     Epic epic = epicRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));
@@ -192,6 +196,7 @@ public class EpicService {
   /**
    * Batch-update sort order for epics (used by drag-and-drop reordering).
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void reorder(ReorderRequest request) {
     List<Epic> epicsToSave = request.getItems().stream().map(item -> {
       Epic epic = epicRepository.findByIdNotDeleted(item.getId())
@@ -203,6 +208,7 @@ public class EpicService {
     log.info("Reordered {} epics", request.getItems().size());
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO updateStatus(Long id, EpicStatus status) {
     Epic epic = epicRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));
@@ -213,6 +219,7 @@ public class EpicService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO linkToInitiative(Long epicId, Long initiativeId) {
     Epic epic = epicRepository.findByIdNotDeleted(epicId)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + epicId));
@@ -225,6 +232,7 @@ public class EpicService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO unlinkFromInitiative(Long epicId) {
     Epic epic = epicRepository.findByIdNotDeleted(epicId)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + epicId));

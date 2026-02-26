@@ -67,20 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       personName: serverUser.personName,
     };
 
-    // Only update state if something actually changed
-    const changed =
-      !user ||
-      user.userId !== merged.userId ||
-      user.username !== merged.username ||
-      user.role !== merged.role ||
-      user.personId !== merged.personId ||
-      user.personName !== merged.personName;
-
-    if (changed) {
-      setUser(merged);
-      localStorage.setItem(USER_KEY, JSON.stringify(merged));
-    }
-  }, [serverUser, token]); // eslint-disable-line react-hooks/exhaustive-deps
+    setUser(merged);
+    localStorage.setItem(USER_KEY, JSON.stringify(merged));
+  }, [serverUser, token]);
   // ───────────────────────────────────────────────────────────────────
 
   const login = useCallback((newToken: string, newUser: User) => {

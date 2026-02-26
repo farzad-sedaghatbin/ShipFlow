@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -102,6 +103,7 @@ public class PitchService {
     return pitchRepository.findByTargetReleaseIdNotDeleted(releaseId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO linkToEpic(Long pitchId, Long epicId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -112,6 +114,7 @@ public class PitchService {
     return toDTO(pitchRepository.save(pitch));
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO unlinkFromEpic(Long pitchId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -120,6 +123,7 @@ public class PitchService {
     return toDTO(pitchRepository.save(pitch));
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO setTargetRelease(Long pitchId, Long releaseId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -130,6 +134,7 @@ public class PitchService {
     return toDTO(pitchRepository.save(pitch));
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO clearTargetRelease(Long pitchId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -148,6 +153,7 @@ public class PitchService {
    * Create a lightweight idea (just title + optional description).
    * Ideas don't require cycle or appetite - they're raw concepts.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO createIdea(String title, String description, Long epicId) {
     Pitch pitch = Pitch.builder()
         .title(title)
@@ -174,6 +180,7 @@ public class PitchService {
    * Create a pitch with full flexibility - can be IDEA, DRAFT, SHAPED, or assigned to cycle.
    * Validates field requirements based on target status.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO createPitch(CreatePitchRequest request) {
     // Determine final status - default to IDEA if not specified
     PitchStatus targetStatus = request.getStatus() != null ? request.getStatus() : PitchStatus.IDEA;
@@ -278,6 +285,7 @@ public class PitchService {
   /**
    * Start shaping an idea - transitions IDEA → DRAFT.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO startShaping(Long pitchId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -298,6 +306,7 @@ public class PitchService {
    * Mark a draft as shaped and ready for betting - transitions DRAFT → SHAPED.
    * Requires: problemStatement OR solution, AND appetiteDays.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO markAsShaped(Long pitchId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -332,6 +341,7 @@ public class PitchService {
   /**
    * Assign a shaped pitch to a cycle (betting table decision) - transitions SHAPED → PENDING.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO assignToCycle(Long pitchId, Long cycleId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -363,6 +373,7 @@ public class PitchService {
   /**
    * Unassign a pitch from its cycle (move back to betting candidates) - transitions PENDING → SHAPED.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO unassignFromCycle(Long pitchId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
@@ -433,6 +444,7 @@ public class PitchService {
   /**
    * Batch-update sort order for pitches (used by drag-and-drop reordering).
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void reorder(ReorderRequest request) {
     List<Pitch> pitchesToSave = request.getItems().stream().map(item -> {
       Pitch pitch = pitchRepository.findByIdNotDeleted(item.getId())
@@ -444,6 +456,7 @@ public class PitchService {
     log.info("Reordered {} pitches", request.getItems().size());
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO updatePitch(Long id, CreatePitchRequest request) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
@@ -509,6 +522,7 @@ public class PitchService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO updateStatus(Long id, PitchStatus status) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
@@ -543,6 +557,7 @@ public class PitchService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public PitchDTO assignTeam(Long id, Long teamId) {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
@@ -559,6 +574,7 @@ public class PitchService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deletePitch(Long id) {
     Pitch pitch = pitchRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + id));

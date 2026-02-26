@@ -55,6 +55,7 @@ export default function Dashboard() {
           return res.data;
         },
         staleTime: STALE_TIMES.entities,
+        placeholderData: (previousData: Cycle[] | undefined) => previousData,
       },
       {
         queryKey: [...queryKeys.pitches.lists(), 'my'],

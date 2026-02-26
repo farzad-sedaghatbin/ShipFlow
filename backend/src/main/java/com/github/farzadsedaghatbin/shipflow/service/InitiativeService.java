@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,6 +87,7 @@ public class InitiativeService {
     return toDTOWithEpics(initiative);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public InitiativeDTO createInitiative(CreateInitiativeRequest request) {
     Project project = projectRepository.findById(request.getProjectId())
         .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
@@ -117,6 +119,7 @@ public class InitiativeService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public InitiativeDTO updateInitiative(Long id, CreateInitiativeRequest request) {
     Initiative initiative = initiativeRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + id));
@@ -151,6 +154,7 @@ public class InitiativeService {
     return toDTO(saved);
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteInitiative(Long id) {
     Initiative initiative = initiativeRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + id));
@@ -165,6 +169,7 @@ public class InitiativeService {
   /**
    * Batch-update sort order for initiatives (used by drag-and-drop reordering).
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void reorder(ReorderRequest request) {
     List<Initiative> initiativesToSave = request.getItems().stream().map(item -> {
       Initiative initiative = initiativeRepository.findByIdNotDeleted(item.getId())
@@ -176,6 +181,7 @@ public class InitiativeService {
     log.info("Reordered {} initiatives", request.getItems().size());
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public InitiativeDTO updateStatus(Long id, InitiativeStatus status) {
     Initiative initiative = initiativeRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + id));
