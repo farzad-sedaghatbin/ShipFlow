@@ -38,6 +38,7 @@ import {
   Layers,
   PackageCheck,
   ArrowDownToLine,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -77,6 +78,7 @@ import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
+import GlobalSearchCommand from './GlobalSearchCommand';
 import packageJson from '../../package.json';
 
 interface LayoutProps {
@@ -468,10 +470,23 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
+
+  // Global search keyboard shortcut: Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -578,6 +593,25 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipContent>
             </Tooltip>
 
+            {/* Global Search */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}
+                  className="hidden sm:inline-flex h-11 w-11 touch-manipulation"
+                  aria-label={t('globalSearch.shortcut', 'Search')}
+                >
+                  <Search className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="sr-only">{t('globalSearch.shortcut', 'Search')}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('globalSearch.shortcut', 'Search')} ({navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+K)
+              </TooltipContent>
+            </Tooltip>
+
             {/* Notification Center */}
             <NotificationCenter />
 
@@ -642,6 +676,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Welcome Tour Dialog for new users */}
       <WelcomeTourDialog />
+
+      {/* Global Search Command Palette */}
+      <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
       {/* Q&A Floating Button - Available on all pages */}
       <QAFloatingButton contextType="cycle" contextName="your active cycles" />

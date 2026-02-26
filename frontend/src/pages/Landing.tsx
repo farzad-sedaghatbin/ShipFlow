@@ -23,6 +23,7 @@ import {
   Search,
   ArrowDownToLine,
   Pencil,
+  Command,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -125,6 +126,11 @@ export default function Landing() {
       icon: <Pencil className="h-10 w-10" />,
       title: t('landing.markdownEditor'),
       description: t('landing.markdownEditorDesc'),
+    },
+    {
+      icon: <Command className="h-10 w-10" />,
+      title: t('landing.globalSearch'),
+      description: t('landing.globalSearchDesc'),
     },
   ];
 

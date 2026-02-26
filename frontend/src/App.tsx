@@ -44,6 +44,7 @@ import AITestGeneratePage from './pages/AITestGeneratePage';
 import WiseArchitecturePage from './pages/WiseArchitecturePage';
 import AdviceHistoryPage from './pages/AdviceHistoryPage';
 import BugReportsPage from './pages/BugReportsPage';
+import BugReportDetailPage from './pages/BugReportDetailPage';
 import PitchTestPage from './pages/PitchTestPage';
 import CycleQADashboardPage from './pages/CycleQADashboardPage';
 import RoadmapPage from './pages/RoadmapPage';
@@ -205,6 +206,7 @@ function App() {
                     <Route path="qa/test-cases/:id/edit" element={<TestCaseFormPage />} />
                     <Route path="qa/test-cases/:id/run" element={<TestRunPage />} />
                     <Route path="qa/bug-reports" element={<BugReportsPage />} />
+                    <Route path="qa/bug-reports/:id" element={<BugReportDetailPage />} />
                     <Route path="pitches/:pitchId/test" element={<PitchTestPage />} />
                     <Route path="cycles/:cycleId/qa-dashboard" element={<CycleQADashboardPage />} />
 
