@@ -471,6 +471,10 @@
       "updateStatusFailed": "Failed to update project status"
     }
   },
+  "projectRequired": {
+    "title": "Select a Project",
+    "description": "Please select a specific project to continue."
+  },
   "cycles": {
     "title": "Cycles",
     "newCycle": "New Cycle",
@@ -4541,6 +4545,10 @@
     "inAppGuidesDesc": "Ask how-to questions and get AI-powered answers from ShipFlow documentation, plus interactive tour and detailed guides.",
     "inboundWebhooks": "Inbound Webhook Integrations",
     "inboundWebhooksDesc": "Connect any external service — Zendesk, PagerDuty, or custom — via the admin UI. Configure per-provider HMAC secrets and get a ready-to-use webhook URL without writing code.",
+    "markdownEditor": "Rich Markdown Editor",
+    "markdownEditorDesc": "Write and preview Markdown in real time with a live-split editor. Supports full GFM syntax including tables, code blocks, task lists, and inline formatting.",
+    "globalSearch": "Global Search (⌘K)",
+    "globalSearchDesc": "Instantly find tasks, bugs, pitches, and epics across your project with a keyboard-first command palette. Fuzzy matching, score-based ranking, and deep links to every entity.",
     "aboutAuthorTitle": "About the Author",
     "aboutAuthorSubtitle": "Meet the creator behind ShipFlow",
     "authorName": "Farzad Sedaghatbin",
@@ -6475,5 +6483,19 @@
     "vcsLabel": "VCS & DevOps",
     "notifLabel": "Notifications & Alerting",
     "inboundLabel": "Inbound Webhooks Guide"
+  },
+  "globalSearch": {
+    "placeholder": "Search tasks, bugs, pitches, epics...",
+    "noResults": "No results found",
+    "tasks": "Tasks",
+    "subtasks": "Subtasks",
+    "bugReports": "Bug Reports",
+    "pitches": "Pitches",
+    "epics": "Epics",
+    "selectProject": "Select a project to search",
+    "shortcut": "Search",
+    "minChars": "Type at least 2 characters",
+    "bugNotFound": "Bug report not found",
+    "backToBugs": "Back to Bug Reports"
   }
 }

@@ -27,6 +27,8 @@ import {
   Key,
   Webhook,
   Search,
+  Command,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -44,6 +46,55 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '0.6.2',
+    date: 'February 26, 2026',
+    title: 'Global Search & Command Palette',
+    highlights: [
+      {
+        icon: <Command className="h-5 w-5" />,
+        title: 'Global Search (⌘K)',
+        description: 'Instantly search tasks, subtasks, bug reports, pitches, and epics within your project from the top bar. Press ⌘K (Mac) or Ctrl+K (Windows/Linux) for the command palette — no mouse needed.',
+      },
+      {
+        icon: <Search className="h-5 w-5" />,
+        title: 'PostgreSQL Trigram Search',
+        description: 'Fuzzy full-text search powered by pg_trgm and GIN indexes. Finds results even with partial or approximate matches. Exact bug key matching (e.g. BUG-42) always scores 1.0 for instant lookups.',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Score-Based Grouped Results',
+        description: 'Results grouped by entity type (Task, Subtask, Bug Report, Pitch, Epic) and ranked by trigram similarity score. Direct deep-link navigation to every matched entity.',
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Bug Report Deep Links',
+        description: 'New /qa/bug-reports/:id route lets you navigate directly to any bug from search results, notification links, or external references.',
+      },
+    ],
+  },
+  {
+    version: '0.6.1',
+    date: 'February 26, 2026',
+    title: 'Inbound Webhook Admin UI',
+    highlights: [
+      {
+        icon: <ArrowDownToLine className="h-5 w-5" />,
+        title: 'No-Code Webhook Setup',
+        description: 'Configure inbound webhook providers through the Integrations → Inbound Webhooks admin page — no environment variables or code changes required.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Per-Provider HMAC Configuration',
+        description: 'Choose HmacSHA256, HmacSHA1, or HmacSHA512 per provider. Secrets are masked after saving. Auto-generated webhook URLs are displayed and copyable directly from the admin page.',
+      },
+      {
+        icon: <Settings className="h-5 w-5" />,
+        title: 'DB-Backed Provider Registry',
+        description: 'InboundWebhookConfig JPA entity stores all provider configs. Enable/disable providers on the fly. GenericInboundWebhookHandler falls through for any DB-configured provider automatically.',
+      },
+    ],
+  },
   {
     version: '0.6.0',
     date: 'February 22, 2026',

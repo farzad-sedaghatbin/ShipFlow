@@ -82,6 +82,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'AI-powered help search', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Search & Navigation', feature: 'Global search (⌘K)', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
 
   // QA & Testing
   { category: 'QA', feature: 'Integrated test management', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },

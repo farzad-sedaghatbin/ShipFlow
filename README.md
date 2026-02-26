@@ -133,6 +133,12 @@ A modern project management application implementing the [Shape Up](https://base
     - Optional links to scopes and related tasks for better coverage tracking
     - Debounced search prevents performance issues with large test suites
     - Multiple test types: FUNCTIONAL, INTEGRATION, UNIT, E2E, REGRESSION, SMOKE, PERFORMANCE, SECURITY
+- **Global Search (Cmd+K)**: Project-scoped instant search across all entities from the top bar
+  - Search tasks, subtasks, bug reports, pitches, and epics with a single keyboard shortcut
+  - PostgreSQL trigram (`pg_trgm`) indexes for fuzzy matching on titles and exact key matching
+  - Grouped results by entity type with score-based ranking
+  - Debounced 300ms search with loading, empty, and minimum-chars feedback
+  - Requires specific project context (disabled when "All Projects" selected)
 - **Help & Guides**: Built-in comprehensive documentation, interactive tour, and AI-powered search
   - **Interactive Tour**: Step-by-step walkthrough for new users
   - **Rich Guides**: 16 detailed guides covering all features (Cycles, Pitches, Hill Charts, Retrospectives, QA, Exports, Webhooks, API, MCP, and more)
@@ -383,6 +389,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |

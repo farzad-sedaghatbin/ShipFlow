@@ -1652,5 +1652,18 @@ export interface RoadmapTimeline {
   releases: TimelineRelease[];
 }
 
+// Global Search
+export type GlobalSearchEntityType = 'TASK' | 'SUBTASK' | 'BUG_REPORT' | 'PITCH' | 'EPIC';
+
+export interface GlobalSearchResult {
+  entityType: GlobalSearchEntityType;
+  entityId: number;
+  title: string;
+  subtitle: string;
+  route: string;
+  score: number;
+  matchedBy: 'EXACT_KEY' | 'TRIGRAM';
+}
+
 export * from './betting-analytics';
 export * from './circuit-breaker';

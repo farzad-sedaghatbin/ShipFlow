@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-02-26 - Global Search & Command Palette
+
+### Added
+- **Global Search (Cmd+K)**: Project-scoped instant search across all entities from the top bar
+  - PostgreSQL trigram (`pg_trgm`) indexes on task titles, bug report titles/keys, pitch titles, and epic names
+  - `GlobalSearchService` — UNION ALL native query with trigram similarity scoring and exact key matching
+  - `GlobalSearchController` — `GET /api/search/global?q=&projectId=&limit=` (any authenticated user)
+  - `GlobalSearchCommand` — cmdk-powered command palette with Cmd+K / Ctrl+K keyboard shortcut
+  - Grouped results by entity type (Task, Subtask, Bug Report, Pitch, Epic) with icons and score-based ranking
+  - Debounced 300ms search with loading, empty state, and minimum-chars feedback
+  - Disabled when "All Projects" is selected — requires a specific project context
+  - Bug report deep-link route (`/qa/bug-reports/:id`) with `BugReportDetailPage`
+  - Flyway migration `V2026_02_26_0001` for `pg_trgm` extension and GIN trigram indexes
+  - i18n keys added (English and Persian)
+- **Inbound Webhook Admin UI**: DB-backed provider configuration through "Integrations → Inbound Webhooks" — no environment variables required
+  - Create, edit, enable/disable, and delete webhook provider configs via the admin page
+  - HMAC signature validation (HmacSHA256, HmacSHA1, HmacSHA512) configured per provider through the UI
+  - Auto-generated, copyable webhook URL displayed for each provider
+  - `InboundWebhookConfig` JPA entity + Flyway migration `V98`
+  - `InboundWebhookConfigService` — upsert by provider name, secret masking, toggle enabled, webhook URL builder
+  - `InboundWebhookConfigController` — REST API at `GET/POST/PATCH/DELETE /api/inbound-webhooks/configurations`; ADMIN/MANAGER gated
+  - `GenericInboundWebhookHandler` — DB-driven fallback handler; `InboundWebhookRouter` falls through to it when no code-level handler exists
+  - `InboundWebhooksIntegration.tsx` frontend admin page with full CRUD dialog, enable/disable toggle, copy-URL button
+  - Navigation entry under Integrations sidebar (`integrations/inbound-webhooks`)
+  - i18n keys added (English and Persian)
+
 ## [0.6.1] - 2026-02-25 - Markdown Editor, Project Selection Dialog, Expanded Color Palette & Pitch Prioritization
 
 ### Added
@@ -66,6 +92,7 @@ All notable changes to this project will be documented in this file.
 - **Cycle Cache Invalidation on Date Change**: Changing a cycle's start or end date now properly invalidates risk analysis caches
   - `CycleService.updateCycle()` detects date changes and invalidates both the cycle cache and all associated pitch caches via `RiskAnalysisService`
   - Prevents stale risk advisory data after cycle duration adjustments
+
 
 ## [0.6.0] - 2026-02-22 - Provider Abstractions, Release Traceability & Inbound Webhooks
 
