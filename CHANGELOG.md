@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-24 - MCP Server (AI Editor Integration)
+
+### Added
+- **ShipFlow as MCP Server (opt-in)**: Expose ShipFlow data directly to AI coding assistants — Claude Code, Cursor, Claude Desktop, GitHub Copilot, or any MCP-compatible client
+  - Disabled by default; enable with `MCP_SERVER_ENABLED=true` so self-hosters decide when to activate it
+  - Transport: HTTP + Server-Sent Events (SSE) at `GET /mcp/sse` + `POST /mcp/messages` (JSON-RPC 2.0)
+  - Public health endpoint `GET /mcp/health` for status checks and readiness probes
+- **10 read tools** available to any connected AI client:
+  - `list_projects` / `get_project` — browse projects and metadata
+  - `get_cycles` / `get_cycle` — cycle details, scope lists, and hill-chart positions
+  - `get_tasks` / `get_task` / `get_blockers` — task data with dependency graph
+  - `get_pitches` / `get_pitch_detail` — full Shape Up pitch including wireframe (Figma) links
+  - `get_betting_candidates` — shaped pitches ready for the betting table
+- **1 write tool** (requires `MCP_SERVER_WRITE_ENABLED=true`):
+  - `update_task_status` — change task status from the editor without opening the UI
+- **Pitch → Figma chain**: `get_pitch_detail` returns `wireframeLinks` (Figma URLs) so AI editors can immediately call Figma MCP for design context — enabling a full code-to-design-to-implementation loop
+- **MCP API Key auth** (`McpAuthFilter`): `Authorization: Bearer <api-key>` on all `/mcp/**` endpoints; ties into existing `ApiKeyService` and `ApiKeyScope` (READ / WRITE / ADMIN)
+- **Session management** (`McpSessionManager`): UUID-keyed SSE emitter registry — streams JSON-RPC responses async after HTTP 202 Accepted
+- All MCP beans use `@ConditionalOnProperty(mcp.server.enabled)` — zero performance or startup impact when the server is disabled
+- **`McpServerProperties`** config class (`mcp.server.*`) with environment variable overrides (`MCP_SERVER_ENABLED`, `MCP_SERVER_WRITE_ENABLED`, `MCP_SERVER_NAME`)
+- **VS Code guide** (`VSCODE_GUIDE.md`): step-by-step instructions for Claude Code, Cursor, and GitHub Copilot integration
+- **MCP client setup guide** (`MCP_CLIENT_SETUP.md`): configuration snippets for Claude Desktop, Claude Code CLI, Cursor, and VS Code MCP extension
+
+### Technical Notes
+- 9 unit tests added (`McpToolDispatcherTest`) covering initialize handshake, tools/list, tools/call routing, write-tool gating, Figma URL presence, and tool schema completeness
+- No Spring context required for MCP unit tests — all tool logic is plain Java
+
 ## [0.6.2] - 2026-02-26 - Multi-Layer Caching & Performance
 
 ### Added

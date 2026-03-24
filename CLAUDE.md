@@ -236,13 +236,14 @@ PRs to `main` must pass all checks. Branch naming: `feat/`, `fix/`, `chore/`, `d
 
 ### Add a new MCP tool (server-side)
 
-See `MCP_SERVER_MILESTONE.md` for the full plan. The short version:
+The MCP server is live as of v0.7.0. To add a new tool:
 
-1. Add Spring AI MCP Server dependency to `pom.xml`
-2. Annotate method with `@Tool` in a `@McpServerToolsProvider` bean
-3. Map to existing service layer — never bypass it
-4. Add auth check via `SecurityContextHolder`
-5. Write integration test
+1. Add the tool method to the relevant `*McpTools` class in `service/mcp/server/tools/`
+2. Register it in `McpToolDispatcher` — add to `READ_TOOLS` or `WRITE_TOOLS` map and add a static definition method
+3. Map to the existing service layer — **never bypass it**
+4. If it is a write tool, ensure `properties.isWriteEnabled()` is checked before dispatching
+5. Add unit tests in `McpToolDispatcherTest` (no Spring context needed)
+6. Update `MCP_CLIENT_SETUP.md` tool reference table
 
 ### Debug an AI feature
 
@@ -250,6 +251,27 @@ See `MCP_SERVER_MILESTONE.md` for the full plan. The short version:
 - Ollama logs: `ollama logs`
 - Redis cache: `redis-cli monitor`
 - Vector store: check `VectorStoreConfig` for active profile
+
+---
+
+### On every feature release (checklist for Claude Code)
+
+This project is **open source** — every significant feature must be documented and visible to contributors and self-hosters. Run this checklist before merging any non-trivial feature PR:
+
+| # | Task | Where |
+|---|------|--------|
+| 1 | Add entry under `[Unreleased]` or bump version | `CHANGELOG.md` |
+| 2 | Add feature to the `✨ Features` list | `README.md` |
+| 3 | Add row to the comparison table if it differentiates vs competitors | `README.md` → `🔀 How ShipFlow Compares` |
+| 4 | Add highlight card to the in-app release notes page | `frontend/src/pages/ReleaseNotes.tsx` |
+| 5 | Update competitor positioning if relevant | `COMPETITOR_ANALYSIS.md` |
+| 6 | Update `CLAUDE.md` if the feature introduces a new repeatable task pattern | `CLAUDE.md` |
+| 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
+| 8 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
+| 9 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
+| 10 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
+
+> These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
 
 ---
 
