@@ -8,6 +8,19 @@ Claude Code, Cursor, GitHub Copilot, and custom agents — can query and drive S
 > A developer types: *"What tasks are blocking Cycle 12?"* or *"Create a task for the auth bug under the Login pitch"*
 > — and their AI assistant does it through ShipFlow's MCP server without leaving the editor.
 
+### Design principle: fully opt-in
+
+ShipFlow is open source and self-hostable. Not every instance needs an MCP server.
+A team using ShipFlow as a plain project management tool has zero reason to expose an MCP endpoint.
+
+**The MCP server must be:**
+- **Disabled by default** — `MCP_SERVER_ENABLED=false` out of the box
+- **Zero-impact when off** — no extra startup cost, no open port, no dependencies loaded
+- **Trivial to enable** — one environment variable, no code changes
+- **Documented clearly** — instance owners know exactly what they are turning on
+
+This keeps the default installation minimal and gives self-hosters full control.
+
 ---
 
 ## Current State
@@ -26,7 +39,8 @@ ShipFlow is already an **MCP client** (consuming external servers):
 - No `@Tool`-annotated methods exposed as MCP tools
 - No MCP resource definitions for ShipFlow entities
 - No MCP-specific authentication flow
-- No `claude_desktop_config.json` or client setup guide
+- No opt-in configuration gate (`MCP_SERVER_ENABLED`)
+- No client setup guide (`MCP_CLIENT_SETUP.md` — now created)
 
 ---
 
@@ -144,6 +158,17 @@ Spring AI's MCP module does.
 
 **Alternative**: Implement MCP protocol from scratch (JSON-RPC 2.0 over SSE). Feasible but high effort.
 
+**Opt-in gate**: All MCP server beans must use `@ConditionalOnProperty`:
+
+```java
+@Configuration
+@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true", matchIfMissing = false)
+public class McpServerConfig { ... }
+```
+
+This guarantees zero runtime overhead when the feature is disabled — the Spring context
+does not load the MCP beans, the SSE endpoint is not registered, and no port is opened.
+
 ---
 
 ### GAP 6 — No MCP Capability Manifest
@@ -251,13 +276,17 @@ Key design decisions:
 ### Phase 1 — Foundation (Week 1–2)
 
 - [ ] Add Spring AI MCP Server starter to `pom.xml`
-- [ ] Configure SSE transport (`/mcp` base path)
+- [ ] Add `mcp.server.enabled` property (default `false`) to `application.properties`
+- [ ] Gate all MCP beans with `@ConditionalOnProperty(name="mcp.server.enabled", havingValue="true")`
+- [ ] Configure SSE transport (`/mcp` base path) — only active when enabled
 - [ ] Wire API key authentication to MCP session
 - [ ] Expose 3 read tools: `list_projects`, `get_cycles`, `get_tasks`
 - [ ] Return valid JSON-RPC 2.0 responses
 - [ ] Basic integration test with `McpClient`
+- [ ] Verify zero impact on startup when `MCP_SERVER_ENABLED=false`
 
 **Definition of done**: Claude Desktop can connect and list projects.
+Starting the backend without `MCP_SERVER_ENABLED=true` shows no MCP-related log lines.
 
 ### Phase 2 — Core Read Tools (Week 3–4)
 
@@ -393,6 +422,8 @@ Then in Claude Code chat:
 ## Related Files
 
 - `CLAUDE.md` — Claude Code setup and coding conventions
+- `MCP_CLIENT_SETUP.md` — how to connect Claude Code, Claude Desktop, Cursor to your ShipFlow instance
+- `VSCODE_GUIDE.md` — VS Code developer setup including MCP launch configs
 - `ENVIRONMENT_SETUP.md` — local dev environment
 - `PERMISSION_MATRIX.md` — RBAC roles (MCP scope to be added)
 - `API_CONTRACT_GENERATION.md` — OpenAPI docs (MCP endpoints to be added)

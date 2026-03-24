@@ -1,0 +1,93 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ─── Backend ──────────────────────────────────────────────────────────────
+    {
+      "type": "java",
+      "name": "ShipFlow Backend (dev)",
+      "request": "launch",
+      "mainClass": "com.github.farzadsedaghatbin.shipflow.ShipflowApplication",
+      "projectName": "shipflow-backend",
+      "cwd": "${workspaceFolder}/backend",
+      "args": [],
+      "vmArgs": "-Dspring.profiles.active=dev",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "dev"
+      }
+    },
+    {
+      "type": "java",
+      "name": "ShipFlow Backend (MCP enabled)",
+      "request": "launch",
+      "mainClass": "com.github.farzadsedaghatbin.shipflow.ShipflowApplication",
+      "projectName": "shipflow-backend",
+      "cwd": "${workspaceFolder}/backend",
+      "vmArgs": "-Dspring.profiles.active=dev",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "dev",
+        "MCP_SERVER_ENABLED": "true",
+        "MCP_SERVER_BASE_PATH": "/mcp"
+      }
+    },
+    {
+      "type": "java",
+      "name": "ShipFlow Backend (attach remote)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "timeout": 30000
+    },
+
+    // ─── Frontend ─────────────────────────────────────────────────────────────
+    {
+      "type": "chrome",
+      "name": "ShipFlow Frontend (Chrome)",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "msedge",
+      "name": "ShipFlow Frontend (Edge)",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    },
+
+    // ─── Tests ────────────────────────────────────────────────────────────────
+    {
+      "type": "java",
+      "name": "Run All Backend Tests",
+      "request": "launch",
+      "mainClass": "org.junit.platform.console.ConsoleLauncher",
+      "projectName": "shipflow-backend",
+      "cwd": "${workspaceFolder}/backend",
+      "vmArgs": "-Dspring.profiles.active=test"
+    },
+    {
+      "type": "node",
+      "name": "Vitest — current file",
+      "request": "launch",
+      "program": "${workspaceFolder}/frontend/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${file}"],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal"
+    }
+  ],
+
+  "compounds": [
+    {
+      "name": "Full Stack (Backend + Frontend)",
+      "configurations": ["ShipFlow Backend (dev)", "ShipFlow Frontend (Chrome)"],
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack + MCP Server",
+      "configurations": ["ShipFlow Backend (MCP enabled)", "ShipFlow Frontend (Chrome)"],
+      "stopAll": true
+    }
+  ]
+}
