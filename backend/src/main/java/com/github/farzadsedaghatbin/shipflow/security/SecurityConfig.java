@@ -35,6 +35,7 @@ public class SecurityConfig {
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final MaliciousHeaderFilter maliciousHeaderFilter;
   private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+  private final McpAuthFilter mcpAuthFilter;
 
   @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
   private String allowedOrigins;
@@ -90,11 +91,16 @@ public class SecurityConfig {
             .requestMatchers("/actuator/health").permitAll()
             // All API endpoints require authentication
             .requestMatchers("/api/**").authenticated()
+            // MCP health is public; all other /mcp/** auth is handled by McpAuthFilter
+            .requestMatchers("/mcp/health").permitAll()
+            .requestMatchers("/mcp/**").permitAll()
             // Allow any other request (frontend will handle auth)
             .anyRequest().permitAll())
         .authenticationProvider(authenticationProvider())
         // Add malicious header filter before JWT filter
         .addFilterBefore(maliciousHeaderFilter, UsernamePasswordAuthenticationFilter.class)
+        // Add MCP API key filter for /mcp/** paths
+        .addFilterBefore(mcpAuthFilter, UsernamePasswordAuthenticationFilter.class)
         // Add API key filter before JWT filter for /api/v1/public/** paths
         .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
