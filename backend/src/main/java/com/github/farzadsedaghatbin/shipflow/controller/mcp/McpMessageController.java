@@ -1,11 +1,17 @@
 package com.github.farzadsedaghatbin.shipflow.controller.mcp;
 
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSession;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,27 +25,61 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code 202 Accepted} immediately. The actual JSON-RPC response is sent asynchronously through
  * the client's open SSE stream ({@code /mcp/sse}).
  *
+ * <p>Session ownership is enforced: the authenticated principal on this request must match the
+ * principal that opened the target session, preventing one API key from injecting tool calls into
+ * another user's session.
+ *
  * <p>Only active when {@code mcp.server.enabled=true}.
  */
 @RestController
 @RequestMapping("/mcp")
 @ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
-@RequiredArgsConstructor
 @Slf4j
 public class McpMessageController {
 
   private final McpToolDispatcher dispatcher;
+  private final McpSessionManager sessionManager;
+
+  /**
+   * Bounded virtual-thread executor — limits concurrent dispatches so MCP traffic cannot exhaust
+   * server resources. 100 concurrent MCP tool calls is more than enough for any realistic
+   * self-hosted deployment.
+   */
+  private final ExecutorService mcpExecutor =
+      Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
+
+  public McpMessageController(McpToolDispatcher dispatcher, McpSessionManager sessionManager) {
+    this.dispatcher = dispatcher;
+    this.sessionManager = sessionManager;
+  }
 
   @PostMapping("/messages")
   public ResponseEntity<Void> handleMessage(
-      @RequestParam String sessionId,
-      @RequestBody Map<String, Object> request) {
+      @RequestParam String sessionId, @RequestBody Map<String, Object> request) {
+
+    // Verify that the caller owns the target session (prevents session-hijacking)
+    Optional<McpSession> session = sessionManager.get(sessionId);
+    if (session.isEmpty()) {
+      log.warn("MCP /messages: unknown session '{}' rejected", sessionId);
+      return ResponseEntity.badRequest().build();
+    }
+
+    Authentication requestAuth = SecurityContextHolder.getContext().getAuthentication();
+    Authentication sessionAuth = session.get().getAuth();
+    if (requestAuth == null
+        || sessionAuth == null
+        || !requestAuth.getName().equals(sessionAuth.getName())) {
+      log.warn(
+          "MCP /messages: session ownership mismatch — request={} session={}",
+          requestAuth != null ? requestAuth.getName() : "null",
+          sessionAuth != null ? sessionAuth.getName() : "null");
+      return ResponseEntity.status(403).build();
+    }
 
     log.debug("MCP message received: session={} method={}", sessionId, request.get("method"));
 
-    // Dispatch asynchronously so the HTTP response returns immediately (202 Accepted).
-    // The actual result is pushed back via the SSE stream.
-    Thread.startVirtualThread(() -> dispatcher.dispatch(sessionId, request));
+    // Dispatch asynchronously; the actual result is pushed back via the SSE stream.
+    mcpExecutor.submit(() -> dispatcher.dispatch(sessionId, request));
 
     return ResponseEntity.accepted().build();
   }

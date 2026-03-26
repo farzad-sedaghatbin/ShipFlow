@@ -170,49 +170,34 @@ Content-Type: application/json   (for /mcp/messages)
 
 Once connected, your AI assistant has access to these tools:
 
-### Read Tools
+### Read Tools (v0.7.0 — available now)
 
 | Tool | What it returns |
 |------|----------------|
-| `list_projects` | All projects in the organization |
+| `list_projects` | All accessible projects (id, name, key, type, activeCycleCount) |
 | `get_project` | Single project details |
-| `get_cycles` | Cycles for a project (filter by status) |
-| `get_cycle_detail` | Cycle with its pitches, tasks, and hill chart |
-| `get_pitches` | Pitches (filter by status: IDEA, SHAPED, PITCHED…) |
-| `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos |
-| `get_tasks` | Tasks for a cycle, pitch, or scope |
-| `get_task_detail` | Task with dependencies and comments |
-| `get_blockers` | Tasks that are blocking other tasks |
-| `get_hill_chart` | Hill chart scope positions for a cycle |
-| `get_betting_table` | Current betting table candidates |
-| `get_retrospective` | Retrospective entries for a cycle |
-| `get_release` | Release details and linked cycles |
-| `get_initiative` | Initiative with its epics |
-| `search_all` | Full-text search across all entities |
+| `get_cycles` | Cycles for a project with phase and dates |
+| `get_cycle` | Cycle detail including scope list |
+| `get_tasks` | Tasks for a cycle or project — **cycleId or projectId required** |
+| `get_task` | Full task detail including blocked-by relationships |
+| `get_blockers` | Tasks that are currently blocked within a cycle or project |
+| `get_pitches` | Pitches for a project (filterable by status) |
+| `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
+| `get_betting_candidates` | Shaped pitches ready for the betting table |
 
-### Write Tools
+### Write Tools (v0.7.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
-| `create_task` | Create a task in a cycle |
-| `update_task_status` | Change task status (TODO, IN_PROGRESS, DONE…) |
-| `add_comment` | Add a comment to any entity |
-| `create_pitch` | Draft a new pitch |
-| `update_hill_chart` | Move a scope position on the hill chart |
-| `log_retrospective_entry` | Add a retrospective item |
+| `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
 
-> Write tools require your API key to have the `mcp_write` permission.
-> Read-only keys can only call read tools.
+> **Planned tools** (future releases): `create_task`, `add_comment`, `create_pitch`,
+> `get_cycle` hill-chart positions, `search_all`, `get_retrospective`.
+> See [MCP_SERVER_MILESTONE.md](MCP_SERVER_MILESTONE.md) for the full roadmap.
 
 ### Prompt Templates
 
-| Prompt | What it does |
-|--------|-------------|
-| `analyze_pitch_risks` | AI risk analysis for a pitch |
-| `generate_test_cases` | Generate QA test cases from a pitch |
-| `summarize_cycle` | Stakeholder-ready cycle summary |
-| `wise_architecture_advice` | Technical implementation advice |
-| `retrospective_summary` | Summarize a retrospective |
+Prompt templates are planned for a future release and are not yet available.
 
 ---
 
@@ -267,7 +252,6 @@ services:
     image: ghcr.io/farzad-sedaghatbin/shipflow:latest
     environment:
       MCP_SERVER_ENABLED: "true"
-      MCP_SERVER_BASE_PATH: "/mcp"          # optional, default: /mcp
       MCP_SERVER_WRITE_ENABLED: "true"      # optional: allow write tools
       # ... other env vars
 ```
@@ -285,8 +269,8 @@ Or use the **`ShipFlow Backend (MCP enabled)`** launch config in VS Code.
 ```properties
 # Opt-in: MCP server is disabled by default
 mcp.server.enabled=${MCP_SERVER_ENABLED:false}
-mcp.server.base-path=${MCP_SERVER_BASE_PATH:/mcp}
 mcp.server.write-enabled=${MCP_SERVER_WRITE_ENABLED:false}
+# Note: MCP endpoints are served under the fixed /mcp path. No base-path config needed.
 ```
 
 ### When NOT to enable the MCP server

@@ -32,7 +32,8 @@ public class TaskMcpTools {
             "List tasks for a cycle or project. Returns id, title, status "
                 + "(TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED), priority, assigneeName, "
                 + "pitchTitle, isBlocked, blockedByCount, and dueDate. "
-                + "Provide cycleId OR projectId (cycleId takes precedence).",
+                + "One of cycleId or projectId is REQUIRED (cycleId takes precedence). "
+                + "Omitting both is rejected to prevent unscoped enumeration.",
         "inputSchema",
             Map.of(
                 "type", "object",
@@ -126,9 +127,9 @@ public class TaskMcpTools {
           .map(McpTaskDTO::from)
           .toList();
     }
-    return taskService.getAllTasks().stream()
-        .map(McpTaskDTO::from)
-        .toList();
+    throw new IllegalArgumentException(
+        "Either 'cycleId' or 'projectId' must be provided. "
+            + "Listing all tasks across projects is not permitted via MCP.");
   }
 
   public McpTaskDTO getTask(Map<String, Object> args) {

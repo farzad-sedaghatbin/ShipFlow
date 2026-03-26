@@ -79,12 +79,16 @@ public class McpToolDispatcher {
         case "tools/list" -> handleToolsList(sessionId);
         case "tools/call" -> handleToolCall(sessionId, params);
         default -> {
-          log.warn("Unknown MCP method: {}", method);
+          log.warn("Unknown MCP method [session={}]: {}", sessionId, method);
+          if (id != null) {
+            // JSON-RPC 2.0 §5.1: unknown method must return -32601 so clients don't hang
+            trySendError(sessionId, id, -32601, "Method not found: " + method);
+          }
           yield null;
         }
       };
 
-      // Notifications don't get a response
+      // Notifications (id == null) and unknown-method cases (result == null) need no success reply
       if (result == null || id == null) {
         return;
       }
@@ -115,7 +119,7 @@ public class McpToolDispatcher {
         "serverInfo",
             Map.of(
                 "name", properties.getServerName(),
-                "version", "0.6.2"));
+                "version", "0.7.0"));
   }
 
   private Map<String, Object> handleToolsList(String sessionId) {
@@ -218,6 +222,14 @@ public class McpToolDispatcher {
 
   private boolean isWriteTool(String name) {
     return TaskMcpTools.TOOL_UPDATE_TASK_STATUS.equals(name);
+  }
+
+  /**
+   * Returns the total number of tools registered in this dispatcher.
+   * Used by the health endpoint to avoid a hardcoded constant.
+   */
+  public int toolCount() {
+    return readTools().size() + writeTools().size();
   }
 
   // ── JSON-RPC helpers ──────────────────────────────────────────────────────

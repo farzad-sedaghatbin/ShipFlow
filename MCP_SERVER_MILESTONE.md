@@ -23,9 +23,11 @@ This keeps the default installation minimal and gives self-hosters full control.
 
 ---
 
-## Current State
+## Current State (updated v0.7.0)
 
-ShipFlow is already an **MCP client** (consuming external servers):
+ShipFlow is both an **MCP client** (consuming external servers) and an **MCP server** (exposing its own data).
+
+### MCP Client (unchanged)
 
 | File | Role |
 |------|------|
@@ -34,13 +36,27 @@ ShipFlow is already an **MCP client** (consuming external servers):
 | `service/mcp/FigmaMcpProvider.java` | Reads designs from Figma MCP |
 | `service/mcp/McpConfig.java` | Config for consumed MCP servers |
 
-**What does NOT exist yet** — the server side:
-- No MCP server transport (SSE or stdio)
-- No `@Tool`-annotated methods exposed as MCP tools
-- No MCP resource definitions for ShipFlow entities
-- No MCP-specific authentication flow
-- No opt-in configuration gate (`MCP_SERVER_ENABLED`)
-- No client setup guide (`MCP_CLIENT_SETUP.md` — now created)
+### MCP Server (implemented in v0.7.0)
+
+| File | Role |
+|------|------|
+| `controller/mcp/McpSseController.java` | GET `/mcp/sse` — SSE session establishment |
+| `controller/mcp/McpMessageController.java` | POST `/mcp/messages` — JSON-RPC 2.0 handler |
+| `controller/mcp/McpHealthController.java` | GET `/mcp/health` — public health endpoint |
+| `service/mcp/server/McpToolDispatcher.java` | JSON-RPC routing + tool invocation |
+| `service/mcp/server/McpSessionManager.java` | SSE emitter registry |
+| `service/mcp/server/tools/ProjectMcpTools.java` | list_projects, get_project |
+| `service/mcp/server/tools/CycleMcpTools.java` | get_cycles, get_cycle |
+| `service/mcp/server/tools/TaskMcpTools.java` | get_tasks, get_task, get_blockers, update_task_status |
+| `service/mcp/server/tools/PitchMcpTools.java` | get_pitches, get_pitch_detail, get_betting_candidates |
+| `security/McpAuthFilter.java` | Bearer API-key auth on `/mcp/**` |
+| `config/mcp/McpServerProperties.java` | `mcp.server.*` config (disabled by default) |
+
+**Remaining gaps** (planned for future milestones — see Gap Analysis below):
+- MCP resource definitions (URIs for entities)
+- Prompt templates
+- Developer SDK / OpenAPI client
+- Additional write tools (create_task, add_comment, create_pitch)
 
 ---
 

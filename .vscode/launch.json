@@ -25,8 +25,7 @@
       "vmArgs": "-Dspring.profiles.active=dev",
       "env": {
         "SPRING_PROFILES_ACTIVE": "dev",
-        "MCP_SERVER_ENABLED": "true",
-        "MCP_SERVER_BASE_PATH": "/mcp"
+        "MCP_SERVER_ENABLED": "true"
       }
     },
     {

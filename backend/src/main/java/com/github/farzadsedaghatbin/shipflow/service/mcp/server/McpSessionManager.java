@@ -33,10 +33,16 @@ public class McpSessionManager {
 
   private final ConcurrentHashMap<String, McpSession> sessions = new ConcurrentHashMap<>();
 
+  /** SSE emitter timeout — 30 minutes. Clients must reconnect after this. */
+  private static final long EMITTER_TIMEOUT_MS = 30 * 60 * 1_000L;
+
+  /** Sessions older than this with no activity will be swept by the cleanup task. */
+  private static final long SESSION_MAX_IDLE_MS = EMITTER_TIMEOUT_MS + 60_000L;
+
   /** Create a new session for an incoming SSE connection. */
   public McpSession create(Authentication auth) {
     String sessionId = UUID.randomUUID().toString();
-    SseEmitter emitter = new SseEmitter(0L); // no timeout — client keeps connection alive
+    SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MS);
     McpSession session = new McpSession(sessionId, emitter, auth, Instant.now());
     sessions.put(sessionId, session);
     log.debug("MCP session created: {} (active sessions: {})", sessionId, sessions.size());
@@ -78,15 +84,30 @@ public class McpSessionManager {
     return sessions.size();
   }
 
-  /** Periodically clean up sessions that have had their emitter completed. */
+  /**
+   * Periodically remove sessions whose SSE emitter timed out but whose {@code onCompletion} /
+   * {@code onTimeout} callback was never fired (e.g., proxy dropped the connection silently).
+   *
+   * <p>Sessions are identified as stale by comparing {@link McpSession#getCreatedAt()} against
+   * {@link #SESSION_MAX_IDLE_MS}. This is a conservative safety net — normal cleanup happens via
+   * the SSE callbacks registered in {@link
+   * com.github.farzadsedaghatbin.shipflow.controller.mcp.McpSseController}.
+   */
   @Scheduled(fixedRate = 60_000)
   public void cleanupDeadSessions() {
+    Instant cutoff = Instant.now().minusMillis(SESSION_MAX_IDLE_MS);
     int before = sessions.size();
-    // SseEmitter doesn't expose a "is complete" flag directly;
-    // any send attempt on a dead emitter throws — so we rely on onCompletion/onError callbacks.
-    // This scheduled task is a safety net only.
-    if (before > 0) {
-      log.debug("MCP session cleanup check — {} active sessions", before);
+    sessions.entrySet().removeIf(e -> {
+      boolean stale = e.getValue().getCreatedAt().isBefore(cutoff);
+      if (stale) {
+        log.info("MCP session evicted (idle timeout): {}", e.getKey());
+        e.getValue().getEmitter().complete();
+      }
+      return stale;
+    });
+    int removed = before - sessions.size();
+    if (removed > 0) {
+      log.info("MCP session cleanup: removed {} stale session(s), {} active", removed, sessions.size());
     }
   }
 }

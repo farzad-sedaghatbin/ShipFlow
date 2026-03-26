@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -100,11 +101,16 @@ public class McpAuthFilter extends OncePerRequestFilter {
       // here we allow the request through and let the dispatcher reject write tools.
     }
 
-    List<GrantedAuthority> authorities = scopes.stream()
-        .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
-        .collect(Collectors.toList());
+    // Scope authorities from the API key (READ / WRITE / ADMIN)
+    List<GrantedAuthority> authorities = new ArrayList<>(
+        scopes.stream()
+            .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
+            .collect(Collectors.toList()));
 
+    // Merge with the user's role authorities so @PreAuthorize / hasRole checks still work
     UserDetails userDetails = userDetailsService.loadUserByUsername(apiKey.getUser().getUsername());
+    authorities.addAll(userDetails.getAuthorities());
+
     UsernamePasswordAuthenticationToken auth =
         new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

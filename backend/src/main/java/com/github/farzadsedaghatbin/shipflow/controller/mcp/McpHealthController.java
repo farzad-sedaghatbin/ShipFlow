@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller.mcp;
 
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -46,12 +47,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class McpHealthController {
 
-  private static final int TOOL_COUNT = 11; // keep in sync with McpToolDispatcher read+write tools
-
   private final McpServerProperties properties;
 
-  // ObjectProvider allows optional injection — McpSessionManager only exists when MCP is enabled
+  // ObjectProvider allows optional injection — these beans only exist when MCP is enabled
   private final ObjectProvider<McpSessionManager> sessionManagerProvider;
+  private final ObjectProvider<McpToolDispatcher> dispatcherProvider;
 
   @GetMapping("/health")
   public Map<String, Object> health() {
@@ -61,8 +61,9 @@ public class McpHealthController {
     if (properties.isEnabled()) {
       mcpInfo.put("writeEnabled", properties.isWriteEnabled());
       McpSessionManager mgr = sessionManagerProvider.getIfAvailable();
+      McpToolDispatcher dispatcher = dispatcherProvider.getIfAvailable();
       mcpInfo.put("activeSessions", mgr != null ? mgr.activeCount() : 0);
-      mcpInfo.put("toolCount", TOOL_COUNT);
+      mcpInfo.put("toolCount", dispatcher != null ? dispatcher.toolCount() : 0);
     }
 
     Map<String, Object> response = new LinkedHashMap<>();

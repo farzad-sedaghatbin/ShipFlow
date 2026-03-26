@@ -19,7 +19,7 @@ enterprise-grade RBAC.
 ## Repository Layout
 
 ```
-shapeup-tracker/
+shipflow/
 ├── backend/          # Spring Boot API (Maven)
 │   └── src/main/java/com/github/farzadsedaghatbin/shipflow/
 │       ├── controller/   # 65 REST controllers
@@ -85,22 +85,24 @@ npm run dev
 ```
 
 Backend runs on **http://localhost:8080**
-Frontend runs on **http://localhost:5173**
+Frontend runs on **http://localhost:3000**
 Swagger UI: **http://localhost:8080/swagger-ui.html**
 
 ### Environment Variables (dev profile)
 
 ```bash
-# Database
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/shipflow
+# Database (matches docker-compose defaults)
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/shipflowdb
 SPRING_DATASOURCE_USERNAME=shipflow
-SPRING_DATASOURCE_PASSWORD=shipflow
+SPRING_DATASOURCE_PASSWORD=shipflow_secret
 
 # Redis
-SPRING_REDIS_HOST=localhost
+SPRING_DATA_REDIS_HOST=localhost
+SPRING_DATA_REDIS_PORT=6379
+SPRING_DATA_REDIS_PASSWORD=changeme
 
-# JWT
-JWT_SECRET=your-dev-secret
+# JWT (configured via app.jwt.secret in application.properties)
+APP_JWT_SECRET=your-dev-secret
 
 # LLM (pick one)
 OLLAMA_BASE_URL=http://localhost:11434          # local
@@ -139,7 +141,7 @@ npm run storybook              # component explorer
 
 ### Backend (Java)
 
-- **Formatting**: Spotless (Google Java Format). Run `./mvnw spotless:apply` before committing.
+- **Formatting**: Spotless (Eclipse formatter — see `backend/pom.xml`). Run `./mvnw spotless:apply` before committing.
 - **Layering**: Controller → Service → Repository. Never skip layers.
 - **DTOs**: Always use DTOs at the controller boundary. Never expose entities directly.
 - **Caching**: Use `@Cacheable` / `@CacheEvict` from Spring Cache. Redis is the production store.
@@ -178,7 +180,12 @@ See `PERMISSION_MATRIX.md` for the full matrix.
 ## Database Migrations
 
 - Managed by **Flyway**. Files live in `backend/src/main/resources/db/migration/`.
-- Naming convention: `V{YYYY}_{MM}_{DD}_{sequence}__{description}.sql`
+- Naming conventions (do **not** rename existing files):
+  - **Preferred for new migrations**: `V{YYYY}_{MM}_{DD}_{sequence}__{description}.sql`
+    e.g. `V2026_03_24_0001__add_mcp_api_key_scope.sql`
+  - **Legacy sequential** (existing files): `V{N}__{description}.sql`
+    e.g. `V1__init.sql`, `V99__add_index.sql`
+  - **Date-based without underscores** (older files): `V{YYYYMMDD}{seq}__{description}.sql`
 - **Never edit an existing migration.** Always add a new file.
 - H2 is used for tests; PostgreSQL for dev/prod.
 
@@ -194,8 +201,9 @@ ShipFlow currently acts as an **MCP client**, consuming:
 Config class: `service/mcp/McpConfig.java`
 DB settings: `V2026_02_15_0001__add_mcp_organization_settings.sql`
 
-**Next milestone**: Expose ShipFlow itself as an MCP **server** so external AI tools (Claude Code, Cursor,
-Copilot) can query and mutate ShipFlow data. See `MCP_SERVER_MILESTONE.md`.
+**v0.7.0**: ShipFlow now also acts as an **MCP server** (opt-in via `MCP_SERVER_ENABLED=true`).
+External AI tools (Claude Code, Cursor, Claude Desktop) can query and mutate ShipFlow data.
+See `MCP_CLIENT_SETUP.md` for client configuration.
 
 ---
 
@@ -219,7 +227,8 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 2. Backend tests (`./mvnw verify`)
 3. Frontend tests (`npm test`)
 
-PRs to `main` must pass all checks. Branch naming: `feat/`, `fix/`, `chore/`, `docs/`.
+PRs to `main` (via `develop`) must pass all checks. Branch naming follows `CONTRIBUTING.md`:
+`feature/*`, `fix/*`, `docs/*` — use `develop` as the integration branch.
 
 ---
 
