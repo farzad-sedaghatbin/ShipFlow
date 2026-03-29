@@ -43,6 +43,7 @@ interface Release {
   version: string;
   date: string;
   title: string;
+  upcoming?: boolean;
   highlights: {
     icon: React.ReactNode;
     title: string;
@@ -54,6 +55,7 @@ const releases: Release[] = [
   {
     version: '0.8.0',
     date: 'Coming Soon',
+    upcoming: true,
     title: 'Core Product + Hardening — In Progress',
     highlights: [
       {
@@ -542,6 +544,7 @@ const releases: Release[] = [
 export default function ReleaseNotes() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const latestShippedIndex = releases.findIndex((r) => !r.upcoming);
 
   return (
     <div className="min-h-screen bg-background">
@@ -570,7 +573,7 @@ export default function ReleaseNotes() {
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <Badge variant="outline" className="mb-4 text-sm px-4 py-1">
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            {t('releaseNotes.latestVersion')}: v{releases[0].version}
+            {t('releaseNotes.latestVersion')}: v{latestShippedIndex >= 0 ? releases[latestShippedIndex].version : releases[0].version}
           </Badge>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {t('releaseNotes.title')}
@@ -587,19 +590,24 @@ export default function ReleaseNotes() {
           <div className="space-y-12">
             {releases.map((release, index) => (
               <div key={release.version}>
-                <Card className={index === 0 ? 'border-primary/50 bg-primary/5' : ''}>
+                <Card className={index === latestShippedIndex ? 'border-primary/50 bg-primary/5' : ''}>
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="flex items-center gap-3">
                         <Badge
-                          variant={index === 0 ? 'default' : 'secondary'}
+                          variant={index === latestShippedIndex ? 'default' : 'secondary'}
                           className="text-sm px-3 py-1"
                         >
                           v{release.version}
                         </Badge>
-                        {index === 0 && (
+                        {index === latestShippedIndex && (
                           <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
                             {t('releaseNotes.latest')}
+                          </Badge>
+                        )}
+                        {release.upcoming && (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                            {t('releaseNotes.upcoming')}
                           </Badge>
                         )}
                       </div>

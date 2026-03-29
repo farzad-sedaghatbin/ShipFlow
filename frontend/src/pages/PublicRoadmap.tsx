@@ -50,297 +50,115 @@ interface RoadmapPhase {
   items: { icon: React.ReactNode; title: string; description: string }[];
 }
 
-const recentlyShipped: RoadmapRelease[] = [
-  {
-    version: '0.7.0',
-    date: 'March 24, 2026',
-    title: 'MCP Server — AI Editor Integration',
-    highlights: [
-      {
-        icon: <Plug className="h-5 w-5" />,
-        title: 'ShipFlow as an MCP Server (opt-in)',
-        description:
-          'Claude Code, Cursor, Claude Desktop, and any MCP-compatible AI assistant can now query ShipFlow directly from the editor. Enable with MCP_SERVER_ENABLED=true.',
-      },
-      {
-        icon: <Cpu className="h-5 w-5" />,
-        title: '10 Read Tools + 1 Write Tool',
-        description:
-          'list_projects, get_cycles, get_tasks, get_pitches, get_betting_candidates, and more. Plus update_task_status write tool (opt-in).',
-      },
-      {
-        icon: <Lock className="h-5 w-5" />,
-        title: 'API Key Auth on All MCP Endpoints',
-        description:
-          'Bearer token authentication on /mcp/** reuses existing API key scopes (READ / WRITE / ADMIN).',
-      },
-      {
-        icon: <GitBranch className="h-5 w-5" />,
-        title: 'HTTP + SSE Transport (JSON-RPC 2.0)',
-        description:
-          'Standard MCP transport over Spring Boot. Zero additional dependencies.',
-      },
-    ],
-  },
-  {
-    version: '0.6.2',
-    date: 'February 26, 2026',
-    title: 'Multi-Layer Caching & Performance',
-    highlights: [
-      {
-        icon: <RefreshCw className="h-5 w-5" />,
-        title: 'HTTP ETag / 304 Caching',
-        description:
-          'ShallowEtagHeaderFilter computes ETags; browsers receive 304 Not Modified when resources are unchanged.',
-      },
-      {
-        icon: <Shield className="h-5 w-5" />,
-        title: 'Spring Service-Layer Caching with Redis',
-        description:
-          '@Cacheable / @CacheEvict on eight domain services with per-domain TTLs. Redis in production with in-memory fallback.',
-      },
-      {
-        icon: <Activity className="h-5 w-5" />,
-        title: 'React Query & Axios ETag Interceptor',
-        description:
-          'Per-domain staleTime constants. Dashboard widgets migrated to useQuery / useQueries.',
-      },
-      {
-        icon: <Command className="h-5 w-5" />,
-        title: 'Global Search (⌘K)',
-        description:
-          'Instantly search tasks, bug reports, pitches, and epics using ⌘K. Powered by pg_trgm GIN indexes.',
-      },
-    ],
-  },
-  {
-    version: '0.6.1',
-    date: 'February 25, 2026',
-    title: 'Markdown Editor, Project Selection & Pitch Prioritization',
-    highlights: [
-      {
-        icon: <FileText className="h-5 w-5" />,
-        title: 'Markdown Editor for Descriptions',
-        description:
-          'All description fields support Markdown with Write/Preview toggle. Rich rendering across pitches, epics, tasks, and bug reports.',
-      },
-      {
-        icon: <Layout className="h-5 w-5" />,
-        title: 'Project Selection Dialog',
-        description:
-          'A modal guides users to select a project when navigating to pages that require one.',
-      },
-      {
-        icon: <TrendingUp className="h-5 w-5" />,
-        title: 'Pitch Prioritization & Drag-and-Drop Reorder',
-        description:
-          'High / Medium / Low priority labels and drag-and-drop reordering for pitches inside epics.',
-      },
-    ],
-  },
-];
-
-const upcomingPhases: RoadmapPhase[] = [
-  {
-    version: 'v0.8.0',
-    theme: 'Core Product + Hardening',
-    status: 'in-progress',
-    items: [
-      {
-        icon: <Rocket className="h-5 w-5" />,
-        title: 'Public Roadmap Page',
-        description: 'This page — built in public, updated every commit.',
-      },
-      {
-        icon: <Wrench className="h-5 w-5" />,
-        title: 'Version & Config Alignment',
-        description: 'pom.xml version bump, java.version=21, prod CORS fix.',
-      },
-      {
-        icon: <Container className="h-5 w-5" />,
-        title: 'Spring Boot Upgrade 3.2.1 → 3.4.x',
-        description: 'Latest stable Spring Boot with all compatibility fixes.',
-      },
-      {
-        icon: <Shield className="h-5 w-5" />,
-        title: 'Rate Limiting + Security Headers',
-        description:
-          'Bucket4j rate limiting on auth/search/AI endpoints. CSP headers and startup secret validation.',
-      },
-      {
-        icon: <Zap className="h-5 w-5" />,
-        title: 'Docker GHCR CI/CD + Code Splitting',
-        description:
-          'Automated Docker image push to GHCR on tag. React.lazy code splitting for all 50+ pages.',
-      },
-      {
-        icon: <Paperclip className="h-5 w-5" />,
-        title: 'File Attachments on Tasks',
-        description:
-          'Drag-and-drop file uploads on tasks. Every PM tool has this — now ShipFlow does too.',
-      },
-      {
-        icon: <ListChecks className="h-5 w-5" />,
-        title: 'Bulk Task Operations',
-        description:
-          'Multi-select tasks and bulk assign, change status, change priority, add tag, or delete.',
-      },
-      {
-        icon: <Bell className="h-5 w-5" />,
-        title: '@Mention Notifications',
-        description:
-          '@mentions in comments now trigger real in-app notifications for the mentioned user.',
-      },
-      {
-        icon: <FileText className="h-5 w-5" />,
-        title: 'CSV Export for Task Backlog',
-        description:
-          'Export filtered task lists as CSV directly from the backlog page.',
-      },
-      {
-        icon: <Sparkles className="h-5 w-5" />,
-        title: 'Interactive Onboarding Tour',
-        description:
-          'Step-by-step tour wired with driver.js. Guides new users through Shape Up and Kanban flows.',
-      },
-    ],
-  },
-  {
-    version: 'v0.9.0',
-    theme: 'Power User Features + Quality',
-    status: 'planned',
-    items: [
-      {
-        icon: <BookmarkCheck className="h-5 w-5" />,
-        title: 'Saved Filter Views',
-        description:
-          'Save named filter presets in the backlog. Load them with one click. No more recreating the same filters daily.',
-      },
-      {
-        icon: <Bell className="h-5 w-5" />,
-        title: 'Real-Time Notifications via SSE',
-        description:
-          'Replace 30-second polling with Server-Sent Events for instant push notifications.',
-      },
-      {
-        icon: <Mail className="h-5 w-5" />,
-        title: 'Email Notifications',
-        description:
-          'SMTP email support for task assignment, @mentions, and pitch status changes.',
-      },
-      {
-        icon: <Cpu className="h-5 w-5" />,
-        title: 'MCP Write Tools (Phase 2)',
-        description:
-          'create_task, add_comment, create_pitch, update_pitch_status — fully bidirectional AI editor integration.',
-      },
-      {
-        icon: <FlaskConical className="h-5 w-5" />,
-        title: 'Playwright E2E Tests',
-        description:
-          'End-to-end test suites for login, Shape Up lifecycle, hill chart, betting table, and task management.',
-      },
-      {
-        icon: <Layout className="h-5 w-5" />,
-        title: 'Component Decomposition',
-        description:
-          'BacklogPage, OrganizationSettings, and PitchDetail split into focused sub-components.',
-      },
-    ],
-  },
-  {
-    version: 'v1.0.0',
-    theme: 'First Open Source Release',
-    status: 'planned',
-    items: [
-      {
-        icon: <FileText className="h-5 w-5" />,
-        title: 'VitePress Documentation Site',
-        description:
-          'Dedicated docs site with Getting Started, User Guide, Admin Guide, and Developer Guide.',
-      },
-      {
-        icon: <Github className="h-5 w-5" />,
-        title: 'Community Infrastructure',
-        description:
-          'GitHub Discussions, GOVERNANCE.md, and Discussion templates for support and ideas.',
-      },
-      {
-        icon: <Container className="h-5 w-5" />,
-        title: 'Docker Image on GHCR',
-        description:
-          'ghcr.io/farzad-sedaghatbin/shipflow:latest available for one-command self-hosted setup.',
-      },
-      {
-        icon: <Rocket className="h-5 w-5" />,
-        title: 'Public Launch',
-        description:
-          'Hacker News, Reddit (r/selfhosted, r/projectmanagement), blog post, and live demo.',
-      },
-    ],
-  },
-];
-
-const futureVision = [
-  {
-    icon: <Layers className="h-6 w-6" />,
-    title: 'Scrum Mode (v1.1)',
-    description:
-      'Sprint entity reusing the Cycle infrastructure — story points, velocity tracking, burndown charts, and sprint planning. The third ProjectType after Shape Up and Kanban.',
-  },
-  {
-    icon: <Globe className="h-6 w-6" />,
-    title: 'SSO / SAML / OIDC (v1.1)',
-    description:
-      'Enterprise-grade authentication via Keycloak, Auth0, or Okta. For organizations running self-hosted at scale.',
-  },
-  {
-    icon: <Workflow className="h-6 w-6" />,
-    title: 'Workflow Automations (v1.2)',
-    description:
-      'Trigger/action rules: "when task → DONE, notify Slack", "when pitch → SHAPED, add to betting table". No more manual coordination.',
-  },
-  {
-    icon: <Sliders className="h-6 w-6" />,
-    title: 'Custom Fields (v1.2)',
-    description:
-      'Per-project configurable fields on tasks and pitches. Story Points, Sprint Goal, Customer — whatever your team needs.',
-  },
-  {
-    icon: <Brain className="h-6 w-6" />,
-    title: 'MCP Phases 3–4 (v1.3)',
-    description:
-      'AI agent tools, Spring AI MCP starter migration, and plugin system for custom integrations.',
-  },
-  {
-    icon: <Smartphone className="h-6 w-6" />,
-    title: 'Mobile / PWA (v1.4)',
-    description:
-      'Progressive Web App with offline support. Helm chart for Kubernetes. OpenTelemetry + Prometheus + Grafana.',
-  },
-];
-
-const statusConfig = {
-  'in-progress': {
-    label: 'In Progress',
-    badge: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-    card: 'border-blue-500/30 bg-blue-500/5',
-  },
-  planned: {
-    label: 'Planned',
-    badge: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-    card: '',
-  },
-  future: {
-    label: 'Future',
-    badge: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-    card: '',
-  },
-};
-
 export default function PublicRoadmap() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const statusConfig = {
+    'in-progress': {
+      label: t('publicRoadmap.statusInProgress'),
+      badge: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+      card: 'border-blue-500/30 bg-blue-500/5',
+    },
+    planned: {
+      label: t('publicRoadmap.statusPlanned'),
+      badge: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+      card: '',
+    },
+    future: {
+      label: t('publicRoadmap.statusFuture'),
+      badge: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+      card: '',
+    },
+  };
+
+  const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '0.7.0',
+      date: 'March 24, 2026',
+      title: t('publicRoadmap.shipped070Title'),
+      highlights: [
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped070Item0Title'), description: t('publicRoadmap.shipped070Item0Desc') },
+        { icon: <Cpu className="h-5 w-5" />, title: t('publicRoadmap.shipped070Item1Title'), description: t('publicRoadmap.shipped070Item1Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped070Item2Title'), description: t('publicRoadmap.shipped070Item2Desc') },
+        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.shipped070Item3Title'), description: t('publicRoadmap.shipped070Item3Desc') },
+      ],
+    },
+    {
+      version: '0.6.2',
+      date: 'February 26, 2026',
+      title: t('publicRoadmap.shipped062Title'),
+      highlights: [
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.shipped062Item0Title'), description: t('publicRoadmap.shipped062Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped062Item1Title'), description: t('publicRoadmap.shipped062Item1Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.shipped062Item2Title'), description: t('publicRoadmap.shipped062Item2Desc') },
+        { icon: <Command className="h-5 w-5" />, title: t('publicRoadmap.shipped062Item3Title'), description: t('publicRoadmap.shipped062Item3Desc') },
+      ],
+    },
+    {
+      version: '0.6.1',
+      date: 'February 25, 2026',
+      title: t('publicRoadmap.shipped061Title'),
+      highlights: [
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped061Item0Title'), description: t('publicRoadmap.shipped061Item0Desc') },
+        { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.shipped061Item1Title'), description: t('publicRoadmap.shipped061Item1Desc') },
+        { icon: <TrendingUp className="h-5 w-5" />, title: t('publicRoadmap.shipped061Item2Title'), description: t('publicRoadmap.shipped061Item2Desc') },
+      ],
+    },
+  ];
+
+  const upcomingPhases: RoadmapPhase[] = [
+    {
+      version: 'v0.8.0',
+      theme: t('publicRoadmap.phase080Theme'),
+      status: 'in-progress',
+      items: [
+        { icon: <Rocket className="h-5 w-5" />, title: t('publicRoadmap.phase080Item0Title'), description: t('publicRoadmap.phase080Item0Desc') },
+        { icon: <Wrench className="h-5 w-5" />, title: t('publicRoadmap.phase080Item1Title'), description: t('publicRoadmap.phase080Item1Desc') },
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phase080Item2Title'), description: t('publicRoadmap.phase080Item2Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase080Item3Title'), description: t('publicRoadmap.phase080Item3Desc') },
+        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase080Item4Title'), description: t('publicRoadmap.phase080Item4Desc') },
+        { icon: <Paperclip className="h-5 w-5" />, title: t('publicRoadmap.phase080Item5Title'), description: t('publicRoadmap.phase080Item5Desc') },
+        { icon: <ListChecks className="h-5 w-5" />, title: t('publicRoadmap.phase080Item6Title'), description: t('publicRoadmap.phase080Item6Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phase080Item7Title'), description: t('publicRoadmap.phase080Item7Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase080Item8Title'), description: t('publicRoadmap.phase080Item8Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase080Item9Title'), description: t('publicRoadmap.phase080Item9Desc') },
+      ],
+    },
+    {
+      version: 'v0.9.0',
+      theme: t('publicRoadmap.phase090Theme'),
+      status: 'planned',
+      items: [
+        { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.phase090Item0Title'), description: t('publicRoadmap.phase090Item0Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phase090Item1Title'), description: t('publicRoadmap.phase090Item1Desc') },
+        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.phase090Item2Title'), description: t('publicRoadmap.phase090Item2Desc') },
+        { icon: <Cpu className="h-5 w-5" />, title: t('publicRoadmap.phase090Item3Title'), description: t('publicRoadmap.phase090Item3Desc') },
+        { icon: <FlaskConical className="h-5 w-5" />, title: t('publicRoadmap.phase090Item4Title'), description: t('publicRoadmap.phase090Item4Desc') },
+        { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.phase090Item5Title'), description: t('publicRoadmap.phase090Item5Desc') },
+      ],
+    },
+    {
+      version: 'v1.0.0',
+      theme: t('publicRoadmap.phase100Theme'),
+      status: 'planned',
+      items: [
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase100Item0Title'), description: t('publicRoadmap.phase100Item0Desc') },
+        { icon: <Github className="h-5 w-5" />, title: t('publicRoadmap.phase100Item1Title'), description: t('publicRoadmap.phase100Item1Desc') },
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phase100Item2Title'), description: t('publicRoadmap.phase100Item2Desc') },
+        { icon: <Rocket className="h-5 w-5" />, title: t('publicRoadmap.phase100Item3Title'), description: t('publicRoadmap.phase100Item3Desc') },
+      ],
+    },
+  ];
+
+  const futureVision = [
+    { icon: <Layers className="h-6 w-6" />, title: t('publicRoadmap.futureItem0Title'), description: t('publicRoadmap.futureItem0Desc') },
+    { icon: <Globe className="h-6 w-6" />, title: t('publicRoadmap.futureItem1Title'), description: t('publicRoadmap.futureItem1Desc') },
+    { icon: <Workflow className="h-6 w-6" />, title: t('publicRoadmap.futureItem2Title'), description: t('publicRoadmap.futureItem2Desc') },
+    { icon: <Sliders className="h-6 w-6" />, title: t('publicRoadmap.futureItem3Title'), description: t('publicRoadmap.futureItem3Desc') },
+    { icon: <Brain className="h-6 w-6" />, title: t('publicRoadmap.futureItem4Title'), description: t('publicRoadmap.futureItem4Desc') },
+    { icon: <Smartphone className="h-6 w-6" />, title: t('publicRoadmap.futureItem5Title'), description: t('publicRoadmap.futureItem5Desc') },
+  ];
 
   return (
     <div className="min-h-screen bg-background">

@@ -120,7 +120,7 @@ function App() {
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/compare" element={<CompetitorsComparison />} />
       <Route path="/releases" element={<ReleaseNotes />} />
-      <Route path="/roadmap" element={<PublicRoadmap />} />
+      <Route path="/public-roadmap" element={<PublicRoadmap />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"

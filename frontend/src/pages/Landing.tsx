@@ -222,7 +222,7 @@ export default function Landing() {
                 <Button
                   variant="ghost"
                   size="lg"
-                  onClick={() => navigate('/roadmap')}
+                  onClick={() => navigate('/public-roadmap')}
                 >
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.roadmap')}
