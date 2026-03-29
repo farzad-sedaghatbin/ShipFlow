@@ -5,6 +5,52 @@ Read it before touching any code.
 
 ---
 
+## Current Milestone: v0.8.0 — "Core Product + Hardening"
+
+**Current version**: v0.7.0 → targeting v0.8.0
+**Target**: v1.0.0 open-source release (~12-17 weeks, 29 Claude Code sessions total)
+**All PRs target**: `main` branch
+
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum (Sprints ≈ Cycles) planned for v1.1.
+
+### v0.8.0 session map (sessions S01–S13)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S01 | Public roadmap page (`/roadmap`) | pending |
+| S02 | Demo seed data refresh | pending |
+| S03 | Version alignment (pom.xml 0.8.0, java 21, CORS fix) | pending |
+| S04 | Spring Boot upgrade 3.2.1 → 3.4.x | pending |
+| S05 | Rate limiting (Bucket4j) + CSP headers + startup secret validation | pending |
+| S06 | Docker GHCR CI/CD + React.lazy code splitting | pending |
+| S07 | File attachments on tasks — backend | pending |
+| S08 | File attachments on tasks — frontend | pending |
+| S09 | Bulk task operations — backend | pending |
+| S10 | Bulk task operations — frontend | pending |
+| S11 | @mention triggers notification | pending |
+| S12 | CSV export for task backlog | pending |
+| S13 | Interactive onboarding tour (wire TourContext + driver.js) | pending |
+
+Full session prompts (S01–S29 through v1.0.0) are in:
+`/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
+
+### Mandatory end-of-session checklist
+Every session must complete ALL of these before creating the PR:
+
+1. Add entry to `CHANGELOG.md` under `[Unreleased]`
+2. Update `README.md` if user-visible feature added — **refresh screenshots if UI changed**
+3. Update `COMPETITOR_ANALYSIS.md` if this closes a gap vs Linear/Jira/Asana
+4. Add highlight card to `frontend/src/pages/ReleaseNotes.tsx`
+5. Update relevant `*_GUIDE.md` or `CLAUDE.md` if a new repeatable pattern was introduced
+6. Add i18n keys to **both** `en.json` AND `fa.json`
+7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage)
+8. Update `SampleDataInitializer.java` with demo data for the new feature
+9. **If UI layout changed**: verify onboarding tour step selectors in `src/tours/` still target correct elements
+10. **If in-app help guides reference changed UI**: update the relevant help guide content
+11. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+
+---
+
 ## What is ShipFlow?
 
 ShipFlow is a full-stack project management platform built around the **Shape Up** methodology by Basecamp.
@@ -270,15 +316,19 @@ This project is **open source** — every significant feature must be documented
 | # | Task | Where |
 |---|------|--------|
 | 1 | Add entry under `[Unreleased]` or bump version | `CHANGELOG.md` |
-| 2 | Add feature to the `✨ Features` list | `README.md` |
+| 2 | Add feature to the `✨ Features` list — refresh screenshots if UI changed | `README.md` |
 | 3 | Add row to the comparison table if it differentiates vs competitors | `README.md` → `🔀 How ShipFlow Compares` |
 | 4 | Add highlight card to the in-app release notes page | `frontend/src/pages/ReleaseNotes.tsx` |
 | 5 | Update competitor positioning if relevant | `COMPETITOR_ANALYSIS.md` |
 | 6 | Update `CLAUDE.md` if the feature introduces a new repeatable task pattern | `CLAUDE.md` |
 | 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
-| 8 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
-| 9 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
-| 10 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
+| 8 | Add i18n keys to both `en.json` and `fa.json` | `frontend/src/i18n/` |
+| 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
+| 10 | If UI layout changed: verify onboarding tour selectors still work | `frontend/src/tours/` |
+| 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
+| 12 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
+| 13 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
+| 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
 
 > These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
 
