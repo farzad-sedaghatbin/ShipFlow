@@ -4617,8 +4617,25 @@
     "viewLicense": "View License",
     "wcag21AA": "WCAG 2.1 AA",
     "whatsNew": "What's New",
+    "roadmap": "Roadmap",
     "wiseArchitecture": "Wise Architecture",
     "wiseArchitectureDesc": "AI-powered architecture advisor that analyzes codebases, team skills, and Figma designs to recommend optimal implementation strategies."
+  },
+  "publicRoadmap": {
+    "badge": "Built in public. Shipped iteratively.",
+    "heroTitle": "ShipFlow Roadmap",
+    "heroSubtitle": "Methodology-agnostic, AI-native project management — from Shape Up to Scrum and beyond. Follow our journey to v1.0.0.",
+    "viewReleaseNotes": "View Release Notes",
+    "upcomingTitle": "What's Coming",
+    "upcomingSubtitle": "Planned milestones on the way to v1.0.0 open-source release.",
+    "recentlyShippedTitle": "Recently Shipped",
+    "recentlyShippedSubtitle": "What we've delivered in the last few releases.",
+    "latest": "Latest",
+    "viewAllReleases": "View All Releases",
+    "futureVisionTitle": "Long-Term Vision",
+    "futureVisionSubtitle": "Where ShipFlow is headed after 1.0. The Cycle abstraction expands naturally to Scrum, and the plugin system opens up to the community.",
+    "ctaTitle": "Ready to Try ShipFlow?",
+    "ctaSubtitle": "Self-hosted, open source, and free. Deploy in minutes with Docker Compose."
   },
   "releaseNotes": {
     "title": "Release Notes",

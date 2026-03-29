@@ -32,6 +32,8 @@ import {
   Plug,
   Cpu,
   Lock,
+  Paperclip,
+  ListChecks,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -49,6 +51,37 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '0.8.0',
+    date: 'Coming Soon',
+    title: 'Core Product + Hardening — In Progress',
+    highlights: [
+      {
+        icon: <Rocket className="h-5 w-5" />,
+        title: 'Public Roadmap Page',
+        description:
+          'A new /roadmap page shows what\'s shipping next, what\'s been shipped, and the long-term vision. Built in public, updated every commit.',
+      },
+      {
+        icon: <Paperclip className="h-5 w-5" />,
+        title: 'File Attachments on Tasks',
+        description:
+          'Drag-and-drop file uploads directly on tasks — screenshots, specs, designs. The feature every PM tool has, now in ShipFlow.',
+      },
+      {
+        icon: <ListChecks className="h-5 w-5" />,
+        title: 'Bulk Task Operations',
+        description:
+          'Multi-select tasks and bulk assign, change status, change priority, or add tags in one action.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Security Hardening',
+        description:
+          'Bucket4j rate limiting on auth/search/AI endpoints, CSP headers, startup secret validation, and Spring Boot upgrade to 3.4.x.',
+      },
+    ],
+  },
   {
     version: '0.7.0',
     date: 'March 24, 2026',

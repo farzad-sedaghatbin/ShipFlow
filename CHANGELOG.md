@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Public Roadmap Page** (`/roadmap`): New public page (no auth required) showing upcoming milestones, recently shipped releases, and long-term vision. Accessible from the landing page nav alongside Competitors and Release Notes.
+  - "What's Coming" section with v0.8.0 (In Progress), v0.9.0 (Planned), v1.0.0 (Planned) phase cards
+  - "Recently Shipped" section sourced from CHANGELOG (v0.7.0, v0.6.2, v0.6.1)
+  - "Long-Term Vision" section (Scrum mode, automations, custom fields, mobile/PWA)
+  - "Roadmap" nav button added to Landing.tsx
+  - i18n keys added to en.json and fa.json
+
 ## [0.7.0] - 2026-03-24 - MCP Server (AI Editor Integration)
 
 ### Added

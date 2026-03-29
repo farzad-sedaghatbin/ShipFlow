@@ -219,6 +219,14 @@ export default function Landing() {
                   <Sparkles className="h-5 w-5 mr-2" />
                   {t('landing.whatsNew')}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/roadmap')}
+                >
+                  <ArrowRight className="h-5 w-5 mr-2" />
+                  {t('landing.roadmap')}
+                </Button>
               </div>
 
               {/* Tech Stack */}

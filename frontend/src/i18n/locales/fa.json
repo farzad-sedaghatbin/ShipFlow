@@ -2988,8 +2988,25 @@
     "authorExpertise": "تخصص فنی",
     "contact": "تماس",
     "whatsNew": "تازه‌ها",
+    "roadmap": "نقشه راه",
     "scopeTaskBridge": "پل محدوده-تسک",
     "scopeTaskBridgeDesc": "ارتباط مستقیم بین محدوده‌های نمودار تپه و تسک‌ها با پیشرفت خودکار."
+  },
+  "publicRoadmap": {
+    "badge": "در فضای عمومی ساخته می‌شود. به صورت تکراری ارسال می‌شود.",
+    "heroTitle": "نقشه راه ShipFlow",
+    "heroSubtitle": "مدیریت پروژه مستقل از روش‌شناسی و مبتنی بر هوش مصنوعی — از Shape Up تا Scrum و فراتر از آن. سفر ما به سمت نسخه ۱.۰.۰ را دنبال کنید.",
+    "viewReleaseNotes": "مشاهده یادداشت‌های انتشار",
+    "upcomingTitle": "چه چیزی در راه است",
+    "upcomingSubtitle": "نقاط عطف برنامه‌ریزی شده در مسیر انتشار اوپن‌سورس نسخه ۱.۰.۰.",
+    "recentlyShippedTitle": "اخیراً ارسال شده",
+    "recentlyShippedSubtitle": "آنچه در چند نسخه اخیر تحویل داده‌ایم.",
+    "latest": "جدید",
+    "viewAllReleases": "مشاهده همه انتشارها",
+    "futureVisionTitle": "چشم‌انداز بلندمدت",
+    "futureVisionSubtitle": "مسیر ShipFlow پس از نسخه ۱.۰. انتزاع Cycle به طور طبیعی به Scrum گسترش می‌یابد و سیستم پلاگین برای جامعه باز می‌شود.",
+    "ctaTitle": "آماده امتحان ShipFlow هستید؟",
+    "ctaSubtitle": "خودمیزبان، اوپن‌سورس و رایگان. در چند دقیقه با Docker Compose راه‌اندازی کنید."
   },
   "releaseNotes": {
     "title": "یادداشت‌های انتشار",
