@@ -57,6 +57,11 @@ public class HillChartService {
         .collect(Collectors.toList());
   }
 
+  public List<HillChartPointDTO> getHillChartPointsByCycle(Long cycleId) {
+    return hillChartPointRepository.findByPitchCycleId(cycleId).stream().map(this::toDTO)
+        .collect(Collectors.toList());
+  }
+
   /**
    * Search hill chart points (scopes) by name or description. Minimum 3
    * characters required to prevent performance issues with large datasets.

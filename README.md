@@ -306,6 +306,14 @@ A modern project management application implementing the [Shape Up](https://base
   - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations
   - **Context Availability Warnings**: Transparent feedback when context sources are missing
   - Configurable via Organization Settings with per-org Figma token storage
+- **MCP Server (AI Editor Integration)**: Use ShipFlow data directly from your AI coding assistant — no context switching
+  - Works with **Claude Code**, **Cursor**, **Claude Desktop**, **GitHub Copilot**, and any MCP-compatible client
+  - **Opt-in** — disabled by default, enable with `MCP_SERVER_ENABLED=true` (self-hosters stay in control)
+  - **10 read tools**: `list_projects`, `get_project`, `get_cycles`, `get_cycle`, `get_tasks`, `get_task`, `get_blockers`, `get_pitches`, `get_pitch_detail`, `get_betting_candidates`
+  - **1 write tool**: `update_task_status` (requires `MCP_SERVER_WRITE_ENABLED=true`)
+  - **Pitch → Figma chain**: `get_pitch_detail` returns wireframe (Figma) URLs so the AI can chain to Figma MCP for full design context
+  - **API key auth** — Bearer token on all `/mcp/**` endpoints; reuses existing API key scopes (READ / WRITE / ADMIN)
+  - See [MCP Client Setup Guide](MCP_CLIENT_SETUP.md) and [VS Code Guide](VSCODE_GUIDE.md)
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
   - Test type-specific prompts (SMOKE, FUNCTIONAL, REGRESSION, INTEGRATION, E2E)
@@ -437,6 +445,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **MCP Server (AI editor tools)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
@@ -453,6 +462,7 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
 - **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
 - **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
+- **AI-Native Workflows**: The only PM tool that connects to your editor via MCP — ask Claude Code "what's blocking my tasks?" without leaving the terminal
 - **AI-Powered**: Pluggable LLM architecture with provider flexibility
   - **Local AI (Ollama)**: Privacy-first, no API costs, perfect for local development or self-hosted deployments
   - **Cloud AI (OpenAI)**: Production-grade GPT-4o/GPT-4o-mini for complex reasoning and high-quality responses

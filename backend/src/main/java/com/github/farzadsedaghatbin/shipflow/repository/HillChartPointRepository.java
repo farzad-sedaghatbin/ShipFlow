@@ -35,4 +35,10 @@ public interface HillChartPointRepository extends JpaRepository<HillChartPoint, 
    */
   @Query("SELECT h FROM HillChartPoint h WHERE h.pitch.id = :pitchId AND h.linkedTask IS NOT NULL")
   List<HillChartPoint> findByPitchIdWithLinkedTasks(@Param("pitchId") Long pitchId);
+
+  /**
+   * Find all scopes for all pitches in a cycle. Useful for the cycle-level hill chart view.
+   */
+  @Query("SELECT h FROM HillChartPoint h WHERE h.pitch.cycle.id = :cycleId ORDER BY h.pitch.id, h.updatedAt DESC")
+  List<HillChartPoint> findByPitchCycleId(@Param("cycleId") Long cycleId);
 }

@@ -29,6 +29,9 @@ import {
   Search,
   Command,
   ArrowDownToLine,
+  Plug,
+  Cpu,
+  Lock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -46,6 +49,43 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '0.7.0',
+    date: 'March 24, 2026',
+    title: 'MCP Server — Your AI Editor Meets Your Project Board',
+    highlights: [
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'ShipFlow as an MCP Server (opt-in)',
+        description:
+          'Claude Code, Cursor, Claude Desktop, and any MCP-compatible AI assistant can now query ShipFlow directly from the editor — no tab switching. Disabled by default; enable with MCP_SERVER_ENABLED=true so self-hosters stay in control.',
+      },
+      {
+        icon: <Cpu className="h-5 w-5" />,
+        title: '10 Read Tools + 1 Write Tool',
+        description:
+          'list_projects, get_project, get_cycles, get_cycle, get_tasks, get_task, get_blockers, get_pitches, get_pitch_detail, get_betting_candidates — and update_task_status (write, opt-in). Ask your AI "what\'s blocking me?" and get a live answer.',
+      },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'Pitch → Figma → Code Loop',
+        description:
+          'get_pitch_detail returns wireframe (Figma) URLs stored in the pitch. When Figma MCP is also configured, the AI chains the calls automatically — reading design context without you copying a URL.',
+      },
+      {
+        icon: <Lock className="h-5 w-5" />,
+        title: 'API Key Auth on All MCP Endpoints',
+        description:
+          'Bearer token authentication on /mcp/** reuses existing API key scopes (READ / WRITE / ADMIN). Write tools require both MCP_SERVER_WRITE_ENABLED=true and a WRITE-scoped key.',
+      },
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'HTTP + SSE Transport (JSON-RPC 2.0)',
+        description:
+          'Standard MCP transport: GET /mcp/sse establishes the session stream, POST /mcp/messages sends tool calls. GET /mcp/health is public for readiness probes. Zero additional dependencies — pure Spring Boot.',
+      },
+    ],
+  },
   {
     version: '0.6.2',
     date: 'February 26, 2026',

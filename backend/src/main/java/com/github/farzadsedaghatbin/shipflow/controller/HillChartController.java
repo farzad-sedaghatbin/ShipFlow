@@ -56,6 +56,13 @@ public class HillChartController {
     return ResponseEntity.ok(hillChartService.getHillChartPointsByPitch(pitchId));
   }
 
+  @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get hill chart points by cycle", description = "Returns all scopes across all pitches in the cycle, ordered by pitch then last updated. Use this for the cycle-level hill chart view.")
+  public ResponseEntity<List<HillChartPointDTO>> getHillChartPointsByCycle(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(hillChartService.getHillChartPointsByCycle(cycleId));
+  }
+
   @GetMapping("/{id}")
   @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get hill chart point by ID")
