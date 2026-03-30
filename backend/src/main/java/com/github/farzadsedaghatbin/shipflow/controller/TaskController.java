@@ -11,7 +11,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.service.AuditService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService.DownloadResult;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -367,11 +369,13 @@ public class TaskController {
   @Operation(summary = "Download attachment", description = "Stream the raw file bytes for the given attachment")
   public ResponseEntity<Resource> downloadAttachment(
       @PathVariable Long id, @PathVariable Long attachmentId) {
-    Resource resource = attachmentService.downloadAttachment(id, attachmentId);
+    DownloadResult result = attachmentService.downloadAttachment(id, attachmentId);
+    ContentDisposition disposition = ContentDisposition.attachment()
+        .filename(result.originalFileName()).build();
     return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"" + resource.getFilename() + "\"")
-        .body(resource);
+        .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+        .contentType(MediaType.parseMediaType(result.contentType()))
+        .body(result.resource());
   }
 
   @DeleteMapping("/{id}/attachments/{attachmentId}")

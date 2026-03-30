@@ -64,7 +64,17 @@ public class TaskService {
   public TaskDTO getTaskById(Long id) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
-    return toDTO(task);
+    TaskDTO dto = toDTO(task);
+    // Attachments are only loaded for the single-task detail view to avoid N+1 on list endpoints
+    dto.setAttachments(attachmentRepository.findByTaskIdOrderByCreatedAtDesc(id).stream()
+        .map(a -> TaskAttachmentDTO.builder()
+            .id(a.getId()).taskId(a.getTask().getId()).fileName(a.getFileName())
+            .fileSize(a.getFileSize()).contentType(a.getContentType())
+            .uploadedById(a.getUploadedBy() != null ? a.getUploadedBy().getId() : null)
+            .uploadedByUsername(a.getUploadedBy() != null ? a.getUploadedBy().getUsername() : null)
+            .createdAt(a.getCreatedAt()).build())
+        .collect(Collectors.toList()));
+    return dto;
   }
 
   public Page<TaskDTO> getTasksByCycleId(Long cycleId, Pageable pageable) {
@@ -702,14 +712,6 @@ public class TaskService {
         .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
         .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())
-        .attachments(attachmentRepository.findByTaskIdOrderByCreatedAtDesc(task.getId()).stream()
-            .map(a -> TaskAttachmentDTO.builder()
-                .id(a.getId()).taskId(a.getTask().getId()).fileName(a.getFileName())
-                .fileSize(a.getFileSize()).contentType(a.getContentType())
-                .uploadedById(a.getUploadedBy() != null ? a.getUploadedBy().getId() : null)
-                .uploadedByUsername(a.getUploadedBy() != null ? a.getUploadedBy().getUsername() : null)
-                .createdAt(a.getCreatedAt()).build())
-            .collect(Collectors.toList()))
         .build();
   }
 

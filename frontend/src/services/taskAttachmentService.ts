@@ -27,7 +27,7 @@ export const taskAttachmentService = {
     });
   },
 
-  /** Download an attachment — returns the raw blob URL. */
+  /** Returns the API endpoint path for an attachment download. Use as an anchor href or navigate to it to trigger the browser download. */
   getDownloadUrl: (taskId: number, attachmentId: number) =>
     `/api/tasks/${taskId}/attachments/${attachmentId}/download`,
 

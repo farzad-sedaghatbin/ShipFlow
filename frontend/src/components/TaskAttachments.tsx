@@ -106,18 +106,26 @@ export default function TaskAttachments({ taskId }: Props) {
   function canDelete(a: TaskAttachment) {
     return (
       user?.role === 'ADMIN' ||
-      (user?.username && a.uploadedByUsername === user.username)
+      (user?.userId !== undefined && a.uploadedById === user.userId)
     );
   }
 
   return (
     <Card>
-      <CardHeader
-        className="cursor-pointer select-none"
-        onClick={() => setCollapsed((c) => !c)}
-      >
-        <CardTitle className="flex items-center justify-between text-sm font-semibold">
-          <span className="flex items-center gap-2">
+      <CardHeader className="p-0">
+        <button
+          type="button"
+          className="flex w-full cursor-pointer select-none items-center justify-between p-6 text-left"
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((c) => !c)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setCollapsed((c) => !c);
+            }
+          }}
+        >
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Paperclip className="h-4 w-4" />
             {t('attachments.title')}
             {attachments.length > 0 && (
@@ -125,13 +133,13 @@ export default function TaskAttachments({ taskId }: Props) {
                 {attachments.length}
               </span>
             )}
-          </span>
+          </CardTitle>
           {collapsed ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
           )}
-        </CardTitle>
+        </button>
       </CardHeader>
 
       {!collapsed && (

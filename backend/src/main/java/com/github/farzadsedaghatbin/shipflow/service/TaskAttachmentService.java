@@ -81,7 +81,7 @@ public class TaskAttachmentService {
       Files.createDirectories(uploadPath);
       Path dest = uploadPath.resolve(storedName);
       if (!dest.normalize().startsWith(uploadPath)) {
-        throw new SecurityException("Invalid file path");
+        throw new IllegalArgumentException("Invalid file path detected");
       }
       Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {
@@ -115,8 +115,11 @@ public class TaskAttachmentService {
 
   // ── Download ──────────────────────────────────────────────────────────────
 
+  /** Carries both the file resource and its original metadata for the response. */
+  public record DownloadResult(Resource resource, String originalFileName, String contentType) {}
+
   @Transactional(readOnly = true)
-  public Resource downloadAttachment(Long taskId, Long attachmentId) {
+  public DownloadResult downloadAttachment(Long taskId, Long attachmentId) {
     TaskAttachment attachment = resolveAttachment(taskId, attachmentId);
     try {
       Path file = Paths.get(uploadDir).toAbsolutePath().normalize()
@@ -125,7 +128,7 @@ public class TaskAttachmentService {
       if (!resource.exists() || !resource.isReadable()) {
         throw new ResourceNotFoundException("File not found on disk: " + attachment.getFileName());
       }
-      return resource;
+      return new DownloadResult(resource, attachment.getFileName(), attachment.getContentType());
     } catch (java.net.MalformedURLException e) {
       throw new RuntimeException("Could not resolve file path", e);
     }
@@ -211,7 +214,9 @@ public class TaskAttachmentService {
   private String sanitize(String name) {
     if (name == null || name.isBlank()) return "attachment";
     // Strip directory separators and null bytes
-    return name.replaceAll("[/\\\\:\\*\\?\"<>|\\x00]", "_");
+    String safe = name.replaceAll("[/\\\\:\\*\\?\"<>|\\x00]", "_");
+    // Truncate to 200 characters to stay well within VARCHAR(255) and filesystem limits
+    return safe.length() > 200 ? safe.substring(0, 200) : safe;
   }
 
   private User getCurrentUser() {

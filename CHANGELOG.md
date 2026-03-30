@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
 - **React.lazy code splitting**: All 50+ page components in `App.tsx` are now loaded with `React.lazy()` + `<Suspense>`.
 - **File attachments on tasks (S07 + S08)**: Tasks now support file attachments end-to-end.
   - **Backend**: New `task_attachments` table (Flyway `V2026_03_30_0001`), `TaskAttachment` JPA entity, `TaskAttachmentService` (upload / list / download / delete), and 4 new controller endpoints — `POST /api/tasks/{id}/attachments`, `GET /api/tasks/{id}/attachments`, `GET /api/tasks/{id}/attachments/{aid}/download`, `DELETE /api/tasks/{id}/attachments/{aid}`. Only the uploader or ADMIN may delete. `TaskDTO` now includes the `attachments` list.
-  - **Frontend**: New `TaskAttachments.tsx` component with drag-and-drop upload zone, upload progress bar, per-file download and delete buttons, and collapsible section header. Added to `TaskDetailPage`. `taskAttachmentService.ts` handles all API calls. i18n keys added to `en.json` and `fa.json`. Each page is a separate JS chunk. Only the landing page, login, auth infrastructure, and shared vendors load on first visit — subsequent page navigations stream in their chunk on demand.
+  - **Frontend**: New `TaskAttachments.tsx` component with drag-and-drop upload zone, upload progress bar, per-file download and delete buttons, and collapsible section header. Added to `TaskDetailPage`. `taskAttachmentService.ts` handles all API calls. i18n keys added to `en.json` and `fa.json`.
 
 ### Added
 - **`CODE_OF_CONDUCT.md`**: Community code of conduct adapted from Contributor Covenant v2.1 — defines expected behavior, enforcement guidelines, and contact for reporting violations.
