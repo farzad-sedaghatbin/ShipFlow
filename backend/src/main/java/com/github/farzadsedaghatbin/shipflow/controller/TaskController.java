@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
@@ -8,7 +9,14 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.service.AuditService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService.DownloadResult;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -35,6 +43,7 @@ public class TaskController {
 
   private final TaskService taskService;
   private final AuditService auditService;
+  private final TaskAttachmentService attachmentService;
   
   // Allowed fields for sorting to prevent runtime errors
   private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
@@ -333,5 +342,51 @@ public class TaskController {
   @Operation(summary = "Get task tree", description = "Returns the complete task hierarchy for a cycle with nested children")
   public ResponseEntity<List<TaskDTO>> getTaskTree(@PathVariable Long cycleId) {
     return ResponseEntity.ok(taskService.getTaskTreeByCycleId(cycleId));
+  }
+
+  // ========== File Attachments ==========
+
+  @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Upload attachment", description = "Upload a file attachment to a task (max 10 MB; images, PDF, DOCX, DOC, TXT, MD)")
+  @ApiResponses({@ApiResponse(responseCode = "201", description = "Attachment uploaded"),
+      @ApiResponse(responseCode = "400", description = "Invalid file or size exceeded"),
+      @ApiResponse(responseCode = "404", description = "Task not found")})
+  public ResponseEntity<TaskAttachmentDTO> uploadAttachment(
+      @PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(attachmentService.uploadAttachment(id, file));
+  }
+
+  @GetMapping("/{id}/attachments")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "List attachments", description = "Returns all attachments for a task, newest first")
+  public ResponseEntity<List<TaskAttachmentDTO>> listAttachments(@PathVariable Long id) {
+    return ResponseEntity.ok(attachmentService.getAttachments(id));
+  }
+
+  @GetMapping("/{id}/attachments/{attachmentId}/download")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Download attachment", description = "Stream the raw file bytes for the given attachment")
+  public ResponseEntity<Resource> downloadAttachment(
+      @PathVariable Long id, @PathVariable Long attachmentId) {
+    DownloadResult result = attachmentService.downloadAttachment(id, attachmentId);
+    ContentDisposition disposition = ContentDisposition.attachment()
+        .filename(result.originalFileName()).build();
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+        .contentType(MediaType.parseMediaType(result.contentType()))
+        .body(result.resource());
+  }
+
+  @DeleteMapping("/{id}/attachments/{attachmentId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Delete attachment", description = "Delete a task attachment (uploader or ADMIN only)")
+  @ApiResponses({@ApiResponse(responseCode = "204", description = "Attachment deleted"),
+      @ApiResponse(responseCode = "403", description = "Not the uploader or ADMIN"),
+      @ApiResponse(responseCode = "404", description = "Attachment not found")})
+  public ResponseEntity<Void> deleteAttachment(
+      @PathVariable Long id, @PathVariable Long attachmentId) {
+    attachmentService.deleteAttachment(id, attachmentId);
+    return ResponseEntity.noContent().build();
   }
 }

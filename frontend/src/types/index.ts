@@ -842,6 +842,20 @@ export interface Task {
   targetReleaseId?: number;
   targetReleaseName?: string;
   targetReleaseVersion?: string;
+
+  // File attachments
+  attachments?: TaskAttachment[];
+}
+
+export interface TaskAttachment {
+  id: number;
+  taskId: number;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  uploadedById?: number;
+  uploadedByUsername?: string;
+  createdAt: string;
 }
 
 export interface CreateTaskRequest {

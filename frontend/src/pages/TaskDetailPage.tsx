@@ -28,6 +28,7 @@ import { personService } from '../services/personService';
 import { pitchService } from '../services/pitchService';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
+import TaskAttachments from '../components/TaskAttachments';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
@@ -442,6 +443,9 @@ export default function TaskDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* File Attachments */}
+      <TaskAttachments taskId={task.id} />
 
       {/* GitHub Integration */}
       <GitHubLinksCard taskId={task.id} />
