@@ -34,6 +34,7 @@ public class SecurityConfig {
   private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final MaliciousHeaderFilter maliciousHeaderFilter;
+  private final RateLimitFilter rateLimitFilter;
   private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
   private final McpAuthFilter mcpAuthFilter;
 
@@ -61,8 +62,33 @@ public class SecurityConfig {
         // See:
         // https://security.stackexchange.com/questions/170388/do-i-need-csrf-token-if-im-using-bearer-jwt
         .csrf(AbstractHttpConfigurer::disable)
-        // Disable ForwardedHeaderFilter to prevent malicious header exploitation
-        .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+        // Security response headers
+        .headers(headers -> headers
+            // Prevent clickjacking — only allow framing from same origin
+            .frameOptions(frame -> frame.sameOrigin())
+            // Prevent MIME-type sniffing
+            .contentTypeOptions(cto -> {})
+            // Content Security Policy for the React SPA
+            .contentSecurityPolicy(csp -> csp.policyDirectives(
+                "default-src 'self'; "
+                + "script-src 'self' 'unsafe-inline'; "
+                + "style-src 'self' 'unsafe-inline'; "
+                + "img-src 'self' data: blob: https:; "
+                + "font-src 'self' data:; "
+                + "connect-src 'self' ws: wss: https:; "
+                + "frame-ancestors 'self'; "
+                + "object-src 'none'; "
+                + "base-uri 'self'"))
+            // Tell browsers to use HTTPS only (1 year)
+            .httpStrictTransportSecurity(hsts -> hsts
+                .maxAgeInSeconds(31536000)
+                .includeSubDomains(true))
+            // Referrer policy
+            .referrerPolicy(rp -> rp.policy(
+                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+            // Permissions policy — restrict sensitive browser features
+            .permissionsPolicy(pp -> pp.policy(
+                "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
         .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
             .accessDeniedHandler(jwtAccessDeniedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -97,7 +123,9 @@ public class SecurityConfig {
             // Allow any other request (frontend will handle auth)
             .anyRequest().permitAll())
         .authenticationProvider(authenticationProvider())
-        // Add malicious header filter before JWT filter
+        // Rate limiting runs first on auth/search/AI paths
+        .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+        // Malicious header detection runs after rate limiting
         .addFilterBefore(maliciousHeaderFilter, UsernamePasswordAuthenticationFilter.class)
         // Add MCP API key filter for /mcp/** paths
         .addFilterBefore(mcpAuthFilter, UsernamePasswordAuthenticationFilter.class)
