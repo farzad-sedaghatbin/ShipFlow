@@ -259,6 +259,13 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
+
+        <!-- Bucket4j - In-memory rate limiting (no Redis required) -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
     </dependencies>
 
     <profiles>

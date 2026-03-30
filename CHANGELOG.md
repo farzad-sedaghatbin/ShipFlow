@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 - **springdoc-openapi upgraded 2.3.0 → 2.8.6**: Keeps Swagger UI compatible with the new Spring MVC auto-configuration in Spring Boot 3.4.
 
 ### Added
+- **Rate limiting (Bucket4j)**: Per-IP token-bucket rate limits on sensitive API paths — `/api/auth/**` (10 req/min), `/api/search/**` (30 req/min), `/api/wise-architecture/**` and `/api/risk/**` (5 req/min). Excess requests receive HTTP 429 with JSON `{"error":"Too many requests","retryAfter":60}` and a `Retry-After` header.
+- **Security response headers**: Content-Security-Policy, `X-Content-Type-Options: nosniff`, HSTS (`max-age=31536000; includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()` added to all responses via Spring Security's headers DSL.
+- **Production secret validation** (`StartupSecretValidator`): On startup in the `prod` profile, ShipFlow now fails fast with a clear error message if `app.jwt.secret` or `spring.data.redis.password` is still set to the default development value. Prevents accidental production deployment with insecure credentials.
+- **Docker GHCR CI/CD** (`.github/workflows/docker.yml`): Pushing a `v*.*.*` tag now automatically builds the multi-stage Docker image and publishes `ghcr.io/farzad-sedaghatbin/shipflow:{version}` and `:latest` to GitHub Container Registry using `GITHUB_TOKEN` (no secrets required). Docker Buildx layer caching is enabled for fast builds.
+- **Docker build check on PRs**: `ci.yml` now includes a `docker-build-check` job that builds (but does not push) the Docker image on every PR to catch `Dockerfile` regressions early.
+- **React.lazy code splitting**: All 50+ page components in `App.tsx` are now loaded with `React.lazy()` + `<Suspense>`. Each page is a separate JS chunk. Only the landing page, login, auth infrastructure, and shared vendors load on first visit — subsequent page navigations stream in their chunk on demand.
+
+### Added
 - **`CODE_OF_CONDUCT.md`**: Community code of conduct adapted from Contributor Covenant v2.1 — defines expected behavior, enforcement guidelines, and contact for reporting violations.
 - **`ROADMAP.md`**: Root-level roadmap document pointing to the live `/roadmap` page on shipflow.dev with the full v0.8.0 session table and beyond-v0.8.0 milestones.
 
