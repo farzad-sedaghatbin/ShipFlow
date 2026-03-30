@@ -17,6 +17,7 @@ import Login from './pages/Login';
 import Landing from './pages/Landing';
 import ReleaseNotes from './pages/ReleaseNotes';
 import CompetitorsComparison from './pages/CompetitorsComparison';
+import PublicRoadmap from './pages/PublicRoadmap';
 import Profile from './pages/Profile';
 import People from './pages/People';
 import UserManagement from './pages/UserManagement';
@@ -119,6 +120,7 @@ function App() {
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/compare" element={<CompetitorsComparison />} />
       <Route path="/releases" element={<ReleaseNotes />} />
+      <Route path="/public-roadmap" element={<PublicRoadmap />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"
