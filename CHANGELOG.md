@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **`CODE_OF_CONDUCT.md`**: Community code of conduct adapted from Contributor Covenant v2.1 — defines expected behavior, enforcement guidelines, and contact for reporting violations.
+- **`ROADMAP.md`**: Root-level roadmap document pointing to the live `/roadmap` page on shipflow.dev with the full v0.8.0 session table and beyond-v0.8.0 milestones.
+
+### Changed
+- **Version bump to 0.8.0**: `backend/pom.xml` version `0.6.2 → 0.8.0`, `frontend/package.json` version `0.6.2 → 0.8.0`.
+- **Java version aligned to 21**: `pom.xml` `<java.version>17</java.version>` → `21` (matches CI and runtime).
+- **CORS prod config fixed**: `application-prod.properties` default allowed-origin updated from `ship.somedayy.com` to `shipflow.dev`.
+
+### Added
 - **Public Roadmap Page** (`/roadmap`): New public page (no auth required) showing upcoming milestones, recently shipped releases, and long-term vision. Accessible from the landing page nav alongside Competitors and Release Notes.
   - "What's Coming" section with v0.8.0 (In Progress), v0.9.0 (Planned), v1.0.0 (Planned) phase cards
   - "Recently Shipped" section sourced from CHANGELOG (v0.7.0, v0.6.2, v0.6.1)
