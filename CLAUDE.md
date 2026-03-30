@@ -17,9 +17,9 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 
 | Session | Task | Status |
 |---------|------|--------|
-| S01 | Public roadmap page (`/roadmap`) | pending |
-| S02 | Demo seed data refresh | pending |
-| S03 | Version alignment (pom.xml 0.8.0, java 21, CORS fix) | pending |
+| S01 | Public roadmap page (`/roadmap`) | ✅ done |
+| S02 | Demo seed data refresh | ✅ done |
+| S03 | Version alignment (pom.xml 0.8.0, java 21, CORS fix) | ✅ done |
 | S04 | Spring Boot upgrade 3.2.1 → 3.4.x | pending |
 | S05 | Rate limiting (Bucket4j) + CSP headers + startup secret validation | pending |
 | S06 | Docker GHCR CI/CD + React.lazy code splitting | pending |
