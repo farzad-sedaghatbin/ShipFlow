@@ -6616,5 +6616,18 @@
     "write": "Write",
     "preview": "Preview",
     "nothingToPreview": "Nothing to preview yet."
+  },
+  "attachments": {
+    "title": "Attachments",
+    "dropHint": "Drag & drop a file here, or click to browse",
+    "allowedTypes": "Images, PDF, DOCX, DOC, TXT, MD — max 10 MB",
+    "uploaded": "File uploaded successfully",
+    "uploadError": "Failed to upload file",
+    "deleted": "Attachment deleted",
+    "deleteError": "Failed to delete attachment",
+    "tooLarge": "File exceeds the 10 MB limit",
+    "unsupportedType": "Unsupported file type",
+    "uploading": "Uploading...",
+    "empty": "No attachments yet"
   }
 }

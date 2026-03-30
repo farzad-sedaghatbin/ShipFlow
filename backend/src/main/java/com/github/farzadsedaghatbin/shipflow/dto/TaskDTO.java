@@ -78,4 +78,7 @@ public class TaskDTO {
 
   // Comment count
   private Integer commentCount;
+
+  // Attachments
+  private java.util.List<TaskAttachmentDTO> attachments;
 }

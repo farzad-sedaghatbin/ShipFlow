@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
@@ -18,6 +19,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
@@ -46,6 +48,7 @@ public class TaskService {
   private final UserRepository userRepository;
   private final PitchRepository pitchRepository;
   private final HillChartPointRepository hillChartPointRepository;
+  private final TaskAttachmentRepository attachmentRepository;
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
@@ -698,7 +701,16 @@ public class TaskService {
         .parentTaskTitle(task.getParentTask() != null ? task.getParentTask().getTitle() : null)
         .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
-        .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty()).build();
+        .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())
+        .attachments(attachmentRepository.findByTaskIdOrderByCreatedAtDesc(task.getId()).stream()
+            .map(a -> TaskAttachmentDTO.builder()
+                .id(a.getId()).taskId(a.getTask().getId()).fileName(a.getFileName())
+                .fileSize(a.getFileSize()).contentType(a.getContentType())
+                .uploadedById(a.getUploadedBy() != null ? a.getUploadedBy().getId() : null)
+                .uploadedByUsername(a.getUploadedBy() != null ? a.getUploadedBy().getUsername() : null)
+                .createdAt(a.getCreatedAt()).build())
+            .collect(Collectors.toList()))
+        .build();
   }
 
   /**
