@@ -552,6 +552,16 @@ Press `?` to view all keyboard shortcuts:
 
 ## 🚀 Quick Start
 
+### Demo Credentials (seed data loaded automatically)
+
+| Username | Password | Role | Description |
+|----------|----------|------|-------------|
+| `admin` | `admin123` | Admin | Full system access |
+| `sara` | `demo123` | Manager | Mobile Banking App owner |
+| `ali` | `demo123` | Member | Backend developer |
+| `mina` | `demo123` | Member | Frontend developer |
+| `viewer` | `demo123` | Read-only | Read-only access |
+
 ```bash
 # 1. Set up environment (choose one option)
 

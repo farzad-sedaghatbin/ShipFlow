@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
   - "Roadmap" nav button added to Landing.tsx
   - i18n keys added to en.json and fa.json
 
+### Changed
+- **Demo seed data refreshed** — replaced outdated sample data with realistic 2026 demo content:
+  - Two projects: "Mobile Banking App" (Shape Up) and "DevOps Platform" (Kanban)
+  - Five demo users: `admin/admin123`, `sara/demo123` (Manager), `ali/demo123` (Member), `mina/demo123` (Member), `viewer/demo123` (Read-only)
+  - 7 pitches across the full Shape Up lifecycle (IDEA → DONE), hill chart positions, and work logs
+  - 16 tasks for the active MBA cycle and 21 Kanban tasks covering all 7 columns
+  - Bug reports (CRITICAL / MAJOR / MINOR), test cases, two retrospectives with votes, team assignments
+  - Wise Architecture conversation history, roadmap initiatives, epics, and releases
+
 ## [0.7.0] - 2026-03-24 - MCP Server (AI Editor Integration)
 
 ### Added
@@ -884,8 +893,6 @@ These signals inform better betting decisions, not performance evaluations.
   - **Database**: Automatic audit table creation via Hibernate Envers (`*_AUD` tables)
   - **Unit Tests**: Comprehensive tests for AuditService with mocked AuditReader
 
-<<<<<<< HEAD
-=======
 - **Direct Project Association for Bug Reports**
   - **Kanban Support**: Bug reports can now be directly associated with projects
   - **Flexible Workflow**: Support both Shape Up (cycle-based) and Kanban (project-only) methodologies
@@ -948,7 +955,6 @@ These signals inform better betting decisions, not performance evaluations.
 - **Frontend Stability**: Resolved React hooks violations and rendering issues
 - **API Robustness**: Better error handling and logging throughout the application
 
->>>>>>> release/v0.3.11
 ## [0.3.10] - 2026-02-02
 
 ### Added
@@ -1970,7 +1976,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 15 integration tests in MeetingControllerIntegrationTest (up from 6)
     - Tests cover pagination, filtering, action items, retrospective linking, and error validation
 
->>>>>>> 7aef3fd (feat(health): implement automated risk detection for Health Overview)
 ### Fixed
 - **Exception Handling**: BadRequestException now correctly returns 400 status instead of 500
   - Added explicit handler in GlobalExceptionHandler for BadRequestException
