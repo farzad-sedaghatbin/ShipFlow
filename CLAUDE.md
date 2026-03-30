@@ -22,7 +22,7 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S03 | Version alignment (pom.xml 0.8.0, java 21, CORS fix) | ✅ done |
 | S04 | Spring Boot upgrade 3.2.1 → 3.4.x | ✅ done |
 | S05 | Rate limiting (Bucket4j) + CSP headers + startup secret validation | ✅ done |
-| S06 | Docker GHCR CI/CD + React.lazy code splitting | pending |
+| S06 | Docker GHCR CI/CD + React.lazy code splitting | ✅ done |
 | S07 | File attachments on tasks — backend | pending |
 | S08 | File attachments on tasks — frontend | pending |
 | S09 | Bulk task operations — backend | pending |
