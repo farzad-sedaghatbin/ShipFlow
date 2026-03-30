@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Spring Boot upgraded 3.2.1 → 3.4.7**: Pulls in Spring Framework 6.2, Hibernate 6.6, Spring Security 6.4, and Spring Data 3.4. Zero application-code changes required — all 1849 existing tests pass.
+- **springdoc-openapi upgraded 2.3.0 → 2.8.6**: Keeps Swagger UI compatible with the new Spring MVC auto-configuration in Spring Boot 3.4.
+
 ### Added
 - **Rate limiting (Bucket4j)**: Per-IP token-bucket rate limits on sensitive API paths — `/api/auth/**` (10 req/min), `/api/search/**` (30 req/min), `/api/wise-architecture/**` and `/api/risk/**` (5 req/min). Excess requests receive HTTP 429 with JSON `{"error":"Too many requests","retryAfter":60}` and a `Retry-After` header.
 - **Security response headers**: Content-Security-Policy, `X-Content-Type-Options: nosniff`, HSTS (`max-age=31536000; includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()` added to all responses via Spring Security's headers DSL.
