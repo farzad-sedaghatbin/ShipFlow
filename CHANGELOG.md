@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Spring Boot upgraded 3.2.1 → 3.4.7**: Pulls in Spring Framework 6.2, Hibernate 6.6, Spring Security 6.4, and Spring Data 3.4. Zero application-code changes required — all 1849 existing tests pass.
+- **springdoc-openapi upgraded 2.3.0 → 2.8.6**: Keeps Swagger UI compatible with the new Spring MVC auto-configuration in Spring Boot 3.4.
+
 ### Added
 - **`CODE_OF_CONDUCT.md`**: Community code of conduct adapted from Contributor Covenant v2.1 — defines expected behavior, enforcement guidelines, and contact for reporting violations.
 - **`ROADMAP.md`**: Root-level roadmap document pointing to the live `/roadmap` page on shipflow.dev with the full v0.8.0 session table and beyond-v0.8.0 milestones.
