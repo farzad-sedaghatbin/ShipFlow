@@ -49,3 +49,25 @@ jobs:
       run: |
         cd frontend
         npm test -- --run
+
+  docker-build-check:
+    name: Docker build check (no push)
+    runs-on: ubuntu-latest
+    # Only run on PRs — publishing is handled by docker.yml on tag push
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (verify only, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/farzad-sedaghatbin/shipflow:pr-check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

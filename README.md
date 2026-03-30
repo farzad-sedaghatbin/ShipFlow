@@ -552,6 +552,21 @@ Press `?` to view all keyboard shortcuts:
 
 ## 🚀 Quick Start
 
+### Docker (fastest — production-ready)
+
+```bash
+# Pull the latest image from GitHub Container Registry
+docker pull ghcr.io/farzad-sedaghatbin/shipflow:latest
+
+# Or pin to a specific version
+docker pull ghcr.io/farzad-sedaghatbin/shipflow:0.8.0
+
+# Run with docker compose (PostgreSQL + Redis + ShipFlow)
+docker compose up -d
+```
+
+### Local Development
+
 ### Demo Credentials (seed data loaded automatically)
 
 | Username | Password | Role | Description |
