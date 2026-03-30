@@ -29,8 +29,8 @@ DELETE FROM hill_chart_history;
 DELETE FROM task_dependencies;
 DELETE FROM work_logs;
 DELETE FROM meetings;
-DELETE FROM test_runs;
 DELETE FROM bug_reports;
+DELETE FROM test_runs;
 DELETE FROM test_cases;
 DELETE FROM betting_decisions;
 DELETE FROM cooldown_activities;
@@ -360,7 +360,7 @@ INSERT INTO test_cases (id, test_case_key, title, description, preconditions, st
     'User is on OTP confirmation screen after initiating a transfer.',
     E'1. Enter wrong OTP three times\n2. Observe error on third attempt\n3. Verify OTP field is disabled\n4. Verify ''Send new code'' CTA appears\n5. Request new OTP and verify counter resets',
     'OTP locked after 3 failures. New OTP request re-enables input.',
-    1, 2, 2, 'E2E', 'HIGH', 'APPROVED', 'otp,auth,security', 15, NULL, '2026-02-08 10:00:00', CURRENT_TIMESTAMP),
+    1, 2, 2, 'E2E', 'HIGH', 'APPROVED', 'otp,auth,security', 15, 4, '2026-02-08 10:00:00', CURRENT_TIMESTAMP),
 (2, 'MBA-TC-002',
     'Transfer rejected on insufficient balance',
     'Verify payment flow handles insufficient balance: shows error before OTP to avoid user frustration.',
@@ -471,9 +471,9 @@ UPDATE bug_reports SET target_release_id = 1 WHERE id = 2;
 -- ── STEP 21 — COMMENTS ───────────────────────────────────────────────────────
 INSERT INTO comments (id, content, entity_type, entity_id, author_id, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
 (1, 'Confirmed with PSP support: idempotency key must be UUID v4, max 64 chars. Adding X-Idempotency-Key header to API spec now.',
-    'PITCH', 3, 3, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+    'BUG_REPORT', 1, 3, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
 (2, 'Device-binding approach approved by security team. JWT payload includes device_fingerprint + public_key hash.',
-    'PITCH', 1, 2, '2026-02-20 11:00:00', '2026-02-20 11:00:00'),
+    'BUG_REPORT', 2, 2, '2026-02-20 11:00:00', '2026-02-20 11:00:00'),
 (3, 'Blocked waiting for DNS API key approval from security team. Raised ticket SEC-441.',
     'TASK',  26, 3, CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days');
 
