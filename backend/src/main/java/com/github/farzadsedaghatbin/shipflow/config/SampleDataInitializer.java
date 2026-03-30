@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -16,23 +17,33 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Seeds realistic 2026 demo data showcasing ShipFlow features.
+ *
+ * <p>Demo credentials: admin / admin123 (created by DefaultAdminInitializer)
+ *
+ * <p>Projects: - Mobile Banking App (Shape Up) - DevOps Platform (Kanban)
+ *
+ * <p>Demo users: admin / admin123 — ADMIN sara / demo123 — MANAGER ali / demo123 — MEMBER mina /
+ * demo123 — MEMBER viewer / demo123 — READONLY
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Order(1) // Run before KnowledgeSeeder
+@Order(2) // Run after DefaultAdminInitializer (Order=1)
 @ConditionalOnProperty(name = "app.sample-data.enabled", havingValue = "true")
 public class SampleDataInitializer implements CommandLineRunner {
 
   private final ProjectRepository projectRepository;
   private final CycleRepository cycleRepository;
   private final TeamRepository teamRepository;
-  private final PersonRepository personRepository;
   private final TeamAssignmentRepository teamAssignmentRepository;
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
   private final MeetingRepository meetingRepository;
   private final EvidenceRepository evidenceRepository;
   private final UserRepository userRepository;
+  private final PersonRepository personRepository;
   private final PasswordEncoder passwordEncoder;
   private final TaskRepository taskRepository;
   private final HillChartPointRepository hillChartPointRepository;
@@ -45,6 +56,10 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
   private final WiseArchitectureAdviceRepository wiseArchitectureAdviceRepository;
+  private final BugReportRepository bugReportRepository;
+  private final TestCaseRepository testCaseRepository;
+  private final RetrospectiveRepository retrospectiveRepository;
+  private final RetroItemRepository retroItemRepository;
 
   @Override
   @Transactional
@@ -54,628 +69,928 @@ public class SampleDataInitializer implements CommandLineRunner {
       return;
     }
 
-    log.info("Initializing sample data...");
+    log.info("Initializing 2026 sample data...");
+
+    // ── Persons ──────────────────────────────────────────────────────────────
+    Person saraPerson =
+        createPerson(
+            "Sara Hosseini",
+            "sara@shipflow.dev",
+            "Java, Spring Boot, Architecture, Leadership",
+            null);
+    Person aliPerson =
+        createPerson(
+            "Ali Rezaei", "ali@shipflow.dev", "Java, Spring Boot, PostgreSQL, Redis", null);
+    Person minaPerson =
+        createPerson(
+            "Mina Ahmadi",
+            "mina@shipflow.dev",
+            "React, TypeScript, Tailwind CSS, Vite",
+            null);
+    Person viewerPerson =
+        createPerson("View Only", "viewer@shipflow.dev", "Product Management", null);
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    createUser("sara", "demo123", UserRole.MANAGER, saraPerson);
+    createUser("ali", "demo123", UserRole.MEMBER, aliPerson);
+    createUser("mina", "demo123", UserRole.MEMBER, minaPerson);
+    createUser("viewer", "demo123", UserRole.READONLY, viewerPerson);
 
-    // Create persons (independent of teams)
-    Person alice = createPerson("Alice Johnson", "alice.johnson@example.com", "Java, React, PostgreSQL", null);
-    Person bob = createPerson("Bob Smith", "bob.smith@example.com", "Java, Spring Boot, Microservices", null);
-    Person carol = createPerson("Carol Williams", "carol.williams@example.com", "Testing, Selenium, Cypress", null);
-    Person dave = createPerson("Dave Brown", "dave.brown@example.com", "React, TypeScript, CSS", null);
-    Person eve = createPerson("Eve Davis", "eve.davis@example.com", "Figma, UI/UX, Prototyping", null);
-    Person frank = createPerson("Frank Miller", "frank.miller@example.com", "Architecture, DevOps, Leadership",
-        null);
-    Person grace = createPerson("Grace Lee", "grace.lee@example.com", "Python, Data Analysis, Machine Learning",
-        null);
-    Person henry = createPerson("Henry Wilson", "henry.wilson@example.com", "Android, Kotlin, Mobile Development",
-        null);
-
-    // Create users for sample persons
-    createUser("alice", "password", UserRole.MEMBER, alice);
-    createUser("bob", "password", UserRole.MEMBER, bob);
-    createUser("carol", "password", UserRole.MEMBER, carol);
-    createUser("dave", "password", UserRole.MEMBER, dave);
-    createUser("eve", "password", UserRole.MEMBER, eve);
-    createUser("frank", "password", UserRole.MANAGER, frank);
-    createUser("grace", "password", UserRole.MEMBER, grace);
-    createUser("henry", "password", UserRole.MEMBER, henry);
-
-    // Create projects first
-    User aliceUser = userRepository.findByUsername("alice").orElse(null);
-    User frankUser = userRepository.findByUsername("frank").orElse(null);
-
-    Project mainProject = Project.builder().name("ShipFlow").projectKey("SUT")
-        .description("Main product development - Shape Up tracking and collaboration platform").color("#3B82F6")
-        .owner(aliceUser).isActive(true).enableRetrospectives(true)
-        .createdAt(LocalDateTime.now().minusMonths(12)).build();
-    projectRepository.save(mainProject);
-
-    Project internalToolsProject = Project.builder().name("Internal Tools").projectKey("IT")
-        .description("Suite of internal tools for team productivity").color("#10B981").owner(aliceUser)
-        .isActive(true).enableRetrospectives(true).createdAt(LocalDateTime.now().minusMonths(8)).build();
-    projectRepository.save(internalToolsProject);
-
-    Project mobileAppProject = Project.builder().name("Mobile App").projectKey("MA")
-        .description("Native mobile application for iOS and Android").color("#8B5CF6").owner(frankUser)
-        .isActive(true).enableRetrospectives(true).createdAt(LocalDateTime.now().minusMonths(6)).build();
-    projectRepository.save(mobileAppProject);
-
-    // Create active cycle for main project
-    Cycle activeCycle = Cycle.builder().project(mainProject).name("Q1 2025 - Feature Sprint")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
-    cycleRepository.save(activeCycle);
-
-    // Create completed cycles for main project
-    Cycle completedCycle1 = Cycle.builder().project(mainProject).name("Q4 2024 - Holiday Release")
-        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.BETTING_COOLDOWN)
-        .isActive(false).build();
-    cycleRepository.save(completedCycle1);
-
-    Cycle completedCycle2 = Cycle.builder().project(mainProject).name("Q3 2024 - Summer Sprint")
-        .startDate(LocalDate.of(2024, 8, 5)).endDate(LocalDate.of(2024, 9, 20)).phase(CyclePhase.BETTING_COOLDOWN)
-        .isActive(false).build();
-    cycleRepository.save(completedCycle2);
-
-    Cycle completedCycle3 = Cycle.builder().project(mainProject).name("Q2 2024 - Mobile Expansion")
-        .startDate(LocalDate.of(2024, 5, 6)).endDate(LocalDate.of(2024, 6, 21)).phase(CyclePhase.BETTING_COOLDOWN)
-        .isActive(false).build();
-    cycleRepository.save(completedCycle3);
-
-    // Create cycles for Internal Tools project
-    Cycle itCycle1 = Cycle.builder().project(internalToolsProject).name("IT Q1 2025 - Dashboard & Analytics")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 14)).phase(CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
-    cycleRepository.save(itCycle1);
-
-    Cycle itCycle2 = Cycle.builder().project(internalToolsProject).name("IT Q4 2024 - Automation Tools")
-        .startDate(LocalDate.of(2024, 11, 4)).endDate(LocalDate.of(2024, 12, 13)).phase(CyclePhase.BETTING_COOLDOWN)
-        .isActive(false).build();
-    cycleRepository.save(itCycle2);
-
-    // Create cycles for Mobile App project
-    Cycle maCycle1 = Cycle.builder().project(mobileAppProject).name("MA Q1 2025 - iOS & Android Launch")
-        .startDate(LocalDate.of(2025, 1, 6)).endDate(LocalDate.of(2025, 2, 28)).phase(CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
-    cycleRepository.save(maCycle1);
-
-    Cycle maCycle2 = Cycle.builder().project(mobileAppProject).name("MA Q4 2024 - Beta Testing")
-        .startDate(LocalDate.of(2024, 10, 7)).endDate(LocalDate.of(2024, 12, 20)).phase(CyclePhase.BETTING_COOLDOWN)
-        .isActive(false).build();
-    cycleRepository.save(maCycle2);
-
-    // Create Roadmap data - Initiatives, Epics, and Releases
-    createRoadmapData(mainProject, internalToolsProject, mobileAppProject, aliceUser, frankUser,
-        activeCycle, itCycle1, maCycle1);
-
-    // Create teams for active cycle
-    Team alphaTeam = Team.builder().name("Alpha Team").build();
-    teamRepository.save(alphaTeam);
-
-    Team betaTeam = Team.builder().name("Beta Team").build();
-    teamRepository.save(betaTeam);
-
-    // Create teams for past cycles
-    Team pastTeam1 = Team.builder().name("Release Team").build();
-    teamRepository.save(pastTeam1);
-
-    Team pastTeam2 = Team.builder().name("Summer Squad").build();
-    teamRepository.save(pastTeam2);
-
-    Team pastTeam3 = Team.builder().name("Mobile Team").build();
-    teamRepository.save(pastTeam3);
-
-    // Create team assignments for active cycle - Alpha Team
-    createAssignment(alice, alphaTeam, TeamMemberRole.FULLSTACK, activeCycle.getStartDate(), null);
-    createAssignment(bob, alphaTeam, TeamMemberRole.BACKEND, activeCycle.getStartDate(), null);
-    createAssignment(carol, alphaTeam, TeamMemberRole.QA, activeCycle.getStartDate(), null);
-
-    // Create team assignments for active cycle - Beta Team
-    createAssignment(dave, betaTeam, TeamMemberRole.FRONTEND, activeCycle.getStartDate(), null);
-    createAssignment(eve, betaTeam, TeamMemberRole.DESIGNER, activeCycle.getStartDate(), null);
-    createAssignment(frank, betaTeam, TeamMemberRole.TECH_LEAD, activeCycle.getStartDate(), null);
-
-    // Create team assignments for past cycles (historical data)
-    createAssignment(alice, pastTeam1, TeamMemberRole.TECH_LEAD, completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(), false);
-    createAssignment(bob, pastTeam1, TeamMemberRole.BACKEND, completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(), false);
-    createAssignment(grace, pastTeam1, TeamMemberRole.FULLSTACK, completedCycle1.getStartDate(),
-        completedCycle1.getEndDate(), false);
-
-    createAssignment(dave, pastTeam2, TeamMemberRole.FRONTEND, completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(), false);
-    createAssignment(eve, pastTeam2, TeamMemberRole.DESIGNER, completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(), false);
-    createAssignment(frank, pastTeam2, TeamMemberRole.TECH_LEAD, completedCycle2.getStartDate(),
-        completedCycle2.getEndDate(), false);
-
-    createAssignment(henry, pastTeam3, TeamMemberRole.FULLSTACK, completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(), false);
-    createAssignment(grace, pastTeam3, TeamMemberRole.BACKEND, completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(), false);
-    createAssignment(carol, pastTeam3, TeamMemberRole.QA, completedCycle3.getStartDate(),
-        completedCycle3.getEndDate(), false);
-
-    // Create pitches for active cycle with varied statuses
-    Pitch userDashboard = Pitch.builder().title("User Dashboard Redesign")
-        .description("Complete redesign of the user dashboard with new analytics widgets and improved UX")
-        .appetiteDays(6).cycle(activeCycle).team(alphaTeam).status(PitchStatus.IN_PROGRESS)
-        .createdAt(LocalDateTime.now().minusDays(10)).updatedAt(LocalDateTime.now()).build();
-    pitchRepository.save(userDashboard);
-
-    Pitch apiIntegration = Pitch.builder().title("Third-party API Integration")
-        .description("Integrate with external payment provider API and implement webhook handlers")
-        .appetiteDays(4).cycle(activeCycle).team(alphaTeam).status(PitchStatus.IN_PROGRESS)
-        .createdAt(LocalDateTime.now().minusDays(5)).updatedAt(LocalDateTime.now()).build();
-    pitchRepository.save(apiIntegration);
-
-    Pitch mobileApp = Pitch.builder().title("Mobile App Notification System")
-        .description("Push notification system for mobile app with customizable preferences").appetiteDays(5)
-        .cycle(activeCycle).team(betaTeam).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(15))
-        .updatedAt(LocalDateTime.now().minusDays(1)).build();
-    pitchRepository.save(mobileApp);
-
-    Pitch reportModule = Pitch.builder().title("Advanced Reporting Module")
-        .description("New reporting module with PDF export and scheduled email delivery").appetiteDays(6)
-        .cycle(activeCycle).team(betaTeam).status(PitchStatus.IN_PROGRESS)
-        .createdAt(LocalDateTime.now().minusDays(8)).updatedAt(LocalDateTime.now()).build();
-    pitchRepository.save(reportModule);
-
-    Pitch searchFeature = Pitch.builder().title("Enhanced Search Functionality")
-        .description("Add full-text search with filters and autocomplete").appetiteDays(4).cycle(activeCycle)
-        .team(alphaTeam).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(12))
-        .updatedAt(LocalDateTime.now().minusDays(2)).build();
-    pitchRepository.save(searchFeature);
-
-    // Create pitches for completed cycles with full work history
-    Pitch darkMode = Pitch.builder().title("Dark Mode Support")
-        .description("Implement dark mode across all UI components").appetiteDays(3).cycle(completedCycle1)
-        .team(pastTeam1).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(60))
-        .updatedAt(LocalDateTime.now().minusDays(45)).build();
-    pitchRepository.save(darkMode);
-
-    Pitch performanceOpt = Pitch.builder().title("Performance Optimization")
-        .description("Database query optimization and caching implementation").appetiteDays(5)
-        .cycle(completedCycle1).team(pastTeam1).status(PitchStatus.DONE)
-        .createdAt(LocalDateTime.now().minusDays(58)).updatedAt(LocalDateTime.now().minusDays(43)).build();
-    pitchRepository.save(performanceOpt);
-
-    Pitch socialIntegration = Pitch.builder().title("Social Media Integration")
-        .description("Share content to Twitter, LinkedIn, and Facebook").appetiteDays(4).cycle(completedCycle2)
-        .team(pastTeam2).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(100))
-        .updatedAt(LocalDateTime.now().minusDays(85)).build();
-    pitchRepository.save(socialIntegration);
-
-    Pitch dataExport = Pitch.builder().title("Data Export Feature")
-        .description("Export user data in CSV and Excel formats").appetiteDays(3).cycle(completedCycle2)
-        .team(pastTeam2).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(95))
-        .updatedAt(LocalDateTime.now().minusDays(82)).build();
-    pitchRepository.save(dataExport);
-
-    Pitch mobileOnboarding = Pitch.builder().title("Mobile Onboarding Flow")
-        .description("Improved first-time user experience on mobile").appetiteDays(5).cycle(completedCycle3)
-        .team(pastTeam3).status(PitchStatus.DONE).createdAt(LocalDateTime.now().minusDays(140))
-        .updatedAt(LocalDateTime.now().minusDays(125)).build();
-    pitchRepository.save(mobileOnboarding);
-
-    Pitch offlineMode = Pitch.builder().title("Offline Mode Support")
-        .description("Enable app functionality without internet connection").appetiteDays(6)
-        .cycle(completedCycle3).team(pastTeam3).status(PitchStatus.DONE)
-        .createdAt(LocalDateTime.now().minusDays(138)).updatedAt(LocalDateTime.now().minusDays(123)).build();
-    pitchRepository.save(offlineMode);
-
-    // Create work logs for active cycle pitches
-    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(5), new BigDecimal("6.5"),
-        "Designed new widget layout");
-    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(4), new BigDecimal("7.0"),
-        "Implemented chart components");
-    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(3), new BigDecimal("5.5"),
-        "Added drag-and-drop functionality");
-    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("6.0"),
-        "Fixed responsive layout issues");
-    createWorkLog(alice, userDashboard, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
-        "Integrated with analytics API");
-    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(4), new BigDecimal("8.0"),
-        "Built API endpoints for widgets");
-    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
-        "Optimized database queries");
-    createWorkLog(bob, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("7.0"), "Added caching layer");
-    createWorkLog(carol, userDashboard, LocalDate.now().minusDays(2), new BigDecimal("4.0"), "Created test cases");
-    createWorkLog(carol, userDashboard, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
-        "Performed integration testing");
-
-    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(4), new BigDecimal("7.5"),
-        "Set up payment provider SDK");
-    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
-        "Implemented webhook handlers");
-    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(2), new BigDecimal("6.5"),
-        "Added error handling and retry logic");
-    createWorkLog(bob, apiIntegration, LocalDate.now().minusDays(1), new BigDecimal("5.0"),
-        "Writing integration tests");
-    createWorkLog(alice, apiIntegration, LocalDate.now().minusDays(2), new BigDecimal("4.0"),
-        "Built admin UI for payment settings");
-
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(14), new BigDecimal("8.0"),
-        "Set up notification service");
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(13), new BigDecimal("7.0"),
-        "Built notification preferences UI");
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(12), new BigDecimal("6.5"),
-        "Integrated with Firebase");
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(11), new BigDecimal("6.0"),
-        "Implemented push notification handlers");
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(10), new BigDecimal("5.5"),
-        "Added notification scheduling");
-    createWorkLog(eve, mobileApp, LocalDate.now().minusDays(9), new BigDecimal("5.0"),
-        "Designed notification templates");
-    createWorkLog(eve, mobileApp, LocalDate.now().minusDays(8), new BigDecimal("4.5"),
-        "Created user preference flows");
-    createWorkLog(frank, mobileApp, LocalDate.now().minusDays(7), new BigDecimal("4.0"),
-        "Code review and architecture refinement");
-    createWorkLog(dave, mobileApp, LocalDate.now().minusDays(3), new BigDecimal("6.0"), "Bug fixes and polish");
-
-    createWorkLog(frank, reportModule, LocalDate.now().minusDays(7), new BigDecimal("7.0"),
-        "Designed report templates");
-    createWorkLog(frank, reportModule, LocalDate.now().minusDays(6), new BigDecimal("6.5"),
-        "Implemented PDF generation");
-    createWorkLog(frank, reportModule, LocalDate.now().minusDays(5), new BigDecimal("7.0"),
-        "Built report scheduler");
-    createWorkLog(dave, reportModule, LocalDate.now().minusDays(4), new BigDecimal("5.5"),
-        "Created report UI components");
-    createWorkLog(dave, reportModule, LocalDate.now().minusDays(3), new BigDecimal("6.0"),
-        "Added chart visualizations");
-    createWorkLog(eve, reportModule, LocalDate.now().minusDays(2), new BigDecimal("4.0"),
-        "Designed report layouts");
-
-    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(11), new BigDecimal("7.5"),
-        "Integrated Elasticsearch");
-    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(10), new BigDecimal("6.0"),
-        "Built search API endpoints");
-    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(9), new BigDecimal("6.5"),
-        "Implemented autocomplete");
-    createWorkLog(bob, searchFeature, LocalDate.now().minusDays(8), new BigDecimal("5.5"), "Added search filters");
-    createWorkLog(bob, searchFeature, LocalDate.now().minusDays(7), new BigDecimal("6.0"),
-        "Optimized search performance");
-    createWorkLog(alice, searchFeature, LocalDate.now().minusDays(6), new BigDecimal("5.0"), "Built search UI");
-    createWorkLog(carol, searchFeature, LocalDate.now().minusDays(3), new BigDecimal("4.5"), "QA testing");
-
-    // Work logs for completed cycle 1 (Q4 2024)
-    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 5), new BigDecimal("7.0"),
-        "Designed dark theme color palette");
-    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 6), new BigDecimal("8.0"), "Implemented theme switching");
-    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 7), new BigDecimal("6.5"), "Updated all components");
-    createWorkLog(bob, darkMode, LocalDate.of(2024, 11, 8), new BigDecimal("5.0"), "Fixed theme persistence");
-    createWorkLog(grace, darkMode, LocalDate.of(2024, 11, 11), new BigDecimal("4.5"), "Added user preferences");
-    createWorkLog(alice, darkMode, LocalDate.of(2024, 11, 12), new BigDecimal("5.5"), "Final polish and testing");
-
-    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 6), new BigDecimal("8.0"), "Analyzed slow queries");
-    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 7), new BigDecimal("7.5"), "Added database indexes");
-    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 8), new BigDecimal("7.0"),
-        "Implemented Redis caching");
-    createWorkLog(grace, performanceOpt, LocalDate.of(2024, 11, 11), new BigDecimal("6.5"),
-        "Optimized API endpoints");
-    createWorkLog(bob, performanceOpt, LocalDate.of(2024, 11, 12), new BigDecimal("6.0"),
-        "Added query result caching");
-    createWorkLog(grace, performanceOpt, LocalDate.of(2024, 11, 13), new BigDecimal("5.5"),
-        "Load testing and tuning");
-    createWorkLog(alice, performanceOpt, LocalDate.of(2024, 11, 14), new BigDecimal("4.5"),
-        "Performance monitoring setup");
-
-    // Work logs for completed cycle 2 (Q3 2024)
-    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 6), new BigDecimal("7.0"),
-        "Set up OAuth integrations");
-    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 7), new BigDecimal("6.5"),
-        "Built Twitter integration");
-    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 8), new BigDecimal("6.5"),
-        "Built LinkedIn integration");
-    createWorkLog(eve, socialIntegration, LocalDate.of(2024, 8, 9), new BigDecimal("5.5"),
-        "Designed share dialogs");
-    createWorkLog(dave, socialIntegration, LocalDate.of(2024, 8, 12), new BigDecimal("6.0"),
-        "Built Facebook integration");
-    createWorkLog(frank, socialIntegration, LocalDate.of(2024, 8, 13), new BigDecimal("5.0"),
-        "Added analytics tracking");
-
-    createWorkLog(eve, dataExport, LocalDate.of(2024, 8, 14), new BigDecimal("6.5"), "Designed export UI");
-    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 15), new BigDecimal("7.0"), "Implemented CSV export");
-    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 16), new BigDecimal("6.5"), "Implemented Excel export");
-    createWorkLog(dave, dataExport, LocalDate.of(2024, 8, 19), new BigDecimal("5.5"), "Added export filters");
-    createWorkLog(frank, dataExport, LocalDate.of(2024, 8, 20), new BigDecimal("5.0"), "Performance optimization");
-
-    // Work logs for completed cycle 3 (Q2 2024)
-    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 7), new BigDecimal("7.5"),
-        "Designed onboarding flow");
-    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 8), new BigDecimal("7.0"),
-        "Built welcome screens");
-    createWorkLog(grace, mobileOnboarding, LocalDate.of(2024, 5, 9), new BigDecimal("6.5"),
-        "Implemented tutorial steps");
-    createWorkLog(henry, mobileOnboarding, LocalDate.of(2024, 5, 10), new BigDecimal("6.0"),
-        "Added skip functionality");
-    createWorkLog(grace, mobileOnboarding, LocalDate.of(2024, 5, 13), new BigDecimal("5.5"),
-        "Built progress indicators");
-    createWorkLog(carol, mobileOnboarding, LocalDate.of(2024, 5, 14), new BigDecimal("4.5"), "QA and testing");
-
-    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 15), new BigDecimal("8.0"),
-        "Implemented local database");
-    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 16), new BigDecimal("7.5"), "Built sync mechanism");
-    createWorkLog(grace, offlineMode, LocalDate.of(2024, 5, 17), new BigDecimal("7.0"),
-        "Added conflict resolution");
-    createWorkLog(henry, offlineMode, LocalDate.of(2024, 5, 20), new BigDecimal("6.5"),
-        "Implemented offline queue");
-    createWorkLog(grace, offlineMode, LocalDate.of(2024, 5, 21), new BigDecimal("6.0"), "Built background sync");
-    createWorkLog(carol, offlineMode, LocalDate.of(2024, 5, 22), new BigDecimal("5.0"), "Offline mode testing");
-
-    // Create meetings
-    Meeting kickoff1 = Meeting.builder().pitch(userDashboard).type("KICKOFF")
-        .dateHeld(LocalDate.now().minusDays(10)).dorReady(true).dodReady(false)
-        .notes("Defined scope and milestones").build();
-    meetingRepository.save(kickoff1);
-
-    Meeting standup1 = Meeting.builder().pitch(userDashboard).type("STANDUP")
-        .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
-        .notes("Progress update - 70% complete").build();
-    meetingRepository.save(standup1);
-
-    Meeting shaping = Meeting.builder().pitch(reportModule).type("SHAPING")
-        .dateHeld(LocalDate.now().minusDays(5)).dorReady(false).dodReady(false)
-        .notes("Identified key requirements and risks").build();
-    meetingRepository.save(shaping);
-
-    Meeting betting = Meeting.builder().pitch(reportModule).type("BETTING")
-        .dateHeld(LocalDate.now().minusDays(3)).dorReady(true).dodReady(false)
-        .notes("Approved for next build phase").build();
-    meetingRepository.save(betting);
-
-    Meeting demo = Meeting.builder().pitch(mobileApp).type("DEMO").dateHeld(LocalDate.now().minusDays(1))
-        .dorReady(true).dodReady(true).notes("Successful demo to stakeholders").build();
-    meetingRepository.save(demo);
-
-    // Create evidences
-    Evidence evidence1 = Evidence.builder().pitch(userDashboard).person(alice).date(LocalDate.now().minusDays(4))
-        .description("Blocker: Third-party charting library has performance issues with large datasets")
-        .fileUrl(null).build();
-    evidenceRepository.save(evidence1);
-
-    Evidence evidence2 = Evidence.builder().pitch(mobileApp).person(dave).date(LocalDate.now().minusDays(6))
-        .description("QA passed - All notification flows working correctly on iOS and Android")
-        .fileUrl("https://example.com/qa-report.pdf").build();
-    evidenceRepository.save(evidence2);
-
-    Evidence evidence3 = Evidence.builder().pitch(apiIntegration).person(bob).date(LocalDate.now().minusDays(1))
-        .description("Waiting for API credentials from payment provider - ETA 2 days").fileUrl(null).build();
-    evidenceRepository.save(evidence3);
-
-    // Create sample tasks for active cycle
-    createTask("Setup Redux store for dashboard",
-        "Initialize Redux state management with slices for widgets and layout", TaskStatus.DONE,
-        TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("3.5"), activeCycle, alice, null, alice,
-        LocalDate.now().plusDays(5), "frontend,redux,setup");
-
-    createTask("Implement widget drag-and-drop", "Add react-beautiful-dnd for dashboard widget rearrangement",
-        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("5.5"), activeCycle, alice,
-        null, alice, LocalDate.now().plusDays(8), "frontend,ux,drag-drop");
-
-    createTask("Create chart API endpoints", "Build REST endpoints for fetching chart data with time range filters",
-        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("5.0"), new BigDecimal("3.0"), activeCycle,
-        bob, null, bob, LocalDate.now().plusDays(3), "backend,api,charts");
-
-    createTask("Optimize dashboard queries", "Add database indexes and implement query result caching",
-        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("2.5"), activeCycle,
-        bob, null, bob, LocalDate.now().plusDays(4), "backend,performance,database");
-
-    createTask("Write dashboard integration tests",
-        "Create Cypress tests for dashboard functionality and interactions", TaskStatus.TODO,
-        TaskPriority.MEDIUM, new BigDecimal("8.0"), null, activeCycle, carol, null, alice,
-        LocalDate.now().plusDays(7), "testing,cypress,integration");
-
-    createTask("Payment provider SDK integration", "Integrate Stripe SDK and configure API credentials",
-        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("6.0"), new BigDecimal("4.0"), activeCycle,
-        bob, null, bob, LocalDate.now().plusDays(2), "backend,payment,stripe");
-
-    createTask("Webhook signature verification", "Implement secure webhook verification using provider signatures",
-        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("3.0"), null, activeCycle, bob, alice, bob,
-        LocalDate.now().plusDays(4), "backend,security,webhooks");
-
-    createTask("Payment error handling", "Add comprehensive error handling and user-friendly messages",
-        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("4.0"), null, activeCycle, bob, null, bob,
-        LocalDate.now().plusDays(6), "backend,error-handling");
-
-    createTask("Admin payment settings UI", "Create admin panel for configuring payment provider settings",
-        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("3.0"), activeCycle,
-        alice, null, bob, LocalDate.now().plusDays(5), "frontend,admin,settings");
-
-    createTask("PDF report template design", "Create professional PDF templates for different report types",
-        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("4.0"), activeCycle,
-        eve, null, frank, LocalDate.now().plusDays(8), "design,pdf,templates");
-
-    createTask("Report scheduler backend", "Build cron-based scheduler for automated report generation",
-        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("7.0"), new BigDecimal("5.0"), activeCycle,
-        frank, null, frank, LocalDate.now().plusDays(6), "backend,scheduler,cron");
-
-    createTask("Email delivery service", "Implement email service for sending scheduled reports", TaskStatus.TODO,
-        TaskPriority.MEDIUM, new BigDecimal("5.0"), null, activeCycle, frank, null, frank,
-        LocalDate.now().plusDays(9), "backend,email,notifications");
-
-    createTask("Report UI components", "Create React components for report builder and viewer",
-        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("8.0"), new BigDecimal("6.0"), activeCycle,
-        dave, null, frank, LocalDate.now().plusDays(7), "frontend,react,components");
-
-    createTask("Chart visualization library", "Integrate Chart.js for interactive report charts", TaskStatus.TODO,
-        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, dave, null, frank,
-        LocalDate.now().plusDays(10), "frontend,charts,visualization");
-
-    createTask("Code review: Search feature", "Review and approve search implementation before merge",
-        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("2.0"), new BigDecimal("1.5"), activeCycle, frank,
-        null, alice, LocalDate.now().minusDays(3), "code-review,search");
-
-    createTask("Deploy search to staging", "Deploy Elasticsearch and search API to staging environment",
-        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("3.0"), new BigDecimal("2.5"), activeCycle, bob,
-        null, alice, LocalDate.now().minusDays(2), "devops,deployment,staging");
-
-    createTask("Write API documentation", "Document all new API endpoints with examples", TaskStatus.TODO,
-        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, alice, bob, alice,
-        LocalDate.now().plusDays(12), "documentation,api");
-
-    createTask("Update user guide", "Add documentation for new dashboard features", TaskStatus.TODO,
-        TaskPriority.LOW, new BigDecimal("3.0"), null, activeCycle, eve, null, alice,
-        LocalDate.now().plusDays(14), "documentation,user-guide");
-
-    createTask("Security audit: Payment flow", "Conduct security review of payment integration", TaskStatus.TODO,
-        TaskPriority.HIGH, new BigDecimal("5.0"), null, activeCycle, frank, bob, frank,
-        LocalDate.now().plusDays(8), "security,audit,payment");
-
-    createTask("Performance monitoring setup", "Configure application performance monitoring tools",
-        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("4.0"), new BigDecimal("2.0"), activeCycle,
-        bob, null, frank, LocalDate.now().plusDays(10), "devops,monitoring,performance");
-
-    createTask("Accessibility review", "Ensure dashboard meets WCAG 2.1 AA standards", TaskStatus.BACKLOG,
-        TaskPriority.MEDIUM, new BigDecimal("6.0"), null, activeCycle, eve, alice, eve,
-        LocalDate.now().plusDays(15), "accessibility,a11y,compliance");
-
-    createTask("Mobile responsive fixes", "Fix responsive layout issues on tablet and mobile", TaskStatus.TODO,
-        TaskPriority.MEDIUM, new BigDecimal("5.0"), null, activeCycle, dave, null, alice,
-        LocalDate.now().plusDays(9), "frontend,responsive,mobile");
-
-    createTask("Browser compatibility testing", "Test on Safari, Firefox, Chrome, and Edge", TaskStatus.BACKLOG,
-        TaskPriority.LOW, new BigDecimal("4.0"), null, activeCycle, carol, null, alice,
-        LocalDate.now().plusDays(16), "testing,browsers,qa");
-
-    createTask("Database migration script", "Create migration for new dashboard schema changes", TaskStatus.DONE,
-        TaskPriority.HIGH, new BigDecimal("2.0"), new BigDecimal("1.5"), activeCycle, bob, null, bob,
-        LocalDate.now().minusDays(5), "database,migration");
-
-    createTask("Implement notification preferences", "Add user preferences for notification channels and frequency",
-        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("4.5"), activeCycle, dave,
-        null, dave, LocalDate.now().minusDays(8), "frontend,notifications,preferences");
-
-    // Create technical debt tasks
-    createTask("Refactor authentication service",
-        "Technical Debt: Auth service has grown too complex, needs splitting into separate concerns",
-        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("8.0"), null, activeCycle, bob, null, frank,
-        LocalDate.now().plusDays(20), "backend,technical-debt,refactoring");
-
-    createTask("Update deprecated React lifecycle methods",
-        "Technical Debt: Replace componentWillMount and componentWillReceiveProps with hooks",
-        TaskStatus.IN_PROGRESS, TaskPriority.LOW, new BigDecimal("6.0"), new BigDecimal("2.0"), activeCycle,
-        alice, null, alice, LocalDate.now().plusDays(15), "frontend,technical-debt,react");
-
-    createTask("Add missing database indexes",
-        "Technical Debt: Several query performance issues due to missing indexes on foreign keys",
-        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("4.0"), null, activeCycle, bob, null, bob,
-        LocalDate.now().plusDays(10), "backend,technical-debt,database,performance");
-
-    createTask("Remove duplicate code in services",
-        "Technical Debt: Pitch and Task services have duplicate validation logic", TaskStatus.BACKLOG,
-        TaskPriority.LOW, new BigDecimal("5.0"), null, activeCycle, bob, null, frank,
-        LocalDate.now().plusDays(25), "backend,technical-debt,code-quality");
-
-    createTask("Upgrade to latest Spring Boot version",
-        "Technical Debt: Running on Spring Boot 3.1, need to upgrade to 3.2 for security patches",
-        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("10.0"), null, activeCycle, bob, alice, frank,
-        LocalDate.now().plusDays(18), "backend,technical-debt,dependencies,security");
-
-    createTask("Fix inconsistent error handling",
-        "Technical Debt: API endpoints return different error formats, need standardization",
-        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("3.5"), activeCycle,
-        bob, null, bob, LocalDate.now().plusDays(12), "backend,technical-debt,api,error-handling");
-
-    createTask("Improve test coverage for utils",
-        "Technical Debt: Utility classes have only 45% test coverage, target is 80%", TaskStatus.TODO,
-        TaskPriority.LOW, new BigDecimal("8.0"), null, activeCycle, carol, null, carol,
-        LocalDate.now().plusDays(22), "testing,technical-debt,coverage");
-
-    createTask("Remove unused npm dependencies",
-        "Technical Debt: Package.json has 15+ unused dependencies increasing bundle size", TaskStatus.BACKLOG,
-        TaskPriority.LOW, new BigDecimal("2.0"), null, activeCycle, dave, null, alice,
-        LocalDate.now().plusDays(30), "frontend,technical-debt,dependencies");
-
-    createTask("Migrate to React Query",
-        "Technical Debt: Replace custom data fetching hooks with React Query for better caching",
-        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("12.0"), null, activeCycle, alice, dave, alice,
-        LocalDate.now().plusDays(16), "frontend,technical-debt,refactoring,data-fetching");
-
-    createTask("Add API rate limiting", "Technical Debt: API endpoints lack rate limiting, vulnerable to abuse",
-        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("5.0"), null, activeCycle, bob, null, frank,
-        LocalDate.now().plusDays(8), "backend,technical-debt,security,api");
-
-    createTask("Consolidate CSS styles",
-        "Technical Debt: Multiple CSS files with duplicate styles and unused rules", TaskStatus.BACKLOG,
-        TaskPriority.LOW, new BigDecimal("7.0"), null, activeCycle, dave, null, eve,
-        LocalDate.now().plusDays(28), "frontend,technical-debt,css,cleanup");
-
-    // Create hill chart points for all active pitches
-    createHillChartPoints(userDashboard, alice);
-    createHillChartPoints(apiIntegration, bob);
-    createHillChartPoints(mobileApp, dave);
-    createHillChartPoints(reportModule, frank);
-    createHillChartPoints(searchFeature, alice);
-
-    // Create retrospectives for completed cycles
-    createRetrospectives(completedCycle1, pastTeam1, alice, bob, grace);
-    createRetrospectives(completedCycle2, pastTeam2, dave, eve, frank);
-
-    // Create manual notes for active pitches
-    createManualNotes(userDashboard, alice);
-    createManualNotes(apiIntegration, bob);
-    createManualNotes(reportModule, frank);
-
-    // Create custom dashboards for users
-    createCustomDashboards(alice, bob, frank);
-
-    // Create user preferences
-    createUserPreferences(alice, bob, carol, dave, eve, frank);
-
-    // Create risk feedback for pitches
-    createRiskFeedback(userDashboard, alice, bob);
-    createRiskFeedback(apiIntegration, bob, alice);
-    createRiskFeedback(reportModule, frank, dave);
-
-    // Create dashboard notifications
-    createDashboardNotifications(alice, bob, carol, dave, frank);
-
-    // Create WISE Architecture advice history
-    User bobUser = userRepository.findByUsername("bob").orElse(null);
     User adminUser = userRepository.findByUsername("admin").orElse(null);
-    createWiseArchitectureHistory(aliceUser, bobUser, frankUser, adminUser, userDashboard, performanceOpt, apiIntegration, searchFeature, reportModule);
+    User saraUser = userRepository.findByUsername("sara").orElse(null);
+    User aliUser = userRepository.findByUsername("ali").orElse(null);
+    User minaUser = userRepository.findByUsername("mina").orElse(null);
 
-    log.info("Sample data initialized successfully!");
+    // ── Projects ──────────────────────────────────────────────────────────────
+    Project bankingProject =
+        Project.builder()
+            .name("Mobile Banking App")
+            .projectKey("MBA")
+            .description(
+                "Consumer-facing mobile banking application — payments, biometric auth, "
+                    + "spending analytics, and card management.")
+            .color("#3B82F6")
+            .projectType(ProjectType.SHAPE_UP)
+            .owner(saraUser)
+            .isActive(true)
+            .enableRetrospectives(true)
+            .createdAt(LocalDateTime.of(2026, 1, 5, 9, 0))
+            .build();
+    projectRepository.save(bankingProject);
+
+    Project devopsProject =
+        Project.builder()
+            .name("DevOps Platform")
+            .projectKey("DVP")
+            .description(
+                "Internal platform engineering — Kubernetes, CI/CD pipelines, observability, "
+                    + "and infrastructure automation.")
+            .color("#10B981")
+            .projectType(ProjectType.KANBAN)
+            .owner(aliUser)
+            .isActive(true)
+            .enableRetrospectives(false)
+            .createdAt(LocalDateTime.of(2026, 1, 10, 9, 0))
+            .build();
+    projectRepository.save(devopsProject);
+
+    // ── Cycles ────────────────────────────────────────────────────────────────
+    // Shape Up — MBA cycles
+    Cycle mbaActiveCycle =
+        Cycle.builder()
+            .project(bankingProject)
+            .name("v2.0 — Payments Overhaul")
+            .startDate(LocalDate.of(2026, 4, 1))
+            .endDate(LocalDate.of(2026, 5, 15))
+            .phase(CyclePhase.SHAPING_BUILDING)
+            .isActive(true)
+            .build();
+    cycleRepository.save(mbaActiveCycle);
+
+    Cycle mbaCompletedCycle =
+        Cycle.builder()
+            .project(bankingProject)
+            .name("v1.5 — Biometric Authentication")
+            .startDate(LocalDate.of(2026, 2, 1))
+            .endDate(LocalDate.of(2026, 3, 14))
+            .phase(CyclePhase.BETTING_COOLDOWN)
+            .isActive(false)
+            .build();
+    cycleRepository.save(mbaCompletedCycle);
+
+    // Kanban — Continuous Flow cycle (mirrors ProjectService.createDefaultKanbanCycle)
+    Cycle kanbanCycle =
+        Cycle.builder()
+            .project(devopsProject)
+            .name("Continuous Flow")
+            .startDate(LocalDate.of(2026, 1, 10))
+            .endDate(LocalDate.of(2099, 12, 31))
+            .phase(CyclePhase.SHAPING_BUILDING)
+            .isActive(true)
+            .build();
+    cycleRepository.save(kanbanCycle);
+
+    // ── Roadmap: Initiatives, Epics, Releases ─────────────────────────────────
+    createRoadmapData(bankingProject, devopsProject, saraUser, aliUser);
+
+    // ── Teams ─────────────────────────────────────────────────────────────────
+    Team paymentsTeam = Team.builder().name("Payments Team").build();
+    teamRepository.save(paymentsTeam);
+
+    Team authTeam = Team.builder().name("Auth Team").build();
+    teamRepository.save(authTeam);
+
+    // Active cycle team assignments
+    createAssignment(aliPerson, paymentsTeam, TeamMemberRole.BACKEND, mbaActiveCycle.getStartDate(), null);
+    createAssignment(minaPerson, paymentsTeam, TeamMemberRole.FRONTEND, mbaActiveCycle.getStartDate(), null);
+    createAssignment(saraPerson, paymentsTeam, TeamMemberRole.TECH_LEAD, mbaActiveCycle.getStartDate(), null);
+
+    // Past cycle team assignments
+    createAssignment(aliPerson, authTeam, TeamMemberRole.BACKEND,
+        mbaCompletedCycle.getStartDate(), mbaCompletedCycle.getEndDate(), false);
+    createAssignment(minaPerson, authTeam, TeamMemberRole.FRONTEND,
+        mbaCompletedCycle.getStartDate(), mbaCompletedCycle.getEndDate(), false);
+    createAssignment(saraPerson, authTeam, TeamMemberRole.TECH_LEAD,
+        mbaCompletedCycle.getStartDate(), mbaCompletedCycle.getEndDate(), false);
+
+    // ── Pitches — MBA (6 pitches across all stages) ───────────────────────────
+
+    // In-cycle DONE pitches (completed cycle)
+    Pitch biometricLogin =
+        Pitch.builder()
+            .title("Biometric Login Flow")
+            .description(
+                "Replace password-only login with Face ID / fingerprint as the primary auth "
+                    + "method. Fallback to PIN. Integrates with iOS LocalAuthentication and "
+                    + "Android BiometricPrompt APIs. Server-side: issue short-lived JWT on "
+                    + "biometric success, revoke all sessions on device loss.")
+            .appetiteDays(6)
+            .cycle(mbaCompletedCycle)
+            .team(authTeam)
+            .status(PitchStatus.DONE)
+            .createdAt(LocalDateTime.of(2026, 1, 20, 10, 0))
+            .updatedAt(LocalDateTime.of(2026, 3, 10, 16, 0))
+            .build();
+    pitchRepository.save(biometricLogin);
+
+    Pitch sessionOverhaul =
+        Pitch.builder()
+            .title("Session Management Overhaul")
+            .description(
+                "Introduce refresh-token rotation, per-device session listing, and "
+                    + "remote logout. Users can see all active sessions (device, last seen, "
+                    + "location) and revoke any individually. Prevents session fixation "
+                    + "attacks and meets PCI-DSS session requirements.")
+            .appetiteDays(4)
+            .cycle(mbaCompletedCycle)
+            .team(authTeam)
+            .status(PitchStatus.DONE)
+            .createdAt(LocalDateTime.of(2026, 1, 22, 11, 0))
+            .updatedAt(LocalDateTime.of(2026, 3, 12, 14, 0))
+            .build();
+    pitchRepository.save(sessionOverhaul);
+
+    // In-cycle active pitches (active cycle)
+    Pitch instantTransfer =
+        Pitch.builder()
+            .title("Instant Transfer UI")
+            .description(
+                "End-to-end flow for instant bank transfers: beneficiary selection, "
+                    + "IBAN validation, transfer amount with fee preview, OTP confirmation, "
+                    + "and animated success/failure states. Connects to the existing "
+                    + "PaymentService. Target: < 5 taps from dashboard to confirmed transfer.")
+            .appetiteDays(6)
+            .cycle(mbaActiveCycle)
+            .team(paymentsTeam)
+            .status(PitchStatus.IN_PROGRESS)
+            .createdAt(LocalDateTime.of(2026, 3, 20, 9, 0))
+            .updatedAt(LocalDateTime.now())
+            .build();
+    pitchRepository.save(instantTransfer);
+
+    Pitch spendingAnalytics =
+        Pitch.builder()
+            .title("Spending Analytics Dashboard")
+            .description(
+                "Monthly and weekly spending breakdown by category (Food, Transport, "
+                    + "Bills, Entertainment). Bar chart for last 6 months, donut chart for "
+                    + "category split, biggest transactions list. Data derived from existing "
+                    + "transaction history. No new backend APIs needed — derive from "
+                    + "TransactionService.")
+            .appetiteDays(4)
+            .cycle(mbaActiveCycle)
+            .team(paymentsTeam)
+            .status(PitchStatus.STARTED)
+            .createdAt(LocalDateTime.of(2026, 3, 22, 10, 0))
+            .updatedAt(LocalDateTime.now())
+            .build();
+    pitchRepository.save(spendingAnalytics);
+
+    // Pre-cycle pitches (no cycle — in betting or shaping queue)
+    Pitch cardFreeze =
+        Pitch.builder()
+            .title("Card Freeze & Unfreeze")
+            .description(
+                "One-tap card freeze from the card detail screen. Frozen cards reject all "
+                    + "transactions at the network level. Unfreeze is equally instant. "
+                    + "Append-only freeze_events table for audit. Push notification on "
+                    + "freeze/unfreeze. Appetite: 2 days. No new DB tables needed — "
+                    + "add frozen_at TIMESTAMPTZ nullable to cards table.")
+            .appetiteDays(2)
+            .status(PitchStatus.SHAPED)
+            .createdAt(LocalDateTime.of(2026, 3, 15, 9, 0))
+            .updatedAt(LocalDateTime.of(2026, 3, 25, 11, 0))
+            .build();
+    pitchRepository.save(cardFreeze);
+
+    Pitch recurringPayments =
+        Pitch.builder()
+            .title("Recurring Payment Support")
+            .description(
+                "Allow users to set up standing orders: pick beneficiary, amount, frequency "
+                    + "(weekly/monthly/custom), and end date. Scheduler executes transfers "
+                    + "automatically. User receives push before each execution. Cancel/pause "
+                    + "at any time.")
+            .appetiteDays(5)
+            .status(PitchStatus.DRAFT)
+            .createdAt(LocalDateTime.of(2026, 3, 28, 14, 0))
+            .updatedAt(LocalDateTime.of(2026, 3, 29, 16, 0))
+            .build();
+    pitchRepository.save(recurringPayments);
+
+    Pitch fraudAlert =
+        Pitch.builder()
+            .title("AI Fraud Detection Alert")
+            .description(
+                "Use transaction velocity and geo-anomaly signals to flag suspicious "
+                    + "transactions in real time. Surface a dismissable alert in the app "
+                    + "within 30 seconds of a suspicious transaction. User can confirm "
+                    + "legitimate or freeze card immediately.")
+            .appetiteDays(6)
+            .status(PitchStatus.IDEA)
+            .createdAt(LocalDateTime.of(2026, 3, 29, 9, 0))
+            .updatedAt(LocalDateTime.of(2026, 3, 29, 9, 0))
+            .build();
+    pitchRepository.save(fraudAlert);
+
+    // ── Hill Chart Points ──────────────────────────────────────────────────────
+    // Completed pitches — near 100%
+    createHillChartPoints(biometricLogin, 95, 92, 100, 88);
+    createHillChartPoints(sessionOverhaul, 98, 95, 100, 90);
+    // Active pitches — realistic in-progress positions
+    createHillChartPoints(instantTransfer, 70, 55, 30, 45);
+    createHillChartPoints(spendingAnalytics, 80, 40, 20, 60);
+
+    // ── Tasks — MBA active cycle (15+ tasks) ──────────────────────────────────
+    createTask(
+        "Payment webhook handler",
+        "Implement /api/webhooks/payments endpoint. Validate HMAC-SHA256 signature, "
+            + "parse PSP event payload, map to internal PaymentEvent, publish to "
+            + "ApplicationEventPublisher.",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("8.0"), new BigDecimal("5.0"),
+        mbaActiveCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 15), "backend,payments,webhooks");
+
+    createTask(
+        "IBAN validation service",
+        "ISO 13616 IBAN validation: country code, check digits (MOD97), bank code "
+            + "lookup via BIC registry. Return validation result with bank name for UX.",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("5.0"), null,
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 4, 12), "backend,payments,validation");
+
+    createTask(
+        "Transfer confirmation screen",
+        "OTP input screen with 60-second countdown. Auto-submit on last digit. Resend "
+            + "OTP after cooldown. Animated success state with confetti. Error state "
+            + "with retry CTA.",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("6.0"), new BigDecimal("4.0"),
+        mbaActiveCycle, minaPerson, null, minaPerson, LocalDate.of(2026, 4, 14), "frontend,payments,ui");
+
+    createTask(
+        "Balance widget redesign",
+        "Redesign home screen balance widget: gradient background, masked balance "
+            + "toggle, mini sparkline for last 7 days, quick action buttons.",
+        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("4.0"), new BigDecimal("3.5"),
+        mbaActiveCycle, minaPerson, null, minaPerson, LocalDate.of(2026, 4, 5), "frontend,ui,design");
+
+    createTask(
+        "Transaction history pagination",
+        "Infinite scroll on transaction list. Backend: cursor-based pagination by "
+            + "transaction date + ID. Frontend: useInfiniteQuery, skeleton loaders.",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("3.0"),
+        mbaActiveCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 18), "backend,frontend,payments");
+
+    createTask(
+        "Spending category tagging",
+        "Tag each transaction with a spending category using merchant category codes "
+            + "(MCC). Seed MCC-to-category mapping table in Flyway migration.",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("6.0"), null,
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 4, 20), "backend,analytics,database");
+
+    createTask(
+        "Category breakdown chart",
+        "Donut chart for spending category split (Recharts). Animated on mount. "
+            + "Tap slice to drill into category transaction list.",
+        TaskStatus.BACKLOG, TaskPriority.MEDIUM, new BigDecimal("5.0"), null,
+        mbaActiveCycle, minaPerson, null, minaPerson, LocalDate.of(2026, 4, 25), "frontend,charts,analytics");
+
+    createTask(
+        "Monthly trend bar chart",
+        "Bar chart showing last 6 months total spending per month. Highlight current "
+            + "month. Tooltip shows amount and % change vs previous month.",
+        TaskStatus.BACKLOG, TaskPriority.LOW, new BigDecimal("4.0"), null,
+        mbaActiveCycle, minaPerson, null, minaPerson, LocalDate.of(2026, 4, 28), "frontend,charts,analytics");
+
+    createTask(
+        "Push notification for large transfers",
+        "Trigger FCM push notification when transfer > 50M IRR. Include amount, "
+            + "beneficiary, and deep link to transaction detail.",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("3.0"), null,
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 4, 22), "backend,notifications");
+
+    createTask(
+        "Fix decimal rounding in currency display",
+        "Bug: Amounts show 3 decimal places in Persian locale. Fix: use "
+            + "NumberFormat with maximumFractionDigits=0 for IRR, 2 for EUR/USD.",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("2.0"), new BigDecimal("1.5"),
+        mbaActiveCycle, minaPerson, null, aliPerson, LocalDate.of(2026, 4, 3), "frontend,bug,i18n");
+
+    createTask(
+        "API rate limiting — /api/transfers",
+        "Add Bucket4j rate limit: 10 transfers/min per user. Return 429 with "
+            + "Retry-After header. Add to RateLimitFilter.",
+        TaskStatus.IN_REVIEW, TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("3.0"),
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 4, 10), "backend,security,rate-limiting");
+
+    createTask(
+        "Accessibility audit — payment flow",
+        "WCAG 2.1 AA audit for the entire transfer flow. Fix: missing ARIA labels on "
+            + "icon buttons, insufficient contrast on disabled states.",
+        TaskStatus.BACKLOG, TaskPriority.MEDIUM, new BigDecimal("6.0"), null,
+        mbaActiveCycle, minaPerson, null, saraPerson, LocalDate.of(2026, 5, 5), "frontend,a11y,compliance");
+
+    createTask(
+        "E2E tests — transfer flow",
+        "Playwright E2E: login → dashboard → initiate transfer → OTP confirmation "
+            + "→ success screen → verify transaction in history.",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("8.0"), null,
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 5, 8), "testing,e2e,payments");
+
+    createTask(
+        "JWT refresh token rotation",
+        "Implement refresh token rotation: each /auth/refresh issues new access + "
+            + "refresh token and invalidates the previous refresh token (one-time use).",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("5.0"), new BigDecimal("4.5"),
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 4, 2), "backend,security,auth");
+
+    createTask(
+        "Error handling for payment timeout",
+        "Graceful UI for PSP timeout (>30s): stop spinner, show friendly error, "
+            + "offer retry. Log correlation ID for support lookup.",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("3.0"), new BigDecimal("1.5"),
+        mbaActiveCycle, minaPerson, null, aliPerson, LocalDate.of(2026, 4, 16), "frontend,error-handling,payments");
+
+    createTask(
+        "Performance test — high load transfer",
+        "k6 load test: simulate 500 concurrent users initiating transfers for 5 min. "
+            + "Target: p99 < 2s, 0% error rate.",
+        TaskStatus.TODO, TaskPriority.LOW, new BigDecimal("6.0"), null,
+        mbaActiveCycle, aliPerson, null, saraPerson, LocalDate.of(2026, 5, 10), "testing,performance,backend");
+
+    // ── Tasks — DevOps Platform Kanban (21 tasks across all 7 statuses) ───────
+    // DONE
+    createTask("Set up Kubernetes cluster on AWS EKS",
+        "Provision 3-node EKS cluster with managed node groups. Configure VPC, subnets, "
+            + "security groups, and IAM roles. Enable cluster autoscaler.",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("12.0"), new BigDecimal("14.0"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 2, 15), "infra,kubernetes,aws");
+
+    createTask("Configure Helm chart for ShipFlow backend",
+        "Package Spring Boot app as Helm chart: Deployment, Service, Ingress, "
+            + "ConfigMap, Secret. Values file for dev/staging/prod environments.",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("6.0"), new BigDecimal("5.5"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 2, 20), "infra,helm,kubernetes");
+
+    createTask("CI/CD pipeline for frontend (GitHub Actions)",
+        "On push to main: npm test → npm build → Docker build → push to GHCR → "
+            + "kubectl rollout restart. Cache node_modules between runs.",
+        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("5.0"), new BigDecimal("4.5"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 2, 25), "ci-cd,github-actions,frontend");
+
+    createTask("Network policies for pod isolation",
+        "Apply Kubernetes NetworkPolicy: deny all ingress by default, allow only "
+            + "explicit pod-to-pod communication paths.",
+        TaskStatus.DONE, TaskPriority.HIGH, new BigDecimal("4.0"), new BigDecimal("3.5"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 3, 5), "security,kubernetes,networking");
+
+    createTask("On-call rotation setup (PagerDuty)",
+        "Configure PagerDuty escalation policy: L1 → L2 → manager. Alert routing "
+            + "from Alertmanager. On-call schedule covering 24/7.",
+        TaskStatus.DONE, TaskPriority.MEDIUM, new BigDecimal("3.0"), new BigDecimal("3.0"),
+        kanbanCycle, saraPerson, null, saraPerson, LocalDate.of(2026, 3, 10), "ops,alerting,oncall");
+
+    // IN_PROGRESS
+    createTask("Prometheus + Alertmanager setup",
+        "Deploy kube-prometheus-stack via Helm. Configure alerts: pod restarts > 3, "
+            + "CPU > 80%, memory > 90%, disk > 85%. Route to PagerDuty and Slack.",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("8.0"), new BigDecimal("5.0"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 20), "monitoring,prometheus,alerting");
+
+    createTask("Grafana dashboard templates",
+        "Build standard dashboards: JVM metrics (heap, GC, threads), HTTP request "
+            + "rates, error rates, PostgreSQL connections, Redis hit rate.",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("3.0"),
+        kanbanCycle, minaPerson, null, aliPerson, LocalDate.of(2026, 4, 25), "monitoring,grafana,dashboards");
+
+    createTask("Terraform modules for AWS RDS",
+        "Reusable Terraform module for PostgreSQL RDS: multi-AZ, encrypted at rest, "
+            + "automated backups to S3, parameter group tuning.",
+        TaskStatus.IN_PROGRESS, TaskPriority.HIGH, new BigDecimal("10.0"), new BigDecimal("6.0"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 5, 1), "infra,terraform,aws");
+
+    createTask("SLA monitoring dashboard",
+        "Real-time SLA tracking: availability %, P50/P95/P99 latency, error rate. "
+            + "30-day rolling window. Send weekly PDF report to stakeholders.",
+        TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, new BigDecimal("7.0"), new BigDecimal("4.0"),
+        kanbanCycle, minaPerson, null, saraPerson, LocalDate.of(2026, 4, 30), "monitoring,sla,reporting");
+
+    // BLOCKED
+    createTask("SSL certificate renewal automation",
+        "Automate TLS cert renewal with cert-manager + Let's Encrypt. Requires DNS "
+            + "validation. Blocked: awaiting security team approval for DNS API key access.",
+        TaskStatus.BLOCKED, TaskPriority.HIGH, new BigDecimal("4.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 18), "security,tls,cert-manager");
+
+    // IN_REVIEW
+    createTask("Log aggregation with Grafana Loki",
+        "Ship pod logs to Loki via Promtail DaemonSet. Configure log retention 30 days. "
+            + "Add LogQL queries for error spikes and slow query detection.",
+        TaskStatus.IN_REVIEW, TaskPriority.MEDIUM, new BigDecimal("6.0"), new BigDecimal("5.5"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 22), "logging,loki,observability");
+
+    createTask("Redis cluster setup (6 nodes)",
+        "Deploy Redis 7 cluster mode: 3 primaries, 3 replicas. Configure maxmemory-policy "
+            + "allkeys-lru. Sentinel for failover. TLS between nodes.",
+        TaskStatus.IN_REVIEW, TaskPriority.HIGH, new BigDecimal("8.0"), new BigDecimal("7.0"),
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 4, 19), "infra,redis,caching");
+
+    createTask("Documentation site deployment (VitePress)",
+        "Deploy VitePress docs to GitHub Pages via Actions. Publish on every push to "
+            + "main. Custom domain docs.shipflow.dev. Include API reference.",
+        TaskStatus.IN_REVIEW, TaskPriority.LOW, new BigDecimal("4.0"), new BigDecimal("3.5"),
+        kanbanCycle, minaPerson, null, saraPerson, LocalDate.of(2026, 4, 21), "docs,vitepress,ci-cd");
+
+    // TODO
+    createTask("ArgoCD GitOps deployment",
+        "Install ArgoCD. Create Application CRs pointing to Helm charts in Git. "
+            + "Sync policy: automated with self-heal. RBAC: devs can view, ops can sync.",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("8.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 5, 10), "ci-cd,argocd,gitops");
+
+    createTask("HashiCorp Vault for secrets",
+        "Deploy Vault in HA mode. Migrate all K8s secrets to Vault KV v2. "
+            + "Enable Vault Agent Injector for pod secret injection. Audit logging.",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("10.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 5, 15), "security,vault,secrets");
+
+    createTask("PostgreSQL automated backup to S3",
+        "pg_dump nightly cron job in K8s. Encrypt with AES-256 before S3 upload. "
+            + "Alert if backup fails. Monthly restore drill automation.",
+        TaskStatus.TODO, TaskPriority.HIGH, new BigDecimal("5.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 5, 8), "database,backup,aws");
+
+    createTask("Container image security scanning (Trivy)",
+        "Add Trivy scan step to CI pipeline. Fail build on CRITICAL CVEs. "
+            + "Weekly scan of all images in GHCR registry. Report to Slack.",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("4.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 5, 12), "security,ci-cd,containers");
+
+    createTask("Disaster recovery playbook",
+        "Document full DR procedure: RTO target 4h, RPO target 1h. Cover DB restore, "
+            + "K8s cluster rebuild, DNS failover. Run quarterly drill.",
+        TaskStatus.TODO, TaskPriority.MEDIUM, new BigDecimal("6.0"), null,
+        kanbanCycle, saraPerson, null, saraPerson, LocalDate.of(2026, 5, 20), "ops,dr,documentation");
+
+    // BACKLOG
+    createTask("ELK stack migration from CloudWatch",
+        "Migrate app logs from CloudWatch to self-hosted ELK (Elasticsearch + Logstash "
+            + "+ Kibana). Estimate 3× cost reduction.",
+        TaskStatus.BACKLOG, TaskPriority.MEDIUM, new BigDecimal("15.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 6, 1), "logging,elk,infra");
+
+    createTask("Service mesh with Istio",
+        "Deploy Istio for mTLS between all services, traffic mirroring, canary "
+            + "deployments, and circuit breakers via VirtualService rules.",
+        TaskStatus.BACKLOG, TaskPriority.LOW, new BigDecimal("20.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 6, 15), "infra,istio,service-mesh");
+
+    createTask("Multi-region failover testing",
+        "Simulate full region failure: DNS failover to eu-west-1 backup region. "
+            + "Verify RDS read replica promotion. Measure actual RTO.",
+        TaskStatus.BACKLOG, TaskPriority.LOW, new BigDecimal("12.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 6, 20), "infra,dr,aws");
+
+    // CANCELLED
+    createTask("Migrate to AWS ECS (cancelled)",
+        "Evaluation of ECS as Kubernetes alternative. Cancelled: team voted to "
+            + "stay on EKS for better ecosystem and tooling compatibility.",
+        TaskStatus.CANCELLED, TaskPriority.LOW, new BigDecimal("20.0"), null,
+        kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 3, 1), "infra,ecs,cancelled");
+
+    // ── Work Logs ─────────────────────────────────────────────────────────────
+    createWorkLog(aliPerson, instantTransfer, LocalDate.of(2026, 4, 1), new BigDecimal("7.5"),
+        "Set up payment API integration, drafted webhook endpoint");
+    createWorkLog(aliPerson, instantTransfer, LocalDate.of(2026, 4, 2), new BigDecimal("6.0"),
+        "Implemented IBAN validation and bank code lookup");
+    createWorkLog(aliPerson, instantTransfer, LocalDate.of(2026, 4, 3), new BigDecimal("7.0"),
+        "Transfer submission flow + error handling");
+    createWorkLog(minaPerson, instantTransfer, LocalDate.of(2026, 4, 2), new BigDecimal("6.5"),
+        "Designed beneficiary selection screen with search");
+    createWorkLog(minaPerson, instantTransfer, LocalDate.of(2026, 4, 3), new BigDecimal("7.0"),
+        "OTP confirmation screen with animated states");
+    createWorkLog(saraPerson, instantTransfer, LocalDate.of(2026, 4, 4), new BigDecimal("3.0"),
+        "Code review — suggested retry-on-timeout pattern");
+
+    createWorkLog(minaPerson, spendingAnalytics, LocalDate.of(2026, 4, 1), new BigDecimal("5.0"),
+        "Dashboard layout prototype, category color system");
+    createWorkLog(aliPerson, spendingAnalytics, LocalDate.of(2026, 4, 2), new BigDecimal("4.0"),
+        "Transaction aggregation queries by MCC category");
+
+    createWorkLog(aliPerson, biometricLogin, LocalDate.of(2026, 2, 3), new BigDecimal("8.0"),
+        "iOS LocalAuthentication integration");
+    createWorkLog(aliPerson, biometricLogin, LocalDate.of(2026, 2, 4), new BigDecimal("7.5"),
+        "Android BiometricPrompt integration");
+    createWorkLog(minaPerson, biometricLogin, LocalDate.of(2026, 2, 5), new BigDecimal("6.0"),
+        "UI — enrollment screen, success animation");
+    createWorkLog(aliPerson, biometricLogin, LocalDate.of(2026, 2, 6), new BigDecimal("5.5"),
+        "JWT issuance on biometric success, device binding");
+    createWorkLog(saraPerson, biometricLogin, LocalDate.of(2026, 3, 8), new BigDecimal("3.0"),
+        "Final code review + sign off");
+
+    createWorkLog(aliPerson, sessionOverhaul, LocalDate.of(2026, 2, 10), new BigDecimal("7.0"),
+        "Refresh token rotation — DB schema + service layer");
+    createWorkLog(aliPerson, sessionOverhaul, LocalDate.of(2026, 2, 11), new BigDecimal("6.5"),
+        "Per-device session listing and revocation API");
+    createWorkLog(minaPerson, sessionOverhaul, LocalDate.of(2026, 2, 12), new BigDecimal("5.5"),
+        "Active sessions management UI");
+
+    // ── Meetings ──────────────────────────────────────────────────────────────
+    Meeting kickoff = Meeting.builder()
+        .pitch(instantTransfer)
+        .type("KICKOFF")
+        .dateHeld(LocalDate.of(2026, 4, 1))
+        .dorReady(true)
+        .dodReady(false)
+        .notes("Team aligned on scope. IBAN validation covers 42 countries. OTP flow prioritised.")
+        .build();
+    meetingRepository.save(kickoff);
+
+    Meeting standup = Meeting.builder()
+        .pitch(instantTransfer)
+        .type("STANDUP")
+        .dateHeld(LocalDate.of(2026, 4, 4))
+        .dorReady(true)
+        .dodReady(false)
+        .notes("Backend 60% — webhook handler ready. Frontend 40% — OTP screen in progress. No blockers.")
+        .build();
+    meetingRepository.save(standup);
+
+    Meeting shapingMeeting = Meeting.builder()
+        .pitch(cardFreeze)
+        .type("SHAPING")
+        .dateHeld(LocalDate.of(2026, 3, 20))
+        .dorReady(false)
+        .dodReady(false)
+        .notes("Appetite confirmed: 2 days. Decided append-only freeze_events vs flag on card. "
+            + "Chose flag for simplicity — audit via Envers.")
+        .build();
+    meetingRepository.save(shapingMeeting);
+
+    Meeting bettingMeeting = Meeting.builder()
+        .pitch(cardFreeze)
+        .type("BETTING")
+        .dateHeld(LocalDate.of(2026, 3, 25))
+        .dorReady(true)
+        .dodReady(false)
+        .notes("Card Freeze bet for v2.1 cooldown. Small but high-value for trust. Sara will handle.")
+        .build();
+    meetingRepository.save(bettingMeeting);
+
+    Meeting biometricDemo = Meeting.builder()
+        .pitch(biometricLogin)
+        .type("DEMO")
+        .dateHeld(LocalDate.of(2026, 3, 13))
+        .dorReady(true)
+        .dodReady(true)
+        .notes("Live demo to product and security teams. iOS + Android flows shown. "
+            + "Security team: approved for production rollout.")
+        .build();
+    meetingRepository.save(biometricDemo);
+
+    // ── Evidence ──────────────────────────────────────────────────────────────
+    Evidence ev1 = Evidence.builder()
+        .pitch(instantTransfer)
+        .person(aliPerson)
+        .date(LocalDate.of(2026, 4, 3))
+        .description("Blocker: PSP sandbox returns inconsistent IBAN validation errors. "
+            + "Raised support ticket #PT-88234. ETA: 2 working days.")
+        .fileUrl(null)
+        .build();
+    evidenceRepository.save(ev1);
+
+    Evidence ev2 = Evidence.builder()
+        .pitch(biometricLogin)
+        .person(saraPerson)
+        .date(LocalDate.of(2026, 3, 13))
+        .description("Security review passed. PCI-DSS session requirements met. "
+            + "Signed off for production — see review doc.")
+        .fileUrl("https://drive.shipflow.dev/biometric-security-review-v1.5.pdf")
+        .build();
+    evidenceRepository.save(ev2);
+
+    // ── Bug Reports ───────────────────────────────────────────────────────────
+    BugReport criticalBug = BugReport.builder()
+        .bugKey("MBA-BUG-001")
+        .title("Double submission on network timeout during transfer")
+        .description("When the network drops between POST /transfers and the PSP response, "
+            + "the user retries and the transfer executes twice. Balance deducted twice.")
+        .stepsToReproduce(
+            "1. Initiate transfer\n"
+            + "2. Kill network after request sent, before 200 received\n"
+            + "3. App shows spinner timeout\n"
+            + "4. User taps Retry\n"
+            + "5. Transfer processed twice")
+        .expectedBehavior("Idempotency key prevents duplicate processing.")
+        .actualBehavior("PSP processes second request independently. Balance deducted twice.")
+        .environment("iOS 17.4 / Production PSP sandbox")
+        .severity(BugSeverity.CRITICAL)
+        .status(BugStatus.IN_PROGRESS)
+        .project(bankingProject)
+        .pitch(instantTransfer)
+        .cycle(mbaActiveCycle)
+        .team(paymentsTeam)
+        .reporter(aliUser)
+        .assignee(aliPerson)
+        .createdAt(LocalDateTime.of(2026, 4, 4, 11, 30))
+        .build();
+    bugReportRepository.save(criticalBug);
+
+    BugReport majorBug = BugReport.builder()
+        .bugKey("MBA-BUG-002")
+        .title("Biometric auth fails on Samsung Galaxy S24 Ultra")
+        .description("BiometricPrompt dialog does not appear on Samsung Galaxy S24 Ultra "
+            + "running One UI 6.1. App falls through to PIN fallback without showing "
+            + "the biometric prompt at all.")
+        .stepsToReproduce(
+            "1. Open app on Samsung Galaxy S24 Ultra (One UI 6.1)\n"
+            + "2. Tap 'Login with Biometrics'\n"
+            + "3. Observe: PIN screen appears immediately, no biometric prompt")
+        .expectedBehavior("BiometricPrompt should appear.")
+        .actualBehavior("Biometric dialog skipped silently, falls to PIN.")
+        .environment("Samsung Galaxy S24 Ultra / Android 14 / One UI 6.1")
+        .severity(BugSeverity.MAJOR)
+        .status(BugStatus.OPEN)
+        .project(bankingProject)
+        .pitch(biometricLogin)
+        .cycle(mbaCompletedCycle)
+        .reporter(minaUser)
+        .createdAt(LocalDateTime.of(2026, 3, 16, 14, 0))
+        .build();
+    bugReportRepository.save(majorBug);
+
+    BugReport minorBug = BugReport.builder()
+        .bugKey("MBA-BUG-003")
+        .title("Currency symbol missing in Persian locale transaction list")
+        .description("In the Persian (FA) locale, the currency symbol (﷼) does not appear "
+            + "next to transaction amounts in the history list. Amount shows as a plain "
+            + "number with no unit. English locale is unaffected.")
+        .stepsToReproduce(
+            "1. Switch app language to Persian\n"
+            + "2. Open transaction history\n"
+            + "3. Observe: amounts display without ﷼ symbol")
+        .expectedBehavior("Amounts formatted as '1,500,000 ﷼' in Persian locale.")
+        .actualBehavior("Amounts show as '1500000' with no currency symbol.")
+        .environment("iOS 17.4 + Android 14 / Persian locale")
+        .severity(BugSeverity.MINOR)
+        .status(BugStatus.OPEN)
+        .project(bankingProject)
+        .reporter(minaUser)
+        .createdAt(LocalDateTime.of(2026, 4, 4, 9, 0))
+        .build();
+    bugReportRepository.save(minorBug);
+
+    // ── Test Cases ────────────────────────────────────────────────────────────
+    TestCase tc1 = TestCase.builder()
+        .testCaseKey("MBA-TC-001")
+        .title("OTP expiry after 3 failed attempts")
+        .description("Verify that OTP is invalidated after 3 consecutive wrong entries "
+            + "and the user is prompted to request a new code.")
+        .preconditions("User is on the OTP confirmation screen after initiating transfer.")
+        .steps(
+            "1. Enter wrong OTP three times\n"
+            + "2. Observe error message on third attempt\n"
+            + "3. Verify OTP field is disabled\n"
+            + "4. Verify 'Send new code' CTA appears\n"
+            + "5. Request new OTP and verify counter resets")
+        .expectedResult("OTP locked after 3 failures. New OTP request re-enables input.")
+        .pitch(biometricLogin)
+        .cycle(mbaCompletedCycle)
+        .team(authTeam)
+        .status(TestCaseStatus.APPROVED)
+        .type(TestCaseType.E2E)
+        .priority(TestCasePriority.HIGH)
+        .createdAt(LocalDateTime.of(2026, 2, 8, 10, 0))
+        .build();
+    testCaseRepository.save(tc1);
+
+    TestCase tc2 = TestCase.builder()
+        .testCaseKey("MBA-TC-002")
+        .title("Transfer rejected on insufficient balance")
+        .description("Verify the payment flow correctly handles insufficient balance: "
+            + "shows a clear error before the OTP step to avoid user frustration.")
+        .preconditions("User has a balance of 10,000 IRR. Attempting to transfer 1,000,000 IRR.")
+        .steps(
+            "1. Open transfer screen\n"
+            + "2. Enter beneficiary IBAN\n"
+            + "3. Enter amount 1,000,000 IRR\n"
+            + "4. Tap Continue\n"
+            + "5. Observe: inline error before OTP screen appears")
+        .expectedResult("Error message 'Insufficient balance' shown inline. OTP screen never shown.")
+        .pitch(instantTransfer)
+        .cycle(mbaActiveCycle)
+        .team(paymentsTeam)
+        .status(TestCaseStatus.READY)
+        .type(TestCaseType.FUNCTIONAL)
+        .priority(TestCasePriority.CRITICAL)
+        .createdBy(aliUser)
+        .createdAt(LocalDateTime.of(2026, 4, 2, 11, 0))
+        .build();
+    testCaseRepository.save(tc2);
+
+    // ── Retrospectives ────────────────────────────────────────────────────────
+    Retrospective retro1 = Retrospective.builder()
+        .title("v1.5 Biometric Auth — Sprint Retrospective")
+        .notes("Strong delivery. Biometric auth shipped on time and passed security review. "
+            + "Main pain point was lack of real Samsung devices for testing.")
+        .status(RetroStatus.CLOSED)
+        .cycle(mbaCompletedCycle)
+        .project(bankingProject)
+        .createdAt(LocalDateTime.of(2026, 3, 14, 14, 0))
+        .updatedAt(LocalDateTime.of(2026, 3, 14, 16, 0))
+        .closedAt(LocalDateTime.of(2026, 3, 14, 16, 0))
+        .build();
+    retrospectiveRepository.save(retro1);
+
+    createRetroItem(retro1, "Biometric flow shipped on time and passed PCI audit", RetroColumnType.WENT_WELL, saraUser, 4);
+    createRetroItem(retro1, "Team communication via ShipFlow comments kept everyone aligned", RetroColumnType.WENT_WELL, minaUser, 3);
+    createRetroItem(retro1, "No Samsung test devices — discovered Galaxy S24 bug only after release", RetroColumnType.DID_NOT_GO_WELL, aliUser, 5);
+    createRetroItem(retro1, "Set up cloud-based device farm for regression testing before shipping", RetroColumnType.TRY_NEXT, aliUser, 4);
+    createRetroItem(retro1, "Buy 2 Samsung Galaxy devices for QA lab by end of April", RetroColumnType.ACTIONS, saraUser, 3);
+
+    Retrospective retro2 = Retrospective.builder()
+        .title("v2.0 Payments Overhaul — Mid-Cycle Check-in")
+        .notes("Mid-cycle pulse. Payments team is on track. Double-submission bug needs "
+            + "immediate attention — idempotency key story underestimated.")
+        .status(RetroStatus.OPEN)
+        .cycle(mbaActiveCycle)
+        .project(bankingProject)
+        .createdAt(LocalDateTime.of(2026, 4, 4, 15, 0))
+        .updatedAt(LocalDateTime.now())
+        .build();
+    retrospectiveRepository.save(retro2);
+
+    createRetroItem(retro2, "Transfer UI design is the best we've ever shipped", RetroColumnType.WENT_WELL, minaPerson.getId() != null ? minaUser : saraUser, 6);
+    createRetroItem(retro2, "PSP sandbox reliability is blocking progress — 3 hours lost this week", RetroColumnType.DID_NOT_GO_WELL, aliUser, 4);
+    createRetroItem(retro2, "Add idempotency keys to ALL payment endpoints, not just transfer", RetroColumnType.TRY_NEXT, aliUser, 5);
+    createRetroItem(retro2, "Use WireMock PSP stub for local dev to avoid sandbox flakiness", RetroColumnType.TRY_NEXT, aliUser, 3);
+
+    // ── Manual Notes ──────────────────────────────────────────────────────────
+    ManualNote note1 = ManualNote.builder()
+        .title("Idempotency key design decision")
+        .content("Decision: Generate idempotency-key on client (UUID v4), include in X-Idempotency-Key "
+            + "header. Server stores in transfer_idempotency table (key, user_id, result_payload, "
+            + "expires_at 24h). If duplicate key seen within TTL, return cached response.")
+        .contextType("pitch")
+        .contextId(instantTransfer.getId())
+        .pitchId(instantTransfer.getId())
+        .authorId(aliPerson.getId())
+        .includeInKnowledge(true)
+        .build();
+    manualNoteRepository.save(note1);
+
+    ManualNote note2 = ManualNote.builder()
+        .title("IBAN validation scope — 42 countries")
+        .content("Scope confirmed: validate IBAN structure for all 42 countries in SEPA zone. "
+            + "Use iban4j library (v3.2.7) — covers format validation + check digit. "
+            + "Bank code lookup not required for MVP (add in v2.1).")
+        .contextType("pitch")
+        .contextId(instantTransfer.getId())
+        .pitchId(instantTransfer.getId())
+        .authorId(saraPerson.getId())
+        .includeInKnowledge(true)
+        .build();
+    manualNoteRepository.save(note2);
+
+    ManualNote note3 = ManualNote.builder()
+        .title("Biometric auth — server-side session architecture")
+        .content("Architecture decision: biometric auth stays client-side only. "
+            + "Server only sees a valid JWT request — no biometric data ever leaves the device. "
+            + "Satisfied PCI-DSS 8.3.1 cardholder authentication requirement.")
+        .contextType("pitch")
+        .contextId(biometricLogin.getId())
+        .pitchId(biometricLogin.getId())
+        .authorId(saraPerson.getId())
+        .includeInKnowledge(true)
+        .build();
+    manualNoteRepository.save(note3);
+
+    // ── Custom Dashboards + User Preferences ─────────────────────────────────
+    createCustomDashboards(saraPerson, aliPerson, minaPerson);
+    createUserPreferences(saraPerson, aliPerson, minaPerson, viewerPerson);
+
+    // ── Risk Feedback ─────────────────────────────────────────────────────────
+    createRiskFeedback(instantTransfer, saraUser, aliUser);
+    createRiskFeedback(biometricLogin, aliUser, minaUser);
+
+    // ── Dashboard Notifications ───────────────────────────────────────────────
+    createDashboardNotifications(saraUser, aliUser, minaUser);
+
+    // ── WISE Architecture advice history ─────────────────────────────────────
+    if (adminUser != null) {
+      createWiseArchitectureHistory(adminUser, saraUser, aliUser, minaUser,
+          instantTransfer, biometricLogin, sessionOverhaul);
+    }
+
+    log.info("Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban)");
   }
+
+  // ── Helper Methods ──────────────────────────────────────────────────────────
 
   private void createUser(String username, String password, UserRole role, Person person) {
     if (!userRepository.existsByUsername(username)) {
-      User user = User.builder().username(username).password(passwordEncoder.encode(password)).role(role)
-          .person(person).isActive(true).build();
+      User user =
+          User.builder()
+              .username(username)
+              .password(passwordEncoder.encode(password))
+              .role(role)
+              .person(person)
+              .isActive(true)
+              .build();
       userRepository.save(user);
     }
   }
 
   private Person createPerson(String name, String email, String skills, String avatarUrl) {
-    Person person = Person.builder().name(name).email(email).skills(skills).avatarUrl(avatarUrl).isActive(true)
-        .createdAt(LocalDateTime.now()).build();
+    Person person =
+        Person.builder()
+            .name(name)
+            .email(email)
+            .skills(skills)
+            .avatarUrl(avatarUrl)
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
     return personRepository.save(person);
   }
 
-  private void createAssignment(Person person, Team team, TeamMemberRole role, LocalDate startDate,
-      LocalDate endDate) {
+  private void createAssignment(
+      Person person, Team team, TeamMemberRole role, LocalDate startDate, LocalDate endDate) {
     createAssignment(person, team, role, startDate, endDate, true);
   }
 
-  private void createAssignment(Person person, Team team, TeamMemberRole role, LocalDate startDate, LocalDate endDate,
+  private void createAssignment(
+      Person person,
+      Team team,
+      TeamMemberRole role,
+      LocalDate startDate,
+      LocalDate endDate,
       boolean isActive) {
-    TeamAssignment assignment = TeamAssignment.builder().person(person).team(team).role(role).startDate(startDate)
-        .endDate(endDate).isActive(isActive).build();
+    TeamAssignment assignment =
+        TeamAssignment.builder()
+            .person(person)
+            .team(team)
+            .role(role)
+            .startDate(startDate)
+            .endDate(endDate)
+            .isActive(isActive)
+            .build();
     teamAssignmentRepository.save(assignment);
   }
 
-  private void createWorkLog(Person person, Pitch pitch, LocalDate date, BigDecimal hours, String note) {
-    WorkLog workLog = WorkLog.builder().person(person).pitch(pitch).date(date).hoursSpent(hours).note(note).build();
+  private void createWorkLog(
+      Person person, Pitch pitch, LocalDate date, BigDecimal hours, String note) {
+    WorkLog workLog =
+        WorkLog.builder().person(person).pitch(pitch).date(date).hoursSpent(hours).note(note).build();
     workLogRepository.save(workLog);
   }
 
-  private void createTask(String title, String description, TaskStatus status, TaskPriority priority,
-      BigDecimal estimateHours, BigDecimal actualHours, Cycle cycle, Person assignee, Person pairAssignee,
-      Person createdBy, LocalDate dueDate, String tags) {
-    Task task = Task.builder().title(title).description(description).status(status).priority(priority)
-        .estimateHours(estimateHours).actualHours(actualHours).cycle(cycle).assignee(assignee)
-        .pairAssignee(pairAssignee).createdBy(createdBy).dueDate(dueDate).tags(tags).build();
+  private void createTask(
+      String title,
+      String description,
+      TaskStatus status,
+      TaskPriority priority,
+      BigDecimal estimateHours,
+      BigDecimal actualHours,
+      Cycle cycle,
+      Person assignee,
+      Person pairAssignee,
+      Person createdBy,
+      LocalDate dueDate,
+      String tags) {
+    Task task =
+        Task.builder()
+            .title(title)
+            .description(description)
+            .status(status)
+            .priority(priority)
+            .estimateHours(estimateHours)
+            .actualHours(actualHours)
+            .cycle(cycle)
+            .assignee(assignee)
+            .pairAssignee(pairAssignee)
+            .createdBy(createdBy)
+            .dueDate(dueDate)
+            .tags(tags)
+            .build();
 
     if (status == TaskStatus.DONE) {
       task.setCompletedAt(LocalDateTime.now().minusDays(1));
@@ -684,622 +999,429 @@ public class SampleDataInitializer implements CommandLineRunner {
     taskRepository.save(task);
   }
 
-  private void createHillChartPoints(Pitch pitch, Person creator) {
-    // Create 3-5 hill chart points per pitch to demonstrate scopes
-    HillChartPoint point1 = HillChartPoint.builder().pitch(pitch).scope("Backend Development")
-        .description("API endpoints and business logic for " + pitch.getTitle())
-        .position(pitch.getStatus() == PitchStatus.DONE ? 95 : 75).build();
-    hillChartPointRepository.save(point1);
+  private void createHillChartPoints(
+      Pitch pitch, int backendPos, int frontendPos, int testingPos, int integrationPos) {
+    hillChartPointRepository.save(
+        HillChartPoint.builder()
+            .pitch(pitch)
+            .scope("Backend Services")
+            .description("API endpoints, business logic, and data layer for " + pitch.getTitle())
+            .position(backendPos)
+            .build());
 
-    HillChartPoint point2 = HillChartPoint.builder().pitch(pitch).scope("Frontend Implementation")
-        .description("UI components and user interactions for " + pitch.getTitle())
-        .position(pitch.getStatus() == PitchStatus.DONE ? 90 : 60).build();
-    hillChartPointRepository.save(point2);
+    hillChartPointRepository.save(
+        HillChartPoint.builder()
+            .pitch(pitch)
+            .scope("Frontend UI")
+            .description("Screens, components, and interactions for " + pitch.getTitle())
+            .position(frontendPos)
+            .build());
 
-    HillChartPoint point3 = HillChartPoint.builder().pitch(pitch).scope("Testing & QA")
-        .description("Test coverage and quality assurance")
-        .position(pitch.getStatus() == PitchStatus.DONE ? 100 : 35).build();
-    hillChartPointRepository.save(point3);
+    hillChartPointRepository.save(
+        HillChartPoint.builder()
+            .pitch(pitch)
+            .scope("Testing & QA")
+            .description("Unit tests, integration tests, and manual QA")
+            .position(testingPos)
+            .build());
 
-    HillChartPoint point4 = HillChartPoint.builder().pitch(pitch).scope("Integration")
-        .description("Third-party integrations and API connections")
-        .position(pitch.getStatus() == PitchStatus.DONE ? 85 : 45).build();
-    hillChartPointRepository.save(point4);
+    hillChartPointRepository.save(
+        HillChartPoint.builder()
+            .pitch(pitch)
+            .scope("Third-party Integration")
+            .description("PSP, notification services, external API connections")
+            .position(integrationPos)
+            .build());
   }
 
-  private void createRetrospectives(Cycle cycle, Team team, Person... participants) {
-    // Note: Retrospective requires Project but we don't have that entity created
-    // yet
-    // Skip retrospective creation for now or create with minimal data
-    // Commenting out to avoid compilation errors
-    /*
-     * Retrospective retro = Retrospective.builder() .cycle(cycle)
-     * .title("Retrospective for " + cycle.getName())
-     * .notes("Team retrospective discussion") .status(RetroStatus.COMPLETED)
-     * .build(); retrospectiveRepository.save(retro);
-     *
-     * // Retro items would go here but retrospective creation is disabled
-     */
+  private void createRetroItem(
+      Retrospective retro, String content, RetroColumnType columnType, User author, int votes) {
+    RetroItem item =
+        RetroItem.builder()
+            .content(content)
+            .columnType(columnType)
+            .retrospective(retro)
+            .author(author)
+            .isAnonymous(false)
+            .voteCount(votes)
+            .actedOn(columnType == RetroColumnType.ACTIONS)
+            .createdAt(retro.getCreatedAt().plusMinutes(votes * 3L))
+            .updatedAt(retro.getCreatedAt().plusMinutes(votes * 3L))
+            .build();
+    retroItemRepository.save(item);
   }
 
-  private void createManualNotes(Pitch pitch, Person creator) {
-    ManualNote note1 = ManualNote.builder().title("API Coordination")
-        .content("Important: Need to coordinate with backend team on API contract changes").contextType("pitch")
-        .contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId()).includeInKnowledge(true)
-        .build();
-    manualNoteRepository.save(note1);
+  private void createCustomDashboards(Person... persons) {
+    for (Person person : persons) {
+      User userEntity = userRepository.findByPersonId(person.getId()).orElse(null);
+      if (userEntity == null) continue;
 
-    ManualNote note2 = ManualNote.builder().title("Rate Limiting Risk")
-        .content("Risk identified: Third-party service might have rate limiting issues under high load")
-        .contextType("pitch").contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId())
-        .includeInKnowledge(true).build();
-    manualNoteRepository.save(note2);
-
-    ManualNote note3 = ManualNote.builder().title("Technology Decision")
-        .content("Decision made: Use React Query for data fetching and caching").contextType("pitch")
-        .contextId(pitch.getId()).pitchId(pitch.getId()).authorId(creator.getId()).includeInKnowledge(true)
-        .build();
-    manualNoteRepository.save(note3);
-  }
-
-  private void createCustomDashboards(Person... users) {
-    for (Person user : users) {
-      User userEntity = userRepository.findByPersonId(user.getId()).orElse(null);
-      if (userEntity == null)
-        continue;
-
-      CustomDashboard dashboard = CustomDashboard.builder().user(userEntity).name(user.getName() + "'s Dashboard")
-          .isDefault(true).build();
+      CustomDashboard dashboard =
+          CustomDashboard.builder()
+              .user(userEntity)
+              .name(person.getName() + "'s Dashboard")
+              .isDefault(true)
+              .build();
       customDashboardRepository.save(dashboard);
     }
   }
 
-  private void createUserPreferences(Person... users) {
-    for (Person user : users) {
-      User userEntity = userRepository.findByPersonId(user.getId()).orElse(null);
-      if (userEntity == null)
-        continue;
+  private void createUserPreferences(Person... persons) {
+    for (Person person : persons) {
+      User userEntity = userRepository.findByPersonId(person.getId()).orElse(null);
+      if (userEntity == null) continue;
 
       UserPreference pref = UserPreference.builder().user(userEntity).build();
       userPreferenceRepository.save(pref);
     }
   }
 
-  private void createDashboardNotifications(Person... users) {
+  private void createDashboardNotifications(User... users) {
+    String[] taskTitles = {
+      "Payment webhook handler",
+      "Biometric auth flow review",
+      "IBAN validation service",
+      "Prometheus monitoring setup",
+      "Transfer confirmation screen"
+    };
+    String[] pitchTitles = {
+      "Instant Transfer UI",
+      "Biometric Login Flow",
+      "Card Freeze & Unfreeze",
+      "Spending Analytics Dashboard",
+      "Session Management Overhaul"
+    };
+
     for (int i = 0; i < users.length; i++) {
-      User userEntity = userRepository.findByPersonId(users[i].getId()).orElse(null);
-      if (userEntity == null)
-        continue;
+      User user = users[i];
 
-      // Unread notification
-      DashboardNotification notif1 = DashboardNotification.builder().user(userEntity).type("TASK_ASSIGNED")
-          .title("New Task Assigned").message("You have been assigned a new task: Review API documentation")
-          .isRead(false).createdAt(LocalDateTime.now().minusHours(i + 1)).build();
-      dashboardNotificationRepository.save(notif1);
+      dashboardNotificationRepository.save(
+          DashboardNotification.builder()
+              .user(user)
+              .type("TASK_ASSIGNED")
+              .title("New Task Assigned")
+              .message("You have been assigned: " + taskTitles[i % taskTitles.length])
+              .isRead(false)
+              .createdAt(LocalDateTime.now().minusHours(i + 1))
+              .build());
 
-      // Read notification
-      DashboardNotification notif2 = DashboardNotification.builder().user(userEntity).type("PITCH_STATUS_CHANGED")
-          .title("Pitch Status Updated")
-          .message("Pitch 'User Dashboard Redesign' status changed to In Progress").isRead(true)
-          .createdAt(LocalDateTime.now().minusDays(i + 1)).build();
-      dashboardNotificationRepository.save(notif2);
+      dashboardNotificationRepository.save(
+          DashboardNotification.builder()
+              .user(user)
+              .type("PITCH_STATUS_CHANGED")
+              .title("Pitch Status Updated")
+              .message(
+                  "Pitch '"
+                      + pitchTitles[i % pitchTitles.length]
+                      + "' moved to "
+                      + (i % 2 == 0 ? "IN_PROGRESS" : "TESTING"))
+              .isRead(true)
+              .createdAt(LocalDateTime.now().minusDays(i + 1))
+              .build());
 
-      // Meeting notification
       if (i % 2 == 0) {
-        DashboardNotification notif3 = DashboardNotification.builder().user(userEntity)
-            .type("MEETING_SCHEDULED").title("Meeting Scheduled")
-            .message("Stand-up meeting scheduled for tomorrow at 10:00 AM").isRead(false)
-            .createdAt(LocalDateTime.now().minusHours(2)).build();
-        dashboardNotificationRepository.save(notif3);
+        dashboardNotificationRepository.save(
+            DashboardNotification.builder()
+                .user(user)
+                .type("MENTION")
+                .title("You were mentioned")
+                .message("@" + (i == 0 ? "ali" : "sara") + " mentioned you in a comment on 'Instant Transfer UI'")
+                .isRead(false)
+                .createdAt(LocalDateTime.now().minusMinutes(30 + i * 15))
+                .build());
       }
     }
   }
 
-  private void createRiskFeedback(Pitch pitch, Person... reviewers) {
+  private void createRiskFeedback(Pitch pitch, User... reviewers) {
     for (int i = 0; i < reviewers.length; i++) {
-      User userEntity = userRepository.findByPersonId(reviewers[i].getId()).orElse(null);
-      if (userEntity == null)
-        continue;
-
-      RiskFeedback feedback = RiskFeedback.builder().pitch(pitch).user(userEntity)
-          .originalRiskScore(i == 0 ? 65 : 45)
-          .rating(i == 0 ? FeedbackRating.ACCURATE : FeedbackRating.ACCURATE)
-          .suggestedRiskScore(i == 0 ? 70 : null)
-          .notes(i == 0
-              ? "Timeline might be tight given the scope. Consider reducing features or extending deadline."
-              : "Overall looking good. Main dependencies are identified and team has necessary skills.")
-          .missedFactors(i == 0
-              ? "Break down large features into smaller milestones for better tracking"
-              : "Keep monitoring third-party API availability")
-          .build();
+      RiskFeedback feedback =
+          RiskFeedback.builder()
+              .pitch(pitch)
+              .user(reviewers[i])
+              .originalRiskScore(i == 0 ? 72 : 55)
+              .rating(FeedbackRating.ACCURATE)
+              .suggestedRiskScore(i == 0 ? 75 : null)
+              .notes(
+                  i == 0
+                      ? "PSP dependency is the main risk — sandbox flakiness already cost us time. "
+                          + "Add WireMock stub before next cycle."
+                      : "Scope is well-defined. Main concern is Samsung device coverage for biometrics.")
+              .missedFactors(
+                  i == 0
+                      ? "Consider adding integration test against real PSP in staging, not just sandbox"
+                      : "Device fragmentation risk for biometric APIs on custom Android ROMs")
+              .build();
       riskFeedbackRepository.save(feedback);
     }
   }
 
-  private void createRoadmapData(Project mainProject, Project internalToolsProject, 
-      Project mobileAppProject, User aliceUser, User frankUser,
-      Cycle activeCycle, Cycle itCycle, Cycle maCycle) {
-    log.info("Creating roadmap data (Initiatives, Epics, Releases)...");
+  private void createRoadmapData(
+      Project bankingProject, Project devopsProject, User saraUser, User aliUser) {
 
-    // === INITIATIVES FOR MAIN PROJECT (ShipFlow) ===
-    Initiative coreProductInitiative = Initiative.builder()
-        .name("Core Product Enhancement 2025")
-        .description("Strategic initiative to enhance core features and improve user experience")
-        .status(InitiativeStatus.IN_PROGRESS)
-        .color("#3B82F6")
-        .targetStartDate(LocalDate.of(2025, 1, 1))
-        .targetEndDate(LocalDate.of(2025, 6, 30))
-        .project(mainProject)
-        .owner(aliceUser)
-        .sortOrder(1)
-        .build();
-    initiativeRepository.save(coreProductInitiative);
+    // ── MBA Initiatives ───────────────────────────────────────────────────────
+    Initiative securityInitiative =
+        Initiative.builder()
+            .name("Security & Compliance 2026")
+            .description(
+                "Achieve PCI-DSS Level 1 compliance. Implement biometric auth, "
+                    + "token rotation, fraud detection, and full audit trail.")
+            .status(InitiativeStatus.IN_PROGRESS)
+            .color("#EF4444")
+            .targetStartDate(LocalDate.of(2026, 1, 1))
+            .targetEndDate(LocalDate.of(2026, 6, 30))
+            .project(bankingProject)
+            .owner(saraUser)
+            .sortOrder(1)
+            .build();
+    initiativeRepository.save(securityInitiative);
 
-    Initiative enterpriseInitiative = Initiative.builder()
-        .name("Enterprise Features 2025")
-        .description("Build enterprise-grade features for larger organizations")
-        .status(InitiativeStatus.PLANNED)
-        .color("#8B5CF6")
-        .targetStartDate(LocalDate.of(2025, 4, 1))
-        .targetEndDate(LocalDate.of(2025, 12, 31))
-        .project(mainProject)
-        .owner(frankUser)
-        .sortOrder(2)
-        .build();
-    initiativeRepository.save(enterpriseInitiative);
+    Initiative paymentsInitiative =
+        Initiative.builder()
+            .name("Payments Excellence 2026")
+            .description(
+                "Make payments instant, reliable, and intelligent. "
+                    + "Instant transfers, recurring payments, spending analytics.")
+            .status(InitiativeStatus.IN_PROGRESS)
+            .color("#3B82F6")
+            .targetStartDate(LocalDate.of(2026, 2, 1))
+            .targetEndDate(LocalDate.of(2026, 9, 30))
+            .project(bankingProject)
+            .owner(saraUser)
+            .sortOrder(2)
+            .build();
+    initiativeRepository.save(paymentsInitiative);
 
-    // === EPICS FOR CORE PRODUCT INITIATIVE ===
-    Epic dashboardEpic = Epic.builder()
-        .name("Dashboard Modernization")
-        .description("Complete overhaul of the dashboard with real-time analytics and customizable widgets")
-        .status(EpicStatus.IN_PROGRESS)
-        .color("#10B981")
-        .targetStartDate(LocalDate.of(2025, 1, 1))
-        .targetEndDate(LocalDate.of(2025, 3, 31))
-        .project(mainProject)
-        .initiative(coreProductInitiative)
-        .owner(aliceUser)
-        .sortOrder(1)
-        .build();
-    epicRepository.save(dashboardEpic);
+    // ── MBA Epics ──────────────────────────────────────────────────────────────
+    Epic authEpic =
+        Epic.builder()
+            .name("Authentication Modernisation")
+            .description("Replace password-only auth with biometric + OTP. Session hygiene overhaul.")
+            .status(EpicStatus.IN_PROGRESS)
+            .initiative(securityInitiative)
+            .project(bankingProject)
+            .owner(saraUser)
+            .targetStartDate(LocalDate.of(2026, 1, 15))
+            .targetEndDate(LocalDate.of(2026, 3, 31))
+            .sortOrder(1)
+            .build();
+    epicRepository.save(authEpic);
 
-    Epic reportingEpic = Epic.builder()
-        .name("Advanced Reporting")
-        .description("Build comprehensive reporting system with export capabilities and scheduling")
-        .status(EpicStatus.PLANNED)
-        .color("#F59E0B")
-        .targetStartDate(LocalDate.of(2025, 2, 1))
-        .targetEndDate(LocalDate.of(2025, 5, 31))
-        .project(mainProject)
-        .initiative(coreProductInitiative)
-        .owner(frankUser)
-        .sortOrder(2)
-        .build();
-    epicRepository.save(reportingEpic);
+    Epic paymentsEpic =
+        Epic.builder()
+            .name("Instant Payment Flow")
+            .description("End-to-end instant transfer UI, IBAN validation, idempotency, and analytics.")
+            .status(EpicStatus.IN_PROGRESS)
+            .initiative(paymentsInitiative)
+            .project(bankingProject)
+            .owner(saraUser)
+            .targetStartDate(LocalDate.of(2026, 3, 15))
+            .targetEndDate(LocalDate.of(2026, 5, 31))
+            .sortOrder(1)
+            .build();
+    epicRepository.save(paymentsEpic);
 
-    // === EPICS FOR ENTERPRISE INITIATIVE ===
-    Epic ssoEpic = Epic.builder()
-        .name("SSO & SAML Integration")
-        .description("Enterprise single sign-on with SAML 2.0 and OAuth 2.0 support")
-        .status(EpicStatus.DRAFT)
-        .color("#EF4444")
-        .targetStartDate(LocalDate.of(2025, 4, 1))
-        .targetEndDate(LocalDate.of(2025, 6, 30))
-        .project(mainProject)
-        .initiative(enterpriseInitiative)
-        .owner(frankUser)
-        .sortOrder(1)
-        .build();
-    epicRepository.save(ssoEpic);
+    // ── MBA Releases ───────────────────────────────────────────────────────────
+    Release v15Release =
+        Release.builder()
+            .name("v1.5 — Biometric Authentication")
+            .description("Biometric login, session management overhaul. PCI-DSS compliant.")
+            .version("1.5.0")
+            .status(ReleaseStatus.RELEASED)
+            .project(bankingProject)
+            .releaseDate(LocalDate.of(2026, 3, 14))
+            .build();
+    releaseRepository.save(v15Release);
 
-    Epic auditEpic = Epic.builder()
-        .name("Audit Trail & Compliance")
-        .description("Comprehensive audit logging for SOC 2 and GDPR compliance")
-        .status(EpicStatus.DRAFT)
-        .color("#6366F1")
-        .targetStartDate(LocalDate.of(2025, 5, 1))
-        .targetEndDate(LocalDate.of(2025, 8, 31))
-        .project(mainProject)
-        .initiative(enterpriseInitiative)
-        .owner(aliceUser)
-        .sortOrder(2)
-        .build();
-    epicRepository.save(auditEpic);
+    Release v20Release =
+        Release.builder()
+            .name("v2.0 — Payments Overhaul")
+            .description("Instant transfer UI, IBAN validation, spending analytics, card freeze.")
+            .version("2.0.0")
+            .status(ReleaseStatus.IN_PROGRESS)
+            .project(bankingProject)
+            .releaseDate(LocalDate.of(2026, 5, 20))
+            .build();
+    releaseRepository.save(v20Release);
 
-    // === STANDALONE EPIC (NOT LINKED TO INITIATIVE) ===
-    Epic techDebtEpic = Epic.builder()
-        .name("Technical Debt Reduction")
-        .description("Address critical technical debt items and improve codebase maintainability")
-        .status(EpicStatus.IN_PROGRESS)
-        .color("#78716C")
-        .targetStartDate(LocalDate.of(2025, 1, 15))
-        .targetEndDate(LocalDate.of(2025, 12, 31))
-        .project(mainProject)
-        .initiative(null)  // Orphan epic
-        .owner(aliceUser)
-        .sortOrder(99)
-        .build();
-    epicRepository.save(techDebtEpic);
-
-    // === INITIATIVE FOR MOBILE PROJECT ===
-    Initiative mobileInitiative = Initiative.builder()
-        .name("Mobile 2.0 Launch")
-        .description("Launch the next generation mobile application with enhanced features")
-        .status(InitiativeStatus.IN_PROGRESS)
-        .color("#EC4899")
-        .targetStartDate(LocalDate.of(2025, 1, 1))
-        .targetEndDate(LocalDate.of(2025, 6, 30))
-        .project(mobileAppProject)
-        .owner(frankUser)
-        .sortOrder(1)
-        .build();
-    initiativeRepository.save(mobileInitiative);
-
-    Epic mobileUxEpic = Epic.builder()
-        .name("Mobile UX Redesign")
-        .description("Redesign mobile user experience based on user feedback")
-        .status(EpicStatus.IN_PROGRESS)
-        .color("#14B8A6")
-        .targetStartDate(LocalDate.of(2025, 1, 6))
-        .targetEndDate(LocalDate.of(2025, 3, 31))
-        .project(mobileAppProject)
-        .initiative(mobileInitiative)
-        .owner(frankUser)
-        .sortOrder(1)
-        .build();
-    epicRepository.save(mobileUxEpic);
-
-    // === RELEASES ===
-    Release q1Release = Release.builder()
-        .name("Q1 2025 Release")
-        .version("v2.5.0")
-        .description("First major release of 2025 with dashboard improvements")
-        .status(ReleaseStatus.IN_PROGRESS)
-        .riskLevel(ReleaseRiskLevel.MEDIUM)
-        .targetDate(LocalDate.of(2025, 3, 31))
-        .releaseDate(null)
-        .project(mainProject)
-        .sortOrder(1)
-        .build();
-    q1Release.getCycles().add(activeCycle);
-    releaseRepository.save(q1Release);
-
-    Release q2Release = Release.builder()
-        .name("Q2 2025 Release")
-        .version("v2.6.0")
-        .description("Enterprise features and reporting enhancements")
-        .status(ReleaseStatus.PLANNING)
-        .riskLevel(ReleaseRiskLevel.LOW)
-        .targetDate(LocalDate.of(2025, 6, 30))
-        .releaseDate(null)
-        .project(mainProject)
-        .sortOrder(2)
-        .build();
-    releaseRepository.save(q2Release);
-
-    Release mobileRelease = Release.builder()
-        .name("Mobile 2.0 Launch")
-        .version("v2.0.0")
-        .description("Major mobile app launch with new features")
-        .status(ReleaseStatus.IN_PROGRESS)
-        .riskLevel(ReleaseRiskLevel.HIGH)
-        .targetDate(LocalDate.of(2025, 2, 28))
-        .releaseDate(null)
-        .project(mobileAppProject)
-        .sortOrder(1)
-        .build();
-    mobileRelease.getCycles().add(maCycle);
-    releaseRepository.save(mobileRelease);
-
-    Release itRelease = Release.builder()
-        .name("Internal Tools v1.2")
-        .version("v1.2.0")
-        .description("Dashboard and analytics improvements")
-        .status(ReleaseStatus.PLANNING)
-        .riskLevel(ReleaseRiskLevel.LOW)
-        .targetDate(LocalDate.of(2025, 2, 14))
-        .releaseDate(null)
-        .project(internalToolsProject)
-        .sortOrder(1)
-        .build();
-    itRelease.getCycles().add(itCycle);
-    releaseRepository.save(itRelease);
-
-    log.info("Roadmap data created: 4 initiatives, 6 epics, 4 releases");
+    // ── DVP Initiative ─────────────────────────────────────────────────────────
+    Initiative infraInitiative =
+        Initiative.builder()
+            .name("Platform Reliability 2026")
+            .description(
+                "SLA 99.9% uptime. Full observability stack, GitOps deployments, "
+                    + "automated DR, and security hardening.")
+            .status(InitiativeStatus.IN_PROGRESS)
+            .color("#10B981")
+            .targetStartDate(LocalDate.of(2026, 1, 10))
+            .targetEndDate(LocalDate.of(2026, 12, 31))
+            .project(devopsProject)
+            .owner(aliUser)
+            .sortOrder(1)
+            .build();
+    initiativeRepository.save(infraInitiative);
   }
 
-  private void createWiseArchitectureHistory(User aliceUser, User bobUser, User frankUser, User adminUser,
-      Pitch userDashboard, Pitch performanceOpt, Pitch apiIntegration, Pitch searchFeature, Pitch reportModule) {
+  private void createWiseArchitectureHistory(
+      User adminUser, User saraUser, User aliUser, User minaUser,
+      Pitch instantTransfer, Pitch biometricLogin, Pitch sessionOverhaul) {
 
-    // ---- Conversation 1: Alice on User Dashboard Redesign ----
-    String conv1Id = "conv-wise-001";
+    // ── Conversation 1: Sara — Instant Transfer Architecture ──────────────────
+    String conv1Id = "conv-wise-" + UUID.randomUUID().toString().substring(0, 8);
     LocalDateTime conv1Start = LocalDateTime.now().minusDays(5);
 
-    WiseArchitectureAdvice advice1Init = WiseArchitectureAdvice.builder()
-        .conversationId(conv1Id)
-        .pitch(userDashboard)
-        .userId(aliceUser.getId())
-        .messageType("INITIAL_SOLUTION")
-        .userMessage("Initial solution request")
-        .aiResponse("## Frontend React\n\n" +
-            "A component-driven dashboard redesign using React 18 with server components.\n\n" +
-            "### Key Components\n- **DashboardGrid**: Responsive grid layout using CSS Grid\n" +
-            "- **WidgetContainer**: Draggable widget wrapper with react-beautiful-dnd\n" +
-            "- **AnalyticsChart**: Chart.js integration for metrics visualisation\n\n" +
-            "### Implementation Steps\n1. **Setup layout system** (~4h)\n   Implement CSS Grid-based responsive layout\n" +
-            "2. **Build widget components** (~8h)\n   Create reusable widget shell components\n" +
-            "3. **Add drag-and-drop** (~5h)\n   Integrate react-beautiful-dnd for customisation\n" +
-            "4. **Connect analytics API** (~4h)\n   Wire up Chart.js to backend endpoints\n\n" +
-            "### Recommended Libraries\n- **react-beautiful-dnd** v13 — Drag-and-drop\n" +
-            "- **chart.js** v4 — Charting library\n- **@tanstack/react-query** v5 — Data fetching")
-        .techStacks("FRONTEND_REACT")
-        .hasFigmaContext(true)
-        .hasGitHubContext(true)
-        .hasRoadmapContext(false)
-        .processingTimeMs(4823L)
-        .feedbackHelpful(true)
-        .feedbackText("Very helpful! The drag-and-drop suggestion saved us a lot of time.")
-        .feedbackAt(conv1Start.plusHours(2))
-        .createdAt(conv1Start)
-        .updatedAt(conv1Start.plusHours(2))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice1Init);
+    wiseArchitectureAdviceRepository.save(
+        WiseArchitectureAdvice.builder()
+            .conversationId(conv1Id)
+            .pitch(instantTransfer)
+            .userId(saraUser.getId())
+            .messageType("INITIAL_SOLUTION")
+            .userMessage("Initial solution request")
+            .aiResponse(
+                "## Backend Spring — Idempotent Payment API\n\n"
+                    + "Design pattern: **Idempotent REST + Outbox Pattern** for reliable payment processing.\n\n"
+                    + "### Architecture\n"
+                    + "- **X-Idempotency-Key header** (UUID v4 from client) — stored in `transfer_idempotency` table\n"
+                    + "- **Outbox table** — `payment_outbox(id, payload, status, created_at, processed_at)` for retry safety\n"
+                    + "- **PaymentService** — checks idempotency cache first, processes if new, returns cached result if duplicate\n\n"
+                    + "### Implementation Steps\n"
+                    + "1. **Idempotency table** (~2h) — Flyway migration, unique constraint on (user_id, idempotency_key)\n"
+                    + "2. **PaymentService guard** (~3h) — check cache on entry, return cached on duplicate\n"
+                    + "3. **Outbox processor** (~4h) — `@Scheduled` job retries PENDING outbox entries with exponential backoff\n"
+                    + "4. **PSP adapter** (~3h) — Stripe/PSP SDK wrapped behind `PaymentGatewayPort` interface\n\n"
+                    + "### Recommended Libraries\n"
+                    + "- **resilience4j-spring-boot3** — Circuit breaker around PSP calls\n"
+                    + "- **spring-retry** — Declarative retry for transient network errors\n"
+                    + "- **iban4j** v3.2.7 — IBAN format validation for 42 SEPA countries")
+            .techStacks("BACKEND_SPRING")
+            .hasFigmaContext(false)
+            .hasGitHubContext(true)
+            .hasRoadmapContext(true)
+            .processingTimeMs(5840L)
+            .feedbackHelpful(true)
+            .feedbackText("Exactly what we needed. The idempotency design solves the double-submission bug perfectly.")
+            .feedbackAt(conv1Start.plusHours(3))
+            .createdAt(conv1Start)
+            .updatedAt(conv1Start.plusHours(3))
+            .build());
 
-    WiseArchitectureAdvice advice1FollowUpQ = WiseArchitectureAdvice.builder()
-        .conversationId(conv1Id)
-        .pitch(userDashboard)
-        .userId(aliceUser.getId())
-        .messageType("FOLLOW_UP_QUESTION")
-        .userMessage("How should we handle real-time updates for chart widgets without overloading the server?")
-        .aiResponse(null)
-        .techStacks("FRONTEND_REACT")
-        .hasFigmaContext(false)
-        .hasGitHubContext(false)
-        .hasRoadmapContext(false)
-        .processingTimeMs(null)
-        .createdAt(conv1Start.plusDays(1))
-        .updatedAt(conv1Start.plusDays(1))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice1FollowUpQ);
+    wiseArchitectureAdviceRepository.save(
+        WiseArchitectureAdvice.builder()
+            .conversationId(conv1Id)
+            .pitch(instantTransfer)
+            .userId(saraUser.getId())
+            .messageType("FOLLOW_UP_QUESTION")
+            .userMessage("What TTL should we use for the idempotency cache?")
+            .aiResponse(null)
+            .techStacks("BACKEND_SPRING")
+            .hasFigmaContext(false)
+            .hasGitHubContext(false)
+            .hasRoadmapContext(false)
+            .processingTimeMs(null)
+            .createdAt(conv1Start.plusDays(1))
+            .updatedAt(conv1Start.plusDays(1))
+            .build());
 
-    WiseArchitectureAdvice advice1FollowUpA = WiseArchitectureAdvice.builder()
-        .conversationId(conv1Id)
-        .pitch(userDashboard)
-        .userId(aliceUser.getId())
-        .messageType("FOLLOW_UP_ANSWER")
-        .userMessage("How should we handle real-time updates for chart widgets without overloading the server?")
-        .aiResponse("For real-time chart updates without server overload, use a **WebSocket with SSE fallback** approach:\n\n" +
-            "1. **Server-Sent Events (SSE)** for read-only dashboards — lightweight, auto-reconnect, works with HTTP/2\n" +
-            "2. **Debounced polling** (30–60s) for less critical metrics\n" +
-            "3. **Optimistic UI updates** — update locally first, sync in background\n\n" +
-            "In Spring Boot use `SseEmitter`. On the frontend use the browser `EventSource` API. " +
-            "This keeps connections manageable and avoids overwhelming the server during peak usage.")
-        .techStacks("FRONTEND_REACT")
-        .hasFigmaContext(false)
-        .hasGitHubContext(false)
-        .hasRoadmapContext(false)
-        .processingTimeMs(3102L)
-        .createdAt(conv1Start.plusDays(1).plusMinutes(2))
-        .updatedAt(conv1Start.plusDays(1).plusMinutes(2))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice1FollowUpA);
+    wiseArchitectureAdviceRepository.save(
+        WiseArchitectureAdvice.builder()
+            .conversationId(conv1Id)
+            .pitch(instantTransfer)
+            .userId(saraUser.getId())
+            .messageType("FOLLOW_UP_ANSWER")
+            .userMessage("What TTL should we use for the idempotency cache?")
+            .aiResponse(
+                "For payment idempotency, **24 hours** is the industry standard (Stripe, Adyen both use this).\n\n"
+                    + "Rationale:\n"
+                    + "- Long enough to catch retries from network failures or app crashes\n"
+                    + "- Short enough to avoid false-positive rejection of legitimate re-submissions days later\n"
+                    + "- Set TTL via scheduled cleanup job rather than relying on DB row TTL for auditability\n\n"
+                    + "Implementation: `TIMESTAMPTZ expires_at = created_at + INTERVAL '24 hours'`\n"
+                    + "Nightly cleanup job deletes expired records to keep the table lean.")
+            .techStacks("BACKEND_SPRING")
+            .hasFigmaContext(false)
+            .hasGitHubContext(false)
+            .hasRoadmapContext(false)
+            .processingTimeMs(1820L)
+            .createdAt(conv1Start.plusDays(1).plusMinutes(4))
+            .updatedAt(conv1Start.plusDays(1).plusMinutes(4))
+            .build());
 
-    // ---- Conversation 2: Bob on Performance Optimization ----
-    String conv2Id = "conv-wise-002";
-    LocalDateTime conv2Start = LocalDateTime.now().minusDays(3);
+    // ── Conversation 2: Ali — Biometric Auth Backend ──────────────────────────
+    String conv2Id = "conv-wise-" + UUID.randomUUID().toString().substring(0, 8);
+    LocalDateTime conv2Start = LocalDateTime.now().minusDays(45);
 
-    WiseArchitectureAdvice advice2Init = WiseArchitectureAdvice.builder()
-        .conversationId(conv2Id)
-        .pitch(performanceOpt)
-        .userId(bobUser.getId())
-        .messageType("INITIAL_SOLUTION")
-        .userMessage("Initial solution request")
-        .aiResponse("## Backend Spring\n\n" +
-            "A multi-layer performance strategy for the Spring Boot backend.\n\n" +
-            "### Key Areas\n- **Database**: Add composite indexes, rewrite N+1 queries with JOIN FETCH\n" +
-            "- **Caching**: Redis L2 cache for read-heavy endpoints (TTL 5 min)\n" +
-            "- **Connection Pooling**: Tune HikariCP pool size to match DB capacity\n\n" +
-            "### Implementation Steps\n1. **Profiling baseline** (~2h)\n   Use Spring Boot Actuator + Micrometer to capture slow endpoints\n" +
-            "2. **Database indexes** (~4h)\n   Analyse slow_query_log and add missing indexes on FK columns\n" +
-            "3. **Redis caching** (~6h)\n   Add @Cacheable to frequently called service methods\n" +
-            "4. **Connection pool tuning** (~2h)\n   Configure HikariCP max-pool-size based on load tests\n\n" +
-            "### Recommended Libraries\n- **spring-boot-starter-data-redis** — Redis cache integration\n" +
-            "- **micrometer-registry-prometheus** — Metrics export\n- **p6spy** — SQL query logging for profiling")
-        .techStacks("BACKEND_SPRING")
-        .hasFigmaContext(false)
-        .hasGitHubContext(true)
-        .hasRoadmapContext(true)
-        .processingTimeMs(5241L)
-        .createdAt(conv2Start)
-        .updatedAt(conv2Start)
-        .build();
-    wiseArchitectureAdviceRepository.save(advice2Init);
+    wiseArchitectureAdviceRepository.save(
+        WiseArchitectureAdvice.builder()
+            .conversationId(conv2Id)
+            .pitch(biometricLogin)
+            .userId(aliUser.getId())
+            .messageType("INITIAL_SOLUTION")
+            .userMessage("Initial solution request")
+            .aiResponse(
+                "## Backend Spring — Biometric Auth (Zero Server-Side Biometric Data)\n\n"
+                    + "**Core principle**: Biometric verification happens entirely on-device. "
+                    + "The server only sees a standard JWT request — no biometric data ever transmitted.\n\n"
+                    + "### Flow\n"
+                    + "1. **Enrollment**: User enables biometric on device → app generates a device-bound key pair\n"
+                    + "2. **Public key registration**: `POST /api/auth/devices` stores `(userId, deviceId, publicKey)`\n"
+                    + "3. **Login**: Biometric unlocks private key → signs a challenge → server verifies signature\n"
+                    + "4. **JWT issuance**: Standard JWT issued on successful signature verification\n\n"
+                    + "### Implementation Steps\n"
+                    + "1. **Device registration endpoint** (~3h)\n"
+                    + "2. **Challenge generation** (~2h) — time-bound HMAC challenge (30s TTL)\n"
+                    + "3. **Signature verification** (~3h) — ECDSA P-256 via Java Security\n"
+                    + "4. **JWT with device binding claim** (~1h) — include `device_id` in JWT for audit\n\n"
+                    + "### PCI-DSS 8.3.1 Compliance\n"
+                    + "This architecture satisfies PCI-DSS 8.3.1 (multi-factor authentication) "
+                    + "because 'something you are' (biometric) + 'something you have' (device key) = MFA.")
+            .techStacks("BACKEND_SPRING")
+            .hasFigmaContext(false)
+            .hasGitHubContext(true)
+            .hasRoadmapContext(false)
+            .processingTimeMs(6210L)
+            .feedbackHelpful(true)
+            .feedbackAt(conv2Start.plusHours(2))
+            .createdAt(conv2Start)
+            .updatedAt(conv2Start.plusHours(2))
+            .build());
 
-    WiseArchitectureAdvice advice2FollowUpQ = WiseArchitectureAdvice.builder()
-        .conversationId(conv2Id)
-        .pitch(performanceOpt)
-        .userId(bobUser.getId())
-        .messageType("FOLLOW_UP_QUESTION")
-        .userMessage("What is the best cache eviction strategy when the underlying data changes frequently?")
-        .aiResponse(null)
-        .techStacks("BACKEND_SPRING")
-        .hasFigmaContext(false)
-        .hasGitHubContext(false)
-        .hasRoadmapContext(false)
-        .processingTimeMs(null)
-        .createdAt(conv2Start.plusDays(1))
-        .updatedAt(conv2Start.plusDays(1))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice2FollowUpQ);
+    // ── Conversation 3: Admin — Session Management ────────────────────────────
+    String conv3Id = "conv-wise-" + UUID.randomUUID().toString().substring(0, 8);
+    LocalDateTime conv3Start = LocalDateTime.now().minusDays(40);
 
-    WiseArchitectureAdvice advice2FollowUpA = WiseArchitectureAdvice.builder()
-        .conversationId(conv2Id)
-        .pitch(performanceOpt)
-        .userId(bobUser.getId())
-        .messageType("FOLLOW_UP_ANSWER")
-        .userMessage("What is the best cache eviction strategy when the underlying data changes frequently?")
-        .aiResponse("For frequently changing data, combine **Cache-Aside with event-driven eviction**:\n\n" +
-            "- **@CacheEvict on write operations** — immediately invalidate stale entries when data is mutated\n" +
-            "- **Short TTL (30–120s)** — safety net for missed evictions\n" +
-            "- **@CachePut for hot-write paths** — update cache on write instead of evicting (write-through)\n\n" +
-            "If multiple services write to the same data, use **Redis Pub/Sub** to broadcast invalidation events " +
-            "so all instances evict consistently. Avoid long TTLs on mutable data — prefer accuracy over cache hit rate.")
-        .techStacks("BACKEND_SPRING")
-        .hasFigmaContext(false)
-        .hasGitHubContext(false)
-        .hasRoadmapContext(false)
-        .processingTimeMs(2867L)
-        .createdAt(conv2Start.plusDays(1).plusMinutes(3))
-        .updatedAt(conv2Start.plusDays(1).plusMinutes(3))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice2FollowUpA);
+    wiseArchitectureAdviceRepository.save(
+        WiseArchitectureAdvice.builder()
+            .conversationId(conv3Id)
+            .pitch(sessionOverhaul)
+            .userId(adminUser.getId())
+            .messageType("INITIAL_SOLUTION")
+            .userMessage("Initial solution request")
+            .aiResponse(
+                "## Backend Spring — Refresh Token Rotation with Per-Device Sessions\n\n"
+                    + "### Architecture\n"
+                    + "- **`user_sessions` table**: `(id, user_id, device_id, device_name, "
+                    + "refresh_token_hash, last_seen_at, last_ip, created_at, revoked_at)`\n"
+                    + "- **Token rotation**: Each `/auth/refresh` call issues a NEW refresh token "
+                    + "and immediately revokes the old one\n"
+                    + "- **Revocation**: SET `revoked_at = NOW()` — soft delete for audit trail\n\n"
+                    + "### Implementation Steps\n"
+                    + "1. **Session table** (~2h) — Flyway migration, index on `refresh_token_hash`\n"
+                    + "2. **TokenService refactor** (~3h) — store SHA-256 hash of refresh token\n"
+                    + "3. **Rotation logic** (~2h) — atomic swap: revoke old, issue new in single transaction\n"
+                    + "4. **List sessions endpoint** (~1h) — `GET /api/auth/sessions`\n"
+                    + "5. **Revoke session endpoint** (~1h) — `DELETE /api/auth/sessions/{id}`\n\n"
+                    + "### Security Notes\n"
+                    + "Never store raw refresh token — only SHA-256 hash. "
+                    + "This prevents mass token exposure if DB is breached.")
+            .techStacks("BACKEND_SPRING")
+            .hasFigmaContext(false)
+            .hasGitHubContext(false)
+            .hasRoadmapContext(true)
+            .processingTimeMs(4930L)
+            .createdAt(conv3Start)
+            .updatedAt(conv3Start)
+            .build());
 
-    // ---- Conversation 3: Frank on Third-party API Integration ----
-    String conv3Id = "conv-wise-003";
-    LocalDateTime conv3Start = LocalDateTime.now().minusDays(7);
-
-    WiseArchitectureAdvice advice3Init = WiseArchitectureAdvice.builder()
-        .conversationId(conv3Id)
-        .pitch(apiIntegration)
-        .userId(frankUser.getId())
-        .messageType("INITIAL_SOLUTION")
-        .userMessage("Initial solution request")
-        .aiResponse("## Backend Spring\n\n" +
-            "Resilient third-party payment API integration using a hexagonal architecture adapter pattern.\n\n" +
-            "### Architecture\n- **PaymentPort** interface — decouples business logic from provider details\n" +
-            "- **StripeAdapter** — concrete implementation encapsulating SDK calls\n" +
-            "- **OutboxPattern** — reliable event delivery even if provider is temporarily unavailable\n\n" +
-            "### Implementation Steps\n1. **Define port interface** (~2h)\n   Create `PaymentPort` with `charge()`, `refund()`, `getStatus()` methods\n" +
-            "2. **Implement Stripe adapter** (~6h)\n   Wrap Stripe Java SDK with proper error mapping\n" +
-            "3. **Webhook verification** (~3h)\n   Validate Stripe-Signature header with HMAC-SHA256\n" +
-            "4. **Outbox pattern** (~5h)\n   Persist payment events to outbox table, replay on recovery\n" +
-            "5. **Retry with exponential backoff** (~2h)\n   Use Resilience4j Retry for transient failures\n\n" +
-            "### Recommended Libraries\n- **stripe-java** v24 — Official Stripe SDK\n" +
-            "- **resilience4j-spring-boot3** — Circuit breaker and retry\n- **spring-retry** — Declarative retry support")
-        .techStacks("BACKEND_SPRING")
-        .hasFigmaContext(false)
-        .hasGitHubContext(true)
-        .hasRoadmapContext(false)
-        .processingTimeMs(6103L)
-        .feedbackHelpful(false)
-        .feedbackText("The Outbox pattern seems overkill for our scale. Would have preferred a simpler approach first.")
-        .feedbackAt(conv3Start.plusHours(5))
-        .createdAt(conv3Start)
-        .updatedAt(conv3Start.plusHours(5))
-        .build();
-    wiseArchitectureAdviceRepository.save(advice3Init);
-
-    // ---- Conversation 4: Admin on Enhanced Search Functionality ----
-    if (adminUser != null) {
-      String conv4Id = "conv-wise-004";
-      LocalDateTime conv4Start = LocalDateTime.now().minusDays(2);
-
-      WiseArchitectureAdvice advice4Init = WiseArchitectureAdvice.builder()
-          .conversationId(conv4Id)
-          .pitch(searchFeature)
-          .userId(adminUser.getId())
-          .messageType("INITIAL_SOLUTION")
-          .userMessage("Initial solution request")
-          .aiResponse("## Backend Spring\n\n" +
-              "Full-text search architecture using Elasticsearch with a Spring Data integration layer.\n\n" +
-              "### Architecture\n- **SearchService** — abstracts Elasticsearch queries behind a clean API\n" +
-              "- **IndexingPipeline** — event-driven index updates via Spring ApplicationEvents\n" +
-              "- **QueryBuilder** — composable filter/sort/pagination DSL\n\n" +
-              "### Implementation Steps\n1. **Elasticsearch setup** (~3h)\n   Configure `spring-boot-starter-data-elasticsearch`, define index mappings\n" +
-              "2. **Entity indexing** (~4h)\n   Map Pitch and Task entities to Elasticsearch documents\n" +
-              "3. **Search API endpoint** (~3h)\n   Build `/api/search?q=...&type=...&page=...` with relevance scoring\n" +
-              "4. **Autocomplete** (~2h)\n   Use Elasticsearch completion suggester for prefix matching\n" +
-              "5. **Sync strategy** (~3h)\n   Dual-write on save + nightly full reindex job for consistency\n\n" +
-              "### Recommended Libraries\n- **spring-data-elasticsearch** — Repository abstraction\n" +
-              "- **co.elastic.clients:elasticsearch-java** v8 — Official Java client\n" +
-              "- **spring-batch** — Scheduled bulk reindex jobs")
-          .techStacks("BACKEND_SPRING")
-          .hasFigmaContext(false)
-          .hasGitHubContext(true)
-          .hasRoadmapContext(true)
-          .processingTimeMs(5820L)
-          .createdAt(conv4Start)
-          .updatedAt(conv4Start)
-          .build();
-      wiseArchitectureAdviceRepository.save(advice4Init);
-
-      WiseArchitectureAdvice advice4FollowUpQ = WiseArchitectureAdvice.builder()
-          .conversationId(conv4Id)
-          .pitch(searchFeature)
-          .userId(adminUser.getId())
-          .messageType("FOLLOW_UP_QUESTION")
-          .userMessage("How do we keep the Elasticsearch index in sync when records are updated or deleted?")
-          .aiResponse(null)
-          .techStacks("BACKEND_SPRING")
-          .hasFigmaContext(false)
-          .hasGitHubContext(false)
-          .hasRoadmapContext(false)
-          .processingTimeMs(null)
-          .createdAt(conv4Start.plusHours(3))
-          .updatedAt(conv4Start.plusHours(3))
-          .build();
-      wiseArchitectureAdviceRepository.save(advice4FollowUpQ);
-
-      WiseArchitectureAdvice advice4FollowUpA = WiseArchitectureAdvice.builder()
-          .conversationId(conv4Id)
-          .pitch(searchFeature)
-          .userId(adminUser.getId())
-          .messageType("FOLLOW_UP_ANSWER")
-          .userMessage("How do we keep the Elasticsearch index in sync when records are updated or deleted?")
-          .aiResponse("Use a **CDC (Change Data Capture) + outbox** approach for reliable sync:\n\n" +
-              "1. **@EntityListeners** — hook JPA `@PostPersist`, `@PostUpdate`, `@PostRemove` to publish `EntityChangedEvent`\n" +
-              "2. **Async listener** — `@EventListener(condition = ...)` with `@Async` applies the change to Elasticsearch\n" +
-              "3. **Soft-delete guard** — never hard-delete from the index; mark as `status=DELETED` and filter in queries\n" +
-              "4. **Nightly reconciliation job** — Spring Batch job compares DB checksums with ES docs and re-indexes diverged records\n\n" +
-              "This gives near-real-time sync for normal operations and safety-net consistency for edge cases.")
-          .techStacks("BACKEND_SPRING")
-          .hasFigmaContext(false)
-          .hasGitHubContext(false)
-          .hasRoadmapContext(false)
-          .processingTimeMs(3418L)
-          .feedbackHelpful(true)
-          .feedbackText("Perfect, the outbox approach is exactly what we needed.")
-          .feedbackAt(conv4Start.plusHours(4))
-          .createdAt(conv4Start.plusHours(3).plusMinutes(2))
-          .updatedAt(conv4Start.plusHours(4))
-          .build();
-      wiseArchitectureAdviceRepository.save(advice4FollowUpA);
-
-      // ---- Conversation 5: Admin on Advanced Reporting Module ----
-      String conv5Id = "conv-wise-005";
-      LocalDateTime conv5Start = LocalDateTime.now().minusDays(1);
-
-      WiseArchitectureAdvice advice5Init = WiseArchitectureAdvice.builder()
-          .conversationId(conv5Id)
-          .pitch(reportModule)
-          .userId(adminUser.getId())
-          .messageType("INITIAL_SOLUTION")
-          .userMessage("Initial solution request")
-          .aiResponse("## Backend Spring\n\n" +
-              "A scalable reporting engine using async PDF generation and scheduled delivery.\n\n" +
-              "### Architecture\n- **ReportDefinition** entity — stores template config (fields, filters, schedule)\n" +
-              "- **ReportGenerationService** — async job triggered via `@Async` or Spring Batch\n" +
-              "- **PdfRenderEngine** — JasperReports or iText for PDF output\n" +
-              "- **SchedulerService** — `@Scheduled` cron-based report dispatch\n\n" +
-              "### Implementation Steps\n1. **Report definition schema** (~3h)\n   Design flexible JSON-configurable report template model\n" +
-              "2. **PDF generation** (~5h)\n   Integrate JasperReports, build template for cycle summaries\n" +
-              "3. **Async execution** (~3h)\n   Run generation in background thread pool, stream result to S3\n" +
-              "4. **Email dispatch** (~3h)\n   Send finished reports via Spring Mail\n" +
-              "5. **Scheduler** (~2h)\n   Cron-based trigger with per-report configurable schedule\n\n" +
-              "### Recommended Libraries\n- **jasperreports** v6 — PDF/XLSX report templates\n" +
-              "- **spring-boot-starter-mail** — Email delivery\n" +
-              "- **spring-batch** — Batch report generation pipeline")
-          .techStacks("BACKEND_SPRING")
-          .hasFigmaContext(false)
-          .hasGitHubContext(false)
-          .hasRoadmapContext(true)
-          .processingTimeMs(4990L)
-          .createdAt(conv5Start)
-          .updatedAt(conv5Start)
-          .build();
-      wiseArchitectureAdviceRepository.save(advice5Init);
-    }
-
-    log.info("WISE Architecture advice history created: 5 conversations, 12 entries");
+    log.info("WISE Architecture advice history created: 3 conversations, 7 entries");
   }
 }
