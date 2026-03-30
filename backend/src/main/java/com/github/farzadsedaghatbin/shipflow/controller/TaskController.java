@@ -1,5 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
@@ -319,6 +321,25 @@ public class TaskController {
   public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
     taskService.deleteTask(id);
     return ResponseEntity.noContent().build();
+  }
+
+  // ========== Bulk Operations ==========
+
+  @PostMapping("/bulk-update")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Bulk update tasks",
+      description =
+          "Apply a single action (ASSIGN, CHANGE_STATUS, CHANGE_PRIORITY, ADD_TAG, DELETE) to"
+              + " multiple tasks. All task IDs must belong to the same project. Returns a result"
+              + " with per-task error details so partial failures are visible to the caller.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Bulk operation completed (check successCount/failureCount)"),
+      @ApiResponse(responseCode = "400", description = "Invalid request or tasks span multiple projects")
+  })
+  public ResponseEntity<BulkUpdateResult> bulkUpdateTasks(
+      @Valid @RequestBody BulkTaskUpdateRequest request) {
+    return ResponseEntity.ok(taskService.bulkUpdate(request));
   }
 
   // ========== Sub-task Hierarchy Endpoints ==========

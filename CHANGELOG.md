@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Bulk task operations (S09 + S10)**: Multi-select tasks in the backlog list view and apply bulk actions in one click.
+  - **Backend**: New `BulkAction` enum (`ASSIGN`, `CHANGE_STATUS`, `CHANGE_PRIORITY`, `ADD_TAG`, `DELETE`), `BulkTaskUpdateRequest` / `BulkUpdateResult` DTOs, `TaskService.bulkUpdate()` (single `@Transactional`, cross-project validation, per-task error collection), and `POST /api/tasks/bulk-update` endpoint secured with `BACKLOG UPDATE` permission. 13 unit tests cover every action plus cross-project rejection and soft-delete filtering.
+  - **Frontend**: Checkbox column added to the backlog list table (select-all in header, per-row checkboxes). When ≥ 1 task is selected a sticky `BulkActionBar` appears at the bottom of the viewport with: Assign To (person picker), Change Status, Change Priority, Add Tag (inline input), Delete (with confirm dialog), and Clear. After a successful bulk action the list auto-refreshes and selection is cleared. i18n keys added to `en.json` and `fa.json`.
+
 ### Changed
 - **Spring Boot upgraded 3.2.1 → 3.4.7**: Pulls in Spring Framework 6.2, Hibernate 6.6, Spring Security 6.4, and Spring Data 3.4. Zero application-code changes required — all 1849 existing tests pass.
 - **springdoc-openapi upgraded 2.3.0 → 2.8.6**: Keeps Swagger UI compatible with the new Spring MVC auto-configuration in Spring Boot 3.4.

@@ -6629,5 +6629,23 @@
     "unsupportedType": "Unsupported file type",
     "uploading": "Uploading...",
     "empty": "No attachments yet"
+  },
+  "bulkActions": {
+    "toolbar": "Bulk actions toolbar",
+    "selected": "{{count}} selected",
+    "selectAll": "Select all tasks on this page",
+    "selectTask": "Select task",
+    "assignTo": "Assign To",
+    "selectPerson": "Select person",
+    "changeStatus": "Change Status",
+    "changePriority": "Change Priority",
+    "addTag": "Add Tag",
+    "tagPlaceholder": "Enter tag…",
+    "clearSelection": "Clear selection",
+    "successAll": "{{count}} task(s) updated successfully",
+    "partialSuccess": "{{success}} updated, {{failed}} failed",
+    "error": "Bulk operation failed",
+    "deleteConfirmTitle": "Delete {{count}} task(s)?",
+    "deleteConfirmDescription": "This will permanently delete {{count}} task(s). This action cannot be undone."
   }
 }

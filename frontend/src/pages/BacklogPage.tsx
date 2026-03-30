@@ -87,6 +87,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import KanbanBoard from '../components/KanbanBoard';
 import { useProject, useAuth } from '../contexts';
 import { BacklogSkeleton } from '../components/Skeletons';
+import BulkActionBar from '../components/BulkActionBar';
 
 // View mode type
 type ViewMode = 'list' | 'kanban';
@@ -174,6 +175,9 @@ export default function BacklogPage() {
   });
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+
+  // Bulk selection
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
 
   // Multi-select dropdown states
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -1777,6 +1781,19 @@ export default function BacklogPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox
+                    checked={tasks.length > 0 && tasks.every((t) => selectedTaskIds.has(t.id))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedTaskIds(new Set(tasks.map((t) => t.id)));
+                      } else {
+                        setSelectedTaskIds(new Set());
+                      }
+                    }}
+                    aria-label={t('bulkActions.selectAll')}
+                  />
+                </TableHead>
                 <TableHead className="w-[40%]">
                   <Button
                     variant="ghost"
@@ -1827,7 +1844,28 @@ export default function BacklogPage() {
             </TableHeader>
             <TableBody>
               {tasks.map((task) => (
-                <TableRow key={task.id} className={task.parentTaskId ? 'bg-muted/30' : ''}>
+                <TableRow
+                  key={task.id}
+                  className={cn(
+                    task.parentTaskId ? 'bg-muted/30' : '',
+                    selectedTaskIds.has(task.id) ? 'bg-primary/5' : ''
+                  )}
+                >
+                  <TableCell className="w-8">
+                    <Checkbox
+                      checked={selectedTaskIds.has(task.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedTaskIds((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.add(task.id);
+                          else next.delete(task.id);
+                          return next;
+                        });
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`${t('bulkActions.selectTask')} ${task.title}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className={task.parentTaskId ? 'pl-6' : ''}>
                       <div className="font-medium flex items-center gap-2">
@@ -2090,6 +2128,17 @@ export default function BacklogPage() {
             </TableBody>
           </Table>
         </Card>
+
+        {/* Bulk action bar — appears when tasks are selected */}
+        <BulkActionBar
+          selectedIds={selectedTaskIds}
+          persons={persons}
+          onClear={() => setSelectedTaskIds(new Set())}
+          onSuccess={() => {
+            setSelectedTaskIds(new Set());
+            loadTasks();
+          }}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

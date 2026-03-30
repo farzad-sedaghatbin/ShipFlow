@@ -25,8 +25,8 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S06 | Docker GHCR CI/CD + React.lazy code splitting | ✅ done |
 | S07 | File attachments on tasks — backend | ✅ done |
 | S08 | File attachments on tasks — frontend | ✅ done |
-| S09 | Bulk task operations — backend | pending |
-| S10 | Bulk task operations — frontend | pending |
+| S09 | Bulk task operations — backend | ✅ done |
+| S10 | Bulk task operations — frontend | ✅ done |
 | S11 | @mention triggers notification | pending |
 | S12 | CSV export for task backlog | pending |
 | S13 | Interactive onboarding tour (wire TourContext + driver.js) | pending |

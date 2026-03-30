@@ -1,5 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
@@ -11,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
@@ -26,6 +29,7 @@ import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -462,6 +466,107 @@ public class TaskService {
     task.setPriority(priority);
     Task saved = taskRepository.save(task);
     return toDTO(saved);
+  }
+
+  // ========== Bulk operations ==========
+
+  /**
+   * Apply a single action to a list of tasks in one transaction.
+   *
+   * <p>All task IDs must belong to the same project; if they span multiple projects the whole
+   * request is rejected. Per-task errors are collected and returned rather than aborting the
+   * entire batch.
+   */
+  @Transactional
+  public BulkUpdateResult bulkUpdate(BulkTaskUpdateRequest request) {
+    List<Task> tasks =
+        taskRepository.findAllById(request.getTaskIds()).stream()
+            .filter(t -> t.getDeletedAt() == null)
+            .collect(Collectors.toList());
+
+    if (tasks.isEmpty()) {
+      return BulkUpdateResult.builder().successCount(0).failureCount(0).errors(List.of()).build();
+    }
+
+    // Validate all tasks belong to the same project
+    Set<Long> projectIds =
+        tasks.stream()
+            .map(t -> t.getCycle().getProject().getId())
+            .collect(Collectors.toSet());
+    if (projectIds.size() > 1) {
+      throw new IllegalArgumentException("All tasks must belong to the same project");
+    }
+
+    int successCount = 0;
+    List<String> errors = new ArrayList<>();
+
+    for (Task task : tasks) {
+      try {
+        applyBulkAction(task, request.getAction(), request.getValue());
+        successCount++;
+      } catch (Exception e) {
+        errors.add("Task " + task.getId() + ": " + e.getMessage());
+      }
+    }
+
+    return BulkUpdateResult.builder()
+        .successCount(successCount)
+        .failureCount(errors.size())
+        .errors(errors)
+        .build();
+  }
+
+  private void applyBulkAction(Task task, BulkAction action, String value) {
+    switch (action) {
+      case ASSIGN -> {
+        if (value == null || value.isBlank()) {
+          task.setAssignee(null);
+        } else {
+          Long assigneeId = Long.parseLong(value.trim());
+          Person assignee =
+              personRepository
+                  .findById(assigneeId)
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Person not found: " + assigneeId));
+          task.setAssignee(assignee);
+        }
+        taskRepository.save(task);
+      }
+      case CHANGE_STATUS -> {
+        TaskStatus status = TaskStatus.valueOf(value);
+        TaskStatus oldStatus = task.getStatus();
+        task.setStatus(status);
+        if (status == TaskStatus.DONE && oldStatus != TaskStatus.DONE) {
+          task.setCompletedAt(LocalDateTime.now());
+        } else if (status != TaskStatus.DONE) {
+          task.setCompletedAt(null);
+        }
+        taskRepository.save(task);
+        if (!status.equals(oldStatus)) {
+          publishTaskStatusChangedEvent(task, oldStatus, status);
+        }
+      }
+      case CHANGE_PRIORITY -> {
+        task.setPriority(TaskPriority.valueOf(value));
+        taskRepository.save(task);
+      }
+      case ADD_TAG -> {
+        String existing = task.getTags();
+        if (existing == null || existing.isBlank()) {
+          task.setTags(value);
+        } else if (!existing.contains(value)) {
+          task.setTags(existing + "," + value);
+        }
+        taskRepository.save(task);
+      }
+      case DELETE -> {
+        User currentUser = getCurrentUser();
+        task.setDeletedAt(LocalDateTime.now());
+        task.setDeletedBy(currentUser);
+        taskRepository.save(task);
+      }
+      default -> throw new IllegalArgumentException("Unknown bulk action: " + action);
+    }
   }
 
   public void deleteTask(Long id) {
