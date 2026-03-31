@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Interactive onboarding tour (S13)**: Full 21-step product tour powered by driver.js v1.4.0, wired into the existing `TourContext` architecture.
+  - **WelcomeTourDialog** auto-appears 1 second after first login and gives users a choice to start the tour or skip it.
+  - **21 steps** walk through: sidebar orientation → projects → cycles → pitch board → betting table → health/hill chart → retrospectives → reports → meetings → backlog → work logs → project selector → user menu.
+  - Tour navigates automatically between routes (`/projects`, `/cycles`, `/pitches`, `/betting`, `/health`) with a 400 ms render delay before advancing.
+  - Skip confirmation dialog prevents accidental tour exit; user must confirm before the tour stops mid-run.
+  - Tour completion and welcome-shown state are persisted in `localStorage`. After completion the sidebar button changes to "Restart Tour".
+  - Custom dark-theme CSS (`tour.css`) with animated highlight ring, gradient popover, and responsive mobile layout.
+  - Steps 4 and 7 (project card / cycle card) work with the seeded demo data from `SampleDataInitializer`; on blank instances driver.js gracefully falls back to a full-screen popover.
+  - `TOUR_GUIDE.md` created — the single source of truth for all 21 steps: selector, source file, route, and a maintenance contract that every future UI PR must follow.
+  - `CLAUDE.md` checklists updated to point to `TourContext.tsx` and `TOUR_GUIDE.md` (was pointing to non-existent `src/tours/`).
 - **CSV export for task backlog (S12)**: One-click export of the current task list (with active filters applied) as a UTF-8 CSV file.
   - **Backend**: New `TaskService.exportTasksCsv()` accepts either `projectId` or `cycleId` (not both) plus all filter parameters. Uses `Pageable.unpaged()` to fetch all matching tasks in a single query; the cycle-scoped path also filters out soft-deleted tasks. Columns: `ID, Title, Status, Priority, Assignee, Pitch, Cycle, Estimate(h), Actual(h), Tags, Created, Updated`. Tags are stored as a plain string and included as-is. `csvEscape()` handles RFC-4180 quoting and prefixes formula-injection characters (`=`, `+`, `-`, `@`) with a single quote to prevent spreadsheet apps from executing them. Exposed via `GET /api/tasks/export` secured with `BACKLOG READ` permission; returns 400 if both or neither scope param is provided.
   - **Frontend**: Download icon button added to the BacklogPage header toolbar (between the view-mode toggle and the New Task button). Passes either `cycleId` or `projectId` (matching the API contract) with the current filter state, builds a `Blob`, and triggers a browser download. The button shows a spinner while the download is in progress.

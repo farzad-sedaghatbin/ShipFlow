@@ -35,6 +35,7 @@ import {
   Paperclip,
   ListChecks,
   Download,
+  Compass,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -59,6 +60,12 @@ const releases: Release[] = [
     upcoming: true,
     title: 'Core Product + Hardening — In Progress',
     highlights: [
+      {
+        icon: <Compass className="h-5 w-5" />,
+        title: 'Interactive Onboarding Tour',
+        description:
+          '21-step guided tour powered by driver.js walks first-time users through every key feature — projects, cycles, pitches, betting table, hill charts and more. Appears automatically on first login; restartable any time from the sidebar.',
+      },
       {
         icon: <Rocket className="h-5 w-5" />,
         title: 'Public Roadmap Page',

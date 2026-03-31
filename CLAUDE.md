@@ -29,7 +29,7 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S10 | Bulk task operations — frontend | ✅ done |
 | S11 | @mention triggers notification | ✅ done |
 | S12 | CSV export for task backlog | ✅ done |
-| S13 | Interactive onboarding tour (wire TourContext + driver.js) | pending |
+| S13 | Interactive onboarding tour (wire TourContext + driver.js) | ✅ done |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
@@ -45,7 +45,7 @@ Every session must complete ALL of these before creating the PR:
 6. Add i18n keys to **both** `en.json` AND `fa.json`
 7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage)
 8. Update `SampleDataInitializer.java` with demo data for the new feature
-9. **If UI layout changed**: verify onboarding tour step selectors in `src/tours/` still target correct elements
+9. **If UI layout changed**: verify onboarding tour step selectors in `src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
 10. **If in-app help guides reference changed UI**: update the relevant help guide content
 11. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
 
@@ -324,7 +324,7 @@ This project is **open source** — every significant feature must be documented
 | 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
 | 8 | Add i18n keys to both `en.json` and `fa.json` | `frontend/src/i18n/` |
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
-| 10 | If UI layout changed: verify onboarding tour selectors still work | `frontend/src/tours/` |
+| 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
 | 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
 | 12 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
 | 13 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
