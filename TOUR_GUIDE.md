@@ -105,6 +105,8 @@ The tour navigates between routes automatically. The flow is:
 
 **Important**: Steps 3 and 4 share the same route (`/projects`). This is intentional — step 3 navigates to `/projects` and highlights the button, then step 4 stays on the same page and highlights the card.
 
+**Known behaviour — same-route transitions take ~600 ms**: The `onNextClick` and `onPrevClick` handlers capture `location.pathname` in a closure at the time the driver is created. For steps that share a route, the stale closure value may differ from the actual current pathname, causing the handler to call `navigate()` (a no-op) and wait 600 ms before advancing. This has no visible side-effect beyond a short delay and is acceptable for the current release.
+
 ---
 
 ## Demo Data Dependency
