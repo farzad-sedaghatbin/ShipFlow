@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { 
-  Plus, 
-  Trash2, 
-  Pencil, 
-  ArrowUp, 
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  ArrowUp,
   ArrowDown,
   ChevronLeft,
   ChevronRight,
@@ -23,6 +23,7 @@ import {
   List,
   Kanban,
   Search,
+  Download,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -155,6 +156,8 @@ export default function BacklogPage() {
   });
   const [subtasks, setSubtasks] = useState<Task[]>([]);
   const [viewHistory, setViewHistory] = useState<Task[]>([]);
+
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -869,6 +872,36 @@ export default function BacklogPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    if (!currentProject) return;
+    setExportLoading(true);
+    try {
+      const response = await taskService.exportTasks({
+        projectId: currentProject.id,
+        cycleId: typeof selectedCycle === 'number' ? selectedCycle : undefined,
+        statuses: statusFilter.length > 0 ? statusFilter : undefined,
+        priorities: priorityFilter.length > 0 ? priorityFilter : undefined,
+        assigneeIds: assigneeFilter.length > 0 ? assigneeFilter : undefined,
+        category: activeCategory,
+      });
+      const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `tasks-${currentProject.id}${typeof selectedCycle === 'number' ? '-cycle' + selectedCycle : ''}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      toast.success(t('backlogPage.exportSuccess'));
+    } catch (error: any) {
+      const message = getUserFriendlyError(error);
+      toast.error(message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const handleQuickStatusChange = async (taskId: number, newStatus: TaskStatus) => {
     try {
       await taskService.updateStatus(taskId, newStatus);
@@ -1018,6 +1051,28 @@ export default function BacklogPage() {
               </Tooltip>
             </TooltipProvider>
           </div>
+
+          {/* Export CSV Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCsv}
+                  disabled={exportLoading || !currentProject}
+                  aria-label={t('backlogPage.exportCsv')}
+                >
+                  {exportLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('backlogPage.exportCsv')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           {/* New Task Button - For Kanban, always enabled; for Shape Up, requires cycle selection */}
           {isKanbanProject ? (

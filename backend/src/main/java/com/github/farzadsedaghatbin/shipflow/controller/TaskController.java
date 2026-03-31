@@ -325,6 +325,41 @@ public class TaskController {
 
   // ========== Bulk Operations ==========
 
+  // ========== CSV Export ==========
+
+  @GetMapping("/export")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(
+      summary = "Export tasks as CSV",
+      description =
+          "Download all tasks for a project (optionally filtered by cycle, status, priority, "
+              + "assignee and category) as a UTF-8 encoded CSV file.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "CSV file generated"),
+      @ApiResponse(responseCode = "400", description = "Missing projectId parameter")
+  })
+  public ResponseEntity<byte[]> exportTasksCsv(
+      @RequestParam Long projectId,
+      @RequestParam(required = false) Long cycleId,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) TaskCategory category) {
+
+    byte[] csv = taskService.exportTasksCsv(projectId, cycleId, statuses, priorities, assigneeIds, category);
+
+    String filename = "tasks-" + projectId
+        + (cycleId != null ? "-cycle" + cycleId : "")
+        + "-" + java.time.LocalDate.now() + ".csv";
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+        .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+        .body(csv);
+  }
+
+  // ========== Bulk Operations ==========
+
   @PostMapping("/bulk-update")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(

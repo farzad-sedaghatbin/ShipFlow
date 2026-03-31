@@ -28,7 +28,7 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S09 | Bulk task operations — backend | ✅ done |
 | S10 | Bulk task operations — frontend | ✅ done |
 | S11 | @mention triggers notification | ✅ done |
-| S12 | CSV export for task backlog | pending |
+| S12 | CSV export for task backlog | ✅ done |
 | S13 | Interactive onboarding tour (wire TourContext + driver.js) | pending |
 
 Full session prompts (S01–S29 through v1.0.0) are in:

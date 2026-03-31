@@ -28,7 +28,12 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -752,6 +757,67 @@ public class TaskService {
           .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category, pageable)
           .map(this::toDTO);
     }
+  }
+
+  // ========== CSV Export ==========
+
+  @Transactional(readOnly = true)
+  public byte[] exportTasksCsv(Long projectId, Long cycleId, List<TaskStatus> statuses,
+      List<TaskPriority> priorities, List<Long> assigneeIds, TaskCategory category) {
+
+    List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
+    List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
+    List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+
+    List<Task> tasks;
+    if (cycleId != null) {
+      tasks = taskRepository
+          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, category,
+              Pageable.unpaged())
+          .getContent();
+    } else {
+      tasks = taskRepository
+          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category,
+              Pageable.unpaged())
+          .getContent();
+    }
+
+    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter writer =
+            new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
+
+      writer.println("ID,Title,Status,Priority,Assignee,Pitch,Cycle,Estimate(h),Actual(h),Tags,Created,Updated");
+
+      DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+      for (Task t : tasks) {
+        String tags = t.getTags() != null ? t.getTags() : "";
+        writer.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
+            t.getId(),
+            csvEscape(t.getTitle()),
+            t.getStatus() != null ? t.getStatus().name() : "",
+            t.getPriority() != null ? t.getPriority().name() : "",
+            t.getAssignee() != null ? csvEscape(t.getAssignee().getName()) : "",
+            t.getPitch() != null ? csvEscape(t.getPitch().getTitle()) : "",
+            t.getCycle() != null ? csvEscape(t.getCycle().getName()) : "",
+            t.getEstimateHours() != null ? t.getEstimateHours() : "",
+            t.getActualHours() != null ? t.getActualHours() : "",
+            csvEscape(tags),
+            t.getCreatedAt() != null ? t.getCreatedAt().format(fmt) : "",
+            t.getUpdatedAt() != null ? t.getUpdatedAt().format(fmt) : "");
+      }
+      writer.flush();
+      return baos.toByteArray();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to export tasks as CSV", e);
+    }
+  }
+
+  private static String csvEscape(String val) {
+    if (val == null || val.isEmpty()) return "";
+    if (val.contains(",") || val.contains("\"") || val.contains("\n") || val.contains("\r")) {
+      return "\"" + val.replace("\"", "\"\"") + "\"";
+    }
+    return val;
   }
 
   // ========== Category-based methods ==========

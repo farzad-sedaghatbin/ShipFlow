@@ -345,6 +345,8 @@
     "taskCreated": "تسک با موفقیت ایجاد شد",
     "taskDeleteFailed": "حذف تسک ناموفق بود",
     "taskDeleted": "تسک با موفقیت حذف شد",
+    "exportCsv": "دانلود CSV",
+    "exportSuccess": "تسک‌ها با موفقیت صادر شدند",
     "taskDescription": "توضیحات تسک",
     "taskLoadFailed": "بارگذاری تسک‌ها ناموفق بود",
     "taskName": "نام تسک",

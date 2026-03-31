@@ -3080,6 +3080,8 @@
     "taskUpdated": "Task updated successfully",
     "taskCreated": "Task created successfully",
     "taskDeleted": "Task deleted successfully",
+    "exportCsv": "Export CSV",
+    "exportSuccess": "Tasks exported successfully",
     "statusUpdated": "Status updated successfully",
     "priorityUpdated": "Priority updated successfully",
     "editSubtask": "Edit Subtask",
