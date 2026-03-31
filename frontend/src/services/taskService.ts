@@ -1,5 +1,5 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory, BulkTaskUpdateRequest, BulkUpdateResult } from '../types';
 
 export const taskService = {
   // Current user's tasks
@@ -203,4 +203,8 @@ export const taskService = {
         size: size ?? 20,
       },
     }),
+
+  // Bulk operations
+  bulkUpdate: (request: BulkTaskUpdateRequest) =>
+    api.post<BulkUpdateResult>('/tasks/bulk-update', request),
 };

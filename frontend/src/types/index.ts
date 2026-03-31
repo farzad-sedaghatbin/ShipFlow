@@ -1666,6 +1666,22 @@ export interface RoadmapTimeline {
   releases: TimelineRelease[];
 }
 
+// Bulk task operations
+export type BulkAction = 'ASSIGN' | 'CHANGE_STATUS' | 'CHANGE_PRIORITY' | 'ADD_TAG' | 'DELETE';
+
+export interface BulkTaskUpdateRequest {
+  taskIds: number[];
+  action: BulkAction;
+  /** Action-specific payload — see BulkAction docs for expected value per action. */
+  value?: string;
+}
+
+export interface BulkUpdateResult {
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+}
+
 // Global Search
 export type GlobalSearchEntityType = 'TASK' | 'SUBTASK' | 'BUG_REPORT' | 'PITCH' | 'EPIC';
 

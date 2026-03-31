@@ -6629,5 +6629,23 @@
     "unsupportedType": "نوع فایل پشتیبانی نمی‌شود",
     "uploading": "در حال بارگذاری...",
     "empty": "هنوز پیوستی وجود ندارد"
+  },
+  "bulkActions": {
+    "toolbar": "نوار عملیات دسته‌ای",
+    "selected": "{{count}} انتخاب شده",
+    "selectAll": "انتخاب همه وظایف این صفحه",
+    "selectTask": "انتخاب وظیفه",
+    "assignTo": "تخصیص به",
+    "selectPerson": "انتخاب شخص",
+    "changeStatus": "تغییر وضعیت",
+    "changePriority": "تغییر اولویت",
+    "addTag": "افزودن برچسب",
+    "tagPlaceholder": "برچسب را وارد کنید…",
+    "clearSelection": "پاک کردن انتخاب",
+    "successAll": "{{count}} وظیفه با موفقیت به‌روزرسانی شد",
+    "partialSuccess": "{{success}} به‌روز شد، {{failed}} ناموفق",
+    "error": "عملیات دسته‌ای ناموفق بود",
+    "deleteConfirmTitle": "حذف {{count}} وظیفه؟",
+    "deleteConfirmDescription": "این عمل {{count}} وظیفه را به‌طور دائمی حذف می‌کند و قابل بازگشت نیست."
   }
 }
