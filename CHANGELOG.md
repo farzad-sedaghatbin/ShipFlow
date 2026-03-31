@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **CSV export for task backlog (S12)**: One-click export of the current task list (with active filters applied) as a UTF-8 CSV file.
+  - **Backend**: New `TaskService.exportTasksCsv()` accepts either `projectId` or `cycleId` (not both) plus all filter parameters. Uses `Pageable.unpaged()` to fetch all matching tasks in a single query; the cycle-scoped path also filters out soft-deleted tasks. Columns: `ID, Title, Status, Priority, Assignee, Pitch, Cycle, Estimate(h), Actual(h), Tags, Created, Updated`. Tags are stored as a plain string and included as-is. `csvEscape()` handles RFC-4180 quoting and prefixes formula-injection characters (`=`, `+`, `-`, `@`) with a single quote to prevent spreadsheet apps from executing them. Exposed via `GET /api/tasks/export` secured with `BACKLOG READ` permission; returns 400 if both or neither scope param is provided.
+  - **Frontend**: Download icon button added to the BacklogPage header toolbar (between the view-mode toggle and the New Task button). Passes either `cycleId` or `projectId` (matching the API contract) with the current filter state, builds a `Blob`, and triggers a browser download. The button shows a spinner while the download is in progress.
+  - 8 unit tests in `TaskCsvExportServiceTest` cover: header row, per-task row format, CSV escaping, assignee/pitch names, tags field, cycle-scoped query routing, empty result, and null-field safety.
+  - i18n keys added to `en.json` and `fa.json`.
 - **@mention notifications (S11)**: Writing `@Name` in any comment now triggers an in-app notification for the mentioned user.
   - `CommentService.processMentions()` parses `@Name` and `@"Full Name"` patterns after every comment save, looks up matching users via `userRepository.findByPersonNameIn()`, and calls `DashboardNotificationService.notifyCommentMention()` for each match.
   - Self-mentions and mentions of unknown users are silently skipped.

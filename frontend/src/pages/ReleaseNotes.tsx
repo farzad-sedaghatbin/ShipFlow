@@ -34,6 +34,7 @@ import {
   Lock,
   Paperclip,
   ListChecks,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -81,6 +82,12 @@ const releases: Release[] = [
         title: '@Mention Notifications',
         description:
           'Type @Name in any comment to instantly notify that person. Mentions appear in the notification bell with a distinct icon so they stand out from other alerts.',
+      },
+      {
+        icon: <Download className="h-5 w-5" />,
+        title: 'CSV Export for Task Backlog',
+        description:
+          'One-click CSV download of your current task list with all active filters applied. Includes title, status, priority, assignee, pitch, cycle, estimates, tags, and timestamps.',
       },
       {
         icon: <Shield className="h-5 w-5" />,

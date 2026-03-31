@@ -325,6 +325,49 @@ public class TaskController {
 
   // ========== Bulk Operations ==========
 
+  // ========== CSV Export ==========
+
+  @GetMapping("/export")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(
+      summary = "Export tasks as CSV",
+      description =
+          "Download all tasks for a project or cycle (optionally filtered by status, priority, "
+              + "assignee and category) as a UTF-8 encoded CSV file. "
+              + "Provide either projectId OR cycleId — not both.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "CSV file generated"),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Exactly one of projectId or cycleId must be provided")
+  })
+  public ResponseEntity<byte[]> exportTasksCsv(
+      @RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long cycleId,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) TaskCategory category) {
+
+    if ((projectId == null) == (cycleId == null)) {
+      // both null or both provided
+      return ResponseEntity.badRequest().build();
+    }
+
+    byte[] csv = taskService.exportTasksCsv(projectId, cycleId, statuses, priorities, assigneeIds, category);
+
+    String filename = cycleId != null
+        ? "tasks-cycle" + cycleId + "-" + java.time.LocalDate.now() + ".csv"
+        : "tasks-" + projectId + "-" + java.time.LocalDate.now() + ".csv";
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+        .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+        .body(csv);
+  }
+
+  // ========== Bulk Operations ==========
+
   @PostMapping("/bulk-update")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(

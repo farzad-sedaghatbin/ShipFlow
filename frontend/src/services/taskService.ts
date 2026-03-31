@@ -207,4 +207,25 @@ export const taskService = {
   // Bulk operations
   bulkUpdate: (request: BulkTaskUpdateRequest) =>
     api.post<BulkUpdateResult>('/tasks/bulk-update', request),
+
+  // CSV Export — pass exactly one of projectId or cycleId
+  exportTasks: (params: {
+    projectId?: number;
+    cycleId?: number;
+    statuses?: TaskStatus[];
+    priorities?: TaskPriority[];
+    assigneeIds?: number[];
+    category?: TaskCategory;
+  }) =>
+    api.get<Blob>('/tasks/export', {
+      params: {
+        projectId: params.projectId,
+        cycleId: params.cycleId,
+        statuses: params.statuses?.join(','),
+        priorities: params.priorities?.join(','),
+        assigneeIds: params.assigneeIds?.join(','),
+        category: params.category,
+      },
+      responseType: 'blob',
+    }),
 };
