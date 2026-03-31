@@ -14,6 +14,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
@@ -58,6 +60,7 @@ class TaskBulkUpdateServiceTest {
   @Mock DashboardNotificationService notificationService;
   @Mock MessageService messageService;
   @Mock ApplicationEventPublisher eventPublisher;
+  @Mock PermissionService permissionService;
 
   @InjectMocks TaskService taskService;
 
@@ -98,6 +101,8 @@ class TaskBulkUpdateServiceTest {
         new UsernamePasswordAuthenticationToken("testuser", null, List.of()));
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(currentUser));
     when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+    // Default: grant DELETE permission (individual tests can override)
+    when(permissionService.hasPermission(ResourceType.BACKLOG, PermissionType.DELETE)).thenReturn(true);
   }
 
   private BulkTaskUpdateRequest request(BulkAction action, String value) {
@@ -255,7 +260,7 @@ class TaskBulkUpdateServiceTest {
   class Delete {
 
     @Test
-    @DisplayName("soft-deletes all tasks")
+    @DisplayName("soft-deletes all tasks when DELETE permission is granted")
     void softDeletesTasks() {
       when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
 
@@ -265,6 +270,76 @@ class TaskBulkUpdateServiceTest {
       assertThat(task1.getDeletedAt()).isNotNull();
       assertThat(task2.getDeletedAt()).isNotNull();
       assertThat(task1.getDeletedBy()).isEqualTo(currentUser);
+    }
+
+    @Test
+    @DisplayName("throws AccessDeniedException when caller lacks BACKLOG DELETE permission")
+    void deniedWithoutDeletePermission() {
+      when(permissionService.hasPermission(ResourceType.BACKLOG, PermissionType.DELETE)).thenReturn(false);
+
+      BulkTaskUpdateRequest req = request(BulkAction.DELETE, null);
+
+      assertThatThrownBy(() -> taskService.bulkUpdate(req))
+          .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("ADD_TAG — exact token deduplication")
+  class AddTagDedup {
+
+    @Test
+    @DisplayName("does not add tag that is a substring of an existing tag")
+    void substringIsNotADuplicate() {
+      task1.setTags("backend");
+      when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
+
+      // "end" is a substring of "backend" but NOT the same token — should be added
+      taskService.bulkUpdate(request(BulkAction.ADD_TAG, "end"));
+
+      assertThat(task1.getTags()).isEqualTo("backend,end");
+    }
+
+    @Test
+    @DisplayName("rejects a tag value that contains a comma")
+    void rejectsTagWithComma() {
+      when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
+
+      BulkUpdateResult result = taskService.bulkUpdate(request(BulkAction.ADD_TAG, "foo,bar"));
+
+      assertThat(result.getFailureCount()).isEqualTo(2);
+      assertThat(result.getErrors()).allMatch(e -> e.contains("commas"));
+    }
+  }
+
+  @Nested
+  @DisplayName("Skipped / missing IDs reported as failures")
+  class SkippedIds {
+
+    @Test
+    @DisplayName("missing task ID is reported as a failure")
+    void missingIdReportedAsFailure() {
+      // Only task1 is returned — task2 (102) is missing
+      when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1));
+
+      BulkUpdateResult result = taskService.bulkUpdate(request(BulkAction.CHANGE_PRIORITY, "HIGH"));
+
+      assertThat(result.getSuccessCount()).isEqualTo(1);
+      assertThat(result.getFailureCount()).isEqualTo(1);
+      assertThat(result.getErrors()).anyMatch(e -> e.contains("102") && e.contains("not found"));
+    }
+
+    @Test
+    @DisplayName("already-deleted task ID is reported as a failure")
+    void deletedIdReportedAsFailure() {
+      task2.setDeletedAt(java.time.LocalDateTime.now());
+      when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
+
+      BulkUpdateResult result = taskService.bulkUpdate(request(BulkAction.CHANGE_PRIORITY, "HIGH"));
+
+      assertThat(result.getSuccessCount()).isEqualTo(1);
+      assertThat(result.getFailureCount()).isEqualTo(1);
+      assertThat(result.getErrors()).anyMatch(e -> e.contains("102") && e.contains("deleted"));
     }
   }
 
@@ -297,8 +372,8 @@ class TaskBulkUpdateServiceTest {
     }
 
     @Test
-    @DisplayName("returns empty result when all task IDs are for deleted tasks")
-    void emptyResultWhenAllDeleted() {
+    @DisplayName("reports deleted task IDs as failures rather than silently dropping them")
+    void deletedTasksReportedAsFailures() {
       task1.setDeletedAt(java.time.LocalDateTime.now());
       task2.setDeletedAt(java.time.LocalDateTime.now());
       when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
@@ -311,7 +386,8 @@ class TaskBulkUpdateServiceTest {
       BulkUpdateResult result = taskService.bulkUpdate(req);
 
       assertThat(result.getSuccessCount()).isZero();
-      assertThat(result.getFailureCount()).isZero();
+      assertThat(result.getFailureCount()).isEqualTo(2);
+      assertThat(result.getErrors()).allMatch(e -> e.contains("deleted"));
     }
   }
 }

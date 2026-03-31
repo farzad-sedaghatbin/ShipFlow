@@ -191,6 +191,11 @@ export default function BacklogPage() {
     setViewMode(isKanbanProject ? 'kanban' : 'list');
   }, [isKanbanProject]);
 
+  // Clear bulk selection whenever the visible task set changes (page, filters, cycle, project, view)
+  useEffect(() => {
+    setSelectedTaskIds(new Set());
+  }, [page, selectedCycle, currentProject?.id, statusFilter, priorityFilter, assigneeFilter, viewMode, activeCategory]);
+
   useEffect(() => {
     loadInitialData();
     loadActiveTimer();

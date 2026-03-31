@@ -14,6 +14,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
@@ -36,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +59,7 @@ public class TaskService {
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
+  private final PermissionService permissionService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -474,21 +478,51 @@ public class TaskService {
    * Apply a single action to a list of tasks in one transaction.
    *
    * <p>All task IDs must belong to the same project; if they span multiple projects the whole
-   * request is rejected. Per-task errors are collected and returned rather than aborting the
-   * entire batch.
+   * request is rejected. Task IDs that are not found or are already soft-deleted are reported as
+   * failures. Per-task errors are collected so partial-success results are visible to the caller.
+   *
+   * <p>The DELETE action additionally requires {@code BACKLOG DELETE} permission because the
+   * endpoint is protected with the weaker {@code BACKLOG UPDATE} permission only.
    */
   @Transactional
   public BulkUpdateResult bulkUpdate(BulkTaskUpdateRequest request) {
-    List<Task> tasks =
-        taskRepository.findAllById(request.getTaskIds()).stream()
-            .filter(t -> t.getDeletedAt() == null)
-            .collect(Collectors.toList());
-
-    if (tasks.isEmpty()) {
-      return BulkUpdateResult.builder().successCount(0).failureCount(0).errors(List.of()).build();
+    // Fix #1: enforce DELETE permission when the action is DELETE
+    if (request.getAction() == BulkAction.DELETE
+        && !permissionService.hasPermission(ResourceType.BACKLOG, PermissionType.DELETE)) {
+      throw new AccessDeniedException("BACKLOG DELETE permission is required to bulk-delete tasks");
     }
 
-    // Validate all tasks belong to the same project
+    // Load tasks and partition into found-and-active vs missing/deleted
+    List<Task> allLoaded = taskRepository.findAllById(request.getTaskIds());
+    Set<Long> loadedIds =
+        allLoaded.stream().map(Task::getId).collect(Collectors.toSet());
+
+    List<String> errors = new ArrayList<>();
+
+    // Fix #2: report missing or deleted IDs explicitly rather than silently dropping them
+    for (Long requestedId : request.getTaskIds()) {
+      if (!loadedIds.contains(requestedId)) {
+        errors.add("Task " + requestedId + ": not found");
+      }
+    }
+    for (Task t : allLoaded) {
+      if (t.getDeletedAt() != null) {
+        errors.add("Task " + t.getId() + ": already deleted");
+      }
+    }
+
+    List<Task> tasks =
+        allLoaded.stream().filter(t -> t.getDeletedAt() == null).collect(Collectors.toList());
+
+    if (tasks.isEmpty()) {
+      return BulkUpdateResult.builder()
+          .successCount(0)
+          .failureCount(errors.size())
+          .errors(errors)
+          .build();
+    }
+
+    // Validate all active tasks belong to the same project
     Set<Long> projectIds =
         tasks.stream()
             .map(t -> t.getCycle().getProject().getId())
@@ -498,7 +532,6 @@ public class TaskService {
     }
 
     int successCount = 0;
-    List<String> errors = new ArrayList<>();
 
     for (Task task : tasks) {
       try {
@@ -533,7 +566,11 @@ public class TaskService {
         taskRepository.save(task);
       }
       case CHANGE_STATUS -> {
-        TaskStatus status = TaskStatus.valueOf(value);
+        // Fix #4: validate value before Enum.valueOf to give a clear error message
+        if (value == null || value.isBlank()) {
+          throw new IllegalArgumentException("Status value must not be blank");
+        }
+        TaskStatus status = TaskStatus.valueOf(value.trim());
         TaskStatus oldStatus = task.getStatus();
         task.setStatus(status);
         if (status == TaskStatus.DONE && oldStatus != TaskStatus.DONE) {
@@ -547,15 +584,33 @@ public class TaskService {
         }
       }
       case CHANGE_PRIORITY -> {
-        task.setPriority(TaskPriority.valueOf(value));
+        // Fix #4: validate value before Enum.valueOf to give a clear error message
+        if (value == null || value.isBlank()) {
+          throw new IllegalArgumentException("Priority value must not be blank");
+        }
+        task.setPriority(TaskPriority.valueOf(value.trim()));
         taskRepository.save(task);
       }
       case ADD_TAG -> {
+        // Fix #3: reject tags that contain commas; use exact token match to prevent substring dupes
+        if (value == null || value.isBlank()) {
+          throw new IllegalArgumentException("Tag value must not be blank");
+        }
+        String tag = value.trim();
+        if (tag.contains(",")) {
+          throw new IllegalArgumentException("Tag must not contain commas: " + tag);
+        }
         String existing = task.getTags();
         if (existing == null || existing.isBlank()) {
-          task.setTags(value);
-        } else if (!existing.contains(value)) {
-          task.setTags(existing + "," + value);
+          task.setTags(tag);
+        } else {
+          boolean alreadyPresent =
+              java.util.Arrays.stream(existing.split(","))
+                  .map(String::trim)
+                  .anyMatch(t -> t.equalsIgnoreCase(tag));
+          if (!alreadyPresent) {
+            task.setTags(existing + "," + tag);
+          }
         }
         taskRepository.save(task);
       }
