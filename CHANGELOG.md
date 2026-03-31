@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **@mention notifications (S11)**: Writing `@Name` in any comment now triggers an in-app notification for the mentioned user.
+  - `CommentService.processMentions()` parses `@Name` and `@"Full Name"` patterns after every comment save, looks up matching users via `userRepository.findByPersonNameIn()`, and calls `DashboardNotificationService.notifyCommentMention()` for each match.
+  - Self-mentions and mentions of unknown users are silently skipped.
+  - The `NotificationCenter` now renders a distinct `MessageSquare` (violet) icon for `COMMENT_MENTION` notifications instead of the generic INFO icon.
+  - 7 new unit tests in `DashboardNotificationServiceTest` cover: notification content, username fallback when person profile is absent, self-skip, null-author/null-mentionee guards, long-comment truncation (>100 chars), and BUG_REPORT entity URL generation.
 - **Bulk task operations (S09 + S10)**: Multi-select tasks in the backlog list view and apply bulk actions in one click.
   - **Backend**: New `BulkAction` enum (`ASSIGN`, `CHANGE_STATUS`, `CHANGE_PRIORITY`, `ADD_TAG`, `DELETE`), `BulkTaskUpdateRequest` / `BulkUpdateResult` DTOs, `TaskService.bulkUpdate()` (single `@Transactional`, cross-project validation, per-task error collection), and `POST /api/tasks/bulk-update` endpoint secured with `BACKLOG UPDATE` permission. 13 unit tests cover every action plus cross-project rejection and soft-delete filtering.
   - **Frontend**: Checkbox column added to the backlog list table (select-all in header, per-row checkboxes). When ≥ 1 task is selected a sticky `BulkActionBar` appears at the bottom of the viewport with: Assign To (person picker), Change Status, Change Priority, Add Tag (inline input), Delete (with confirm dialog), and Clear. After a successful bulk action the list auto-refreshes and selection is cleared. i18n keys added to `en.json` and `fa.json`.

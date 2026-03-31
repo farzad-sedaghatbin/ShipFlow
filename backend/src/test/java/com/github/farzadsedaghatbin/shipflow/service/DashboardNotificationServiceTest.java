@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -531,5 +532,124 @@ class DashboardNotificationServiceTest {
         eq(1L));
     verify(teamsService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
         eq(1L));
+  }
+
+  // ========== notifyCommentMention ==========
+
+  @Test
+  void notifyCommentMention_ShouldCreateNotificationForMentionedUser() {
+    // Arrange
+    Person authorPerson = Person.builder().id(2L).name("Bob Smith").build();
+    User author = User.builder().id(2L).username("bob").person(authorPerson).build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 42L, "Hey @alice, take a look!");
+
+    // Assert
+    verify(notificationRepository).save(argThat(n ->
+        "COMMENT_MENTION".equals(n.getType())
+        && "INFO".equals(n.getSeverity())
+        && n.getUser().equals(mentioned)
+        && n.getActionUrl() != null && n.getActionUrl().contains("42")
+        && n.getMessage() != null && n.getMessage().contains("Bob Smith")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldUseUsernameWhenPersonIsNull() {
+    // Arrange — author has no Person profile
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 10L, "check this");
+
+    // Assert
+    verify(notificationRepository).save(argThat(n ->
+        n.getMessage() != null && n.getMessage().contains("bob")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenMentionedUserIsSameAsAuthor() {
+    // Arrange — same user mentions themselves
+    User author = User.builder().id(1L).username("alice").build();
+    User mentioned = author; // same object
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 1L, "@alice testing");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenMentionedUserIsNull() {
+    // Arrange
+    User author = User.builder().id(1L).username("alice").build();
+
+    // Act
+    notificationService.notifyCommentMention(null, author, "TASK", 1L, "@unknown");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenAuthorIsNull() {
+    // Arrange
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, null, "TASK", 1L, "some content");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldTruncateCommentPreviewLongerThan100Chars() {
+    // Arrange
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+    String longComment = "a".repeat(150);
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 5L, longComment);
+
+    // Assert — message contains "..." indicating truncation
+    verify(notificationRepository).save(argThat(n ->
+        n.getMessage() != null && n.getMessage().contains("...")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldBuildCorrectActionUrlForBugEntity() {
+    // Arrange
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "BUG_REPORT", 99L, "check this bug");
+
+    // Assert — action URL points to bugs endpoint
+    verify(notificationRepository).save(argThat(n ->
+        n.getActionUrl() != null && n.getActionUrl().contains("99")
+        && n.getEntityType().equals("BUG_REPORT")
+        && n.getEntityId().equals(99L)
+    ));
   }
 }
