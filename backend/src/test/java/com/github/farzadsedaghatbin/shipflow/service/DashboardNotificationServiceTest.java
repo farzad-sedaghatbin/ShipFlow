@@ -554,7 +554,7 @@ class DashboardNotificationServiceTest {
         "COMMENT_MENTION".equals(n.getType())
         && "INFO".equals(n.getSeverity())
         && n.getUser().equals(mentioned)
-        && n.getActionUrl() != null && n.getActionUrl().contains("42")
+        && n.getActionUrl() != null && n.getActionUrl().startsWith("/tasks/") && n.getActionUrl().contains("42")
         && n.getMessage() != null && n.getMessage().contains("Bob Smith")
     ));
   }
@@ -579,9 +579,9 @@ class DashboardNotificationServiceTest {
 
   @Test
   void notifyCommentMention_ShouldSkipWhenMentionedUserIsSameAsAuthor() {
-    // Arrange — same user mentions themselves
+    // Arrange — two distinct User objects with the same id (same logical user)
     User author = User.builder().id(1L).username("alice").build();
-    User mentioned = author; // same object
+    User mentioned = User.builder().id(1L).username("alice").build();
 
     // Act
     notificationService.notifyCommentMention(mentioned, author, "TASK", 1L, "@alice testing");
@@ -645,9 +645,11 @@ class DashboardNotificationServiceTest {
     // Act
     notificationService.notifyCommentMention(mentioned, author, "BUG_REPORT", 99L, "check this bug");
 
-    // Assert — action URL points to bugs endpoint
+    // Assert — action URL points to bugs endpoint (not /tasks/)
     verify(notificationRepository).save(argThat(n ->
-        n.getActionUrl() != null && n.getActionUrl().contains("99")
+        n.getActionUrl() != null
+        && n.getActionUrl().startsWith("/bugs/")
+        && n.getActionUrl().contains("99")
         && n.getEntityType().equals("BUG_REPORT")
         && n.getEntityId().equals(99L)
     ));

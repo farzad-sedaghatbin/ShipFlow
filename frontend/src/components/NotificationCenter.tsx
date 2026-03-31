@@ -110,7 +110,7 @@ export const NotificationCenter: React.FC = () => {
   };
 
   /** Returns a type-specific icon that overrides the severity icon for known notification types. */
-  const getTypeIcon = (type: string, severity: string) => {
+  const getTypeIcon = (type: DashboardNotification['type'], severity: DashboardNotification['severity']) => {
     if (type === 'COMMENT_MENTION') {
       return <MessageSquare className="h-4 w-4 text-violet-500" />;
     }
