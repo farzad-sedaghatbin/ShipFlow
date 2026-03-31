@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Info,
   XCircle,
+  MessageSquare,
 } from 'lucide-react';
 import { dashboardNotificationApi } from '../services/dashboardApi';
 import { DashboardNotification } from '../types/dashboard';
@@ -108,7 +109,12 @@ export const NotificationCenter: React.FC = () => {
     }
   };
 
-  const getSeverityIcon = (severity: string) => {
+  /** Returns a type-specific icon that overrides the severity icon for known notification types. */
+  const getTypeIcon = (type: DashboardNotification['type'], severity: DashboardNotification['severity']) => {
+    if (type === 'COMMENT_MENTION') {
+      return <MessageSquare className="h-4 w-4 text-violet-500" />;
+    }
+    // Fall back to severity-based icon
     switch (severity) {
       case 'CRITICAL':
       case 'ERROR':
@@ -219,7 +225,7 @@ export const NotificationCenter: React.FC = () => {
                 >
                   <div className="flex items-start gap-2">
                     <div className="mt-0.5">
-                      {getSeverityIcon(notification.severity)}
+                      {getTypeIcon(notification.type, notification.severity)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">

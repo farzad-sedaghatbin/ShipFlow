@@ -77,6 +77,12 @@ const releases: Release[] = [
           'Multi-select tasks and bulk assign, change status, change priority, or add tags in one action.',
       },
       {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: '@Mention Notifications',
+        description:
+          'Type @Name in any comment to instantly notify that person. Mentions appear in the notification bell with a distinct icon so they stand out from other alerts.',
+      },
+      {
         icon: <Shield className="h-5 w-5" />,
         title: 'Security Hardening',
         description:
