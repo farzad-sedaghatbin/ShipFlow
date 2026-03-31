@@ -774,7 +774,10 @@ public class TaskService {
       tasks = taskRepository
           .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, category,
               Pageable.unpaged())
-          .getContent();
+          .getContent()
+          .stream()
+          .filter(t -> t.getDeletedAt() == null)
+          .collect(Collectors.toList());
     } else {
       tasks = taskRepository
           .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category,
@@ -814,10 +817,15 @@ public class TaskService {
 
   private static String csvEscape(String val) {
     if (val == null || val.isEmpty()) return "";
-    if (val.contains(",") || val.contains("\"") || val.contains("\n") || val.contains("\r")) {
-      return "\"" + val.replace("\"", "\"\"") + "\"";
+    // Prefix formula-injection trigger characters so spreadsheet apps don't execute them
+    String safe = val;
+    if (!safe.isEmpty() && "=+-@\t\r".indexOf(safe.charAt(0)) >= 0) {
+      safe = "'" + safe;
     }
-    return val;
+    if (safe.contains(",") || safe.contains("\"") || safe.contains("\n") || safe.contains("\r")) {
+      return "\"" + safe.replace("\"", "\"\"") + "\"";
+    }
+    return safe;
   }
 
   // ========== Category-based methods ==========

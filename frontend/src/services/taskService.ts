@@ -208,9 +208,9 @@ export const taskService = {
   bulkUpdate: (request: BulkTaskUpdateRequest) =>
     api.post<BulkUpdateResult>('/tasks/bulk-update', request),
 
-  // CSV Export
+  // CSV Export — pass exactly one of projectId or cycleId
   exportTasks: (params: {
-    projectId: number;
+    projectId?: number;
     cycleId?: number;
     statuses?: TaskStatus[];
     priorities?: TaskPriority[];

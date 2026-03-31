@@ -874,11 +874,13 @@ export default function BacklogPage() {
 
   const handleExportCsv = async () => {
     if (!currentProject) return;
+    const hasCycle = typeof selectedCycle === 'number';
     setExportLoading(true);
     try {
       const response = await taskService.exportTasks({
-        projectId: currentProject.id,
-        cycleId: typeof selectedCycle === 'number' ? selectedCycle : undefined,
+        // Pass only one of projectId / cycleId per the API contract
+        projectId: hasCycle ? undefined : currentProject.id,
+        cycleId: hasCycle ? selectedCycle : undefined,
         statuses: statusFilter.length > 0 ? statusFilter : undefined,
         priorities: priorityFilter.length > 0 ? priorityFilter : undefined,
         assigneeIds: assigneeFilter.length > 0 ? assigneeFilter : undefined,
@@ -888,7 +890,9 @@ export default function BacklogPage() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `tasks-${currentProject.id}${typeof selectedCycle === 'number' ? '-cycle' + selectedCycle : ''}-${new Date().toISOString().slice(0, 10)}.csv`;
+      anchor.download = hasCycle
+        ? `tasks-cycle${selectedCycle}-${new Date().toISOString().slice(0, 10)}.csv`
+        : `tasks-${currentProject.id}-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);

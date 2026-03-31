@@ -204,4 +204,37 @@ class TaskCsvExportServiceTest {
     assertThatNoException().isThrownBy(
         () -> taskService.exportTasksCsv(1L, null, null, null, null, null));
   }
+
+  @Test
+  @DisplayName("Soft-deleted tasks are excluded from cycle-scoped exports")
+  void exportTasksCsv_WhenCyclePath_ShouldExcludeSoftDeletedTasks() {
+    Task active = buildTask(1L, "Active task");
+    Task deleted = buildTask(2L, "Deleted task");
+    deleted.setDeletedAt(LocalDateTime.of(2026, 3, 10, 8, 0));
+
+    when(taskRepository.findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(active, deleted)));
+
+    byte[] csv = taskService.exportTasksCsv(null, 10L, null, null, null, null);
+    String content = new String(csv, StandardCharsets.UTF_8);
+
+    assertThat(content).contains("Active task");
+    assertThat(content).doesNotContain("Deleted task");
+  }
+
+  @Test
+  @DisplayName("Title starting with '=' is prefixed to prevent formula injection")
+  void exportTasksCsv_WhenTitleStartsWithEquals_ShouldPrefixApostrophe() {
+    Task task = buildTask(1L, "=SUM(A1:A10)");
+
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(task)));
+
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    String content = new String(csv, StandardCharsets.UTF_8);
+
+    // The escaped value should be prefixed with ' and then wrapped in quotes
+    assertThat(content).doesNotContain(",=SUM(");
+    assertThat(content).contains("'=SUM(");
+  }
 }
