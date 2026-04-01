@@ -126,6 +126,13 @@
   background: rgba(0, 0, 0, 0.75) !important;
 }
 
+/* Ensure skip-confirmation dialog renders above driver.js overlay (z-index: 10000)
+   and popover (z-index: 1,000,000,000). Radix AlertDialog default is z-50 (50). */
+[data-radix-alert-dialog-overlay],
+[data-radix-alert-dialog-content] {
+  z-index: 2000000000 !important;
+}
+
 /* Animated highlight */
 .driver-active-element {
   animation: pulse-highlight 2s infinite;
