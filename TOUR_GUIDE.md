@@ -101,7 +101,7 @@ The tour navigates between routes automatically. The flow is:
 1. User clicks **Next →**
 2. `onNextClick` increments `currentStepIndex`
 3. If the next step has a different `route`, the driver calls `navigate(route)` and then `moveNext()` after a 600 ms delay
-4. A `useEffect` on `location.pathname` watches for **manual** navigation — if the user clicks a sidebar link while the tour is active, the tour stops immediately
+4. A `useEffect` on `location.pathname` watches for **manual** navigation — if the user navigates to a route that is **not** part of the tour, the tour is destroyed. Navigation between routes that are still used by other tour steps does **not** stop the tour.
 
 **Important**: Steps 3 and 4 share the same route (`/projects`). This is intentional — step 3 navigates to `/projects` and highlights the button, then step 4 stays on the same page and highlights the card.
 
@@ -112,7 +112,7 @@ The tour navigates between routes automatically. The flow is:
 ## Demo Data Dependency
 
 Steps 4 and 7 target `[data-tour="project-card"]` and `[data-tour="cycle-card"]` respectively.
-These selectors only match the **first** card (`index === 0 ?`). They depend on demo data being present.
+These selectors only match the **first** card (`index === 0`). They depend on demo data being present.
 
 `SampleDataInitializer.java` seeds two projects and two cycles on startup (dev/demo profile).
 If you're running the tour on a **blank instance with no data**, steps 4 and 7 will skip
