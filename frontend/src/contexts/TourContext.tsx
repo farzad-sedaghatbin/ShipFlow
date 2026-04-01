@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { driver, DriveStep, Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import '../styles/tour.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
@@ -36,6 +37,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const expectedRouteRef = useRef<string | null>(null);
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
   const pendingDestroyRef = useRef<Driver | null>(null);
+  // Track the pending navigation timeout so it can be cancelled if the tour stops early
+  const navTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Tour steps definition
   const getTourSteps = useCallback((): TourStep[] => [
@@ -252,10 +255,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   ], []);
 
   const stopTour = useCallback(() => {
+    if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
     if (driverInstance) {
       driverInstance.destroy();
       setDriverInstance(null);
     }
+    document.body.classList.remove('tour-active');
     setIsTourActive(false);
   }, [driverInstance]);
 
@@ -300,10 +305,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           isNavigatingRef.current = true;
           expectedRouteRef.current = nextStep.route;
           navigate(nextStep.route);
-          setTimeout(() => {
+          if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current);
+          navTimeoutRef.current = setTimeout(() => {
+            navTimeoutRef.current = null;
             isNavigatingRef.current = false;
             newDriver.moveNext();
-          }, 400);
+          }, 600);
         } else {
           newDriver.moveNext();
         }
@@ -316,10 +323,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           isNavigatingRef.current = true;
           expectedRouteRef.current = prevStep.route;
           navigate(prevStep.route);
-          setTimeout(() => {
+          if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current);
+          navTimeoutRef.current = setTimeout(() => {
+            navTimeoutRef.current = null;
             isNavigatingRef.current = false;
             newDriver.movePrevious();
-          }, 400);
+          }, 600);
         } else {
           newDriver.movePrevious();
         }
@@ -327,20 +336,24 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       onDestroyStarted: () => {
         if (newDriver.hasNextStep()) {
           // User clicked close/skip - show confirmation dialog
+          if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
           pendingDestroyRef.current = newDriver;
           setSkipConfirmOpen(true);
           return;
         }
         // Tour completed naturally
+        if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
         localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
         setHasCompletedTour(true);
         newDriver.destroy();
+        document.body.classList.remove('tour-active');
         setIsTourActive(false);
       },
     });
 
     setDriverInstance(newDriver);
     setIsTourActive(true);
+    document.body.classList.add('tour-active');
 
     // Navigate to first route if needed
     const firstStep = steps[0];
@@ -358,6 +371,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       setHasCompletedTour(true);
       pendingDestroyRef.current.destroy();
       pendingDestroyRef.current = null;
+      document.body.classList.remove('tour-active');
       setIsTourActive(false);
     }
     setSkipConfirmOpen(false);
@@ -376,17 +390,19 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
       if (driverInstance) {
         driverInstance.destroy();
       }
+      document.body.classList.remove('tour-active');
+      pendingDestroyRef.current = null;
     };
   }, [driverInstance]);
 
-  // Stop tour if user navigates away manually (not via tour navigation)
+  // Stop tour only when the user manually navigates away (not tour-driven navigation)
   useEffect(() => {
-    // Skip if navigation was triggered by the tour driver
+    // If the tour triggered this navigation, update the flag and do nothing else
     if (isNavigatingRef.current) {
-      // Reset the flag after navigation completes
       if (location.pathname === expectedRouteRef.current) {
         isNavigatingRef.current = false;
         expectedRouteRef.current = null;
@@ -394,28 +410,25 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Only clean up if tour is active and user navigated manually
-    if (isTourActive && driverInstance) {
-      const steps = getTourSteps();
-      const currentRoute = location.pathname;
+    // Tour is not active — nothing to do
+    if (!isTourActive || !driverInstance) return;
 
-      // Check if this route matches the expected tour flow
-      // If user manually navigated (not via tour), destroy the tour
-      const isValidTourRoute = steps.some(step => step.route === currentRoute);
+    // At this point: tour IS active and navigation was NOT tour-driven.
+    // Only destroy if user navigated to a route that is completely outside the tour.
+    const steps = getTourSteps();
+    const isValidTourRoute = steps.some(step => step.route === location.pathname);
 
-      if (!isValidTourRoute) {
-        // User navigated to a route not in the tour - definitely manual
-        driverInstance.destroy();
-        setDriverInstance(null);
-        setIsTourActive(false);
-      } else {
-        // User navigated to a valid tour route, but manually
-        // This is the key fix: if we didn't trigger the navigation, destroy the tour
-        driverInstance.destroy();
-        setDriverInstance(null);
-        setIsTourActive(false);
-      }
+    if (!isValidTourRoute) {
+      // Genuinely manual navigation to an unknown route — stop the tour
+      if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
+      driverInstance.destroy();
+      setDriverInstance(null);
+      document.body.classList.remove('tour-active');
+      setIsTourActive(false);
     }
+    // If the route IS a valid tour route but we didn't trigger it, we leave the
+    // tour running — the user may have just navigated there manually and it's
+    // fine for the popover to remain visible.
   }, [location.pathname, isTourActive, driverInstance, getTourSteps]);
 
   return (

@@ -778,6 +778,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .status(TestCaseStatus.APPROVED)
         .type(TestCaseType.E2E)
         .priority(TestCasePriority.HIGH)
+        .createdBy(aliUser)
         .createdAt(LocalDateTime.of(2026, 2, 8, 10, 0))
         .build();
     testCaseRepository.save(tc1);
