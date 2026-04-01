@@ -45,7 +45,7 @@ Every session must complete ALL of these before creating the PR:
 6. Add i18n keys to **both** `en.json` AND `fa.json`
 7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage)
 8. Update `SampleDataInitializer.java` with demo data for the new feature
-9. **If UI layout changed**: verify onboarding tour step selectors in `src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
+9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
 10. **If in-app help guides reference changed UI**: update the relevant help guide content
 11. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
 

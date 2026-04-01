@@ -14,13 +14,13 @@ This file is the **single source of truth** for the interactive onboarding tour.
 |------|---------------|
 | `frontend/src/contexts/TourContext.tsx` | All 21 tour steps, driver.js config, navigation, skip-confirm |
 | `frontend/src/components/WelcomeTourDialog.tsx` | Auto-shown welcome modal for first-time users |
-| `frontend/src/styles/tour.css` | Custom dark-theme styling for driver.js popovers |
+| `frontend/src/styles/tour.css` | Custom dark-theme styling for driver.js popovers — imported from `TourContext.tsx` |
 | `frontend/src/components/Layout.tsx` | Renders `<WelcomeTourDialog>`, exposes "Start Tour" / "Restart Tour" buttons in sidebar + topbar |
 
 **Library**: [driver.js](https://driverjs.com/) v1.4.0 — installed as `driver.js` in `frontend/package.json`.
 
 **How it's triggered**:
-1. **Auto** — `WelcomeTourDialog` appears 1 second after first login (guarded by `localStorage.shipflow_welcome_shown`).
+1. **Auto** — `WelcomeTourDialog` appears 1500 ms after first login (guarded by `localStorage.shipflow_welcome_shown`).
 2. **Manual** — "Start Tour" / "Restart Tour" button in the left sidebar (desktop) and top navbar (mobile).
 3. **Programmatic** — call `useTour().startTour()` from any component.
 
@@ -100,7 +100,7 @@ The tour navigates between routes automatically. The flow is:
 
 1. User clicks **Next →**
 2. `onNextClick` increments `currentStepIndex`
-3. If the next step has a different `route`, the driver calls `navigate(route)` and then `moveNext()` after a 400 ms delay
+3. If the next step has a different `route`, the driver calls `navigate(route)` and then `moveNext()` after a 600 ms delay
 4. A `useEffect` on `location.pathname` watches for **manual** navigation — if the user clicks a sidebar link while the tour is active, the tour stops immediately
 
 **Important**: Steps 3 and 4 share the same route (`/projects`). This is intentional — step 3 navigates to `/projects` and highlights the button, then step 4 stays on the same page and highlights the card.
@@ -129,7 +129,7 @@ To make the tour fully work end-to-end on a blank instance:
 1. Add a `data-tour="my-feature"` attribute to the element in the relevant component.
 2. Add a new `TourStep` entry in the `getTourSteps()` array in `TourContext.tsx`, with the correct `route`.
 3. Add a row to the **Step Inventory** table above.
-4. If the step navigates to a new route, verify the 400 ms navigation delay is sufficient for the target page to render. Increase if necessary.
+4. If the step navigates to a new route, verify the 600 ms navigation delay is sufficient for the target page to render. Increase if necessary.
 5. Update `CHANGELOG.md` (tour step count changed).
 
 ---
@@ -167,7 +167,7 @@ localStorage.clear(); location.reload();
 ```
 
 **Step-by-step checklist**:
-- [ ] Welcome dialog appears ~1 s after first login
+- [ ] Welcome dialog appears ~1.5 s after first login
 - [ ] "Start Tour" button launches step 1 (sidebar highlighted)
 - [ ] Each "Next →" advances the step and highlights the correct element
 - [ ] Steps 3, 6, 9 navigate to `/projects`, `/cycles`, `/pitches` correctly

@@ -6,12 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - **Interactive onboarding tour (S13)**: Full 21-step product tour powered by driver.js v1.4.0, wired into the existing `TourContext` architecture.
-  - **WelcomeTourDialog** auto-appears 1 second after first login and gives users a choice to start the tour or skip it.
+  - **WelcomeTourDialog** auto-appears 1500 ms after first login and gives users a choice to start the tour or skip it.
   - **21 steps** walk through: sidebar orientation → projects → cycles → pitch board → betting table → health/hill chart → retrospectives → reports → meetings → backlog → work logs → project selector → user menu.
-  - Tour navigates automatically between routes (`/projects`, `/cycles`, `/pitches`, `/betting`, `/health`) with a 400 ms render delay before advancing.
+  - Tour navigates automatically between routes (`/projects`, `/cycles`, `/pitches`, `/betting`, `/health`) with a 600 ms render delay before advancing.
   - Skip confirmation dialog prevents accidental tour exit; user must confirm before the tour stops mid-run.
   - Tour completion and welcome-shown state are persisted in `localStorage`. After completion the sidebar button changes to "Restart Tour".
-  - Custom dark-theme CSS (`tour.css`) with animated highlight ring, gradient popover, and responsive mobile layout.
+  - Custom dark-theme CSS (`tour.css`) — imported from `TourContext.tsx` — provides animated highlight ring, gradient popover, and responsive mobile layout.
   - Steps 4 and 7 (project card / cycle card) work with the seeded demo data from `SampleDataInitializer`; on blank instances driver.js gracefully falls back to a full-screen popover.
   - `TOUR_GUIDE.md` created — the single source of truth for all 21 steps: selector, source file, route, and a maintenance contract that every future UI PR must follow.
   - `CLAUDE.md` checklists updated to point to `TourContext.tsx` and `TOUR_GUIDE.md` (was pointing to non-existent `src/tours/`).
