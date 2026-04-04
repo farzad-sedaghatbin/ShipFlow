@@ -179,6 +179,34 @@ public class ConversationManager {
     return history.toString();
   }
 
+  /**
+   * Update the stored context (contextType, contextId, contextName) for an
+   * existing conversation. Called after entity resolution resolves a new entity
+   * mid-conversation so that getMostRecentContext() returns current values.
+   */
+  public void updateContext(String conversationId, String contextType, Long contextId,
+      String contextName) {
+    ConversationContext context = isRedisActive()
+        ? loadFromRedis(conversationId) : conversations.get(conversationId);
+    if (context == null) {
+      return;
+    }
+    if (contextType != null) {
+      context.setContextType(contextType);
+    }
+    if (contextId != null) {
+      context.setContextId(contextId);
+    }
+    if (contextName != null) {
+      context.setContextName(contextName);
+    }
+    if (isRedisActive()) {
+      saveToRedis(conversationId, context);
+    }
+    log.debug("Updated conversation {} context: type={}, id={}, name='{}'",
+        conversationId, contextType, contextId, contextName);
+  }
+
   /** End a conversation. */
   public void endConversation(String conversationId) {
     ConversationContext context = isRedisActive()
