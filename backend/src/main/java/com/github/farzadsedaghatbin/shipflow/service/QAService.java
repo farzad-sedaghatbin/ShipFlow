@@ -119,27 +119,11 @@ public class QAService {
           .errorMessage("Q&A feature is not enabled").answeredAt(LocalDateTime.now()).build();
     }
 
-    // Check cache first for similar questions
-    Optional<QAResponse> cachedResponse = cacheService.getCachedQAResponse(request.getQuestion(),
-        request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId());
-
-    if (cachedResponse.isPresent()) {
-      log.debug("Returning cached Q&A response for similar question");
-      QAResponse cached = cachedResponse.get();
-      // Return cached response with updated metadata
-      return QAResponse.builder().question(request.getQuestion()).answer(cached.getAnswer())
-          .sources(cached.getSources()).confidenceScore(cached.getConfidenceScore())
-          .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
-          .aiEnabled(cached.getAiEnabled()).suggestedFollowUps(cached.getSuggestedFollowUps()).cached(true) // Mark
-          // as
-          // cached
-          // response
-          .build();
-    }
-
-    // Get or create conversation context early so it can be used for context
-    // inference. Also creates a new conversation on first question so the response
-    // includes a conversationId for multi-turn tracking.
+    // Get or create conversation context early — must happen before the cache
+    // check so that every response (including cached ones) carries a
+    // conversationId, enabling the client to continue a multi-turn session even
+    // when the first answer was served from cache.
+    boolean isMultiTurn = request.getConversationId() != null;
     ConversationContext conversation = null;
     if (conversationManager != null) {
       try {
@@ -151,11 +135,42 @@ public class QAService {
       }
     }
 
+    // Check cache for similar single-turn questions (skip for multi-turn sessions
+    // whose answers incorporate conversation history not captured in the cache key).
+    if (!isMultiTurn) {
+      Optional<QAResponse> cachedResponse = cacheService.getCachedQAResponse(request.getQuestion(),
+          request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId());
+
+      if (cachedResponse.isPresent()) {
+        log.debug("Returning cached Q&A response for similar question");
+        QAResponse cached = cachedResponse.get();
+        // Include the newly-created conversationId so the client can continue as
+        // a multi-turn session from this cached first answer.
+        return QAResponse.builder().question(request.getQuestion()).answer(cached.getAnswer())
+            .sources(cached.getSources()).confidenceScore(cached.getConfidenceScore())
+            .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
+            .aiEnabled(cached.getAiEnabled()).suggestedFollowUps(cached.getSuggestedFollowUps())
+            .cached(true)
+            .conversationId(conversation != null ? conversation.getConversationId() : null).build();
+      }
+    }
+
     // Entity resolution: extract contextId from question text when not provided
     // Supports both numeric IDs ("cycle 6") and name-based lookup ("Build Season
     // cycle")
     if (request.getContextId() == null && request.getContextType() != null) {
       resolveEntityFromQuestion(request);
+    }
+
+    // Evolve conversation context whenever entity resolution just resolved a new
+    // entity mid-conversation (e.g. user asks about a different cycle).
+    if (conversation != null && conversationManager != null && request.getContextId() != null) {
+      try {
+        conversationManager.updateContext(conversation.getConversationId(),
+            request.getContextType(), request.getContextId(), request.getContextName());
+      } catch (Exception e) {
+        log.debug("Could not update conversation context: {}", e.getMessage());
+      }
     }
 
     // Try to infer context from conversation history if not provided
@@ -182,10 +197,20 @@ public class QAService {
     String ambiguityCheck = checkForAmbiguousContext(request);
     if (ambiguityCheck != null) {
       log.info("Detected ambiguous context in question: {}", request.getQuestion());
+      // Save the clarification exchange as a conversation turn so the next question
+      // has history of what was asked and what was asked back.
+      if (conversation != null && conversationManager != null) {
+        try {
+          conversationManager.addTurn(conversation.getConversationId(),
+              request.getQuestion(), ambiguityCheck);
+        } catch (Exception e) {
+          log.debug("Could not save clarification turn: {}", e.getMessage());
+        }
+      }
       return QAResponse.builder().question(request.getQuestion()).answer(ambiguityCheck).confidenceScore(0)
           .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
           .aiEnabled(true).suggestedFollowUps(generateClarificationSuggestions(request)).cached(false)
-          .build();
+          .conversationId(conversation != null ? conversation.getConversationId() : null).build();
     }
 
     String originalQuestion = request.getQuestion();
@@ -468,10 +493,13 @@ public class QAService {
           .suggestedFollowUps(generateSuggestedFollowUps(request, matches)).cached(false)
           .conversationId(conversation != null ? conversation.getConversationId() : null).build();
 
-      // 8. Cache the response for future similar questions
-      cacheService.cacheQAResponse(originalQuestion, // Cache with original question
-          request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId(),
-          response);
+      // 8. Cache the response for future similar questions (skip for multi-turn
+      // conversations whose answers incorporate conversation history).
+      if (!isMultiTurn) {
+        cacheService.cacheQAResponse(originalQuestion,
+            request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId(),
+            response);
+      }
 
       return response;
 
@@ -1103,57 +1131,124 @@ public class QAService {
     String question = request.getQuestion();
     String contextType = request.getContextType();
 
-    // Step 1: Try numeric ID extraction (e.g., "cycle 6" → 6)
-    Long extractedId = extractEntityIdFromQuestion(question, contextType);
-    if (extractedId != null) {
-      request.setContextId(extractedId);
-      if ("cycle".equalsIgnoreCase(contextType) && request.getCycleId() == null) {
-        request.setCycleId(extractedId);
-        // Also resolve the name for prompt enrichment
-        if (cycleRepository != null) {
-          try {
-            cycleRepository.findById(extractedId)
-                .ifPresent(c -> request.setContextName(c.getName()));
-          } catch (Exception e) {
-            log.debug("Could not resolve cycle name for ID {}: {}", extractedId, e.getMessage());
-          }
-        }
-      } else if ("team".equalsIgnoreCase(contextType) && request.getTeamId() == null) {
-        request.setTeamId(extractedId);
+    // For cycles: run name-based lookup first (or in parallel with numeric lookup)
+    // so that "Cycle 5" resolves to the cycle *named* "Cycle 5" rather than the
+    // cycle whose database ID happens to be 5.
+    if ("cycle".equalsIgnoreCase(contextType) && cycleRepository != null) {
+      // Prefer a name match — try extracting a name token from the question.
+      // extractEntityNameFromQuestion skips pure-numeric tokens, so "cycle 5" won't
+      // match here when used alone. We also try the composite string "Cycle <N>"
+      // explicitly so users who named their cycle "Cycle 5" get the right result.
+      Long numericId = extractEntityIdFromQuestion(question, contextType);
+      String candidateName = null;
+      if (numericId != null) {
+        // Build the composite name that the user is most likely referring to,
+        // e.g. the question "what's in cycle 5?" → candidate name "Cycle 5".
+        candidateName = contextType.substring(0, 1).toUpperCase()
+            + contextType.substring(1).toLowerCase() + " " + numericId;
+      } else {
+        candidateName = extractEntityNameFromQuestion(question, contextType);
       }
-      log.info("Resolved entity from question: contextType={}, contextId={}, contextName='{}'",
-          contextType, extractedId, request.getContextName());
+
+      if (candidateName != null) {
+        try {
+          List<Cycle> nameMatches = cycleRepository.findByNameContainingIgnoreCase(candidateName);
+
+          // Prefer an exact (case-insensitive) match over a partial one to avoid
+          // "Cycle 5" accidentally resolving to "Cycle 50".
+          final String finalCandidateName = candidateName;
+          List<Cycle> exactMatches = nameMatches.stream()
+              .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(finalCandidateName))
+              .collect(Collectors.toList());
+
+          if (exactMatches.size() == 1) {
+            Cycle cycle = exactMatches.get(0);
+            request.setContextId(cycle.getId());
+            if (request.getCycleId() == null) {
+              request.setCycleId(cycle.getId());
+            }
+            request.setContextName(cycle.getName());
+            log.info("Resolved cycle by exact name '{}' → ID={}, name='{}'",
+                candidateName, cycle.getId(), cycle.getName());
+            return;
+          } else if (exactMatches.size() > 1) {
+            request.setContextName(candidateName);
+            log.info("Multiple cycles exactly match name '{}' ({}), using name-based vector filtering",
+                candidateName, exactMatches.size());
+            return;
+          } else if (nameMatches.size() > 1) {
+            // Multiple partial matches — use name as vector-search filter; don't pin a
+            // single ID.
+            request.setContextName(candidateName);
+            log.info("Multiple partial cycle name matches for '{}' ({}), using name-based vector filtering",
+                candidateName, nameMatches.size());
+            return;
+          }
+          // No match at all — fall through to numeric ID lookup below.
+        } catch (Exception e) {
+          log.warn("Cycle name lookup failed for '{}': {}", candidateName, e.getMessage());
+        }
+      }
+
+      // No name match found; fall back to numeric ID (e.g. "go to cycle 5" really
+      // meaning the row with id=5).
+      if (numericId != null) {
+        request.setContextId(numericId);
+        if (request.getCycleId() == null) {
+          request.setCycleId(numericId);
+        }
+        try {
+          cycleRepository.findById(numericId)
+              .ifPresent(c -> request.setContextName(c.getName()));
+        } catch (Exception e) {
+          log.debug("Could not resolve cycle name for ID {}: {}", numericId, e.getMessage());
+        }
+        log.info("Resolved cycle by numeric ID: contextId={}, contextName='{}'",
+            numericId, request.getContextName());
+        return;
+      }
+
+      // Last resort: try a free-form name extraction (e.g. "the Build Season cycle")
+      String freeName = extractEntityNameFromQuestion(question, contextType);
+      if (freeName != null) {
+        try {
+          List<Cycle> freeMatches = cycleRepository.findByNameContainingIgnoreCase(freeName);
+          final String finalFreeName = freeName;
+          List<Cycle> exactFreeMatches = freeMatches.stream()
+              .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(finalFreeName))
+              .collect(Collectors.toList());
+
+          if (exactFreeMatches.size() == 1) {
+            Cycle cycle = exactFreeMatches.get(0);
+            request.setContextId(cycle.getId());
+            if (request.getCycleId() == null) {
+              request.setCycleId(cycle.getId());
+            }
+            request.setContextName(cycle.getName());
+            log.info("Resolved cycle by exact free-form name '{}' → ID={}", freeName, cycle.getId());
+          } else if (freeMatches.size() > 1) {
+            request.setContextName(freeName);
+            log.info("Multiple cycles match free-form name '{}' ({})", freeName, freeMatches.size());
+          } else {
+            request.setContextName(freeName);
+            log.debug("No cycle found for free-form name '{}', relying on semantic search", freeName);
+          }
+        } catch (Exception e) {
+          log.warn("Cycle free-form name lookup failed for '{}': {}", freeName, e.getMessage());
+        }
+      }
       return;
     }
 
-    // Step 2: Try name-based resolution for cycles (e.g., "Build Season cycle")
-    if ("cycle".equalsIgnoreCase(contextType) && cycleRepository != null) {
-      String extractedName = extractEntityNameFromQuestion(question, contextType);
-      if (extractedName != null) {
-        try {
-          List<Cycle> matches = cycleRepository.findByNameContainingIgnoreCase(extractedName);
-          if (matches.size() == 1) {
-            Cycle cycle = matches.get(0);
-            request.setContextId(cycle.getId());
-            request.setCycleId(cycle.getId());
-            request.setContextName(cycle.getName());
-            log.info("Resolved cycle by name: '{}' → ID={}, name='{}'",
-                extractedName, cycle.getId(), cycle.getName());
-          } else if (matches.size() > 1) {
-            // Multiple matches — set the name for vector search filtering, don't set a
-            // single ID
-            request.setContextName(extractedName);
-            log.info("Multiple cycles match name '{}' ({}), using name-based vector filtering",
-                extractedName, matches.size());
-          } else {
-            // No match — set as contextName so semantic search can still use it
-            request.setContextName(extractedName);
-            log.debug("No cycle found for name '{}', relying on semantic search", extractedName);
-          }
-        } catch (Exception e) {
-          log.warn("Cycle name lookup failed for '{}': {}", extractedName, e.getMessage());
-        }
+    // Non-cycle entities: numeric ID extraction only.
+    Long extractedId = extractEntityIdFromQuestion(question, contextType);
+    if (extractedId != null) {
+      request.setContextId(extractedId);
+      if ("team".equalsIgnoreCase(contextType) && request.getTeamId() == null) {
+        request.setTeamId(extractedId);
       }
+      log.info("Resolved entity from question: contextType={}, contextId={}",
+          contextType, extractedId);
     }
   }
 

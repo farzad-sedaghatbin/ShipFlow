@@ -84,7 +84,13 @@ export const QAPanel: React.FC<QAPanelProps> = ({
   const [showCorrectionDialog, setShowCorrectionDialog] = useState<number | null>(null);
   const [correction, setCorrection] = useState('');
   const [qaStatus, setQaStatus] = useState<{ qaEnabled?: boolean; aiAvailable?: boolean } | null>(null);
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  // Persist conversation ID across remounts / page navigation within the same
+  // browser session.  Key is scoped to (contextType, contextId) so navigating
+  // from Cycle A to Cycle B always starts a fresh conversation for Cycle B.
+  const storageKey = `qa_conv_${contextType}_${contextId ?? 'global'}`;
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    () => sessionStorage.getItem(storageKey) ?? undefined
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check Q&A status on mount
@@ -129,9 +135,12 @@ export const QAPanel: React.FC<QAPanelProps> = ({
 
       const data: QAResponse = response.data;
 
-      // Track conversationId for multi-turn context
-      if (data.conversationId && !conversationId) {
+      // Track conversationId for multi-turn context; persist across remounts.
+      // Also update when the server returns a *different* ID (e.g. the previous
+      // conversation expired and the backend silently started a new one).
+      if (data.conversationId && data.conversationId !== conversationId) {
         setConversationId(data.conversationId);
+        sessionStorage.setItem(storageKey, data.conversationId);
       }
 
       if (data.errorMessage) {

@@ -324,12 +324,82 @@ class QAServiceEntityResolutionTest {
                 .cycleId(99L) // already set by caller
                 .build();
 
-            // cycleId is non-null so findById is never called (the branch is guarded by cycleId == null)
+            // Name lookup for "Cycle 6" returns nothing → falls back to numeric ID lookup.
+            // cycleId guard (null-check) prevents overwriting the caller-supplied 99L.
+            when(cycleRepository.findByNameContainingIgnoreCase("Cycle 6")).thenReturn(List.of());
+
             invokeResolveEntity(request);
 
-            // contextId set, but existing cycleId preserved
+            // contextId set from extracted numeric id, but existing cycleId preserved
             assertThat(request.getContextId()).isEqualTo(6L);
             assertThat(request.getCycleId()).isEqualTo(99L);
+        }
+
+        @Test
+        @DisplayName("named 'Cycle 5' is preferred over db row with id=5")
+        void shouldPreferNamedCycleOverIdWhenBothExist() throws Exception {
+            // DB has: id=5 → "Summer Sprint", id=12 → "Cycle 5"
+            // User asks about "Cycle 5" meaning the one literally named "Cycle 5".
+            Cycle namedCycle5 = cycle(12L, "Cycle 5");
+            when(cycleRepository.findByNameContainingIgnoreCase("Cycle 5"))
+                .thenReturn(List.of(namedCycle5));
+
+            AskQuestionRequest request = AskQuestionRequest.builder()
+                .question("What pitches are in cycle 5?")
+                .contextType("cycle")
+                .build();
+
+            invokeResolveEntity(request);
+
+            // Should resolve to the cycle NAMED "Cycle 5" (id=12), not id=5
+            assertThat(request.getContextId()).isEqualTo(12L);
+            assertThat(request.getCycleId()).isEqualTo(12L);
+            assertThat(request.getContextName()).isEqualTo("Cycle 5");
+            // findById(5) must never be called since name match took precedence
+            verify(cycleRepository, never()).findById(5L);
+        }
+
+        @Test
+        @DisplayName("'Cycle 5' must not match a cycle named 'Cycle 50'")
+        void shouldNotMatchPartialCycleNameCycle50WhenAskedAboutCycle5() throws Exception {
+            // DB only has "Cycle 50"; no cycle is named exactly "Cycle 5".
+            Cycle cycle50 = cycle(50L, "Cycle 50");
+            when(cycleRepository.findByNameContainingIgnoreCase("Cycle 5"))
+                .thenReturn(List.of(cycle50));        // partial hit: "Cycle 50" contains "Cycle 5"
+            // Numeric fallback: db row id=5 exists
+            when(cycleRepository.findById(5L)).thenReturn(Optional.of(cycle(5L, "Summer Sprint")));
+
+            AskQuestionRequest request = AskQuestionRequest.builder()
+                .question("What pitches are in cycle 5?")
+                .contextType("cycle")
+                .build();
+
+            invokeResolveEntity(request);
+
+            // "Cycle 50" is NOT an exact match for "Cycle 5", so we fall back to id=5
+            assertThat(request.getContextId()).isEqualTo(5L);
+            assertThat(request.getCycleId()).isEqualTo(5L);
+            assertThat(request.getContextName()).isEqualTo("Summer Sprint");
+        }
+
+        @Test
+        @DisplayName("should not overwrite caller-supplied cycleId when resolving cycle by name")
+        void shouldNotOverwriteCallerCycleIdWhenResolvingByName() throws Exception {
+            Cycle buildSeason = cycle(42L, "Build Season");
+            when(cycleRepository.findByNameContainingIgnoreCase(anyString()))
+                .thenReturn(List.of(buildSeason));
+
+            AskQuestionRequest request = AskQuestionRequest.builder()
+                .question("What pitches are in the Build Season cycle?")
+                .contextType("cycle")
+                .cycleId(99L) // pre-set by caller
+                .build();
+
+            invokeResolveEntity(request);
+
+            assertThat(request.getContextId()).isEqualTo(42L);
+            assertThat(request.getCycleId()).isEqualTo(99L); // untouched
+            assertThat(request.getContextName()).isEqualTo("Build Season");
         }
 
         @Test
