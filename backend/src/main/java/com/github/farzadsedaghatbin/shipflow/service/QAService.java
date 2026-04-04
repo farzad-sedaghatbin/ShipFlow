@@ -119,29 +119,11 @@ public class QAService {
           .errorMessage("Q&A feature is not enabled").answeredAt(LocalDateTime.now()).build();
     }
 
-    // Check cache first for similar questions.
-    // Skip cache entirely for multi-turn conversations: the answer depends on
-    // conversation history that is not part of the cache key, so a hit would
-    // return a stale answer that ignores prior context.
+    // Get or create conversation context early — must happen before the cache
+    // check so that every response (including cached ones) carries a
+    // conversationId, enabling the client to continue a multi-turn session even
+    // when the first answer was served from cache.
     boolean isMultiTurn = request.getConversationId() != null;
-    if (!isMultiTurn) {
-      Optional<QAResponse> cachedResponse = cacheService.getCachedQAResponse(request.getQuestion(),
-          request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId());
-
-      if (cachedResponse.isPresent()) {
-        log.debug("Returning cached Q&A response for similar question");
-        QAResponse cached = cachedResponse.get();
-        return QAResponse.builder().question(request.getQuestion()).answer(cached.getAnswer())
-            .sources(cached.getSources()).confidenceScore(cached.getConfidenceScore())
-            .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
-            .aiEnabled(cached.getAiEnabled()).suggestedFollowUps(cached.getSuggestedFollowUps())
-            .cached(true).build();
-      }
-    }
-
-    // Get or create conversation context early so it can be used for context
-    // inference. Also creates a new conversation on first question so the response
-    // includes a conversationId for multi-turn tracking.
     ConversationContext conversation = null;
     if (conversationManager != null) {
       try {
@@ -150,6 +132,26 @@ public class QAService {
       } catch (Exception e) {
         log.warn("Failed to get/create conversation, continuing without history: {}", e.getMessage());
         // Continue without conversation memory - graceful degradation
+      }
+    }
+
+    // Check cache for similar single-turn questions (skip for multi-turn sessions
+    // whose answers incorporate conversation history not captured in the cache key).
+    if (!isMultiTurn) {
+      Optional<QAResponse> cachedResponse = cacheService.getCachedQAResponse(request.getQuestion(),
+          request.getContextType(), request.getContextId(), request.getCycleId(), request.getTeamId());
+
+      if (cachedResponse.isPresent()) {
+        log.debug("Returning cached Q&A response for similar question");
+        QAResponse cached = cachedResponse.get();
+        // Include the newly-created conversationId so the client can continue as
+        // a multi-turn session from this cached first answer.
+        return QAResponse.builder().question(request.getQuestion()).answer(cached.getAnswer())
+            .sources(cached.getSources()).confidenceScore(cached.getConfidenceScore())
+            .answeredAt(LocalDateTime.now()).processingTimeMs(System.currentTimeMillis() - startTime)
+            .aiEnabled(cached.getAiEnabled()).suggestedFollowUps(cached.getSuggestedFollowUps())
+            .cached(true)
+            .conversationId(conversation != null ? conversation.getConversationId() : null).build();
       }
     }
 
@@ -1151,21 +1153,38 @@ public class QAService {
       if (candidateName != null) {
         try {
           List<Cycle> nameMatches = cycleRepository.findByNameContainingIgnoreCase(candidateName);
-          if (nameMatches.size() == 1) {
-            Cycle cycle = nameMatches.get(0);
+
+          // Prefer an exact (case-insensitive) match over a partial one to avoid
+          // "Cycle 5" accidentally resolving to "Cycle 50".
+          final String finalCandidateName = candidateName;
+          List<Cycle> exactMatches = nameMatches.stream()
+              .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(finalCandidateName))
+              .collect(Collectors.toList());
+
+          if (exactMatches.size() == 1) {
+            Cycle cycle = exactMatches.get(0);
             request.setContextId(cycle.getId());
-            request.setCycleId(cycle.getId());
+            if (request.getCycleId() == null) {
+              request.setCycleId(cycle.getId());
+            }
             request.setContextName(cycle.getName());
-            log.info("Resolved cycle by name '{}' → ID={}, name='{}'",
+            log.info("Resolved cycle by exact name '{}' → ID={}, name='{}'",
                 candidateName, cycle.getId(), cycle.getName());
             return;
-          } else if (nameMatches.size() > 1) {
+          } else if (exactMatches.size() > 1) {
             request.setContextName(candidateName);
-            log.info("Multiple cycles match name '{}' ({}), using name-based vector filtering",
+            log.info("Multiple cycles exactly match name '{}' ({}), using name-based vector filtering",
+                candidateName, exactMatches.size());
+            return;
+          } else if (nameMatches.size() > 1) {
+            // Multiple partial matches — use name as vector-search filter; don't pin a
+            // single ID.
+            request.setContextName(candidateName);
+            log.info("Multiple partial cycle name matches for '{}' ({}), using name-based vector filtering",
                 candidateName, nameMatches.size());
             return;
           }
-          // No name match — fall through to numeric ID lookup below.
+          // No match at all — fall through to numeric ID lookup below.
         } catch (Exception e) {
           log.warn("Cycle name lookup failed for '{}': {}", candidateName, e.getMessage());
         }
@@ -1175,7 +1194,9 @@ public class QAService {
       // meaning the row with id=5).
       if (numericId != null) {
         request.setContextId(numericId);
-        request.setCycleId(numericId);
+        if (request.getCycleId() == null) {
+          request.setCycleId(numericId);
+        }
         try {
           cycleRepository.findById(numericId)
               .ifPresent(c -> request.setContextName(c.getName()));
@@ -1192,12 +1213,19 @@ public class QAService {
       if (freeName != null) {
         try {
           List<Cycle> freeMatches = cycleRepository.findByNameContainingIgnoreCase(freeName);
-          if (freeMatches.size() == 1) {
-            Cycle cycle = freeMatches.get(0);
+          final String finalFreeName = freeName;
+          List<Cycle> exactFreeMatches = freeMatches.stream()
+              .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(finalFreeName))
+              .collect(Collectors.toList());
+
+          if (exactFreeMatches.size() == 1) {
+            Cycle cycle = exactFreeMatches.get(0);
             request.setContextId(cycle.getId());
-            request.setCycleId(cycle.getId());
+            if (request.getCycleId() == null) {
+              request.setCycleId(cycle.getId());
+            }
             request.setContextName(cycle.getName());
-            log.info("Resolved cycle by free-form name '{}' → ID={}", freeName, cycle.getId());
+            log.info("Resolved cycle by exact free-form name '{}' → ID={}", freeName, cycle.getId());
           } else if (freeMatches.size() > 1) {
             request.setContextName(freeName);
             log.info("Multiple cycles match free-form name '{}' ({})", freeName, freeMatches.size());

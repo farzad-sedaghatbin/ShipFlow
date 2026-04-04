@@ -136,7 +136,9 @@ export const QAPanel: React.FC<QAPanelProps> = ({
       const data: QAResponse = response.data;
 
       // Track conversationId for multi-turn context; persist across remounts.
-      if (data.conversationId && !conversationId) {
+      // Also update when the server returns a *different* ID (e.g. the previous
+      // conversation expired and the backend silently started a new one).
+      if (data.conversationId && data.conversationId !== conversationId) {
         setConversationId(data.conversationId);
         sessionStorage.setItem(storageKey, data.conversationId);
       }
