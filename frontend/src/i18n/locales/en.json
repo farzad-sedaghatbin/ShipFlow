@@ -6663,13 +6663,17 @@
   },
   "savedViews": {
     "title": "Saved Views",
-    "saveView": "Save View",
+    "saveView": "Save",
     "loadView": "Load View",
     "deleteView": "Delete View",
     "setDefault": "Set as Default",
     "noViews": "No saved views yet",
     "namePlaceholder": "View name…",
     "viewSaved": "View saved successfully",
-    "viewDeleted": "View deleted"
+    "viewDeleted": "View deleted",
+    "saveCurrentFilters": "Save current filters",
+    "clearFilters": "Clear all filters",
+    "confirmDelete": "Delete saved view \"{{name}}\"?",
+    "enterName": "View name…"
   }
 }

@@ -6663,13 +6663,17 @@
   },
   "savedViews": {
     "title": "نماهای ذخیره‌شده",
-    "saveView": "ذخیره نما",
+    "saveView": "ذخیره",
     "loadView": "بارگذاری نما",
     "deleteView": "حذف نما",
     "setDefault": "تنظیم به‌عنوان پیش‌فرض",
     "noViews": "هنوز نمایی ذخیره نشده است",
     "namePlaceholder": "نام نما…",
     "viewSaved": "نما با موفقیت ذخیره شد",
-    "viewDeleted": "نما حذف شد"
+    "viewDeleted": "نما حذف شد",
+    "saveCurrentFilters": "ذخیره فیلترهای فعلی",
+    "clearFilters": "پاک کردن تمام فیلترها",
+    "confirmDelete": "نمای ذخیره‌شده «{{name}}» حذف شود؟",
+    "enterName": "نام نما…"
   }
 }

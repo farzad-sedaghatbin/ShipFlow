@@ -350,6 +350,7 @@ A modern project management application implementing the [Shape Up](https://base
     - Create/edit/delete provider configs with HMAC algorithm, secret, and signature header
     - Auto-generated webhook URL is displayed and copyable from the admin page
     - Fallback `GenericInboundWebhookHandler` validates HMAC and accepts events for any DB-configured provider
+- **Saved Filter Views**: Save and instantly reload named backlog filter presets (status, priority, assignee, sort, search) — per user, per project. Star one as your default and it auto-applies on page load. Managed via the Bookmark button in the backlog filter bar.
 - **Release Traceability for Tasks & Bugs** (v0.6)
   - Filter backlog tasks by target release
   - Filter bug reports by target release

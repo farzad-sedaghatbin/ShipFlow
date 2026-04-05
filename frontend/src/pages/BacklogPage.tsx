@@ -89,6 +89,9 @@ import KanbanBoard from '../components/KanbanBoard';
 import { useProject, useAuth } from '../contexts';
 import { BacklogSkeleton } from '../components/Skeletons';
 import BulkActionBar from '../components/BulkActionBar';
+import { SavedViewsDropdown } from '../components/backlog/SavedViewsDropdown';
+import { savedViewService, SavedViewFilters } from '../services/savedViewService';
+import { useQuery } from '@tanstack/react-query';
 
 // View mode type
 type ViewMode = 'list' | 'kanban';
@@ -187,6 +190,52 @@ export default function BacklogPage() {
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
   const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+
+  // Track whether default view has been applied on this mount
+  const [defaultApplied, setDefaultApplied] = useState(false);
+
+  // Load saved views for the current project
+  const savedViewsQueryKey = ['saved-views', currentProject?.id ?? 0] as const;
+  const { data: savedViews = [] } = useQuery({
+    queryKey: savedViewsQueryKey,
+    queryFn: () =>
+      savedViewService.getSavedViews(currentProject!.id).then((r) => r.data),
+    staleTime: 30_000,
+    enabled: (currentProject?.id ?? 0) > 0,
+  });
+
+  // Auto-apply default saved view on first load (when no explicit URL filters are active)
+  useEffect(() => {
+    if (defaultApplied) return;
+    if (!currentProject?.id) return;
+    if (savedViews.length === 0) return;
+    const noUrlFilters =
+      !searchParams.get('category') &&
+      statusFilter.length === 0 &&
+      priorityFilter.length === 0 &&
+      assigneeFilter.length === 0;
+    if (!noUrlFilters) {
+      setDefaultApplied(true);
+      return;
+    }
+    const defaultView = savedViews.find((v) => v.isDefault);
+    if (defaultView) {
+      applyViewFilters(defaultView.filters);
+    }
+    setDefaultApplied(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedViews, currentProject?.id]);
+
+  function applyViewFilters(filters: SavedViewFilters) {
+    setStatusFilter((filters.statusFilter as TaskStatus[]) ?? []);
+    setPriorityFilter((filters.priorityFilter as TaskPriority[]) ?? []);
+    setAssigneeFilter(filters.assigneeFilter ?? []);
+    if (filters.activeCategory) setActiveCategory(filters.activeCategory as TaskCategory);
+    setDependencyFilter((filters.dependencyFilter as 'all' | 'blocked' | 'blocking') ?? 'all');
+    setSortBy((filters.sortBy as typeof sortBy) ?? 'createdAt');
+    setSortOrder((filters.sortOrder as typeof sortOrder) ?? 'desc');
+    setSearchQuery(filters.searchQuery ?? '');
+  }
 
   // Sync view mode when project type changes
   useEffect(() => {
@@ -1344,6 +1393,24 @@ export default function BacklogPage() {
               >
                 {t('backlogPage.filters.clearFilters')}
               </Button>
+            )}
+
+            {/* Saved Views */}
+            {currentProject && (
+              <SavedViewsDropdown
+                projectId={currentProject.id}
+                currentFilters={{
+                  statusFilter,
+                  priorityFilter,
+                  assigneeFilter,
+                  activeCategory,
+                  dependencyFilter,
+                  sortBy,
+                  sortOrder,
+                  searchQuery,
+                }}
+                onApplyView={applyViewFilters}
+              />
             )}
           </div>
         </div>
