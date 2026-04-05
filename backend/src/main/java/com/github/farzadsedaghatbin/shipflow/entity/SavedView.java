@@ -40,7 +40,7 @@ public class SavedView {
    * Filter state serialised as raw JSON. Stored in a JSONB column.
    * Example: {"statusFilter":["BACKLOG"],"priorityFilter":["URGENT"],"sortBy":"createdAt","sortOrder":"desc"}
    */
-  @Column(name = "filters", nullable = false, columnDefinition = "TEXT")
+  @Column(name = "filters", nullable = false, columnDefinition = "jsonb")
   private String filters;
 
   @Column(name = "is_default", nullable = false)

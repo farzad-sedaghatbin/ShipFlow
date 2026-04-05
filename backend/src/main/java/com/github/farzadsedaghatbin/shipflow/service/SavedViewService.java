@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.CreateSavedViewRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.SavedViewDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.UpdateSavedViewRequest;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SavedViewService {
 
   private final SavedViewRepository savedViewRepository;
+  private final ObjectMapper objectMapper;
 
   // ── Read ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ public class SavedViewService {
 
   public SavedViewDTO createSavedView(
       Long userId, Long projectId, CreateSavedViewRequest request) {
+    validateFiltersJson(request.getFilters());
     if (savedViewRepository.existsByUserIdAndProjectIdAndName(userId, projectId, request.getName())) {
       throw new BadRequestException(
           "A saved view named '" + request.getName() + "' already exists for this project");
@@ -58,10 +61,15 @@ public class SavedViewService {
 
   // ── Update ──────────────────────────────────────────────────────────────────
 
-  public SavedViewDTO updateSavedView(Long id, Long userId, UpdateSavedViewRequest request) {
+  public SavedViewDTO updateSavedView(Long id, Long userId, Long projectId, UpdateSavedViewRequest request) {
     SavedView view = savedViewRepository.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new ResourceNotFoundException(
             "Saved view not found with id: " + id + " for current user"));
+
+    if (!view.getProjectId().equals(projectId)) {
+      throw new ResourceNotFoundException(
+          "Saved view not found with id: " + id + " for project: " + projectId);
+    }
 
     if (request.getName() != null && !request.getName().isBlank()) {
       // Only check for duplicates when the name actually changes
@@ -75,6 +83,7 @@ public class SavedViewService {
     }
 
     if (request.getFilters() != null) {
+      validateFiltersJson(request.getFilters());
       view.setFilters(request.getFilters());
     }
 
@@ -85,10 +94,14 @@ public class SavedViewService {
 
   // ── Delete ──────────────────────────────────────────────────────────────────
 
-  public void deleteSavedView(Long id, Long userId) {
+  public void deleteSavedView(Long id, Long userId, Long projectId) {
     SavedView view = savedViewRepository.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new ResourceNotFoundException(
             "Saved view not found with id: " + id + " for current user"));
+    if (!view.getProjectId().equals(projectId)) {
+      throw new ResourceNotFoundException(
+          "Saved view not found with id: " + id + " for project: " + projectId);
+    }
     savedViewRepository.delete(view);
     log.info("Deleted saved view id={} for user {}", id, userId);
   }
@@ -99,6 +112,11 @@ public class SavedViewService {
     SavedView view = savedViewRepository.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new ResourceNotFoundException(
             "Saved view not found with id: " + id + " for current user"));
+
+    if (!view.getProjectId().equals(projectId)) {
+      throw new ResourceNotFoundException(
+          "Saved view not found with id: " + id + " for project: " + projectId);
+    }
 
     // Unset previous default for this user+project (if any)
     savedViewRepository.findByUserIdAndProjectIdAndIsDefaultTrue(userId, projectId)
@@ -113,6 +131,16 @@ public class SavedViewService {
     SavedView updated = savedViewRepository.save(view);
     log.info("Set saved view id={} as default for user {} in project {}", id, userId, projectId);
     return toDTO(updated);
+  }
+
+  // ── Validation ──────────────────────────────────────────────────────────────
+
+  private void validateFiltersJson(String filters) {
+    try {
+      objectMapper.readTree(filters);
+    } catch (Exception e) {
+      throw new BadRequestException("filters must be valid JSON");
+    }
   }
 
   // ── Mapping ─────────────────────────────────────────────────────────────────

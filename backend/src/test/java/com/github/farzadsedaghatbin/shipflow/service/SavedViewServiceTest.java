@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.CreateSavedViewRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.SavedViewDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.savedview.UpdateSavedViewRequest;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +31,9 @@ class SavedViewServiceTest {
 
   @Mock
   private SavedViewRepository savedViewRepository;
+
+  @Spy
+  private ObjectMapper objectMapper;
 
   @InjectMocks
   private SavedViewService savedViewService;
@@ -122,6 +127,16 @@ class SavedViewServiceTest {
           () -> savedViewService.createSavedView(USER_ID, PROJECT_ID, request));
       verify(savedViewRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("throws BadRequestException when filters is not valid JSON")
+    void throwsOnInvalidFiltersJson() {
+      CreateSavedViewRequest request = new CreateSavedViewRequest("My View", "not-valid-json{{");
+
+      assertThrows(BadRequestException.class,
+          () -> savedViewService.createSavedView(USER_ID, PROJECT_ID, request));
+      verify(savedViewRepository, never()).save(any());
+    }
   }
 
   // ── deleteSavedView ──────────────────────────────────────────────────────────
@@ -136,7 +151,7 @@ class SavedViewServiceTest {
       SavedView view = buildView(1L, "High Priority Bugs", false);
       when(savedViewRepository.findByIdAndUserId(1L, USER_ID)).thenReturn(Optional.of(view));
 
-      savedViewService.deleteSavedView(1L, USER_ID);
+      savedViewService.deleteSavedView(1L, USER_ID, PROJECT_ID);
 
       verify(savedViewRepository).delete(view);
     }
@@ -147,7 +162,18 @@ class SavedViewServiceTest {
       when(savedViewRepository.findByIdAndUserId(1L, OTHER_USER_ID)).thenReturn(Optional.empty());
 
       assertThrows(ResourceNotFoundException.class,
-          () -> savedViewService.deleteSavedView(1L, OTHER_USER_ID));
+          () -> savedViewService.deleteSavedView(1L, OTHER_USER_ID, PROJECT_ID));
+      verify(savedViewRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("throws ResourceNotFoundException when projectId does not match view's project")
+    void throwsWhenProjectIdMismatch() {
+      SavedView view = buildView(1L, "High Priority Bugs", false);
+      when(savedViewRepository.findByIdAndUserId(1L, USER_ID)).thenReturn(Optional.of(view));
+
+      assertThrows(ResourceNotFoundException.class,
+          () -> savedViewService.deleteSavedView(1L, USER_ID, 999L));
       verify(savedViewRepository, never()).delete(any());
     }
   }
@@ -204,6 +230,16 @@ class SavedViewServiceTest {
       assertThrows(ResourceNotFoundException.class,
           () -> savedViewService.setDefault(1L, OTHER_USER_ID, PROJECT_ID));
     }
+
+    @Test
+    @DisplayName("throws ResourceNotFoundException when projectId does not match view's project")
+    void throwsWhenProjectIdMismatch() {
+      SavedView view = buildView(1L, "My View", false);
+      when(savedViewRepository.findByIdAndUserId(1L, USER_ID)).thenReturn(Optional.of(view));
+
+      assertThrows(ResourceNotFoundException.class,
+          () -> savedViewService.setDefault(1L, USER_ID, 999L));
+    }
   }
 
   // ── updateSavedView ──────────────────────────────────────────────────────────
@@ -224,7 +260,7 @@ class SavedViewServiceTest {
           .thenReturn(false);
       when(savedViewRepository.save(any(SavedView.class))).thenAnswer(i -> i.getArgument(0));
 
-      SavedViewDTO result = savedViewService.updateSavedView(1L, USER_ID, request);
+      SavedViewDTO result = savedViewService.updateSavedView(1L, USER_ID, PROJECT_ID, request);
 
       assertEquals("New Name", result.getName());
       assertEquals("{\"statusFilter\":[\"IN_PROGRESS\"]}", result.getFilters());
@@ -236,7 +272,17 @@ class SavedViewServiceTest {
       when(savedViewRepository.findByIdAndUserId(1L, USER_ID)).thenReturn(Optional.empty());
 
       assertThrows(ResourceNotFoundException.class,
-          () -> savedViewService.updateSavedView(1L, USER_ID, new UpdateSavedViewRequest()));
+          () -> savedViewService.updateSavedView(1L, USER_ID, PROJECT_ID, new UpdateSavedViewRequest()));
+    }
+
+    @Test
+    @DisplayName("throws ResourceNotFoundException when projectId does not match view's project")
+    void throwsWhenProjectIdMismatch() {
+      SavedView view = buildView(1L, "Old Name", false);
+      when(savedViewRepository.findByIdAndUserId(1L, USER_ID)).thenReturn(Optional.of(view));
+
+      assertThrows(ResourceNotFoundException.class,
+          () -> savedViewService.updateSavedView(1L, USER_ID, 999L, new UpdateSavedViewRequest()));
     }
   }
 }

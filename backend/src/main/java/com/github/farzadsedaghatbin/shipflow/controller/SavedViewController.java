@@ -31,7 +31,7 @@ public class SavedViewController {
   private final UserService userService;
 
   @GetMapping
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(
       summary = "List saved views",
       description = "Returns all saved filter views for the current user within the given project")
@@ -41,7 +41,7 @@ public class SavedViewController {
   }
 
   @PostMapping
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(
       summary = "Create a saved view",
       description = "Saves a named filter preset for the current user within the given project")
@@ -53,7 +53,7 @@ public class SavedViewController {
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(
       summary = "Update a saved view",
       description = "Updates the name and/or filters of an existing saved view owned by the current user")
@@ -62,23 +62,23 @@ public class SavedViewController {
       @PathVariable Long id,
       @Valid @RequestBody UpdateSavedViewRequest request) {
     Long userId = getCurrentUserId();
-    return ResponseEntity.ok(savedViewService.updateSavedView(id, userId, request));
+    return ResponseEntity.ok(savedViewService.updateSavedView(id, userId, projectId, request));
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(
       summary = "Delete a saved view",
       description = "Permanently deletes a saved view owned by the current user")
   public ResponseEntity<Void> deleteSavedView(
       @PathVariable Long projectId, @PathVariable Long id) {
     Long userId = getCurrentUserId();
-    savedViewService.deleteSavedView(id, userId);
+    savedViewService.deleteSavedView(id, userId, projectId);
     return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/default")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(
       summary = "Set default view",
       description =
