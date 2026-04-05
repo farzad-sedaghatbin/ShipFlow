@@ -6661,6 +6661,10 @@
     "deleteConfirmTitle": "حذف {{count}} وظیفه؟",
     "deleteConfirmDescription": "این عمل {{count}} وظیفه را به‌طور دائمی حذف می‌کند و قابل بازگشت نیست."
   },
+  "notificationStream": {
+    "streamConnected": "اتصال جریان اعلان‌ها برقرار شد",
+    "streamReconnecting": "در حال اتصال مجدد به جریان اعلان‌ها…"
+  },
   "savedViews": {
     "title": "نماهای ذخیره‌شده",
     "saveView": "ذخیره",

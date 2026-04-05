@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
+import { useNotificationStream } from '../hooks/useNotificationStream';
 import {
   Bell,
   BellOff,
@@ -35,15 +36,27 @@ export const NotificationCenter: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
+  // Stable callback: called whenever the SSE stream delivers a new notification
+  const handleSseNotification = useCallback(() => {
+    loadUnreadCount();
+    // Reload the full list only if the dropdown is open to avoid background noise
+    if (open) {
+      loadNotifications();
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Subscribe to the real-time SSE stream — instant push replaces the 30 s polling
+  useNotificationStream(handleSseNotification);
+
   useEffect(() => {
     loadNotifications();
     loadUnreadCount();
-    
-    // Poll for new notifications every 30 seconds
+
+    // Fallback polling at 60 s in case the SSE stream is unavailable (proxy, firewall, etc.)
     const interval = setInterval(() => {
       loadUnreadCount();
-    }, 30000);
-    
+    }, 60_000);
+
     return () => clearInterval(interval);
   }, []);
 

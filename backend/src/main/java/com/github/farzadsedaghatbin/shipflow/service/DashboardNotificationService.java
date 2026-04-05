@@ -40,6 +40,7 @@ public class DashboardNotificationService {
   private final UserRepository userRepository;
   private final SlackIntegrationService slackService;
   private final TeamsIntegrationService teamsService;
+  private final NotificationSseManager notificationSseManager;
 
   @Autowired(required = false)
   private PitchHealthService pitchHealthService;
@@ -481,7 +482,7 @@ public class DashboardNotificationService {
     log.info("Generated stalled hill chart notifications for {} points", stalledPoints.size());
   }
 
-  /** Create a new notification */
+  /** Create a new notification and push it instantly to the user's SSE stream if connected. */
   private DashboardNotification createNotification(User user, String type, String title, String message,
       String severity, String actionUrl, String entityType, Long entityId) {
 
@@ -490,7 +491,12 @@ public class DashboardNotificationService {
         .isRead(false).expiresAt(LocalDateTime.now().plusDays(30)) // Auto-expire after 30 days
         .build();
 
-    return notificationRepository.save(notification);
+    DashboardNotification saved = notificationRepository.save(notification);
+
+    // Push to the user's live SSE stream (no-op if the user has no active stream)
+    notificationSseManager.sendToUser(user.getId(), toDTO(saved));
+
+    return saved;
   }
 
   /** Cleanup old notifications */
