@@ -139,8 +139,16 @@ A modern project management application implementing the [Shape Up](https://base
   - Grouped results by entity type with score-based ranking
   - Debounced 300ms search with loading, empty, and minimum-chars feedback
   - Requires specific project context (disabled when "All Projects" selected)
+- **AI-Powered Q&A (RAG)**: Conversational assistant over your project knowledge base
+  - Ask questions like "What pitches are at risk in Cycle 5?" or "What are the rabbit holes for the mobile checkout pitch?"
+  - **Multi-turn memory**: Conversation context persists across follow-up questions — the AI remembers what you asked
+  - **Entity disambiguation**: "Cycle 5" resolves to the cycle *named* "Cycle 5", not the row with `id = 5`
+  - **Session continuity**: `conversationId` is preserved across page navigation via `sessionStorage`; navigating away and back continues the same conversation
+  - **Cache isolation**: Multi-turn sessions bypass the generic Q&A cache so history-aware answers are never polluted by prior single-turn responses
+  - Sources cited with relevance scores; confidence indicator per answer
+  - Works with Ollama (local), OpenAI, or any pluggable LLM provider
 - **Help & Guides**: Built-in comprehensive documentation, interactive tour, and AI-powered search
-  - **Interactive Tour**: Step-by-step walkthrough for new users
+  - **Interactive Onboarding Tour**: 21-step guided tour powered by driver.js walks new users through projects, cycles, pitches, betting table, hill charts, retrospectives, reports, meetings, and more. Appears automatically on first login; restartable any time from the sidebar. Includes skip confirmation dialog and `localStorage` persistence.
   - **Rich Guides**: 16 detailed guides covering all features (Cycles, Pitches, Hill Charts, Retrospectives, QA, Exports, Webhooks, API, MCP, and more)
   - **AI Help Search**: Ask "how do I…" questions and get guardrailed answers from ShipFlow documentation
     - Vector store retrieval (EmbeddingStore) for token-efficient prompts — only top-K relevant chunks included
@@ -440,6 +448,8 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Q&A multi-turn memory** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |

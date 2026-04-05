@@ -30,6 +30,9 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S11 | @mention triggers notification | ✅ done |
 | S12 | CSV export for task backlog | ✅ done |
 | S13 | Interactive onboarding tour (wire TourContext + driver.js) | ✅ done |
+| S13.1 | Q&A / RAG hardening — entity disambiguation, multi-turn memory, cache isolation | ✅ done |
+
+**v0.8.0 released: 2026-04-05** ✅
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`

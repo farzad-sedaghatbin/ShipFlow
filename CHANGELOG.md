@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.0] - 2026-04-05 - Core Product + Hardening
 
 ### Added
+- **AI Q&A / RAG hardening (S13.1)**: Five gaps in the AI-powered Q&A feature fixed before v0.8.0 release.
+  - **Entity disambiguation**: `"Cycle 5"` now resolves to the cycle *named* "Cycle 5" first (exact case-insensitive DB name lookup), falling back to numeric ID only when no name match exists. Prevents the common case of landing on the wrong cycle because its DB id happened to match the number in the question.
+  - **Partial-match protection**: `"Cycle 5"` no longer incorrectly resolves to `"Cycle 50"` via a partial `LIKE` hit. Exact name wins; partial is only used for multi-result vector-search scoping.
+  - **Cache bypass for multi-turn sessions**: Q&A response cache is skipped when a `conversationId` is present so conversation-history-aware answers are never served from or stored in the generic cache.
+  - **ConversationId persisted across navigation**: `QAPanel` stores `conversationId` in `sessionStorage` keyed by `(contextType, contextId)`, restoring the same conversation when the user navigates away and returns.
+  - **Conversation context evolves across turns**: New `ConversationManager.updateContext()` called after each entity resolution, so `getMostRecentContext()` always reflects the most recently discussed entity rather than only the one from conversation creation.
+  - **Clarification turns saved**: The ambiguity-check early-exit path now saves a conversation turn and propagates `conversationId` in the response, maintaining history through clarification exchanges.
+  - **Cache-hit responses carry conversationId**: Conversation creation moved before the cache check, so even a cached first answer hands the client a `conversationId` to continue as a multi-turn session.
+  - 4 new unit tests in `QAServiceEntityResolutionTest` covering: named cycle preferred over ID, `"Cycle 50"` not matching `"Cycle 5"`, caller-supplied `cycleId` preserved, and `setCycleId` null-guard.
+
 - **Interactive onboarding tour (S13)**: Full 21-step product tour powered by driver.js v1.4.0, wired into the existing `TourContext` architecture.
   - **WelcomeTourDialog** auto-appears 1500 ms after first login and gives users a choice to start the tour or skip it.
   - **21 steps** walk through: sidebar orientation → projects → cycles → pitch board → betting table → health/hill chart → retrospectives → reports → meetings → backlog → work logs → project selector → user menu.

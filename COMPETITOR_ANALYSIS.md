@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-03-24 (v0.7.0)_
+_Last updated: 2026-04-05 (v0.8.0)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -32,6 +32,8 @@ ShipFlow targets teams that:
 | **MCP server (AI editor integration)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Figma MCP client** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A on project docs (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI Q&A multi-turn context + entity disambiguation** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ | ❌ |
 | **AI technical solution generator** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI test case generation** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Pluggable LLM (Ollama/OpenAI/RunPod)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
