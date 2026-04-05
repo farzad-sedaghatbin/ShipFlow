@@ -1,36 +1,7 @@
 User-agent: *
-Allow: /
+Disallow: /
 Allow: /compare
 Allow: /releases
 Allow: /public-roadmap
 Allow: /login
-
-# Disallow authenticated app routes
-Disallow: /dashboard
-Disallow: /projects
-Disallow: /cycles
-Disallow: /pitches
-Disallow: /betting
-Disallow: /backlog
-Disallow: /retros
-Disallow: /reports
-Disallow: /dashboards
-Disallow: /health
-Disallow: /people
-Disallow: /teams
-Disallow: /settings
-Disallow: /notifications
-Disallow: /time
-Disallow: /worklogs
-Disallow: /meetings
-Disallow: /planning
-Disallow: /qa
-Disallow: /integrations
-Disallow: /ai
-Disallow: /mcp
-Disallow: /admin
-Disallow: /help
-Disallow: /roadmap
-Disallow: /releases-management
-
 Sitemap: https://shipflow.dev/sitemap.xml
