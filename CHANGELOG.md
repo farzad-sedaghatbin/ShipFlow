@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Real-Time Notifications via SSE (S16)**: Replaced 30-second polling with instant Server-Sent Events push for the notification center.
+  - `GET /api/notifications/stream` — long-lived `text/event-stream` endpoint; each authenticated user holds one active SSE connection
+  - `NotificationSseManager` — thread-safe `ConcurrentHashMap`-backed emitter registry; one stream per user, auto-cleans on completion/timeout/error
+  - `DashboardNotificationService.createNotification()` now pushes each new notification to the user's live SSE stream immediately after persisting it
+  - `useNotificationStream` React hook — opens the stream via `fetch` (supports `Authorization` header for JWT), parses SSE frames, and invokes a callback on each `notification` event; falls back gracefully if stream fails (single reconnect after 5 s)
+  - `NotificationCenter.tsx` updated: SSE hook triggers instant badge refresh; 30 s polling replaced with 60 s fallback interval so the UI continues to work even if the SSE stream is unavailable
+  - i18n keys `notificationStream.streamConnected` and `notificationStream.streamReconnecting` added to `en.json` and `fa.json`
+  - Unit tests for `NotificationSseManager`: subscribe lifecycle, active-count tracking, duplicate-user replacement, stale-emitter cleanup
+
 - **Saved Filter Views — Backend + Frontend (S14 + S15)**: Users can save, load, and manage named filter presets for the task backlog on a per-user, per-project basis.
   - `POST /api/projects/{projectId}/saved-views` — create a named view with a serialised filter state (status, priority, assignee, sort, search, etc.)
   - `GET /api/projects/{projectId}/saved-views` — list all saved views for the current user within a project

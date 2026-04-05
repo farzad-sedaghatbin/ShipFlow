@@ -6661,6 +6661,10 @@
     "deleteConfirmTitle": "Delete {{count}} task(s)?",
     "deleteConfirmDescription": "This will permanently delete {{count}} task(s). This action cannot be undone."
   },
+  "notificationStream": {
+    "streamConnected": "Notification stream connected",
+    "streamReconnecting": "Reconnecting to notification stream…"
+  },
   "savedViews": {
     "title": "Saved Views",
     "saveView": "Save",

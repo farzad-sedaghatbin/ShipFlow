@@ -57,6 +57,9 @@ class DashboardNotificationServiceTest {
   @Mock
   private TeamsIntegrationService teamsService;
 
+  @Mock
+  private NotificationSseManager notificationSseManager;
+
   @InjectMocks
   private DashboardNotificationService notificationService;
 
