@@ -5,13 +5,13 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v0.8.0 — "Core Product + Hardening"
+## Current Milestone: v0.9.0 — "Power User Features + Polish"
 
-**Current version**: v0.7.0 → targeting v0.8.0
-**Target**: v1.0.0 open-source release (~12-17 weeks, 29 Claude Code sessions total)
+**Current version**: v0.8.0 (released 2026-04-05) → targeting v0.9.0
+**Target**: v1.0.0 open-source release
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum (Sprints ≈ Cycles) planned for v1.1.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum (Sprints ≈ Cycles) planned for v1.1; competitor migration tooling planned for v1.2 (requires Scrum mode first).
 
 ### v0.8.0 session map (sessions S01–S13)
 
@@ -334,6 +334,16 @@ This project is **open source** — every significant feature must be documented
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
 
 > These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
+
+---
+
+## Architectural Decisions Log
+
+Key product/architecture decisions recorded here so future Claude Code sessions don't re-debate them.
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
 
 ---
 

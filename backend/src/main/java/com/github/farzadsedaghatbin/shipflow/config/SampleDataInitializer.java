@@ -60,6 +60,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final TestCaseRepository testCaseRepository;
   private final RetrospectiveRepository retrospectiveRepository;
   private final RetroItemRepository retroItemRepository;
+  private final SavedViewRepository savedViewRepository;
 
   @Override
   @Transactional
@@ -901,6 +902,11 @@ public class SampleDataInitializer implements CommandLineRunner {
           instantTransfer, biometricLogin, sessionOverhaul);
     }
 
+    // ── Saved Views ───────────────────────────────────────────────────────────
+    if (adminUser != null && saraUser != null) {
+      createSampleSavedViews(adminUser, saraUser, bankingProject.getId(), devopsProject.getId());
+    }
+
     log.info("Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban)");
   }
 
@@ -1424,5 +1430,65 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("WISE Architecture advice history created: 3 conversations, 7 entries");
+  }
+
+  // ── Saved Views ──────────────────────────────────────────────────────────────
+
+  private void createSampleSavedViews(User adminUser, User saraUser, Long bankingProjectId,
+      Long devopsProjectId) {
+
+    // Admin — "High Priority Bugs" (Mobile Banking App)
+    savedViewRepository.save(
+        SavedView.builder()
+            .userId(adminUser.getId())
+            .projectId(bankingProjectId)
+            .name("High Priority Bugs")
+            .filters("{\"statusFilter\":[\"BACKLOG\",\"TODO\"],"
+                + "\"priorityFilter\":[\"URGENT\",\"HIGH\"],"
+                + "\"activeCategory\":\"BUG_FIX\","
+                + "\"sortBy\":\"priority\","
+                + "\"sortOrder\":\"desc\"}")
+            .isDefault(false)
+            .build());
+
+    // Admin — "My Tasks In Progress" (Mobile Banking App) — marked as default
+    savedViewRepository.save(
+        SavedView.builder()
+            .userId(adminUser.getId())
+            .projectId(bankingProjectId)
+            .name("My Tasks In Progress")
+            .filters("{\"statusFilter\":[\"IN_PROGRESS\"],"
+                + "\"assigneeFilter\":[" + adminUser.getId() + "],"
+                + "\"sortBy\":\"updatedAt\","
+                + "\"sortOrder\":\"desc\"}")
+            .isDefault(true)
+            .build());
+
+    // Sara — "Blocked Items" (Mobile Banking App)
+    savedViewRepository.save(
+        SavedView.builder()
+            .userId(saraUser.getId())
+            .projectId(bankingProjectId)
+            .name("Blocked Items")
+            .filters("{\"statusFilter\":[\"BLOCKED\"],"
+                + "\"dependencyFilter\":\"blocked\","
+                + "\"sortBy\":\"createdAt\","
+                + "\"sortOrder\":\"asc\"}")
+            .isDefault(false)
+            .build());
+
+    // Admin — "All Open" (DevOps Platform)
+    savedViewRepository.save(
+        SavedView.builder()
+            .userId(adminUser.getId())
+            .projectId(devopsProjectId)
+            .name("All Open")
+            .filters("{\"statusFilter\":[\"BACKLOG\",\"TODO\",\"IN_PROGRESS\",\"BLOCKED\",\"IN_REVIEW\"],"
+                + "\"sortBy\":\"priority\","
+                + "\"sortOrder\":\"desc\"}")
+            .isDefault(true)
+            .build());
+
+    log.info("Saved views sample data created: 4 entries");
   }
 }
