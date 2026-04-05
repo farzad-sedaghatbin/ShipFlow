@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import org.springframework.test.util.ReflectionTestUtils;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -100,6 +101,9 @@ class ProjectServiceTest {
     lenient().when(userRepository.findByUsername("owner")).thenReturn(Optional.of(testOwner));
     // Mock project access check - owner has access
     lenient().when(userProjectRepository.hasProjectAccess(1L, 1L)).thenReturn(true);
+
+    // Inject self-reference so @Cacheable proxy calls work in unit tests
+    ReflectionTestUtils.setField(projectService, "self", projectService);
   }
 
   @AfterEach
