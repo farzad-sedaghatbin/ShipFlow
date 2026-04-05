@@ -33,6 +33,14 @@ public class UpdateOrganizationSettingsRequest {
   private Double defaultHoursPerDay;
   private Integer defaultWorkingDaysPerWeek;
 
+  // Email / SMTP settings
+  private Boolean emailNotificationsEnabled;
+  private String smtpHost;
+  private Integer smtpPort;
+  private String smtpUsername;
+  private String smtpFrom;
+  private Boolean smtpTlsEnabled;
+
   // Wise Architecture Feature Flag
   private Boolean enableWiseArchitecture;
 

@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
 import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
 import java.time.LocalDate;
@@ -41,6 +42,7 @@ public class DashboardNotificationService {
   private final SlackIntegrationService slackService;
   private final TeamsIntegrationService teamsService;
   private final NotificationSseManager notificationSseManager;
+  private final IEmailNotificationService emailService;
 
   @Autowired(required = false)
   private PitchHealthService pitchHealthService;
@@ -111,6 +113,15 @@ public class DashboardNotificationService {
             task.getDescription() != null ? task.getDescription() : "No description"),
         null, "TASK", task.getId());
 
+    // Send email notification
+    if (assignee.getEmail() != null && !assignee.getEmail().isBlank()) {
+      String recipientName = assignee.getPerson() != null && assignee.getPerson().getName() != null
+          ? assignee.getPerson().getName()
+          : assignee.getUsername();
+      emailService.sendTaskAssigned(
+          assignee.getEmail(), recipientName, task.getTitle(), "/tasks/" + task.getId());
+    }
+
     log.info("Created task assignment notification for user {} on task {}", assignee.getId(), task.getId());
   }
 
@@ -141,6 +152,15 @@ public class DashboardNotificationService {
             mentionedUser.getUsername(), entityType.toLowerCase(),
             commentPreview.length() > 100 ? commentPreview.substring(0, 100) + "..." : commentPreview),
         null, entityType, entityId);
+
+    // Send email notification
+    if (mentionedUser.getEmail() != null && !mentionedUser.getEmail().isBlank()) {
+      String recipientName = mentionedUser.getPerson() != null && mentionedUser.getPerson().getName() != null
+          ? mentionedUser.getPerson().getName()
+          : mentionedUser.getUsername();
+      emailService.sendMentionedInComment(
+          mentionedUser.getEmail(), recipientName, entityType.toLowerCase(), actionUrl);
+    }
 
     log.info("Created comment mention notification for user {} from author {} on {} {}", mentionedUser.getId(),
         author.getId(), entityType, entityId);
