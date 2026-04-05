@@ -31,8 +31,23 @@ export function useNotificationStream(onNewNotification: (payload: unknown) => v
     const controller = new AbortController();
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+    // Fix 6: guard against stacking multiple timers
+    function scheduleReconnect() {
+      if (aborted) return;
+      if (reconnectTimer !== null) return; // already scheduled
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!aborted) connect();
+      }, RECONNECT_DELAY_MS);
+    }
+
     async function connect() {
       if (aborted) return;
+      // Fix 6: clear any pending timer when a new connection attempt starts
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       try {
         const response = await fetch('/api/notifications/stream', {
           headers: {
@@ -51,50 +66,54 @@ export function useNotificationStream(onNewNotification: (payload: unknown) => v
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
-        // Read the stream chunk by chunk
-        const read = async (): Promise<void> => {
-          if (aborted) return;
-          const { done, value } = await reader.read();
-          if (done || aborted) return;
+        // Fix 5: maintain a buffer across chunks so frames split across chunks are handled correctly
+        let buffer = '';
 
-          const text = decoder.decode(value, { stream: true });
-          // SSE frames: one or more "field: value\n" lines, terminated by "\n\n"
-          const lines = text.split('\n');
-          let eventName = '';
-          for (const line of lines) {
-            if (line.startsWith('event:')) {
-              eventName = line.slice(6).trim();
-            } else if (line.startsWith('data:')) {
-              const raw = line.slice(5).trim();
-              if (eventName === 'notification' || (!eventName && raw)) {
-                try {
-                  const payload: unknown = JSON.parse(raw);
+        function processBuffer() {
+          const frames = buffer.split('\n\n');
+          buffer = frames.pop() ?? ''; // last incomplete frame stays in buffer
+          for (const frame of frames) {
+            if (!frame.trim()) continue;
+            let eventName = '';
+            const dataLines: string[] = [];
+            for (const line of frame.split('\n')) {
+              if (line.startsWith('event:')) eventName = line.slice(6).trim();
+              else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            }
+            const data = dataLines.join('\n');
+            if (data) {
+              try {
+                const payload = JSON.parse(data);
+                if (eventName !== 'connected') {
                   callbackRef.current(payload);
-                } catch {
-                  // Ignore malformed JSON frames
                 }
+              } catch {
+                // Ignore malformed JSON frames
               }
-              // Reset event name after consuming data line
-              eventName = '';
             }
           }
+        }
 
-          return read();
-        };
-
-        await read();
+        // Fix 3 & 4: iterative loop instead of recursion — avoids stack overflow on long-lived
+        // connections; also reconnects when the server closes the stream (done === true).
+        await (async function readStream() {
+          while (true) {
+            if (aborted) break;
+            const { done, value } = await reader.read();
+            if (done) {
+              // Server closed the stream (deploy, timeout, etc.) — reconnect unless aborted
+              if (!aborted) scheduleReconnect();
+              break;
+            }
+            buffer += decoder.decode(value, { stream: true });
+            processBuffer();
+          }
+        })();
       } catch (err) {
         if (aborted) return; // Normal cleanup on unmount
         // Schedule a reconnect for transient network errors
         scheduleReconnect();
       }
-    }
-
-    function scheduleReconnect() {
-      if (aborted) return;
-      reconnectTimer = setTimeout(() => {
-        if (!aborted) connect();
-      }, RECONNECT_DELAY_MS);
     }
 
     connect();
@@ -104,6 +123,5 @@ export function useNotificationStream(onNewNotification: (payload: unknown) => v
       controller.abort();
       if (reconnectTimer !== null) clearTimeout(reconnectTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount — token is read inside the effect
 }

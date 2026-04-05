@@ -50,17 +50,18 @@ public class NotificationSseManager {
     SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
     emitters.put(userId, emitter);
 
-    // Wire cleanup callbacks before sending the first event to avoid race conditions
+    // Wire cleanup callbacks before sending the first event to avoid race conditions.
+    // Use compare-and-remove so a stale callback never evicts a freshly registered emitter.
     emitter.onCompletion(() -> {
-      emitters.remove(userId);
+      emitters.remove(userId, emitter);
       log.debug("Notification SSE stream completed for user {}", userId);
     });
     emitter.onTimeout(() -> {
-      emitters.remove(userId);
+      emitters.remove(userId, emitter);
       log.debug("Notification SSE stream timed out for user {}", userId);
     });
     emitter.onError(ex -> {
-      emitters.remove(userId);
+      emitters.remove(userId, emitter);
       log.debug("Notification SSE stream error for user {}: {}", userId, ex.getMessage());
     });
 
@@ -71,7 +72,7 @@ public class NotificationSseManager {
           emitters.size());
     } catch (Exception e) {
       log.warn("Failed to send SSE connected event for user {}: {}", userId, e.getMessage());
-      emitters.remove(userId);
+      emitters.remove(userId, emitter);
     }
 
     return emitter;
@@ -96,7 +97,7 @@ public class NotificationSseManager {
       log.debug("Notification SSE event sent to user {}", userId);
     } catch (Exception e) {
       log.debug("SSE send failed for user {} — removing stale emitter: {}", userId, e.getMessage());
-      emitters.remove(userId);
+      emitters.remove(userId, emitter);
     }
   }
 

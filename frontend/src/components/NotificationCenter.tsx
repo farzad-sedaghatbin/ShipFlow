@@ -36,6 +36,27 @@ export const NotificationCenter: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await dashboardNotificationApi.getAllNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const count = await dashboardNotificationApi.getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Failed to load unread count:', error);
+    }
+  }, []);
+
   // Stable callback: called whenever the SSE stream delivers a new notification
   const handleSseNotification = useCallback(() => {
     loadUnreadCount();
@@ -43,7 +64,7 @@ export const NotificationCenter: React.FC = () => {
     if (open) {
       loadNotifications();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, loadUnreadCount, loadNotifications]);
 
   // Subscribe to the real-time SSE stream — instant push replaces the 30 s polling
   useNotificationStream(handleSseNotification);
@@ -58,28 +79,7 @@ export const NotificationCenter: React.FC = () => {
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, []);
-
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      const data = await dashboardNotificationApi.getAllNotifications();
-      setNotifications(data);
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    try {
-      const count = await dashboardNotificationApi.getUnreadCount();
-      setUnreadCount(count);
-    } catch (error) {
-      console.error('Failed to load unread count:', error);
-    }
-  };
+  }, [loadNotifications, loadUnreadCount]);
 
   const handleMarkAsRead = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
