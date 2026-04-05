@@ -9,9 +9,13 @@ A modern project management application implementing the [Shape Up](https://base
 
 <img src="screenshots/demo.webp" alt="ShipFlow Demo" width="100%" />
 
-| Dashboard | Hill Charts | Pitch Board |
-|-----------|-------------|-------------|
-| ![Dashboard](screenshots/dashboard.png) | ![Hill Chart](screenshots/hill-chart.png) | ![Pitch Board](screenshots/pitch-board.png) |
+| Dashboard | Pitch Board | Betting Table |
+|-----------|-------------|---------------|
+| ![Dashboard](screenshots/dashboard.png) | ![Pitch Board](screenshots/pitch-board.png) | ![Betting Table](screenshots/betting-table.png) |
+
+| Hill Chart | Task Backlog | Bug Reports |
+|------------|--------------|-------------|
+| ![Hill Chart](screenshots/hill-chart.png) | ![Task Backlog](screenshots/backlog.png) | ![Bug Reports](screenshots/qa-bug-reports.png) |
 
 ## ✨ Features
 
