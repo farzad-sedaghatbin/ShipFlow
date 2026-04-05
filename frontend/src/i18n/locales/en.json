@@ -6660,5 +6660,16 @@
     "error": "Bulk operation failed",
     "deleteConfirmTitle": "Delete {{count}} task(s)?",
     "deleteConfirmDescription": "This will permanently delete {{count}} task(s). This action cannot be undone."
+  },
+  "savedViews": {
+    "title": "Saved Views",
+    "saveView": "Save View",
+    "loadView": "Load View",
+    "deleteView": "Delete View",
+    "setDefault": "Set as Default",
+    "noViews": "No saved views yet",
+    "namePlaceholder": "View name…",
+    "viewSaved": "View saved successfully",
+    "viewDeleted": "View deleted"
   }
 }

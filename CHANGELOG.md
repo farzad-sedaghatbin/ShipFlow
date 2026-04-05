@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Saved Filter Views — Backend (S14)**: Users can save, load, and manage named filter presets for the task backlog on a per-user, per-project basis.
+  - `POST /api/projects/{projectId}/saved-views` — create a named view with a serialised filter state (status, priority, assignee, sort, search, etc.)
+  - `GET /api/projects/{projectId}/saved-views` — list all saved views for the current user within a project
+  - `PUT /api/projects/{projectId}/saved-views/{id}` — rename or update filter state
+  - `DELETE /api/projects/{projectId}/saved-views/{id}` — remove a view
+  - `PATCH /api/projects/{projectId}/saved-views/{id}/default` — mark a view as the default (automatically unsets the previous default)
+  - Flyway migration `V2026_04_05_0001__add_saved_views.sql` adds the `saved_views` table with a JSONB `filters` column and a unique constraint on `(user_id, project_id, name)`
+  - 4 sample saved views seeded via `SampleDataInitializer` (admin + sara users)
+  - i18n keys `savedViews.*` added to `en.json` and `fa.json`
+
 ## [0.8.0] - 2026-04-05 - Core Product + Hardening
 
 ### Added
