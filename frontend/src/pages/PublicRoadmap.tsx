@@ -21,9 +21,7 @@ import {
   Bell,
   Mail,
   BookmarkCheck,
-  Wrench,
   Container,
-  Zap,
   FlaskConical,
   Layers,
   Brain,
@@ -74,6 +72,18 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '0.8.0',
+      date: 'April 5, 2026',
+      title: t('publicRoadmap.shipped080Title'),
+      highlights: [
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped080Item0Title'), description: t('publicRoadmap.shipped080Item0Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped080Item1Title'), description: t('publicRoadmap.shipped080Item1Desc') },
+        { icon: <Paperclip className="h-5 w-5" />, title: t('publicRoadmap.shipped080Item2Title'), description: t('publicRoadmap.shipped080Item2Desc') },
+        { icon: <ListChecks className="h-5 w-5" />, title: t('publicRoadmap.shipped080Item3Title'), description: t('publicRoadmap.shipped080Item3Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped080Item4Title'), description: t('publicRoadmap.shipped080Item4Desc') },
+      ],
+    },
+    {
       version: '0.7.0',
       date: 'March 24, 2026',
       title: t('publicRoadmap.shipped070Title'),
@@ -109,26 +119,9 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v0.8.0',
-      theme: t('publicRoadmap.phase080Theme'),
-      status: 'in-progress',
-      items: [
-        { icon: <Rocket className="h-5 w-5" />, title: t('publicRoadmap.phase080Item0Title'), description: t('publicRoadmap.phase080Item0Desc') },
-        { icon: <Wrench className="h-5 w-5" />, title: t('publicRoadmap.phase080Item1Title'), description: t('publicRoadmap.phase080Item1Desc') },
-        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phase080Item2Title'), description: t('publicRoadmap.phase080Item2Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase080Item3Title'), description: t('publicRoadmap.phase080Item3Desc') },
-        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase080Item4Title'), description: t('publicRoadmap.phase080Item4Desc') },
-        { icon: <Paperclip className="h-5 w-5" />, title: t('publicRoadmap.phase080Item5Title'), description: t('publicRoadmap.phase080Item5Desc') },
-        { icon: <ListChecks className="h-5 w-5" />, title: t('publicRoadmap.phase080Item6Title'), description: t('publicRoadmap.phase080Item6Desc') },
-        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phase080Item7Title'), description: t('publicRoadmap.phase080Item7Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase080Item8Title'), description: t('publicRoadmap.phase080Item8Desc') },
-        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase080Item9Title'), description: t('publicRoadmap.phase080Item9Desc') },
-      ],
-    },
-    {
       version: 'v0.9.0',
       theme: t('publicRoadmap.phase090Theme'),
-      status: 'planned',
+      status: 'in-progress',
       items: [
         { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.phase090Item0Title'), description: t('publicRoadmap.phase090Item0Desc') },
         { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phase090Item1Title'), description: t('publicRoadmap.phase090Item1Desc') },

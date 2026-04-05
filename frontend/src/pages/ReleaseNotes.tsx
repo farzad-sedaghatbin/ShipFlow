@@ -56,10 +56,15 @@ interface Release {
 const releases: Release[] = [
   {
     version: '0.8.0',
-    date: 'Coming Soon',
-    upcoming: true,
-    title: 'Core Product + Hardening — In Progress',
+    date: 'April 5, 2026',
+    title: 'Core Product + Hardening',
     highlights: [
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'AI Q&A Multi-Turn Memory & Entity Disambiguation',
+        description:
+          '"Cycle 5" now resolves to the cycle named Cycle 5, not the one with id=5. Conversation context persists across page navigation, evolves as you switch topics, and cache is bypassed for multi-turn sessions so every answer reflects the full conversation history.',
+      },
       {
         icon: <Compass className="h-5 w-5" />,
         title: 'Interactive Onboarding Tour',
