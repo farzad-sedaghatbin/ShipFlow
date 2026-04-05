@@ -230,11 +230,13 @@ export default function BacklogPage() {
     setStatusFilter((filters.statusFilter as TaskStatus[]) ?? []);
     setPriorityFilter((filters.priorityFilter as TaskPriority[]) ?? []);
     setAssigneeFilter(filters.assigneeFilter ?? []);
-    if (filters.activeCategory) setActiveCategory(filters.activeCategory as TaskCategory);
+    setActiveCategory((filters.activeCategory as TaskCategory) ?? 'PITCH_SCOPE');
     setDependencyFilter((filters.dependencyFilter as 'all' | 'blocked' | 'blocking') ?? 'all');
     setSortBy((filters.sortBy as typeof sortBy) ?? 'createdAt');
     setSortOrder((filters.sortOrder as typeof sortOrder) ?? 'desc');
     setSearchQuery(filters.searchQuery ?? '');
+    setReleaseFilter(undefined);
+    setPage(0);
   }
 
   // Sync view mode when project type changes

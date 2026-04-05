@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -22,7 +22,28 @@ interface Props {
 }
 
 function filtersEqual(a: SavedViewFilters, b: SavedViewFilters): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  const normalize = (f: SavedViewFilters) => ({
+    statusFilter: f.statusFilter ?? [],
+    priorityFilter: f.priorityFilter ?? [],
+    assigneeFilter: f.assigneeFilter ?? [],
+    activeCategory: f.activeCategory ?? '',
+    dependencyFilter: f.dependencyFilter ?? 'all',
+    sortBy: f.sortBy ?? 'createdAt',
+    sortOrder: f.sortOrder ?? 'desc',
+    searchQuery: f.searchQuery ?? '',
+  });
+  const na = normalize(a);
+  const nb = normalize(b);
+  return (
+    JSON.stringify(na.statusFilter.slice().sort()) === JSON.stringify(nb.statusFilter.slice().sort()) &&
+    JSON.stringify(na.priorityFilter.slice().sort()) === JSON.stringify(nb.priorityFilter.slice().sort()) &&
+    JSON.stringify(na.assigneeFilter.slice().sort()) === JSON.stringify(nb.assigneeFilter.slice().sort()) &&
+    na.activeCategory === nb.activeCategory &&
+    na.dependencyFilter === nb.dependencyFilter &&
+    na.sortBy === nb.sortBy &&
+    na.sortOrder === nb.sortOrder &&
+    na.searchQuery === nb.searchQuery
+  );
 }
 
 function hasActiveFilters(filters: SavedViewFilters): boolean {
@@ -96,14 +117,14 @@ export function SavedViewsDropdown({ projectId, currentFilters, onApplyView }: P
     createMutation.mutate(name);
   };
 
-  const handleDelete = (view: SavedView, e: React.MouseEvent) => {
+  const handleDelete = (view: SavedView, e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (window.confirm(t('savedViews.confirmDelete', { name: view.name }))) {
       deleteMutation.mutate(view.id);
     }
   };
 
-  const handleSetDefault = (view: SavedView, e: React.MouseEvent) => {
+  const handleSetDefault = (view: SavedView, e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setDefaultMutation.mutate(view.id);
   };
@@ -156,18 +177,21 @@ export function SavedViewsDropdown({ projectId, currentFilters, onApplyView }: P
               <button
                 className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
                 title={t('savedViews.setDefault')}
+                aria-label={t('savedViews.setDefault')}
                 onClick={(e) => handleSetDefault(view, e)}
               >
                 <Star
+                  aria-hidden="true"
                   className={`h-3.5 w-3.5 ${view.isDefault ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                 />
               </button>
               <button
                 className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 hover:text-destructive"
                 title={t('savedViews.deleteView')}
+                aria-label={t('savedViews.deleteView')}
                 onClick={(e) => handleDelete(view, e)}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
               </button>
             </span>
           </DropdownMenuItem>

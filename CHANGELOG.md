@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
   - `PATCH /api/projects/{projectId}/saved-views/{id}/default` — mark a view as the default (automatically unsets the previous default)
   - Flyway migration `V2026_04_05_0001__add_saved_views.sql` adds the `saved_views` table with a JSONB `filters` column and a unique constraint on `(user_id, project_id, name)`
   - 4 sample saved views seeded via `SampleDataInitializer` (admin + sara users)
-  - **`SavedViewsDropdown`** component added to the BacklogPage filter bar — Bookmark icon button opens a Radix DropdownMenu with the list of saved views, inline name-input to save current filters, star icon to set/unset default, trash icon to delete
+  - **`SavedViewsDropdown`** component added to the BacklogPage filter bar — Bookmark icon button opens a Radix DropdownMenu with the list of saved views, inline name-input to save current filters, star icon to set as default view (automatically replaces the previous default), trash icon to delete
   - **Auto-apply default view** on page load — if the user has a default saved view and no explicit URL filters are active, the filters are applied automatically
   - `savedViewService.ts` typed service wrapping the five REST endpoints; parses the `filters` JSON string in the service layer before returning to components
   - i18n keys `savedViews.*` extended with `saveCurrentFilters`, `clearFilters`, `confirmDelete`, `enterName` in both `en.json` and `fa.json`
