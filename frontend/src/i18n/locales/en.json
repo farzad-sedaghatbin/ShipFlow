@@ -4883,5 +4883,18 @@
     "copyright": "© 2024 ShipFlow. Open Source & Free.",
     "home": "Home"
   },
-  "cycleId": "Cycle ID"
+  "cycleId": "Cycle ID",
+  "emailSettings": {
+    "title": "Email",
+    "enabled": "Email Notifications Enabled",
+    "smtpHost": "SMTP Host",
+    "smtpPort": "SMTP Port",
+    "smtpUsername": "SMTP Username",
+    "smtpFrom": "From Address",
+    "tlsEnabled": "Enable TLS / STARTTLS",
+    "smtpPasswordNote": "SMTP password must be set via the SMTP_PASS environment variable for security.",
+    "sendTestEmail": "Send Test Email",
+    "testEmailSent": "Test email sent successfully.",
+    "emailNotConfigured": "Email not configured. Set SMTP_HOST to enable email sending."
+  }
 }

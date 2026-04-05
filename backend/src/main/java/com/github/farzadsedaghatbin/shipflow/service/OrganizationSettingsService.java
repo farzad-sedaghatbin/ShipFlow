@@ -96,6 +96,24 @@ public class OrganizationSettingsService {
         if (request.getEnableAIFeatures() != null) {
             settings.setEnableAIFeatures(request.getEnableAIFeatures());
         }
+        if (request.getEmailNotificationsEnabled() != null) {
+            settings.setEmailNotificationsEnabled(request.getEmailNotificationsEnabled());
+        }
+        if (request.getSmtpHost() != null) {
+            settings.setSmtpHost(request.getSmtpHost());
+        }
+        if (request.getSmtpPort() != null) {
+            settings.setSmtpPort(request.getSmtpPort());
+        }
+        if (request.getSmtpUsername() != null) {
+            settings.setSmtpUsername(request.getSmtpUsername());
+        }
+        if (request.getSmtpFrom() != null) {
+            settings.setSmtpFrom(request.getSmtpFrom());
+        }
+        if (request.getSmtpTlsEnabled() != null) {
+            settings.setSmtpTlsEnabled(request.getSmtpTlsEnabled());
+        }
 
         settings.setUpdatedBy(username);
         settings.setUpdatedAt(LocalDateTime.now());
@@ -283,6 +301,10 @@ public class OrganizationSettingsService {
                 .dateFormat("MM/DD/YYYY")
                 .enableNotifications(true)
                 .enableAIFeatures(true)
+                .emailNotificationsEnabled(true)
+                .smtpPort(587)
+                .smtpFrom("noreply@shipflow.dev")
+                .smtpTlsEnabled(true)
                 .updatedBy(username)
                 .build();
 
@@ -327,6 +349,12 @@ public class OrganizationSettingsService {
                 .dateFormat(entity.getDateFormat())
                 .enableNotifications(entity.getEnableNotifications())
                 .enableAIFeatures(entity.getEnableAIFeatures())
+                .emailNotificationsEnabled(entity.getEmailNotificationsEnabled())
+                .smtpHost(entity.getSmtpHost())
+                .smtpPort(entity.getSmtpPort())
+                .smtpUsername(entity.getSmtpUsername())
+                .smtpFrom(entity.getSmtpFrom())
+                .smtpTlsEnabled(entity.getSmtpTlsEnabled())
                 .updatedAt(entity.getUpdatedAt())
                 .updatedBy(entity.getUpdatedBy())
                 .build();

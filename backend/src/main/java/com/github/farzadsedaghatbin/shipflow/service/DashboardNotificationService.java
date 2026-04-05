@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,6 +38,7 @@ public class DashboardNotificationService {
     private final HillChartPointRepository hillChartPointRepository;
     private final UserRepository userRepository;
     private final SlackIntegrationService slackService;
+    private final IEmailNotificationService emailService;
 
     /**
      * Get all notifications for a user
@@ -131,8 +133,20 @@ public class DashboardNotificationService {
             "TASK",
             task.getId()
         );
-        
-        log.info("Created task assignment notification for user {} on task {}", 
+
+        // Send email notification
+        if (assignee.getEmail() != null && !assignee.getEmail().isBlank()) {
+            String recipientName = assignee.getPerson() != null && assignee.getPerson().getName() != null
+                    ? assignee.getPerson().getName()
+                    : assignee.getUsername();
+            emailService.sendTaskAssigned(
+                    assignee.getEmail(),
+                    recipientName,
+                    task.getTitle(),
+                    "/tasks/" + task.getId());
+        }
+
+        log.info("Created task assignment notification for user {} on task {}",
                 assignee.getId(), task.getId());
     }
 

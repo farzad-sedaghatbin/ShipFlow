@@ -3,6 +3,9 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.RiskProfilesDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSettingsRequest;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * REST controller for organization settings management.
@@ -26,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 public class OrganizationSettingsController {
 
     private final OrganizationSettingsService settingsService;
+    private final IEmailNotificationService emailService;
+    private final UserRepository userRepository;
 
     @GetMapping("/settings")
     @Operation(summary = "Get organization settings")
@@ -60,5 +67,27 @@ public class OrganizationSettingsController {
     public ResponseEntity<RiskProfilesDTO> getRiskProfiles() {
         log.info("Fetching predefined risk profiles");
         return ResponseEntity.ok(RiskProfilesDTO.getDefaultProfiles());
+    }
+
+    @PostMapping("/settings/test-email")
+    @Operation(summary = "Send a test email to the currently logged-in admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> sendTestEmail(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (!emailService.isEnabled()) {
+            return ResponseEntity.ok(Map.of("error", "Email not configured"));
+        }
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        String email = user.getEmail();
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.ok(Map.of("error", "Current user has no email address configured"));
+        }
+        String recipientName = user.getPerson() != null && user.getPerson().getName() != null
+                ? user.getPerson().getName()
+                : user.getUsername();
+        emailService.sendTaskAssigned(email, recipientName, "Test Task — ShipFlow Email Working", "/dashboard");
+        log.info("Test email sent to {} by admin {}", email, userDetails.getUsername());
+        return ResponseEntity.ok(Map.of("message", "Test email sent to " + email));
     }
 }

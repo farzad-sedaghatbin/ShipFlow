@@ -30,4 +30,12 @@ public class UpdateOrganizationSettingsRequest {
     private String dateFormat;
     private Boolean enableNotifications;
     private Boolean enableAIFeatures;
+
+    // Email / SMTP settings
+    private Boolean emailNotificationsEnabled;
+    private String smtpHost;
+    private Integer smtpPort;
+    private String smtpUsername;
+    private String smtpFrom;
+    private Boolean smtpTlsEnabled;
 }

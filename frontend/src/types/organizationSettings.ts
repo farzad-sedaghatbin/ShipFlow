@@ -32,7 +32,15 @@ export interface OrganizationSettings {
   dateFormat: string;
   enableNotifications: boolean;
   enableAIFeatures: boolean;
-  
+
+  // Email / SMTP settings
+  emailNotificationsEnabled: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled: boolean;
+
   updatedAt: string;
   updatedBy: string;
 }
@@ -116,6 +124,14 @@ export interface UpdateOrganizationSettingsRequest {
   dateFormat?: string;
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
+
+  // Email / SMTP settings
+  emailNotificationsEnabled?: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled?: boolean;
 }
 
 export interface RolePermissions {

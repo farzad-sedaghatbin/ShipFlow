@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **S17 — Email Notifications** (v0.9.0)
+  - Pluggable SMTP email service with `IEmailNotificationService` interface, real `EmailNotificationService` (Spring `JavaMailSender` + Thymeleaf), and no-op stub when SMTP is not configured
+  - Three Thymeleaf HTML email templates: task-assigned, mentioned-in-comment, pitch-status-changed — ShipFlow purple (#7c3aed) branding
+  - Email notification fired on task assignment via `DashboardNotificationService.notifyTaskAssignment`
+  - New organization settings: `emailNotificationsEnabled`, `smtpHost`, `smtpPort`, `smtpUsername`, `smtpFrom`, `smtpTlsEnabled` — SMTP password stays in env var (`SMTP_PASS`) for security
+  - Flyway migration V61 adds email columns to `organization_settings`
+  - Admin test-email endpoint `POST /api/admin/settings/test-email` — sends a live test email to the logged-in admin
+  - Frontend "Email" tab in Organization Settings with all SMTP controls and "Send Test Email" button
+  - i18n keys added to `en.json` and `fa.json` under `emailSettings.*`
+
 ## [0.3.2] - 2026-01-28
 
 ### Fixed

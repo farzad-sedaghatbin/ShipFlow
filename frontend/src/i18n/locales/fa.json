@@ -4884,5 +4884,18 @@
     "copyright": "© 2024 ShipFlow. متن‌باز و رایگان.",
     "home": "خانه"
   },
-  "cycleId": "شناسه چرخه"
+  "cycleId": "شناسه چرخه",
+  "emailSettings": {
+    "title": "ایمیل",
+    "enabled": "اعلان‌های ایمیل فعال است",
+    "smtpHost": "میزبان SMTP",
+    "smtpPort": "پورت SMTP",
+    "smtpUsername": "نام کاربری SMTP",
+    "smtpFrom": "آدرس فرستنده",
+    "tlsEnabled": "فعال‌سازی TLS / STARTTLS",
+    "smtpPasswordNote": "رمز عبور SMTP باید از طریق متغیر محیطی SMTP_PASS تنظیم شود.",
+    "sendTestEmail": "ارسال ایمیل آزمایشی",
+    "testEmailSent": "ایمیل آزمایشی با موفقیت ارسال شد.",
+    "emailNotConfigured": "ایمیل پیکربندی نشده است. برای فعال‌سازی SMTP_HOST را تنظیم کنید."
+  }
 }

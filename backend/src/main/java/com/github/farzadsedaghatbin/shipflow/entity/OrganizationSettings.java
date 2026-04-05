@@ -70,6 +70,25 @@ public class OrganizationSettings {
     @Column(nullable = false, name = "enable_ai_features")
     private Boolean enableAIFeatures = true;
 
+    // Email / SMTP settings (password is env-var only — never stored in DB)
+    @Column(nullable = false, name = "email_notifications_enabled")
+    private Boolean emailNotificationsEnabled = true;
+
+    @Column(name = "smtp_host")
+    private String smtpHost;
+
+    @Column(name = "smtp_port")
+    private Integer smtpPort = 587;
+
+    @Column(name = "smtp_username")
+    private String smtpUsername;
+
+    @Column(name = "smtp_from")
+    private String smtpFrom = "noreply@shipflow.dev";
+
+    @Column(nullable = false, name = "smtp_tls_enabled")
+    private Boolean smtpTlsEnabled = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
