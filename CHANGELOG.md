@@ -16,6 +16,16 @@ All notable changes to this project will be documented in this file.
   - i18n keys `emailSettings.*` added to `en.json` and `fa.json`
   - 8 unit tests in `EmailNotificationServiceTest` (no-op stub, SMTP enabled/disabled, each send method, exception safety)
 
+- **MCP Phase 2 Write Tools (S18)**: The ShipFlow MCP server is now fully bidirectional. AI editors (Claude Code, Cursor) can create and mutate data in addition to querying it.
+  - `create_task(cycleId, title, description?, assigneeUsername?, priority?)` — creates a task in a cycle; resolves assignee by username automatically
+  - `update_task_status(taskId, status)` — already existed in Phase 1, now grouped with Phase 2 write tools
+  - `create_pitch(title, problemStatement?, appetiteDays?)` — creates a new pitch in IDEA status
+  - `update_pitch_status(pitchId, status)` — advances a pitch through IDEA → DRAFT → SHAPED → PENDING
+  - `add_comment(entityType, entityId, content)` — adds a comment to a TASK or BUG_REPORT as the API key's owner
+  - All write tools require `MCP_SERVER_WRITE_ENABLED=true` and a WRITE-scoped API key
+  - `MCP_CLIENT_SETUP.md` updated with all Phase 2 tool descriptions
+  - 5 new unit tests in `McpToolDispatcherTest` (14 tests total)
+
 - **Real-Time Notifications via SSE (S16)**: Replaced 30-second polling with instant Server-Sent Events push for the notification center.
   - `GET /api/notifications/stream` — long-lived `text/event-stream` endpoint; each authenticated user holds one active SSE connection
   - `NotificationSseManager` — thread-safe `ConcurrentHashMap`-backed emitter registry; one stream per user, auto-cleans on completion/timeout/error

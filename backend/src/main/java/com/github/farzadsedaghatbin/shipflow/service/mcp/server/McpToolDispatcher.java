@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
@@ -51,6 +52,7 @@ public class McpToolDispatcher {
   private final CycleMcpTools cycleTools;
   private final TaskMcpTools taskTools;
   private final PitchMcpTools pitchTools;
+  private final CommentMcpTools commentTools;
 
   /**
    * Process a JSON-RPC 2.0 request from a given session and send the response via SSE.
@@ -195,6 +197,14 @@ public class McpToolDispatcher {
       case PitchMcpTools.TOOL_GET_PITCHES -> pitchTools.getPitches(args);
       case PitchMcpTools.TOOL_GET_PITCH -> pitchTools.getPitchDetail(args);
       case PitchMcpTools.TOOL_GET_BETTING_CANDIDATES -> pitchTools.getBettingCandidates(args);
+      case PitchMcpTools.TOOL_CREATE_PITCH -> pitchTools.createPitch(args);
+      case PitchMcpTools.TOOL_UPDATE_PITCH_STATUS -> pitchTools.updatePitchStatus(args);
+
+      // Task write tools
+      case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
+
+      // Comment write tools
+      case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args);
 
       default -> throw new McpToolException("Unknown tool: " + name);
     };
@@ -217,11 +227,23 @@ public class McpToolDispatcher {
   }
 
   private List<Map<String, Object>> writeTools() {
-    return List.of(TaskMcpTools.updateTaskStatusDefinition());
+    return List.of(
+        TaskMcpTools.createTaskDefinition(),
+        TaskMcpTools.updateTaskStatusDefinition(),
+        PitchMcpTools.createPitchDefinition(),
+        PitchMcpTools.updatePitchStatusDefinition(),
+        CommentMcpTools.addCommentDefinition());
   }
 
+  private static final java.util.Set<String> WRITE_TOOL_NAMES = java.util.Set.of(
+      TaskMcpTools.TOOL_CREATE_TASK,
+      TaskMcpTools.TOOL_UPDATE_TASK_STATUS,
+      PitchMcpTools.TOOL_CREATE_PITCH,
+      PitchMcpTools.TOOL_UPDATE_PITCH_STATUS,
+      CommentMcpTools.TOOL_ADD_COMMENT);
+
   private boolean isWriteTool(String name) {
-    return TaskMcpTools.TOOL_UPDATE_TASK_STATUS.equals(name);
+    return WRITE_TOOL_NAMES.contains(name);
   }
 
   /**

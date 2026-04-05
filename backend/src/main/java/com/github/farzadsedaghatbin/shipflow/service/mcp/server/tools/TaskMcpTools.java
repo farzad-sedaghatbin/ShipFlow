@@ -1,11 +1,16 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools;
 
+import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.mcp.McpTaskDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class TaskMcpTools {
 
   private final TaskService taskService;
+  private final UserRepository userRepository;
 
   // ── Tool definitions ──────────────────────────────────────────────────────
 
@@ -24,6 +30,7 @@ public class TaskMcpTools {
   public static final String TOOL_GET_TASK = "get_task";
   public static final String TOOL_GET_BLOCKERS = "get_blockers";
   public static final String TOOL_UPDATE_TASK_STATUS = "update_task_status";
+  public static final String TOOL_CREATE_TASK = "create_task";
 
   public static Map<String, Object> getTasksDefinition() {
     return Map.of(
@@ -86,6 +93,39 @@ public class TaskMcpTools {
                             "type", "integer",
                             "description", "Filter by project ID")),
                 "required", List.of()));
+  }
+
+  public static Map<String, Object> createTaskDefinition() {
+    return Map.of(
+        "name",
+        TOOL_CREATE_TASK,
+        "description",
+            "Create a new task inside a cycle. Returns the created task. "
+                + "Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type",
+                "object",
+                "properties",
+                    Map.of(
+                        "cycleId",
+                        Map.of("type", "integer", "description", "ID of the cycle to add the task to"),
+                        "title",
+                        Map.of("type", "string", "description", "Task title (required)"),
+                        "description",
+                        Map.of("type", "string", "description", "Optional task description"),
+                        "assigneeUsername",
+                        Map.of("type", "string", "description", "Optional username to assign the task to"),
+                        "priority",
+                        Map.of(
+                            "type",
+                            "string",
+                            "description",
+                            "Task priority: LOW, MEDIUM, HIGH, URGENT (default MEDIUM)",
+                            "enum",
+                            List.of("LOW", "MEDIUM", "HIGH", "URGENT"))),
+                "required",
+                List.of("cycleId", "title")));
   }
 
   public static Map<String, Object> updateTaskStatusDefinition() {
@@ -158,6 +198,47 @@ public class TaskMcpTools {
     }
     TaskDTO updated = taskService.updateTaskStatus(taskId, status);
     return McpTaskDTO.from(updated);
+  }
+
+  public McpTaskDTO createTask(Map<String, Object> args) {
+    Object cycleIdArg = args.get("cycleId");
+    if (cycleIdArg == null) {
+      throw new IllegalArgumentException("Missing required argument: cycleId");
+    }
+    Object titleArg = args.get("title");
+    if (titleArg == null || titleArg.toString().isBlank()) {
+      throw new IllegalArgumentException("Missing required argument: title");
+    }
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setCycleId(toLong(cycleIdArg));
+    request.setTitle(titleArg.toString().trim());
+
+    Object descriptionArg = args.get("description");
+    if (descriptionArg != null) {
+      request.setDescription(descriptionArg.toString());
+    }
+
+    Object priorityArg = args.get("priority");
+    if (priorityArg != null) {
+      try {
+        request.setPriority(TaskPriority.valueOf(priorityArg.toString().toUpperCase()));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            "Invalid priority '" + priorityArg + "'. Must be LOW, MEDIUM, HIGH, or URGENT");
+      }
+    }
+
+    Object assigneeUsernameArg = args.get("assigneeUsername");
+    if (assigneeUsernameArg != null && !assigneeUsernameArg.toString().isBlank()) {
+      Optional<User> assignee = userRepository.findByUsernameWithPerson(assigneeUsernameArg.toString());
+      if (assignee.isPresent() && assignee.get().getPerson() != null) {
+        request.setAssigneeId(assignee.get().getPerson().getId());
+      }
+    }
+
+    TaskDTO created = taskService.createTask(request);
+    return McpTaskDTO.from(created);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

@@ -6692,5 +6692,12 @@
     "sendTestEmail": "ارسال ایمیل آزمایشی",
     "testEmailSent": "ایمیل آزمایشی با موفقیت ارسال شد.",
     "emailNotConfigured": "ایمیل پیکربندی نشده است. برای فعال‌سازی SMTP_HOST را تنظیم کنید."
+  },
+  "mcpWriteTools": {
+    "createTask": "ایجاد وظیفه از طریق MCP",
+    "createPitch": "ایجاد پیچ از طریق MCP",
+    "updatePitchStatus": "به‌روزرسانی وضعیت پیچ از طریق MCP",
+    "addComment": "افزودن نظر از طریق MCP",
+    "writeToolsEnabled": "ابزارهای نوشتاری فعال است"
   }
 }

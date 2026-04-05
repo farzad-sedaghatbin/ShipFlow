@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools;
 
+import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.mcp.McpPitchDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,8 @@ public class PitchMcpTools {
   public static final String TOOL_GET_PITCHES = "get_pitches";
   public static final String TOOL_GET_PITCH = "get_pitch_detail";
   public static final String TOOL_GET_BETTING_CANDIDATES = "get_betting_candidates";
+  public static final String TOOL_CREATE_PITCH = "create_pitch";
+  public static final String TOOL_UPDATE_PITCH_STATUS = "update_pitch_status";
 
   public static Map<String, Object> getPitchesDefinition() {
     return Map.of(
@@ -99,6 +103,61 @@ public class PitchMcpTools {
                 "required", List.of()));
   }
 
+  public static Map<String, Object> createPitchDefinition() {
+    return Map.of(
+        "name",
+        TOOL_CREATE_PITCH,
+        "description",
+            "Create a new pitch (Shape Up artefact). The pitch starts in IDEA status. "
+                + "Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type",
+                "object",
+                "properties",
+                    Map.of(
+                        "title",
+                        Map.of("type", "string", "description", "Pitch title (required)"),
+                        "problemStatement",
+                        Map.of("type", "string", "description", "What problem does this solve?"),
+                        "appetiteDays",
+                        Map.of(
+                            "type",
+                            "integer",
+                            "description",
+                            "Time budget in days (e.g. 14 for a Small Batch, 42 for a Big Batch)")),
+                "required",
+                List.of("title")));
+  }
+
+  public static Map<String, Object> updatePitchStatusDefinition() {
+    return Map.of(
+        "name",
+        TOOL_UPDATE_PITCH_STATUS,
+        "description",
+            "Update the status of a pitch. Valid statuses: IDEA, DRAFT, SHAPED, PENDING. "
+                + "Use SHAPED to mark a pitch as ready for the betting table. "
+                + "Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type",
+                "object",
+                "properties",
+                    Map.of(
+                        "pitchId",
+                        Map.of("type", "integer", "description", "The numeric pitch ID"),
+                        "status",
+                        Map.of(
+                            "type",
+                            "string",
+                            "description",
+                            "New status: IDEA, DRAFT, SHAPED, or PENDING",
+                            "enum",
+                            List.of("IDEA", "DRAFT", "SHAPED", "PENDING"))),
+                "required",
+                List.of("pitchId", "status")));
+  }
+
   // ── Implementations ───────────────────────────────────────────────────────
 
   public List<McpPitchDTO> getPitches(Map<String, Object> args) {
@@ -137,6 +196,50 @@ public class PitchMcpTools {
     return pitchService.getBettingCandidates().stream()
         .map(McpPitchDTO::from)
         .toList();
+  }
+
+  public McpPitchDTO createPitch(Map<String, Object> args) {
+    Object titleArg = args.get("title");
+    if (titleArg == null || titleArg.toString().isBlank()) {
+      throw new IllegalArgumentException("Missing required argument: title");
+    }
+
+    CreatePitchRequest request = new CreatePitchRequest();
+    request.setTitle(titleArg.toString().trim());
+
+    Object problemArg = args.get("problemStatement");
+    if (problemArg != null) {
+      request.setProblemStatement(problemArg.toString());
+    }
+
+    Object appetiteArg = args.get("appetiteDays");
+    if (appetiteArg instanceof Number n) {
+      request.setAppetiteDays(n.intValue());
+    } else if (appetiteArg != null) {
+      try {
+        request.setAppetiteDays(Integer.parseInt(appetiteArg.toString()));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("appetiteDays must be an integer, got: " + appetiteArg);
+      }
+    }
+
+    return McpPitchDTO.from(pitchService.createPitch(request));
+  }
+
+  public McpPitchDTO updatePitchStatus(Map<String, Object> args) {
+    long pitchId = toLong(args.get("pitchId"));
+    String statusStr = (String) args.get("status");
+    if (statusStr == null || statusStr.isBlank()) {
+      throw new IllegalArgumentException("Missing required argument: status");
+    }
+    PitchStatus status;
+    try {
+      status = PitchStatus.valueOf(statusStr.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          "Invalid status '" + statusStr + "'. Must be IDEA, DRAFT, SHAPED, or PENDING");
+    }
+    return McpPitchDTO.from(pitchService.updateStatus(pitchId, status));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

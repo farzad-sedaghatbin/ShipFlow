@@ -7,10 +7,14 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.ProjectDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
-import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.comment.CommentDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.CommentService;
 import com.github.farzadsedaghatbin.shipflow.service.CycleService;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
 import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
@@ -18,6 +22,7 @@ import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSession;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
@@ -48,6 +53,8 @@ class McpToolDispatcherTest {
   @Mock private CycleService cycleService;
   @Mock private TaskService taskService;
   @Mock private PitchService pitchService;
+  @Mock private CommentService commentService;
+  @Mock private UserRepository userRepository;
   @Mock private Authentication auth;
 
   private McpToolDispatcher dispatcher;
@@ -66,12 +73,13 @@ class McpToolDispatcherTest {
 
     ProjectMcpTools projectTools = new ProjectMcpTools(projectService);
     CycleMcpTools cycleTools = new CycleMcpTools(cycleService);
-    TaskMcpTools taskTools = new TaskMcpTools(taskService);
+    TaskMcpTools taskTools = new TaskMcpTools(taskService, userRepository);
     PitchMcpTools pitchTools = new PitchMcpTools(pitchService);
+    CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
-        projectTools, cycleTools, taskTools, pitchTools);
+        projectTools, cycleTools, taskTools, pitchTools, commentTools);
 
     McpSession session = new McpSession(
         SESSION_ID,
@@ -306,6 +314,174 @@ class McpToolDispatcherTest {
     assertThat((String) error.get("message")).contains("Write tools are disabled");
   }
 
+  // ── Write tool tests ──────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_createTask_returnsCreatedTask() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    TaskDTO task = TaskDTO.builder().id(99L).title("New Task from MCP").build();
+    when(taskService.createTask(org.mockito.ArgumentMatchers.any())).thenReturn(task);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "create_task",
+            "arguments", Map.of("cycleId", 1, "title", "New Task from MCP")),
+        "id", 10);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("New Task from MCP");
+  }
+
+  @Test
+  void toolsCall_createPitch_returnsCreatedPitch() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    PitchDTO pitch = PitchDTO.builder().id(55L).title("New Pitch from MCP").status(PitchStatus.IDEA).build();
+    when(pitchService.createPitch(org.mockito.ArgumentMatchers.any())).thenReturn(pitch);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "create_pitch",
+            "arguments", Map.of(
+                "title", "New Pitch from MCP",
+                "problemStatement", "Users can't find their tasks",
+                "appetiteDays", 14)),
+        "id", 11);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("New Pitch from MCP");
+  }
+
+  @Test
+  void toolsCall_updatePitchStatus_returnsPitch() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    PitchDTO pitch = PitchDTO.builder().id(42L).title("Auth Revamp").status(PitchStatus.SHAPED).build();
+    when(pitchService.updateStatus(42L, PitchStatus.SHAPED)).thenReturn(pitch);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_pitch_status",
+            "arguments", Map.of("pitchId", 42, "status", "SHAPED")),
+        "id", 12);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("SHAPED");
+  }
+
+  @Test
+  void toolsCall_addComment_rejectsWhenWriteDisabled() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "add_comment",
+            "arguments", Map.of("entityType", "TASK", "entityId", 1, "content", "Looks good")),
+        "id", 13);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
+  }
+
+  @Test
+  void toolsList_writeEnabled_includesAllPhase2Tools() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/list",
+        "id", 14);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
+    List<String> toolNames = tools.stream().map(t -> (String) t.get("name")).toList();
+
+    assertThat(toolNames).contains(
+        "create_task", "update_task_status",
+        "create_pitch", "update_pitch_status",
+        "add_comment");
+  }
+
   // ── Tool definitions ──────────────────────────────────────────────────────
 
   @Test
@@ -326,10 +502,14 @@ class McpToolDispatcherTest {
         TaskMcpTools.getTasksDefinition(),
         TaskMcpTools.getTaskDefinition(),
         TaskMcpTools.getBlockersDefinition(),
+        TaskMcpTools.createTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
         PitchMcpTools.getPitchesDefinition(),
         PitchMcpTools.getPitchDetailDefinition(),
-        PitchMcpTools.getBettingCandidatesDefinition());
+        PitchMcpTools.getBettingCandidatesDefinition(),
+        PitchMcpTools.createPitchDefinition(),
+        PitchMcpTools.updatePitchStatusDefinition(),
+        CommentMcpTools.addCommentDefinition());
 
     for (Map<String, Object> def : all) {
       assertThat(def).as("Tool definition " + def.get("name"))
