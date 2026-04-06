@@ -30,4 +30,9 @@ export const organizationSettingsService = {
    * Reset settings to defaults
    */
   resetToDefaults: () => api.post<OrganizationSettings>('/admin/settings/reset'),
+
+  /**
+   * Send a test email to the currently logged-in admin
+   */
+  sendTestEmail: () => api.post<{ message?: string; error?: string }>('/admin/settings/test-email'),
 };

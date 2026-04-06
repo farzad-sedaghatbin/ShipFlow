@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **SMTP Email Notifications (S17)**: Pluggable email notification service wired into task assignment and @mention events.
+  - `IEmailNotificationService` interface with two implementations: `EmailNotificationService` (real SMTP/Thymeleaf, active when `SMTP_HOST` is set) and `NoOpEmailNotificationService` (stub, auto-registered otherwise — app starts without mail config)
+  - Three Thymeleaf HTML templates: `task-assigned`, `mentioned-in-comment`, `pitch-status-changed` (ShipFlow purple `#7c3aed` branding)
+  - `DashboardNotificationService` wires email send on task assignment and @mention events (after existing Slack notification)
+  - `V2026_04_05_0003` Flyway migration adds six SMTP columns to `organization_settings` (SMTP password is env-var only — never stored in DB)
+  - `POST /api/admin/settings/test-email` endpoint — sends test task-assigned email to logged-in admin
+  - Frontend **Email** tab added to Organization Settings page with SMTP host/port/username/from/TLS controls and **Send Test Email** button
+  - `spring-boot-starter-mail` and `spring-boot-starter-thymeleaf` added to `pom.xml`
+  - i18n keys `emailSettings.*` added to `en.json` and `fa.json`
+  - 8 unit tests in `EmailNotificationServiceTest` (no-op stub, SMTP enabled/disabled, each send method, exception safety)
+
 - **Real-Time Notifications via SSE (S16)**: Replaced 30-second polling with instant Server-Sent Events push for the notification center.
   - `GET /api/notifications/stream` — long-lived `text/event-stream` endpoint; each authenticated user holds one active SSE connection
   - `NotificationSseManager` — thread-safe `ConcurrentHashMap`-backed emitter registry; one stream per user, auto-cleans on completion/timeout/error

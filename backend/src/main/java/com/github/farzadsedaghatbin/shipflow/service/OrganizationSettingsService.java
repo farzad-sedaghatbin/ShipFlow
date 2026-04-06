@@ -106,6 +106,26 @@ public class OrganizationSettingsService {
       settings.setDefaultWorkingDaysPerWeek(request.getDefaultWorkingDaysPerWeek());
     }
 
+    // Email / SMTP settings
+    if (request.getEmailNotificationsEnabled() != null) {
+      settings.setEmailNotificationsEnabled(request.getEmailNotificationsEnabled());
+    }
+    if (request.getSmtpHost() != null) {
+      settings.setSmtpHost(request.getSmtpHost());
+    }
+    if (request.getSmtpPort() != null) {
+      settings.setSmtpPort(request.getSmtpPort());
+    }
+    if (request.getSmtpUsername() != null) {
+      settings.setSmtpUsername(request.getSmtpUsername());
+    }
+    if (request.getSmtpFrom() != null) {
+      settings.setSmtpFrom(request.getSmtpFrom());
+    }
+    if (request.getSmtpTlsEnabled() != null) {
+      settings.setSmtpTlsEnabled(request.getSmtpTlsEnabled());
+    }
+
     // Wise Architecture Feature Flag
     if (request.getEnableWiseArchitecture() != null) {
       settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
@@ -235,6 +255,7 @@ public class OrganizationSettingsService {
         .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
         .meetingTypesJson(toJson(defaultMeetingTypes))
         .timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true).enableAIFeatures(true)
+        .emailNotificationsEnabled(true).smtpPort(587).smtpFrom("noreply@shipflow.dev").smtpTlsEnabled(true)
         .updatedBy(username).build();
 
     return settingsRepository.save(settings);
@@ -422,6 +443,13 @@ public class OrganizationSettingsService {
         .meetingTypes(meetingTypes)
         .timeZone(entity.getTimeZone()).dateFormat(entity.getDateFormat())
         .enableNotifications(entity.getEnableNotifications()).enableAIFeatures(entity.getEnableAIFeatures())
+        // Email / SMTP settings
+        .emailNotificationsEnabled(entity.getEmailNotificationsEnabled())
+        .smtpHost(entity.getSmtpHost())
+        .smtpPort(entity.getSmtpPort())
+        .smtpUsername(entity.getSmtpUsername())
+        .smtpFrom(entity.getSmtpFrom())
+        .smtpTlsEnabled(entity.getSmtpTlsEnabled())
         .defaultHoursPerDay(entity.getDefaultHoursPerDay())
         .defaultWorkingDaysPerWeek(entity.getDefaultWorkingDaysPerWeek())
         // Wise Architecture Feature Flag

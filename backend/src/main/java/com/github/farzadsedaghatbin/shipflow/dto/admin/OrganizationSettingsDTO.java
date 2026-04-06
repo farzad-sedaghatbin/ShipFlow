@@ -52,6 +52,14 @@ public class OrganizationSettingsDTO {
   private Double defaultHoursPerDay;
   private Integer defaultWorkingDaysPerWeek;
 
+  // Email / SMTP settings (password is env-var only — never stored in DB)
+  private Boolean emailNotificationsEnabled;
+  private String smtpHost;
+  private Integer smtpPort;
+  private String smtpUsername;
+  private String smtpFrom;
+  private Boolean smtpTlsEnabled;
+
   private LocalDateTime updatedAt;
   private String updatedBy;
 

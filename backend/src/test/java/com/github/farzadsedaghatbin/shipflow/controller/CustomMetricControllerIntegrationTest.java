@@ -50,20 +50,21 @@ class CustomMetricControllerIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    // Clean up in correct order due to foreign key constraints
+    // Clean up only metrics and work logs (user/person may be shared with other test classes)
     customMetricRepository.deleteAll();
     workLogRepository.deleteAll();
-    userRepository.deleteAll();
-    personRepository.deleteAll();
 
-    // Create test person
-    testPerson = Person.builder().name("Test User").email("test@example.com").isActive(true).build();
-    testPerson = personRepository.save(testPerson);
-
-    // Create test user
-    testUser = User.builder().username("testuser").password("password").role(UserRole.MEMBER).person(testPerson)
-        .isActive(true).build();
-    testUser = userRepository.save(testUser);
+    // Reuse testuser if it already exists (shared H2 context across test classes)
+    testUser = userRepository.findByUsername("testuser").orElse(null);
+    if (testUser == null) {
+      testPerson = Person.builder().name("Test User").email("test@example.com").isActive(true).build();
+      testPerson = personRepository.save(testPerson);
+      testUser = User.builder().username("testuser").password("password").role(UserRole.MEMBER).person(testPerson)
+          .isActive(true).build();
+      testUser = userRepository.save(testUser);
+    } else {
+      testPerson = testUser.getPerson();
+    }
   }
 
   @Test

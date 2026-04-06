@@ -40,10 +40,18 @@ export interface OrganizationSettings {
   enableNotifications: boolean;
   enableAIFeatures: boolean;
   enableWiseArchitecture: boolean;
-  
+
+  // Email / SMTP settings (password is env-var only — never stored in DB)
+  emailNotificationsEnabled: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled: boolean;
+
   // Figma Integration (for Wise Architecture)
   hasFigmaAccessToken: boolean;
-  
+
   updatedAt: string;
   updatedBy: string;
 }
@@ -134,6 +142,13 @@ export interface UpdateOrganizationSettingsRequest {
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
   enableWiseArchitecture?: boolean;
+  // Email / SMTP settings
+  emailNotificationsEnabled?: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled?: boolean;
   /** Figma access token for Wise Architecture. Set to update, empty string to clear. */
   figmaAccessToken?: string;
 }

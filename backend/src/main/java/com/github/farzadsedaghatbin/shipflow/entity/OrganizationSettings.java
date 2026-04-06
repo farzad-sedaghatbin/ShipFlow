@@ -79,6 +79,29 @@ public class OrganizationSettings {
   @Builder.Default
   private Boolean enableAIFeatures = true;
 
+  // Email / SMTP settings (password is env-var only — never stored in DB)
+  @Column(nullable = false, name = "email_notifications_enabled")
+  @Builder.Default
+  private Boolean emailNotificationsEnabled = true;
+
+  @Column(name = "smtp_host")
+  private String smtpHost;
+
+  @Column(name = "smtp_port")
+  @Builder.Default
+  private Integer smtpPort = 587;
+
+  @Column(name = "smtp_username")
+  private String smtpUsername;
+
+  @Column(name = "smtp_from")
+  @Builder.Default
+  private String smtpFrom = "noreply@shipflow.dev";
+
+  @Column(nullable = false, name = "smtp_tls_enabled")
+  @Builder.Default
+  private Boolean smtpTlsEnabled = true;
+
   // Capacity Configuration
   @Column(nullable = false, name = "default_hours_per_day", columnDefinition = "NUMERIC")
   @Builder.Default
