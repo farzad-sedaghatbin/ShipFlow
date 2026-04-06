@@ -18,9 +18,11 @@ export function PitchStatsRow({ pitch, totalHours, workLogTotalElements }: Pitch
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground mb-1">{t('pitchDetailPage.appetite')}</p>
           <p className="text-3xl font-bold">{pitch.appetiteDays} {t('common.days')}</p>
-          <p className="text-sm text-muted-foreground">
-            ({pitch.appetiteHours?.toFixed(0)} hours)
-          </p>
+          {pitch.appetiteHours != null && (
+            <p className="text-sm text-muted-foreground">
+              ({pitch.appetiteHours.toFixed(0)} hours)
+            </p>
+          )}
         </CardContent>
       </Card>
       <Card>

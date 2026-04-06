@@ -30,17 +30,7 @@ import {
   PitchWorkLogsSection,
   PitchMeetingsSection,
 } from '../components/pitchDetail';
-
-// Shape Up field editing interface
-interface ShapeUpFields {
-  problemStatement: string;
-  solution: string;
-  rabbitHoles: string;
-  risks: string;
-  noGos: string;
-  wireframeLinks: string;
-  appetiteDays?: number;
-}
+import type { ShapeUpFields } from '../components/pitchDetail/PitchShapingSection';
 
 export default function PitchDetail() {
   const { t, i18n } = useTranslation();
@@ -263,9 +253,9 @@ export default function PitchDetail() {
   };
 
   // Check if pitch has any Shape Up content
-  const hasShapeUpContent = pitch && (
-    pitch.problemStatement || pitch.solution || pitch.rabbitHoles ||
-    pitch.risks || pitch.noGos || pitch.wireframeLinks
+  const hasShapeUpContent = Boolean(
+    pitch && (pitch.problemStatement || pitch.solution || pitch.rabbitHoles ||
+    pitch.risks || pitch.noGos || pitch.wireframeLinks)
   );
 
   const handleCreateWorkLog = async () => {

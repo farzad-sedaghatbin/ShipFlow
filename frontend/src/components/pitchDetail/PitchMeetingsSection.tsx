@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
@@ -83,6 +84,7 @@ export function PitchMeetingsSection({
   onToggleChecklistItem,
 }: PitchMeetingsSectionProps) {
   const { t } = useTranslation();
+  const meetingDocUploadRef = useRef<HTMLInputElement>(null);
 
   return (
     <>
@@ -281,9 +283,7 @@ export function PitchMeetingsSection({
                   </p>
                   <div
                     className="border-2 border-dashed border-border rounded-md p-4 text-center cursor-pointer hover:border-primary hover:bg-accent transition-colors"
-                    onClick={() =>
-                      document.getElementById('meeting-doc-upload')?.click()
-                    }
+                    onClick={() => meetingDocUploadRef.current?.click()}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -293,7 +293,7 @@ export function PitchMeetingsSection({
                     }}
                   >
                     <input
-                      id="meeting-doc-upload"
+                      ref={meetingDocUploadRef}
                       type="file"
                       hidden
                       multiple

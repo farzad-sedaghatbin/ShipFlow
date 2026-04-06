@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   X,
@@ -23,7 +24,7 @@ import { Markdown } from '../ui/markdown';
 import MarkdownEditor from '../MarkdownEditor';
 import { Badge } from '../ui/badge';
 
-interface ShapeUpFields {
+export interface ShapeUpFields {
   problemStatement: string;
   solution: string;
   rabbitHoles: string;
@@ -40,7 +41,7 @@ interface PitchShapingSectionProps {
   shapeUpFields: ShapeUpFields;
   extracting: boolean;
   extractedDocumentName: string;
-  hasShapeUpContent: string | boolean | null | undefined;
+  hasShapeUpContent: boolean;
   onSetEditingShapeUp: (value: boolean) => void;
   onSaveShapeUp: () => void;
   onCancelShapeUpEdit: () => void;
@@ -63,6 +64,7 @@ export function PitchShapingSection({
   onShapeUpFieldChange,
 }: PitchShapingSectionProps) {
   const { t } = useTranslation();
+  const extractUploadRef = useRef<HTMLInputElement>(null);
 
   return (
     <Card className="mb-6">
@@ -119,7 +121,7 @@ export function PitchShapingSection({
               )}
               <div
                 className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/50 transition-colors"
-                onClick={() => !extracting && document.getElementById('detail-extract-upload')?.click()}
+                onClick={() => !extracting && extractUploadRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -129,7 +131,7 @@ export function PitchShapingSection({
                 }}
               >
                 <input
-                  id="detail-extract-upload"
+                  ref={extractUploadRef}
                   type="file"
                   hidden
                   accept=".pdf,.doc,.docx,.txt,.md"
