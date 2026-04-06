@@ -425,6 +425,58 @@ class McpToolDispatcherTest {
   }
 
   @Test
+  void toolsCall_addComment_successWhenWriteEnabled() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+    org.mockito.Mockito.doReturn("mcpuser").when(auth).getName();
+
+    com.github.farzadsedaghatbin.shipflow.entity.User mcpUser =
+        com.github.farzadsedaghatbin.shipflow.entity.User.builder()
+            .id(7L)
+            .username("mcpuser")
+            .build();
+    when(userRepository.findByUsername("mcpuser")).thenReturn(Optional.of(mcpUser));
+
+    CommentDTO comment = CommentDTO.builder()
+        .id(101L)
+        .content("Looks good to me!")
+        .build();
+    when(commentService.createComment(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(7L)))
+        .thenReturn(comment);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "add_comment",
+            "arguments", Map.of("entityType", "TASK", "entityId", 5, "content", "Looks good to me!")),
+        "id", 15);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("Looks good to me!");
+
+    org.mockito.Mockito.verify(commentService)
+        .createComment(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(7L));
+  }
+
+  @Test
   void toolsCall_addComment_rejectsWhenWriteDisabled() throws Exception {
     Map<String, Object> request = Map.of(
         "jsonrpc", "2.0",

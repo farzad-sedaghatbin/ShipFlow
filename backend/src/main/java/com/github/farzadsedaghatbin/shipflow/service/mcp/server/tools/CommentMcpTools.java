@@ -11,7 +11,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /** MCP tool implementations for comment operations (write). */
@@ -63,7 +62,14 @@ public class CommentMcpTools {
 
   // ── Implementations ───────────────────────────────────────────────────────
 
-  public CommentDTO addComment(Map<String, Object> args) {
+  /**
+   * Add a comment to a task or bug report as the authenticated MCP user.
+   *
+   * <p>The {@code auth} argument is passed explicitly from the dispatcher so that this method does
+   * not rely on {@link org.springframework.security.core.context.SecurityContextHolder}, which is
+   * unreliable when dispatch runs on an executor thread without security-context propagation.
+   */
+  public CommentDTO addComment(Map<String, Object> args, Authentication auth) {
     String entityTypeStr = (String) args.get("entityType");
     if (entityTypeStr == null || entityTypeStr.isBlank()) {
       throw new IllegalArgumentException("Missing required argument: entityType");
@@ -76,13 +82,13 @@ public class CommentMcpTools {
           "Invalid entityType '" + entityTypeStr + "'. Must be TASK or BUG_REPORT");
     }
 
-    long entityId = toLong(args.get("entityId"));
+    long entityId = toLong(args.get("entityId"), "entityId");
     String content = (String) args.get("content");
     if (content == null || content.isBlank()) {
       throw new IllegalArgumentException("Missing required argument: content");
     }
 
-    User currentUser = resolveCurrentUser();
+    User currentUser = resolveUser(auth);
     CreateCommentRequest request = CreateCommentRequest.builder()
         .content(content)
         .entityType(entityType)
@@ -93,19 +99,18 @@ public class CommentMcpTools {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  private User resolveCurrentUser() {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+  private User resolveUser(Authentication auth) {
     if (auth == null || auth.getName() == null) {
-      throw new SecurityException("No authenticated user found in MCP context");
+      throw new SecurityException("No authenticated user in MCP session");
     }
     return userRepository.findByUsername(auth.getName())
         .orElseThrow(
             () -> new SecurityException("MCP user not found: " + auth.getName()));
   }
 
-  private long toLong(Object val) {
+  private long toLong(Object val, String argName) {
     if (val == null) {
-      throw new IllegalArgumentException("Missing required argument");
+      throw new IllegalArgumentException("Missing required argument: " + argName);
     }
     if (val instanceof Number n) {
       return n.longValue();
@@ -113,7 +118,8 @@ public class CommentMcpTools {
     try {
       return Long.parseLong(val.toString());
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Argument must be a number, got: " + val);
+      throw new IllegalArgumentException(
+          "Argument '" + argName + "' must be a number, got: " + val);
     }
   }
 }

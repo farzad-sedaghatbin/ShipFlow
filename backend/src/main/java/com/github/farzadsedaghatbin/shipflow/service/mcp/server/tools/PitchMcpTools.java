@@ -165,14 +165,15 @@ public class PitchMcpTools {
     Object projectIdArg = args.get("projectId");
 
     if (cycleIdArg != null) {
-      return pitchService.getPitchesByCycleId(toLong(cycleIdArg)).stream()
+      return pitchService.getPitchesByCycleId(toLong(cycleIdArg, "cycleId")).stream()
           .map(McpPitchDTO::from)
           .toList();
     }
     if (projectIdArg != null) {
       // Use accessible pitches filtered client-side by project
+      long projectId = toLong(projectIdArg, "projectId");
       return pitchService.getAccessiblePitches().stream()
-          .filter(p -> toLong(projectIdArg) == p.getProjectId())
+          .filter(p -> projectId == p.getProjectId())
           .map(McpPitchDTO::from)
           .toList();
     }
@@ -182,14 +183,14 @@ public class PitchMcpTools {
   }
 
   public McpPitchDTO getPitchDetail(Map<String, Object> args) {
-    long pitchId = toLong(args.get("pitchId"));
+    long pitchId = toLong(args.get("pitchId"), "pitchId");
     return McpPitchDTO.from(pitchService.getPitchById(pitchId));
   }
 
   public List<McpPitchDTO> getBettingCandidates(Map<String, Object> args) {
     Object projectIdArg = args.get("projectId");
     if (projectIdArg != null) {
-      return pitchService.getBettingCandidatesByProjectId(toLong(projectIdArg)).stream()
+      return pitchService.getBettingCandidatesByProjectId(toLong(projectIdArg, "projectId")).stream()
           .map(McpPitchDTO::from)
           .toList();
     }
@@ -227,9 +228,13 @@ public class PitchMcpTools {
   }
 
   public McpPitchDTO updatePitchStatus(Map<String, Object> args) {
-    long pitchId = toLong(args.get("pitchId"));
-    String statusStr = (String) args.get("status");
-    if (statusStr == null || statusStr.isBlank()) {
+    long pitchId = toLong(args.get("pitchId"), "pitchId");
+    Object statusArg = args.get("status");
+    if (statusArg == null) {
+      throw new IllegalArgumentException("Missing required argument: status");
+    }
+    String statusStr = statusArg.toString().trim();
+    if (statusStr.isBlank()) {
       throw new IllegalArgumentException("Missing required argument: status");
     }
     PitchStatus status;
@@ -244,9 +249,9 @@ public class PitchMcpTools {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  private long toLong(Object val) {
+  private long toLong(Object val, String argName) {
     if (val == null) {
-      throw new IllegalArgumentException("Missing required argument");
+      throw new IllegalArgumentException("Missing required argument: " + argName);
     }
     if (val instanceof Number n) {
       return n.longValue();
@@ -254,7 +259,8 @@ public class PitchMcpTools {
     try {
       return Long.parseLong(val.toString());
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Argument must be a number, got: " + val);
+      throw new IllegalArgumentException(
+          "Argument '" + argName + "' must be a number, got: " + val);
     }
   }
 }
