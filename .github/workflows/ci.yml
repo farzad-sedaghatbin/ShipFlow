@@ -46,6 +46,8 @@ jobs:
         npm ci
 
     - name: Frontend Tests
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
       run: |
         cd frontend
         npm test -- --run

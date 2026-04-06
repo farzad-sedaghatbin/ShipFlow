@@ -25,12 +25,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
-    pool: 'threads',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: 2,
-        minThreads: 1,
+      forks: {
+        singleFork: false,
+        maxForks: 2,
+        minForks: 1,
       },
     },
     coverage: {
