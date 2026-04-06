@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -7,9 +7,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { ConfirmDialog } from '../ui/confirm-dialog';
-import { OrganizationSettings } from '../../types/organizationSettings';
+import { OrganizationSettings, MeetingTypeConfig, DorDodItem } from '../../types/organizationSettings';
 import { useToast } from '../../contexts';
-import { useState } from 'react';
 
 interface MeetingsSettingsTabProps {
   formData: Partial<OrganizationSettings>;
@@ -58,7 +57,7 @@ export function MeetingsSettingsTab({ formData, setFormData }: MeetingsSettingsT
     }, 100);
   };
 
-  const updateMeetingType = (typeIndex: number, updates: any) => {
+  const updateMeetingType = (typeIndex: number, updates: Partial<MeetingTypeConfig>) => {
     const newMeetingTypes = [...(formData.meetingTypes || [])];
     newMeetingTypes[typeIndex] = { ...newMeetingTypes[typeIndex], ...updates };
     setFormData({ ...formData, meetingTypes: newMeetingTypes });
@@ -104,7 +103,7 @@ export function MeetingsSettingsTab({ formData, setFormData }: MeetingsSettingsT
     setFormData({ ...formData, meetingTypes: newMeetingTypes });
   };
 
-  const updateDorItem = (typeIndex: number, actualIndex: number, updates: any) => {
+  const updateDorItem = (typeIndex: number, actualIndex: number, updates: Partial<DorDodItem>) => {
     const newMeetingTypes = [...(formData.meetingTypes || [])];
     const meetingType = newMeetingTypes[typeIndex];
     const newDorItems = [...(meetingType.dorItems || [])];
@@ -113,7 +112,7 @@ export function MeetingsSettingsTab({ formData, setFormData }: MeetingsSettingsT
     setFormData({ ...formData, meetingTypes: newMeetingTypes });
   };
 
-  const updateDodItem = (typeIndex: number, actualIndex: number, updates: any) => {
+  const updateDodItem = (typeIndex: number, actualIndex: number, updates: Partial<DorDodItem>) => {
     const newMeetingTypes = [...(formData.meetingTypes || [])];
     const meetingType = newMeetingTypes[typeIndex];
     const newDodItems = [...(meetingType.dodItems || [])];

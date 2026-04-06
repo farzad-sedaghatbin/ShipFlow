@@ -72,7 +72,7 @@ export function ColorsSettingsTab({ formData, setFormData }: ColorsSettingsTabPr
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      colors: { ...formData.colors!, [key]: e.target.value },
+                      colors: { ...(formData.colors ?? DEFAULT_COLORS), [key]: e.target.value },
                     })
                   }
                   className="w-20 h-10"

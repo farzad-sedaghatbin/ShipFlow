@@ -110,9 +110,10 @@ export default function OrganizationSettingsPage() {
     }
   }, [t, showToast]);
 
+  // Fix: include hasPermission in deps to avoid stale closures
   useEffect(() => {
     hasPermission('SYSTEM', 'MANAGE').then(setCanManageSettings).catch(() => setCanManageSettings(false));
-  }, []);
+  }, [hasPermission]);
 
   useEffect(() => {
     if (canManageSettings) fetchSettings();
@@ -147,7 +148,9 @@ export default function OrganizationSettingsPage() {
     }
   };
 
-  if (canManageSettings === null || loading) {
+  // Fix: separate permission-check spinner from settings-load spinner
+  // so that canManageSettings=false reaches the alert instead of staying on spinner
+  if (canManageSettings === null) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -162,6 +165,14 @@ export default function OrganizationSettingsPage() {
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription>{t('organizationSettings.noPermission')}</AlertDescription>
         </Alert>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }

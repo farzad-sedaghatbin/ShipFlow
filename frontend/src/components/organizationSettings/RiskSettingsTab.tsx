@@ -14,11 +14,14 @@ interface RiskSettingsTabProps {
 export function RiskSettingsTab({ formData, setFormData }: RiskSettingsTabProps) {
   const { t } = useTranslation();
 
-  const updateRiskThreshold = (field: keyof RiskThresholds, value: number) => {
+  const DEFAULT_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
+
+  const updateRiskThreshold = (field: keyof RiskThresholds, rawValue: number) => {
+    const value = Number.isNaN(rawValue) ? 0 : rawValue;
     setFormData({
       ...formData,
       riskThresholds: {
-        ...formData.riskThresholds!,
+        ...(formData.riskThresholds ?? DEFAULT_THRESHOLDS),
         [field]: value,
       },
     });

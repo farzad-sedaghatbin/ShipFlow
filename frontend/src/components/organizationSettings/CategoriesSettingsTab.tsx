@@ -36,7 +36,7 @@ export function CategoriesSettingsTab({ formData }: CategoriesSettingsTabProps) 
                   <div className="text-xs text-muted-foreground">{category.description}</div>
                 </div>
                 <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                  {category.isActive ? 'Active' : 'Inactive'}
+                  {category.isActive ? t('common.active') : t('common.inactive')}
                 </Badge>
               </div>
             ))}
@@ -59,7 +59,7 @@ export function CategoriesSettingsTab({ formData }: CategoriesSettingsTabProps) 
                   <div className="text-xs text-muted-foreground">{category.description}</div>
                 </div>
                 <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                  {category.isActive ? 'Active' : 'Inactive'}
+                  {category.isActive ? t('common.active') : t('common.inactive')}
                 </Badge>
               </div>
             ))}

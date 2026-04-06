@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
-import { OrganizationSettings } from '../../types/organizationSettings';
+import { OrganizationSettings, RiskWeights, RiskProfile } from '../../types/organizationSettings';
 import { organizationSettingsService } from '../../services/organizationSettingsService';
 import { useToast } from '../../contexts';
 
@@ -27,8 +27,9 @@ export function WeightsSettingsTab({ formData, setFormData }: WeightsSettingsTab
   const { t } = useTranslation();
   const { showToast } = useToast();
 
-  const updateRiskWeight = (weightField: string, value: number) => {
-    const currentWeights = formData.riskWeights || DEFAULT_RISK_WEIGHTS;
+  const updateRiskWeight = (weightField: keyof RiskWeights, rawValue: number) => {
+    const value = Number.isNaN(rawValue) ? 0 : rawValue;
+    const currentWeights = formData.riskWeights ?? DEFAULT_RISK_WEIGHTS;
     setFormData({
       ...formData,
       riskWeights: {
@@ -41,14 +42,14 @@ export function WeightsSettingsTab({ formData, setFormData }: WeightsSettingsTab
   const applyRiskProfile = async (profileName: string) => {
     try {
       const response = await organizationSettingsService.getRiskProfiles();
-      const profiles = response.data.profiles;
+      const profiles: RiskProfile[] = response.data.profiles;
 
       if (!profiles || !Array.isArray(profiles)) {
         showToast(t('organizationSettings.failedToLoadProfiles'), 'error');
         return;
       }
 
-      const selectedProfile = profiles.find((p: any) => p.name === profileName);
+      const selectedProfile = profiles.find((p) => p.name === profileName);
 
       if (!selectedProfile) {
         showToast(t('organizationSettings.profileNotFound', { profile: profileName }), 'error');
@@ -116,12 +117,14 @@ export function WeightsSettingsTab({ formData, setFormData }: WeightsSettingsTab
 
         {/* Weight Sliders */}
         <div className="space-y-6">
-          {[
-            { key: 'budgetWeight', emoji: '💰', labelKey: 'organizationSettings.budgetWeight', descKey: 'organizationSettings.budgetWeightDesc', default: 25 },
-            { key: 'bugsWeight', emoji: '🐛', labelKey: 'organizationSettings.bugsWeight', descKey: 'organizationSettings.bugsWeightDesc', default: 30 },
-            { key: 'scopeWeight', emoji: '📊', labelKey: 'organizationSettings.scopeWeight', descKey: 'organizationSettings.scopeWeightDesc', default: 25 },
-            { key: 'timeWeight', emoji: '⏰', labelKey: 'organizationSettings.timeWeight', descKey: 'organizationSettings.timeWeightDesc', default: 20 },
-          ].map(({ key, emoji, labelKey, descKey, default: def }) => (
+          {(
+            [
+              { key: 'budgetWeight' as keyof RiskWeights, emoji: '💰', labelKey: 'organizationSettings.budgetWeight', descKey: 'organizationSettings.budgetWeightDesc', default: 25 },
+              { key: 'bugsWeight' as keyof RiskWeights, emoji: '🐛', labelKey: 'organizationSettings.bugsWeight', descKey: 'organizationSettings.bugsWeightDesc', default: 30 },
+              { key: 'scopeWeight' as keyof RiskWeights, emoji: '📊', labelKey: 'organizationSettings.scopeWeight', descKey: 'organizationSettings.scopeWeightDesc', default: 25 },
+              { key: 'timeWeight' as keyof RiskWeights, emoji: '⏰', labelKey: 'organizationSettings.timeWeight', descKey: 'organizationSettings.timeWeightDesc', default: 20 },
+            ] as const
+          ).map(({ key, emoji, labelKey, descKey, default: def }) => (
             <div key={key} className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor={key} className="font-medium">{emoji} {t(labelKey)}</Label>
@@ -131,7 +134,7 @@ export function WeightsSettingsTab({ formData, setFormData }: WeightsSettingsTab
                     type="number"
                     min="0"
                     max="100"
-                    value={(formData.riskWeights as any)?.[key] ?? def}
+                    value={formData.riskWeights?.[key] ?? def}
                     onChange={(e) => updateRiskWeight(key, parseInt(e.target.value) || 0)}
                     className="w-16 text-center"
                   />
@@ -143,7 +146,7 @@ export function WeightsSettingsTab({ formData, setFormData }: WeightsSettingsTab
                 min="0"
                 max="100"
                 step="5"
-                value={(formData.riskWeights as any)?.[key] ?? def}
+                value={formData.riskWeights?.[key] ?? def}
                 onChange={(e) => updateRiskWeight(key, parseInt(e.target.value))}
                 className="w-full"
               />
