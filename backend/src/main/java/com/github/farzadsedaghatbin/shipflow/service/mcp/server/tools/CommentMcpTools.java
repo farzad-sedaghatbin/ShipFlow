@@ -70,8 +70,12 @@ public class CommentMcpTools {
    * unreliable when dispatch runs on an executor thread without security-context propagation.
    */
   public CommentDTO addComment(Map<String, Object> args, Authentication auth) {
-    String entityTypeStr = (String) args.get("entityType");
-    if (entityTypeStr == null || entityTypeStr.isBlank()) {
+    Object entityTypeValue = args.get("entityType");
+    if (entityTypeValue == null) {
+      throw new IllegalArgumentException("Missing required argument: entityType");
+    }
+    String entityTypeStr = entityTypeValue.toString().trim();
+    if (entityTypeStr.isBlank()) {
       throw new IllegalArgumentException("Missing required argument: entityType");
     }
     CommentEntityType entityType;
@@ -83,8 +87,12 @@ public class CommentMcpTools {
     }
 
     long entityId = toLong(args.get("entityId"), "entityId");
-    String content = (String) args.get("content");
-    if (content == null || content.isBlank()) {
+    Object contentValue = args.get("content");
+    if (contentValue == null) {
+      throw new IllegalArgumentException("Missing required argument: content");
+    }
+    String content = contentValue.toString().trim();
+    if (content.isBlank()) {
       throw new IllegalArgumentException("Missing required argument: content");
     }
 

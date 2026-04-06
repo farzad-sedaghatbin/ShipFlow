@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -53,6 +55,16 @@ public class McpToolDispatcher {
   private final TaskMcpTools taskTools;
   private final PitchMcpTools pitchTools;
   private final CommentMcpTools commentTools;
+
+  /**
+   * Names of all write tools, derived once from {@link #writeTools()} at construction time.
+   * Allows O(1) membership checks in {@link #isWriteTool(String)} without rebuilding the
+   * definition list on every {@code tools/call} request.
+   */
+  private static final Set<String> WRITE_TOOL_NAMES =
+      writeToolDefinitions().stream()
+          .map(def -> (String) def.get("name"))
+          .collect(Collectors.toUnmodifiableSet());
 
   /**
    * Process a JSON-RPC 2.0 request from a given session and send the response via SSE.
@@ -226,8 +238,13 @@ public class McpToolDispatcher {
         PitchMcpTools.getBettingCandidatesDefinition());
   }
 
-  /** Single source of truth for all write tool definitions (used for listing and security gate). */
-  private List<Map<String, Object>> writeTools() {
+  /**
+   * Single source of truth for all write tool definitions.
+   *
+   * <p>Static so it can be used to initialise {@link #WRITE_TOOL_NAMES} before any instance
+   * exists, keeping the security-gate set and the tool-list perfectly in sync.
+   */
+  private static List<Map<String, Object>> writeToolDefinitions() {
     return List.of(
         TaskMcpTools.createTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
@@ -236,9 +253,14 @@ public class McpToolDispatcher {
         CommentMcpTools.addCommentDefinition());
   }
 
+  /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */
+  private List<Map<String, Object>> writeTools() {
+    return writeToolDefinitions();
+  }
+
   private boolean isWriteTool(String name) {
-    // Derived from writeTools() to avoid duplicate definition that could drift out of sync
-    return writeTools().stream().anyMatch(def -> name.equals(def.get("name")));
+    // O(1) lookup — set is built once from writeToolDefinitions() at class-load time
+    return WRITE_TOOL_NAMES.contains(name);
   }
 
   /**
