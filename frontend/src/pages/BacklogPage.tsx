@@ -1,6 +1,6 @@
 import { FileText, Wrench } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { TaskCategory } from '../types';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TaskCategory, Task } from '../types';
 import TimerWidget from '../components/TimerWidget';
 import KanbanBoard from '../components/KanbanBoard';
 import { BacklogSkeleton } from '../components/Skeletons';
@@ -27,12 +27,16 @@ export default function BacklogPage() {
   const kanbanProps = {
     tasks: bp.tasks,
     onStatusChange: bp.handleQuickStatusChange,
-    onViewTask: (task: any) => bp.setViewDialog({ open: true, task }),
+    // Fix: use handleViewTask so subtasks are loaded and view history is tracked
+    onViewTask: (task: Task) => bp.handleViewTask(task),
     onEditTask: bp.handleOpenDialog,
     onDeleteTask: (taskId: number) => bp.setDeleteDialog({ open: true, taskId }),
     onAddSubtask: bp.handleAddSubTask,
     onStartTimer: bp.handleStartTimer,
     loading: bp.tasksLoading,
+    // Fix: wire column visibility controls
+    visibleColumns: bp.visibleColumns,
+    onToggleColumn: bp.handleToggleColumn,
   };
 
   const taskTableProps = {
@@ -82,43 +86,38 @@ export default function BacklogPage() {
       />
 
       <Tabs value={bp.activeCategory} onValueChange={(v) => bp.handleCategoryChange(v as TaskCategory)} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="PITCH_SCOPE" className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'PITCH_SCOPE' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+            onClick={() => bp.handleCategoryChange('PITCH_SCOPE')}
+          >
             <FileText className="h-4 w-4" />
             {bp.isKanbanProject ? t('backlogPage.featureTasks') : t('backlogPage.pitchTasks')}
-          </TabsTrigger>
-          <TabsTrigger value="DEBT_IMPROVEMENT" className="flex items-center gap-2">
+          </button>
+          <button
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'DEBT_IMPROVEMENT' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+            onClick={() => bp.handleCategoryChange('DEBT_IMPROVEMENT')}
+          >
             <Wrench className="h-4 w-4" />
             {t('backlogPage.debtImprovements')}
-          </TabsTrigger>
-        </TabsList>
+          </button>
+        </div>
       </Tabs>
 
       {bp.statistics && <BacklogStatistics statistics={bp.statistics} />}
 
       <Tabs value={bp.tabValue} onValueChange={bp.setTabValue} className="w-full">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="all">{t('backlogPage.allTasks')}</TabsTrigger>
-            <TabsTrigger value="my">{t('backlogPage.myTasks')}</TabsTrigger>
-          </TabsList>
-          <BacklogFilters
-            statusFilter={bp.statusFilter}
-            priorityFilter={bp.priorityFilter}
-            assigneeFilter={bp.assigneeFilter}
-            dependencyFilter={bp.dependencyFilter}
-            statusDropdownOpen={bp.statusDropdownOpen}
-            priorityDropdownOpen={bp.priorityDropdownOpen}
-            dependencyDropdownOpen={bp.dependencyDropdownOpen}
-            onStatusDropdownOpenChange={bp.setStatusDropdownOpen}
-            onPriorityDropdownOpenChange={bp.setPriorityDropdownOpen}
-            onDependencyDropdownOpenChange={bp.setDependencyDropdownOpen}
-            onStatusFilterChange={bp.setStatusFilter}
-            onPriorityFilterChange={bp.setPriorityFilter}
-            onDependencyFilterChange={bp.setDependencyFilter}
-            onClearFilters={bp.handleClearFilters}
-          />
-        </div>
+        <BacklogFilters
+          onTabChange={(tab) => bp.setTabValue(tab)}
+          statusFilter={bp.statusFilter}
+          onStatusFilterChange={bp.handleToggleStatusFilter}
+          priorityFilter={bp.priorityFilter}
+          onPriorityFilterChange={bp.handleTogglePriorityFilter}
+          dependencyFilter={bp.dependencyFilter}
+          onDependencyFilterChange={bp.setDependencyFilter}
+          hasActiveFilters={bp.hasActiveFilters}
+          onClearFilters={bp.handleClearFilters}
+        />
 
         <TabsContent value="all" className="mt-0">
           {bp.viewMode === 'kanban' ? <KanbanBoard {...kanbanProps} /> : <BacklogTaskTable {...taskTableProps} />}

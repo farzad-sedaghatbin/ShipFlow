@@ -25,6 +25,9 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { useProject, useAuth } from '../contexts';
 import { ViewMode } from '../components/backlog';
 
+// Large page size for Kanban — fetches effectively all tasks for the board
+const KANBAN_PAGE_SIZE = 500;
+
 export function useBacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,6 +58,11 @@ export function useBacklogPage() {
   const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
 
+  // Kanban column visibility
+  const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
+    'BACKLOG', 'TODO', 'IN_PROGRESS', 'BLOCKED', 'IN_REVIEW', 'DONE', 'CANCELLED',
+  ]);
+
   // Filters / sort / pagination
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
@@ -68,7 +76,7 @@ export function useBacklogPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Filter dropdown open states
+  // Bulk selection + dropdown open states
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
@@ -95,7 +103,8 @@ export function useBacklogPage() {
 
   useEffect(() => { loadInitialData(); loadActiveTimer(); }, []);
 
-  useEffect(() => { if (currentProject) loadInitialData(); }, [currentProject?.id, isKanbanProject]);
+  // Fix: run loadInitialData on every project switch (including "All Projects" where currentProject is null)
+  useEffect(() => { loadInitialData(); }, [currentProject?.id, isKanbanProject]);
 
   useEffect(() => {
     if (dialogOpen) {
@@ -104,11 +113,22 @@ export function useBacklogPage() {
     }
   }, [dialogOpen, formData.cycleId]);
 
+  // Fix: include searchQuery, releaseFilter, viewMode in deps
   useEffect(() => {
     if (isKanbanProject && currentProject) { loadTasks(); loadStatistics(); }
     else if (selectedCycle) { loadTasks(); loadStatistics(); }
     else { setTasks([]); setTotalElements(0); setTasksLoading(false); setStatistics(null); }
-  }, [selectedCycle, currentProject?.id, isKanbanProject, activeCategory, tabValue, statusFilter, priorityFilter, assigneeFilter, excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter]);
+  }, [
+    selectedCycle, currentProject?.id, isKanbanProject, viewMode,
+    activeCategory, tabValue,
+    statusFilter, priorityFilter, assigneeFilter, releaseFilter, searchQuery,
+    excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter,
+  ]);
+
+  // Fix: clear bulk selection when visible task set changes
+  useEffect(() => {
+    setSelectedTaskIds(new Set());
+  }, [tasks]);
 
   useEffect(() => {
     if (categoryFromUrl && categoryFromUrl !== activeCategory) setActiveCategory(categoryFromUrl);
@@ -118,21 +138,22 @@ export function useBacklogPage() {
 
   const loadInitialData = async () => {
     try {
-      const [cyclesRes, personsRes] = await Promise.all([cycleService.getMyActiveCycles(), personService.getAll()]);
+      // Fix: use project-scoped cycles when a project is selected
+      const cyclesPromise = currentProject
+        ? cycleService.getActiveByProject(currentProject.id)
+        : cycleService.getMyActiveCycles();
+      const [cyclesRes, personsRes] = await Promise.all([cyclesPromise, personService.getAll()]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
       if (currentProject) {
         const projectCycles = cyclesRes.data.filter((c: Cycle) => c.projectId === currentProject.id);
         setSelectedCycle(projectCycles.length > 0 ? projectCycles[0].id : 'all');
-      } else {
-        setSelectedCycle('all');
-      }
-      if (currentProject?.id) {
         try {
           const releasesRes = await releaseService.getByProject(currentProject.id);
           setReleases(releasesRes.data);
         } catch { setReleases([]); }
       } else {
+        setSelectedCycle('all');
         setReleases([]);
       }
     } catch (error) { console.error('Failed to load data:', error); }
@@ -165,7 +186,10 @@ export function useBacklogPage() {
       setTasksLoading(true);
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       try {
-        const response = await taskService.getByProjectIdAndCategory(currentProject.id, activeCategory, page, rowsPerPage, sortBy, sortOrder);
+        // Fix: Kanban fetches a large unpaginated set so all columns are populated
+        const response = await taskService.getByProjectIdAndCategory(
+          currentProject.id, activeCategory, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
+        );
         let filtered = applyCommonFilters(response?.data?.content || []);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
         setTasks(filtered);
@@ -230,6 +254,28 @@ export function useBacklogPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
+  const handleToggleColumn = (status: TaskStatus) => {
+    setVisibleColumns(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status],
+    );
+  };
+
+  // Toggle single status in filter (matches new BacklogFilters interface)
+  const handleToggleStatusFilter = (status: TaskStatus) => {
+    setStatusFilter(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status],
+    );
+    setPage(0);
+  };
+
+  // Toggle single priority in filter (matches new BacklogFilters interface)
+  const handleTogglePriorityFilter = (priority: TaskPriority) => {
+    setPriorityFilter(prev =>
+      prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority],
+    );
+    setPage(0);
+  };
+
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
     setFormData({ ...formData, pitchId: pitch });
@@ -244,7 +290,23 @@ export function useBacklogPage() {
   const handleOpenDialog = (task?: Task) => {
     if (task) {
       setEditingTask(task);
-      setFormData({ title: task.title, description: task.description || '', cycleId: task.cycleId, status: task.status, priority: task.priority, estimateHours: task.estimateHours, actualHours: task.actualHours, assigneeId: task.assigneeId, pairAssigneeId: task.pairAssigneeId, dueDate: task.dueDate, tags: task.tags || '', category: task.category || activeCategory });
+      // Fix: include pitchId and parentTaskId when editing
+      setFormData({
+        title: task.title,
+        description: task.description || '',
+        cycleId: task.cycleId,
+        status: task.status,
+        priority: task.priority,
+        estimateHours: task.estimateHours,
+        actualHours: task.actualHours,
+        assigneeId: task.assigneeId,
+        pairAssigneeId: task.pairAssigneeId,
+        dueDate: task.dueDate,
+        tags: task.tags || '',
+        category: task.category || activeCategory,
+        pitchId: task.pitchId,
+        parentTaskId: task.parentTaskId,
+      });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
       if (!isKanbanProject && (!selectedCycle || selectedCycle === 'all')) { toast.error(t('backlogPage.selectCycleToCreate')); return; }
@@ -254,7 +316,7 @@ export function useBacklogPage() {
         if (projectCycles.length > 0) { cycleIdToUse = projectCycles[0].id; } else { toast.error(t('backlogPage.noDefaultCycle')); return; }
       }
       setEditingTask(null);
-      setFormData({ title: '', description: '', cycleId: cycleIdToUse, status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory });
+      setFormData({ title: '', description: '', cycleId: cycleIdToUse, status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory, pitchId: undefined });
       setDueDate(null);
     }
     setDialogOpen(true);
@@ -352,6 +414,7 @@ export function useBacklogPage() {
   const handleClearFilters = () => {
     setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]);
     setDependencyFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
+    setPage(0);
   };
 
   const handleExportCsv = async () => {
@@ -396,6 +459,9 @@ export function useBacklogPage() {
     ? (isKanbanProject ? t('backlogPage.categoryDescription.featureScope') : t('backlogPage.categoryDescription.pitchScope'))
     : t('backlogPage.categoryDescription.debtImprovement');
 
+  const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0
+    || assigneeFilter.length > 0 || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
+
   return {
     // State
     tasks, totalElements, cycles, persons, pitches, releases, statistics, subtasks,
@@ -405,6 +471,7 @@ export function useBacklogPage() {
     tabValue, setTabValue,
     viewMode, setViewMode,
     activeTimerTaskId,
+    visibleColumns,
     statusFilter, setStatusFilter,
     priorityFilter, setPriorityFilter,
     assigneeFilter, setAssigneeFilter,
@@ -419,6 +486,7 @@ export function useBacklogPage() {
     priorityDropdownOpen, setPriorityDropdownOpen,
     dependencyDropdownOpen, setDependencyDropdownOpen,
     assigneeDropdownOpen, setAssigneeDropdownOpen,
+    hasActiveFilters,
     dialogOpen, setDialogOpen,
     editingTask,
     formData, setFormData,
@@ -432,6 +500,9 @@ export function useBacklogPage() {
     currentProject,
 
     // Handlers
+    handleToggleColumn,
+    handleToggleStatusFilter,
+    handleTogglePriorityFilter,
     handlePitchChange,
     handleCategoryChange,
     handleOpenDialog,
