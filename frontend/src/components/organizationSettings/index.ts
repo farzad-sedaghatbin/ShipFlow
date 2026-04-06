@@ -1,0 +1,10 @@
+export { GeneralSettingsTab } from './GeneralSettingsTab';
+export { CycleSettingsTab } from './CycleSettingsTab';
+export { RiskSettingsTab } from './RiskSettingsTab';
+export { WeightsSettingsTab } from './WeightsSettingsTab';
+export { ColorsSettingsTab } from './ColorsSettingsTab';
+export { BugSettingsTab } from './BugSettingsTab';
+export { CategoriesSettingsTab } from './CategoriesSettingsTab';
+export { MeetingsSettingsTab } from './MeetingsSettingsTab';
+export { FeaturesSettingsTab } from './FeaturesSettingsTab';
+export { EmailSettingsTab } from './EmailSettingsTab';

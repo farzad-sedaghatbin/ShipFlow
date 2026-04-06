@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Refactored
+- **OrganizationSettings Decomposition (S25)**: `OrganizationSettings.tsx` reduced from 1740 lines to 271 lines. Each of the 10 settings tabs is now a focused, self-contained component under `src/components/organizationSettings/`: `GeneralSettingsTab`, `CycleSettingsTab`, `RiskSettingsTab`, `WeightsSettingsTab`, `ColorsSettingsTab`, `BugSettingsTab`, `CategoriesSettingsTab`, `MeetingsSettingsTab`, `FeaturesSettingsTab`, `EmailSettingsTab`. The page component is now a pure coordinator: loads settings, manages save/reset, and assembles the tab router.
+
 ### Added
 - **SMTP Email Notifications (S17)**: Pluggable email notification service wired into task assignment and @mention events.
   - `IEmailNotificationService` interface with two implementations: `EmailNotificationService` (real SMTP/Thymeleaf, active when `SMTP_HOST` is set) and `NoOpEmailNotificationService` (stub, auto-registered otherwise — app starts without mail config)
