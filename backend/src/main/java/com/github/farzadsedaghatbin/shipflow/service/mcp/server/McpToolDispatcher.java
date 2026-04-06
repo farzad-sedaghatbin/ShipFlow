@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -51,6 +54,17 @@ public class McpToolDispatcher {
   private final CycleMcpTools cycleTools;
   private final TaskMcpTools taskTools;
   private final PitchMcpTools pitchTools;
+  private final CommentMcpTools commentTools;
+
+  /**
+   * Names of all write tools, derived once from {@link #writeTools()} at construction time.
+   * Allows O(1) membership checks in {@link #isWriteTool(String)} without rebuilding the
+   * definition list on every {@code tools/call} request.
+   */
+  private static final Set<String> WRITE_TOOL_NAMES =
+      writeToolDefinitions().stream()
+          .map(def -> (String) def.get("name"))
+          .collect(Collectors.toUnmodifiableSet());
 
   /**
    * Process a JSON-RPC 2.0 request from a given session and send the response via SSE.
@@ -145,11 +159,13 @@ public class McpToolDispatcher {
       throw new McpToolException("Missing tool name in tools/call params");
     }
 
+    // Resolve session auth once — used for both security gate and tool dispatch
+    Authentication auth = sessionManager.get(sessionId)
+        .map(McpSession::getAuth)
+        .orElseThrow(() -> new SecurityException("Session not found"));
+
     // Enforce write scope for mutating tools
     if (isWriteTool(toolName)) {
-      Authentication auth = sessionManager.get(sessionId)
-          .map(McpSession::getAuth)
-          .orElseThrow(() -> new SecurityException("Session not found"));
       if (!properties.isWriteEnabled()) {
         throw new SecurityException("Write tools are disabled on this ShipFlow instance. "
             + "Set MCP_SERVER_WRITE_ENABLED=true to enable them.");
@@ -160,7 +176,7 @@ public class McpToolDispatcher {
       }
     }
 
-    Object result = dispatchTool(toolName, args);
+    Object result = dispatchTool(toolName, args, auth);
     String json;
     try {
       json = objectMapper.writeValueAsString(result);
@@ -175,7 +191,7 @@ public class McpToolDispatcher {
 
   // ── Tool dispatch ─────────────────────────────────────────────────────────
 
-  private Object dispatchTool(String name, Map<String, Object> args) {
+  private Object dispatchTool(String name, Map<String, Object> args, Authentication auth) {
     return switch (name) {
       // Project tools
       case ProjectMcpTools.TOOL_LIST_PROJECTS -> projectTools.listProjects();
@@ -189,12 +205,18 @@ public class McpToolDispatcher {
       case TaskMcpTools.TOOL_GET_TASKS -> taskTools.getTasks(args);
       case TaskMcpTools.TOOL_GET_TASK -> taskTools.getTask(args);
       case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args);
+      case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_STATUS -> taskTools.updateTaskStatus(args);
 
       // Pitch tools
       case PitchMcpTools.TOOL_GET_PITCHES -> pitchTools.getPitches(args);
       case PitchMcpTools.TOOL_GET_PITCH -> pitchTools.getPitchDetail(args);
       case PitchMcpTools.TOOL_GET_BETTING_CANDIDATES -> pitchTools.getBettingCandidates(args);
+      case PitchMcpTools.TOOL_CREATE_PITCH -> pitchTools.createPitch(args);
+      case PitchMcpTools.TOOL_UPDATE_PITCH_STATUS -> pitchTools.updatePitchStatus(args);
+
+      // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
+      case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
     };
@@ -216,12 +238,29 @@ public class McpToolDispatcher {
         PitchMcpTools.getBettingCandidatesDefinition());
   }
 
+  /**
+   * Single source of truth for all write tool definitions.
+   *
+   * <p>Static so it can be used to initialise {@link #WRITE_TOOL_NAMES} before any instance
+   * exists, keeping the security-gate set and the tool-list perfectly in sync.
+   */
+  private static List<Map<String, Object>> writeToolDefinitions() {
+    return List.of(
+        TaskMcpTools.createTaskDefinition(),
+        TaskMcpTools.updateTaskStatusDefinition(),
+        PitchMcpTools.createPitchDefinition(),
+        PitchMcpTools.updatePitchStatusDefinition(),
+        CommentMcpTools.addCommentDefinition());
+  }
+
+  /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */
   private List<Map<String, Object>> writeTools() {
-    return List.of(TaskMcpTools.updateTaskStatusDefinition());
+    return writeToolDefinitions();
   }
 
   private boolean isWriteTool(String name) {
-    return TaskMcpTools.TOOL_UPDATE_TASK_STATUS.equals(name);
+    // O(1) lookup — set is built once from writeToolDefinitions() at class-load time
+    return WRITE_TOOL_NAMES.contains(name);
   }
 
   /**

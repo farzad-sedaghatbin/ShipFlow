@@ -36,6 +36,9 @@ import {
   ListChecks,
   Download,
   Compass,
+  Wrench,
+  Bookmark,
+  Mail,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -54,6 +57,37 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '0.9.0',
+    date: 'April 2026',
+    title: 'Power User Features + Polish',
+    highlights: [
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'MCP Phase 2: Bidirectional AI Editor Integration',
+        description:
+          'AI editors (Claude Code, Cursor) can now create tasks, create and advance pitches, and add comments via the MCP server. Five new write tools: create_task, create_pitch, update_pitch_status, add_comment, plus the existing update_task_status.',
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'Real-Time SSE Notifications',
+        description:
+          'Replaced 30-second polling with instant Server-Sent Events push. Notifications appear the moment they are created — no more waiting up to 30 seconds.',
+      },
+      {
+        icon: <Bookmark className="h-5 w-5" />,
+        title: 'Saved Filter Views',
+        description:
+          'Save, load, and manage named filter presets in the task backlog. One click to return to your most-used filter combination.',
+      },
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'Email Notifications',
+        description:
+          'Optional SMTP integration for email delivery of key events: task assigned, @mention in comment, pitch status change. Configure via Organization Settings → Email.',
+      },
+    ],
+  },
   {
     version: '0.8.0',
     date: 'April 5, 2026',

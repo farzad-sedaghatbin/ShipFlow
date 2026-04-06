@@ -6692,5 +6692,12 @@
     "sendTestEmail": "Send Test Email",
     "testEmailSent": "Test email sent successfully.",
     "emailNotConfigured": "Email not configured. Set SMTP_HOST to enable email sending."
+  },
+  "mcpWriteTools": {
+    "createTask": "Create Task via MCP",
+    "createPitch": "Create Pitch via MCP",
+    "updatePitchStatus": "Update Pitch Status via MCP",
+    "addComment": "Add Comment via MCP",
+    "writeToolsEnabled": "Write tools enabled"
   }
 }

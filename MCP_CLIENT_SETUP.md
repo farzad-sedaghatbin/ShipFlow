@@ -185,14 +185,17 @@ Once connected, your AI assistant has access to these tools:
 | `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
 
-### Write Tools (v0.7.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (v0.9.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
+| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, assigneeUsername, priority) |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
+| `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
+| `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
+| `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
 
-> **Planned tools** (future releases): `create_task`, `add_comment`, `create_pitch`,
-> `get_cycle` hill-chart positions, `search_all`, `get_retrospective`.
+> **Planned tools** (future releases): `get_cycle` hill-chart positions, `search_all`, `get_retrospective`.
 > See [MCP_SERVER_MILESTONE.md](MCP_SERVER_MILESTONE.md) for the full roadmap.
 
 ### Prompt Templates
