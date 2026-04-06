@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Refactored
+- **PitchDetail Decomposition (S26)**: `PitchDetail.tsx` reduced from 1615 lines to 609 lines. JSX sections extracted into `src/components/pitchDetail/`: `PitchHeader` (title, status, action buttons), `PitchStatsRow` (4 stat cards), `PitchTeamCapacity` (team capacity card), `PitchShapingSection` (Shape Up narrative editor with AI extraction), `PitchDocumentsSection` (document drop zone), `PitchTasksSection` (task list), `PitchWorkLogsSection` (work log list + create dialog), `PitchMeetingsSection` (meeting list + create/view dialogs). All state and handlers remain in `PitchDetail.tsx`.
+
 ### Added
 - **SMTP Email Notifications (S17)**: Pluggable email notification service wired into task assignment and @mention events.
   - `IEmailNotificationService` interface with two implementations: `EmailNotificationService` (real SMTP/Thymeleaf, active when `SMTP_HOST` is set) and `NoOpEmailNotificationService` (stub, auto-registered otherwise — app starts without mail config)
