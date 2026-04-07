@@ -1,18 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Progress } from '../ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { TaskStatistics } from '../../types';
 
-export interface BacklogStatisticsProps {
-  statistics: TaskStatistics | null;
+interface BacklogStatisticsProps {
+  statistics: TaskStatistics;
 }
 
 export function BacklogStatistics({ statistics }: BacklogStatisticsProps) {
   const { t } = useTranslation();
-
-  if (!statistics) {
-    return null;
-  }
 
   return (
     <Card>
