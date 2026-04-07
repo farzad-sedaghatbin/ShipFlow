@@ -1,0 +1,8 @@
+export { PitchHeader } from './PitchHeader';
+export { PitchStatsRow } from './PitchStatsRow';
+export { PitchTeamCapacity } from './PitchTeamCapacity';
+export { PitchShapingSection } from './PitchShapingSection';
+export { PitchDocumentsSection } from './PitchDocumentsSection';
+export { PitchTasksSection } from './PitchTasksSection';
+export { PitchWorkLogsSection } from './PitchWorkLogsSection';
+export { PitchMeetingsSection } from './PitchMeetingsSection';
