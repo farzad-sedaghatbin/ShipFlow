@@ -135,6 +135,7 @@ export default function BacklogPage() {
         fieldErrors={bp.fieldErrors}
         saving={bp.saving}
         persons={bp.persons}
+        teams={bp.teams}
         pitches={bp.pitches}
         activeCategory={bp.activeCategory}
         isKanbanProject={bp.isKanbanProject}

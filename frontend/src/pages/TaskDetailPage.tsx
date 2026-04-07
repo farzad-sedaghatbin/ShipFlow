@@ -21,10 +21,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Combobox } from '@/components/ui/combobox';
-import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch } from '../types';
+import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, Team } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import { teamService } from '../services/teamService';
 import { pitchService } from '../services/pitchService';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
@@ -67,6 +68,7 @@ export default function TaskDetailPage() {
   const [saving, setSaving] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
     description: '',
@@ -74,6 +76,7 @@ export default function TaskDetailPage() {
     status: 'BACKLOG',
     priority: 'MEDIUM',
     estimateHours: undefined,
+    teamId: undefined,
     assigneeId: undefined,
     pairAssigneeId: undefined,
     dueDate: undefined,
@@ -95,12 +98,14 @@ export default function TaskDetailPage() {
 
   const loadInitialData = async () => {
     try {
-      const [cyclesRes, personsRes] = await Promise.all([
+      const [cyclesRes, personsRes, teamsRes] = await Promise.all([
         cycleService.getMyActiveCycles(),
         personService.getAll(),
+        teamService.getAll(),
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
+      setTeams(teamsRes.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     }
@@ -177,6 +182,7 @@ export default function TaskDetailPage() {
       status: task.status,
       priority: task.priority,
       estimateHours: task.estimateHours,
+      teamId: task.teamId,
       assigneeId: task.assigneeId,
       pairAssigneeId: task.pairAssigneeId,
       dueDate: task.dueDate,
@@ -373,6 +379,12 @@ export default function TaskDetailPage() {
                     {task.parentTaskTitle}
                   </Link>
                 </div>
+              </div>
+            )}
+            {task.teamName && (
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('backlogPage.team')}</Label>
+                <div className="mt-1 font-medium">{task.teamName}</div>
               </div>
             )}
             <div>
@@ -719,6 +731,23 @@ export default function TaskDetailPage() {
                 />
               </div>
             </div>
+
+            {teams.length > 0 && (
+              <div className="grid gap-2">
+                <Label>{t('backlogPage.team')}</Label>
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('backlogPage.noTeam') },
+                    ...teams.map(team => ({ value: team.id.toString(), label: team.name }))
+                  ]}
+                  value={formData.teamId?.toString() || 'none'}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, teamId: value === 'none' ? undefined : parseInt(value) })
+                  }
+                  placeholder={t('backlogPage.noTeam')}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

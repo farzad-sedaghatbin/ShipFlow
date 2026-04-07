@@ -253,6 +253,8 @@
     "page": "صفحه {{current}} از {{total}}",
     "pairAssignee": "مسئول جفت",
     "pairAssigneeName": "مسئول جفت",
+    "team": "تیم",
+    "noTeam": "بدون تیم",
     "parentTask": "تسک والد",
     "pitch": "پیچ",
     "pitchTasks": "تسک‌های پیچ",

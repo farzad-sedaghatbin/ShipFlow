@@ -12,6 +12,7 @@ export interface TaskFormData {
   priority: TaskPriority;
   estimateHours?: number;
   actualHours?: number;
+  teamId?: number;
   assigneeId?: number;
   pairAssigneeId?: number;
   dueDate?: string;
@@ -73,6 +74,7 @@ const DEFAULT_FORM_DATA: TaskFormData = {
   priority: 'MEDIUM',
   estimateHours: undefined,
   actualHours: undefined,
+  teamId: undefined,
   assigneeId: undefined,
   pairAssigneeId: undefined,
   dueDate: undefined,
@@ -130,6 +132,7 @@ export function useBacklogForm(): UseBacklogFormReturn {
       priority: task.priority,
       estimateHours: task.estimateHours,
       actualHours: task.actualHours,
+      teamId: task.teamId,
       assigneeId: task.assigneeId,
       pairAssigneeId: task.pairAssigneeId,
       dueDate: task.dueDate,
