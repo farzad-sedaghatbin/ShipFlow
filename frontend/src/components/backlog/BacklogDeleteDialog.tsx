@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,20 +7,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog';
+} from '@/components/ui/dialog';
 
-export interface BacklogDeleteDialogProps {
+interface BacklogDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
   onCancel: () => void;
+  onConfirm: () => void;
 }
 
 export function BacklogDeleteDialog({
   open,
   onOpenChange,
-  onConfirm,
   onCancel,
+  onConfirm,
 }: BacklogDeleteDialogProps) {
   const { t } = useTranslation();
 

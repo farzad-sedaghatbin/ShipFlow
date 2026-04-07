@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Refactored
+- **BacklogPage Decomposition (S24)**: `BacklogPage.tsx` reduced from ~2320 lines to ~170 lines by extracting all state and logic into a dedicated `useBacklogPage` custom hook. Each sub-component (`BacklogHeader`, `BacklogFilters`, `BacklogStatistics`, `BacklogTaskTable`, `BacklogTaskDialog`, `BacklogViewDialog`, `BacklogDeleteDialog`) is now fully self-contained. `BacklogHeader` renders the CSV export button. `BacklogTaskTable` supports optional multi-select with `BulkActionBar`. Loading guard uses `BacklogSkeleton` for both initial load and project-switch transitions.
+
 ### Added
 - **SMTP Email Notifications (S17)**: Pluggable email notification service wired into task assignment and @mention events.
   - `IEmailNotificationService` interface with two implementations: `EmailNotificationService` (real SMTP/Thymeleaf, active when `SMTP_HOST` is set) and `NoOpEmailNotificationService` (stub, auto-registered otherwise — app starts without mail config)
