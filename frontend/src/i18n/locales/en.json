@@ -89,6 +89,7 @@
     "updatedAt": "Updated At",
     "errorOccurred": "An error occurred",
     "active": "Active",
+    "inactive": "Inactive",
     "experimental": "Experimental",
     "weeks": "weeks",
     "votes": "votes",
