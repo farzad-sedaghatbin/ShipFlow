@@ -1214,6 +1214,7 @@
     "updatedAt": "تاریخ به‌روزرسانی",
     "errorOccurred": "خطایی رخ داده است",
     "active": "فعال",
+    "inactive": "غیرفعال",
     "experimental": "آزمایشی",
     "weeks": "هفته",
     "votes": "آرا",

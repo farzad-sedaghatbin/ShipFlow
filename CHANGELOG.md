@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Refactored
+<<<<<<< feat/s25-organization-settings-decomposition
+- **OrganizationSettings Decomposition (S25)**: `OrganizationSettings.tsx` reduced from 1740 lines to 271 lines. Each of the 10 settings tabs is now a focused, self-contained component under `src/components/organizationSettings/`: `GeneralSettingsTab`, `CycleSettingsTab`, `RiskSettingsTab`, `WeightsSettingsTab`, `ColorsSettingsTab`, `BugSettingsTab`, `CategoriesSettingsTab`, `MeetingsSettingsTab`, `FeaturesSettingsTab`, `EmailSettingsTab`. The page component is now a pure coordinator: loads settings, manages save/reset, and assembles the tab router.
+=======
 - **BacklogPage Decomposition (S24)**: `BacklogPage.tsx` reduced from ~2320 lines to ~170 lines by extracting all state and logic into a dedicated `useBacklogPage` custom hook. Each sub-component (`BacklogHeader`, `BacklogFilters`, `BacklogStatistics`, `BacklogTaskTable`, `BacklogTaskDialog`, `BacklogViewDialog`, `BacklogDeleteDialog`) is now fully self-contained. `BacklogHeader` renders the CSV export button. `BacklogTaskTable` supports optional multi-select with `BulkActionBar`. Loading guard uses `BacklogSkeleton` for both initial load and project-switch transitions.
+>>>>>>> main
 
 ### Added
 - **SMTP Email Notifications (S17)**: Pluggable email notification service wired into task assignment and @mention events.
