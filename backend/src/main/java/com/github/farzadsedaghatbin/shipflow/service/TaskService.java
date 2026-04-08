@@ -299,6 +299,19 @@ public class TaskService {
     TaskStatus oldStatus = task.getStatus();
     TaskPriority oldPriority = task.getPriority();
 
+    // Handle cycle changes first — so parent-task validation uses the correct cycle
+    if (request.getCycleId() != null && !request.getCycleId().equals(task.getCycle().getId())) {
+      Cycle newCycle = cycleRepository.findById(request.getCycleId())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Cycle not found with id: " + request.getCycleId()));
+      task.setCycle(newCycle);
+      // Clear parent task if it now belongs to a different cycle
+      if (task.getParentTask() != null
+          && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
+        task.setParentTask(null);
+      }
+    }
+
     // Validate and update parent task if changed
     if (request.getParentTaskId() != null) {
       if (!request.getParentTaskId().equals(task.getParentTask() != null ? task.getParentTask().getId() : null)) {
@@ -394,19 +407,6 @@ public class TaskService {
       task.setTeam(team);
     } else {
       task.setTeam(null);
-    }
-
-    // Handle cycle changes — persist if cycle was edited in task detail page
-    if (request.getCycleId() != null && !request.getCycleId().equals(task.getCycle().getId())) {
-      Cycle newCycle = cycleRepository.findById(request.getCycleId())
-          .orElseThrow(() -> new IllegalArgumentException(
-              "Cycle not found with id: " + request.getCycleId()));
-      task.setCycle(newCycle);
-      // Clear parent task if it now belongs to a different cycle
-      if (task.getParentTask() != null
-          && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
-        task.setParentTask(null);
-      }
     }
 
     Task saved = taskRepository.save(task);
