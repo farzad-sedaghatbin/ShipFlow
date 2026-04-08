@@ -1,7 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.service.slack;
 
 import com.github.farzadsedaghatbin.shipflow.dto.slack.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.slack.*;
+import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.slack.*;
 import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
@@ -32,6 +34,7 @@ public class SlackIntegrationService implements NotificationProvider {
   private final SlackConfigurationRepository slackConfigRepository;
   private final SlackChannelConfigRepository channelConfigRepository;
   private final SlackNotificationHistoryRepository historyRepository;
+  private final NotificationUserMappingRepository notificationUserMappingRepository;
   private final RestTemplate restTemplate;
   private final LocalizationService localizationService;
 
@@ -43,6 +46,15 @@ public class SlackIntegrationService implements NotificationProvider {
   @Override
   public boolean isActive() {
     return slackConfigRepository.findFirstByIsEnabledTrue().isPresent();
+  }
+
+  @Override
+  public String resolveUserMention(Person person) {
+    if (person == null) {
+      return null;
+    }
+    return notificationUserMappingRepository.findByPersonIdAndProviderName(person.getId(), "slack")
+        .map(mapping -> "<@" + mapping.getExternalUserId() + ">").orElse(null);
   }
 
   /** Create or update Slack workspace configuration */

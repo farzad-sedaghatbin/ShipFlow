@@ -2,7 +2,9 @@ package com.github.farzadsedaghatbin.shipflow.service.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Set;
@@ -33,8 +35,20 @@ class NotificationProviderContractTest {
     assertThat(methods).containsExactlyInAnyOrder(
         "getProviderName",
         "sendNotification",
-        "isActive"
+        "isActive",
+        "resolveUserMention"
     );
+  }
+
+  @Test
+  void teamsIntegrationService_implementsNotificationProvider() {
+    assertThat(NotificationProvider.class).isAssignableFrom(TeamsIntegrationService.class);
+  }
+
+  @Test
+  void resolveUserMention_hasCorrectSignature() throws NoSuchMethodException {
+    Method method = NotificationProvider.class.getMethod("resolveUserMention", Person.class);
+    assertThat(method.getReturnType()).isEqualTo(String.class);
   }
 
   @Test

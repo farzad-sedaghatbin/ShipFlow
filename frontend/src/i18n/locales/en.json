@@ -3943,7 +3943,16 @@
     "profileUpdated": "Profile updated successfully",
     "security": "Security",
     "skillsHelp": "Comma-separated list of skills",
-    "skillsPlaceholder": "e.g. Java, React, TypeScript, SQL"
+    "skillsPlaceholder": "e.g. Java, React, TypeScript, SQL",
+    "notificationIds": "Notification IDs",
+    "notificationIdsDesc": "Connect your accounts to receive @mentions in Slack/Teams notifications",
+    "slackMemberId": "Slack Member ID",
+    "slackMemberIdHelp": "Find in Slack: click your profile picture > three dots > Copy member ID",
+    "teamsMemberId": "Teams User ID",
+    "teamsMemberIdHelp": "Your Microsoft email address or Azure AD User Principal Name",
+    "notificationIdSaved": "Notification ID saved",
+    "notificationIdRemoved": "Notification ID removed",
+    "notificationIdSaveFailed": "Failed to save notification ID"
   },
   "landingPage": {
     "heroTitle": "Shape Up Your Software Development",

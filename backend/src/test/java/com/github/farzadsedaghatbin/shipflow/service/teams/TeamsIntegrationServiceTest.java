@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.teams.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import com.github.farzadsedaghatbin.shipflow.entity.teams.*;
+import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.teams.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +40,9 @@ class TeamsIntegrationServiceTest {
   private TeamsNotificationHistoryRepository historyRepository;
 
   @Mock
+  private NotificationUserMappingRepository notificationUserMappingRepository;
+
+  @Mock
   private RestTemplate webhookRestTemplate;
 
   private TeamsIntegrationService teamsService;
@@ -50,7 +54,7 @@ class TeamsIntegrationServiceTest {
   void setUp() {
     // Manually create service with webhook RestTemplate mock
     teamsService = new TeamsIntegrationService(teamsConfigRepository, channelConfigRepository, historyRepository,
-        webhookRestTemplate);
+        notificationUserMappingRepository, webhookRestTemplate);
 
     testConfig = TeamsConfiguration.builder().id(1L).tenantName("Test Tenant")
         .webhookUrl("https://outlook.office.com/webhook/test").defaultChannel("General").isEnabled(true)

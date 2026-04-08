@@ -4538,7 +4538,16 @@
     "updateFailed": "بروزرسانی پروفایل ناموفق بود",
     "updateSuccess": "پروفایل با موفقیت بروزرسانی شد",
     "uploadAvatar": "آپلود تصویر",
-    "username": "نام کاربری"
+    "username": "نام کاربری",
+    "notificationIds": "شناسه‌های اعلان",
+    "notificationIdsDesc": "حساب‌های خود را متصل کنید تا در اعلان‌های اسلک/تیمز منشن شوید",
+    "slackMemberId": "شناسه عضو اسلک",
+    "slackMemberIdHelp": "در اسلک: روی تصویر پروفایل کلیک کنید > سه نقطه > کپی شناسه عضو",
+    "teamsMemberId": "شناسه کاربر تیمز",
+    "teamsMemberIdHelp": "آدرس ایمیل مایکروسافت یا نام اصلی کاربر Azure AD شما",
+    "notificationIdSaved": "شناسه اعلان ذخیره شد",
+    "notificationIdRemoved": "شناسه اعلان حذف شد",
+    "notificationIdSaveFailed": "ذخیره شناسه اعلان ناموفق بود"
   },
   "projectDetail": {
     "activate": "فعال کردن پروژه",

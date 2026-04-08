@@ -8,8 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
-import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
-import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,8 +38,7 @@ public class DashboardNotificationService {
   private final PitchRepository pitchRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final UserRepository userRepository;
-  private final SlackIntegrationService slackService;
-  private final TeamsIntegrationService teamsService;
+  private final List<NotificationProvider> notificationProviders;
   private final NotificationSseManager notificationSseManager;
   private final IEmailNotificationService emailService;
 
@@ -106,12 +104,12 @@ public class DashboardNotificationService {
         String.format("You have been assigned to task '%s'", task.getTitle()), "INFO", "/tasks/" + task.getId(),
         "TASK", task.getId());
 
-    // Send Slack notification
-    slackService.sendNotification("TASK_ASSIGNED",
+    // Send external notifications (Slack, Teams, etc.)
+    sendToConfiguredChannels("TASK_ASSIGNED",
         String.format("📋 *Task Assigned*\n*%s* has been assigned to *%s*\nTask: %s", task.getTitle(),
             assignee.getUsername(),
             task.getDescription() != null ? task.getDescription() : "No description"),
-        null, "TASK", task.getId());
+        "TASK", task.getId(), assignee.getPerson());
 
     // Send email notification
     if (assignee.getEmail() != null && !assignee.getEmail().isBlank()) {
@@ -146,12 +144,12 @@ public class DashboardNotificationService {
             commentPreview.length() > 100 ? commentPreview.substring(0, 100) + "..." : commentPreview),
         "INFO", actionUrl, entityType, entityId);
 
-    // Send Slack notification
-    slackService.sendNotification("COMMENT_MENTION",
+    // Send external notifications (Slack, Teams, etc.)
+    sendToConfiguredChannels("COMMENT_MENTION",
         String.format("💬 *Comment Mention*\n*%s* mentioned *%s* in a %s comment:\n\"%s\"", authorName,
             mentionedUser.getUsername(), entityType.toLowerCase(),
             commentPreview.length() > 100 ? commentPreview.substring(0, 100) + "..." : commentPreview),
-        null, entityType, entityId);
+        entityType, entityId, mentionedUser.getPerson());
 
     // Send email notification
     if (mentionedUser.getEmail() != null && !mentionedUser.getEmail().isBlank()) {
@@ -199,21 +197,21 @@ public class DashboardNotificationService {
           String.format("Task '%s' status changed to BLOCKED", task.getTitle()), "WARNING",
           "/tasks/" + task.getId(), "TASK", task.getId());
 
-      // Send Slack notification for blocked task
-      slackService.sendNotification("TASK_BLOCKED",
+      // Send external notifications (Slack, Teams, etc.)
+      sendToConfiguredChannels("TASK_BLOCKED",
           String.format("⚠️ *Task Blocked*\n*%s* is now blocked\nAssigned to: %s", task.getTitle(),
               assignee.getUsername()),
-          null, "TASK", task.getId());
+          "TASK", task.getId(), assignee.getPerson());
     } else if (newStatus == TaskStatus.IN_PROGRESS && oldStatus == TaskStatus.BLOCKED) {
       createNotification(assignee, "TASK_STATUS_CHANGED", "Task Unblocked: " + task.getTitle(),
           String.format("Task '%s' is no longer blocked", task.getTitle()), "INFO", "/tasks/" + task.getId(),
           "TASK", task.getId());
     } else if (newStatus == TaskStatus.DONE) {
-      // Send Slack notification for completed task
-      slackService.sendNotification("TASK_COMPLETED",
+      // Send external notifications (Slack, Teams, etc.)
+      sendToConfiguredChannels("TASK_COMPLETED",
           String.format("✅ *Task Completed*\n*%s* has been marked as done\nCompleted by: %s", task.getTitle(),
               assignee.getUsername()),
-          null, "TASK", task.getId());
+          "TASK", task.getId(), assignee.getPerson());
     }
 
     log.info("Created task status change notification for task {}", task.getId());
@@ -597,43 +595,47 @@ public class DashboardNotificationService {
   }
 
   /**
-   * Send notification to all configured external channels (Slack, Teams, or both).
-   * Checks which integrations are configured and active before sending.
+   * Send notification to all configured external channels (Slack, Teams, etc.).
+   * Iterates over all registered {@link NotificationProvider} beans.
    */
-  private void sendToConfiguredChannels(String notificationType, String message, 
+  private void sendToConfiguredChannels(String notificationType, String message,
       String entityType, Long entityId) {
-    boolean slackSent = false;
-    boolean teamsSent = false;
+    sendToConfiguredChannels(notificationType, message, entityType, entityId, null);
+  }
 
-    // Check if Slack is configured and send
-    try {
-      if (slackService != null && slackService.getActiveConfiguration().isPresent()) {
-        slackService.sendNotification(notificationType, message, null, entityType, entityId);
-        slackSent = true;
-        log.debug("Sent {} notification to Slack", notificationType);
+  /**
+   * Send notification to all configured external channels with optional @mention.
+   * If {@code mentionTarget} is non-null and the provider has a mapping for that
+   * person, the provider-specific @mention is prepended to the message.
+   */
+  private void sendToConfiguredChannels(String notificationType, String message,
+      String entityType, Long entityId, Person mentionTarget) {
+    List<String> sentProviders = new ArrayList<>();
+
+    for (NotificationProvider provider : notificationProviders) {
+      try {
+        if (provider.isActive()) {
+          String finalMessage = message;
+          if (mentionTarget != null) {
+            String mention = provider.resolveUserMention(mentionTarget);
+            if (mention != null) {
+              finalMessage = mention + " " + message;
+            }
+          }
+          provider.sendNotification(notificationType, finalMessage, null, entityType, entityId);
+          sentProviders.add(provider.getProviderName());
+          log.debug("Sent {} notification to {}", notificationType, provider.getProviderName());
+        }
+      } catch (Exception e) {
+        log.warn("Failed to send {} notification to {}: {}", notificationType, provider.getProviderName(),
+            e.getMessage());
       }
-    } catch (Exception e) {
-      log.warn("Failed to send {} notification to Slack: {}", notificationType, e.getMessage());
     }
 
-    // Check if Teams is configured and send
-    try {
-      if (teamsService != null && teamsService.getActiveConfiguration().isPresent()) {
-        teamsService.sendNotification(notificationType, message, null, entityType, entityId);
-        teamsSent = true;
-        log.debug("Sent {} notification to Teams", notificationType);
-      }
-    } catch (Exception e) {
-      log.warn("Failed to send {} notification to Teams: {}", notificationType, e.getMessage());
-    }
-
-    if (!slackSent && !teamsSent) {
-      log.info("No external notification channels configured for {} - skipping external notification", 
-          notificationType);
+    if (sentProviders.isEmpty()) {
+      log.info("No external notification channels configured for {} - skipping", notificationType);
     } else {
-      log.info("Sent {} notification to: {}{}", notificationType,
-          slackSent ? "Slack" : "",
-          teamsSent ? (slackSent ? ", Teams" : "Teams") : "");
+      log.info("Sent {} notification to: {}", notificationType, String.join(", ", sentProviders));
     }
   }
 

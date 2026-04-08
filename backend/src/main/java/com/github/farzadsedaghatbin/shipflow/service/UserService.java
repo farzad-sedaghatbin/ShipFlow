@@ -6,6 +6,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.entity.NotificationUserMapping;
+import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -29,6 +31,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PersonRepository personRepository;
+  private final NotificationUserMappingRepository notificationUserMappingRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final MessageService messageService;
@@ -281,5 +284,65 @@ public class UserService {
         .personId(user.getPerson() != null ? user.getPerson().getId() : null)
         .personName(user.getPerson() != null ? user.getPerson().getName() : null).isActive(user.getIsActive())
         .createdAt(user.getCreatedAt()).updatedAt(user.getUpdatedAt()).build();
+  }
+
+  // ========== Notification User Mapping ==========
+
+  @Transactional(readOnly = true)
+  public List<NotificationUserMappingDTO> getNotificationMappings(String username) {
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    if (user.getPerson() == null) {
+      return List.of();
+    }
+    return notificationUserMappingRepository.findByPersonId(user.getPerson().getId()).stream()
+        .map(this::toMappingDTO).collect(Collectors.toList());
+  }
+
+  @Transactional
+  public NotificationUserMappingDTO upsertNotificationMapping(String username,
+      UpsertNotificationMappingRequest request) {
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    if (user.getPerson() == null) {
+      throw new IllegalArgumentException("Cannot upsert notification mapping: user has no linked person profile");
+    }
+    Person person = user.getPerson();
+
+    String normalizedProvider = request.getProviderName().trim().toLowerCase();
+
+    String normalizedExternalUserId = request.getExternalUserId().trim();
+    if (normalizedExternalUserId.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Cannot upsert notification mapping: external user id must not be blank");
+    }
+
+    NotificationUserMapping mapping = notificationUserMappingRepository
+        .findByPersonIdAndProviderName(person.getId(), normalizedProvider)
+        .orElse(NotificationUserMapping.builder().person(person).providerName(normalizedProvider).build());
+
+    mapping.setExternalUserId(normalizedExternalUserId);
+    mapping = notificationUserMappingRepository.save(mapping);
+    log.info("Upserted notification mapping for person {} provider {}", person.getId(),
+        request.getProviderName());
+    return toMappingDTO(mapping);
+  }
+
+  @Transactional
+  public void deleteNotificationMapping(String username, String providerName) {
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    if (user.getPerson() == null) {
+      return;
+    }
+    String normalizedProvider = providerName.trim().toLowerCase();
+    notificationUserMappingRepository.deleteByPersonIdAndProviderName(user.getPerson().getId(),
+        normalizedProvider);
+    log.info("Deleted notification mapping for person {} provider {}", user.getPerson().getId(), providerName);
+  }
+
+  private NotificationUserMappingDTO toMappingDTO(NotificationUserMapping mapping) {
+    return NotificationUserMappingDTO.builder().id(mapping.getId()).personId(mapping.getPerson().getId())
+        .providerName(mapping.getProviderName()).externalUserId(mapping.getExternalUserId()).build();
   }
 }
