@@ -55,8 +55,10 @@ public class TeamsIntegrationService implements NotificationProvider {
     if (person == null) {
       return null;
     }
+    // Plain @mention text — a full <at> tag with msteams.entities metadata
+    // is not yet wired into the Adaptive Card payload, so use plain text for now.
     return notificationUserMappingRepository.findByPersonIdAndProviderName(person.getId(), "teams")
-        .map(mapping -> "<at>" + mapping.getExternalUserId() + "</at>").orElse(null);
+        .map(mapping -> "@" + mapping.getExternalUserId()).orElse(null);
   }
 
   /** Create or update Teams tenant configuration */

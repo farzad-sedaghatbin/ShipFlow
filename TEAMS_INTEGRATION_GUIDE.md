@@ -262,7 +262,8 @@ Enter your **Microsoft email address** (User Principal Name), e.g., `john.doe@co
 ### How It Works
 
 - When a notification targets a specific user, ShipFlow looks up their Teams User ID from the `notification_user_mapping` table
-- If found, the message includes an `<at>` tag that Teams renders as an @mention in Adaptive Cards
+- If found, the message is prefixed with `@user@company.com` so the user is visible in the notification text
+- Full native Teams @mention rendering (via `msteams.entities` in Adaptive Cards) is planned for a future release
 - If no mapping exists, the notification is sent without a mention (graceful fallback)
 
 ### API

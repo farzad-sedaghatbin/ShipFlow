@@ -305,13 +305,15 @@ public class UserService {
     User user = userRepository.findByUsername(username)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     if (user.getPerson() == null) {
-      throw new IllegalStateException("User has no linked person profile");
+      throw new IllegalArgumentException("Cannot upsert notification mapping: user has no linked person profile");
     }
     Person person = user.getPerson();
 
+    String normalizedProvider = request.getProviderName().trim().toLowerCase();
+
     NotificationUserMapping mapping = notificationUserMappingRepository
-        .findByPersonIdAndProviderName(person.getId(), request.getProviderName()).orElse(
-            NotificationUserMapping.builder().person(person).providerName(request.getProviderName()).build());
+        .findByPersonIdAndProviderName(person.getId(), normalizedProvider)
+        .orElse(NotificationUserMapping.builder().person(person).providerName(normalizedProvider).build());
 
     mapping.setExternalUserId(request.getExternalUserId());
     mapping = notificationUserMappingRepository.save(mapping);

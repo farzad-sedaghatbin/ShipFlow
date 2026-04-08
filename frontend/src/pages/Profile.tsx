@@ -56,7 +56,7 @@ export default function Profile() {
   const [changingPassword, setChangingPassword] = useState(false);
 
   // Notification mapping state
-  const [notificationMappings, setNotificationMappings] = useState<NotificationUserMapping[]>([]);
+  const [, setNotificationMappings] = useState<NotificationUserMapping[]>([]);
   const [slackId, setSlackId] = useState('');
   const [teamsId, setTeamsId] = useState('');
   const [savingMapping, setSavingMapping] = useState<string | null>(null);
@@ -390,6 +390,7 @@ export default function Profile() {
                 />
                 <Button
                   size="sm"
+                  aria-label={t('profilePage.slackMemberId') + ' - ' + t('profilePage.save', 'Save')}
                   onClick={() => handleSaveMapping('slack', slackId)}
                   disabled={savingMapping === 'slack'}
                 >
@@ -409,6 +410,7 @@ export default function Profile() {
                 />
                 <Button
                   size="sm"
+                  aria-label={t('profilePage.teamsMemberId') + ' - ' + t('profilePage.save', 'Save')}
                   onClick={() => handleSaveMapping('teams', teamsId)}
                   disabled={savingMapping === 'teams'}
                 >
