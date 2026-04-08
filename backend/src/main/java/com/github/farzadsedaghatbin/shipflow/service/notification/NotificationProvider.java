@@ -1,5 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service.notification;
 
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
+
 /**
  * Generic interface for notification providers (Slack, MS Teams, Discord, etc.)
  *
@@ -36,4 +38,17 @@ public interface NotificationProvider {
    * Returns {@code true} when this provider is configured and active.
    */
   boolean isActive();
+
+  /**
+   * Resolve a @mention string for the given person on this provider.
+   * Returns {@code null} if no mapping exists or the provider does not
+   * support mentions.
+   *
+   * @param person the person to mention (nullable)
+   * @return provider-specific mention string (e.g. "&lt;@U12345&gt;" for
+   *         Slack) or {@code null}
+   */
+  default String resolveUserMention(Person person) {
+    return null;
+  }
 }

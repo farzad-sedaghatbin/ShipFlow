@@ -788,6 +788,14 @@ export interface UpdateHillChartPointRequest {
   position?: number;
 }
 
+// Notification User Mapping
+export interface NotificationUserMapping {
+  id: number;
+  personId: number;
+  providerName: string;
+  externalUserId: string;
+}
+
 // Task DTOs
 export interface Task {
   id: number;

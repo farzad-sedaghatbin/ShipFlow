@@ -8,14 +8,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardNotificationDTO;
-import com.github.farzadsedaghatbin.shipflow.dto.slack.SlackConfigurationDTO;
-import com.github.farzadsedaghatbin.shipflow.dto.teams.TeamsConfigurationDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
-import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
-import com.github.farzadsedaghatbin.shipflow.service.teams.TeamsIntegrationService;
+import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,15 +49,17 @@ class DashboardNotificationServiceTest {
   private UserRepository userRepository;
 
   @Mock
-  private SlackIntegrationService slackService;
+  private NotificationProvider slackProvider;
 
   @Mock
-  private TeamsIntegrationService teamsService;
+  private NotificationProvider teamsProvider;
 
   @Mock
   private NotificationSseManager notificationSseManager;
 
-  @InjectMocks
+  @Mock
+  private IEmailNotificationService emailService;
+
   private DashboardNotificationService notificationService;
 
   private User testUser;
@@ -69,6 +68,18 @@ class DashboardNotificationServiceTest {
 
   @BeforeEach
   void setUp() {
+    // Configure provider names
+    lenient().when(slackProvider.getProviderName()).thenReturn("slack");
+    lenient().when(teamsProvider.getProviderName()).thenReturn("teams");
+
+    // Default: both providers inactive
+    lenient().when(slackProvider.isActive()).thenReturn(false);
+    lenient().when(teamsProvider.isActive()).thenReturn(false);
+
+    notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
+        cycleRepository, pitchRepository, hillChartPointRepository, userRepository,
+        List.of(slackProvider, teamsProvider), notificationSseManager, emailService);
+
     testUser = User.builder().id(1L).username("testuser").build();
 
     testNotification = DashboardNotification.builder().id(1L).user(testUser).type("OVERDUE_TASK")
@@ -79,11 +90,6 @@ class DashboardNotificationServiceTest {
 
     testTask = Task.builder().id(1L).title("Test Task").status(TaskStatus.TODO).assignee(assignee)
         .dueDate(LocalDate.now().minusDays(1)).build();
-
-    // Mock both services to return empty configuration (simulating no external integration)
-    // Use lenient() to avoid UnnecessaryStubbingException for tests that don't use these mocks
-    lenient().when(slackService.getActiveConfiguration()).thenReturn(Optional.empty());
-    lenient().when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty());
   }
 
   @Test
@@ -290,8 +296,8 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -305,7 +311,7 @@ class DashboardNotificationServiceTest {
 
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -320,8 +326,8 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -352,8 +358,8 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -368,8 +374,8 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -401,8 +407,8 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -418,16 +424,14 @@ class DashboardNotificationServiceTest {
     // Assert
     verify(notificationRepository, never()).save(any(DashboardNotification.class));
     // No external notifications since neither Slack nor Teams are configured
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
   void notifyCircuitBreakerTriggered_ShouldSendToSlackWhenConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
-        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Simulate Slack is configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty()); // Teams not configured
+    when(slackProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
 
@@ -435,17 +439,15 @@ class DashboardNotificationServiceTest {
     notificationService.notifyCircuitBreakerTriggered(pitch);
 
     // Assert
-    verify(slackService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+    verify(slackProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
         eq("PITCH"), eq(1L));
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
   void notifyCircuitBreakerTriggered_ShouldSendToTeamsWhenConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.empty()); // Slack not configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
-        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Simulate Teams is configured
+    when(teamsProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
 
@@ -453,18 +455,16 @@ class DashboardNotificationServiceTest {
     notificationService.notifyCircuitBreakerTriggered(pitch);
 
     // Assert
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
         eq("PITCH"), eq(1L));
   }
 
   @Test
   void notifyCircuitBreakerTriggered_ShouldSendToBothWhenBothConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
-        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Slack configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
-        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Teams configured
+    when(slackProvider.isActive()).thenReturn(true);
+    when(teamsProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
 
@@ -472,18 +472,16 @@ class DashboardNotificationServiceTest {
     notificationService.notifyCircuitBreakerTriggered(pitch);
 
     // Assert
-    verify(slackService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+    verify(slackProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
         eq("PITCH"), eq(1L));
-    verify(teamsService, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+    verify(teamsProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
         eq("PITCH"), eq(1L));
   }
 
   @Test
   void notifyPitchKilled_ShouldSendToSlackWhenConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
-        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Simulate Slack is configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.empty()); // Teams not configured
+    when(slackProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
     String reason = "Could not fit in time box";
@@ -492,17 +490,15 @@ class DashboardNotificationServiceTest {
     notificationService.notifyPitchKilled(pitch, reason);
 
     // Assert
-    verify(slackService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+    verify(slackProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
         eq(1L));
-    verify(teamsService, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
   }
 
   @Test
   void notifyPitchKilled_ShouldSendToTeamsWhenConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.empty()); // Slack not configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
-        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Simulate Teams is configured
+    when(teamsProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
     String reason = "Could not fit in time box";
@@ -511,18 +507,16 @@ class DashboardNotificationServiceTest {
     notificationService.notifyPitchKilled(pitch, reason);
 
     // Assert
-    verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    verify(teamsService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
         eq(1L));
   }
 
   @Test
   void notifyPitchKilled_ShouldSendToBothWhenBothConfigured() {
     // Arrange
-    when(slackService.getActiveConfiguration()).thenReturn(Optional.of(
-        SlackConfigurationDTO.builder().id(1L).workspaceName("test").build())); // Slack configured
-    when(teamsService.getActiveConfiguration()).thenReturn(Optional.of(
-        TeamsConfigurationDTO.builder().id(1L).tenantName("test").build())); // Teams configured
+    when(slackProvider.isActive()).thenReturn(true);
+    when(teamsProvider.isActive()).thenReturn(true);
 
     Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
     String reason = "Could not fit in time box";
@@ -531,9 +525,9 @@ class DashboardNotificationServiceTest {
     notificationService.notifyPitchKilled(pitch, reason);
 
     // Assert
-    verify(slackService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+    verify(slackProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
         eq(1L));
-    verify(teamsService, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+    verify(teamsProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
         eq(1L));
   }
 

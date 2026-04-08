@@ -2,7 +2,9 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.AdminResetPasswordRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ChangePasswordRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.NotificationUserMappingDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateProfileRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UpsertNotificationMappingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UserProfileDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
@@ -116,5 +118,31 @@ public class UserController {
     String username = authentication.getName();
     UserProfileDTO profile = userService.getProfileByUsername(username);
     return ResponseEntity.ok(userService.updateProfile(profile.getId(), request));
+  }
+
+  @GetMapping("/me/notification-mappings")
+  @Operation(summary = "Get current user's notification provider mappings")
+  public ResponseEntity<List<NotificationUserMappingDTO>> getMyNotificationMappings() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+    return ResponseEntity.ok(userService.getNotificationMappings(username));
+  }
+
+  @PutMapping("/me/notification-mappings")
+  @Operation(summary = "Create or update a notification provider mapping for the current user")
+  public ResponseEntity<NotificationUserMappingDTO> upsertMyNotificationMapping(
+      @Valid @RequestBody UpsertNotificationMappingRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+    return ResponseEntity.ok(userService.upsertNotificationMapping(username, request));
+  }
+
+  @DeleteMapping("/me/notification-mappings/{providerName}")
+  @Operation(summary = "Delete a notification provider mapping for the current user")
+  public ResponseEntity<Void> deleteMyNotificationMapping(@PathVariable String providerName) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+    userService.deleteNotificationMapping(username, providerName);
+    return ResponseEntity.ok().build();
   }
 }

@@ -245,6 +245,42 @@ If you're upgrading from a previous version of ShipFlow, the Teams integration h
 3. **Test Notifications**: Send test messages to ensure everything works correctly
 4. **Update Documentation**: Share the new setup instructions with your team
 
+## User Mention Configuration (v0.9.0+)
+
+Teams notifications can @mention the relevant user in channel messages. When a task is assigned, blocked, completed, or a user is mentioned in a comment, the notification will tag the assignee directly in Teams.
+
+### Setup
+
+1. Each user opens **Profile** in ShipFlow
+2. In the **Notification IDs** section, enter their **Teams User ID**
+3. Click the save button
+
+### What to Enter as Teams User ID
+
+Enter your **Microsoft email address** (User Principal Name), e.g., `john.doe@company.com`. This is the same email you use to sign into Microsoft Teams.
+
+### How It Works
+
+- When a notification targets a specific user, ShipFlow looks up their Teams User ID from the `notification_user_mapping` table
+- If found, the message includes an `<at>` tag that Teams renders as an @mention in Adaptive Cards
+- If no mapping exists, the notification is sent without a mention (graceful fallback)
+
+### API
+
+```
+GET    /api/users/me/notification-mappings
+PUT    /api/users/me/notification-mappings   { "providerName": "teams", "externalUserId": "john@company.com" }
+DELETE /api/users/me/notification-mappings/teams
+```
+
+## Plugin Architecture (v0.9.0+)
+
+All notification providers (Slack, Teams, future integrations) implement the `NotificationProvider` interface. Adding a new provider (e.g., Discord) requires only:
+
+1. A `@Service` class implementing `NotificationProvider`
+2. Implement `getProviderName()`, `sendNotification()`, `isActive()`, and optionally `resolveUserMention()`
+3. Spring auto-discovers the bean — zero changes to existing code
+
 ## FAQ
 
 **Q: Can I use both traditional webhooks and Power Automate?**

@@ -1,9 +1,12 @@
 package com.github.farzadsedaghatbin.shipflow.service.teams;
 
 import com.github.farzadsedaghatbin.shipflow.dto.teams.*;
+import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.FlowType;
 import com.github.farzadsedaghatbin.shipflow.entity.teams.*;
+import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.teams.*;
+import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,14 +30,34 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class TeamsIntegrationService {
+public class TeamsIntegrationService implements NotificationProvider {
 
   private final TeamsConfigurationRepository teamsConfigRepository;
   private final TeamsChannelConfigRepository channelConfigRepository;
   private final TeamsNotificationHistoryRepository historyRepository;
+  private final NotificationUserMappingRepository notificationUserMappingRepository;
 
   @Qualifier("webhookRestTemplate")
   private final RestTemplate webhookRestTemplate;
+
+  @Override
+  public String getProviderName() {
+    return "teams";
+  }
+
+  @Override
+  public boolean isActive() {
+    return teamsConfigRepository.findFirstByIsEnabledTrue().isPresent();
+  }
+
+  @Override
+  public String resolveUserMention(Person person) {
+    if (person == null) {
+      return null;
+    }
+    return notificationUserMappingRepository.findByPersonIdAndProviderName(person.getId(), "teams")
+        .map(mapping -> "<at>" + mapping.getExternalUserId() + "</at>").orElse(null);
+  }
 
   /** Create or update Teams tenant configuration */
   public TeamsConfigurationDTO createOrUpdateConfiguration(CreateTeamsConfigurationRequest request) {
