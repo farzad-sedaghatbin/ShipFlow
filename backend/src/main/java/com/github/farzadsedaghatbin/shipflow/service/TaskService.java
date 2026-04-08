@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
@@ -26,6 +27,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.event.TaskStatusChangedEvent;
 import java.io.ByteArrayOutputStream;
@@ -61,6 +63,7 @@ public class TaskService {
   private final PitchRepository pitchRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final TaskAttachmentRepository attachmentRepository;
+  private final TeamRepository teamRepository;
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
@@ -214,6 +217,14 @@ public class TaskService {
       task.setScope(scope);
     }
 
+    // Set team if provided
+    if (request.getTeamId() != null) {
+      Team team = teamRepository.findById(request.getTeamId())
+          .orElseThrow(
+              () -> new IllegalArgumentException("Team not found with id: " + request.getTeamId()));
+      task.setTeam(team);
+    }
+
     // Set created by current user's person
     try {
       Person currentPerson = getCurrentUserPerson();
@@ -287,6 +298,19 @@ public class TaskService {
     Person oldAssignee = task.getAssignee();
     TaskStatus oldStatus = task.getStatus();
     TaskPriority oldPriority = task.getPriority();
+
+    // Handle cycle changes first — so parent-task validation uses the correct cycle
+    if (request.getCycleId() != null && !request.getCycleId().equals(task.getCycle().getId())) {
+      Cycle newCycle = cycleRepository.findById(request.getCycleId())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Cycle not found with id: " + request.getCycleId()));
+      task.setCycle(newCycle);
+      // Clear parent task if it now belongs to a different cycle
+      if (task.getParentTask() != null
+          && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
+        task.setParentTask(null);
+      }
+    }
 
     // Validate and update parent task if changed
     if (request.getParentTaskId() != null) {
@@ -373,6 +397,16 @@ public class TaskService {
       task.setPairAssignee(pairAssignee);
     } else {
       task.setPairAssignee(null);
+    }
+
+    // Handle team changes
+    if (request.getTeamId() != null) {
+      Team team = teamRepository.findById(request.getTeamId())
+          .orElseThrow(
+              () -> new IllegalArgumentException("Team not found with id: " + request.getTeamId()));
+      task.setTeam(team);
+    } else {
+      task.setTeam(null);
     }
 
     Task saved = taskRepository.save(task);
@@ -933,6 +967,8 @@ public class TaskService {
         .scopeName(task.getScope() != null ? task.getScope().getScope() : null)
         .autoCreatedScopeId(getAutoCreatedScopeId(task))
         .showOnHillChart(task.isRootScope() && getAutoCreatedScopeId(task) != null)
+        .teamId(task.getTeam() != null ? task.getTeam().getId() : null)
+        .teamName(task.getTeam() != null ? task.getTeam().getName() : null)
         .assigneeId(task.getAssignee() != null ? task.getAssignee().getId() : null)
         .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
         .assigneeAvatarUrl(task.getAssignee() != null ? task.getAssignee().getAvatarUrl() : null)

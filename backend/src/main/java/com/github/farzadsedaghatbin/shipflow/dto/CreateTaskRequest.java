@@ -39,6 +39,8 @@ public class CreateTaskRequest {
   private BigDecimal estimateHours;
   private BigDecimal actualHours;
 
+  private Long teamId;
+
   private Long assigneeId;
   private Long pairAssigneeId;
 

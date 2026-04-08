@@ -87,6 +87,12 @@ public class Task {
   @OneToOne(fetch = FetchType.LAZY, mappedBy = "linkedTask")
   private HillChartPoint autoCreatedScope;
 
+  /** The team assigned to this task (optional). */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "team_id")
+  private Team team;
+
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "assignee_id")

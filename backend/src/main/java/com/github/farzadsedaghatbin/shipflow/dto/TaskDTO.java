@@ -43,6 +43,9 @@ public class TaskDTO {
   private Long autoCreatedScopeId;
   private Boolean showOnHillChart;
 
+  private Long teamId;
+  private String teamName;
+
   private Long assigneeId;
   private String assigneeName;
   private String assigneeAvatarUrl;

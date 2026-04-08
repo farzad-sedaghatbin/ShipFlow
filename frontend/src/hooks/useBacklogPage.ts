@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import { teamService } from '../services/teamService';
 import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
 import timerService from '../services/timerService';
@@ -15,6 +16,7 @@ import {
   Person,
   Pitch,
   Release,
+  Team,
   CreateTaskRequest,
   TaskStatus,
   TaskPriority,
@@ -40,6 +42,7 @@ export function useBacklogPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
@@ -142,9 +145,10 @@ export function useBacklogPage() {
       const cyclesPromise = currentProject
         ? cycleService.getActiveByProject(currentProject.id)
         : cycleService.getMyActiveCycles();
-      const [cyclesRes, personsRes] = await Promise.all([cyclesPromise, personService.getAll()]);
+      const [cyclesRes, personsRes, teamsRes] = await Promise.all([cyclesPromise, personService.getAll(), teamService.getAll()]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
+      setTeams(teamsRes.data);
       if (currentProject) {
         const projectCycles = cyclesRes.data.filter((c: Cycle) => c.projectId === currentProject.id);
         setSelectedCycle(projectCycles.length > 0 ? projectCycles[0].id : 'all');
@@ -299,6 +303,7 @@ export function useBacklogPage() {
         priority: task.priority,
         estimateHours: task.estimateHours,
         actualHours: task.actualHours,
+        teamId: task.teamId,
         assigneeId: task.assigneeId,
         pairAssigneeId: task.pairAssigneeId,
         dueDate: task.dueDate,
@@ -464,7 +469,7 @@ export function useBacklogPage() {
 
   return {
     // State
-    tasks, totalElements, cycles, persons, pitches, releases, statistics, subtasks,
+    tasks, totalElements, cycles, persons, teams, pitches, releases, statistics, subtasks,
     loading, tasksLoading, saving, exportLoading,
     selectedCycle, setSelectedCycle,
     activeCategory,

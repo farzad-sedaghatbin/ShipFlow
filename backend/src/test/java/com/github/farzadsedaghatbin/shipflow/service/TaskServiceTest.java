@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
@@ -21,6 +22,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,6 +56,9 @@ class TaskServiceTest {
 
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private TeamRepository teamRepository;
 
   @Autowired
   private TaskService taskService;
@@ -481,5 +486,105 @@ class TaskServiceTest {
     // Then: Should NOT have an auto-created scope
     assertThat(result.getAutoCreatedScopeId()).isNull();
     assertThat(result.getShowOnHillChart()).isFalse();
+  }
+
+  // ========== Cycle Update Tests ==========
+
+  @Test
+  void updateTask_WithNewCycleId_ShouldUpdateCycle() {
+    // Given: A second cycle
+    Cycle newCycle = Cycle.builder()
+        .name("New Cycle")
+        .startDate(LocalDate.now().plusWeeks(7))
+        .endDate(LocalDate.now().plusWeeks(13))
+        .phase(CyclePhase.SHAPING_BUILDING)
+        .isActive(false)
+        .build();
+    newCycle = cycleRepository.save(newCycle);
+
+    testRequest.setCycleId(newCycle.getId());
+
+    // When: Updating the task's cycle
+    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+
+    // Then: Cycle should be updated
+    assertThat(result.getCycleId()).isEqualTo(newCycle.getId());
+  }
+
+  @Test
+  void updateTask_ChangingCycle_ShouldClearParentInOldCycle() {
+    // Given: A parent task in the original cycle and a child linked to it
+    Task parentTask = Task.builder()
+        .title("Parent Task")
+        .description("Parent in original cycle")
+        .status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM)
+        .category(TaskCategory.PITCH_SCOPE)
+        .estimateHours(BigDecimal.valueOf(4.0))
+        .cycle(testCycle)
+        .assignee(testPerson)
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+    parentTask = taskRepository.save(parentTask);
+
+    testTask.setParentTask(parentTask);
+    testTask = taskRepository.save(testTask);
+
+    // Create a new cycle to move the child into
+    Cycle newCycle = Cycle.builder()
+        .name("New Cycle")
+        .startDate(LocalDate.now().plusWeeks(7))
+        .endDate(LocalDate.now().plusWeeks(13))
+        .phase(CyclePhase.SHAPING_BUILDING)
+        .isActive(false)
+        .build();
+    newCycle = cycleRepository.save(newCycle);
+
+    testRequest.setCycleId(newCycle.getId());
+    testRequest.setParentTaskId(null);
+
+    // When: Moving task to the new cycle
+    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+
+    // Then: Cycle updated and parent cleared (parent is in old cycle)
+    assertThat(result.getCycleId()).isEqualTo(newCycle.getId());
+    assertThat(result.getParentTaskId()).isNull();
+  }
+
+  // ========== Team Assignment Tests ==========
+
+  @Test
+  void updateTask_WithTeamId_ShouldAssignTeam() {
+    // Given: A team
+    Team team = Team.builder().name("Backend Team").build();
+    team = teamRepository.save(team);
+
+    testRequest.setTeamId(team.getId());
+
+    // When: Updating the task with a team
+    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+
+    // Then: Team should be assigned
+    assertThat(result.getTeamId()).isEqualTo(team.getId());
+    assertThat(result.getTeamName()).isEqualTo("Backend Team");
+  }
+
+  @Test
+  void updateTask_ClearingTeamId_ShouldRemoveTeam() {
+    // Given: A task with a team assigned
+    Team team = Team.builder().name("Backend Team").build();
+    team = teamRepository.save(team);
+    testTask.setTeam(team);
+    testTask = taskRepository.save(testTask);
+
+    testRequest.setTeamId(null);
+
+    // When: Updating the task without a team
+    TaskDTO result = taskService.updateTask(testTask.getId(), testRequest);
+
+    // Then: Team should be cleared
+    assertThat(result.getTeamId()).isNull();
+    assertThat(result.getTeamName()).isNull();
   }
 }

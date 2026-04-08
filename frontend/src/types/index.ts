@@ -813,7 +813,10 @@ export interface Task {
   // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
   autoCreatedScopeId?: number;
   showOnHillChart?: boolean;
-  
+
+  teamId?: number;
+  teamName?: string;
+
   assigneeId?: number;
   assigneeName?: string;
   assigneeAvatarUrl?: string;
@@ -868,6 +871,7 @@ export interface CreateTaskRequest {
   category?: TaskCategory;
   estimateHours?: number;
   actualHours?: number;
+  teamId?: number;
   assigneeId?: number;
   pairAssigneeId?: number;
   parentTaskId?: number;

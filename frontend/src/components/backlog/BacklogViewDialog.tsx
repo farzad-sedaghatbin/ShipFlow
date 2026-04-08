@@ -85,6 +85,12 @@ export function BacklogViewDialog({
                   </Badge>
                 </div>
               </div>
+              {task.teamName && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">{t('backlogPage.team')}</Label>
+                  <div className="mt-1 font-medium">{task.teamName}</div>
+                </div>
+              )}
               <div>
                 <Label className="text-xs text-muted-foreground">{t('backlogPage.assignee')}</Label>
                 <div className="mt-1 font-medium">

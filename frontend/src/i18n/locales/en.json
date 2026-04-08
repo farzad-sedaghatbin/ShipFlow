@@ -3100,6 +3100,8 @@
     "unassigned": "Unassigned",
     "pairAssignee": "Pair Assignee",
     "selectPair": "Select pair",
+    "team": "Team",
+    "noTeam": "No Team",
     "none": "None",
     "estimateHours": "Estimate (hours)",
     "dueDate": "Due Date",

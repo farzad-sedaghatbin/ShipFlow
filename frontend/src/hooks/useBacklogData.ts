@@ -4,14 +4,16 @@ import { useToast } from '../contexts';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import { teamService } from '../services/teamService';
 import timerService from '../services/timerService';
 import { STALE_TIMES } from '../lib/queryClient';
-import { 
-  Task, 
-  TaskStatus, 
-  TaskPriority, 
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
   TaskCategory,
-  CreateTaskRequest 
+  Team,
+  CreateTaskRequest
 } from '../types';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
@@ -20,6 +22,7 @@ export const backlogKeys = {
   all: ['backlog'] as const,
   cycles: () => [...backlogKeys.all, 'cycles'] as const,
   persons: () => [...backlogKeys.all, 'persons'] as const,
+  teams: () => [...backlogKeys.all, 'teams'] as const,
   activeTimer: () => [...backlogKeys.all, 'activeTimer'] as const,
   tasks: (params: TaskQueryParams) => [...backlogKeys.all, 'tasks', params] as const,
   statistics: (params: StatisticsQueryParams) => [...backlogKeys.all, 'statistics', params] as const,
@@ -74,6 +77,20 @@ export function useBacklogPersons() {
       return await personService.getAll();
     },
     staleTime: STALE_TIMES.reference, // 10 minutes — persons are static reference data
+  });
+}
+
+/**
+ * Hook to fetch all teams (backlog-specific)
+ */
+export function useBacklogTeams() {
+  return useQuery<Team[]>({
+    queryKey: backlogKeys.teams(),
+    queryFn: async () => {
+      const response = await teamService.getAll();
+      return response.data;
+    },
+    staleTime: STALE_TIMES.reference, // 10 minutes — teams are static reference data
   });
 }
 

@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Task, CreateTaskRequest, TaskStatus, TaskPriority, TaskCategory, Person, Pitch } from '../../types';
+import { Task, CreateTaskRequest, TaskStatus, TaskPriority, TaskCategory, Person, Pitch, Team } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -32,6 +32,7 @@ interface BacklogTaskDialogProps {
   fieldErrors: Record<string, string>;
   saving: boolean;
   persons: Person[];
+  teams: Team[];
   pitches: Pitch[];
   activeCategory: TaskCategory;
   isKanbanProject: boolean;
@@ -51,6 +52,7 @@ export function BacklogTaskDialog({
   fieldErrors,
   saving,
   persons,
+  teams,
   pitches,
   activeCategory,
   isKanbanProject,
@@ -186,6 +188,27 @@ export function BacklogTaskDialog({
               </Select>
             </div>
           </div>
+          {teams.length > 0 && (
+            <div className="grid gap-2">
+              <Label>{t('backlogPage.team')}</Label>
+              <Select
+                value={formData.teamId ? String(formData.teamId) : 'none'}
+                onValueChange={(value) => onFormDataChange({ ...formData, teamId: value === 'none' ? undefined : Number(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('backlogPage.noTeam')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('backlogPage.noTeam')}</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={String(team.id)}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="estimateHours">{t('backlogPage.estimateHours')}</Label>

@@ -128,7 +128,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByCycleIdOrderByPriority(@Param("cycleId") Long cycleId);
 
     // Multi-filter queries with pagination
-    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId " + "AND (:statuses IS NULL OR t.status IN :statuses) "
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId " + "AND t.deletedAt IS NULL "
+            + "AND (:statuses IS NULL OR t.status IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
             + "AND (:category IS NULL OR t.category = :category)")
@@ -136,9 +137,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("priorities") List<TaskPriority> priorities, @Param("assigneeIds") List<Long> assigneeIds,
             @Param("category") TaskCategory category, Pageable pageable);
 
-    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId " + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId " + "AND t.deletedAt IS NULL "
+            + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
-            + "AND (:assigneeIds IS NULL OR t.assignee.id NOT IN :assigneeIds)")
+            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
     Page<Task> findByCycleIdWithExclusionFilters(@Param("cycleId") Long cycleId,
             @Param("statuses") List<TaskStatus> statuses, @Param("priorities") List<TaskPriority> priorities,
             @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
