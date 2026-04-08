@@ -311,11 +311,17 @@ public class UserService {
 
     String normalizedProvider = request.getProviderName().trim().toLowerCase();
 
+    String normalizedExternalUserId = request.getExternalUserId().trim();
+    if (normalizedExternalUserId.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Cannot upsert notification mapping: external user id must not be blank");
+    }
+
     NotificationUserMapping mapping = notificationUserMappingRepository
         .findByPersonIdAndProviderName(person.getId(), normalizedProvider)
         .orElse(NotificationUserMapping.builder().person(person).providerName(normalizedProvider).build());
 
-    mapping.setExternalUserId(request.getExternalUserId());
+    mapping.setExternalUserId(normalizedExternalUserId);
     mapping = notificationUserMappingRepository.save(mapping);
     log.info("Upserted notification mapping for person {} provider {}", person.getId(),
         request.getProviderName());
@@ -329,7 +335,9 @@ public class UserService {
     if (user.getPerson() == null) {
       return;
     }
-    notificationUserMappingRepository.deleteByPersonIdAndProviderName(user.getPerson().getId(), providerName);
+    String normalizedProvider = providerName.trim().toLowerCase();
+    notificationUserMappingRepository.deleteByPersonIdAndProviderName(user.getPerson().getId(),
+        normalizedProvider);
     log.info("Deleted notification mapping for person {} provider {}", user.getPerson().getId(), providerName);
   }
 
