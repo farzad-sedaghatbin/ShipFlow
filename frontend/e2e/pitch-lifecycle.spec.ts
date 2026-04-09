@@ -39,14 +39,12 @@ test.describe('Shape Up Pitch Lifecycle', () => {
     await page.click(`text=${pitchTitle}`);
     await expect(page).toHaveURL(/\/pitches\/\d+/, { timeout: 10000 });
 
-    // Change status to DRAFT
+    // Change status to DRAFT — assert control is present so regressions are caught
     const statusSelect = page.locator('[role="combobox"]').filter({ hasText: /IDEA|DRAFT|status/i }).first();
-    if (await statusSelect.isVisible()) {
-      await statusSelect.click();
-      await page.click('[role="option"]:has-text("DRAFT")');
-      // Verify status changed
-      await expect(page.locator('text=DRAFT').first()).toBeVisible({ timeout: 10000 });
-    }
+    await expect(statusSelect).toBeVisible({ timeout: 10000 });
+    await statusSelect.click();
+    await page.click('[role="option"]:has-text("DRAFT")');
+    await expect(page.locator('text=DRAFT').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('shaped pitch appears in betting candidates', async ({ page }) => {
@@ -56,11 +54,10 @@ test.describe('Shape Up Pitch Lifecycle', () => {
     await page.click('text=New Pitch');
     const pitchTitle = `E2E Shaped ${Date.now()}`;
     await page.fill('#pitch-title', pitchTitle);
-    // Set appetite (required for SHAPED)
+    // Appetite is required for SHAPED — assert the field is present
     const appetiteInput = page.locator('#pitch-appetite');
-    if (await appetiteInput.isVisible()) {
-      await appetiteInput.fill('14');
-    }
+    await expect(appetiteInput).toBeVisible({ timeout: 10000 });
+    await appetiteInput.fill('14');
     await page.click('button:has-text("Create Pitch"), button:has-text("Save")');
     await expect(page.locator(`text=${pitchTitle}`)).toBeVisible({ timeout: 10000 });
 

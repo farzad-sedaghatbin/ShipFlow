@@ -71,11 +71,11 @@ test.describe('Hill Chart', () => {
       return;
     }
 
-    // Get the position of a scope dot from the sidebar (e.g., first scope listed)
+    // Read initial position percentage shown in the sidebar list
     const firstScopeEntry = page.locator('text=/%/').first();
-    const initialPositionText = await firstScopeEntry.textContent().catch(() => null);
+    const initialText = await firstScopeEntry.textContent().catch(() => '');
 
-    // Drag from near left of canvas to near center
+    // Drag from near left of canvas toward center
     const startX = box.x + box.width * 0.15;
     const startY = box.y + box.height * 0.5;
     const endX = box.x + box.width * 0.4;
@@ -85,13 +85,20 @@ test.describe('Hill Chart', () => {
     await page.mouse.move(endX, startY, { steps: 10 });
     await page.mouse.up();
 
-    // Wait briefly for save
-    await page.waitForTimeout(1500);
+    // Wait for the API save to complete by watching for the sidebar text to update
+    await page.waitForFunction(
+      ({ selector, before }: { selector: string; before: string }) => {
+        const el = document.querySelector(selector);
+        return el !== null && el.textContent !== before;
+      },
+      { selector: '[class*="sidebar"] span, li span', before: initialText },
+      { timeout: 5000 }
+    ).catch(() => { /* position may not have changed enough to update label */ });
 
-    // Reload and verify something persisted (no error toast)
+    // Reload and verify the page loads without an error toast
     await page.reload();
     await expect(page.locator('text=Cycle Hill Chart')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=Error, text=failed').first()).not.toBeVisible();
+    await expect(page.locator('text=Error').first()).not.toBeVisible({ timeout: 3000 });
   });
 
   test('scopes by pitch section shows pitch groupings', async ({ page }) => {

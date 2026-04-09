@@ -55,16 +55,14 @@ test.describe('Task Management', () => {
     await page.click(`text=${taskTitle}`);
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
-    // Find status selector and change it
+    // Status selector must be present — if missing it's a regression
     const statusSelect = page.locator('[role="combobox"]').filter({ hasText: /TODO|IN_PROGRESS|DONE|status/i }).first();
-    if (await statusSelect.isVisible({ timeout: 5000 })) {
-      await statusSelect.click();
-      const inProgressOption = page.locator('[role="option"]:has-text("IN_PROGRESS"), [role="option"]:has-text("In Progress")').first();
-      if (await inProgressOption.isVisible({ timeout: 3000 })) {
-        await inProgressOption.click();
-        await expect(page.locator('text=IN_PROGRESS, text=In Progress').first()).toBeVisible({ timeout: 10000 });
-      }
-    }
+    await expect(statusSelect).toBeVisible({ timeout: 5000 });
+    await statusSelect.click();
+    const inProgressOption = page.locator('[role="option"]:has-text("IN_PROGRESS"), [role="option"]:has-text("In Progress")').first();
+    await expect(inProgressOption).toBeVisible({ timeout: 3000 });
+    await inProgressOption.click();
+    await expect(page.locator('text=IN_PROGRESS, text=In Progress').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('add a comment with @mention', async ({ page }) => {
@@ -81,14 +79,15 @@ test.describe('Task Management', () => {
     await page.click(`text=${taskTitle}`);
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
-    // Find comment input
+    // Comment textarea must be present for @mention coverage to be valid
     const commentInput = page.locator('textarea[placeholder*="comment"], textarea[placeholder*="Add a comment"]').first();
-    if (await commentInput.isVisible({ timeout: 5000 })) {
-      await commentInput.fill('@admin great work on this task!');
-      await page.click('button:has-text("Post Comment"), button:has-text("Post"), button:has-text("Submit")');
-      // Comment should appear
-      await expect(page.locator('text=great work on this task')).toBeVisible({ timeout: 10000 });
+    if (!await commentInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      test.skip(true, 'Comment textarea not present — comments may be behind a feature flag');
+      return;
     }
+    await commentInput.fill('@admin great work on this task!');
+    await page.click('button:has-text("Post Comment"), button:has-text("Post"), button:has-text("Submit")');
+    await expect(page.locator('text=great work on this task')).toBeVisible({ timeout: 10000 });
   });
 
   test('notification bell is visible after login', async ({ page }) => {
@@ -101,22 +100,26 @@ test.describe('Task Management', () => {
   test('global search opens with Cmd+K and finds tasks', async ({ page }) => {
     await page.goto('/dashboard');
 
-    // Open global search with keyboard shortcut
-    await page.keyboard.press('Meta+k');
+    // Open global search — app supports both Meta+K (macOS) and Control+K (Linux/Windows)
+    const isMac = process.platform === 'darwin';
+    await page.keyboard.press(isMac ? 'Meta+k' : 'Control+k');
 
     // Search dialog/command palette should appear
     const searchInput = page.locator('input[placeholder*="Search"], input[placeholder*="search"]').first();
     await expect(searchInput).toBeVisible({ timeout: 5000 });
 
-    // Type a search query
+    // Type a search query and wait for results without fixed sleep
     await searchInput.fill('task');
 
-    // Results should appear or "no results" message
-    await page.waitForTimeout(500);
     const results = page.locator('[role="option"], [cmdk-item], [data-value]').first();
     const noResults = page.locator('text=/no results/i').first();
-    const hasResults = await results.isVisible({ timeout: 3000 }).catch(() => false);
-    const hasNone = await noResults.isVisible({ timeout: 3000 }).catch(() => false);
+    // Wait for either results or no-results message to appear
+    await Promise.race([
+      expect(results).toBeVisible({ timeout: 5000 }).catch(() => {}),
+      expect(noResults).toBeVisible({ timeout: 5000 }).catch(() => {}),
+    ]);
+    const hasResults = await results.isVisible().catch(() => false);
+    const hasNone = await noResults.isVisible().catch(() => false);
     expect(hasResults || hasNone).toBe(true);
 
     // Close with Escape

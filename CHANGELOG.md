@@ -6,14 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - **Playwright E2E Tests (S19–S23)**: End-to-end test suite covering the five core user flows.
-  - `e2e/auth.spec.ts` — login, logout, invalid credentials, protected-route redirect, remember-username (S19)
-  - `e2e/projects.spec.ts` — create Shape Up project, create Kanban project, sidebar adapts per project type, project selector (S20)
-  - `e2e/pitch-lifecycle.spec.ts` — pitch board loads, create IDEA pitch, advance to DRAFT, shaped pitch visible in betting candidates (S21)
-  - `e2e/hill-chart.spec.ts` — hill chart renders canvas or empty state, drag scope dot and verify reload persists (S22)
-  - `e2e/tasks.spec.ts` — create task from backlog, open detail, change status, add @mention comment, notification bell, Cmd+K global search (S23)
-  - `e2e/helpers.ts` — shared `login()`, `logout()`, `waitForApp()` utilities
-  - `playwright.config.ts` — Chromium, `localhost:3000`, screenshots + traces on failure
-  - `package.json` — `test:e2e`, `test:e2e:ui`, `test:e2e:report` scripts
+  - `frontend/e2e/auth.spec.ts` — login, logout, invalid credentials, protected-route redirect, remember-username (S19)
+  - `frontend/e2e/projects.spec.ts` — create Shape Up project, create Kanban project, sidebar adapts per project type, project selector (S20)
+  - `frontend/e2e/pitch-lifecycle.spec.ts` — pitch board loads, create IDEA pitch, advance to DRAFT, shaped pitch visible in betting candidates (S21)
+  - `frontend/e2e/hill-chart.spec.ts` — hill chart renders canvas or empty state, drag scope dot and verify reload persists (S22)
+  - `frontend/e2e/tasks.spec.ts` — create task from backlog, open detail, change status, add @mention comment, notification bell, Cmd+K global search (S23)
+  - `frontend/e2e/helpers.ts` — shared `login()`, `logout()`, `waitForApp()` utilities
+  - `frontend/playwright.config.ts` — Chromium, `localhost:3000`, screenshots + traces on failure
+  - `frontend/package.json` — `test:e2e`, `test:e2e:ui`, `test:e2e:report` scripts
   - `.github/workflows/ci.yml` — `e2e-tests` job (runs after `build-and-test`, spins up Postgres + Redis, starts backend + frontend, runs Playwright, uploads HTML report as artifact)
 
 ### Refactored

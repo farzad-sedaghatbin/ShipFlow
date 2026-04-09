@@ -117,6 +117,10 @@ jobs:
           for i in $(seq 1 30); do
             curl -sf http://localhost:8080/actuator/health && break || sleep 5
           done
+          curl -sf http://localhost:8080/actuator/health > /dev/null || {
+            echo "Backend failed to become healthy" >&2
+            exit 1
+          }
 
       - name: Install frontend dependencies
         run: |
@@ -133,9 +137,18 @@ jobs:
           cd frontend
           npm run dev &
           echo "Waiting for frontend to start..."
+          frontend_started=false
           for i in $(seq 1 20); do
-            curl -sf http://localhost:3000 && break || sleep 3
+            if curl -sf http://localhost:3000; then
+              frontend_started=true
+              break
+            fi
+            sleep 3
           done
+          if [ "$frontend_started" != "true" ]; then
+            echo "Frontend failed to start at http://localhost:3000" >&2
+            exit 1
+          fi
 
       - name: Run Playwright E2E tests
         run: |

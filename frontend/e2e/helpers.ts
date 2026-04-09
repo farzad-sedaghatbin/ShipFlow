@@ -25,7 +25,9 @@ export async function logout(page: Page) {
 }
 
 /**
- * Wait for the API to be reachable before running tests.
+ * Wait for the frontend to be reachable and the login page to render.
+ * Note: this checks that the frontend dev server is up and the login route
+ * is rendered — not backend API health. Use the backend health check in CI.
  */
 export async function waitForApp(page: Page) {
   await page.goto('/login');

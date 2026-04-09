@@ -66,16 +66,31 @@ test.describe('Project Management', () => {
   test('Kanban project shows Backlog link instead of Cycles', async ({ page }) => {
     await page.goto('/projects');
 
-    // Look for a Kanban badge card's backlog button
-    const backlogBtn = page.locator('[aria-label*="View Backlog"]').first();
-    if (await backlogBtn.isVisible()) {
-      await backlogBtn.click();
-      // We should be on the backlog route
-      await expect(page).toHaveURL(/\/backlog/, { timeout: 10000 });
-    } else {
-      // Just verify Kanban text appears on the page
-      await expect(page.locator('text=Kanban').first()).toBeVisible();
+    // Ensure at least one Kanban project exists
+    let backlogBtn = page.locator('[aria-label*="View Backlog"]').first();
+    if (!await backlogBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      // Create a Kanban project so the sidebar assertion is meaningful
+      await page.click('text=New Project');
+      const projectName = `E2E Kanban Nav ${Date.now()}`;
+      await page.fill('#name', projectName);
+      await page.click('text=Kanban');
+      await page.click('button:has-text("Create Project"), button:has-text("Save")');
+      await expect(page.locator(`text=${projectName}`)).toBeVisible({ timeout: 10000 });
+      await page.goto('/projects');
+      backlogBtn = page.locator('[aria-label*="View Backlog"]').first();
     }
+
+    if (!await backlogBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      test.skip(true, 'Kanban backlog navigation not available in this environment');
+      return;
+    }
+
+    await backlogBtn.click();
+    await expect(page).toHaveURL(/\/backlog/, { timeout: 10000 });
+
+    // In Kanban mode the sidebar should show Backlog, not Cycles
+    const sidebar = page.locator('[data-tour="sidebar"]');
+    await expect(sidebar.locator('text=Backlog')).toBeVisible({ timeout: 10000 });
   });
 
   test('project selector in sidebar lists available projects', async ({ page }) => {
