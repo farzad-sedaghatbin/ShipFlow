@@ -205,7 +205,7 @@ public class WiseArchitectureHistoryService {
     }
 
     /**
-     * Get the generated Markdown files for an advice entry.
+     * Get the generated Markdown files for an advice entry by database ID.
      * Returns an empty list for FOLLOW_UP messages or entries created before this feature.
      */
     @Transactional(readOnly = true)
@@ -213,6 +213,20 @@ public class WiseArchitectureHistoryService {
         WiseArchitectureAdvice advice = adviceRepository.findById(adviceId)
             .orElseThrow(() -> new ResourceNotFoundException("Advice not found: " + adviceId));
         return deserializeGeneratedFiles(advice.getGeneratedFilesJson());
+    }
+
+    /**
+     * Get the generated Markdown files for a conversation (by UUID string).
+     * Finds the INITIAL_SOLUTION entry for the conversation and returns its files.
+     * Returns an empty list if the conversation doesn't exist or has no files (pre-v0.9).
+     */
+    @Transactional(readOnly = true)
+    public List<GeneratedMarkdownFile> getGeneratedFilesByConversationId(String conversationId) {
+        return adviceRepository.findByConversationIdOrderByCreatedAtAsc(conversationId).stream()
+            .filter(a -> "INITIAL_SOLUTION".equals(a.getMessageType()))
+            .findFirst()
+            .map(a -> deserializeGeneratedFiles(a.getGeneratedFilesJson()))
+            .orElse(List.of());
     }
 
     private AdviceHistoryDTO toDTO(WiseArchitectureAdvice advice) {

@@ -1,0 +1,381 @@
+package com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools;
+
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.DetectStacksRequestDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.DetectedStackDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.GeneratedMarkdownFile;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.TechStackType;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.WiseArchitectureRequestDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.WiseArchitectureResponseDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.AdviceHistoryDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureHistoryService;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
+
+/**
+ * MCP tool implementations for the Wise Architecture feature.
+ *
+ * <p>Wise Architecture is an AI-powered feature that analyzes codebases and generates
+ * agent-consumable Markdown implementation guides for pitches. These MCP tools allow
+ * AI coding agents to trigger analyses and retrieve the resulting guides directly from
+ * within their context window.
+ *
+ * <p>Example agent workflow via MCP:
+ * <ol>
+ *   <li>Call {@code get_pitch_detail} to get the pitch to implement</li>
+ *   <li>Call {@code wise_architecture_analyze} with pitchId + repositoryIds to generate guides</li>
+ *   <li>Read the returned Markdown files to understand the architecture and implementation steps</li>
+ *   <li>Implement the pitch following the generated guides</li>
+ * </ol>
+ *
+ * <p>Or, if analysis was run previously:
+ * <ol>
+ *   <li>Call {@code wise_architecture_list_analyses} to find existing analyses for a pitch</li>
+ *   <li>Call {@code wise_architecture_get_files} with the conversationId to retrieve the files</li>
+ * </ol>
+ */
+@Component
+@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
+@RequiredArgsConstructor
+@Slf4j
+public class WiseArchitectureMcpTools {
+
+    /** Minimum confidence score (0-100) for auto-detected stacks to be included. */
+    private static final int AUTO_DETECT_CONFIDENCE_THRESHOLD = 50;
+
+    private final WiseArchitectureService wiseArchitectureService;
+    private final WiseArchitectureHistoryService historyService;
+    private final UserRepository userRepository;
+
+    // ── Tool name constants ───────────────────────────────────────────────────
+
+    public static final String TOOL_LIST_ANALYSES = "wise_architecture_list_analyses";
+    public static final String TOOL_GET_FILES = "wise_architecture_get_files";
+    public static final String TOOL_ANALYZE = "wise_architecture_analyze";
+
+    // ── Tool definitions ──────────────────────────────────────────────────────
+
+    public static Map<String, Object> listAnalysesDefinition() {
+        return Map.of(
+            "name", TOOL_LIST_ANALYSES,
+            "description",
+                "List past Wise Architecture analyses for the current user, optionally filtered by pitch. "
+                + "Returns conversationId, pitchTitle, techStacks, createdAt, and messageCount per analysis. "
+                + "Use wise_architecture_get_files(conversationId) to retrieve the full Markdown guides "
+                + "for a specific analysis. If no analyses exist for a pitch, use wise_architecture_analyze "
+                + "to generate new ones.",
+            "inputSchema",
+                Map.of(
+                    "type", "object",
+                    "properties",
+                        Map.of(
+                            "pitchId",
+                            Map.of(
+                                "type", "integer",
+                                "description", "Optional. Filter by pitch ID to see only analyses for that pitch."),
+                            "page",
+                            Map.of(
+                                "type", "integer",
+                                "description", "Page number, 0-based (default: 0)"),
+                            "size",
+                            Map.of(
+                                "type", "integer",
+                                "description", "Page size (default: 10, max: 25)")),
+                    "required", List.of()));
+    }
+
+    public static Map<String, Object> getFilesDefinition() {
+        return Map.of(
+            "name", TOOL_GET_FILES,
+            "description",
+                "Retrieve the agent-consumable Markdown files generated by a Wise Architecture analysis. "
+                + "Files include: architecture-overview.md (problem, appetite, stack summary), "
+                + "per-stack implementation guides ({stack}-implementation-guide.md) with components, "
+                + "API contracts, data model, reusable services, libraries, and step-by-step implementation, "
+                + "api-design.md (consolidated REST API contracts), and implementation-plan.md. "
+                + "Use wise_architecture_list_analyses to find a conversationId.",
+            "inputSchema",
+                Map.of(
+                    "type", "object",
+                    "properties",
+                        Map.of(
+                            "conversationId",
+                            Map.of(
+                                "type", "string",
+                                "description",
+                                    "The UUID conversation identifier returned by wise_architecture_list_analyses")),
+                    "required", List.of("conversationId")));
+    }
+
+    public static Map<String, Object> analyzeDefinition() {
+        return Map.of(
+            "name", TOOL_ANALYZE,
+            "description",
+                "Run a Wise Architecture analysis for a pitch and return agent-ready Markdown implementation guides. "
+                + "Analyzes the specified repositories, detects technology stacks (or uses selectedStacks if provided), "
+                + "gathers team skills, Figma design context, and roadmap context, then generates: "
+                + "architecture-overview.md, per-stack implementation guides, api-design.md, and implementation-plan.md. "
+                + "Returns all files as a list of {filename, title, category, stackType, content} objects. "
+                + "If selectedStacks is omitted, stacks are auto-detected from the repositories (confidence >= 50%). "
+                + "This is a WRITE operation and requires a WRITE-scoped API key.",
+            "inputSchema",
+                Map.of(
+                    "type", "object",
+                    "properties",
+                        Map.of(
+                            "pitchId",
+                            Map.of(
+                                "type", "integer",
+                                "description", "The ID of the pitch to generate implementation guides for. "
+                                    + "Use get_pitches to find pitch IDs."),
+                            "repositoryIds",
+                            Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "integer"),
+                                "description",
+                                    "List of GitHub repository IDs to analyze. "
+                                    + "These are the ShipFlow-connected repository IDs (not GitHub repository IDs). "
+                                    + "Provide all repositories involved in implementing the pitch."),
+                            "selectedStacks",
+                            Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description",
+                                    "Optional. Technology stacks to generate guides for. "
+                                    + "If omitted, stacks are auto-detected from the repositories. "
+                                    + "Valid values: MOBILE_KOTLIN, MOBILE_SWIFT, MOBILE_REACT_NATIVE, MOBILE_FLUTTER, "
+                                    + "BACKEND_JAVA, BACKEND_NODE, BACKEND_PYTHON, BACKEND_GO, BACKEND_DOTNET, "
+                                    + "WEB_REACT, WEB_ANGULAR, WEB_VUE, WEB_NEXTJS")),
+                    "required", List.of("pitchId", "repositoryIds")));
+    }
+
+    // ── Tool handlers ─────────────────────────────────────────────────────────
+
+    /**
+     * List past Wise Architecture analyses for the current user.
+     * Auth is required to scope results to the authenticated user's conversations.
+     */
+    public List<Map<String, Object>> listAnalyses(Map<String, Object> args, Authentication auth) {
+        User user = resolveUser(auth);
+
+        Object pitchIdArg = args.get("pitchId");
+        if (pitchIdArg != null) {
+            long pitchId = toLong(pitchIdArg, "pitchId");
+            return historyService.getPitchConversations(pitchId).stream()
+                .map(WiseArchitectureMcpTools::summaryToMap)
+                .toList();
+        }
+
+        int page = toIntOrDefault(args.get("page"), 0);
+        int size = Math.min(toIntOrDefault(args.get("size"), 10), 25);
+
+        Page<AdviceHistoryDTO.ConversationSummary> results =
+            historyService.getUserConversations(user.getId(), page, size);
+
+        return results.getContent().stream()
+            .map(WiseArchitectureMcpTools::summaryToMap)
+            .toList();
+    }
+
+    /**
+     * Get the generated Markdown files for a specific analysis conversation.
+     */
+    public List<Map<String, Object>> getFiles(Map<String, Object> args) {
+        Object convIdArg = args.get("conversationId");
+        if (convIdArg == null || convIdArg.toString().isBlank()) {
+            throw new IllegalArgumentException("Missing required argument: conversationId");
+        }
+        String conversationId = convIdArg.toString().trim();
+
+        List<GeneratedMarkdownFile> files =
+            historyService.getGeneratedFilesByConversationId(conversationId);
+
+        if (files.isEmpty()) {
+            return List.of(Map.of(
+                "message",
+                "No generated files found for this conversation. "
+                    + "The analysis may have been run before v0.9.0 or the conversationId is invalid."));
+        }
+
+        return files.stream().map(WiseArchitectureMcpTools::fileToMap).toList();
+    }
+
+    /**
+     * Run a Wise Architecture analysis and return the generated Markdown files.
+     * Auth is required so the analysis is saved to the user's history.
+     */
+    public List<Map<String, Object>> analyze(Map<String, Object> args, Authentication auth) {
+        User user = resolveUser(auth);
+
+        long pitchId = toLong(args.get("pitchId"), "pitchId");
+        List<Long> repositoryIds = toListOfLong(args.get("repositoryIds"), "repositoryIds");
+        List<TechStackType> stacks = resolveStacks(args, pitchId, repositoryIds);
+
+        WiseArchitectureRequestDTO request = WiseArchitectureRequestDTO.builder()
+            .pitchId(pitchId)
+            .repositoryIds(repositoryIds)
+            .selectedStacks(stacks)
+            .build();
+
+        log.info("MCP wise_architecture_analyze: pitchId={}, repos={}, stacks={}, user={}",
+            pitchId, repositoryIds, stacks, user.getUsername());
+
+        WiseArchitectureResponseDTO response =
+            wiseArchitectureService.analyze(request, user.getId());
+
+        List<GeneratedMarkdownFile> files = response.getGeneratedFiles();
+        if (files == null || files.isEmpty()) {
+            return List.of(Map.of("message",
+                "Analysis completed but no Markdown files were generated. "
+                    + "Check that Wise Architecture feature is enabled and the LLM is configured."));
+        }
+
+        return files.stream().map(WiseArchitectureMcpTools::fileToMap).toList();
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Auto-detect stacks from repositories if selectedStacks is absent.
+     * Falls back to all detected stacks (any confidence) if none meet the threshold.
+     */
+    private List<TechStackType> resolveStacks(
+            Map<String, Object> args, long pitchId, List<Long> repositoryIds) {
+
+        Object stacksArg = args.get("selectedStacks");
+        if (stacksArg instanceof List<?> rawList && !rawList.isEmpty()) {
+            return rawList.stream()
+                .map(Object::toString)
+                .map(s -> {
+                    try {
+                        return TechStackType.valueOf(s.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                            "Unknown stack type '" + s + "'. Valid values: "
+                            + "MOBILE_KOTLIN, MOBILE_SWIFT, MOBILE_REACT_NATIVE, MOBILE_FLUTTER, "
+                            + "BACKEND_JAVA, BACKEND_NODE, BACKEND_PYTHON, BACKEND_GO, BACKEND_DOTNET, "
+                            + "WEB_REACT, WEB_ANGULAR, WEB_VUE, WEB_NEXTJS");
+                    }
+                })
+                .toList();
+        }
+
+        // Auto-detect
+        DetectStacksRequestDTO detectRequest = DetectStacksRequestDTO.builder()
+            .pitchId(pitchId)
+            .repositoryIds(repositoryIds)
+            .build();
+
+        var detected = wiseArchitectureService.detectStacks(detectRequest);
+
+        List<TechStackType> highConfidence = detected.getDetectedStacks().stream()
+            .filter(s -> s.getConfidence() >= AUTO_DETECT_CONFIDENCE_THRESHOLD)
+            .map(DetectedStackDTO::getStackType)
+            .distinct()
+            .toList();
+
+        if (!highConfidence.isEmpty()) {
+            log.info("Auto-detected stacks (conf>={}) for pitchId={}: {}",
+                AUTO_DETECT_CONFIDENCE_THRESHOLD, pitchId, highConfidence);
+            return highConfidence;
+        }
+
+        // Fallback: any detected stack
+        List<TechStackType> anyDetected = detected.getDetectedStacks().stream()
+            .map(DetectedStackDTO::getStackType)
+            .distinct()
+            .toList();
+
+        if (!anyDetected.isEmpty()) {
+            log.info("Auto-detected stacks (any confidence) for pitchId={}: {}", pitchId, anyDetected);
+            return anyDetected;
+        }
+
+        throw new IllegalArgumentException(
+            "Could not auto-detect any technology stacks from the specified repositories. "
+            + "Please provide the 'selectedStacks' argument explicitly.");
+    }
+
+    private static Map<String, Object> summaryToMap(AdviceHistoryDTO.ConversationSummary s) {
+        return Map.of(
+            "conversationId", s.getConversationId() != null ? s.getConversationId() : "",
+            "pitchId",        s.getPitchId() != null ? s.getPitchId() : 0L,
+            "pitchTitle",     s.getPitchTitle() != null ? s.getPitchTitle() : "",
+            "techStacks",     s.getTechStacks() != null ? s.getTechStacks() : List.of(),
+            "messageCount",   s.getMessageCount(),
+            "createdAt",      s.getCreatedAt() != null ? s.getCreatedAt().toString() : "");
+    }
+
+    private static Map<String, Object> fileToMap(GeneratedMarkdownFile f) {
+        return Map.of(
+            "filename",  f.getFilename(),
+            "title",     f.getTitle(),
+            "category",  f.getCategory(),
+            "stackType", f.getStackType() != null ? f.getStackType().name() : "cross-stack",
+            "content",   f.getContent());
+    }
+
+    private User resolveUser(Authentication auth) {
+        if (auth == null || auth.getName() == null) {
+            throw new SecurityException("No authenticated user in MCP session");
+        }
+        return userRepository.findByUsername(auth.getName())
+            .orElseThrow(() -> new SecurityException("MCP user not found: " + auth.getName()));
+    }
+
+    private static long toLong(Object val, String field) {
+        if (val == null) {
+            throw new IllegalArgumentException("Missing required argument: " + field);
+        }
+        if (val instanceof Number n) return n.longValue();
+        try {
+            return Long.parseLong(val.toString());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                "Argument '" + field + "' must be a number, got: " + val);
+        }
+    }
+
+    private static int toIntOrDefault(Object val, int defaultValue) {
+        if (val == null) return defaultValue;
+        if (val instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(val.toString());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Long> toListOfLong(Object val, String field) {
+        if (val == null) {
+            throw new IllegalArgumentException("Missing required argument: " + field);
+        }
+        if (!(val instanceof List)) {
+            throw new IllegalArgumentException("Argument '" + field + "' must be an array of integers");
+        }
+        List<?> list = (List<?>) val;
+        if (list.isEmpty()) {
+            throw new IllegalArgumentException("Argument '" + field + "' must not be empty");
+        }
+        return list.stream()
+            .map(item -> {
+                if (item instanceof Number n) return n.longValue();
+                try {
+                    return Long.parseLong(item.toString());
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException(
+                        "Items in '" + field + "' must be integers, got: " + item);
+                }
+            })
+            .toList();
+    }
+}
