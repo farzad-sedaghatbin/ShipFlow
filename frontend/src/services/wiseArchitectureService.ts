@@ -8,6 +8,7 @@ import {
   DetectStacksResponse,
   FollowUpQuestion,
   FollowUpResponse,
+  GeneratedMarkdownFile,
   JobStartResponse,
   JobStatusResponse,
   ProgressCallback,
@@ -341,6 +342,44 @@ export const wiseArchitectureService = {
       feedback
     );
     return response.data;
+  },
+
+  /**
+   * Get the generated Markdown files for an advice entry.
+   * Returns files for INITIAL_SOLUTION entries; empty array for follow-ups.
+   */
+  getAdviceFiles: async (adviceId: number): Promise<GeneratedMarkdownFile[]> => {
+    const response = await wiseArchApi.get<GeneratedMarkdownFile[]>(
+      `/history/${adviceId}/files`
+    );
+    return response.data;
+  },
+
+  /**
+   * Trigger a browser download of a single Markdown file.
+   */
+  downloadMarkdownFile: (file: GeneratedMarkdownFile): void => {
+    const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Trigger a browser download of all generated files as individual downloads.
+   * Files are downloaded sequentially with a small delay to avoid browser blocking.
+   */
+  downloadAllMarkdownFiles: (files: GeneratedMarkdownFile[]): void => {
+    files.forEach((file, idx) => {
+      setTimeout(() => {
+        wiseArchitectureService.downloadMarkdownFile(file);
+      }, idx * 200);
+    });
   },
 };
 

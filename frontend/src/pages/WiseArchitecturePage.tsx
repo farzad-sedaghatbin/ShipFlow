@@ -27,6 +27,9 @@ import {
   Package,
   Layers,
   CheckSquare,
+  Download,
+  FileText,
+  FolderOpen,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -59,6 +62,7 @@ import {
   WiseArchitectureResponse,
   DetectStacksResponse,
   FollowUpResponse,
+  GeneratedMarkdownFile,
   TechStackType,
   STACK_DISPLAY_NAMES,
   DetectedStack,
@@ -101,6 +105,120 @@ const getStackCategory = (stack: TechStackType): string => {
   if (stack.startsWith('WEB_')) return 'Web';
   return 'Other';
 };
+
+// ─── Generated Files Panel ────────────────────────────────────────────────────
+
+const FILE_CATEGORY_ICONS: Record<string, React.ElementType> = {
+  overview: FolderOpen,
+  backend: Server,
+  mobile: Smartphone,
+  web: Globe,
+  api: FileCode2,
+  plan: CheckSquare,
+};
+
+function GeneratedFilesPanel({
+  files,
+  t,
+}: {
+  files: GeneratedMarkdownFile[];
+  t: (key: string, fallback?: string) => string;
+}) {
+  const [previewFile, setPreviewFile] = useState<GeneratedMarkdownFile | null>(null);
+
+  const handleDownload = (file: GeneratedMarkdownFile) => {
+    const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadAll = () => {
+    files.forEach((file, idx) => {
+      setTimeout(() => handleDownload(file), idx * 200);
+    });
+  };
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-5 w-5 text-primary" />
+            {t('wiseArchitecture.generatedFiles.title', 'Generated Agent Files')}
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={handleDownloadAll}>
+            <Download className="h-4 w-4 mr-1" />
+            {t('wiseArchitecture.generatedFiles.downloadAll', 'Download All')}
+          </Button>
+        </div>
+        <CardDescription>
+          {t(
+            'wiseArchitecture.generatedFiles.description',
+            'Markdown files ready to drop into your repository. AI coding agents (Claude Code, Cursor, Copilot) can read these to implement the pitch autonomously.'
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {files.map(file => {
+          const Icon = FILE_CATEGORY_ICONS[file.category] ?? FileText;
+          const isActive = previewFile?.filename === file.filename;
+          return (
+            <div key={file.filename}>
+              <div
+                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                  isActive
+                    ? 'bg-primary/15 border border-primary/40'
+                    : 'bg-muted/50 hover:bg-muted'
+                }`}
+                onClick={() => setPreviewFile(isActive ? null : file)}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{file.title}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{file.filename}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 h-7 px-2"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDownload(file);
+                  }}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+              </div>
+              {isActive && (
+                <div className="mt-1 p-3 bg-background border rounded-lg max-h-80 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                    {file.content}
+                  </pre>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <p className="text-xs text-muted-foreground pt-1">
+          {t(
+            'wiseArchitecture.generatedFiles.hint',
+            'Tip: place these files in a .wise/ directory at the root of your repository.'
+          )}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -1167,6 +1285,11 @@ const WiseArchitecturePage: React.FC = () => {
                   );
                 })}
               </Accordion>
+
+              {/* Generated Markdown Files */}
+              {solution.generatedFiles && solution.generatedFiles.length > 0 && (
+                <GeneratedFilesPanel files={solution.generatedFiles} t={t} />
+              )}
 
               <Button onClick={handleGoToChat} className="w-full">
                 <MessageSquare className="h-4 w-4 mr-2" />

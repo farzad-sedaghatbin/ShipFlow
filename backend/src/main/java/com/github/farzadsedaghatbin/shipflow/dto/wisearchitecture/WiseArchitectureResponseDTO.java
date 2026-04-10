@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.GeneratedMarkdownFile;
 
 /**
  * Response DTO containing the complete technical solution document.
@@ -63,6 +64,14 @@ public class WiseArchitectureResponseDTO {
      * Used to display warnings when context is missing.
      */
     private ContextSourcesDTO contextSources;
+
+    /**
+     * Agent-consumable Markdown files generated from this analysis.
+     * Each file covers a specific area (overview, per-stack guide, API design, implementation plan).
+     * Files can be placed in a {@code .wise/} directory in the repository so AI coding agents
+     * (Claude Code, Cursor, GitHub Copilot Workspace) can read them to drive implementation.
+     */
+    private List<GeneratedMarkdownFile> generatedFiles;
 
     /**
      * DTO for appetite verification result.

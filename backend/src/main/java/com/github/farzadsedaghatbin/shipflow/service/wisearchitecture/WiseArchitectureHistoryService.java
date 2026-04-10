@@ -1,6 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.AdviceHistoryDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.GeneratedMarkdownFile;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.TechStackType;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.WiseArchitectureResponseDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 public class WiseArchitectureHistoryService {
 
     private final WiseArchitectureAdviceRepository adviceRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * Save an initial solution to history.
@@ -52,6 +56,8 @@ public class WiseArchitectureHistoryService {
                 .map(TechStackType::name)
                 .collect(Collectors.joining(",")) : "";
 
+        String generatedFilesJson = serializeGeneratedFiles(response.getGeneratedFiles());
+
         WiseArchitectureAdvice advice = WiseArchitectureAdvice.builder()
             .conversationId(conversationId)
             .pitch(pitch)
@@ -64,6 +70,7 @@ public class WiseArchitectureHistoryService {
             .hasGitHubContext(hasGitHubContext)
             .hasRoadmapContext(hasRoadmapContext)
             .processingTimeMs(processingTimeMs)
+            .generatedFilesJson(generatedFilesJson)
             .build();
 
         WiseArchitectureAdvice saved = adviceRepository.save(advice);
@@ -195,6 +202,17 @@ public class WiseArchitectureHistoryService {
         WiseArchitectureAdvice advice = adviceRepository.findById(adviceId)
             .orElseThrow(() -> new ResourceNotFoundException("Advice not found: " + adviceId));
         return toDTO(advice);
+    }
+
+    /**
+     * Get the generated Markdown files for an advice entry.
+     * Returns an empty list for FOLLOW_UP messages or entries created before this feature.
+     */
+    @Transactional(readOnly = true)
+    public List<GeneratedMarkdownFile> getGeneratedFiles(Long adviceId) {
+        WiseArchitectureAdvice advice = adviceRepository.findById(adviceId)
+            .orElseThrow(() -> new ResourceNotFoundException("Advice not found: " + adviceId));
+        return deserializeGeneratedFiles(advice.getGeneratedFilesJson());
     }
 
     private AdviceHistoryDTO toDTO(WiseArchitectureAdvice advice) {
@@ -399,5 +417,38 @@ public class WiseArchitectureHistoryService {
         }
         
         return sb.toString().trim();
+    }
+
+    /**
+     * Serialize generated Markdown files to JSON for DB storage.
+     * Returns null if files is null or empty.
+     */
+    private String serializeGeneratedFiles(List<GeneratedMarkdownFile> files) {
+        if (files == null || files.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(files);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize generated files to JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Deserialize generated Markdown files from JSON DB storage.
+     * Returns an empty list on error or if json is null.
+     */
+    public List<GeneratedMarkdownFile> deserializeGeneratedFiles(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(json,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, GeneratedMarkdownFile.class));
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to deserialize generated files JSON: {}", e.getMessage());
+            return List.of();
+        }
     }
 }

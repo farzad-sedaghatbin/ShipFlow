@@ -44,6 +44,7 @@ public class WiseArchitectureService {
     private final TechnicalSolutionGeneratorService solutionGeneratorService;
     private final WiseArchitectureConversationService conversationService;
     private final WiseArchitectureHistoryService historyService;
+    private final WiseArchitectureMarkdownService markdownService;
     private final FigmaMcpProvider figmaMcpProvider;
     private final GitHubMcpProvider githubMcpProvider;
 
@@ -285,11 +286,14 @@ public class WiseArchitectureService {
             .contextSources(contextSources)
             .generatedAt(LocalDateTime.now())
             .build();
-        
+
+        // Generate agent-consumable Markdown files from the solution
+        response.setGeneratedFiles(markdownService.generateFiles(response, pitch));
+
         // Create conversation session for follow-ups
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
-        
+
         // Save to advice history
         long processingTimeMs = System.currentTimeMillis() - startTime;
         if (userId != null) {
@@ -1198,12 +1202,15 @@ public class WiseArchitectureService {
             .contextSources(contextSources)
             .generatedAt(LocalDateTime.now())
             .build();
-        
+
+        // Generate agent-consumable Markdown files from the solution
+        response.setGeneratedFiles(markdownService.generateFiles(response, pitch));
+
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
-        
-        String summaryMsg = String.format("Solution complete: %d stack%s, %d hours, appetite %s", 
-            solutions.size(), solutions.size() == 1 ? "" : "s", 
+
+        String summaryMsg = String.format("Solution complete: %d stack%s, %d hours, appetite %s",
+            solutions.size(), solutions.size() == 1 ? "" : "s",
             totalEstimatedHours, appetitePassed ? "passed" : "exceeded");
         callback.onProgress(100, summaryMsg);
         
