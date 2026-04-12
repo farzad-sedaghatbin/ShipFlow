@@ -166,6 +166,12 @@ public class WiseArchitectureResponseDTO {
         private Boolean hasRoadmapContext;
 
         /**
+         * Whether existing pitch scopes (hill chart points) and tasks were included.
+         * When true, the analysis reflects work already done / in-progress.
+         */
+        private Boolean hasPitchProgressContext;
+
+        /**
          * List of warning messages about missing context sources.
          */
         private List<String> warnings;
@@ -173,9 +179,14 @@ public class WiseArchitectureResponseDTO {
         /**
          * Create a DTO with warnings based on missing sources.
          */
-        public static ContextSourcesDTO create(boolean hasCode, boolean hasTeamSkills, boolean hasFigma, boolean hasRoadmap) {
+        public static ContextSourcesDTO create(
+                boolean hasCode,
+                boolean hasTeamSkills,
+                boolean hasFigma,
+                boolean hasRoadmap,
+                boolean hasPitchProgress) {
             List<String> warnings = new java.util.ArrayList<>();
-            
+
             if (!hasCode) {
                 warnings.add("Code repository not accessible - architecture recommendations based on pitch description only");
             }
@@ -188,12 +199,13 @@ public class WiseArchitectureResponseDTO {
             if (!hasRoadmap) {
                 warnings.add("No epic assigned - recommendations may not consider related work and future extensibility");
             }
-            
+
             return ContextSourcesDTO.builder()
                 .hasCodeContext(hasCode)
                 .hasTeamSkills(hasTeamSkills)
                 .hasFigmaContext(hasFigma)
                 .hasRoadmapContext(hasRoadmap)
+                .hasPitchProgressContext(hasPitchProgress)
                 .warnings(warnings.isEmpty() ? null : warnings)
                 .build();
         }

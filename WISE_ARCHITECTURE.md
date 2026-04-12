@@ -67,8 +67,15 @@ Wise Architecture now considers multiple context sources for smarter recommendat
   - Lists related pitches in the same Epic for cohesive design recommendations
   - Generates architecture suggestions optimized for future extension
 
+- **Pitch Progress Context (v0.9.0)**: Reads existing scopes and tasks already defined on the pitch
+  - Fetches hill-chart points (`HillChartPoint`) — scope name, description, position phase (`figuring-out` 0–49 / `executing` 50–100)
+  - Fetches root-level tasks (`Task`) — title, status, estimate hours
+  - LLM is explicitly instructed to **avoid duplicating** work that is already captured; references existing scopes as dependency anchors
+  - Token budget: ~50–120 tokens (only root tasks included, no sub-tasks)
+  - `contextSources.hasPitchProgressContext = true` when at least one scope or task exists on the pitch
+
 - **Context Availability Warnings**: Frontend displays alerts when context sources are missing
-  - Shows which sources were used (code analysis, team skills, design context, roadmap context)
+  - Shows which sources were used (code analysis, team skills, design context, roadmap context, pitch progress)
   - Warns users that recommendations may be less accurate without full context
   - Tip: "Assign pitches to epics to enable roadmap-aware recommendations"
 
@@ -363,6 +370,56 @@ Returns the agent-consumable Markdown files generated during the analysis. Files
 architecture overview, per-stack implementation guides, API design, and implementation plan.
 Returns an empty array for FOLLOW_UP messages or entries created before v0.9.0.
 
+## MCP Tools (v0.9.0)
+
+When the ShipFlow MCP server is enabled (`MCP_SERVER_ENABLED=true`), AI coding agents can interact
+with Wise Architecture directly without opening the UI.
+
+### Read Tools
+
+| Tool | Arguments | What it returns |
+|------|-----------|----------------|
+| `wise_architecture_list_analyses` | `pitchId?` (int), `page?` (int), `size?` (int, max 25) | Analyses for the current user — `conversationId`, `pitchTitle`, `techStacks`, `createdAt`, `messageCount` |
+| `wise_architecture_get_files` | `conversationId` (string, **required**) | All generated Markdown files for that analysis — `filename`, `title`, `category`, `stackType`, `content` |
+
+### Write Tools
+
+| Tool | Arguments | What it does |
+|------|-----------|-------------|
+| `wise_architecture_analyze` | `pitchId` (**required**), `repositoryIds` (**required**), `selectedStacks?` | Runs a full analysis and returns all generated Markdown files in one response. If `selectedStacks` is omitted, stacks are auto-detected from the repositories (confidence ≥ 50 %). Requires a WRITE-scoped API key. |
+
+Valid `selectedStacks` values: `MOBILE_KOTLIN`, `MOBILE_SWIFT`, `MOBILE_REACT_NATIVE`, `MOBILE_FLUTTER`,
+`BACKEND_JAVA`, `BACKEND_NODE`, `BACKEND_PYTHON`, `BACKEND_GO`, `BACKEND_DOTNET`,
+`WEB_REACT`, `WEB_ANGULAR`, `WEB_VUE`, `WEB_NEXTJS`
+
+### End-to-end agent workflow
+
+```
+# 1. Find the pitch to implement
+get_pitches(projectId: 5)
+
+# 2. Run Wise Architecture (auto-detects stacks when selectedStacks omitted)
+wise_architecture_analyze(
+  pitchId: 42,
+  repositoryIds: [1, 3]
+)
+# → [{ filename: "architecture-overview.md", content: "..." }, ...]
+
+# 3. Read the files and implement using the guides
+```
+
+Or, when an analysis already exists:
+
+```
+wise_architecture_list_analyses(pitchId: 42)
+# → [{ conversationId: "abc-...", techStacks: ["BACKEND_JAVA", "WEB_REACT"], createdAt: "..." }]
+
+wise_architecture_get_files(conversationId: "abc-...")
+# → list of Markdown files
+```
+
+See `MCP_CLIENT_SETUP.md` for setup instructions and API key configuration.
+
 ## Requirements
 
 - **AI Features** must be enabled in organization settings
@@ -373,14 +430,15 @@ Returns an empty array for FOLLOW_UP messages or entries created before v0.9.0.
 ## Technical Architecture
 
 ### Backend Services
-- `WiseArchitectureService`: Main orchestration service with progress callbacks
+- `WiseArchitectureService`: Main orchestration — calls `HillChartPointRepository` + `TaskRepository` to build pitch progress context; passes it as the 10th arg to `generateStackSolution()`
 - `AsyncWiseArchitectureService`: Job management and request deduplication
 - `WiseArchitectureExecutor`: Async execution on `aiTaskExecutor` thread pool
-- `WiseArchitectureHistoryService`: Persists and retrieves advice history with feedback; serialises generated files to JSON
-- `WiseArchitectureMarkdownService`: **New in v0.9.0** — converts structured solutions to agent-consumable Markdown files
+- `WiseArchitectureHistoryService`: Persists and retrieves advice history; `getGeneratedFilesByConversationId(String)` for MCP tool access
+- `WiseArchitectureMarkdownService`: Converts structured solutions to agent-consumable Markdown files (v0.9.0)
 - `TechStackDetectorService`: Detects tech stacks with pre-indexed pattern matching
-- `TechnicalSolutionGeneratorService`: Generates solutions using LLM with JSON schema and retry logic
-- `WiseArchitectureConversationService`: Manages chat sessions and Copilot prompts
+- `TechnicalSolutionGeneratorService`: 10-argument `generateStackSolution()` — last arg is `pitchProgressContext`; injects it into the prompt under "Current Pitch Progress" section with explicit instruction not to duplicate captured work
+- `WiseArchitectureConversationService`: Manages chat sessions (60-min TTL) and Copilot prompts
+- `WiseArchitectureMcpTools`: Three MCP server tools (`wise_architecture_list_analyses`, `wise_architecture_get_files`, `wise_architecture_analyze`)
 - `GitHubMcpProvider`: File list caching with 10-minute TTL
 - `FigmaMcpProvider`: Figma design context extraction with node-id support
 
