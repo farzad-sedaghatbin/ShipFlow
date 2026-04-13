@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTo
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +56,7 @@ public class McpToolDispatcher {
   private final TaskMcpTools taskTools;
   private final PitchMcpTools pitchTools;
   private final CommentMcpTools commentTools;
+  private final WiseArchitectureMcpTools wiseArchitectureTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -218,6 +220,11 @@ public class McpToolDispatcher {
       // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
       case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args, auth);
 
+      // Wise Architecture tools — auth passed for user scoping and history persistence
+      case WiseArchitectureMcpTools.TOOL_LIST_ANALYSES -> wiseArchitectureTools.listAnalyses(args, auth);
+      case WiseArchitectureMcpTools.TOOL_GET_FILES -> wiseArchitectureTools.getFiles(args);
+      case WiseArchitectureMcpTools.TOOL_ANALYZE -> wiseArchitectureTools.analyze(args, auth);
+
       default -> throw new McpToolException("Unknown tool: " + name);
     };
   }
@@ -235,7 +242,9 @@ public class McpToolDispatcher {
         TaskMcpTools.getBlockersDefinition(),
         PitchMcpTools.getPitchesDefinition(),
         PitchMcpTools.getPitchDetailDefinition(),
-        PitchMcpTools.getBettingCandidatesDefinition());
+        PitchMcpTools.getBettingCandidatesDefinition(),
+        WiseArchitectureMcpTools.listAnalysesDefinition(),
+        WiseArchitectureMcpTools.getFilesDefinition());
   }
 
   /**
@@ -250,7 +259,8 @@ public class McpToolDispatcher {
         TaskMcpTools.updateTaskStatusDefinition(),
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
-        CommentMcpTools.addCommentDefinition());
+        CommentMcpTools.addCommentDefinition(),
+        WiseArchitectureMcpTools.analyzeDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */

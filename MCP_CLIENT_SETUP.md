@@ -72,6 +72,7 @@ List all pitched ideas waiting for the betting table.
 Create a task "Fix password reset flow" in Cycle 12 under the Auth Revamp pitch.
 Show me the hill chart status for the active cycle.
 Summarize the retrospective from the last cycle.
+Analyze the "Push Notifications" pitch using repositories 1 and 3, then implement it.
 ```
 
 ---
@@ -184,6 +185,8 @@ Once connected, your AI assistant has access to these tools:
 | `get_pitches` | Pitches for a project (filterable by status) |
 | `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
+| `wise_architecture_list_analyses` | Past Wise Architecture analyses for the current user (filterable by pitchId) |
+| `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
 
 ### Write Tools (v0.9.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
@@ -194,6 +197,42 @@ Once connected, your AI assistant has access to these tools:
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
 | `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
+| `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
+
+### Wise Architecture Tools (v0.9.0)
+
+The Wise Architecture tools let AI agents generate and retrieve implementation guides for pitches
+without opening the ShipFlow UI.
+
+**End-to-end agent workflow:**
+
+```
+# Step 1 — find the pitch
+get_pitches(projectId: 5)
+
+# Step 2 — run Wise Architecture (auto-detects stacks if selectedStacks omitted)
+wise_architecture_analyze(
+  pitchId: 42,
+  repositoryIds: [1, 3],          # ShipFlow-connected repo IDs
+  selectedStacks: ["BACKEND_JAVA", "WEB_REACT"]   # optional
+)
+
+# Returns: list of Markdown files (architecture-overview.md,
+#          java-implementation-guide.md, react-implementation-guide.md,
+#          api-design.md, implementation-plan.md)
+
+# Step 3 — read the files and implement!
+```
+
+**Retrieving a past analysis:**
+
+```
+wise_architecture_list_analyses(pitchId: 42)
+# → [{ conversationId: "abc-...", techStacks: ["BACKEND_JAVA", "WEB_REACT"], ... }]
+
+wise_architecture_get_files(conversationId: "abc-...")
+# → list of Markdown files
+```
 
 > **Planned tools** (future releases): `get_cycle` hill-chart positions, `search_all`, `get_retrospective`.
 > See [MCP_SERVER_MILESTONE.md](MCP_SERVER_MILESTONE.md) for the full roadmap.

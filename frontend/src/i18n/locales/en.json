@@ -6440,6 +6440,20 @@
       "teamSkillsNotAvailable": "Team skills not available - recommendations may not match team expertise",
       "figmaNotAvailable": "Figma design not accessible - UI/UX recommendations based on pitch description only"
     },
+    "generatedFiles": {
+      "title": "Generated Agent Files",
+      "description": "Markdown files ready to drop into your repository. AI coding agents (Claude Code, Cursor, Copilot Workspace) can read these to implement the pitch autonomously.",
+      "downloadAll": "Download All",
+      "hint": "Tip: place these files in a .wise/ directory at the root of your repository so agents can discover them automatically.",
+      "categories": {
+        "overview": "Overview",
+        "backend": "Backend",
+        "mobile": "Mobile",
+        "web": "Web",
+        "api": "API Design",
+        "plan": "Implementation Plan"
+      }
+    },
     "history": {
       "title": "Advice History",
       "subtitle": "Review your past AI-generated solutions",

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.GeneratedMarkdownFile;
 
 /**
  * Response DTO containing the complete technical solution document.
@@ -63,6 +64,14 @@ public class WiseArchitectureResponseDTO {
      * Used to display warnings when context is missing.
      */
     private ContextSourcesDTO contextSources;
+
+    /**
+     * Agent-consumable Markdown files generated from this analysis.
+     * Each file covers a specific area (overview, per-stack guide, API design, implementation plan).
+     * Files can be placed in a {@code .wise/} directory in the repository so AI coding agents
+     * (Claude Code, Cursor, GitHub Copilot Workspace) can read them to drive implementation.
+     */
+    private List<GeneratedMarkdownFile> generatedFiles;
 
     /**
      * DTO for appetite verification result.
@@ -157,6 +166,12 @@ public class WiseArchitectureResponseDTO {
         private Boolean hasRoadmapContext;
 
         /**
+         * Whether existing pitch scopes (hill chart points) and tasks were included.
+         * When true, the analysis reflects work already done / in-progress.
+         */
+        private Boolean hasPitchProgressContext;
+
+        /**
          * List of warning messages about missing context sources.
          */
         private List<String> warnings;
@@ -164,9 +179,14 @@ public class WiseArchitectureResponseDTO {
         /**
          * Create a DTO with warnings based on missing sources.
          */
-        public static ContextSourcesDTO create(boolean hasCode, boolean hasTeamSkills, boolean hasFigma, boolean hasRoadmap) {
+        public static ContextSourcesDTO create(
+                boolean hasCode,
+                boolean hasTeamSkills,
+                boolean hasFigma,
+                boolean hasRoadmap,
+                boolean hasPitchProgress) {
             List<String> warnings = new java.util.ArrayList<>();
-            
+
             if (!hasCode) {
                 warnings.add("Code repository not accessible - architecture recommendations based on pitch description only");
             }
@@ -179,12 +199,13 @@ public class WiseArchitectureResponseDTO {
             if (!hasRoadmap) {
                 warnings.add("No epic assigned - recommendations may not consider related work and future extensibility");
             }
-            
+
             return ContextSourcesDTO.builder()
                 .hasCodeContext(hasCode)
                 .hasTeamSkills(hasTeamSkills)
                 .hasFigmaContext(hasFigma)
                 .hasRoadmapContext(hasRoadmap)
+                .hasPitchProgressContext(hasPitchProgress)
                 .warnings(warnings.isEmpty() ? null : warnings)
                 .build();
         }

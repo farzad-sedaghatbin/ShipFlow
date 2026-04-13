@@ -8,18 +8,24 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.GitHubMcpProvider;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +49,12 @@ class WiseArchitectureServiceTest {
 
     @Mock
     private EpicRepository epicRepository;
+
+    @Mock
+    private HillChartPointRepository hillChartPointRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @Mock
     private GitHubRepositoryRepository repositoryRepository;
@@ -288,7 +300,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .architectureOverview("Spring Boot REST API")
@@ -321,7 +333,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(32) // 5 days * 8 hours = 40, so 32 is within budget
@@ -349,7 +361,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(56) // Over 40 hour budget
@@ -383,7 +395,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(16)
@@ -494,7 +506,7 @@ class WiseArchitectureServiceTest {
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitchWithEpic));
             when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitchWithEpic));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -524,7 +536,7 @@ class WiseArchitectureServiceTest {
             lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -568,7 +580,7 @@ class WiseArchitectureServiceTest {
             when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(pitch1));
             when(pitchRepository.findByEpicIdNotDeleted(1L)).thenReturn(List.of(pitch1, pitch2));
             when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
-            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(solutionGeneratorService.generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(StackSolutionDTO.builder()
                     .stackType(TechStackType.BACKEND_JAVA)
                     .estimatedHours(24)
@@ -584,14 +596,152 @@ class WiseArchitectureServiceTest {
             WiseArchitectureResponseDTO response = service.analyze(request, 100L);
 
             assertThat(response.getContextSources().getHasRoadmapContext()).isTrue();
-            
+
             // Verify that roadmap context was passed to solution generator
             verify(solutionGeneratorService).generateStackSolution(
-                any(), any(), any(), any(), any(), any(), 
-                argThat(roadmapContext -> roadmapContext != null && 
+                any(), any(), any(), any(), any(), any(),
+                argThat(roadmapContext -> roadmapContext != null &&
                     roadmapContext.contains("Payment Epic") &&
                     roadmapContext.contains("Payment History")),
-                any(), any());
+                any(), any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("PitchProgressContext")
+    class PitchProgressContextTests {
+
+        private WiseArchitectureRequestDTO buildRequest() {
+            return WiseArchitectureRequestDTO.builder()
+                .pitchId(1L)
+                .repositoryIds(List.of(1L))
+                .selectedStacks(List.of(TechStackType.BACKEND_JAVA))
+                .build();
+        }
+
+        private void stubCommonMocks() {
+            when(settingsService.getSettings()).thenReturn(enabledSettings);
+            lenient().when(settingsService.getFigmaAccessToken()).thenReturn(null);
+            when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+            when(repositoryRepository.findById(1L)).thenReturn(Optional.of(testRepo));
+            when(solutionGeneratorService.generateStackSolution(
+                    any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(StackSolutionDTO.builder()
+                    .stackType(TechStackType.BACKEND_JAVA)
+                    .estimatedHours(16)
+                    .build());
+            when(conversationService.createSession(any(), any())).thenReturn("session-xyz");
+        }
+
+        @Test
+        @DisplayName("hasPitchProgressContext is false when no scopes or tasks exist")
+        void shouldBeFalseWhenNoScopesOrTasks() {
+            stubCommonMocks();
+            // Mockito returns empty List by default for unstubbed List-returning methods,
+            // but be explicit for clarity
+            when(hillChartPointRepository.findByPitchId(1L)).thenReturn(List.of());
+            when(taskRepository.findByPitchId(1L)).thenReturn(List.of());
+
+            WiseArchitectureResponseDTO response = service.analyze(buildRequest(), 100L);
+
+            assertThat(response.getContextSources().getHasPitchProgressContext()).isFalse();
+        }
+
+        @Test
+        @DisplayName("hasPitchProgressContext is true when pitch has existing scopes")
+        void shouldBeTrueWhenScopesExist() {
+            stubCommonMocks();
+
+            HillChartPoint scope = HillChartPoint.builder()
+                .id(10L)
+                .scope("User Authentication Flow")
+                .description("Login and registration screens")
+                .position(30)
+                .pitch(testPitch)
+                .build();
+
+            when(hillChartPointRepository.findByPitchId(1L)).thenReturn(List.of(scope));
+            when(taskRepository.findByPitchId(1L)).thenReturn(List.of());
+
+            WiseArchitectureResponseDTO response = service.analyze(buildRequest(), 100L);
+
+            assertThat(response.getContextSources().getHasPitchProgressContext()).isTrue();
+        }
+
+        @Test
+        @DisplayName("hasPitchProgressContext is true when pitch has existing tasks")
+        void shouldBeTrueWhenTasksExist() {
+            stubCommonMocks();
+
+            Task task = Task.builder()
+                .id(20L)
+                .title("Design DB schema")
+                .status(TaskStatus.DONE)
+                .estimateHours(BigDecimal.valueOf(4))
+                .build();
+
+            when(hillChartPointRepository.findByPitchId(1L)).thenReturn(List.of());
+            when(taskRepository.findByPitchId(1L)).thenReturn(List.of(task));
+
+            WiseArchitectureResponseDTO response = service.analyze(buildRequest(), 100L);
+
+            assertThat(response.getContextSources().getHasPitchProgressContext()).isTrue();
+        }
+
+        @Test
+        @DisplayName("scope and task context is passed as 10th argument to generateStackSolution")
+        void shouldPassProgressContextToGenerator() {
+            stubCommonMocks();
+
+            HillChartPoint scope = HillChartPoint.builder()
+                .id(10L)
+                .scope("API Layer")
+                .description("REST endpoints for the feature")
+                .position(60)
+                .pitch(testPitch)
+                .build();
+
+            Task task = Task.builder()
+                .id(21L)
+                .title("Write OpenAPI spec")
+                .status(TaskStatus.IN_PROGRESS)
+                .estimateHours(BigDecimal.valueOf(3))
+                .build();
+
+            when(hillChartPointRepository.findByPitchId(1L)).thenReturn(List.of(scope));
+            when(taskRepository.findByPitchId(1L)).thenReturn(List.of(task));
+
+            service.analyze(buildRequest(), 100L);
+
+            // Verify the 10th argument (pitchProgressContext) contains scope and task info
+            verify(solutionGeneratorService).generateStackSolution(
+                any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                argThat(ctx -> ctx != null
+                    && ctx.contains("API Layer")
+                    && ctx.contains("Write OpenAPI spec")
+                    && ctx.contains("IN_PROGRESS")));
+        }
+
+        @Test
+        @DisplayName("scope position phase is correctly labelled in context")
+        void shouldLabelScopePhaseCorrectly() {
+            stubCommonMocks();
+
+            HillChartPoint uphill = HillChartPoint.builder()
+                .id(11L).scope("Uphill Work").description("Still figuring out").position(20).pitch(testPitch).build();
+            HillChartPoint downhill = HillChartPoint.builder()
+                .id(12L).scope("Downhill Work").description("Executing now").position(75).pitch(testPitch).build();
+
+            when(hillChartPointRepository.findByPitchId(1L)).thenReturn(List.of(uphill, downhill));
+            when(taskRepository.findByPitchId(1L)).thenReturn(List.of());
+
+            service.analyze(buildRequest(), 100L);
+
+            verify(solutionGeneratorService).generateStackSolution(
+                any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                argThat(ctx -> ctx != null
+                    && ctx.contains("figuring-out")
+                    && ctx.contains("executing")));
         }
     }
 }

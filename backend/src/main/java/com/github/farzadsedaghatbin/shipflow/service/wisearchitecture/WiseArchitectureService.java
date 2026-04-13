@@ -2,15 +2,20 @@ package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.TeamAssignment;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
 import com.github.farzadsedaghatbin.shipflow.exception.FeatureDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryRepository;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
@@ -40,10 +45,13 @@ public class WiseArchitectureService {
     private final OrganizationSettingsService settingsService;
     private final PitchRepository pitchRepository;
     private final GitHubRepositoryRepository repositoryRepository;
+    private final HillChartPointRepository hillChartPointRepository;
+    private final TaskRepository taskRepository;
     private final TechStackDetectorService techStackDetectorService;
     private final TechnicalSolutionGeneratorService solutionGeneratorService;
     private final WiseArchitectureConversationService conversationService;
     private final WiseArchitectureHistoryService historyService;
+    private final WiseArchitectureMarkdownService markdownService;
     private final FigmaMcpProvider figmaMcpProvider;
     private final GitHubMcpProvider githubMcpProvider;
 
@@ -171,7 +179,13 @@ public class WiseArchitectureService {
         String roadmapContext = extractRoadmapContext(pitch);
         boolean hasRoadmapContext = roadmapContext != null && !roadmapContext.isBlank();
         log.debug("Roadmap context for pitch '{}': {}", pitch.getTitle(), hasRoadmapContext ? "available" : "not available");
-        
+
+        // Extract existing pitch progress - scopes (hill chart) + tasks already defined
+        String pitchProgressContext = extractPitchProgressContext(pitch);
+        boolean hasPitchProgressContext = pitchProgressContext != null && !pitchProgressContext.isBlank();
+        log.debug("Pitch progress context for '{}': {}", pitch.getTitle(),
+            hasPitchProgressContext ? "available (" + pitchProgressContext.length() + " chars)" : "not available");
+
         // Generate solution for each selected stack
         Map<TechStackType, StackSolutionDTO> solutions = new LinkedHashMap<>();
         int totalEstimatedHours = 0;
@@ -230,7 +244,7 @@ public class WiseArchitectureService {
             
             StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
                 pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext,
-                projectConventions, previousStacksSummary.toString());
+                projectConventions, previousStacksSummary.toString(), pitchProgressContext);
             
             solutions.put(stackType, solution);
             totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
@@ -271,8 +285,9 @@ public class WiseArchitectureService {
         }
         
         // Build context sources information
-        WiseArchitectureResponseDTO.ContextSourcesDTO contextSources = 
-            WiseArchitectureResponseDTO.ContextSourcesDTO.create(hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
+        WiseArchitectureResponseDTO.ContextSourcesDTO contextSources =
+            WiseArchitectureResponseDTO.ContextSourcesDTO.create(
+                hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext, hasPitchProgressContext);
         
         // Build response
         WiseArchitectureResponseDTO response = WiseArchitectureResponseDTO.builder()
@@ -285,11 +300,14 @@ public class WiseArchitectureService {
             .contextSources(contextSources)
             .generatedAt(LocalDateTime.now())
             .build();
-        
+
+        // Generate agent-consumable Markdown files from the solution
+        response.setGeneratedFiles(markdownService.generateFiles(response, pitch));
+
         // Create conversation session for follow-ups
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
-        
+
         // Save to advice history
         long processingTimeMs = System.currentTimeMillis() - startTime;
         if (userId != null) {
@@ -804,6 +822,68 @@ public class WiseArchitectureService {
         return result;
     }
 
+    /**
+     * Extract existing scopes (hill-chart points) and tasks for the pitch.
+     *
+     * <p>The resulting string is injected into the LLM prompt so the model can:
+     * <ul>
+     *   <li>Avoid generating implementation steps that duplicate already-defined work</li>
+     *   <li>Reference existing scopes by name when they are dependencies</li>
+     *   <li>Factor in progress (DONE / IN_PROGRESS) when estimating remaining effort</li>
+     * </ul>
+     *
+     * <p>Token budget: ~50-120 tokens for a typical pitch with 3-6 scopes and 5-10 tasks.
+     *
+     * @param pitch the pitch being analysed
+     * @return compact context string, or null when no scopes/tasks exist yet
+     */
+    private String extractPitchProgressContext(Pitch pitch) {
+        List<HillChartPoint> scopes = hillChartPointRepository.findByPitchId(pitch.getId());
+        List<Task> tasks = taskRepository.findByPitchId(pitch.getId());
+
+        if (scopes.isEmpty() && tasks.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder ctx = new StringBuilder();
+
+        if (!scopes.isEmpty()) {
+            ctx.append("Scopes (hill-chart points):\n");
+            for (HillChartPoint scope : scopes) {
+                String phase = scope.getPosition() != null
+                    ? (scope.getPosition() >= 50 ? "executing" : "figuring-out")
+                    : "unknown";
+                ctx.append("- ").append(scope.getScope())
+                    .append(" [").append(phase).append(", pos=").append(scope.getPosition()).append("]");
+                if (scope.getDescription() != null && !scope.getDescription().isBlank()) {
+                    String desc = scope.getDescription();
+                    ctx.append(": ").append(desc.length() > 80 ? desc.substring(0, 77) + "..." : desc);
+                }
+                ctx.append("\n");
+            }
+        }
+
+        if (!tasks.isEmpty()) {
+            ctx.append("Tasks already defined:\n");
+            // Only top-level tasks (no parent) to keep token count low
+            tasks.stream()
+                .filter(t -> t.getParentTask() == null)
+                .forEach(t -> {
+                    ctx.append("- ").append(t.getTitle())
+                        .append(" [").append(t.getStatus()).append("]");
+                    if (t.getEstimateHours() != null) {
+                        ctx.append(" (~").append(t.getEstimateHours()).append("h)");
+                    }
+                    ctx.append("\n");
+                });
+        }
+
+        String result = ctx.toString().trim();
+        log.debug("Extracted pitch progress context for '{}': {} scopes, {} tasks ({} chars)",
+            pitch.getTitle(), scopes.size(), tasks.size(), result.length());
+        return result;
+    }
+
     // =====================================================================
     // ASYNC METHODS WITH PROGRESS CALLBACKS
     // =====================================================================
@@ -1127,7 +1207,7 @@ public class WiseArchitectureService {
             
             StackSolutionDTO solution = solutionGeneratorService.generateStackSolution(
                 pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext,
-                projectConventions, previousStacksSummary.toString());
+                projectConventions, previousStacksSummary.toString(), pitchProgressContext);
             
             solutions.put(stackType, solution);
             totalEstimatedHours += solution.getEstimatedHours() != null ? solution.getEstimatedHours() : 0;
@@ -1183,8 +1263,9 @@ public class WiseArchitectureService {
         // Phase 5: Finalization (95-100%)
         callback.onProgress(96, "Building response...");
         
-        WiseArchitectureResponseDTO.ContextSourcesDTO contextSources = 
-            WiseArchitectureResponseDTO.ContextSourcesDTO.create(hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext);
+        WiseArchitectureResponseDTO.ContextSourcesDTO contextSources =
+            WiseArchitectureResponseDTO.ContextSourcesDTO.create(
+                hasCodeContext, hasTeamSkills, hasFigmaContext, hasRoadmapContext, hasPitchProgressContext);
         
         callback.onProgress(98, "Creating conversation session...");
         
@@ -1198,12 +1279,15 @@ public class WiseArchitectureService {
             .contextSources(contextSources)
             .generatedAt(LocalDateTime.now())
             .build();
-        
+
+        // Generate agent-consumable Markdown files from the solution
+        response.setGeneratedFiles(markdownService.generateFiles(response, pitch));
+
         String sessionId = conversationService.createSession(pitch, response);
         response.setSessionId(sessionId);
-        
-        String summaryMsg = String.format("Solution complete: %d stack%s, %d hours, appetite %s", 
-            solutions.size(), solutions.size() == 1 ? "" : "s", 
+
+        String summaryMsg = String.format("Solution complete: %d stack%s, %d hours, appetite %s",
+            solutions.size(), solutions.size() == 1 ? "" : "s",
             totalEstimatedHours, appetitePassed ? "passed" : "exceeded");
         callback.onProgress(100, summaryMsg);
         

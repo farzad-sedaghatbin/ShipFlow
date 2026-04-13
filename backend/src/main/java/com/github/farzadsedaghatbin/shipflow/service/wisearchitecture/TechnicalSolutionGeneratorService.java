@@ -57,6 +57,8 @@ public class TechnicalSolutionGeneratorService {
      * @param roadmapContext roadmap context including epic, initiative, and related pitches (optional, can be null)
      * @param projectConventions analysis of project conventions from pre-pass (optional, can be null)
      * @param previousStacksSummary summary of previously generated stacks' API contracts for cross-stack awareness (optional)
+     * @param pitchProgressContext existing scopes and tasks on the pitch (optional); allows the LLM to avoid
+     *                             re-planning work that is already done or in progress
      * @return the generated stack solution
      */
     public StackSolutionDTO generateStackSolution(
@@ -68,14 +70,15 @@ public class TechnicalSolutionGeneratorService {
             String figmaContext,
             String roadmapContext,
             String projectConventions,
-            String previousStacksSummary) {
+            String previousStacksSummary,
+            String pitchProgressContext) {
         
         if (chatLanguageModel == null) {
             log.warn("ChatLanguageModel not available, returning placeholder solution");
             return createPlaceholderSolution(stack);
         }
 
-        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext, projectConventions, previousStacksSummary);
+        String prompt = buildSolutionPrompt(pitch, stack, codeContext, existingServices, teamSkills, figmaContext, roadmapContext, projectConventions, previousStacksSummary, pitchProgressContext);
         
         try {
             log.info("Generating solution for {} in pitch '{}'", stack.getStackType(), pitch.getTitle());
@@ -177,7 +180,8 @@ public class TechnicalSolutionGeneratorService {
             String figmaContext,
             String roadmapContext,
             String projectConventions,
-            String previousStacksSummary) {
+            String previousStacksSummary,
+            String pitchProgressContext) {
         
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are a senior software architect producing an actionable implementation plan — not generic advice.\n");
@@ -225,7 +229,16 @@ public class TechnicalSolutionGeneratorService {
             prompt.append(roadmapContext).append("\n");
             prompt.append("Consider related work when designing for extensibility and shared patterns.\n\n");
         }
-        
+
+        if (pitchProgressContext != null && !pitchProgressContext.isBlank()) {
+            prompt.append("## Current Pitch Progress (Scopes & Tasks Already Defined)\n");
+            prompt.append("The following scopes and tasks have ALREADY been created on this pitch. ");
+            prompt.append("DO NOT duplicate them in implementationSteps. ");
+            prompt.append("Instead, reference them by name when they are relevant dependencies, ");
+            prompt.append("and focus implementation steps on work NOT yet captured.\n");
+            prompt.append(pitchProgressContext).append("\n\n");
+        }
+
         if (codeContext != null && !codeContext.isEmpty()) {
             prompt.append("## Existing Code Context\n");
             prompt.append(codeContext).append("\n\n");

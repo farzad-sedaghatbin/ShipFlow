@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Playwright E2E Tests (S19–S23)**: End-to-end test suite covering the five core user flows.
+- **Wise Architecture: Pitch Scope & Task Context (v0.9.0)**: The LLM now receives a summary of existing hill-chart scopes and tasks already defined on the pitch before generating implementation steps.
+  - `WiseArchitectureService.extractPitchProgressContext()` queries `HillChartPointRepository` and `TaskRepository` for existing work on the pitch
+  - Scope names, position phase (`figuring-out` 0–49 / `executing` 50–100), and description included; root-level tasks included with title, status, and estimate hours (~50–120 tokens)
+  - LLM explicitly instructed to avoid duplicating captured work and to reference existing scopes as dependency anchors
+  - `ContextSourcesDTO` gains `hasPitchProgressContext` flag surfaced in API response and frontend context warnings
+  - `TechnicalSolutionGeneratorService.generateStackSolution()` updated to accept a 10th `pitchProgressContext` parameter injected into the prompt under a dedicated "Current Pitch Progress" section
+
+- **Wise Architecture: MCP Tools (v0.9.0)**: Three new MCP server tools let AI coding agents trigger analyses and retrieve Markdown guides without opening the UI.
+  - `wise_architecture_list_analyses` (read) — list past analyses for the current user, optionally filtered by `pitchId`; returns `conversationId`, `pitchTitle`, `techStacks`, `createdAt`, `messageCount`
+  - `wise_architecture_get_files` (read) — retrieve all generated Markdown files for a conversation by `conversationId`
+  - `wise_architecture_analyze` (write, WRITE-scoped key required) — run a full analysis for a pitch + repositories; `selectedStacks` is optional and auto-detected (confidence ≥ 50 %) when omitted; returns all `GeneratedMarkdownFile` objects in a single response
+  - `WiseArchitectureHistoryService.getGeneratedFilesByConversationId(String)` added for MCP look-ups by conversation UUID
+  - `MCP_CLIENT_SETUP.md` updated with tool reference table and end-to-end agent workflow example
+  - `WISE_ARCHITECTURE.md` updated with Pitch Progress Context and MCP Tools sections
+
+### Tests
+- **`WiseArchitectureServiceTest`**: Updated all `generateStackSolution` mocks from 9 to 10 arguments; new `PitchProgressContext` nested class with 5 tests covering context flag truthiness, LLM arg content, and scope phase labelling
+- **`WiseArchitectureMcpToolsTest`** (new, 26 tests): Full unit-test coverage of all three MCP tools — auth guards, pagination, `pitchId` filtering, size cap, auto-detect fallback, low-confidence fallback, unknown stack type, missing required args, empty results, `cross-stack` null handling, mixed Integer/Long IDs
   - `frontend/e2e/auth.spec.ts` — login, logout, invalid credentials, protected-route redirect, remember-username (S19)
   - `frontend/e2e/projects.spec.ts` — create Shape Up project, create Kanban project, sidebar adapts per project type, project selector (S20)
   - `frontend/e2e/pitch-lifecycle.spec.ts` — pitch board loads, create IDEA pitch, advance to DRAFT, shaped pitch visible in betting candidates (S21)

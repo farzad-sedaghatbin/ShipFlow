@@ -406,6 +406,23 @@ public class WiseArchitectureController {
         return ResponseEntity.ok(advice);
     }
 
+    @GetMapping("/history/{adviceId}/files")
+    @Operation(summary = "Get generated Markdown files for an advice entry",
+        description = "Returns the agent-consumable Markdown files generated during the analysis. "
+            + "Files include architecture overview, per-stack implementation guides, API design, and implementation plan.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Files returned"),
+        @ApiResponse(responseCode = "404", description = "Advice entry not found")
+    })
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<java.util.List<GeneratedMarkdownFile>> getAdviceFiles(
+            @PathVariable Long adviceId) {
+
+        log.info("Fetching generated files for advice {}", adviceId);
+        var files = historyService.getGeneratedFiles(adviceId);
+        return ResponseEntity.ok(files);
+    }
+
     // =====================================================================
     // HELPER METHODS
     // =====================================================================

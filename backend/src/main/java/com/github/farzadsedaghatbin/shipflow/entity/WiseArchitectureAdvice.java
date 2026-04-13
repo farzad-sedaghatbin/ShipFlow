@@ -92,6 +92,14 @@ public class WiseArchitectureAdvice {
     @Column(name = "feedback_at")
     private LocalDateTime feedbackAt;
 
+    /**
+     * JSON array of {@code GeneratedMarkdownFile} objects produced by
+     * {@code WiseArchitectureMarkdownService}. Persisted so files can be retrieved from history
+     * without regenerating. Null for FOLLOW_UP messages.
+     */
+    @Column(name = "generated_files_json", columnDefinition = "TEXT")
+    private String generatedFilesJson;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
