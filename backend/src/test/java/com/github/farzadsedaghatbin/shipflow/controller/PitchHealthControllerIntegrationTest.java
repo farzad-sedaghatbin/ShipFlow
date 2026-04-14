@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -64,6 +65,9 @@ class PitchHealthControllerIntegrationTest {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private EntityManager entityManager;
+
   private Project testProject;
   private Cycle testCycle;
   private Team testTeam;
@@ -75,6 +79,9 @@ class PitchHealthControllerIntegrationTest {
 
   @BeforeEach
   void setUp() {
+    // Clear Hibernate session to avoid transient-reference errors when deleting across FK boundaries
+    entityManager.flush();
+    entityManager.clear();
     // Clean up
     workLogRepository.deleteAll();
     bugReportRepository.deleteAll();
