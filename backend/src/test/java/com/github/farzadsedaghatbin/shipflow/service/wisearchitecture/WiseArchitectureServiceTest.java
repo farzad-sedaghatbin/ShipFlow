@@ -322,7 +322,7 @@ class WiseArchitectureServiceTest {
             assertThat(response.getSolutions()).containsKey(TechStackType.BACKEND_JAVA);
             assertThat(response.getTotalEstimatedHours()).isEqualTo(24);
             
-            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
             verify(conversationService).createSession(eq(testPitch), any());
         }
 

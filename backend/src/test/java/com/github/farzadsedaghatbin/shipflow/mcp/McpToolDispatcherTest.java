@@ -27,6 +27,9 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTo
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureHistoryService;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +59,8 @@ class McpToolDispatcherTest {
   @Mock private CommentService commentService;
   @Mock private UserRepository userRepository;
   @Mock private Authentication auth;
+  @Mock private WiseArchitectureService wiseArchitectureService;
+  @Mock private WiseArchitectureHistoryService wiseArchHistoryService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -76,10 +81,11 @@ class McpToolDispatcherTest {
     TaskMcpTools taskTools = new TaskMcpTools(taskService, userRepository);
     PitchMcpTools pitchTools = new PitchMcpTools(pitchService);
     CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository);
+    WiseArchitectureMcpTools wiseArchTools = new WiseArchitectureMcpTools(wiseArchitectureService, wiseArchHistoryService, userRepository);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
-        projectTools, cycleTools, taskTools, pitchTools, commentTools);
+        projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools);
 
     McpSession session = new McpSession(
         SESSION_ID,
