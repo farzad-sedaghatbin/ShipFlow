@@ -2,7 +2,7 @@
 
 A modern project management application implementing the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
 
-🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev)
+🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev) &nbsp;|&nbsp; 📖 **Docs**: [farzad-sedaghatbin.github.io/ShipFlow](https://farzad-sedaghatbin.github.io/ShipFlow/)
 
 
 ## 📸 Screenshots & Demo
@@ -574,7 +574,7 @@ Press `?` to view all keyboard shortcuts:
 docker pull ghcr.io/farzad-sedaghatbin/shipflow:latest
 
 # Or pin to a specific version
-docker pull ghcr.io/farzad-sedaghatbin/shipflow:0.8.0
+docker pull ghcr.io/farzad-sedaghatbin/shipflow:0.9.0
 
 # Run with docker compose (PostgreSQL + Redis + ShipFlow)
 docker compose up -d

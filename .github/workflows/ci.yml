@@ -52,6 +52,11 @@ jobs:
         cd frontend
         npm test -- --run
 
+    - name: Docs Build
+      run: |
+        npm ci
+        npm run docs:build
+
   e2e-tests:
     name: Playwright E2E tests
     runs-on: ubuntu-latest

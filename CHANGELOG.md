@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-rc1] - Upcoming
+
+### Focus
+Stabilization — no new features. Bug fixes, documentation, community setup, and final release engineering.
+
+### Added
+- **VitePress Documentation Site (S27)**: Full docs site at `farzad-sedaghatbin.github.io/ShipFlow/` built with VitePress.
+  - 5 sections: Getting Started, User Guide, Admin Guide, Developer Guide, API Reference
+  - 20 content pages covering installation, environment setup, Shape Up workflow, Kanban, hill charts, all integrations (GitHub, Slack, Teams), MCP client setup, Redis, permission matrix, REST API, MCP tools, webhooks, contributing, architecture
+  - `npm run docs:build` / `docs:dev` / `docs:preview` scripts at repo root
+  - Docs build step added to CI `build-and-test` job
+- **GOVERNANCE.md (S29)**: Documents project status (solo maintainer), decision-making process, contributor path, response time expectations, and security vulnerability reporting.
+- **GitHub Discussion Templates (S29)**: `.github/DISCUSSION_TEMPLATE/support.yml` and `ideas.yml` for structured community support and feature requests.
+
+### Changed
+- `README.md`: pinned docker pull example to `0.9.0`; added docs site link in header
+- `CHANGELOG.md`: added `[1.0.0-rc1]` upcoming section
+
 ## [0.9.0] - 2026-04-14
 
 ### Added
