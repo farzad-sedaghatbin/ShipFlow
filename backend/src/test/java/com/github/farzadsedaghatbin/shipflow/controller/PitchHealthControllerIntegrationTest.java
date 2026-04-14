@@ -79,8 +79,8 @@ class PitchHealthControllerIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    // Clear Hibernate session to avoid transient-reference errors when deleting across FK boundaries
-    entityManager.flush();
+    // Detach all entities from the Hibernate session without flushing (flush would trigger the cascade
+    // error). This ensures deleteAll() below operates on a clean session with no dirty state.
     entityManager.clear();
     // Clean up
     workLogRepository.deleteAll();
