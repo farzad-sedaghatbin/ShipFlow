@@ -39,6 +39,8 @@ import {
   Wrench,
   Bookmark,
   Mail,
+  FlaskConical,
+  Layers,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -59,7 +61,7 @@ interface Release {
 const releases: Release[] = [
   {
     version: '0.9.0',
-    date: 'April 2026',
+    date: 'April 14, 2026',
     title: 'Power User Features + Polish',
     highlights: [
       {
@@ -85,6 +87,18 @@ const releases: Release[] = [
         title: 'Email Notifications',
         description:
           'Optional SMTP integration for email delivery of key events: task assigned, @mention in comment, pitch status change. Configure via Organization Settings → Email.',
+      },
+      {
+        icon: <FlaskConical className="h-5 w-5" />,
+        title: 'Playwright E2E Test Suite',
+        description:
+          'Full end-to-end coverage across five core flows: authentication, project management, pitch lifecycle, hill chart drag-and-persist, and task management with Cmd+K search. Wired into CI with Postgres + Redis services.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Component Decomposition',
+        description:
+          'BacklogPage (2320 → 170 lines), OrganizationSettings (1740 → 271 lines), and PitchDetail (1615 → 609 lines) each decomposed into focused sub-components, making the codebase significantly easier to navigate and extend.',
       },
     ],
   },
