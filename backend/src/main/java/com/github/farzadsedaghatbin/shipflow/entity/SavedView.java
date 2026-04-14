@@ -3,6 +3,8 @@ package com.github.farzadsedaghatbin.shipflow.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Entity representing a saved filter view (named filter preset) for the task backlog.
@@ -37,11 +39,14 @@ public class SavedView {
   private String name;
 
   /**
-   * Filter state serialised as raw JSON. Stored in a JSONB column.
+   * Filter state serialised as raw JSON. Stored in a JSONB column (PostgreSQL) / text (H2).
    * Example: {"statusFilter":["BACKLOG"],"priorityFilter":["URGENT"],"sortBy":"createdAt","sortOrder":"desc"}
+   *
+   * <p>@JdbcTypeCode(SqlTypes.JSON) maps to jsonb on PostgreSQL and a text-compatible type on H2,
+   * satisfying Hibernate schema-validation on both dialects.
    */
-  // columnDefinition uses "text" for H2 test compatibility; Flyway migration uses JSONB for PostgreSQL
-  @Column(name = "filters", nullable = false, columnDefinition = "text")
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "filters", nullable = false)
   private String filters;
 
   @Column(name = "is_default", nullable = false)
