@@ -1,5 +1,6 @@
 # Docker Compose override for self-hosted Ollama AI
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+# Usage: docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+#   (requires Docker Compose v2 — the legacy docker-compose v1 is not supported)
 #
 # This adds Ollama service for local/self-hosted AI deployments.
 # By default, docker-compose.yml uses RunPod (cloud GPU).
