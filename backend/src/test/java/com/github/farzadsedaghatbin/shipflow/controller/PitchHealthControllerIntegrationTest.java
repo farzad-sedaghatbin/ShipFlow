@@ -90,8 +90,8 @@ class PitchHealthControllerIntegrationTest {
     cycleRepository.deleteAll();
     projectRepository.deleteAll();
     teamRepository.deleteAll();
-    personRepository.deleteAll();
     userRepository.deleteAll();
+    personRepository.deleteAll();
 
     // Create test data
     testProject = Project.builder().name("Health Test Project").projectKey("HEALTH").build();
