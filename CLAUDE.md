@@ -5,9 +5,9 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v0.9.0 — "Power User Features + Polish"
+## Current Milestone: v1.0.0-rc1 — "Stabilization"
 
-**Current version**: v0.8.0 (released 2026-04-05) → targeting v0.9.0
+**Current version**: v0.9.0 (released 2026-04-14) → targeting v1.0.0
 **Target**: v1.0.0 open-source release
 **All PRs target**: `main` branch
 
@@ -33,6 +33,26 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 | S13.1 | Q&A / RAG hardening — entity disambiguation, multi-turn memory, cache isolation | ✅ done |
 
 **v0.8.0 released: 2026-04-05** ✅
+
+### v0.9.0 session map (sessions S14–S26)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S14 | Saved Filter Views — backend | ✅ done |
+| S15 | Saved Filter Views — frontend | ✅ done |
+| S16 | Real-time notifications via SSE | ✅ done |
+| S17 | Email notifications (SMTP) | ✅ done |
+| S18 | MCP Phase 2 write tools | ✅ done |
+| S19 | Playwright E2E — auth flow | ✅ done |
+| S20 | Playwright E2E — project management flow | ✅ done |
+| S21 | Playwright E2E — pitch lifecycle | ✅ done |
+| S22 | Playwright E2E — hill chart | ✅ done |
+| S23 | Playwright E2E — task management | ✅ done |
+| S24 | BacklogPage decomposition | ✅ done |
+| S25 | OrganizationSettings decomposition | ✅ done |
+| S26 | PitchDetail decomposition | ✅ done |
+
+**v0.9.0 released: 2026-04-14** ✅
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`

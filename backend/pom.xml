@@ -13,7 +13,7 @@
 
     <groupId>com.github.farzadsedaghatbin</groupId>
     <artifactId>shipflow</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
     <name>ShipFlow</name>
     <description>ShipFlow - Shape Up methodology analytics tool</description>
 

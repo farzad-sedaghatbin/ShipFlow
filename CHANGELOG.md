@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-14
+
 ### Added
 - **Wise Architecture: Pitch Scope & Task Context (v0.9.0)**: The LLM now receives a summary of existing hill-chart scopes and tasks already defined on the pitch before generating implementation steps.
   - `WiseArchitectureService.extractPitchProgressContext()` queries `HillChartPointRepository` and `TaskRepository` for existing work on the pitch
