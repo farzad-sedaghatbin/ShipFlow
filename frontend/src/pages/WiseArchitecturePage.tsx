@@ -122,7 +122,7 @@ function GeneratedFilesPanel({
   t,
 }: {
   files: GeneratedMarkdownFile[];
-  t: (key: string, fallback?: string) => string;
+  t: ReturnType<typeof useTranslation>['t'];
 }) {
   const [previewFile, setPreviewFile] = useState<GeneratedMarkdownFile | null>(null);
 
