@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -36,8 +37,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
   // ---- Configuration constants ----
 
-  /** Auth endpoints: 10 requests per minute per IP. */
-  private static final int AUTH_CAPACITY = 10;
+  /**
+   * Auth endpoints: configurable requests per minute per IP.
+   * Default 10 (production-safe). Override in dev/test profiles via
+   * {@code app.rate-limit.auth.capacity} to avoid blocking E2E test suites
+   * that re-login many times from the same runner IP.
+   */
+  @Value("${app.rate-limit.auth.capacity:10}")
+  private int authCapacity;
+
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
   private static final long AUTH_RETRY_AFTER_SECONDS = 60;
 
@@ -93,7 +101,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private RateLimit resolveLimit(String path) {
     if (path == null) return null;
     if (path.startsWith(AUTH_PREFIX)) {
-      return new RateLimit("auth", AUTH_CAPACITY, AUTH_PERIOD, AUTH_RETRY_AFTER_SECONDS);
+      return new RateLimit("auth", authCapacity, AUTH_PERIOD, AUTH_RETRY_AFTER_SECONDS);
     }
     if (path.startsWith(SEARCH_PREFIX)) {
       return new RateLimit("search", SEARCH_CAPACITY, SEARCH_PERIOD, SEARCH_RETRY_AFTER_SECONDS);

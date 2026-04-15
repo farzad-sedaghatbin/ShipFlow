@@ -62,7 +62,9 @@ test.describe('Task Management', () => {
     const inProgressOption = page.locator('[role="option"]:has-text("IN_PROGRESS"), [role="option"]:has-text("In Progress")').first();
     await expect(inProgressOption).toBeVisible({ timeout: 3000 });
     await inProgressOption.click();
-    await expect(page.locator('text=IN_PROGRESS, text=In Progress').first()).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.locator('text=IN_PROGRESS').or(page.locator('text=In Progress')).first()
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('add a comment with @mention', async ({ page }) => {
