@@ -35,9 +35,12 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        // Use a single fork to limit memory usage in CI (GitHub Actions ~7 GB RAM).
-        // NODE_OPTIONS is inherited by child processes, so 2 forks × heap limit = OOM.
-        singleFork: true,
+        // singleFork: true accumulates ALL jsdom environments in one process → OOM.
+        // maxForks: 1 + singleFork: false gives each file its own fresh process
+        // while running only one at a time → low peak memory, full isolation.
+        singleFork: false,
+        maxForks: 1,
+        minForks: 1,
       },
     },
     coverage: {
