@@ -51,6 +51,12 @@ test.describe('Authentication', () => {
 
   test('remember username persists across page reload', async ({ page }) => {
     await page.goto('/login');
+    // Suppress first-visit overlays (same as login() helper) — this test
+    // submits the form manually so we must set the flags here explicitly.
+    await page.evaluate(() => {
+      localStorage.setItem('shipflow_welcome_shown', 'true');
+      localStorage.setItem('shipflow_tour_completed', 'true');
+    });
     await page.fill('#username', ADMIN.username);
     await page.fill('#password', ADMIN.password);
     // Remember checkbox must be present for this test to be meaningful

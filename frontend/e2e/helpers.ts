@@ -26,10 +26,20 @@ export async function login(page: Page, username = ADMIN.username, password = AD
 
 /**
  * Log out via the user menu in the sidebar.
+ * Defensively clears blocking overlays before clicking:
+ *  - Escape dismisses any open dialog/sheet (e.g. WelcomeTourDialog)
+ *  - Wait for Sonner success toasts to disappear (they cover the user-menu)
  */
 export async function logout(page: Page) {
+  // Dismiss any open modal/dialog overlay
+  await page.keyboard.press('Escape');
+  // Wait for any Sonner toast to vanish (they sit at top-right and intercept clicks)
+  await page.waitForFunction(
+    () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
+    { timeout: 8000 }
+  ).catch(() => {});
   // Open user menu (bottom of sidebar)
-  await page.click('[data-tour="user-menu"]');
+  await page.locator('[data-tour="user-menu"]').click();
   await page.click('text=Logout');
   await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
 }
