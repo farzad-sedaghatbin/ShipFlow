@@ -5,9 +5,19 @@ export const BASE_URL = 'http://localhost:3000';
 
 /**
  * Log in with the given credentials and wait for the dashboard to load.
+ * Also suppresses first-visit UI (welcome tour dialog, onboarding tour) so
+ * overlays do not block subsequent interactions in tests.
  */
 export async function login(page: Page, username = ADMIN.username, password = ADMIN.password) {
   await page.goto('/login');
+  // Set localStorage flags BEFORE submitting the form so that when the
+  // dashboard mounts, WelcomeTourDialog and TourContext see the keys already
+  // set and never schedule the 1500 ms timer.  Setting them on /login works
+  // because localStorage is scoped to the origin (same host:port).
+  await page.evaluate(() => {
+    localStorage.setItem('shipflow_welcome_shown', 'true');
+    localStorage.setItem('shipflow_tour_completed', 'true');
+  });
   await page.fill('#username', username);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
