@@ -25,6 +25,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
+    // Exclude Playwright E2E tests — those are run separately via `npm run test:e2e`
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'e2e/**',
+      '**/*.e2e.{ts,tsx}',
+    ],
     pool: 'forks',
     poolOptions: {
       forks: {
@@ -39,6 +46,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/test/',
+        'e2e/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/types/**',
