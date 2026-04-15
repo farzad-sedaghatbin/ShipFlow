@@ -115,7 +115,7 @@ jobs:
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
           SPRING_DATA_REDIS_PASSWORD: ""
-          APP_JWT_SECRET: e2e-ci-test-secret-minimum-32-chars-long
+          APP_JWT_SECRET: ZTJlY2l0ZXN0LXNlY3JldC1taW5pbXVtLTMyLWNoYXJzLWxvbmcta2V5ISE=
           SPRING_PROFILES_ACTIVE: dev
         run: |
           cd backend
