@@ -35,9 +35,9 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: false,
-        maxForks: 2,
-        minForks: 1,
+        // Use a single fork to limit memory usage in CI (GitHub Actions ~7 GB RAM).
+        // NODE_OPTIONS is inherited by child processes, so 2 forks × heap limit = OOM.
+        singleFork: true,
       },
     },
     coverage: {
