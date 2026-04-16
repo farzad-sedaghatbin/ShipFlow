@@ -57,46 +57,57 @@ export async function waitForApp(page: Page) {
 /**
  * Select the first Kanban project so that "New Task" is always enabled.
  *
- * The app stores the selected project in localStorage under
- * `shipflow_selected_project_id`. On the backlog page, "New Task" is only
- * enabled for Kanban projects (Shape Up requires a cycle to be selected too).
+ * The backlog "New Task" button is only enabled when a Kanban project is
+ * active (Shape Up also requires a specific cycle to be selected).
  *
- * Strategy: call the projects API with the JWT from localStorage, find the
- * first Kanban project, write its id into localStorage, then navigate to
- * /backlog so the React ProjectContext picks it up on mount.
+ * Strategy:
+ * 1. Go to /projects and find a "View Backlog" button — its aria-label
+ *    includes the Kanban project name (e.g. "View Backlog for DevOps Platform")
+ * 2. Extract the project name and use the sidebar project selector dropdown
+ *    (role="menuitem") to select it by name — this calls selectProject() in
+ *    ProjectContext, persisting the choice to localStorage.
+ * 3. Navigate to /backlog so the page context is active.
  */
 export async function selectFirstProject(page: Page) {
-  // Ensure we are on an authenticated page so the JWT exists in localStorage
-  if (!page.url().includes('localhost')) {
-    await page.goto('/dashboard');
-    await expect(page.locator('[data-tour="sidebar"]')).toBeVisible({ timeout: 15000 });
+  // Step 1 — find a Kanban project name from the projects listing
+  await page.goto('/projects');
+  const viewBacklogBtn = page.locator('[aria-label*="View Backlog"]').first();
+  const kanbanVisible = await viewBacklogBtn.isVisible({ timeout: 8000 }).catch(() => false);
+  if (!kanbanVisible) {
+    // No Kanban project visible — tests will fail naturally on missing button
+    return;
   }
 
-  const projectId = await page.evaluate(async () => {
-    const token = localStorage.getItem('shipflow_token');
-    if (!token) return null;
-    try {
-      const res = await fetch('/api/projects/active', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return null;
-      const projects: Array<{ id: number; projectType: string }> = await res.json();
-      // Prefer Kanban — "New Task" is always enabled there (no cycle needed)
-      const kanban = projects.find((p) => p.projectType === 'KANBAN');
-      const chosen = kanban ?? projects[0] ?? null;
-      if (chosen) {
-        localStorage.setItem('shipflow_selected_project_id', chosen.id.toString());
-        return chosen.id;
-      }
-    } catch {
-      // ignore — tests will fail naturally if the button remains disabled
+  // Extract project name from aria-label: "View backlog for <name>"
+  const ariaLabel = (await viewBacklogBtn.getAttribute('aria-label')) ?? '';
+  // i18n key: "viewBacklogFor": "View backlog for {{name}}"
+  const projectName = ariaLabel.replace(/^view backlog for /i, '').trim();
+  if (!projectName) return;
+
+  // Step 2 — select the project via the sidebar dropdown
+  await page.goto('/dashboard');
+  await page.locator('[data-tour="sidebar"]').waitFor({ timeout: 15000 });
+
+  const trigger = page.locator('[data-tour="project-selector"]');
+  await trigger.waitFor({ timeout: 5000 });
+  await trigger.click();
+
+  // Radix DropdownMenuItem uses role="menuitem" (not role="option")
+  const projectItem = page.locator(`[role="menuitem"]:has-text("${projectName}")`).first();
+  if (await projectItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await projectItem.click();
+  } else {
+    // Fallback: click the second menuitem (skip "All Projects" at index 0)
+    await page.keyboard.press('Escape');
+    await trigger.click();
+    const items = page.locator('[role="menuitem"]');
+    const count = await items.count();
+    if (count > 1) {
+      await items.nth(1).click();
     }
-    return null;
-  });
-
-  if (projectId) {
-    // Re-navigate so ProjectContext re-reads the updated localStorage key
-    await page.goto('/backlog');
-    await page.waitForLoadState('networkidle');
   }
+
+  // Step 3 — navigate to backlog with project context active
+  await page.goto('/backlog');
+  await page.locator('[data-tour="sidebar"]').waitFor({ timeout: 10000 });
 }
