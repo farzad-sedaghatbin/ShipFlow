@@ -74,16 +74,27 @@ test.describe('Task Management', () => {
     await page.goto(`/backlog/${taskId}`);
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
-    // Status selector must be present — if missing it's a regression
-    const statusSelect = page.locator('[role="combobox"]').filter({ hasText: /TODO|IN_PROGRESS|DONE|status/i }).first();
-    await expect(statusSelect).toBeVisible({ timeout: 5000 });
-    await statusSelect.click();
-    const inProgressOption = page.locator('[role="option"]:has-text("IN_PROGRESS"), [role="option"]:has-text("In Progress")').first();
+    // Status on TaskDetail is a read-only badge — open Edit dialog to change it
+    await page.getByRole('button', { name: /\bEdit\b/i }).first().click();
+
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+
+    // First combobox in the edit dialog is the status field
+    const statusCombobox = dialog.locator('button[role="combobox"]').first();
+    await expect(statusCombobox).toBeVisible({ timeout: 5000 });
+    await statusCombobox.click();
+
+    // Options render in a popover (may be outside dialog in DOM)
+    const inProgressOption = page.locator('[role="option"]:has-text("In Progress"), [cmdk-item]:has-text("In Progress")').first();
     await expect(inProgressOption).toBeVisible({ timeout: 3000 });
     await inProgressOption.click();
-    await expect(
-      page.locator('text=IN_PROGRESS').or(page.locator('text=In Progress')).first()
-    ).toBeVisible({ timeout: 10000 });
+
+    // Save the edit dialog
+    await dialog.getByRole('button', { name: /^(Save|Update)$/i }).click();
+
+    // Verify status badge now shows In Progress
+    await expect(page.locator('text=In Progress').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('add a comment with @mention', async ({ page }) => {
