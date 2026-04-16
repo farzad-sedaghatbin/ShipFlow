@@ -26,7 +26,11 @@ X-Hub-Signature-256: sha256=<hmac>
 Where `{provider}` is the configured provider slug (e.g. `github`, `custom`).
 
 ::: info Authentication
-Inbound webhook endpoints (`/api/inbound/**`) are intentionally unauthenticated. Requests are validated via HMAC signature verification using your configured webhook secret.
+Inbound webhook endpoints (`/api/inbound/**`) are intentionally unauthenticated.
+
+If a webhook secret is configured for the endpoint, ShipFlow validates inbound requests using HMAC signature verification (`X-Hub-Signature-256`).
+
+If no secret is configured, signature verification is skipped and unsigned requests are accepted — the endpoint is effectively public. Always configure a secret for production use.
 :::
 
 ## Outbound webhooks
