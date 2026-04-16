@@ -39,8 +39,13 @@ test.describe('Task Management', () => {
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
-    // Click on the task title to open detail
-    await page.click(`text=${taskTitle}`);
+    // Wait for any Sonner toast to clear (it covers the table link)
+    await page.waitForFunction(
+      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
+      { timeout: 5000 }
+    ).catch(() => {});
+    // Click the <a> link in the table row — not a generic text= which may hit a toast
+    await page.getByRole('link', { name: taskTitle }).first().click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
     await expect(page.locator('h1, h2').first()).toBeVisible();
   });
@@ -56,8 +61,12 @@ test.describe('Task Management', () => {
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
-    // Open the task
-    await page.click(`text=${taskTitle}`);
+    // Open the task — wait for toast, then click the <a> link in the table
+    await page.waitForFunction(
+      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
+      { timeout: 5000 }
+    ).catch(() => {});
+    await page.getByRole('link', { name: taskTitle }).first().click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
     // Status selector must be present — if missing it's a regression
@@ -83,8 +92,12 @@ test.describe('Task Management', () => {
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
-    // Open task detail
-    await page.click(`text=${taskTitle}`);
+    // Open task detail — wait for toast, then click the <a> link in the table
+    await page.waitForFunction(
+      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
+      { timeout: 5000 }
+    ).catch(() => {});
+    await page.getByRole('link', { name: taskTitle }).first().click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
     // Comment textarea must be present for @mention coverage to be valid
