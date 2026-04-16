@@ -60,7 +60,8 @@ test.describe('Task Management', () => {
     // Navigate directly using the ID — avoids pagination (seed data has 20+ tasks)
     await page.goto(`/backlog/${taskId}`);
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    // TaskDetail page uses styled divs, not h1/h2 — verify the sidebar is visible (page fully loaded)
+    await expect(page.locator('[data-tour="sidebar"]')).toBeVisible({ timeout: 10000 });
   });
 
   test('change task status', async ({ page }) => {
