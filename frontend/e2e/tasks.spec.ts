@@ -23,7 +23,8 @@ test.describe('Task Management', () => {
     const taskTitle = `E2E Task ${Date.now()}`;
     await page.fill('#title', taskTitle);
 
-    await page.click('button:has-text("Create Task"), button:has-text("Save"), button:has-text("Add Task")');
+    // Submit button inside the BacklogTaskDialog — text is t('backlogPage.create') = "Create"
+    await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
   });
 
@@ -34,7 +35,8 @@ test.describe('Task Management', () => {
     await page.click('text=New Task');
     const taskTitle = `E2E Detail ${Date.now()}`;
     await page.fill('#title', taskTitle);
-    await page.click('button:has-text("Create Task"), button:has-text("Save"), button:has-text("Add Task")');
+    // Submit button inside the BacklogTaskDialog — text is t('backlogPage.create') = "Create"
+    await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
     // Click on the task title to open detail
@@ -50,7 +52,8 @@ test.describe('Task Management', () => {
     await page.click('text=New Task');
     const taskTitle = `E2E Status ${Date.now()}`;
     await page.fill('#title', taskTitle);
-    await page.click('button:has-text("Create Task"), button:has-text("Save"), button:has-text("Add Task")');
+    // Submit button inside the BacklogTaskDialog — text is t('backlogPage.create') = "Create"
+    await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
     // Open the task
@@ -76,7 +79,8 @@ test.describe('Task Management', () => {
     await page.click('text=New Task');
     const taskTitle = `E2E Comment ${Date.now()}`;
     await page.fill('#title', taskTitle);
-    await page.click('button:has-text("Create Task"), button:has-text("Save"), button:has-text("Add Task")');
+    // Submit button inside the BacklogTaskDialog — text is t('backlogPage.create') = "Create"
+    await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
     // Open task detail
@@ -90,7 +94,8 @@ test.describe('Task Management', () => {
       return;
     }
     await commentInput.fill('@admin great work on this task!');
-    await page.click('button:has-text("Post Comment"), button:has-text("Post"), button:has-text("Submit")');
+    // t('backlogPage.addComment') = "Add Comment"
+    await page.getByRole('button', { name: /^(Add Comment|Post Comment|Post|Submit)$/ }).click();
     await expect(page.locator('text=great work on this task')).toBeVisible({ timeout: 10000 });
   });
 
