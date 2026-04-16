@@ -8,7 +8,9 @@ When running locally: **http://localhost:8080/swagger-ui.html**
 
 ## Authentication
 
-All API endpoints require a JWT token or API key.
+Most API endpoints require a JWT token or API key. Exceptions:
+- `/api/auth/**` — login/register (unauthenticated by design)
+- `/api/inbound/**` — inbound webhooks (validated by provider signature, not JWT)
 
 ### JWT (user sessions)
 

@@ -34,7 +34,7 @@ This page mirrors [`ENVIRONMENT_SETUP.md`](https://github.com/farzad-sedaghatbin
 |----------|----------|---------|-------------|
 | `QA_VECTORSTORE_PROVIDER` | | `in-memory` | `in-memory` \| `qdrant` \| `chroma` |
 | `QDRANT_HOST` | if qdrant | `localhost` | Qdrant host |
-| `QDRANT_PORT` | if qdrant | `6333` | Qdrant gRPC port |
+| `QDRANT_PORT` | if qdrant | `6334` | Qdrant gRPC port (note: 6333 is Qdrant's HTTP port; 6334 is gRPC) |
 | `QDRANT_API_KEY` | | — | Qdrant cloud API key (optional for self-hosted) |
 
 ## Email Notifications (SMTP)
@@ -58,5 +58,5 @@ This page mirrors [`ENVIRONMENT_SETUP.md`](https://github.com/farzad-sedaghatbin
 
 | Profile | Use case |
 |---------|----------|
-| `dev` | Local development — H2 compatible, relaxed CORS, debug logging |
+| `dev` | Local development — PostgreSQL, relaxed CORS, debug logging (H2 is used for unit tests only) |
 | `prod` | Production — strict CORS, secret validation on startup, no Swagger |

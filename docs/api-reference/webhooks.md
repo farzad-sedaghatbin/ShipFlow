@@ -16,12 +16,18 @@ Each webhook endpoint has a unique URL and an optional secret for HMAC signature
 ### Payload
 
 ```http
-POST /api/webhooks/inbound/{webhookId}
+POST /api/inbound/{provider}
 Content-Type: application/json
 X-Hub-Signature-256: sha256=<hmac>
 
 { "event": "...", "payload": { ... } }
 ```
+
+Where `{provider}` is the configured provider slug (e.g. `github`, `custom`).
+
+::: info Authentication
+Inbound webhook endpoints (`/api/inbound/**`) are intentionally unauthenticated. Requests are validated via HMAC signature verification using your configured webhook secret.
+:::
 
 ## Outbound webhooks
 
