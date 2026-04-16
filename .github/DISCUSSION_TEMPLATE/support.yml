@@ -1,0 +1,60 @@
+title: "[Support] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for using ShipFlow! Please fill out this form so we can help you as quickly as possible.
+
+        Before opening a support request, please check:
+        - [Documentation](https://farzad-sedaghatbin.github.io/ShipFlow/)
+        - [Existing discussions](https://github.com/farzad-sedaghatbin/ShipFlow/discussions)
+        - [Open issues](https://github.com/farzad-sedaghatbin/ShipFlow/issues)
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment type
+      options:
+        - Docker Compose (self-hosted)
+        - Built from source
+        - shipflow.dev (live demo)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ShipFlow version
+      placeholder: "e.g. 0.9.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe what you are trying to achieve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened instead?
+      description: If something is broken or not working as expected, describe the actual behaviour.
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. See error
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error messages
+      render: shell

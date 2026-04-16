@@ -40,7 +40,6 @@ import {
   Bookmark,
   Mail,
   FlaskConical,
-  Layers,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -59,6 +58,38 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.0.0-rc1',
+    date: 'Coming Soon',
+    title: 'Stabilization — Docs, Community & Release Prep',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'VitePress Documentation Site',
+        description:
+          'Dedicated docs site with Getting Started, User Guide, Admin Guide, and Developer Guide. 10+ architecture guides migrated from Markdown files into a searchable, navigable site.',
+      },
+      {
+        icon: <Github className="h-5 w-5" />,
+        title: 'GOVERNANCE.md + GitHub Discussions',
+        description:
+          'Governance document covering maintainer expectations, contribution process, and security disclosure. Discussion templates for community support and feature requests.',
+      },
+      {
+        icon: <FlaskConical className="h-5 w-5" />,
+        title: 'Full E2E Suite on CI',
+        description:
+          'All 32 Playwright tests passing against the production Docker image. Auth, project management, pitch lifecycle, hill chart drag-and-persist, and task management flows all covered.',
+      },
+      {
+        icon: <Rocket className="h-5 w-5" />,
+        title: 'v1.0.0 Launch Prep',
+        description:
+          'CHANGELOG finalized, migration guide drafted, Docker Compose one-command setup verified on Linux / macOS / WSL2. Ready to tag and ship.',
+      },
+    ],
+  },
   {
     version: '0.9.0',
     date: 'April 14, 2026',

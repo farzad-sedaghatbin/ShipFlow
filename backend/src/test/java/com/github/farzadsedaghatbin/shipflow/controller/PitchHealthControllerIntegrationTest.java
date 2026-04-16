@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -64,6 +65,9 @@ class PitchHealthControllerIntegrationTest {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private EntityManager entityManager;
+
   private Project testProject;
   private Cycle testCycle;
   private Team testTeam;
@@ -75,6 +79,9 @@ class PitchHealthControllerIntegrationTest {
 
   @BeforeEach
   void setUp() {
+    // Detach all entities from the Hibernate session without flushing (flush would trigger the cascade
+    // error). This ensures deleteAll() below operates on a clean session with no dirty state.
+    entityManager.clear();
     // Clean up
     workLogRepository.deleteAll();
     bugReportRepository.deleteAll();
@@ -83,8 +90,8 @@ class PitchHealthControllerIntegrationTest {
     cycleRepository.deleteAll();
     projectRepository.deleteAll();
     teamRepository.deleteAll();
-    personRepository.deleteAll();
     userRepository.deleteAll();
+    personRepository.deleteAll();
 
     // Create test data
     testProject = Project.builder().name("Health Test Project").projectKey("HEALTH").build();

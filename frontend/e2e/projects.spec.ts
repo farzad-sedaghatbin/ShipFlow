@@ -9,22 +9,30 @@ test.describe('Project Management', () => {
 
   test('projects list page loads', async ({ page }) => {
     await page.goto('/projects');
-    await expect(page.locator('h1, h2').filter({ hasText: /projects/i })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.locator('h1').filter({ hasText: /projects/i })
+        .or(page.locator('h2').filter({ hasText: /projects/i }))
+        .first()
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('create a Shape Up project', async ({ page }) => {
     await page.goto('/projects');
     await page.click('text=New Project');
 
-    // Fill project name
+    // Scope ALL interactions to the dialog to avoid hitting background elements
+    // that are behind the Radix Dialog overlay.
+    const dialog = page.locator('[role="dialog"]');
+    await dialog.waitFor({ timeout: 5000 });
+
     const projectName = `E2E Shape Up ${Date.now()}`;
-    await page.fill('#name', projectName);
+    await dialog.locator('#name, input[name="name"], input[placeholder*="name" i]').first().fill(projectName);
 
-    // Shape Up should be default — verify it is selected
-    await expect(page.locator('text=Shape Up').first()).toBeVisible();
+    // Shape Up should be default — verify it is selected (within dialog only)
+    await expect(dialog.locator('text=Shape Up').first()).toBeVisible();
 
-    // Save
-    await page.click('button:has-text("Create Project"), button:has-text("Save")');
+    // Submit — try common button labels, scoped to the dialog
+    await dialog.locator('button[type="submit"], button:has-text("Create"), button:has-text("Save"), button:has-text("Add")').first().click();
     await expect(page.locator(`text=${projectName}`)).toBeVisible({ timeout: 10000 });
   });
 
@@ -32,14 +40,17 @@ test.describe('Project Management', () => {
     await page.goto('/projects');
     await page.click('text=New Project');
 
+    const dialog = page.locator('[role="dialog"]');
+    await dialog.waitFor({ timeout: 5000 });
+
     const projectName = `E2E Kanban ${Date.now()}`;
-    await page.fill('#name', projectName);
+    await dialog.locator('#name, input[name="name"], input[placeholder*="name" i]').first().fill(projectName);
 
-    // Switch to Kanban
-    await page.click('text=Kanban');
+    // Click Kanban INSIDE the dialog to avoid hitting sidebar nav links behind the overlay
+    await dialog.locator('text=Kanban').first().click();
 
-    // Save
-    await page.click('button:has-text("Create Project"), button:has-text("Save")');
+    // Submit
+    await dialog.locator('button[type="submit"], button:has-text("Create"), button:has-text("Save"), button:has-text("Add")').first().click();
     await expect(page.locator(`text=${projectName}`)).toBeVisible({ timeout: 10000 });
   });
 
@@ -48,15 +59,19 @@ test.describe('Project Management', () => {
 
     // Find a Shape Up project card and click its "View Cycles" button
     const shapeUpCard = page.locator('[aria-label*="View Cycles"]').first();
-    if (await shapeUpCard.isVisible()) {
+    if (await shapeUpCard.isVisible({ timeout: 3000 }).catch(() => false)) {
       // Navigate to that project context
       await shapeUpCard.click();
     } else {
-      // Create one first
+      // Create one first — scope all interactions to the dialog
       await page.click('text=New Project');
+      const dialog = page.locator('[role="dialog"]');
+      await dialog.waitFor({ timeout: 5000 });
       const name = `E2E SU Nav ${Date.now()}`;
-      await page.fill('#name', name);
-      await page.click('button:has-text("Create Project"), button:has-text("Save")');
+      await dialog.locator('#name, input[name="name"], input[placeholder*="name" i]').first().fill(name);
+      // Shape Up is default — just submit
+      await dialog.locator('button[type="submit"], button:has-text("Create"), button:has-text("Save"), button:has-text("Add")').first().click();
+      await expect(page.locator(`text=${name}`)).toBeVisible({ timeout: 10000 });
       await page.goto('/cycles');
     }
     // Cycles nav item should be visible in sidebar
@@ -70,11 +85,14 @@ test.describe('Project Management', () => {
     let backlogBtn = page.locator('[aria-label*="View Backlog"]').first();
     if (!await backlogBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       // Create a Kanban project so the sidebar assertion is meaningful
+      // Scope all interactions to the dialog to avoid clicking sidebar elements behind the overlay
       await page.click('text=New Project');
+      const dialog = page.locator('[role="dialog"]');
+      await dialog.waitFor({ timeout: 5000 });
       const projectName = `E2E Kanban Nav ${Date.now()}`;
-      await page.fill('#name', projectName);
-      await page.click('text=Kanban');
-      await page.click('button:has-text("Create Project"), button:has-text("Save")');
+      await dialog.locator('#name, input[name="name"], input[placeholder*="name" i]').first().fill(projectName);
+      await dialog.locator('text=Kanban').first().click();
+      await dialog.locator('button[type="submit"], button:has-text("Create"), button:has-text("Save"), button:has-text("Add")').first().click();
       await expect(page.locator(`text=${projectName}`)).toBeVisible({ timeout: 10000 });
       await page.goto('/projects');
       backlogBtn = page.locator('[aria-label*="View Backlog"]').first();

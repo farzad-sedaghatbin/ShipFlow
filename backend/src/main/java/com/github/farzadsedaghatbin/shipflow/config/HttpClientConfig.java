@@ -13,8 +13,9 @@ public class HttpClientConfig {
 
   @Bean
   public RestTemplate restTemplate(RestTemplateBuilder builder) {
-    return builder.setConnectTimeout(Duration.ofSeconds(15)).setReadTimeout(Duration.ofSeconds(60))
-        // Add error handler to prevent connection reset issues
+    return builder
+        .connectTimeout(Duration.ofSeconds(15))
+        .readTimeout(Duration.ofSeconds(60))
         .additionalMessageConverters(new org.springframework.http.converter.StringHttpMessageConverter())
         .build();
   }
@@ -25,8 +26,9 @@ public class HttpClientConfig {
    */
   @Bean("webhookRestTemplate")
   public RestTemplate webhookRestTemplate(RestTemplateBuilder builder) {
-    return builder.setConnectTimeout(Duration.ofSeconds(30)).setReadTimeout(Duration.ofSeconds(90))
-        // More aggressive timeout for webhooks
+    return builder
+        .connectTimeout(Duration.ofSeconds(30))
+        .readTimeout(Duration.ofSeconds(90))
         .additionalMessageConverters(new org.springframework.http.converter.StringHttpMessageConverter())
         .build();
   }
@@ -35,13 +37,15 @@ public class HttpClientConfig {
    * Dedicated RestTemplate for MCP (Model Context Protocol) server calls.
    * Has longer timeouts as MCP operations may involve fetching external data.
    * Includes custom SSE (Server-Sent Events) message converter for handling text/event-stream responses.
-   * 
+   *
    * Note: Increased timeout from 30s to 120s to handle large repository operations.
    * For very large repos (1000+ files), use the async endpoints instead.
    */
   @Bean("mcpRestTemplate")
   public RestTemplate mcpRestTemplate(RestTemplateBuilder builder, ObjectMapper objectMapper) {
-    return builder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(120))
+    return builder
+        .connectTimeout(Duration.ofSeconds(10))
+        .readTimeout(Duration.ofSeconds(120))
         .additionalMessageConverters(
             new SseJsonMessageConverter(objectMapper),
             new org.springframework.http.converter.StringHttpMessageConverter())

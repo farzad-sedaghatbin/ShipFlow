@@ -1,0 +1,65 @@
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement to ShipFlow!
+
+        Great feature requests explain the **problem** clearly and suggest a possible solution. The maintainer may suggest a different approach — that's part of the discussion.
+
+        Please check [existing discussions](https://github.com/farzad-sedaghatbin/ShipFlow/discussions) first to avoid duplicates.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the problem or gap you are experiencing. Focus on the "why", not the "what".
+      placeholder: "As a [type of user], I often need to [do something] but currently I have to [workaround]..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this to work? Sketches, wireframes, or examples from other tools are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: dropdown
+    id: methodology
+    attributes:
+      label: Which project methodology does this relate to?
+      options:
+        - Shape Up
+        - Kanban
+        - Both / general
+        - Not methodology-specific
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much would this help you?
+      options:
+        - Critical — I can't use ShipFlow effectively without this
+        - High — I'd use ShipFlow more if this existed
+        - Medium — Nice to have, would improve my workflow
+        - Low — Minor polish or convenience
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to submit a PR to implement this feature

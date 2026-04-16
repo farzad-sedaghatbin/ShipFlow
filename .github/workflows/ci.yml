@@ -28,7 +28,9 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        cache-dependency-path: |
+          frontend/package-lock.json
+          package-lock.json
 
     - name: Spotless Check
       run: |
@@ -51,6 +53,11 @@ jobs:
       run: |
         cd frontend
         npm test -- --run
+
+    - name: Docs Build
+      run: |
+        npm ci
+        npm run docs:build
 
   e2e-tests:
     name: Playwright E2E tests
@@ -108,7 +115,7 @@ jobs:
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
           SPRING_DATA_REDIS_PASSWORD: ""
-          APP_JWT_SECRET: e2e-ci-test-secret-minimum-32-chars-long
+          APP_JWT_SECRET: ZTJlY2l0ZXN0LXNlY3JldC1taW5pbXVtLTMyLWNoYXJzLWxvbmcta2V5ISE=
           SPRING_PROFILES_ACTIVE: dev
         run: |
           cd backend

@@ -1127,14 +1127,19 @@ public class WiseArchitectureService {
         boolean hasTeamSkills = teamSkills != null && !teamSkills.isBlank();
         boolean hasFigmaContext = figmaContext != null && !figmaContext.isBlank();
         boolean hasRoadmapContext = roadmapContext != null && !roadmapContext.isBlank();
-        
+
+        // Pitch progress context (existing scopes + tasks already defined on this pitch)
+        String pitchProgressContext = extractPitchProgressContext(pitch);
+        boolean hasPitchProgressContext = pitchProgressContext != null && !pitchProgressContext.isBlank();
+
         List<String> contextSummary = new ArrayList<>();
         if (hasTeamSkills) contextSummary.add("team skills");
         if (hasFigmaContext) contextSummary.add("Figma designs");
         if (hasRoadmapContext) contextSummary.add("roadmap");
-        
-        String contextMsg = contextSummary.isEmpty() 
-            ? "No additional context available" 
+        if (hasPitchProgressContext) contextSummary.add("pitch progress");
+
+        String contextMsg = contextSummary.isEmpty()
+            ? "No additional context available"
             : "Extracted context: " + String.join(", ", contextSummary);
         callback.onProgress(20, contextMsg);
         

@@ -25,6 +25,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.github.GitHubRepositoryR
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.GitHubMcpProvider;
+import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureMarkdownService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +77,9 @@ class WiseArchitectureServiceTest {
 
     @Mock
     private GitHubMcpProvider githubMcpProvider;
+
+    @Mock
+    private WiseArchitectureMarkdownService markdownService;
 
     @InjectMocks
     private WiseArchitectureService service;
@@ -322,7 +326,7 @@ class WiseArchitectureServiceTest {
             assertThat(response.getSolutions()).containsKey(TechStackType.BACKEND_JAVA);
             assertThat(response.getTotalEstimatedHours()).isEqualTo(24);
             
-            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            verify(solutionGeneratorService).generateStackSolution(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
             verify(conversationService).createSession(eq(testPitch), any());
         }
 

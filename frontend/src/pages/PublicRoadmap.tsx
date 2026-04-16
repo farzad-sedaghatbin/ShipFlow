@@ -72,6 +72,19 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '0.9.0',
+      date: 'April 14, 2026',
+      title: t('publicRoadmap.shipped090Title'),
+      highlights: [
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item0Title'), description: t('publicRoadmap.shipped090Item0Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item1Title'), description: t('publicRoadmap.shipped090Item1Desc') },
+        { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item2Title'), description: t('publicRoadmap.shipped090Item2Desc') },
+        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item3Title'), description: t('publicRoadmap.shipped090Item3Desc') },
+        { icon: <FlaskConical className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item4Title'), description: t('publicRoadmap.shipped090Item4Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped090Item5Title'), description: t('publicRoadmap.shipped090Item5Desc') },
+      ],
+    },
+    {
       version: '0.8.0',
       date: 'April 5, 2026',
       title: t('publicRoadmap.shipped080Title'),
@@ -119,16 +132,14 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v0.9.0',
+      version: 'v1.0.0-rc1',
       theme: t('publicRoadmap.phase090Theme'),
       status: 'in-progress',
       items: [
-        { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.phase090Item0Title'), description: t('publicRoadmap.phase090Item0Desc') },
-        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phase090Item1Title'), description: t('publicRoadmap.phase090Item1Desc') },
-        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.phase090Item2Title'), description: t('publicRoadmap.phase090Item2Desc') },
-        { icon: <Cpu className="h-5 w-5" />, title: t('publicRoadmap.phase090Item3Title'), description: t('publicRoadmap.phase090Item3Desc') },
-        { icon: <FlaskConical className="h-5 w-5" />, title: t('publicRoadmap.phase090Item4Title'), description: t('publicRoadmap.phase090Item4Desc') },
-        { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.phase090Item5Title'), description: t('publicRoadmap.phase090Item5Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase090Item0Title'), description: t('publicRoadmap.phase090Item0Desc') },
+        { icon: <Github className="h-5 w-5" />, title: t('publicRoadmap.phase090Item1Title'), description: t('publicRoadmap.phase090Item1Desc') },
+        { icon: <FlaskConical className="h-5 w-5" />, title: t('publicRoadmap.phase090Item2Title'), description: t('publicRoadmap.phase090Item2Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase090Item3Title'), description: t('publicRoadmap.phase090Item3Desc') },
       ],
     },
     {
@@ -136,10 +147,10 @@ export default function PublicRoadmap() {
       theme: t('publicRoadmap.phase100Theme'),
       status: 'planned',
       items: [
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase100Item0Title'), description: t('publicRoadmap.phase100Item0Desc') },
-        { icon: <Github className="h-5 w-5" />, title: t('publicRoadmap.phase100Item1Title'), description: t('publicRoadmap.phase100Item1Desc') },
-        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phase100Item2Title'), description: t('publicRoadmap.phase100Item2Desc') },
-        { icon: <Rocket className="h-5 w-5" />, title: t('publicRoadmap.phase100Item3Title'), description: t('publicRoadmap.phase100Item3Desc') },
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phase100Item0Title'), description: t('publicRoadmap.phase100Item0Desc') },
+        { icon: <Rocket className="h-5 w-5" />, title: t('publicRoadmap.phase100Item1Title'), description: t('publicRoadmap.phase100Item1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase100Item2Title'), description: t('publicRoadmap.phase100Item2Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase100Item3Title'), description: t('publicRoadmap.phase100Item3Desc') },
       ],
     },
   ];

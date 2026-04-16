@@ -202,7 +202,7 @@ class WiseArchitectureMcpToolsTest {
 
             Object stacks = result.get(0).get("techStacks");
             assertThat(stacks).isInstanceOf(List.class);
-            assertThat((List<?>) stacks).contains("BACKEND_JAVA", "WEB_REACT");
+            assertThat((List<String>) stacks).contains("BACKEND_JAVA", "WEB_REACT");
         }
 
         @Test

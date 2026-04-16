@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Unit tests for {@link RateLimitFilter}.
@@ -42,6 +43,9 @@ class RateLimitFilterTest {
   @BeforeEach
   void setUp() throws Exception {
     filter = new RateLimitFilter();
+    // authCapacity is @Value-injected; set it explicitly for unit tests that
+    // bypass Spring context.  Default production value is 10.
+    ReflectionTestUtils.setField(filter, "authCapacity", 10);
     responseWriter = new StringWriter();
     when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
     when(request.getRemoteAddr()).thenReturn("10.0.0.1");

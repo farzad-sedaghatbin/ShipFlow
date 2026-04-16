@@ -9,7 +9,7 @@ test.describe('Hill Chart', () => {
 
   test('cycles list page loads', async ({ page }) => {
     await page.goto('/cycles');
-    await expect(page.locator('h1, h2').filter({ hasText: /cycles/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1').filter({ hasText: /cycles/i })).toBeVisible({ timeout: 10000 });
   });
 
   test('hill chart page loads for an existing cycle', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Hill Chart', () => {
       // Navigate directly if we know a cycle exists
       await page.goto('/cycles');
       // At least verify cycles page loaded
-      await expect(page.locator('h1, h2').filter({ hasText: /cycles/i })).toBeVisible();
+      await expect(page.locator('h1').filter({ hasText: /cycles/i })).toBeVisible();
     }
   });
 

@@ -82,7 +82,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(mockResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "// code context", List.of("ExistingService"), "Java, Spring Boot", "Design with 3 screens", "Epic: Mobile App", "", "");
+                testPitch, testStack, "// code context", List.of("ExistingService"), "Java, Spring Boot", "Design with 3 screens", "Epic: Mobile App", "", "", "");
 
             assertThat(result).isNotNull();
             assertThat(result.getStackType()).isEqualTo(TechStackType.BACKEND_JAVA);
@@ -102,7 +102,7 @@ class TechnicalSolutionGeneratorServiceTest {
             ReflectionTestUtils.setField(service, "chatLanguageModel", null);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getStackType()).isEqualTo(TechStackType.BACKEND_JAVA);
@@ -117,7 +117,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenThrow(new RuntimeException("API error"));
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getArchitectureOverview()).contains("Failed to parse AI response");
@@ -159,7 +159,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenReturn(validJsonOnRetry);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getArchitectureOverview()).isEqualTo("RESTful API from retry");
@@ -195,7 +195,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenReturn(validJsonOnRetry);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getArchitectureOverview()).isEqualTo("Fixed on retry");
@@ -213,7 +213,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenReturn("Still not valid JSON, sorry!");
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getArchitectureOverview()).contains("AI returned non-JSON response after retry");
@@ -240,7 +240,7 @@ class TechnicalSolutionGeneratorServiceTest {
                 .thenReturn(validJsonOnRetry);
 
             service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             // Capture the retry prompt (second invocation)
             org.mockito.ArgumentCaptor<String> promptCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
@@ -276,7 +276,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(mockResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "", List.of(), null, null, null, null, null);
+                testPitch, testStack, "", List.of(), null, null, null, null, null, null);
 
             assertThat(result.getArchitectureOverview()).isEqualTo("Clean Architecture");
         }
@@ -439,7 +439,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(MOCK_MALFORMED_ARCH_DETAIL);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+                testPitch, testStack, "code", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             // architectureOverview is derived from architectureDetail.summary (see parseSolutionResponse)
@@ -479,7 +479,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(malformedStepsResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+                testPitch, testStack, "code", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getImplementationSteps()).hasSize(1);
@@ -514,7 +514,7 @@ class TechnicalSolutionGeneratorServiceTest {
             when(chatLanguageModel.generate(anyString())).thenReturn(malformedResponse);
 
             StackSolutionDTO result = service.generateStackSolution(
-                testPitch, testStack, "code", List.of(), null, null, null, null, null);
+                testPitch, testStack, "code", List.of(), null, null, null, null, null, null);
 
             assertThat(result).isNotNull();
             assertThat(result.getImplementationSteps().get(0).getDependsOnSteps()).isEmpty();
