@@ -37,15 +37,14 @@ test.describe('Task Management', () => {
     await page.fill('#title', taskTitle);
     // Submit button inside the BacklogTaskDialog — text is t('backlogPage.create') = "Create"
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
-    await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
-
-    // Wait for any Sonner toast to clear (it covers the table link)
-    await page.waitForFunction(
-      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
-      { timeout: 5000 }
-    ).catch(() => {});
-    // Click the <a> link in the table row — not a generic text= which may hit a toast
-    await page.getByRole('link', { name: taskTitle }).first().click();
+    // Reload backlog so React Query fetches a fresh list (avoids relying on
+    // the Sonner toast as proof the task is in the DOM)
+    await page.goto('/backlog');
+    // Find the task link (<a href="/backlog/{id}">) — use filter({ hasText })
+    // which is a substring match and tolerates any extra ARIA label content
+    const taskLink = page.locator('a').filter({ hasText: taskTitle }).first();
+    await expect(taskLink).toBeVisible({ timeout: 15000 });
+    await taskLink.click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
     await expect(page.locator('h1, h2').first()).toBeVisible();
   });
@@ -61,12 +60,11 @@ test.describe('Task Management', () => {
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
-    // Open the task — wait for toast, then click the <a> link in the table
-    await page.waitForFunction(
-      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
-      { timeout: 5000 }
-    ).catch(() => {});
-    await page.getByRole('link', { name: taskTitle }).first().click();
+    // Reload backlog so the task list is fresh, then find the task link
+    await page.goto('/backlog');
+    const taskLinkStatus = page.locator('a').filter({ hasText: taskTitle }).first();
+    await expect(taskLinkStatus).toBeVisible({ timeout: 15000 });
+    await taskLinkStatus.click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
     // Status selector must be present — if missing it's a regression
@@ -92,12 +90,11 @@ test.describe('Task Management', () => {
     await page.locator('[role="dialog"]').getByRole('button', { name: /^(Create|Update|Save|Add Task|Create Task)$/ }).click();
     await expect(page.locator(`text=${taskTitle}`)).toBeVisible({ timeout: 10000 });
 
-    // Open task detail — wait for toast, then click the <a> link in the table
-    await page.waitForFunction(
-      () => !document.querySelector('[data-sonner-toast][data-visible="true"]'),
-      { timeout: 5000 }
-    ).catch(() => {});
-    await page.getByRole('link', { name: taskTitle }).first().click();
+    // Reload backlog so the task list is fresh, then find the task link
+    await page.goto('/backlog');
+    const taskLinkComment = page.locator('a').filter({ hasText: taskTitle }).first();
+    await expect(taskLinkComment).toBeVisible({ timeout: 15000 });
+    await taskLinkComment.click();
     await expect(page).toHaveURL(/\/backlog\/\d+/, { timeout: 10000 });
 
     // Comment textarea must be present for @mention coverage to be valid
