@@ -12,7 +12,8 @@ test.describe('Project Management', () => {
     await expect(
       page.locator('h1').filter({ hasText: /projects/i })
         .or(page.locator('h2').filter({ hasText: /projects/i }))
-    ).first().toBeVisible({ timeout: 10000 });
+        .first()
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('create a Shape Up project', async ({ page }) => {

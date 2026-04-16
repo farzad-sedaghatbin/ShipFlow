@@ -53,3 +53,25 @@ export async function waitForApp(page: Page) {
   await page.goto('/login');
   await expect(page.locator('#username')).toBeVisible({ timeout: 30000 });
 }
+
+/**
+ * Select the first available project via the sidebar project selector so that
+ * project-scoped UI (e.g. "New Task", "New Pitch") is enabled.
+ * After login the app has no active project; this picks one so subsequent
+ * backlog/task actions find an enabled UI.
+ */
+export async function selectFirstProject(page: Page) {
+  // The project selector lives on the dashboard; navigate there first if needed
+  if (!page.url().includes('/dashboard')) {
+    await page.goto('/dashboard');
+  }
+  const selector = page.locator('[data-tour="project-selector"]');
+  if (!await selector.isVisible({ timeout: 5000 }).catch(() => false)) {
+    return;
+  }
+  await selector.click();
+  const firstOption = page.locator('[role="option"], [data-radix-select-item]').first();
+  if (await firstOption.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await firstOption.click();
+  }
+}
