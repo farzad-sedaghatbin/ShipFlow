@@ -55,23 +55,48 @@ export async function waitForApp(page: Page) {
 }
 
 /**
- * Select the first available project via the sidebar project selector so that
- * project-scoped UI (e.g. "New Task", "New Pitch") is enabled.
- * After login the app has no active project; this picks one so subsequent
- * backlog/task actions find an enabled UI.
+ * Select the first Kanban project so that "New Task" is always enabled.
+ *
+ * The app stores the selected project in localStorage under
+ * `shipflow_selected_project_id`. On the backlog page, "New Task" is only
+ * enabled for Kanban projects (Shape Up requires a cycle to be selected too).
+ *
+ * Strategy: call the projects API with the JWT from localStorage, find the
+ * first Kanban project, write its id into localStorage, then navigate to
+ * /backlog so the React ProjectContext picks it up on mount.
  */
 export async function selectFirstProject(page: Page) {
-  // The project selector lives on the dashboard; navigate there first if needed
-  if (!page.url().includes('/dashboard')) {
+  // Ensure we are on an authenticated page so the JWT exists in localStorage
+  if (!page.url().includes('localhost')) {
     await page.goto('/dashboard');
+    await expect(page.locator('[data-tour="sidebar"]')).toBeVisible({ timeout: 15000 });
   }
-  const selector = page.locator('[data-tour="project-selector"]');
-  if (!await selector.isVisible({ timeout: 5000 }).catch(() => false)) {
-    return;
-  }
-  await selector.click();
-  const firstOption = page.locator('[role="option"], [data-radix-select-item]').first();
-  if (await firstOption.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await firstOption.click();
+
+  const projectId = await page.evaluate(async () => {
+    const token = localStorage.getItem('shipflow_token');
+    if (!token) return null;
+    try {
+      const res = await fetch('/api/projects/active', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      const projects: Array<{ id: number; projectType: string }> = await res.json();
+      // Prefer Kanban — "New Task" is always enabled there (no cycle needed)
+      const kanban = projects.find((p) => p.projectType === 'KANBAN');
+      const chosen = kanban ?? projects[0] ?? null;
+      if (chosen) {
+        localStorage.setItem('shipflow_selected_project_id', chosen.id.toString());
+        return chosen.id;
+      }
+    } catch {
+      // ignore — tests will fail naturally if the button remains disabled
+    }
+    return null;
+  });
+
+  if (projectId) {
+    // Re-navigate so ProjectContext re-reads the updated localStorage key
+    await page.goto('/backlog');
+    await page.waitForLoadState('networkidle');
   }
 }
