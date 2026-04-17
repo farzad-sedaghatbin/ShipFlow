@@ -161,12 +161,16 @@ OPENAI_BASE_URL=                   # Optional: For Azure OpenAI or proxies
 
 ### Anthropic Configuration
 ```bash
-AI_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-ANTHROPIC_MODEL=claude-3-5-haiku-20241022   # or claude-3-5-sonnet-20241022 for best quality
-ANTHROPIC_TIMEOUT=120
+APP_AI_PROVIDER=anthropic
+APP_AI_ANTHROPIC_API_KEY=sk-ant-your-key-here   # preferred — consistent with APP_AI_* convention
+# ANTHROPIC_API_KEY=sk-ant-your-key-here        # also accepted as fallback
+APP_AI_ANTHROPIC_MODEL=claude-3-5-haiku-20241022   # or claude-3-5-sonnet-20241022 for best quality
+APP_AI_ANTHROPIC_TIMEOUT=120
 ```
 Get an API key at: https://console.anthropic.com/settings/keys
+
+> ⚠️ **Common mistake**: `APP_ANTHROPIC_API_KEY` (missing the `AI` segment) is **wrong** — it maps to
+> `app.anthropic.api-key`, not `app.ai.anthropic.api-key`. Always use `APP_AI_ANTHROPIC_API_KEY`.
 
 | Model | Best for | Price (per 1M tokens) |
 |-------|----------|----------------------|
