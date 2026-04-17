@@ -100,8 +100,11 @@ QA_VECTORSTORE_COLLECTION=shipflow_knowledge
    cat > .env << 'EOF'
    AI_PROVIDER=openai
    OPENAI_API_KEY=sk-your-api-key-here
-   OPENAI_MODEL=gpt-4o-mini
-   # Optional: gpt-4o for more complex tasks
+   OPENAI_MODEL=gpt-4.1-mini
+   # Current recommended default in this guide.
+   # If you see older examples elsewhere in the repo using gpt-4o or
+   # gpt-4-turbo-preview, treat those as legacy references.
+   # Optional: gpt-4.1 for more complex tasks
    EOF
    ```
 
@@ -150,7 +153,7 @@ OLLAMA_TIMEOUT=180
 ```bash
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-key
-OPENAI_MODEL=gpt-4o-mini          # or gpt-4o, gpt-3.5-turbo
+OPENAI_MODEL=gpt-4.1-mini          # or gpt-4.1 (flagship), gpt-4.1-nano (fastest)
 OPENAI_TIMEOUT=120
 OPENAI_ORG_ID=                     # Optional: Organization ID
 OPENAI_BASE_URL=                   # Optional: For Azure OpenAI or proxies
