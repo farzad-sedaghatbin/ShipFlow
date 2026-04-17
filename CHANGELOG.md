@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Anthropic Claude provider**: `langchain4j-anthropic` integrated as a first-class LLM provider.
+  Set `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` to use Claude models.
+  Default: `claude-3-5-haiku-20241022` (cost-efficient). Recommended for Wise Architecture: `claude-3-5-sonnet-20241022`.
+
+### Changed
+- Default OpenAI model updated from retired `gpt-4o-mini` to `gpt-4.1-mini`
+
 ## [1.0.0-rc1] - Upcoming
 
 ### Focus

@@ -153,7 +153,12 @@
             <artifactId>langchain4j-open-ai</artifactId>
             <version>0.35.0</version>
         </dependency>
-        
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+            <version>0.35.0</version>
+        </dependency>
+
         <!-- LangChain4j Embeddings for RAG Q&A feature -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

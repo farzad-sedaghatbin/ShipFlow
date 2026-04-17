@@ -13,7 +13,7 @@ ShipFlow uses a pluggable LLM provider system that supports multiple AI backends
 | Ollama | `ollama` | Local development, privacy-first | No |
 | RunPod | `runpod` | Production with GPU scaling | Yes |
 | OpenAI | `openai` | High-quality responses, complex tasks | Yes |
-| Anthropic | `anthropic` | Coming soon | Yes |
+| Anthropic | `anthropic` | Best for code analysis & long-context reasoning | Yes |
 | Google | `google` | Coming soon | Yes |
 
 ## Vector Store Configuration
@@ -158,6 +158,20 @@ OPENAI_TIMEOUT=120
 OPENAI_ORG_ID=                     # Optional: Organization ID
 OPENAI_BASE_URL=                   # Optional: For Azure OpenAI or proxies
 ```
+
+### Anthropic Configuration
+```bash
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+ANTHROPIC_MODEL=claude-3-5-haiku-20241022   # or claude-3-5-sonnet-20241022 for best quality
+ANTHROPIC_TIMEOUT=120
+```
+Get an API key at: https://console.anthropic.com/settings/keys
+
+| Model | Best for | Price (per 1M tokens) |
+|-------|----------|----------------------|
+| `claude-3-5-haiku-20241022` | Default — all ShipFlow AI features | $0.80 in / $4.00 out |
+| `claude-3-5-sonnet-20241022` | Wise Architecture, risk analysis | $3.00 in / $15.00 out |
 
 ### RunPod Configuration
 ```bash
