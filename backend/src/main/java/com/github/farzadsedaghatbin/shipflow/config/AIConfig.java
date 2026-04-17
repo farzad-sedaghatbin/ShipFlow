@@ -98,6 +98,9 @@ public class AIConfig {
   private String openaiOrganizationId;
 
   // Anthropic Configuration
+  // Env var: APP_AI_ANTHROPIC_API_KEY  (Spring relaxed binding: app.ai.anthropic.api-key)
+  // Also accepts: ANTHROPIC_API_KEY  (explicit placeholder in application.properties)
+  // Note: APP_ANTHROPIC_API_KEY is WRONG — missing the AI segment, maps to app.anthropic.api-key
   @Value("${app.ai.anthropic.api-key:}")
   private String anthropicApiKey;
 

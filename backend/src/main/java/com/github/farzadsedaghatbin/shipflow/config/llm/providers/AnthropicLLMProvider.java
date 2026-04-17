@@ -74,8 +74,9 @@ public class AnthropicLLMProvider implements LLMProvider {
     if (config.getApiKey() == null || config.getApiKey().trim().isEmpty()) {
       throw new IllegalArgumentException(
           "Anthropic provider requires an API key. "
-              + "Set ANTHROPIC_API_KEY or APP_AI_ANTHROPIC_API_KEY environment variable. "
-              + "Get one at https://console.anthropic.com/settings/keys");
+              + "Set APP_AI_ANTHROPIC_API_KEY (or ANTHROPIC_API_KEY) environment variable. "
+              + "Note: APP_ANTHROPIC_API_KEY is wrong — it is missing the AI segment. "
+              + "Get a key at https://console.anthropic.com/settings/keys");
     }
   }
 
