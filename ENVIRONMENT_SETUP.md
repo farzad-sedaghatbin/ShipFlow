@@ -101,6 +101,9 @@ QA_VECTORSTORE_COLLECTION=shipflow_knowledge
    AI_PROVIDER=openai
    OPENAI_API_KEY=sk-your-api-key-here
    OPENAI_MODEL=gpt-4.1-mini
+   # Current recommended default in this guide.
+   # If you see older examples elsewhere in the repo using gpt-4o or
+   # gpt-4-turbo-preview, treat those as legacy references.
    # Optional: gpt-4.1 for more complex tasks
    EOF
    ```
