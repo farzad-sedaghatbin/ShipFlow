@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration;
  * <li>ollama - Local/self-hosted using Ollama
  * <li>runpod - RunPod Serverless GPU (cloud)
  * <li>openai - OpenAI ChatGPT
- * <li>anthropic - Anthropic Claude (future)
+ * <li>anthropic - Anthropic Claude
  * <li>google - Google Gemini (future)
  * </ul>
  *
@@ -85,7 +85,7 @@ public class AIConfig {
   @Value("${app.ai.openai.api-key:}")
   private String openaiApiKey;
 
-  @Value("${app.ai.openai.model:gpt-4o-mini}")
+  @Value("${app.ai.openai.model:gpt-4.1-mini}")
   private String openaiModel;
 
   @Value("${app.ai.openai.base-url:}")
@@ -96,6 +96,16 @@ public class AIConfig {
 
   @Value("${app.ai.openai.organization-id:}")
   private String openaiOrganizationId;
+
+  // Anthropic Configuration
+  @Value("${app.ai.anthropic.api-key:}")
+  private String anthropicApiKey;
+
+  @Value("${app.ai.anthropic.model:claude-3-5-haiku-20241022}")
+  private String anthropicModel;
+
+  @Value("${app.ai.anthropic.timeout:120}")
+  private int anthropicTimeout;
 
   @Autowired
   private LLMProviderFactory llmProviderFactory;
@@ -158,6 +168,10 @@ public class AIConfig {
         break;
 
       case ANTHROPIC :
+        configBuilder.apiKey(anthropicApiKey).modelName(anthropicModel)
+            .timeout(Duration.ofSeconds(anthropicTimeout));
+        break;
+
       case GOOGLE :
       case AZURE_OPENAI :
         log.warn("Provider {} is defined but not yet fully implemented. " + "Using default configuration.",
@@ -189,6 +203,8 @@ public class AIConfig {
           return runpodModel;
         case OPENAI :
           return openaiModel;
+        case ANTHROPIC :
+          return anthropicModel;
         default :
           return ollamaModel;
       }
