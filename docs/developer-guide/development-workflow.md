@@ -20,7 +20,10 @@ cd frontend && npm run dev
 ## Running tests
 
 ```bash
-# Backend — compile + test + coverage report
+# Backend — compile + test (matches CI)
+cd backend && ./mvnw test
+
+# Backend — compile + test + coverage report (run locally before PRs)
 cd backend && ./mvnw verify
 
 # Frontend — unit tests
@@ -51,7 +54,7 @@ cd backend && ./mvnw spotless:apply
 
 GitHub Actions runs on every push and PR:
 1. Spotless format check
-2. Backend tests (`./mvnw verify`)
+2. Backend tests (`./mvnw test`)
 3. Frontend tests (`npm test -- --run`)
 4. Playwright E2E tests (on canonical repo only)
 5. Docker build verification (on PRs)

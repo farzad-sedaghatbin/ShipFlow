@@ -8,7 +8,15 @@ When running locally: **http://localhost:8080/swagger-ui.html**
 
 ## Authentication
 
-All API endpoints require a JWT token or API key.
+Most API endpoints require authentication. Here's how each path works:
+
+| Path | Auth method |
+|------|-------------|
+| `/api/auth/**` | None (login/register) |
+| `/api/inbound/**` | None (HMAC signature when secret configured) |
+| `/api/qa/status` | None (health check) |
+| `/api/v1/public/**` | `X-API-Key` header (not JWT) |
+| Everything else | `Authorization: Bearer <jwt>` |
 
 ### JWT (user sessions)
 

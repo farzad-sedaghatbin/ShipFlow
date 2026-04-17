@@ -11,7 +11,7 @@ See [`CONTRIBUTING.md`](https://github.com/farzad-sedaghatbin/ShipFlow/blob/main
 1. Fork the repository
 2. Create a branch: `git checkout -b feature/my-feature`
 3. Make your changes following the [coding conventions](#coding-conventions)
-4. Run tests: `./mvnw verify` (backend) and `npm test` (frontend)
+4. Run tests: `./mvnw test` (backend) and `npm test` (frontend)
 5. Open a PR targeting `main`
 
 ## Branch naming
@@ -40,4 +40,4 @@ See [`CONTRIBUTING.md`](https://github.com/farzad-sedaghatbin/ShipFlow/blob/main
 
 ## Coverage gate
 
-JaCoCo enforces **≥ 80% line coverage** on the backend. PRs that drop below this threshold will fail CI.
+The backend target is **≥ 80% line coverage**. Run `./mvnw verify` locally before opening a PR to validate the JaCoCo coverage report (CI runs `./mvnw test`; full coverage enforcement via `verify` is planned).

@@ -3,11 +3,11 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'ShipFlow',
   description: 'Methodology-agnostic project management — Shape Up, Kanban, and more.',
-  base: '/ShipFlow/',
+  base: process.env.NODE_ENV === 'production' ? '/ShipFlow/' : '/',
   ignoreDeadLinks: [/localhost/],
 
   head: [
-    ['link', { rel: 'icon', href: '/ShipFlow/favicon.ico' }],
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
   ],
 
   themeConfig: {
