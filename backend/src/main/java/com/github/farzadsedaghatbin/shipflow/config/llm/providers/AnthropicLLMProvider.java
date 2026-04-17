@@ -40,7 +40,9 @@ public class AnthropicLLMProvider implements LLMProvider {
   public ChatLanguageModel createModel(LLMProviderConfig config) {
     validateConfig(config);
 
-    String modelName = config.getModelName() != null ? config.getModelName() : DEFAULT_MODEL;
+    String modelName = (config.getModelName() != null && !config.getModelName().trim().isEmpty())
+        ? config.getModelName()
+        : DEFAULT_MODEL;
 
     log.info("Creating Anthropic ChatLanguageModel - Model: {}", modelName);
 
