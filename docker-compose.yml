@@ -47,7 +47,7 @@ services:
       APP_AI_OPENAI_TIMEOUT: ${APP_AI_OPENAI_TIMEOUT:-120}
       # Anthropic Configuration (Claude) — set APP_AI_ANTHROPIC_API_KEY in .env
       APP_AI_ANTHROPIC_API_KEY: ${APP_AI_ANTHROPIC_API_KEY:-}
-      APP_AI_ANTHROPIC_MODEL: ${APP_AI_ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}
+      APP_AI_ANTHROPIC_MODEL: ${APP_AI_ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
       APP_AI_ANTHROPIC_TIMEOUT: ${APP_AI_ANTHROPIC_TIMEOUT:-120}
       # RunPod Configuration (cloud GPU)
       APP_AI_RUNPOD_BASE_URL: ${APP_AI_RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
