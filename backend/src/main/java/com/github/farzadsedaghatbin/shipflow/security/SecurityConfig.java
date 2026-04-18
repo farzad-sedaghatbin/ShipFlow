@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.security;
 
+import jakarta.servlet.DispatcherType;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -93,6 +94,11 @@ public class SecurityConfig {
             .accessDeniedHandler(jwtAccessDeniedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            // ASYNC and ERROR dispatches are internal Tomcat re-dispatches (e.g. SSE push,
+            // error page rendering). The SecurityContext is not propagated on these re-dispatches,
+            // so the AuthorizationFilter would throw AccessDeniedException. Permit them explicitly
+            // — the original REQUEST was already authenticated; these are follow-up I/O dispatches.
+            .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
             // Allow CORS preflight requests
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
             // SPA routes - all frontend routes should be accessible (React handles auth)
