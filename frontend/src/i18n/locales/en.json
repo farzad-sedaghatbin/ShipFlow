@@ -126,6 +126,7 @@
     "workLogs": "Work Logs",
     "customMetrics": "Custom Metrics",
     "dashboards": "Dynamic Report",
+    "blog": "Blog",
     "helpGuides": "Help & Guides",
     "menu": "Menu",
     "more": "More",
@@ -1435,6 +1436,18 @@
     "passwordChangeSuccess": "Password changed successfully",
     "passwordMismatch": "Passwords do not match",
     "loadFailed": "Failed to load profile"
+  },
+  "blog": {
+    "title": "ShipFlow Blog",
+    "badge": "Articles & Insights",
+    "headline": "The ShipFlow Blog",
+    "subheadline": "Shape Up methodology, product building, and engineering insights from the team behind ShipFlow.",
+    "backToHome": "Back to home",
+    "backToBlog": "Back to blog",
+    "errorTitle": "Could not load posts",
+    "postNotFound": "Post not found",
+    "emptyTitle": "No posts yet",
+    "emptySubtitle": "Check back soon — articles are on the way."
   },
   "helpGuides": {
     "title": "Help & Guides",

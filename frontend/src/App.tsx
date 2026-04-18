@@ -17,6 +17,8 @@ const Login = lazy(() => import('./pages/Login'));
 const ReleaseNotes = lazy(() => import('./pages/ReleaseNotes'));
 const CompetitorsComparison = lazy(() => import('./pages/CompetitorsComparison'));
 const PublicRoadmap = lazy(() => import('./pages/PublicRoadmap'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
 
 // Core app pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -172,6 +174,8 @@ function App() {
         <Route path="/compare" element={<CompetitorsComparison />} />
         <Route path="/releases" element={<ReleaseNotes />} />
         <Route path="/public-roadmap" element={<PublicRoadmap />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/login" element={<Login />} />
         <Route
           path="/*"
