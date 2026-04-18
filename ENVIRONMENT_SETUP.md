@@ -164,18 +164,28 @@ OPENAI_BASE_URL=                   # Optional: For Azure OpenAI or proxies
 APP_AI_PROVIDER=anthropic
 APP_AI_ANTHROPIC_API_KEY=sk-ant-your-key-here   # preferred — consistent with APP_AI_* convention
 # ANTHROPIC_API_KEY=sk-ant-your-key-here        # also accepted as fallback
-APP_AI_ANTHROPIC_MODEL=claude-3-5-haiku-20241022   # or claude-3-5-sonnet-20241022 for best quality
+APP_AI_ANTHROPIC_MODEL=claude-haiku-4-5-20251001   # see model table below
 APP_AI_ANTHROPIC_TIMEOUT=120
 ```
 Get an API key at: https://console.anthropic.com/settings/keys
 
+Check which models your key can access:
+```bash
+curl https://api.anthropic.com/v1/models -H "X-Api-Key: $APP_AI_ANTHROPIC_API_KEY"
+```
+
 > ⚠️ **Common mistake**: `APP_ANTHROPIC_API_KEY` (missing the `AI` segment) is **wrong** — it maps to
 > `app.anthropic.api-key`, not `app.ai.anthropic.api-key`. Always use `APP_AI_ANTHROPIC_API_KEY`.
 
-| Model | Best for | Price (per 1M tokens) |
-|-------|----------|----------------------|
-| `claude-3-5-haiku-20241022` | Default — all ShipFlow AI features | $0.80 in / $4.00 out |
-| `claude-3-5-sonnet-20241022` | Wise Architecture, risk analysis | $3.00 in / $15.00 out |
+> ⚠️ **Model mismatch**: Newer API keys (created 2025+) only expose Claude 4.x models. Older Claude 3.x
+> IDs like `claude-3-5-haiku-20241022` return `not_found_error` on these keys. Use the models table below.
+
+| Model | Best for | Notes |
+|-------|----------|-------|
+| `claude-haiku-4-5-20251001` | **Default** — all ShipFlow AI features | Fastest, cheapest |
+| `claude-sonnet-4-5-20250929` | Wise Architecture, risk analysis | Better reasoning |
+| `claude-sonnet-4-6` | Best quality/cost balance | Latest Sonnet |
+| `claude-opus-4-6` | Maximum capability | Premium pricing |
 
 ### RunPod Configuration
 ```bash
