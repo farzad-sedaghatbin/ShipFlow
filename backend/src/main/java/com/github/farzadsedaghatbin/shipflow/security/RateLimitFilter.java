@@ -24,8 +24,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <ul>
  *   <li>{@code /api/auth/**} — 10 requests / minute</li>
  *   <li>{@code /api/search/**} — 30 requests / minute</li>
- *   <li>{@code /api/wise-architecture/**} — 5 requests / minute</li>
- *   <li>{@code /api/risk/**} — 5 requests / minute</li>
+ *   <li>{@code /api/wise-architecture/**} — 5 requests / minute (actual AI calls)</li>
+ *   <li>{@code /api/risk/**} — 5 requests / minute (actual AI calls)</li>
+ *   <li>{@code /api/risk/async/jobs/**} — 120 requests / minute (status polling, not AI calls)</li>
  * </ul>
  *
  * <p>Requests that exceed the limit receive HTTP 429 with a JSON body and a
@@ -54,10 +55,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
   private static final long SEARCH_RETRY_AFTER_SECONDS = 60;
 
-  /** AI endpoints (wise-architecture, risk): 5 requests per minute per IP. */
+  /** AI endpoints (wise-architecture, risk triggers): 5 requests per minute per IP. */
   private static final int AI_CAPACITY = 5;
   private static final Duration AI_PERIOD = Duration.ofMinutes(1);
   private static final long AI_RETRY_AFTER_SECONDS = 60;
+
+  /**
+   * Async job status/result polling endpoints: 120 requests per minute per IP.
+   * These are lightweight DB reads, not AI calls — they must not share the strict
+   * AI bucket or polling will be rate-limited immediately after the job starts.
+   */
+  private static final int POLL_CAPACITY = 120;
+  private static final Duration POLL_PERIOD = Duration.ofMinutes(1);
+  private static final long POLL_RETRY_AFTER_SECONDS = 5;
 
   // ---- Bucket stores (one ConcurrentHashMap per rate-limited path group) ----
 
@@ -69,6 +79,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final String SEARCH_PREFIX = "/api/search";
   private static final String WISE_ARCH_PREFIX = "/api/wise-architecture";
   private static final String RISK_PREFIX = "/api/risk";
+  /** Async job polling — checked BEFORE RISK_PREFIX so it gets the higher limit. */
+  private static final String ASYNC_JOBS_PREFIX = "/api/risk/async/jobs/";
 
   @Override
   protected void doFilterInternal(
@@ -105,6 +117,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     if (path.startsWith(SEARCH_PREFIX)) {
       return new RateLimit("search", SEARCH_CAPACITY, SEARCH_PERIOD, SEARCH_RETRY_AFTER_SECONDS);
+    }
+    // Async job polling must be checked BEFORE the general RISK_PREFIX check —
+    // status/result endpoints are lightweight DB reads, not AI calls.
+    if (path.startsWith(ASYNC_JOBS_PREFIX)) {
+      return new RateLimit("poll", POLL_CAPACITY, POLL_PERIOD, POLL_RETRY_AFTER_SECONDS);
     }
     if (path.startsWith(WISE_ARCH_PREFIX) || path.startsWith(RISK_PREFIX)) {
       return new RateLimit("ai", AI_CAPACITY, AI_PERIOD, AI_RETRY_AFTER_SECONDS);
