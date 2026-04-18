@@ -33,6 +33,7 @@ import {
   Github,
   Plug,
   BookOpen,
+  Rss,
   Beaker,
   Map,
   Layers,
@@ -410,6 +411,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
+          <NavItem
+            item={{ textKey: 'nav.blog', icon: Rss, path: '/blog', tourId: 'blog-menu' }}
+            isActive={currentPath.startsWith('/blog')}
+            onClick={onItemClick}
+          />
           <NavItem
             item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
