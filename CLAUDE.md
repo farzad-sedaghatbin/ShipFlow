@@ -70,7 +70,44 @@ Every session must complete ALL of these before creating the PR:
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
 10. **If in-app help guides reference changed UI**: update the relevant help guide content
-11. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+11. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
+12. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+
+---
+
+## Public Pages Alignment
+
+> **Rule**: `ReleaseNotes.tsx` and `PublicRoadmap.tsx` are two views of the same truth. They must always be in sync.
+
+### The two pages
+
+| Page | Route | Audience | File |
+|------|-------|----------|------|
+| Release Notes | `/releases` | Anyone — changelog-style list, newest first | `frontend/src/pages/ReleaseNotes.tsx` |
+| Public Roadmap | `/public-roadmap` | Anyone — phase view with "in-progress / planned / future" | `frontend/src/pages/PublicRoadmap.tsx` (i18n keys in `en.json` / `fa.json`) |
+
+### What must match between them
+
+1. **Every version milestone** must appear in both pages (e.g. if v1.0.0-rc1 is a card in ReleaseNotes, it must be a phase in PublicRoadmap and vice-versa).
+2. **Item titles** for each milestone must be the same (or differ only in phrasing, never in substance).
+3. **Item count** should be the same for a given milestone — don't add an item to one page and forget the other.
+4. **Milestone status** must be consistent: if a version is marked `upcoming: true` in ReleaseNotes it must be `'in-progress'` or `'planned'` in PublicRoadmap's `upcomingPhases` array, not in `recentlyShipped`.
+5. **Newly shipped versions** move from "upcoming/in-progress" to the "recently shipped" section in PublicRoadmap and lose the `upcoming: true` flag in ReleaseNotes — both changes in the same PR.
+
+### When releasing a new version
+
+Run this sub-checklist **in addition to** the main end-of-session checklist:
+
+- [ ] Move the version card in **ReleaseNotes.tsx**: remove `upcoming: true`, set `date` to the real release date (e.g. `'April 19, 2026'`).
+- [ ] Move the version in **PublicRoadmap.tsx**: remove from `upcomingPhases`, add to `recentlyShipped` with all highlights.
+- [ ] Update the i18n `shipped*` keys in **`en.json`** and **`fa.json`** with the correct title and item descriptions.
+- [ ] Verify the hero badge in ReleaseNotes now shows the new version as "Latest".
+- [ ] Verify the "In Progress" card in PublicRoadmap now points to the next milestone.
+
+### When adding a feature mid-milestone
+
+- Add it to the **current milestone's** highlights in both pages (same session, same PR).
+- If the feature uses i18n keys (PublicRoadmap), add the corresponding hardcoded text in ReleaseNotes to match.
 
 ---
 

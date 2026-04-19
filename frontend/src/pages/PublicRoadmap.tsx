@@ -29,6 +29,7 @@ import {
   Workflow,
   Sliders,
   Smartphone,
+  Rss,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -140,6 +141,7 @@ export default function PublicRoadmap() {
         { icon: <Github className="h-5 w-5" />, title: t('publicRoadmap.phase090Item1Title'), description: t('publicRoadmap.phase090Item1Desc') },
         { icon: <FlaskConical className="h-5 w-5" />, title: t('publicRoadmap.phase090Item2Title'), description: t('publicRoadmap.phase090Item2Desc') },
         { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase090Item3Title'), description: t('publicRoadmap.phase090Item3Desc') },
+        { icon: <Rss className="h-5 w-5" />, title: t('publicRoadmap.phase090Item4Title'), description: t('publicRoadmap.phase090Item4Desc') },
       ],
     },
     {
