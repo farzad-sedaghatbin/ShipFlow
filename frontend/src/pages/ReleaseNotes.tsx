@@ -40,6 +40,8 @@ import {
   Bookmark,
   Mail,
   FlaskConical,
+  Rss,
+  Container,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -59,9 +61,41 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.0.0',
+    date: 'Coming Soon',
+    title: 'First Open Source Release',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Container className="h-5 w-5" />,
+        title: 'Tag v1.0.0 & Docker Image',
+        description:
+          'ghcr.io/farzad-sedaghatbin/shipflow:1.0.0 and :latest published on GHCR. One-command self-hosted setup via Docker Compose verified on Linux, macOS, and WSL2.',
+      },
+      {
+        icon: <Rocket className="h-5 w-5" />,
+        title: 'Public Launch Announcements',
+        description:
+          'Hacker News, Reddit (r/selfhosted, r/projectmanagement, r/java, r/reactjs), blog post, and live demo at shipflow.dev with guest read-only access.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Migration Guide',
+        description:
+          'Documented upgrade path from 0.x to 1.0.0, including Flyway migration notes and any breaking configuration changes.',
+      },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'Live Demo',
+        description:
+          'Public demo at shipflow.dev with pre-loaded seed data. No sign-up required to explore Shape Up and Kanban modes.',
+      },
+    ],
+  },
+  {
     version: '1.0.0-rc1',
     date: 'Coming Soon',
-    title: 'Stabilization — Docs, Community & Release Prep',
+    title: 'Stabilization — Docs, Community & Production Fixes',
     upcoming: true,
     highlights: [
       {
@@ -72,21 +106,27 @@ const releases: Release[] = [
       },
       {
         icon: <Github className="h-5 w-5" />,
-        title: 'GOVERNANCE.md + GitHub Discussions',
+        title: 'GOVERNANCE.md + Community Templates',
         description:
-          'Governance document covering maintainer expectations, contribution process, and security disclosure. Discussion templates for community support and feature requests.',
+          'Governance document covering maintainer expectations, contribution process, and security disclosure. GitHub Discussion templates for community support and feature requests.',
       },
       {
         icon: <FlaskConical className="h-5 w-5" />,
-        title: 'Full E2E Suite on CI',
+        title: 'Full E2E Suite on Production Image',
         description:
-          'All 32 Playwright tests passing against the production Docker image. Auth, project management, pitch lifecycle, hill chart drag-and-persist, and task management flows all covered.',
+          'All 32 Playwright tests passing against the production Docker image on CI. Auth, project management, pitch lifecycle, hill chart drag-and-persist, and task management flows covered.',
       },
       {
-        icon: <Rocket className="h-5 w-5" />,
-        title: 'v1.0.0 Launch Prep',
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Bug Bash & Production Fixes',
         description:
-          'CHANGELOG finalized, migration guide drafted, Docker Compose one-command setup verified on Linux / macOS / WSL2. Ready to tag and ship.',
+          'SSE async-dispatch security fix (AuthorizationDeniedException on notification stream), rate-limiter separate bucket for async job polling, Anthropic model update for 2025+ API keys, and Playwright selector stabilization.',
+      },
+      {
+        icon: <Rss className="h-5 w-5" />,
+        title: 'Blog System',
+        description:
+          'Static blog at /blog powered by Markdown files synced from a private GitHub repository. First posts: What is Shape Up, Hill Charts, ShipFlow vs Linear, Shape Up vs Scrum.',
       },
     ],
   },
