@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { safeParseId } from '../utils/validation';
@@ -13,6 +13,7 @@ import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequ
 import { MeetingTypeConfig } from '../types/organizationSettings';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
+import { WiseDesignerPanel } from '../components/WiseDesignerPanel';
 import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
@@ -36,6 +37,8 @@ export default function PitchDetail() {
   const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
+  const [searchParams] = useSearchParams();
+  const archSessionFromUrl = searchParams.get('archSession') || undefined;
   const { showSuccess, showError } = useToast();
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
@@ -510,6 +513,15 @@ export default function PitchDetail() {
       <div className="grid grid-cols-1 gap-6">
         {/* Risk Analysis - Full Width */}
         <RiskInsightsCard pitchId={pitch.id} />
+
+        {/* Wise Designer - AI UI Prototype Generator */}
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <WiseDesignerPanel
+            pitchId={pitch.id}
+            pitchName={pitch.title}
+            wiseArchSessionId={archSessionFromUrl}
+          />
+        </div>
 
         <PitchDocumentsSection
           pitchId={pitch.id}

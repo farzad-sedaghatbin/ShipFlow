@@ -30,6 +30,7 @@ import {
   Download,
   FileText,
   FolderOpen,
+  Paintbrush,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -926,6 +927,22 @@ const WiseArchitecturePage: React.FC = () => {
           {/* Step 4: Solution Display */}
           {currentStep === 'solution' && solution && (
             <div className="space-y-4">
+              {/* Wise Designer CTA — jump to the pitch page with arch context pre-loaded */}
+              {selectedPitch && sessionId && (
+                <div className="flex items-center justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-950"
+                    onClick={() =>
+                      navigate(`/pitches/${selectedPitch.id}?wiseDesigner=1&archSession=${sessionId}`)
+                    }
+                  >
+                    <Paintbrush className="h-4 w-4" />
+                    {t('wiseArchitecture.openWiseDesigner')}
+                  </Button>
+                </div>
+              )}
               {/* Appetite Check */}
               <Card className={solution.appetiteCheck.passed ? 'border-green-500/50' : 'border-amber-500/50'}>
                 <CardHeader>

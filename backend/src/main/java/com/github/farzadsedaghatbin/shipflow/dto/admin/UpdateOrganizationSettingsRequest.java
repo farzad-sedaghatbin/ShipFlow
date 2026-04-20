@@ -44,6 +44,9 @@ public class UpdateOrganizationSettingsRequest {
   // Wise Architecture Feature Flag
   private Boolean enableWiseArchitecture;
 
+  // Wise Designer Feature Flag
+  private Boolean enableWiseDesigner;
+
   // Figma MCP Configuration (token managed via MCP settings API)
   private String figmaAccessToken;
 

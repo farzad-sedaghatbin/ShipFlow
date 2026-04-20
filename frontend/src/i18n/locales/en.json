@@ -6417,6 +6417,7 @@
     "startingAnalysis": "Starting solution analysis...",
     "generateSolution": "Generate Solution",
     "solutionGenerationFailed": "Failed to generate solution",
+    "openWiseDesigner": "Generate UI Design",
     "appetiteCheck": "Appetite Check",
     "estimated": "Estimated",
     "available": "Available",
@@ -6749,5 +6750,29 @@
     "updatePitchStatus": "Update Pitch Status via MCP",
     "addComment": "Add Comment via MCP",
     "writeToolsEnabled": "Write tools enabled"
+  },
+  "wiseDesigner": {
+    "title": "Wise Designer",
+    "badge": "Experimental",
+    "archLinked": "Architecture linked",
+    "archContext": "Arch context",
+    "generateTitle": "Generate UI Prototype",
+    "generateDesc": "Describe any design hints and click Generate. The AI will produce a clickable HTML mockup of the pitch's key screens.",
+    "contextPlaceholder": "Optional hints: e.g. mobile-first, dark theme, focus on onboarding flow…",
+    "generateBtn": "Generate Prototype",
+    "withArchContext": "+ Arch",
+    "generating": "Generating prototype…",
+    "generated": "UI prototype generated",
+    "regenerate": "Regenerate",
+    "iteratePlaceholder": "Describe a change: e.g. make the nav sticky, add a dark mode toggle…",
+    "iterateBtn": "Apply",
+    "iterateHint": "Press Enter or click Send to iterate on the current design.",
+    "iterated": "Prototype updated",
+    "history": "Version history",
+    "historyTitle": "Design history",
+    "openTab": "Open in new tab",
+    "fullscreen": "Fullscreen",
+    "errorGenerate": "Failed to generate prototype. Check that AI features and Wise Designer are enabled.",
+    "errorIterate": "Failed to apply change. Please try again."
   }
 }

@@ -125,6 +125,11 @@ public class OrganizationSettings {
   @Builder.Default
   private Boolean enableWiseArchitecture = false;
 
+  // Wise Designer Feature Flag
+  @Column(name = "enable_wise_designer", nullable = false)
+  @Builder.Default
+  private Boolean enableWiseDesigner = false;
+
   // Figma MCP Configuration
   @Column(name = "figma_access_token", columnDefinition = "TEXT")
   private String figmaAccessToken;

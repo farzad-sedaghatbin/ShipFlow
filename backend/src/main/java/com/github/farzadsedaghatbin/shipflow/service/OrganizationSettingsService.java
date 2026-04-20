@@ -131,6 +131,11 @@ public class OrganizationSettingsService {
       settings.setEnableWiseArchitecture(request.getEnableWiseArchitecture());
     }
 
+    // Wise Designer Feature Flag
+    if (request.getEnableWiseDesigner() != null) {
+      settings.setEnableWiseDesigner(request.getEnableWiseDesigner());
+    }
+
     // Figma MCP Configuration (token only, managed via MCP settings API)
     if (request.getFigmaAccessToken() != null) {
       settings.setFigmaAccessToken(request.getFigmaAccessToken());
@@ -454,6 +459,8 @@ public class OrganizationSettingsService {
         .defaultWorkingDaysPerWeek(entity.getDefaultWorkingDaysPerWeek())
         // Wise Architecture Feature Flag
         .enableWiseArchitecture(entity.getEnableWiseArchitecture())
+        // Wise Designer Feature Flag
+        .enableWiseDesigner(entity.getEnableWiseDesigner())
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())

@@ -66,6 +66,9 @@ public class OrganizationSettingsDTO {
   // Wise Architecture Feature Flag
   private Boolean enableWiseArchitecture;
 
+  // Wise Designer Feature Flag
+  private Boolean enableWiseDesigner;
+
   // Figma MCP Configuration (token not exposed, only flag)
   private Boolean hasFigmaAccessToken;
 
