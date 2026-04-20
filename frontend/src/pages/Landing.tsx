@@ -227,6 +227,14 @@ export default function Landing() {
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.roadmap')}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => navigate('/blog')}
+                >
+                  <ArrowRight className="h-5 w-5 mr-2" />
+                  {t('landing.blog', 'Blog')}
+                </Button>
               </div>
 
               {/* Tech Stack */}
@@ -520,6 +528,12 @@ export default function Landing() {
               © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
             </p>
             <nav className="flex gap-6">
+              <button
+                onClick={() => navigate('/blog')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t('landing.blog', 'Blog')}
+              </button>
               <button
                 onClick={() => navigate('/releases')}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
