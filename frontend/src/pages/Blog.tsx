@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Calendar, BookOpen, Rss, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Rss } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
@@ -213,41 +213,27 @@ export default function Blog() {
           )}
 
           {!loading && !error && posts.length > 0 && (
-            <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {posts.map((post) => (
                 <Link
                   key={post.slug}
                   to={`/blog/${post.slug}`}
                   className="group rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200 p-6 block"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      {post.date && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                          <time dateTime={post.date}>{formatDate(post.date)}</time>
-                        </div>
-                      )}
-                      <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors mb-2 leading-snug">
-                        {post.title}
-                      </h2>
-                      {post.description && (
-                        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-                          {post.description}
-                        </p>
-                      )}
-                      {post.keywords && post.keywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {post.keywords.slice(0, 4).map((kw) => (
-                            <Badge key={kw} variant="secondary" className="text-xs font-normal">
-                              {kw}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                  {post.date && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                      <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                      <time dateTime={post.date}>{formatDate(post.date)}</time>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary flex-shrink-0 mt-1 transition-colors" />
-                  </div>
+                  )}
+                  <h2 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-2 leading-snug">
+                    {post.title}
+                  </h2>
+                  {post.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                      {post.description}
+                    </p>
+                  )}
                 </Link>
               ))}
             </div>
