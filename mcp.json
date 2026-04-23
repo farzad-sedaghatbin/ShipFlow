@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "ShipFlow MCP Server — connects Claude Code to your running ShipFlow backend.",
+    "",
+    "PREREQUISITE: Backend must be running with MCP enabled:",
+    "  MCP_SERVER_ENABLED=true ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev",
+    "",
+    "Generate an API key in ShipFlow UI → Settings → API Keys, then export it:",
+    "  export SHIPFLOW_API_KEY=sf_dev_xxxxxxxxxxxxxxxxxxxx",
+    "",
+    "The key is read from the environment — do NOT put it in this file directly.",
+    "This file is committed to git; secrets stay in your shell environment.",
+    "",
+    "See MCP_CLIENT_SETUP.md for full setup, available tools, and production config."
+  ],
+  "mcpServers": {
+    "shipflow": {
+      "type": "sse",
+      "url": "http://localhost:8080/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer ${SHIPFLOW_API_KEY}"
+      }
+    }
+  }
+}
