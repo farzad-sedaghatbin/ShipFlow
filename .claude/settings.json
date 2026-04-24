@@ -27,10 +27,17 @@
       "Bash(find * -name *)"
     ],
     "deny": [
+      "Bash(git push --force)",
       "Bash(git push --force *)",
+      "Bash(git push -f)",
       "Bash(git push -f *)",
+      "Bash(git reset --hard)",
       "Bash(git reset --hard *)",
+      "Bash(./mvnw flyway:clean)",
       "Bash(./mvnw flyway:clean *)",
+      "Bash(cd backend && ./mvnw flyway:clean)",
+      "Bash(cd backend && ./mvnw flyway:clean *)",
+      "Bash(docker compose down -v)",
       "Bash(docker compose down -v *)"
     ]
   },

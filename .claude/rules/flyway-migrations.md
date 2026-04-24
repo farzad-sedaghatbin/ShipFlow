@@ -6,17 +6,13 @@ globs: backend/src/main/resources/db/migration/**
 
 **NEVER edit an existing migration file.** Flyway checksums will mismatch and the application will refuse to start. Always create a new file.
 
-**Naming — use date-based format for all new files**:
+**Naming — use sequential format (matches all existing files in this repo)**:
 ```
-V{YYYY}_{MM}_{DD}_{sequence}__{description}.sql
+V{N}__{description}.sql
 ```
-Example: `V2026_04_22_0001__add_notification_preferences.sql`
+Example: if the highest existing version is V60, the new file is `V61__add_notification_preferences.sql`
 
-Sequence is a 4-digit counter scoped to the day (0001, 0002, …). Scan existing files for today's date before picking the sequence.
-
-**Legacy formats already in the repo** (do not use for new files):
-- `V{N}__{description}.sql` — old sequential (V1__init.sql … V99__)
-- `V{YYYYMMDD}{seq}__{description}.sql` — date without underscores
+Scan the migration directory for the highest `V{N}__*.sql` before picking the next number.
 
 **H2 compatibility** — tests run on H2, so avoid PostgreSQL-only DDL syntax:
 - ❌ `jsonb`, `uuid` column type, `SERIAL`, `CREATE INDEX CONCURRENTLY`

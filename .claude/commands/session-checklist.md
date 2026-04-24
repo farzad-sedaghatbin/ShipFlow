@@ -12,7 +12,7 @@ For the current session's changes, check each item below and report status as �
 8. **SampleDataInitializer.java** — Does the demo seed data reflect the new feature?
 9. **TourContext.tsx** — If the UI layout changed, are `data-tour` selectors still valid? Is the Step Inventory in `TOUR_GUIDE.md` updated?
 10. **Help guides** — If any `*_GUIDE.md` references changed UI, is it updated?
-11. **Spotless** — Does `cd backend && ./mvnw spotless:check` pass?
+11. **Backend build** — Does `cd backend && ./mvnw verify` pass cleanly with no build or test failures?
 12. **PR branch** — Is the branch named with `feat/fix/chore/refactor/test/docs` prefix, targeting `main`?
 
 After checking, list anything that needs attention and offer to fix it.
