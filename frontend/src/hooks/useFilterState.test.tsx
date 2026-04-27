@@ -349,9 +349,14 @@ describe('useFilterState', () => {
     });
 
     it('should handle number array filters', () => {
+      // When the default value is an empty array the hook cannot auto-detect the
+      // element type; provide an explicit parser to get number parsing.
       const { result } = renderHook(
         () => useFilterState<Pick<TestFilters, 'assigneeIds'>>({
-          assigneeIds: { defaultValue: [] },
+          assigneeIds: {
+            defaultValue: [] as number[],
+            parse: (val) => (val ? val.split(',').filter(Boolean).map(Number) : []),
+          },
         }),
         { wrapper: createWrapper(['/?assigneeIds=1,2,3']) }
       );

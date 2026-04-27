@@ -50,57 +50,80 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'Shape Up', feature: 'Native Shape Up methodology', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: '6-week fixed cycles', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: 'Betting table for pitches', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Shape Up', feature: 'Pre-cycle pitch lifecycle', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
   { category: 'Shape Up', feature: 'Appetite-based budgeting', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: 'Circuit breaker mechanism', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Shape Up', feature: 'Pitch shaping workflow', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: 'partial', clickup: false },
   { category: 'Shape Up', feature: 'Cooldown periods', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Shape Up', feature: 'Dual mode (Shape Up + Kanban)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
-  
+
   // Progress Visualization
   { category: 'Progress', feature: 'Hill charts', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: true, clickup: false },
   { category: 'Progress', feature: 'Interactive hill chart editing', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Progress', feature: 'Scope-Task auto-bridging', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Progress', feature: 'Auto-progress from subtasks', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Progress', feature: 'Gantt charts', shipflow: false, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Progress', feature: 'Kanban boards', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   { category: 'Progress', feature: 'Sprint burndown', shipflow: false, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: false, clickup: true },
-  
+
+  // Reporting
+  { category: 'Reporting', feature: 'Detailed Cycle Reports', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Reporting', feature: 'Pitch Health Analytics', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release cockpit (task/bug breakdown)', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Reporting', feature: 'Release traceability (tasks & bugs)', shipflow: true, linear: 'partial', asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
+
   // AI & Intelligence
   { category: 'AI Features', feature: 'AI risk analysis', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: 'partial' },
   { category: 'AI Features', feature: 'AI test case generation', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'AI pitch document extraction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'AI technical solution generator', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Team skills-aware recommendations', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Figma design analysis (MCP)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
-  
+  { category: 'AI Features', feature: 'AI-powered help search', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Search & Navigation', feature: 'Global search (⌘K)', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+
   // QA & Testing
   { category: 'QA', feature: 'Integrated test management', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'QA', feature: 'Bug tracking', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'QA', feature: 'Test execution & runs', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'QA', feature: 'Traceability links', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: 'partial' },
-  
+
   // Team & Collaboration
+  { category: 'Team', feature: 'Configurable team capacity', shipflow: true, linear: false, asana: 'partial', monday: 'partial', jira: 'partial', basecamp: false, clickup: 'partial' },
+  { category: 'Team', feature: 'Per-person budget tracking', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Team', feature: 'Markdown descriptions (write/preview)', shipflow: true, linear: true, asana: 'partial', monday: 'partial', jira: true, basecamp: 'partial', clickup: true },
   { category: 'Team', feature: 'Retrospectives', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Team', feature: 'Anonymous retro submissions', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Team', feature: 'Time tracking', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Team', feature: 'Work log timers', shipflow: true, linear: false, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
   { category: 'Team', feature: 'Task dependencies', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  
+  { category: 'Team', feature: 'Interactive Help Guides with AI Search', shipflow: true, linear: false, asana: 'partial', monday: 'partial', jira: 'partial', basecamp: 'partial', clickup: 'partial' },
+
   // Integrations
   { category: 'Integrations', feature: 'GitHub integration', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable VCS providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Slack notifications', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Pluggable notification providers', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
   { category: 'Integrations', feature: 'Microsoft Teams', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  { category: 'Integrations', feature: 'Webhooks', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
-  
+  { category: 'Integrations', feature: 'Webhooks (outgoing)', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
+  { category: 'Integrations', feature: 'Generic inbound webhooks', shipflow: true, linear: false, asana: false, monday: false, jira: 'partial', basecamp: false, clickup: false },
+  { category: 'Integrations', feature: 'Pluggable inbound webhook handlers', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Integrations', feature: 'No-code inbound webhook setup (admin UI)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+
   // Deployment & Pricing
   { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
   { category: 'Deployment', feature: 'Open source', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Deployment', feature: 'Docker ready', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
   { category: 'Deployment', feature: 'Free tier', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
-  
+
   // Accessibility
   { category: 'Accessibility', feature: 'WCAG 2.1 AA compliant', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial', clickup: 'partial' },
   { category: 'Accessibility', feature: 'Keyboard navigation', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
   { category: 'Accessibility', feature: 'Screen reader support', shipflow: true, linear: 'partial', asana: true, monday: 'partial', jira: true, basecamp: 'partial', clickup: 'partial' },
   { category: 'Accessibility', feature: 'Mobile responsive', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: true, clickup: true },
-  
+
   // Internationalization
   { category: 'i18n', feature: 'Multilingual UI', shipflow: true, linear: 'partial', asana: 'partial', monday: true, jira: true, basecamp: 'partial', clickup: 'partial' },
   { category: 'i18n', feature: 'RTL language support', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
@@ -220,7 +243,7 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <TrendingUp className="h-10 w-10 text-primary mb-4" />
@@ -231,19 +254,20 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <Brain className="h-10 w-10 text-primary mb-4" />
                 <h3 className="font-semibold text-lg mb-2">AI-Powered Insights</h3>
                 <p className="text-sm text-muted-foreground">
                   Pluggable LLM architecture: Choose Ollama (local), OpenAI ChatGPT, or RunPod (cloud GPU).
-                  Get automated risk analysis, AI-generated test cases, and intelligent pitch
-                  document extraction. Privacy-first or production-ready—your choice.
+                  Get automated risk analysis, AI-generated test cases, intelligent pitch
+                  document extraction, and Wise Architecture—AI-powered technical solution
+                  generation with team skills, Figma design, and roadmap context integration.
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <Lock className="h-10 w-10 text-primary mb-4" />
@@ -254,7 +278,7 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <DollarSign className="h-10 w-10 text-primary mb-4" />
@@ -265,7 +289,7 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <Shield className="h-10 w-10 text-primary mb-4" />
@@ -276,7 +300,7 @@ export default function CompetitorsComparison() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <Users className="h-10 w-10 text-primary mb-4" />
@@ -526,22 +550,22 @@ export default function CompetitorsComparison() {
             {t('competitors.ctaSubtitle')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="secondary"
               onClick={() => navigate('/login')}
             >
               {t('competitors.getStarted')}
             </Button>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               className="bg-transparent border-white/30 hover:bg-white/10"
               asChild
             >
-              <a 
-                href="https://github.com/farzad-sedaghatbin/ShipFlow" 
-                target="_blank" 
+              <a
+                href="https://github.com/farzad-sedaghatbin/ShipFlow"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <Github className="h-5 w-5 mr-2" />
@@ -563,13 +587,13 @@ export default function CompetitorsComparison() {
               {t('competitors.copyright', { year: new Date().getFullYear() })}
             </p>
             <nav className="flex gap-6">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t('competitors.home')}
               </a>
-              <a 
+              <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -577,7 +601,7 @@ export default function CompetitorsComparison() {
               >
                 GitHub
               </a>
-              <a 
+              <a
                 href="https://basecamp.com/shapeup"
                 target="_blank"
                 rel="noopener noreferrer"

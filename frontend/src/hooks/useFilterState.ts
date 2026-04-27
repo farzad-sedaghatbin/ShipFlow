@@ -144,24 +144,47 @@ export function useFilterState<T extends Record<string, FilterValue>>(
 ): UseFilterStateReturn<T> {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Initialize filters from URL or defaults
+  // Initialize filters from URL or defaults.
+  // When a param is absent from the URL (urlValue === null) and no custom parser
+  // is provided, return the configured defaultValue directly rather than letting
+  // the auto-detected parser produce a type-mismatched fallback (e.g. number
+  // parser returns undefined for null, not 0).
   const parseFilters = useCallback((): T => {
     const result = {} as T;
-    
+
     for (const [key, config] of Object.entries(configs) as [keyof T, FilterConfig<T[keyof T]>][]) {
       const urlValue = searchParams.get(key as string);
-      const parse = config.parse ?? getDefaultParser(config.defaultValue);
-      result[key] = parse(urlValue);
+      if (urlValue === null && !config.parse) {
+        result[key] = config.defaultValue;
+      } else {
+        const parse = config.parse ?? getDefaultParser(config.defaultValue);
+        result[key] = parse(urlValue);
+      }
     }
-    
+
     return result;
   }, [searchParams, configs]);
   
   const [filters, setFiltersState] = useState<T>(parseFilters);
   
-  // Sync filters when URL changes (e.g., browser back/forward)
+  // Sync filters when URL changes (e.g., browser back/forward).
+  // Use a functional update with deep equality so that if the parsed values are
+  // unchanged (e.g. configs object was re-created as an inline literal on every
+  // render), React bails out and no re-render is triggered — breaking the cycle.
   useEffect(() => {
-    setFiltersState(parseFilters());
+    setFiltersState(prev => {
+      const next = parseFilters();
+      const keys = Object.keys(next) as (keyof T)[];
+      const changed = keys.some(key => {
+        const a = prev[key];
+        const b = next[key];
+        if (Array.isArray(a) && Array.isArray(b)) {
+          return a.length !== b.length || !a.every((v, i) => v === b[i]);
+        }
+        return a !== b;
+      });
+      return changed ? next : prev;
+    });
   }, [searchParams, parseFilters]);
   
   // Update URL when filters change

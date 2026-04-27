@@ -1,14 +1,25 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.github.farzadsedaghatbin.shipflow.dto.CreateHillChartPointRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.HillChartPointDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateHillChartPointRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,182 +27,208 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class HillChartServiceTest {
 
-    @Mock
-    private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-    @Mock
-    private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-    @InjectMocks
-    private HillChartService hillChartService;
+  @Mock
+  private TaskRepository taskRepository;
 
-    private Pitch testPitch;
-    private HillChartPoint testPoint;
-    private Cycle testCycle;
+  @Mock
+  private PersonRepository personRepository;
 
-    @BeforeEach
-    void setUp() {
-        testCycle = new Cycle();
-        testCycle.setId(1L);
-        testCycle.setName("Cycle 1");
+  @Mock
+  private ScopeProgressService scopeProgressService;
 
-        testPitch = new Pitch();
-        testPitch.setId(1L);
-        testPitch.setTitle("Test Pitch");
-        testPitch.setStatus(PitchStatus.IN_PROGRESS);
-        testPitch.setCycle(testCycle);
+  @InjectMocks
+  private HillChartService hillChartService;
 
-        testPoint = new HillChartPoint();
-        testPoint.setId(1L);
-        testPoint.setPitch(testPitch);
-        testPoint.setScope("Feature A");
-        testPoint.setDescription("Implementing feature A");
-        testPoint.setPosition(25);
-        testPoint.setCreatedAt(LocalDateTime.now());
-        testPoint.setUpdatedAt(LocalDateTime.now());
-    }
+  private Pitch testPitch;
+  private HillChartPoint testPoint;
+  private Cycle testCycle;
 
-    @Test
-    void getAllHillChartPoints_ShouldReturnAllPoints() {
-        // Arrange
-        when(hillChartPointRepository.findAll()).thenReturn(Arrays.asList(testPoint));
+  @BeforeEach
+  void setUp() {
+    testCycle = new Cycle();
+    testCycle.setId(1L);
+    testCycle.setName("Cycle 1");
 
-        // Act
-        List<HillChartPointDTO> result = hillChartService.getAllHillChartPoints();
+    testPitch = new Pitch();
+    testPitch.setId(1L);
+    testPitch.setTitle("Test Pitch");
+    testPitch.setStatus(PitchStatus.IN_PROGRESS);
+    testPitch.setCycle(testCycle);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Feature A", result.get(0).getScope());
-        verify(hillChartPointRepository, times(1)).findAll();
-    }
+    testPoint = new HillChartPoint();
+    testPoint.setId(1L);
+    testPoint.setPitch(testPitch);
+    testPoint.setScope("Feature A");
+    testPoint.setDescription("Implementing feature A");
+    testPoint.setPosition(25);
+    testPoint.setCreatedAt(LocalDateTime.now());
+    testPoint.setUpdatedAt(LocalDateTime.now());
+    
+    // Mock taskRepository.save() to prevent NullPointerException in createLinkedTask
+    Task mockTask = new Task();
+    mockTask.setId(1L);
+    mockTask.setTitle("Mock Task");
+    lenient().when(taskRepository.save(any(Task.class))).thenReturn(mockTask);
+  }
 
-    @Test
-    void getHillChartPointById_WhenExists_ShouldReturnPoint() {
-        // Arrange
-        when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+  @Test
+  void getAllHillChartPoints_ShouldReturnAllPoints() {
+    // Arrange
+    when(hillChartPointRepository.findAll()).thenReturn(Arrays.asList(testPoint));
 
-        // Act
-        HillChartPointDTO result = hillChartService.getHillChartPointById(1L);
+    // Act
+    List<HillChartPointDTO> result = hillChartService.getAllHillChartPoints();
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("Feature A", result.getScope());
-        assertEquals(25, result.getPosition());
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals("Feature A", result.get(0).getScope());
+    verify(hillChartPointRepository, times(1)).findAll();
+  }
 
-    @Test
-    void getHillChartPointById_WhenNotExists_ShouldThrowException() {
-        // Arrange
-        when(hillChartPointRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  void getHillChartPointById_WhenExists_ShouldReturnPoint() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> hillChartService.getHillChartPointById(999L));
-    }
+    // Act
+    HillChartPointDTO result = hillChartService.getHillChartPointById(1L);
 
-    @Test
-    void getHillChartPointsByPitch_ShouldReturnPointsForPitch() {
-        // Arrange
-        when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L))
-                .thenReturn(Arrays.asList(testPoint));
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getId());
+    assertEquals("Feature A", result.getScope());
+    assertEquals(25, result.getPosition());
+  }
 
-        // Act
-        List<HillChartPointDTO> result = hillChartService.getHillChartPointsByPitch(1L);
+  @Test
+  void getHillChartPointById_WhenNotExists_ShouldThrowException() {
+    // Arrange
+    when(hillChartPointRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getPitchId());
-        verify(hillChartPointRepository, times(1)).findByPitchIdOrderByUpdatedAtDesc(1L);
-    }
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> hillChartService.getHillChartPointById(999L));
+  }
 
-    @Test
-    void createHillChartPoint_ShouldSavePoint() {
-        // Arrange
-        CreateHillChartPointRequest request = CreateHillChartPointRequest.builder()
-                .pitchId(1L)
-                .scope("Feature B")
-                .description("New feature")
-                .position(50)
-                .build();
+  @Test
+  void getHillChartPointsByPitch_ShouldReturnPointsForPitch() {
+    // Arrange
+    when(hillChartPointRepository.findByPitchIdOrderByUpdatedAtDesc(1L)).thenReturn(Arrays.asList(testPoint));
 
-        when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
-        when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+    // Act
+    List<HillChartPointDTO> result = hillChartService.getHillChartPointsByPitch(1L);
 
-        // Act
-        HillChartPointDTO result = hillChartService.createHillChartPoint(request);
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals(1L, result.get(0).getPitchId());
+    verify(hillChartPointRepository, times(1)).findByPitchIdOrderByUpdatedAtDesc(1L);
+  }
 
-        // Assert
-        assertNotNull(result);
-        verify(pitchRepository, times(1)).findById(1L);
-        verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
-    }
+  @Test
+  void createHillChartPoint_ShouldSavePoint() {
+    // Arrange
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(1L).scope("Feature B")
+        .description("New feature").position(50).build();
 
-    @Test
-    void createHillChartPoint_WhenPitchNotExists_ShouldThrowException() {
-        // Arrange
-        CreateHillChartPointRequest request = CreateHillChartPointRequest.builder()
-                .pitchId(999L)
-                .scope("Feature B")
-                .description("New feature")
-                .position(50)
-                .build();
+    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
 
-        when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
+    // Act
+    HillChartPointDTO result = hillChartService.createHillChartPoint(request);
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> hillChartService.createHillChartPoint(request));
-    }
+    // Assert
+    assertNotNull(result);
+    verify(pitchRepository, times(1)).findById(1L);
+    // Service saves twice: once initially, once after setting linkedTask
+    verify(hillChartPointRepository, times(2)).save(any(HillChartPoint.class));
+  }
 
-    @Test
-    void updateHillChartPoint_WhenExists_ShouldUpdatePoint() {
-        // Arrange
-        UpdateHillChartPointRequest request = UpdateHillChartPointRequest.builder()
-                .position(75)
-                .build();
+  @Test
+  void createHillChartPoint_WhenPitchNotExists_ShouldThrowException() {
+    // Arrange
+    CreateHillChartPointRequest request = CreateHillChartPointRequest.builder().pitchId(999L).scope("Feature B")
+        .description("New feature").position(50).build();
 
-        when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
-        when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+    when(pitchRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act
-        HillChartPointDTO result = hillChartService.updateHillChartPoint(1L, request);
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> hillChartService.createHillChartPoint(request));
+  }
 
-        // Assert
-        assertNotNull(result);
-        verify(hillChartPointRepository, times(1)).save(testPoint);
-    }
+  @Test
+  void updateHillChartPoint_WhenExists_ShouldUpdatePoint() {
+    // Arrange
+    UpdateHillChartPointRequest request = UpdateHillChartPointRequest.builder().position(75).build();
 
-    @Test
-    void deleteHillChartPoint_WhenExists_ShouldDelete() {
-        // Arrange
-        when(hillChartPointRepository.existsById(1L)).thenReturn(true);
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
 
-        // Act
-        hillChartService.deleteHillChartPoint(1L);
+    // Act
+    HillChartPointDTO result = hillChartService.updateHillChartPoint(1L, request);
 
-        // Assert
-        verify(hillChartPointRepository, times(1)).deleteById(1L);
-    }
+    // Assert
+    assertNotNull(result);
+    verify(hillChartPointRepository, times(1)).save(testPoint);
+  }
 
-    @Test
-    void deleteHillChartPoint_WhenNotExists_ShouldThrowException() {
-        // Arrange
-        when(hillChartPointRepository.existsById(999L)).thenReturn(false);
+  @Test
+  void deleteHillChartPoint_WhenExists_ShouldDelete() {
+    // Arrange
+    when(hillChartPointRepository.existsById(1L)).thenReturn(true);
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> hillChartService.deleteHillChartPoint(999L));
-    }
+    // Act
+    hillChartService.deleteHillChartPoint(1L);
+
+    // Assert
+    verify(hillChartPointRepository, times(1)).deleteById(1L);
+  }
+
+  @Test
+  void deleteHillChartPoint_WhenNotExists_ShouldThrowException() {
+    // Arrange
+    when(hillChartPointRepository.existsById(999L)).thenReturn(false);
+
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> hillChartService.deleteHillChartPoint(999L));
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldEnableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, true);
+
+    // Assert
+    assertNotNull(result);
+    // Service calls syncProgressIfEnabled when enabling auto-progress
+    verify(scopeProgressService, times(1)).syncProgressIfEnabled(1L);
+  }
+
+  @Test
+  void toggleAutoProgress_ShouldDisableAutoProgress() {
+    // Arrange
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(testPoint));
+    when(hillChartPointRepository.save(any(HillChartPoint.class))).thenReturn(testPoint);
+
+    // Act
+    HillChartPointDTO result = hillChartService.toggleAutoProgress(1L, false);
+
+    // Assert
+    assertNotNull(result);
+    // Service just sets the flag and saves, no service method call when disabling
+    verify(hillChartPointRepository, times(1)).save(any(HillChartPoint.class));
+  }
 }

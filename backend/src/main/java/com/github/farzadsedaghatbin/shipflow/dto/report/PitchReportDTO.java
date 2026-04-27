@@ -8,14 +8,14 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class PitchReportDTO {
-    private Long pitchId;
-    private String pitchTitle;
-    private String teamName;
-    private PitchStatus status;
-    private Integer appetiteDays;
-    private Double appetiteHours;
-    private Double actualHours;
-    private Double varianceHours;
-    private Double variancePercentage;
-    private Boolean isOverBudget;
+  private Long pitchId;
+  private String pitchTitle;
+  private String teamName;
+  private PitchStatus status;
+  private Integer appetiteDays;
+  private Double appetiteHours;
+  private Double actualHours;
+  private Double varianceHours;
+  private Double variancePercentage;
+  private Boolean isOverBudget;
 }

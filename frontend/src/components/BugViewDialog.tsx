@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Bug, 
@@ -8,7 +9,19 @@ import {
   Monitor,
   Tag,
   CheckCircle,
-  Clock
+  Clock,
+  Plus,
+  Edit,
+  Trash2,
+  ArrowRight,
+  Loader2,
+  MessageSquare,
+  Activity,
+  Image as ImageIcon,
+  Video,
+  Paperclip,
+  Download,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -16,9 +29,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { Label } from './ui/label';
-import { BugReport, BugStatus, BugSeverity } from '../types';
+import { ScrollArea } from './ui/scroll-area';
+import { Skeleton } from './ui/skeleton';
+import Comments from './Comments';
+import { Markdown } from './ui/markdown';
+import qaTestManagementService from '../services/qaTestManagementService';
+import { documentService, UploadedDocument } from '../services/documentService';
+import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType } from '../types';
 
 interface BugViewDialogProps {
   bug: BugReport | null;
@@ -47,6 +68,122 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
 
 export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
+  const [activeTab, setActiveTab] = useState('details');
+  const [history, setHistory] = useState<EntityHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [totalHistoryPages, setTotalHistoryPages] = useState(0);
+  
+  // Attachments state
+  const [attachments, setAttachments] = useState<UploadedDocument[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<UploadedDocument | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const pageSize = 20;
+  
+  // Media file type helpers
+  const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+  const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
+  const isImageFile = (fileType: string) => IMAGE_EXTENSIONS.includes(fileType?.toLowerCase() || '');
+  const isVideoFile = (fileType: string) => VIDEO_EXTENSIONS.includes(fileType?.toLowerCase() || '');
+  const getAttachmentUrl = (attachment: UploadedDocument) => `/api/documents/${attachment.id}/download`;
+
+  // Field name translations mapping
+  const fieldNameKeys: Record<string, string> = {
+    status: 'history.field.status',
+    priority: 'history.field.priority',
+    severity: 'history.field.severity',
+    assignee: 'history.field.assignee',
+    title: 'history.field.title',
+    description: 'history.field.description',
+    resolution: 'bugs.resolution',
+    environment: 'history.field.environment',
+    actualBehavior: 'history.field.actualBehavior',
+    expectedBehavior: 'history.field.expectedBehavior',
+    stepsToReproduce: 'history.field.stepsToReproduce',
+  };
+
+  const revisionTypeConfig: Record<RevisionType, { 
+    icon: typeof Plus;
+    labelKey: string; 
+    variant: 'default' | 'secondary' | 'info' | 'warning' | 'destructive' | 'success';
+    color: string;
+  }> = {
+    CREATED: { 
+      icon: Plus,
+      labelKey: 'history.created', 
+      variant: 'success',
+      color: 'bg-green-500'
+    },
+    MODIFIED: { 
+      icon: Edit,
+      labelKey: 'history.modified', 
+      variant: 'info',
+      color: 'bg-blue-500'
+    },
+    DELETED: { 
+      icon: Trash2,
+      labelKey: 'history.deleted', 
+      variant: 'destructive',
+      color: 'bg-red-500'
+    },
+  };
+
+  const loadHistory = useCallback(async () => {
+    if (!bug) return;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const response = await qaTestManagementService.getBugReportHistory(bug.id, historyPage, pageSize);
+      setHistory(response.data?.content || []);
+      setTotalHistoryPages(response.data?.totalPages || 0);
+    } catch (err) {
+      console.error('Failed to load history:', err);
+      setHistoryError(t('history.loadError'));
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [bug, historyPage, t]);
+
+  useEffect(() => {
+    if (open && bug && activeTab === 'activity') {
+      loadHistory();
+    }
+  }, [open, bug, activeTab, loadHistory]);
+
+  // Load attachments when dialog opens
+  const loadAttachments = useCallback(async () => {
+    if (!bug) return;
+    setAttachmentsLoading(true);
+    try {
+      const response = await documentService.getBugAttachments(bug.id);
+      setAttachments(response.data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+      setAttachments([]);
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  }, [bug]);
+
+  useEffect(() => {
+    if (open && bug) {
+      loadAttachments();
+    }
+  }, [open, bug, loadAttachments]);
+
+  // Reset state when dialog closes or bug changes
+  useEffect(() => {
+    if (!open) {
+      setActiveTab('details');
+      setHistory([]);
+      setHistoryPage(0);
+      setAttachments([]);
+      setPreviewAttachment(null);
+    }
+  }, [open]);
 
   if (!bug) return null;
 
@@ -61,22 +198,182 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     });
   };
 
-  if (!bug) return null;
+  const formatRelativeTime = (dateTime: string) => {
+    const d = new Date(dateTime);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t('common.justNow');
+    if (diffMins < 60) return t('common.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('common.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('common.daysAgo', { count: diffDays });
+    return formatDateTime(dateTime);
+  };
+
+  const getFieldLabel = (fieldName: string): string => {
+    const key = fieldNameKeys[fieldName];
+    if (key) {
+      return t(key);
+    }
+    // Fallback: convert camelCase to Title Case
+    return fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+  };
+
+  const renderValue = (value: string | null | undefined): React.ReactNode => {
+    if (value === null || value === undefined || value === '') {
+      return <span className="text-muted-foreground italic">{t('history.emptyValue')}</span>;
+    }
+    // Truncate long values
+    const displayValue = value.length > 50 ? value.substring(0, 50) + '...' : value;
+    return <span className="font-medium">{displayValue}</span>;
+  };
+
+  const renderActivityTimeline = () => {
+    if (historyLoading && history.length === 0) {
+      return (
+        <div className="space-y-4 p-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (historyError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <p className="text-muted-foreground mb-4">{historyError}</p>
+          <Button onClick={loadHistory} variant="outline" size="sm">
+            {t('common.tryAgain')}
+          </Button>
+        </div>
+      );
+    }
+
+    if (history.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Activity className="h-10 w-10 text-muted-foreground/50 mb-3" />
+          <p className="text-muted-foreground text-sm">{t('history.noHistory')}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+        
+        <div className="space-y-1">
+          {history.map((entry) => {
+            const config = revisionTypeConfig[entry.revisionType];
+            const IconComponent = config.icon;
+            const hasChanges = entry.changes && entry.changes.length > 0;
+            
+            return (
+              <div key={entry.revisionNumber} className="relative pl-10 py-3 hover:bg-muted/30 rounded-lg transition-colors">
+                {/* Timeline dot */}
+                <div 
+                  className={`absolute left-2 top-4 h-5 w-5 rounded-full flex items-center justify-center ${config.color} text-white shadow-sm`}
+                >
+                  <IconComponent className="h-3 w-3" />
+                </div>
+                
+                {/* Activity content */}
+                <div className="space-y-1">
+                  {/* Header line */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm">{entry.modifiedBy}</span>
+                    <Badge variant={config.variant} className="text-xs px-1.5 py-0">
+                      {t(config.labelKey)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {formatRelativeTime(entry.revisionDate)}
+                    </span>
+                  </div>
+                  
+                  {/* Changes */}
+                  {hasChanges && (
+                    <div className="space-y-1 mt-2">
+                      {entry.changes.map((change, changeIndex) => (
+                        <div 
+                          key={changeIndex} 
+                          className="flex items-center gap-2 text-sm flex-wrap"
+                        >
+                          <span className="text-muted-foreground">
+                            {getFieldLabel(change.fieldName)}:
+                          </span>
+                          <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs line-through">
+                            {renderValue(change.oldValue)}
+                          </span>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+                            {renderValue(change.newValue)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Load more / pagination */}
+        {totalHistoryPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryPage(p => Math.max(0, p - 1))}
+              disabled={historyPage === 0 || historyLoading}
+            >
+              {t('common.previous')}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {historyPage + 1} / {totalHistoryPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryPage(p => Math.min(totalHistoryPages - 1, p + 1))}
+              disabled={historyPage >= totalHistoryPages - 1 || historyLoading}
+            >
+              {t('common.next')}
+            </Button>
+          </div>
+        )}
+
+        {historyLoading && history.length > 0 && (
+          <div className="flex items-center justify-center py-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5 text-destructive" />
             <Badge variant="outline" className="font-mono">{bug.bugKey}</Badge>
             <span className="truncate">{bug.title}</span>
           </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Status and Severity */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Status and Severity badges */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
             <Badge variant={statusConfig[bug.status]?.variant || 'default'}>
               {t(statusConfig[bug.status]?.labelKey || bug.status)}
             </Badge>
@@ -84,166 +381,319 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
               {t(severityConfig[bug.severity]?.labelKey || bug.severity)}
             </Badge>
           </div>
+        </DialogHeader>
 
-          {/* Metadata Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {t('bugs.reporter')}
-              </Label>
-              <div className="font-medium">{bug.reporterName || t('common.unknown')}</div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {t('bugs.assignee')}
-              </Label>
-              <div className="font-medium">{bug.assigneeName || t('common.unassigned')}</div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {t('common.createdAt')}
-              </Label>
-              <div className="font-medium">{formatDateTime(bug.createdAt)}</div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {t('common.updatedAt')}
-              </Label>
-              <div className="font-medium">{formatDateTime(bug.updatedAt)}</div>
-            </div>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3 shrink-0">
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              {t('common.details')}
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              {t('activity.title')}
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              {t('comments.title')}
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Relationships */}
-          <div className="grid grid-cols-2 gap-4 border-t pt-4">
-            {bug.pitchTitle && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Target className="h-3 w-3" />
-                  {t('bugs.pitch')}
-                </Label>
-                <div className="font-medium">{bug.pitchTitle}</div>
-              </div>
-            )}
-            {bug.cycleName && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t('bugs.cycle')}</Label>
-                <div className="font-medium">{bug.cycleName}</div>
-              </div>
-            )}
-            {bug.teamName && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t('bugs.team')}</Label>
-                <div className="font-medium">{bug.teamName}</div>
-              </div>
-            )}
-            {bug.taskTitle && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">{t('bugs.task')}</Label>
-                <div className="font-medium">{bug.taskTitle}</div>
-              </div>
-            )}
-          </div>
+          <div className="flex-1 min-h-0 mt-4">
+            <TabsContent value="details" className="h-full m-0">
+              <ScrollArea className="h-[55vh] pr-4">
+                <div className="space-y-6">
+                  {/* Metadata Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {t('bugs.reporter')}
+                      </Label>
+                      <div className="font-medium">{bug.reporterName || t('common.unknown')}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {t('bugs.assignee')}
+                      </Label>
+                      <div className="font-medium">{bug.assigneeName || t('common.unassigned')}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {t('common.createdAt')}
+                      </Label>
+                      <div className="font-medium">{formatDateTime(bug.createdAt)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {t('common.updatedAt')}
+                      </Label>
+                      <div className="font-medium">{formatDateTime(bug.updatedAt)}</div>
+                    </div>
+                  </div>
 
-          {/* Description */}
-          <div className="space-y-2 border-t pt-4">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              {t('bugs.description')}
-            </Label>
-            <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-              {bug.description}
-            </div>
-          </div>
+                  {/* Relationships */}
+                  {(bug.pitchTitle || bug.cycleName || bug.teamName || bug.taskTitle) && (
+                    <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                      {bug.pitchTitle && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Target className="h-3 w-3" />
+                            {t('bugs.pitch')}
+                          </Label>
+                          <div className="font-medium">{bug.pitchTitle}</div>
+                        </div>
+                      )}
+                      {bug.cycleName && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t('bugs.cycle')}</Label>
+                          <div className="font-medium">{bug.cycleName}</div>
+                        </div>
+                      )}
+                      {bug.teamName && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t('bugs.team')}</Label>
+                          <div className="font-medium">{bug.teamName}</div>
+                        </div>
+                      )}
+                      {bug.taskTitle && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t('bugs.task')}</Label>
+                          <div className="font-medium">{bug.taskTitle}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-          {/* Steps to Reproduce */}
-          {bug.stepsToReproduce && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">{t('bugs.stepsToReproduce')}</Label>
-              <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap font-mono">
-                {bug.stepsToReproduce}
-              </div>
-            </div>
-          )}
+                  {/* Description */}
+                  <div className="space-y-2 border-t pt-4">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      {t('bugs.description')}
+                    </Label>
+                    <div className="p-3 bg-muted rounded-md text-sm">
+                      <Markdown content={bug.description} />
+                    </div>
+                  </div>
 
-          {/* Expected vs Actual Behavior */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {bug.expectedBehavior && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground text-success flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  {t('bugs.expectedBehavior')}
-                </Label>
-                <div className="p-3 bg-success/10 border border-success/20 rounded-md text-sm whitespace-pre-wrap">
-                  {bug.expectedBehavior}
+                  {/* Steps to Reproduce */}
+                  {bug.stepsToReproduce && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">{t('bugs.stepsToReproduce')}</Label>
+                      <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap font-mono">
+                        {bug.stepsToReproduce}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expected vs Actual Behavior */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bug.expectedBehavior && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground text-success flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          {t('bugs.expectedBehavior')}
+                        </Label>
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md text-sm whitespace-pre-wrap">
+                          {bug.expectedBehavior}
+                        </div>
+                      </div>
+                    )}
+                    {bug.actualBehavior && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground text-destructive flex items-center gap-1">
+                          <Bug className="h-3 w-3" />
+                          {t('bugs.actualBehavior')}
+                        </Label>
+                        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm whitespace-pre-wrap">
+                          {bug.actualBehavior}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Environment */}
+                  {bug.environment && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Monitor className="h-3 w-3" />
+                        {t('bugs.environment')}
+                      </Label>
+                      <div className="p-3 bg-muted rounded-md text-sm font-mono">
+                        {bug.environment}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {(bug.tagList?.length || bug.tags) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        {t('bugs.tags')}
+                      </Label>
+                      <div className="flex flex-wrap gap-1">
+                        {(bug.tagList || bug.tags?.split(',') || []).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {typeof tag === 'string' ? tag.trim() : tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Attachments */}
+                  <div className="space-y-2 border-t pt-4">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Paperclip className="h-3 w-3" />
+                      {t('bugAttachments.title')}
+                    </Label>
+                    {attachmentsLoading ? (
+                      <div className="flex items-center gap-2 py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
+                      </div>
+                    ) : attachments.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {attachments.map((attachment) => (
+                          <button
+                            type="button"
+                            key={attachment.id}
+                            className="relative group rounded-lg overflow-hidden border bg-muted/30 cursor-pointer hover:ring-2 hover:ring-ring focus:outline-none focus:ring-2 focus:ring-ring w-full"
+                            onClick={() => {
+                              setPreviewAttachment(attachment);
+                              setPreviewOpen(true);
+                            }}
+                          >
+                            {isImageFile(attachment.fileType) ? (
+                              <img
+                                src={getAttachmentUrl(attachment)}
+                                alt={attachment.originalFileName}
+                                className="w-full h-20 object-cover"
+                              />
+                            ) : isVideoFile(attachment.fileType) ? (
+                              <div className="w-full h-20 flex items-center justify-center bg-muted">
+                                <Video className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <div className="w-full h-20 flex items-center justify-center bg-muted">
+                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            
+                            {/* Overlay with view icon */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <Eye className="h-6 w-6 text-white" />
+                            </div>
+                            
+                            {/* File name */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 pointer-events-none">
+                              <p className="text-[10px] text-white truncate">
+                                {attachment.originalFileName}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-2">{t('bugAttachments.noAttachments')}</p>
+                    )}
+                  </div>
+
+                  {/* Resolution */}
+                  {bug.resolution && (
+                    <div className="space-y-2 border-t pt-4">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        {t('bugs.resolution')}
+                      </Label>
+                      <div className="p-3 bg-success/10 border border-success/20 rounded-md text-sm whitespace-pre-wrap">
+                        {bug.resolution}
+                      </div>
+                      {bug.resolvedAt && (
+                        <div className="text-xs text-muted-foreground">
+                          {t('bugs.resolvedAt')}: {formatDateTime(bug.resolvedAt)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            {bug.actualBehavior && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground text-destructive flex items-center gap-1">
-                  <Bug className="h-3 w-3" />
-                  {t('bugs.actualBehavior')}
-                </Label>
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm whitespace-pre-wrap">
-                  {bug.actualBehavior}
-                </div>
-              </div>
-            )}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="activity" className="h-full m-0">
+              <ScrollArea className="h-[55vh] pr-4">
+                {renderActivityTimeline()}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="comments" className="h-full m-0">
+              <ScrollArea className="h-[55vh] pr-4">
+                <Comments 
+                  entityType="bug" 
+                  entityId={bug.id}
+                />
+              </ScrollArea>
+            </TabsContent>
           </div>
-
-          {/* Environment */}
-          {bug.environment && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Monitor className="h-3 w-3" />
-                {t('bugs.environment')}
-              </Label>
-              <div className="p-3 bg-muted rounded-md text-sm font-mono">
-                {bug.environment}
-              </div>
-            </div>
-          )}
-
-          {/* Tags */}
-          {(bug.tagList?.length || bug.tags) && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Tag className="h-3 w-3" />
-                {t('bugs.tags')}
-              </Label>
-              <div className="flex flex-wrap gap-1">
-                {(bug.tagList || bug.tags?.split(',') || []).map((tag, idx) => (
-                  <Badge key={idx} variant="outline" className="text-xs">
-                    {typeof tag === 'string' ? tag.trim() : tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Resolution */}
-          {bug.resolution && (
-            <div className="space-y-2 border-t pt-4">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
-                {t('bugs.resolution')}
-              </Label>
-              <div className="p-3 bg-success/10 border border-success/20 rounded-md text-sm whitespace-pre-wrap">
-                {bug.resolution}
-              </div>
-              {bug.resolvedAt && (
-                <div className="text-xs text-muted-foreground">
-                  {t('bugs.resolvedAt')}: {formatDateTime(bug.resolvedAt)}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        </Tabs>
       </DialogContent>
+
+      {/* Attachment Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {previewAttachment && isImageFile(previewAttachment.fileType) && (
+                <ImageIcon className="h-5 w-5" />
+              )}
+              {previewAttachment && isVideoFile(previewAttachment.fileType) && (
+                <Video className="h-5 w-5" />
+              )}
+              {previewAttachment?.originalFileName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center overflow-auto max-h-[70vh]">
+            {previewAttachment && isImageFile(previewAttachment.fileType) && (
+              <img
+                src={getAttachmentUrl(previewAttachment)}
+                alt={previewAttachment.originalFileName}
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
+            {previewAttachment && isVideoFile(previewAttachment.fileType) && (
+              <video
+                src={getAttachmentUrl(previewAttachment)}
+                controls
+                className="max-w-full max-h-full"
+              >
+                {t('bugAttachments.videoNotSupported')}
+              </video>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (previewAttachment) {
+                  // Trigger download
+                  const link = document.createElement('a');
+                  link.href = getAttachmentUrl(previewAttachment);
+                  link.download = previewAttachment.originalFileName;
+                  link.click();
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {t('common.download')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

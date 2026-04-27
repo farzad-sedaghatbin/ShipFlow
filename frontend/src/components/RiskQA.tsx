@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, MessageSquare, Bot, User, Loader2, X } from 'lucide-react';
-import { riskService } from '../services/riskService';
+import { askQuestionAsync, JobStatusResponse } from '../services/riskService';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -26,6 +26,7 @@ export const RiskQA: React.FC<RiskQAProps> = ({ pitchId }) => {
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,22 +46,36 @@ export const RiskQA: React.FC<RiskQAProps> = ({ pitchId }) => {
 
     try {
       setLoading(true);
-      const response = await riskService.askQuestion(pitchId, userQuestion);
+      setLoadingStatus('Sending to AI advisor...');
       
-      if (response.data.errorMessage) {
-        setError(response.data.errorMessage);
-      } else if (response.data.answer) {
-        setMessages(prev => [...prev, {
-          type: 'answer',
-          text: response.data.answer!,
-          timestamp: new Date(response.data.answeredAt),
-          confidenceScore: response.data.confidenceScore,
-        }]);
+      // Use async Q&A to prevent blocking on slow AI responses
+      const response = await askQuestionAsync(pitchId, userQuestion, (status: JobStatusResponse) => {
+        if (status.status === 'PENDING') {
+          setLoadingStatus('Queued for AI processing...');
+        } else if (status.status === 'PROCESSING') {
+          setLoadingStatus('AI thinking...');
+        }
+      });
+      
+      if (response) {
+        if (response.errorMessage) {
+          setError(response.errorMessage);
+        } else if (response.answer) {
+          setMessages(prev => [...prev, {
+            type: 'answer',
+            text: response.answer!,
+            timestamp: new Date(response.answeredAt),
+            confidenceScore: response.confidenceScore,
+          }]);
+        }
+      } else {
+        setError('Failed to get AI response. Please try again.');
       }
     } catch (err: any) {
       setError(err.message || t('errors.getAnswerFailed'));
     } finally {
       setLoading(false);
+      setLoadingStatus(null);
     }
   };
 
@@ -139,7 +154,7 @@ export const RiskQA: React.FC<RiskQAProps> = ({ pitchId }) => {
           {loading && (
             <div className="flex items-center gap-2 p-3">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-muted-foreground">Thinking...</span>
+              <span className="text-sm text-muted-foreground">{loadingStatus || 'Thinking...'}</span>
             </div>
           )}
         </div>

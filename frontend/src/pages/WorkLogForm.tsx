@@ -10,6 +10,7 @@ import { personService } from '../services/personService';
 import { cycleService } from '../services/cycleService';
 import { WorkLog, Pitch, Person, Cycle, CreateWorkLogRequest } from '../types';
 import EmptyState from '../components/EmptyState';
+import { Combobox } from '../components/ui/combobox';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -40,6 +41,10 @@ export default function WorkLogForm() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<number | ''>('');
   const [loading, setLoading] = useState(true);
+  const [wlPage, setWlPage] = useState(0);
+  const [wlTotalPages, setWlTotalPages] = useState(0);
+  const [wlTotalElements, setWlTotalElements] = useState(0);
+  const WL_PAGE_SIZE = 20;
   const { showSuccess, showError } = useToast();
 
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogRequest>({
@@ -60,7 +65,8 @@ export default function WorkLogForm() {
   useEffect(() => {
     const abortController = new AbortController();
     if (selectedCycle) {
-      loadWorkLogs(selectedCycle);
+      setWlPage(0);
+      loadWorkLogs(selectedCycle, 0);
       loadPitches(selectedCycle);
     }
     return () => abortController.abort();
@@ -84,10 +90,12 @@ export default function WorkLogForm() {
     }
   };
 
-  const loadWorkLogs = async (cycleId: number) => {
+  const loadWorkLogs = async (cycleId: number, page: number) => {
     try {
-      const response = await workLogService.getByCycleId(cycleId);
-      setWorkLogs(response.data);
+      const response = await workLogService.getByCycleId(cycleId, page, WL_PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setWlTotalPages(response.data.totalPages);
+      setWlTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
@@ -119,7 +127,8 @@ export default function WorkLogForm() {
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
       showSuccess(t('workLogForm.workLogAdded'));
       if (selectedCycle) {
-        loadWorkLogs(selectedCycle as number);
+        setWlPage(0);
+        loadWorkLogs(selectedCycle as number, 0);
       }
     } catch (error) {
       showError(t('workLogForm.workLogAddFailed'));
@@ -131,11 +140,18 @@ export default function WorkLogForm() {
       await workLogService.delete(id);
       showSuccess(t('workLogForm.workLogDeleted'));
       if (selectedCycle) {
-        loadWorkLogs(selectedCycle as number);
+        const newPage = workLogs.length === 1 && wlPage > 0 ? wlPage - 1 : wlPage;
+        setWlPage(newPage);
+        loadWorkLogs(selectedCycle as number, newPage);
       }
     } catch (error) {
       showError(t('workLogForm.workLogDeleteFailed'));
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setWlPage(newPage);
+    if (selectedCycle) loadWorkLogs(selectedCycle as number, newPage);
   };
 
   if (loading) {
@@ -145,8 +161,6 @@ export default function WorkLogForm() {
       </div>
     );
   }
-
-  const totalHours = workLogs.reduce((sum, wl) => sum + wl.hoursSpent, 0);
 
   return (
     <div className="space-y-6">
@@ -161,7 +175,7 @@ export default function WorkLogForm() {
               value={selectedCycle ? String(selectedCycle) : ''}
               onValueChange={(value) => setSelectedCycle(Number(value))}
             >
-              <SelectTrigger id="cycle-select" className="w-[300px]">
+              <SelectTrigger id="cycle-select" className="w-full sm:w-[300px]">
                 <SelectValue placeholder={t('workLogForm.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
@@ -185,21 +199,14 @@ export default function WorkLogForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-4 items-end">
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-2 space-y-2">
               <Label htmlFor="person-select">{t('workLogForm.person')} *</Label>
-              <Select
+              <Combobox
+                options={persons.map((p) => ({ value: String(p.id), label: p.name }))}
                 value={newWorkLog.personId ? String(newWorkLog.personId) : ''}
                 onValueChange={(value) => setNewWorkLog({ ...newWorkLog, personId: Number(value) })}
-              >
-                <SelectTrigger id="person-select">
-                  <SelectValue placeholder={t('workLogForm.selectPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('workLogForm.selectPerson')}
+                searchPlaceholder={t('common.search')}
+                emptyText={t('common.noResults')}
+              />
             </div>
 
             <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 space-y-2">
@@ -272,9 +279,9 @@ export default function WorkLogForm() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold">{t('workLogForm.recentWorkLogs')}</CardTitle>
-            <span className="text-muted-foreground">
-              {t('workLogForm.total')}: <strong className="text-foreground">{totalHours.toFixed(1)} {t('workLogForm.hoursUnit')}</strong>
-            </span>
+            {wlTotalElements > 0 && (
+              <span className="text-sm text-muted-foreground">{wlTotalElements} {t('workLogForm.entries', { defaultValue: 'entries' })}</span>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -321,6 +328,32 @@ export default function WorkLogForm() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {wlTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <span className="text-xs text-muted-foreground">
+                {t('meetingList.pagination.showing', { from: wlPage * WL_PAGE_SIZE + 1, to: Math.min((wlPage + 1) * WL_PAGE_SIZE, wlTotalElements), total: wlTotalElements })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={wlPage === 0}
+                  onClick={() => handlePageChange(wlPage - 1)}
+                >
+                  {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                </Button>
+                <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: wlPage + 1, total: wlTotalPages })}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={wlPage >= wlTotalPages - 1}
+                  onClick={() => handlePageChange(wlPage + 1)}
+                >
+                  {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

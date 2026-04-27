@@ -15,9 +15,10 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Plus, Github, Copy, CheckCircle2 } from 'lucide-react';
-import { githubService } from '../services/githubService';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { ConfirmDialog } from './ui/confirm-dialog';
+import { Plus, Github, Copy, CheckCircle2, Building2, RefreshCw, Trash2 } from 'lucide-react';
+import { githubService, GitHubAppStatus, GitHubAppInstallation } from '../services/githubService';
 import { GitHubRepository, CreateGitHubRepositoryRequest } from '../types/github';
 
 export default function GitHubRepositoryManager() {
@@ -27,6 +28,14 @@ export default function GitHubRepositoryManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [webhookUrlCopied, setWebhookUrlCopied] = useState(false);
+  
+  // GitHub App OAuth state
+  const [appStatus, setAppStatus] = useState<GitHubAppStatus | null>(null);
+  const [installations, setInstallations] = useState<GitHubAppInstallation[]>([]);
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState<number | 'all' | 'discover' | null>(null);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [installationToRemove, setInstallationToRemove] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<CreateGitHubRepositoryRequest>({
     owner: '',
@@ -41,6 +50,7 @@ export default function GitHubRepositoryManager() {
 
   useEffect(() => {
     loadRepositories();
+    loadAppStatus();
   }, []);
 
   const loadRepositories = async () => {
@@ -49,6 +59,101 @@ export default function GitHubRepositoryManager() {
       setRepositories(data);
     } catch (err) {
       console.error('Failed to load repositories:', err);
+    }
+  };
+
+  const loadAppStatus = async () => {
+    try {
+      const status = await githubService.getAppStatus();
+      setAppStatus(status);
+      if (status.configured) {
+        loadInstallations();
+      }
+    } catch (err) {
+      console.error('Failed to load app status:', err);
+      setAppStatus({ configured: false });
+    }
+  };
+
+  const loadInstallations = async () => {
+    try {
+      const data = await githubService.getInstallations();
+      setInstallations(data);
+    } catch (err) {
+      console.error('Failed to load installations:', err);
+    }
+  };
+
+  const handleConnectOrganization = async () => {
+    setOauthLoading(true);
+    try {
+      const response = await githubService.initiateOAuth();
+      // Redirect to GitHub authorization
+      window.location.href = response.authorizationUrl;
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.connectError'));
+      setOauthLoading(false);
+    }
+  };
+
+  const handleSyncInstallation = async (installationId: number) => {
+    setSyncLoading(installationId);
+    try {
+      await githubService.syncInstallation(installationId);
+      await loadRepositories();
+      await loadInstallations();
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.syncError'));
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setSyncLoading('all');
+    try {
+      await githubService.syncAllRepositories();
+      await loadRepositories();
+      await loadInstallations();
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.syncError'));
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
+  const handleDiscoverInstallations = async () => {
+    setSyncLoading('discover');
+    setError(null);
+    try {
+      const result = await githubService.discoverInstallations();
+      if (result.success) {
+        await loadRepositories();
+        await loadInstallations();
+      } else {
+        setError(result.message || t('githubApp.discoverError'));
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.discoverError'));
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
+  const openRemoveConfirm = (installationId: number) => {
+    setInstallationToRemove(installationId);
+    setRemoveConfirmOpen(true);
+  };
+
+  const handleRemoveInstallation = async () => {
+    if (installationToRemove === null) return;
+    try {
+      await githubService.removeInstallation(installationToRemove);
+      await loadInstallations();
+      setRemoveConfirmOpen(false);
+      setInstallationToRemove(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('githubApp.removeError'));
     }
   };
 
@@ -92,11 +197,123 @@ export default function GitHubRepositoryManager() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* GitHub App OAuth Section - Only show if configured */}
+      {appStatus?.configured && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  {t('githubApp.title')}
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  {t('githubApp.description')}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                {installations.length > 0 ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleSyncAll}
+                    disabled={syncLoading === 'all'}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${syncLoading === 'all' ? 'animate-spin' : ''}`} />
+                    {t('githubApp.syncAll')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handleDiscoverInstallations}
+                    disabled={syncLoading === 'discover'}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${syncLoading === 'discover' ? 'animate-spin' : ''}`} />
+                    {t('githubApp.discoverInstallations')}
+                  </Button>
+                )}
+                <Button onClick={handleConnectOrganization} disabled={oauthLoading}>
+                  <Github className="mr-2 h-4 w-4" />
+                  {oauthLoading ? t('githubApp.connecting') : t('githubApp.connectOrganization')}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {installations.length > 0 ? (
+              <div className="space-y-3">
+                {installations.map((installation) => (
+                  <div key={installation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{installation.accountLogin}</span>
+                          <Badge variant={installation.accountType === 'Organization' ? 'default' : 'secondary'}>
+                            {installation.accountType}
+                          </Badge>
+                          {installation.tokenValid && (
+                            <Badge variant="success">{t('githubApp.connected')}</Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {installation.repositorySelection === 'all' 
+                            ? t('githubApp.allRepositories')
+                            : t('githubApp.selectedRepositories', { count: installation.repositoriesCount || 0 })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSyncInstallation(installation.installationId)}
+                        disabled={syncLoading === installation.installationId}
+                      >
+                        <RefreshCw className={`mr-1 h-3 w-3 ${syncLoading === installation.installationId ? 'animate-spin' : ''}`} />
+                        {t('githubApp.sync')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openRemoveConfirm(installation.installationId)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <Github className="h-4 w-4" />
+                <AlertDescription>
+                  {t('githubApp.noInstallations')}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Manual Repository Setup Section */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{t('githubRepositoryManager.title')}</CardTitle>
+            <div>
+              <CardTitle>{t('githubRepositoryManager.title')}</CardTitle>
+              {appStatus?.configured && (
+                <CardDescription className="mt-1">
+                  {t('githubRepositoryManager.manualDescription')}
+                </CardDescription>
+              )}
+            </div>
             <Button onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               {t('githubRepositoryManager.addRepository')}
@@ -305,6 +522,18 @@ export default function GitHubRepositoryManager() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Installation Confirmation Dialog */}
+      <ConfirmDialog
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        title={t('githubApp.removeTitle')}
+        description={t('githubApp.confirmRemove')}
+        confirmLabel={t('common.remove')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleRemoveInstallation}
+        variant="destructive"
+      />
     </div>
   );
 }

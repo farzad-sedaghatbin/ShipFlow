@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Ban, User } from 'lucide-react';
@@ -6,29 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { taskService } from '../../services/taskService';
 import { Task } from '../../types';
+import { STALE_TIMES } from '../../lib/queryClient';
 
 export function BlockedTasksWidget() {
   const { t } = useTranslation();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadBlockedTasks();
-  }, []);
-
-  const loadBlockedTasks = async () => {
-    try {
-      setLoading(true);
+  const { data: tasks = [], isLoading: loading } = useQuery({
+    queryKey: ['widgets', 'blocked-tasks'],
+    queryFn: async () => {
       const response = await taskService.getAll(0, 100);
-      const allTasks = response.data.content || [];
-      const blocked = allTasks.filter((task: Task) => task.status === 'BLOCKED');
-      setTasks(blocked.slice(0, 5));
-    } catch (error) {
-      console.error('Failed to load blocked tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const allTasks: Task[] = response.data.content || [];
+      return allTasks.filter((task) => task.status === 'BLOCKED').slice(0, 5);
+    },
+    staleTime: STALE_TIMES.tasks,
+  });
 
   if (loading) {
     return (

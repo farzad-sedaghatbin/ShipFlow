@@ -1,62 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Users, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { teamService } from '../../services/teamService';
-import { taskService } from '../../services/taskService';
-import { Team, Task } from '../../types';
-
-interface TeamWorkload {
-  team: Team;
-  totalTasks: number;
-  completedTasks: number;
-  inProgressTasks: number;
-  completionRate: number;
-}
+import { Team } from '../../types';
+import { STALE_TIMES, queryKeys } from '../../lib/queryClient';
 
 export function TeamWorkloadWidget() {
-  const [workloads, setWorkloads] = useState<TeamWorkload[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    loadTeamWorkload();
-  }, []);
-
-  const loadTeamWorkload = async () => {
-    try {
-      setLoading(true);
-      const [teamsRes, tasksRes] = await Promise.all([
-        teamService.getAll(),
-        taskService.getAll(0, 1000),
-      ]);
-
-      const teams = teamsRes.data;
-      const tasks = tasksRes.data.content || [];
-
-      const workloadData = teams.map((team: Team) => {
-        // Filter tasks by matching cycle ID
-        const teamTasks = tasks.filter((task: Task) => task.cycleId === team.cycleId);
-        const completed = teamTasks.filter((t: Task) => t.status === 'DONE').length;
-        const inProgress = teamTasks.filter((t: Task) => t.status === 'IN_PROGRESS').length;
-        const total = teamTasks.filter((t: Task) => t.status !== 'CANCELLED').length;
-
-        return {
-          team,
-          totalTasks: total,
-          completedTasks: completed,
-          inProgressTasks: inProgress,
-          completionRate: total > 0 ? (completed / total) * 100 : 0,
-        };
-      });
-
-      setWorkloads(workloadData.slice(0, 5));
-    } catch (error) {
-      console.error('Failed to load team workload:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: teams = [], isLoading: loading } = useQuery({
+    // Use a widget-specific key so this query's result (full list) is cached
+    // independently from any other teams.lists() consumer, and slicing is done
+    // via `select` to avoid polluting the shared cache with a truncated list.
+    queryKey: [...queryKeys.teams.lists(), { widget: 'teamWorkload', limit: 5 }] as const,
+    queryFn: async () => {
+      const res = await teamService.getAll();
+      return (res.data || []) as Team[];
+    },
+    select: (allTeams) => allTeams.slice(0, 5),
+    staleTime: STALE_TIMES.reference,
+  });
 
   if (loading) {
     return (
@@ -64,11 +30,11 @@ export function TeamWorkloadWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="w-4 h-4 text-violet-500" />
-            Team Workload
+            {t('widgets.teamWorkload')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('widgets.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -79,33 +45,32 @@ export function TeamWorkloadWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Users className="w-4 h-4 text-violet-500" />
-          Team Workload
+          {t('widgets.teamWorkload')}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {workloads.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No team data available</p>
+        {teams.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('widgets.noTeamData')}</p>
         ) : (
-          <div className="space-y-3">
-            {workloads.map(({ team, totalTasks, completedTasks, inProgressTasks, completionRate }) => (
-              <Link
-                key={team.id}
-                to={`/teams/${team.id}`}
-                className="block p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
+          <div className="space-y-2">
+            {teams.map((team) => {
+              const memberCount = team.assignments?.length || 0;
+              const activeCount = team.assignments?.filter((a) => a.isActive).length || 0;
+              return (
+                <Link
+                  key={team.id}
+                  to={`/teams/${team.id}`}
+                  className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
+                >
                   <span className="text-sm font-medium text-foreground">{team.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {completedTasks}/{totalTasks}
-                  </span>
-                </div>
-                <Progress value={completionRate} className="h-1.5 mb-1" />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <TrendingUp className="w-3 h-3" />
-                  {inProgressTasks} in progress • {completionRate.toFixed(0)}% complete
-                </div>
-              </Link>
-            ))}
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="text-xs">
+                      {activeCount}/{memberCount} members
+                    </Badge>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </CardContent>

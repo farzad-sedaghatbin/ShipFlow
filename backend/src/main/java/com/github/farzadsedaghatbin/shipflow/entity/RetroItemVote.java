@@ -1,14 +1,11 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "retro_item_votes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"retro_item_id", "user_id"})
-})
+@Table(name = "retro_item_votes", uniqueConstraints = {@UniqueConstraint(columnNames = {"retro_item_id", "user_id"})})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,23 +13,23 @@ import java.time.LocalDateTime;
 @Builder
 public class RetroItemVote {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "retro_item_id", nullable = false)
-    private RetroItem retroItem;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "retro_item_id", nullable = false)
+  private RetroItem retroItem;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+  @Column(nullable = false)
+  private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+  @PrePersist
+  protected void onCreate() {
+    createdAt = LocalDateTime.now();
+  }
 }

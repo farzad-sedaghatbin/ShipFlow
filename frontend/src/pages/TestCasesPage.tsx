@@ -5,11 +5,9 @@ import {
   Plus,
   Search,
   Pencil,
-  Trash2,
   Play,
   Eye,
   Sparkles,
-  Loader2,
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -33,14 +31,6 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -48,9 +38,11 @@ import {
 } from '../components/ui/tooltip';
 import { cn } from '../lib/utils';
 import qaTestManagementService from '../services/qaTestManagementService';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
+import { TestCasesSkeleton } from '../components/Skeletons';
 import {
   TestCase,
   TestCaseStatus,
@@ -78,7 +70,7 @@ const statusVariants: Record<TestCaseStatus, string> = {
 const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,10 +82,6 @@ const TestCasesPage: React.FC = () => {
   const [pitchFilter, setPitchFilter] = useState<number | 'all'>('all');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; testCase: TestCase | null }>({
-    open: false,
-    testCase: null,
-  });
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -105,8 +93,14 @@ const TestCasesPage: React.FC = () => {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
+
+  // Reset cycle and pitch filters when project changes to ensure clean filtering
+  useEffect(() => {
+    setCycleFilter('all');
+    setPitchFilter('all');
+  }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadTestCases();
@@ -157,7 +151,7 @@ const TestCasesPage: React.FC = () => {
       // Filter by current project if one is selected
       if (!isAllProjectsSelected && currentProject) {
         const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
+        const projectPitchIds = new Set(pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId)).map(p => p.id));
         cases = cases.filter(tc => tc.pitchId && projectPitchIds.has(tc.pitchId));
       }
       
@@ -167,17 +161,7 @@ const TestCasesPage: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteDialog.testCase) return;
-    try {
-      await qaTestManagementService.deleteTestCase(deleteDialog.testCase.id);
-      setTestCases(testCases.filter((tc) => tc.id !== deleteDialog.testCase!.id));
-      setDeleteDialog({ open: false, testCase: null });
-    } catch (err) {
-      setError(t('testCases.deleteFailed'));
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -191,12 +175,8 @@ const TestCasesPage: React.FC = () => {
     return matchesSearch;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <TestCasesSkeleton />;
   }
 
   return (
@@ -480,21 +460,16 @@ const TestCasesPage: React.FC = () => {
                         <TooltipContent>{t('testCases.runTest')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteDialog({ open: true, testCase: tc })}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('testCases.delete')}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <SoftDeleteButton
+                      entityType="testCase"
+                      entityId={tc.id}
+                      entityTitle={tc.title}
+                      onSuccess={() => {
+                        setTestCases(testCases.filter((testCase) => testCase.id !== tc.id));
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    />
                   </div>
                 </TableCell>
               </TableRow>
@@ -513,32 +488,6 @@ const TestCasesPage: React.FC = () => {
           </TableBody>
         </Table>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => !open && setDeleteDialog({ open: false, testCase: null })}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('testCases.deleteTestCase')}</DialogTitle>
-            <DialogDescription>
-              {t('testCases.deleteConfirm', { title: deleteDialog.testCase?.title })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialog({ open: false, testCase: null })}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              {t('common.delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

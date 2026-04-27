@@ -8,8 +8,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateTeamRequest {
-    @NotBlank(message = "Team name is required")
-    private String name;
-    
-    private Long cycleId;
+  @NotBlank(message = "Team name is required")
+  private String name;
+
+  // Capacity Configuration Overrides (null = inherit from organization)
+  private Double hoursPerDayOverride;
+  private Integer workingDaysPerWeekOverride;
 }

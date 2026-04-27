@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Plus, AlertCircle, Info, X } from 'lucide-react';
 import { HillChart } from '../components/HillChart';
 import { hillChartApi } from '../services/hillChartApi';
-import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest } from '../types';
-import { useParams } from 'react-router-dom';
+import { pitchService } from '../services/pitchService';
+import { taskService } from '../services/taskService';
+import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest, Pitch, Task } from '../types';
+import { useParams, useLocation } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import { HillChartSkeleton } from '../components/Skeletons';
 import { Button } from '../components/ui/button';
@@ -12,6 +14,9 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Slider } from '../components/ui/slider';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { cn } from '../lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +38,11 @@ import {
 export const PitchHillChart: React.FC = () => {
   const { t } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
+  const location = useLocation();
   const pitchId = safeParseId(pitchIdParam);
+  // Only use location.state pitch if its ID matches the current pitchId
+  const initialPitch = location.state?.pitch?.id === pitchId ? location.state.pitch : null;
+  const [pitch, setPitch] = useState<Pitch | null>(initialPitch);
   const [points, setPoints] = useState<HillChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,26 +57,60 @@ export const PitchHillChart: React.FC = () => {
     description: '',
     position: 0,
   });
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const abortController = new AbortController();
-    loadHillChartPoints();
+    // Reset pitch state when pitchId changes to avoid stale data
+    if (pitch && pitch.id !== pitchId) {
+      setPitch(null);
+    }
+    loadPitchData();
     return () => abortController.abort();
   }, [pitchId]);
 
-  const loadHillChartPoints = async () => {
+  const loadPitchData = async () => {
     if (!pitchId) return;
     
     try {
       setLoading(true);
-      const data = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setPoints(data);
+      // Only fetch pitch if not available from navigation state
+      const pitchPromise = pitch ? Promise.resolve({ data: pitch }) : pitchService.getById(pitchId);
+      const [pitchData, hillChartData] = await Promise.all([
+        pitchPromise,
+        hillChartApi.getHillChartPointsByPitch(pitchId)
+      ]);
+      setPitch(pitchData.data);
+      setPoints(hillChartData);
+      
+      // Load tasks for this pitch
+      try {
+        const tasksRes = await taskService.getByPitchId(pitchId);
+        setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+      } catch {
+        // Tasks loading is non-critical
+        setTasks([]);
+      }
+      
       setError(null);
     } catch (err) {
       setError(t('pitchHillChart.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHillChartPoints = async () => {
+    if (!pitchId) return;
+    
+    try {
+      const data = await hillChartApi.getHillChartPointsByPitch(pitchId);
+      setPoints(data);
+      setError(null);
+    } catch (err) {
+      setError(t('pitchHillChart.loadFailed'));
+      console.error(err);
     }
   };
 
@@ -176,7 +219,12 @@ export const PitchHillChart: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{t('pitchHillChart.title')}</h1>
+        <div>
+          <h1 className="text-3xl font-bold">{t('pitchHillChart.title')}</h1>
+          {pitch && (
+            <p className="text-lg text-muted-foreground mt-1">{pitch.title}</p>
+          )}
+        </div>
         <Button onClick={handleAddPoint} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('pitchHillChart.addScope')}
@@ -219,6 +267,64 @@ export const PitchHillChart: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Summary Section */}
+      {points.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">{t('pitchHillChart.scopeSummary', 'Scope Summary')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {points.map(point => {
+              // Find tasks linked to this scope
+              const linkedTasks = tasks.filter(task => 
+                task.scopeId === point.id || task.autoCreatedScopeId === point.id
+              );
+              return (
+                <Card key={point.id} className="hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold truncate">{point.scope}</h3>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "text-xs shrink-0 ml-2",
+                          point.position >= 50 
+                            ? "bg-green-500/10 text-green-500" 
+                            : "bg-amber-500/10 text-amber-500"
+                        )}
+                      >
+                        {point.position}%
+                      </Badge>
+                    </div>
+                    {point.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{point.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {point.position < 50 
+                        ? t('pitchHillChart.figuringOut')
+                        : t('pitchHillChart.makingHappen')}
+                    </p>
+                    {linkedTasks.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs font-medium mb-1">{t('pitchHillChart.linkedTasks', 'Linked Tasks')}:</p>
+                        <div className="space-y-1">
+                          {linkedTasks.map(task => (
+                            <div key={task.id} className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {task.status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate">{task.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -226,6 +332,16 @@ export const PitchHillChart: React.FC = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Info about auto-created task when adding new scope */}
+            {!editingPoint && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <Info className="h-4 w-4 shrink-0" />
+                <p className="text-sm">
+                  {t('pitchHillChart.taskAutoCreate', 'A linked task will be automatically created for tracking and assigning work.')}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="scope">{t('pitchHillChart.scopeName')} *</Label>
               <Input

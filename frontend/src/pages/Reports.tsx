@@ -40,12 +40,14 @@ import EmptyState from '../components/EmptyState';
 import { EmptyReportsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
 import { useProject } from '../contexts';
+import { CycleSignalsPanel } from '../components/CycleSignalsPanel';
+import { CycleSummaryPanel } from '../components/CycleSummaryPanel';
 
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function Reports() {
   const { t } = useTranslation();
-  const { isKanbanProject } = useProject();
+  const { isKanbanProject, currentProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
@@ -295,7 +297,7 @@ export default function Reports() {
             <Card>
               <CardContent className="pt-6 text-center">
                 <p className="text-sm text-muted-foreground">{t('reportsPage.appetiteHours')}</p>
-                <p className="text-3xl font-bold">{report.totalAppetiteHours.toFixed(0)}</p>
+                <p className="text-3xl font-bold">{report.totalAppetiteHours.toFixed(0)}h</p>
               </CardContent>
             </Card>
             <Card>
@@ -305,7 +307,7 @@ export default function Reports() {
                   'text-3xl font-bold',
                   report.totalActualHours > report.totalAppetiteHours ? 'text-destructive' : 'text-green-600'
                 )}>
-                  {report.totalActualHours.toFixed(0)}
+                  {report.totalActualHours.toFixed(0)}h
                 </p>
               </CardContent>
             </Card>
@@ -390,6 +392,21 @@ export default function Reports() {
               </div>
             </CardContent>
           </Card>
+
+          {/* v0.5 - Decision Support Signals */}
+          {selectedCycle && report.cycleId && currentProject && (
+            <>
+              <CycleSignalsPanel 
+                cycleId={report.cycleId} 
+                projectId={currentProject.id} 
+                className="mb-8"
+              />
+              <CycleSummaryPanel 
+                cycleId={report.cycleId}
+                className="mb-8"
+              />
+            </>
+          )}
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

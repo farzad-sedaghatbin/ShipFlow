@@ -14,25 +14,31 @@ import {
   Link2,
   Search,
   ArrowUpDown,
+  SlidersHorizontal,
+  Tag,
 } from 'lucide-react';
 import { pitchService } from '../services/pitchService';
 import { cycleService } from '../services/cycleService';
 import { teamService } from '../services/teamService';
 import { documentService } from '../services/documentService';
 import { Pitch, Cycle, Team, PitchStatus, CreatePitchRequest } from '../types';
+import PriorityBadge from '../components/PriorityBadge';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
 import EmptyState from '../components/EmptyState';
 import { EmptyPitchesIllustration } from '../components/illustrations';
 import { useProject, useToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { cn } from '../lib/utils';
 import LoadingButton from '../components/LoadingButton';
+import { useBreakpointHelpers } from '../hooks/useBreakpoint';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { Label } from '../components/ui/label';
 import {
   Select,
@@ -41,6 +47,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../components/ui/popover';
+import { Checkbox } from '../components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -56,18 +68,27 @@ import {
   TabsTrigger,
 } from '../components/ui/tabs';
 
-const statusColumns: PitchStatus[] = ['PENDING', 'SHAPED', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
+const statusColumns: PitchStatus[] = ['IDEA', 'DRAFT', 'SHAPED', 'PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
 
 export default function PitchBoard() {
   const { t } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
+  const { isMobile } = useBreakpointHelpers();
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team'>('title');
+  const [sortBy, setSortBy] = useState<'title' | 'appetite' | 'team' | 'priority'>('title');
+  const [mobileActiveStatus, setMobileActiveStatus] = useState<PitchStatus>('IDEA');
+  const [visibleColumns, setVisibleColumns] = useState<Set<PitchStatus>>(() => {
+    try {
+      const stored = localStorage.getItem('pitchBoard.visibleColumns');
+      if (stored) return new Set(JSON.parse(stored) as PitchStatus[]);
+    } catch {}
+    return new Set(statusColumns);
+  });
   const [loading, setLoading] = useState(true);
   const [createDialog, setCreateDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,10 +101,10 @@ export default function PitchBoard() {
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
     description: '',
-    appetiteDays: 6,
-    cycleId: 0,
+    appetiteDays: undefined,
+    cycleId: undefined,
     teamId: undefined,
-    status: 'PENDING',
+    status: 'IDEA',
     // Shape Up fields
     problemStatement: '',
     solution: '',
@@ -100,7 +121,9 @@ export default function PitchBoard() {
   }, [currentProject, isAllProjectsSelected]);
 
   useEffect(() => {
-    if (selectedCycle) {
+    if (selectedCycle === 'all') {
+      loadAllPitches();
+    } else if (selectedCycle) {
       loadPitches(parseInt(selectedCycle));
     }
   }, [selectedCycle]);
@@ -144,10 +167,36 @@ export default function PitchBoard() {
     }
   };
 
+  const loadAllPitches = async () => {
+    try {
+      const response = await pitchService.getAll();
+      setPitches(response.data);
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('pitchBoard.errors.loadFailed')));
+    }
+  };
+
+  const toggleColumnVisibility = (status: PitchStatus) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      try {
+        localStorage.setItem('pitchBoard.visibleColumns', JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  };
+
   const handleStatusChange = async (pitchId: number, newStatus: string) => {
     try {
       await pitchService.updateStatus(pitchId, newStatus as PitchStatus);
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllPitches();
+      } else if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
@@ -155,7 +204,7 @@ export default function PitchBoard() {
     }
   };
 
-  // Validate pitch form
+  // Validate pitch form - requirements depend on target status
   const validatePitchForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -165,10 +214,20 @@ export default function PitchBoard() {
       errors.title = t('pitchBoard.pitchTitleMinLength');
     }
 
-    if (!newPitch.appetiteDays || newPitch.appetiteDays < 1) {
-      errors.appetiteDays = t('pitchBoard.appetiteMin');
-    } else if (newPitch.appetiteDays > 42) {
-      errors.appetiteDays = t('pitchBoard.appetiteMax');
+    // Appetite is only required for SHAPED status and above
+    const requiresAppetite = ['SHAPED', 'PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+    if (requiresAppetite) {
+      if (!newPitch.appetiteDays || newPitch.appetiteDays < 1) {
+        errors.appetiteDays = t('pitchBoard.appetiteMin');
+      } else if (newPitch.appetiteDays > 42) {
+        errors.appetiteDays = t('pitchBoard.appetiteMax');
+      }
+    }
+
+    // Cycle is only required for PENDING status and above
+    const requiresCycle = ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+    if (requiresCycle && !selectedCycle) {
+      errors.cycle = t('pitchBoard.cycleRequired');
     }
 
     setFieldErrors(errors);
@@ -184,9 +243,12 @@ export default function PitchBoard() {
 
     try {
       setSaving(true);
+      const requiresCycle = ['PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'].includes(newPitch.status || 'IDEA');
+      
       const response = await pitchService.create({
         ...newPitch,
-        cycleId: parseInt(selectedCycle),
+        cycleId: requiresCycle && selectedCycle ? parseInt(selectedCycle) : undefined,
+        appetiteDays: newPitch.appetiteDays || undefined,
       });
       const createdPitch = response.data;
       
@@ -221,10 +283,10 @@ export default function PitchBoard() {
       setNewPitch({
         title: '',
         description: '',
-        appetiteDays: 6,
-        cycleId: 0,
+        appetiteDays: undefined,
+        cycleId: undefined,
         teamId: undefined,
-        status: 'PENDING',
+        status: 'IDEA',
         problemStatement: '',
         solution: '',
         rabbitHoles: '',
@@ -240,7 +302,9 @@ export default function PitchBoard() {
       // Navigate after all state cleanup is complete to avoid visual issues
       navigate(`/pitches/${createdPitch.id}`);
       
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllPitches();
+      } else if (selectedCycle) {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
@@ -356,6 +420,12 @@ export default function PitchBoard() {
             return (a.appetiteDays || 0) - (b.appetiteDays || 0);
           case 'team':
             return (a.teamName || '').localeCompare(b.teamName || '');
+          case 'priority': {
+            const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+            const aOrder = a.priority ? priorityOrder[a.priority] ?? 3 : 3;
+            const bOrder = b.priority ? priorityOrder[b.priority] ?? 3 : 3;
+            return aOrder - bOrder;
+          }
           default:
             return 0;
         }
@@ -364,6 +434,124 @@ export default function PitchBoard() {
 
   const getPitchesByStatus = (status: PitchStatus) =>
     filterAndSortPitches(pitches.filter((p) => p.status === status));
+
+  // Mobile: Render a single column at a time with horizontal tab switcher
+  const renderMobileBoard = () => {
+    const visibleStatuses = statusColumns.filter(s => visibleColumns.has(s));
+    const currentStatus = visibleStatuses.includes(mobileActiveStatus) ? mobileActiveStatus : visibleStatuses[0];
+    const currentPitches = getPitchesByStatus(currentStatus);
+
+    return (
+      <div className="space-y-4">
+        {/* Horizontal scrollable tab bar for statuses */}
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1 scrollbar-none">
+          {visibleStatuses.map((status) => {
+            const count = getPitchesByStatus(status).length;
+            return (
+              <button
+                key={status}
+                onClick={() => setMobileActiveStatus(status)}
+                className={cn(
+                  "flex-shrink-0 snap-start rounded-full px-3 py-2 text-xs font-medium transition-colors touch-manipulation min-h-[44px] flex items-center gap-1.5",
+                  currentStatus === status
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                )}
+              >
+                {status.replace('_', ' ')}
+                <Badge variant={currentStatus === status ? 'secondary' : 'outline'} className="text-[10px] h-5 px-1.5">{count}</Badge>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Single column content */}
+        <div className="space-y-3">
+          {currentPitches.map((pitch) => (
+            <Card
+              key={pitch.id}
+              className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Link
+                    to={`/pitches/${pitch.id}`}
+                    className="font-semibold text-foreground hover:text-primary transition-colors flex-1"
+                  >
+                    {pitch.title}
+                  </Link>
+                  {pitch.priority && <PriorityBadge priority={pitch.priority} />}
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                  {selectedCycle === 'all' && pitch.cycleName && (
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      {pitch.cycleName}
+                    </Badge>
+                  )}
+                  {pitch.targetReleaseVersion && (
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 gap-0.5">
+                      <Tag className="h-3 w-3" />
+                      v{pitch.targetReleaseVersion}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3 mt-1">
+                  {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
+                </p>
+                {pitch.busiestPerson && (
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <span className="font-medium">👤 {pitch.busiestPerson.personName}</span>
+                    <span className={cn(
+                      pitch.busiestPerson.isOverBudget ? 'text-destructive' :
+                      pitch.busiestPerson.utilizationPercent > 80 ? 'text-orange-500' :
+                      'text-green-600'
+                    )}>
+                      ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}%)
+                    </span>
+                  </div>
+                )}
+                <ProgressBar
+                  value={pitch.progressPercentage || 0}
+                  label={`${pitch.totalHoursSpent?.toFixed(1) || 0}h / ${pitch.appetiteHours?.toFixed(0) || 0}h`}
+                />
+                <div className="mt-3">
+                  <Select
+                    value={pitch.status}
+                    onValueChange={(value) => handleStatusChange(pitch.id, value)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusColumns.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s.replace('_', ' ')}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="COOLDOWN">COOLDOWN</SelectItem>
+                      <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {currentPitches.length === 0 && (
+            <Card className="opacity-60 border-dashed">
+              <CardContent className="py-6">
+                <EmptyState
+                  title={t('pitchBoard.noPitches')}
+                  description={t('pitchBoard.noPitchesDescription', { status: currentStatus.toLowerCase().replace('_', ' ') })}
+                  size="small"
+                  compact
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -382,6 +570,7 @@ export default function PitchBoard() {
                 <SelectValue placeholder={t('pitchBoard.selectCycle')} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">{t('pitchBoard.allCycles')}</SelectItem>
                 {cycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={cycle.id.toString()}>
                     {cycle.name}
@@ -389,9 +578,33 @@ export default function PitchBoard() {
                 ))}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  {t('pitchBoard.columns')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-3" align="end">
+                <div className="space-y-2">
+                  {statusColumns.map((status) => (
+                    <div key={status} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`col-${status}`}
+                        checked={visibleColumns.has(status)}
+                        onCheckedChange={() => toggleColumnVisibility(status)}
+                      />
+                      <label htmlFor={`col-${status}`} className="text-sm cursor-pointer">
+                        {status.replace('_', ' ')}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button
               onClick={() => setCreateDialog(true)}
-              disabled={!selectedCycle}
+              disabled={!selectedCycle || selectedCycle === 'all'}
               data-tour="new-pitch-btn"
               size="sm"
             >
@@ -422,6 +635,7 @@ export default function PitchBoard() {
                 <SelectItem value="title">{t('pitchBoard.sortTitle')}</SelectItem>
                 <SelectItem value="appetite">{t('pitchBoard.sortAppetite')}</SelectItem>
                 <SelectItem value="team">{t('pitchBoard.sortTeam')}</SelectItem>
+                <SelectItem value="priority">{t('pitchBoard.sortPriority')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -441,9 +655,16 @@ export default function PitchBoard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4" data-tour="pitch-board">
-          {statusColumns.map((status) => (
-            <div key={status} className="min-w-[300px] flex-shrink-0">
+        <>
+          {/* Mobile: Tab-based single column view */}
+          {isMobile ? (
+            <div data-tour="pitch-board">
+              {renderMobileBoard()}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
+          {statusColumns.filter(s => visibleColumns.has(s)).map((status) => (
+            <div key={status} className="min-w-0">
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3">
                 <StatusChip status={status} size="medium" />
@@ -458,15 +679,43 @@ export default function PitchBoard() {
                     className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
                   >
                     <CardContent className="p-4">
-                      <Link
-                        to={`/pitches/${pitch.id}`}
-                        className="font-semibold text-foreground hover:text-primary transition-colors"
-                      >
-                        {pitch.title}
-                      </Link>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link
+                          to={`/pitches/${pitch.id}`}
+                          className="font-semibold text-foreground hover:text-primary transition-colors flex-1 min-w-0 truncate"
+                        >
+                          {pitch.title}
+                        </Link>
+                        {pitch.priority && <PriorityBadge priority={pitch.priority} />}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        {selectedCycle === 'all' && pitch.cycleName && (
+                          <Badge variant="outline" className="text-xs px-1 py-0">
+                            {pitch.cycleName}
+                          </Badge>
+                        )}
+                        {pitch.targetReleaseVersion && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0 gap-0.5">
+                            <Tag className="h-3 w-3" />
+                            v{pitch.targetReleaseVersion}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground mb-3 mt-1">
                         {pitch.teamName || t('pitchBoard.unassigned')} • {pitch.appetiteDays}d
                       </p>
+                      {pitch.busiestPerson && (
+                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                          <span className="font-medium">👤 {pitch.busiestPerson.personName}</span>
+                          <span className={cn(
+                            pitch.busiestPerson.isOverBudget ? 'text-destructive' :
+                            pitch.busiestPerson.utilizationPercent > 80 ? 'text-orange-500' :
+                            'text-green-600'
+                          )}>
+                            ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}%)
+                          </span>
+                        </div>
+                      )}
                       <ProgressBar
                         value={pitch.progressPercentage || 0}
                         label={`${pitch.totalHoursSpent?.toFixed(1) || 0}h / ${pitch.appetiteHours?.toFixed(0) || 0}h`}
@@ -508,7 +757,9 @@ export default function PitchBoard() {
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Pitch Dialog */}
@@ -556,13 +807,13 @@ export default function PitchBoard() {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="pitch-description">{t('pitchBoard.description')}</Label>
-                <Textarea
+                <Label>{t('pitchBoard.description')}</Label>
+                <MarkdownEditor
                   id="pitch-description"
                   value={newPitch.description}
-                  onChange={(e) => setNewPitch({ ...newPitch, description: e.target.value })}
+                  onChange={(value) => setNewPitch({ ...newPitch, description: value })}
                   placeholder={t('pitchBoard.descriptionPlaceholder')}
-                  rows={3}
+                  rows={4}
                 />
               </div>
 

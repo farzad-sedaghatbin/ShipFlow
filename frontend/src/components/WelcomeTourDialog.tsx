@@ -23,7 +23,7 @@ export const WelcomeTourDialog: React.FC = () => {
     const hasSeenWelcome = localStorage.getItem(WELCOME_SHOWN_KEY) === 'true';
     if (!hasSeenWelcome && !hasCompletedTour) {
       // Delay showing the dialog to let the page render first
-      const timer = setTimeout(() => setOpen(true), 1000);
+      const timer = setTimeout(() => setOpen(true), 1500);
       return () => clearTimeout(timer);
     }
   }, [hasCompletedTour]);

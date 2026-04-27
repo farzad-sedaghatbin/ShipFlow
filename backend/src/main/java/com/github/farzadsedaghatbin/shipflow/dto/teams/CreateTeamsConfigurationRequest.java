@@ -9,13 +9,13 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateTeamsConfigurationRequest {
-    @NotBlank(message = "Tenant name is required")
-    private String tenantName;
+  @NotBlank(message = "Tenant name is required")
+  private String tenantName;
 
-    @NotBlank(message = "Webhook URL is required")
-    private String webhookUrl;
+  @NotBlank(message = "Webhook URL is required")
+  private String webhookUrl;
 
-    private String defaultChannel;
+  private String defaultChannel;
 
-    private Boolean isEnabled;
+  private Boolean isEnabled;
 }

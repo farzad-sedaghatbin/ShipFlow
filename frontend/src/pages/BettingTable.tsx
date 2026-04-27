@@ -10,6 +10,7 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  TouchSensor,
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
@@ -23,6 +24,7 @@ import {
   ClipboardList,
   XCircle,
   BarChart3,
+  Vote,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -39,14 +41,29 @@ import {
 } from '../components/ui/select';
 import { bettingService } from '../services/bettingService';
 import { cycleService } from '../services/cycleService';
+import { bettingDecisionService, BettingDecisionDTO, CycleBettingSummaryDTO, computeCycleSummary } from '../services/bettingDecisionService';
 import { BettingTable, BettingSlot, Pitch, Cycle, TeamTrack } from '../types';
 import { useProject, useToast } from '../contexts';
 import EmptyState from '../components/EmptyState';
+import BettingDecisionDialog from '../components/BettingDecisionDialog';
+import BettingDecisionBadge from '../components/BettingDecisionBadge';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 
 // Draggable Pitch Card Component
-function DraggablePitchCard({ pitch, isDragging, t }: { pitch: Pitch; isDragging?: boolean; t: any }) {
+function DraggablePitchCard({ 
+  pitch, 
+  isDragging, 
+  t, 
+  decision,
+  onDecisionClick,
+}: { 
+  pitch: Pitch; 
+  isDragging?: boolean; 
+  t: any;
+  decision?: BettingDecisionDTO | null;
+  onDecisionClick?: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `pitch-${pitch.id}`,
     data: { pitch, type: 'pitch' },
@@ -85,17 +102,38 @@ function DraggablePitchCard({ pitch, isDragging, t }: { pitch: Pitch; isDragging
         <div className="flex items-start gap-2">
           <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate mb-1">{pitch.title}</p>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <p className="font-semibold text-sm truncate">{pitch.title}</p>
+              {decision && <BettingDecisionBadge decision={decision} size="sm" />}
+            </div>
             <div className="flex items-center gap-1.5">
-              <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
-                {pitch.appetiteDays} {t('common.days')}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {getAppetiteLabel(pitch.appetiteDays)}
-              </span>
+              {pitch.appetiteDays !== undefined && (
+                <>
+                  <Badge variant={getAppetiteVariant(pitch.appetiteDays)} className="text-xs h-5">
+                    {pitch.appetiteDays} {t('common.days')}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {getAppetiteLabel(pitch.appetiteDays)}
+                  </span>
+                </>
+              )}
             </div>
             {pitch.projectKey && (
               <p className="text-xs text-muted-foreground mt-1">{pitch.projectKey}</p>
+            )}
+            {onDecisionClick && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 h-6 text-xs p-0 px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDecisionClick();
+                }}
+              >
+                <Vote className="h-3 w-3 mr-1" />
+                {decision ? t('bettingTablePage.updateDecision') : t('bettingTablePage.recordDecision')}
+              </Button>
             )}
           </div>
         </div>
@@ -246,11 +284,23 @@ export default function BettingTablePage() {
   const [loading, setLoading] = useState(true);
   const [generatingSlots, setGeneratingSlots] = useState(false);
   const [activePitch, setActivePitch] = useState<Pitch | null>(null);
+  
+  // Decision tracking state
+  const [decisions, setDecisions] = useState<Map<number, BettingDecisionDTO>>(new Map());
+  const [cycleSummary, setCycleSummary] = useState<CycleBettingSummaryDTO | null>(null);
+  const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
+  const [selectedPitchForDecision, setSelectedPitchForDecision] = useState<Pitch | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
       },
     })
   );
@@ -296,11 +346,47 @@ export default function BettingTablePage() {
       setLoading(true);
       const response = await bettingService.getBettingTable(cycleId);
       setBettingTable(response.data);
+      // Also load decisions for this cycle
+      await loadDecisions(cycleId);
     } catch (error) {
       showError(getUserFriendlyError(error, 'Failed to load betting table'));
     } finally {
       setLoading(false);
     }
+  };
+  
+  const loadDecisions = async (cycleId: number) => {
+    try {
+      const decisionsResponse = await bettingDecisionService.getDecisionsByCycle(cycleId);
+      
+      // Create a map of pitchId -> decision
+      const decisionsMap = new Map<number, BettingDecisionDTO>();
+      decisionsResponse.data.forEach((decision: BettingDecisionDTO) => {
+        decisionsMap.set(decision.pitchId, decision);
+      });
+      setDecisions(decisionsMap);
+      
+      // Compute summary locally from decisions
+      const cycleName = bettingTable?.cycleName || '';
+      setCycleSummary(computeCycleSummary(cycleId, cycleName, decisionsResponse.data));
+    } catch (error) {
+      // Decisions are optional - don't show error if they fail to load
+      console.warn('Failed to load betting decisions:', error);
+    }
+  };
+  
+  const handleDecisionClick = (pitch: Pitch) => {
+    setSelectedPitchForDecision(pitch);
+    setDecisionDialogOpen(true);
+  };
+  
+  const handleDecisionRecorded = async () => {
+    setDecisionDialogOpen(false);
+    setSelectedPitchForDecision(null);
+    if (selectedCycle) {
+      await loadDecisions(Number(selectedCycle));
+    }
+    showSuccess(t('bettingTablePage.decisionRecordedSuccess'));
   };
 
   const handleGenerateSlots = async () => {
@@ -462,7 +548,7 @@ export default function BettingTablePage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Left Column - Shaped Pitches */}
             <div className="md:col-span-3">
-              <Card className="h-[calc(100vh-220px)] overflow-auto">
+              <Card className="md:h-[calc(100vh-220px)] max-h-[50vh] md:max-h-none overflow-auto">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-4">
                     <ClipboardList className="h-5 w-5 text-primary" />
@@ -486,7 +572,13 @@ export default function BettingTablePage() {
                     </div>
                   ) : (
                     bettingTable.shapedPitches.map((pitch) => (
-                      <DraggablePitchCard key={pitch.id} pitch={pitch} t={t} />
+                      <DraggablePitchCard 
+                        key={pitch.id} 
+                        pitch={pitch} 
+                        t={t} 
+                        decision={decisions.get(pitch.id)}
+                        onDecisionClick={() => handleDecisionClick(pitch)}
+                      />
                     ))
                   )}
                 </CardContent>
@@ -495,7 +587,7 @@ export default function BettingTablePage() {
 
             {/* Main Area - Team Tracks */}
             <div className="md:col-span-9">
-              <Card className="h-[calc(100vh-220px)] overflow-auto">
+              <Card className="md:h-[calc(100vh-220px)] overflow-auto">
                 <CardContent className="p-4">
                   {/* Cycle Info Header */}
                   <div className="flex items-center justify-between mb-4">
@@ -521,6 +613,27 @@ export default function BettingTablePage() {
                       </Badge>
                     </div>
                   </div>
+                  
+                  {/* Betting Decisions Summary */}
+                  {cycleSummary && cycleSummary.totalPitchesConsidered > 0 && (
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
+                      <Vote className="h-4 w-4 text-primary" />
+                      <div className="flex items-center gap-4 text-xs">
+                        <span>
+                          <span className="font-semibold text-green-600">{cycleSummary.committedCount}</span> {t('bettingTablePage.committed')}
+                        </span>
+                        <span>
+                          <span className="font-semibold text-red-600">{cycleSummary.rejectedCount}</span> {t('bettingTablePage.rejected')}
+                        </span>
+                        <span>
+                          <span className="font-semibold text-amber-600">{cycleSummary.deferredCount}</span> {t('bettingTablePage.deferred')}
+                        </span>
+                        <span>
+                          <span className="font-semibold text-blue-600">{cycleSummary.needsShapingCount}</span> {t('bettingTablePage.needsShaping')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   <Separator className="mb-4" />
 
@@ -577,7 +690,7 @@ export default function BettingTablePage() {
           {/* Drag Overlay */}
           <DragOverlay>
             {activePitch ? (
-              <Card className="w-[250px] shadow-lg opacity-90">
+              <Card className="w-full max-w-[250px] shadow-lg opacity-90">
                 <CardContent className="py-3 px-4">
                   <p className="font-semibold text-sm">{activePitch.title}</p>
                   <Badge variant="secondary" className="mt-1">
@@ -588,6 +701,18 @@ export default function BettingTablePage() {
             ) : null}
           </DragOverlay>
         </DndContext>
+      )}
+      
+      {/* Betting Decision Dialog */}
+      {selectedPitchForDecision && (
+        <BettingDecisionDialog
+          open={decisionDialogOpen}
+          onOpenChange={setDecisionDialogOpen}
+          pitch={selectedPitchForDecision}
+          cycleId={Number(selectedCycle)}
+          existingDecision={decisions.get(selectedPitchForDecision.id)}
+          onDecisionRecorded={handleDecisionRecorded}
+        />
       )}
     </div>
   );

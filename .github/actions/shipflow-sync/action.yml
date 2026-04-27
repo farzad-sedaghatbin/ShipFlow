@@ -1,0 +1,39 @@
+name: 'ShipFlow Sync'
+description: 'Sync GitHub Actions with ShipFlow tasks – update task status, add comments, and more via the ShipFlow Public API'
+author: 'ShipFlow'
+
+branding:
+  icon: 'refresh-cw'
+  color: 'blue'
+
+inputs:
+  shipflow-url:
+    description: 'Base URL of your ShipFlow instance (e.g. https://shipflow.example.com)'
+    required: true
+  api-key:
+    description: 'ShipFlow API key (store as a GitHub secret)'
+    required: true
+  action:
+    description: 'Action to perform: update-task-status, get-task, list-tasks'
+    required: true
+    default: 'update-task-status'
+  task-id:
+    description: 'ShipFlow task ID (required for update-task-status, get-task)'
+    required: false
+  status:
+    description: 'New task status: BACKLOG, TODO, IN_PROGRESS, BLOCKED, IN_REVIEW, DONE, CANCELLED'
+    required: false
+  comment:
+    description: 'Optional comment for the status change'
+    required: false
+  cycle-id:
+    description: 'Cycle ID filter (for list-tasks)'
+    required: false
+
+outputs:
+  result:
+    description: 'JSON response from the ShipFlow API'
+
+runs:
+  using: 'node20'
+  main: 'index.js'

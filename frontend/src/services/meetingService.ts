@@ -27,7 +27,6 @@ export interface PageResponse<T> {
 }
 
 export const meetingService = {
-  getAll: () => api.get<Meeting[]>('/meetings'),
   getPaginated: (params: MeetingFilterParams = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page !== undefined) queryParams.append('page', params.page.toString());
@@ -57,6 +56,7 @@ export const meetingService = {
   getByPitchId: (pitchId: number) => api.get<Meeting[]>(`/meetings/pitch/${pitchId}`),
   getByType: (type: MeetingType) => api.get<Meeting[]>(`/meetings/type/${type}`),
   getById: (id: number) => api.get<Meeting>(`/meetings/${id}`),
+  getByIdForView: (id: number) => api.get<Meeting>(`/meetings/${id}/view`),
   create: (data: CreateMeetingRequest) => api.post<Meeting>('/meetings', data),
   update: (id: number, data: CreateMeetingRequest) => api.put<Meeting>(`/meetings/${id}`, data),
   delete: (id: number) => api.delete(`/meetings/${id}`),

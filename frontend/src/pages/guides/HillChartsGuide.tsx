@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingUp, Circle, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function HillChartsGuide() {
     const { t } = useTranslation();
@@ -36,7 +37,7 @@ export default function HillChartsGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>{t('guides.hillCharts.whatDesc')}</p>
+                    <p><MarkdownInline content={t('guides.hillCharts.whatDesc')} /></p>
                     <p>{t('guides.hillCharts.unlike')}</p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
@@ -237,9 +238,9 @@ export default function HillChartsGuide() {
                     <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4 mt-4">
                         <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">{t('guides.hillCharts.warningTitle')}</h4>
                         <ul className="space-y-1 text-sm text-amber-900 dark:text-amber-100">
-                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnStuckUphill') }} /></li>
-                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnMovingBackward') }} /></li>
-                            <li>• <span dangerouslySetInnerHTML={{ __html: t('guides.hillCharts.warnTooManyUphill') }} /></li>
+                            <li>• <MarkdownInline content={t('guides.hillCharts.warnStuckUphill')} /></li>
+                            <li>• <MarkdownInline content={t('guides.hillCharts.warnMovingBackward')} /></li>
+                            <li>• <MarkdownInline content={t('guides.hillCharts.warnTooManyUphill')} /></li>
                         </ul>
                     </div>
                 </CardContent>

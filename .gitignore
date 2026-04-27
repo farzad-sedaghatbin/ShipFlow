@@ -107,4 +107,12 @@ logs/
 DEVELOPMENT_WORKFLOW.md
 LOCAL_*.md
 *_LOCAL.md
+AGENT_PR_WORKFLOW.md
 backend/data/
+
+# =========================
+# VitePress docs
+# =========================
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+node_modules/

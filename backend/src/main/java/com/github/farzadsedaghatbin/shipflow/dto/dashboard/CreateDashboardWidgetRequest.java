@@ -12,15 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateDashboardWidgetRequest {
-    @NotBlank(message = "Widget type is required")
-    private String widgetType;
+  @NotBlank(message = "Widget type is required")
+  private String widgetType;
 
-    @NotNull(message = "Visibility is required")
-    private Boolean isVisible;
+  @NotNull(message = "Visibility is required")
+  private Boolean isVisible;
 
-    @NotNull(message = "Display order is required")
-    private Integer displayOrder;
+  @NotNull(message = "Display order is required")
+  private Integer displayOrder;
 
-    private String layoutConfig;
-    private String settings;
+  private String layoutConfig;
+  private String settings;
 }

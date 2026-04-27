@@ -8,13 +8,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +18,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useToast } from '../contexts';
 import { customDashboardService } from '../services/customDashboardService';
 import { cycleService } from '../services/cycleService';
@@ -47,6 +42,8 @@ export default function DashboardManager() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState<CustomDashboard | null>(null);
   const [savingDashboard, setSavingDashboard] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [dashboardToDelete, setDashboardToDelete] = useState<CustomDashboard | null>(null);
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
 
@@ -138,18 +135,24 @@ export default function DashboardManager() {
     }
   };
 
-  const handleDelete = async (dashboard: CustomDashboard) => {
+  const openDeleteConfirm = (dashboard: CustomDashboard) => {
     if (dashboard.isDefault) {
       showError(t('common.cannotDeleteDefault'));
       return;
     }
+    setDashboardToDelete(dashboard);
+    setDeleteConfirmOpen(true);
+  };
 
-    if (!confirm(t('common.confirmDelete', { name: dashboard.name }))) return;
+  const handleDelete = async () => {
+    if (!dashboardToDelete) return;
 
     try {
-      await customDashboardService.delete(dashboard.id);
+      await customDashboardService.delete(dashboardToDelete.id);
       showSuccess(t('common.deleteSuccess'));
       loadDashboards();
+      setDeleteConfirmOpen(false);
+      setDashboardToDelete(null);
     } catch (err) {
       showError(getUserFriendlyError(err, t('common.deleteFailed')));
     }
@@ -187,7 +190,7 @@ export default function DashboardManager() {
       id: -1,
       name: t('dashboardManager.cycleReports'),
       description: t('dashboardManager.cycleReportsDesc'),
-      url: '/reports/cycle-reports',
+      url: '/reports',
       isStatic: true
     }
   ];
@@ -307,7 +310,7 @@ export default function DashboardManager() {
                   {dashboard.templateCategory && (
                     <Badge variant="secondary">{dashboard.templateCategory}</Badge>
                   )}
-                  <div className="flex justify-end gap-2 pt-2">
+                  <div className="flex flex-wrap justify-end gap-2 pt-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -338,7 +341,7 @@ export default function DashboardManager() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(dashboard)}
+                        onClick={() => openDeleteConfirm(dashboard)}
                       >
                         <Trash2 className="me-2 h-4 w-4" />
                         {t('dashboardManager.delete')}
@@ -398,73 +401,55 @@ export default function DashboardManager() {
               {/* Cycle Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.cycle')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allCycles') },
+                    ...cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
+                  ]}
                   value={formData.cycleId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     cycleId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allCycles')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allCycles')}</SelectItem>
-                    {cycles.map((cycle) => (
-                      <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                        {cycle.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allCycles')}
+                  searchPlaceholder="Search cycles..."
+                />
               </div>
 
               {/* Pitch Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.pitch')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allPitches') },
+                    ...pitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
+                  ]}
                   value={formData.pitchId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     pitchId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allPitches')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allPitches')}</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allPitches')}
+                  searchPlaceholder="Search pitches..."
+                />
               </div>
 
               {/* Team Scope */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('dashboardManager.team')}</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('dashboardManager.allTeams') },
+                    ...teams.map(team => ({ value: team.id.toString(), label: team.name }))
+                  ]}
                   value={formData.teamId?.toString() || 'none'}
                   onValueChange={(value) => setFormData({ 
                     ...formData, 
                     teamId: value === 'none' ? undefined : parseInt(value) 
                   })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('dashboardManager.allTeams')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('dashboardManager.allTeams')}</SelectItem>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id.toString()}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={t('dashboardManager.allTeams')}
+                  searchPlaceholder="Search teams..."
+                />
               </div>
             </div>
           </div>
@@ -520,6 +505,18 @@ export default function DashboardManager() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('dashboardManager.deleteTitle')}
+        description={t('common.confirmDelete', { name: dashboardToDelete?.name || '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 }

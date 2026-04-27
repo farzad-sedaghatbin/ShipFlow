@@ -1,0 +1,49 @@
+{
+  "recommendations": [
+    // Java / Spring Boot
+    "vscjava.vscode-java-pack",
+    "vmware.vscode-spring-boot",
+    "vscjava.vscode-spring-initializr",
+    "vscjava.vscode-spring-boot-dashboard",
+    "redhat.vscode-xml",
+    "redhat.java",
+
+    // Frontend
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "styled-components.vscode-styled-components",
+
+    // TypeScript / React
+    "ms-vscode.vscode-typescript-next",
+    "dsznajder.es7-react-js-snippets",
+
+    // Database
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+
+    // Docker / infrastructure
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // REST / API
+    "humao.rest-client",
+
+    // Testing
+    "ms-vscode.vscode-jest",
+    "vitest.explorer",
+
+    // Utilities
+    "EditorConfig.EditorConfig",
+    "streetsidesoftware.code-spell-checker",
+    "christian-kohler.path-intellisense",
+
+    // AI (choose one)
+    "GitHub.copilot",
+    "claude-ai.claude-vscode"
+  ]
+}

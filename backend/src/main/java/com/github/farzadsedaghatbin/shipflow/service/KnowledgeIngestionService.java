@@ -12,21 +12,19 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Service for ingesting knowledge from various entities into the vector store.
@@ -36,812 +34,1040 @@ import java.util.Optional;
 @ConditionalOnProperty(name = "app.features.qa.enabled", havingValue = "true")
 public class KnowledgeIngestionService {
 
-    private final KnowledgeItemRepository knowledgeItemRepository;
-    private final QAInteractionRepository qaInteractionRepository;
-    private final EmbeddingModel embeddingModel;
-    private final EmbeddingStore<TextSegment> embeddingStore;
-    private final QAConfig qaConfig;
+  private final KnowledgeItemRepository knowledgeItemRepository;
+  private final QAInteractionRepository qaInteractionRepository;
+  private final EmbeddingModel embeddingModel;
+  private final EmbeddingStore<TextSegment> embeddingStore;
+  private final QAConfig qaConfig;
 
-    // Repositories for fetching entity context
-    private final PitchRepository pitchRepository;
-    private final MeetingRepository meetingRepository;
-    private final WorkLogRepository workLogRepository;
-    private final TeamRepository teamRepository;
-    private final CycleRepository cycleRepository;
-    private final EvidenceRepository evidenceRepository;
-    private final ManualNoteRepository manualNoteRepository;
+  // Repositories for fetching entity context
+  private final PitchRepository pitchRepository;
+  private final MeetingRepository meetingRepository;
+  private final WorkLogRepository workLogRepository;
+  private final CycleRepository cycleRepository;
+  private final EvidenceRepository evidenceRepository;
+  private final ManualNoteRepository manualNoteRepository;
+  private final InitiativeRepository initiativeRepository;
+  private final EpicRepository epicRepository;
+  private final ReleaseRepository releaseRepository;
 
-    @Autowired
-    public KnowledgeIngestionService(
-            KnowledgeItemRepository knowledgeItemRepository,
-            QAInteractionRepository qaInteractionRepository,
-            @Autowired(required = false) EmbeddingModel embeddingModel,
-            @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
-            @Autowired(required = false) QAConfig qaConfig,
-            PitchRepository pitchRepository,
-            MeetingRepository meetingRepository,
-            WorkLogRepository workLogRepository,
-            TeamRepository teamRepository,
-            CycleRepository cycleRepository,
-            EvidenceRepository evidenceRepository,
-            ManualNoteRepository manualNoteRepository) {
-        this.knowledgeItemRepository = knowledgeItemRepository;
-        this.qaInteractionRepository = qaInteractionRepository;
-        this.embeddingModel = embeddingModel;
-        this.embeddingStore = embeddingStore;
-        this.qaConfig = qaConfig;
-        this.pitchRepository = pitchRepository;
-        this.meetingRepository = meetingRepository;
-        this.workLogRepository = workLogRepository;
-        this.teamRepository = teamRepository;
-        this.cycleRepository = cycleRepository;
-        this.evidenceRepository = evidenceRepository;
-        this.manualNoteRepository = manualNoteRepository;
+  @Autowired
+  public KnowledgeIngestionService(KnowledgeItemRepository knowledgeItemRepository,
+      QAInteractionRepository qaInteractionRepository, @Autowired(required = false) EmbeddingModel embeddingModel,
+      @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
+      @Autowired(required = false) QAConfig qaConfig, PitchRepository pitchRepository,
+      MeetingRepository meetingRepository, WorkLogRepository workLogRepository,
+      CycleRepository cycleRepository, EvidenceRepository evidenceRepository,
+      ManualNoteRepository manualNoteRepository, InitiativeRepository initiativeRepository,
+      EpicRepository epicRepository, ReleaseRepository releaseRepository) {
+    this.knowledgeItemRepository = knowledgeItemRepository;
+    this.qaInteractionRepository = qaInteractionRepository;
+    this.embeddingModel = embeddingModel;
+    this.embeddingStore = embeddingStore;
+    this.qaConfig = qaConfig;
+    this.pitchRepository = pitchRepository;
+    this.meetingRepository = meetingRepository;
+    this.workLogRepository = workLogRepository;
+    this.cycleRepository = cycleRepository;
+    this.evidenceRepository = evidenceRepository;
+    this.manualNoteRepository = manualNoteRepository;
+    this.initiativeRepository = initiativeRepository;
+    this.epicRepository = epicRepository;
+    this.releaseRepository = releaseRepository;
+  }
+
+  /** Ingest a cycle into the knowledge base for name-based resolution. */
+  @Transactional
+  @Async
+  public void ingestCycle(Long cycleId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Cycle> cycleOpt = cycleRepository.findByIdWithProject(cycleId);
+    if (cycleOpt.isEmpty()) {
+      log.warn("Cycle not found for ingestion: {}", cycleId);
+      return;
     }
 
-    /**
-     * Ingest a pitch into the knowledge base.
-     */
-    @Transactional
-    @Async
-    public void ingestPitch(Long pitchId) {
-        if (!isQAEnabled()) return;
-        
-        Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
-        if (pitchOpt.isEmpty()) {
-            log.warn("Pitch not found for ingestion: {}", pitchId);
-            return;
-        }
+    Cycle cycle = cycleOpt.get();
+    String content = buildCycleContent(cycle);
 
+    ingestEntity(KnowledgeEntityType.CYCLE, cycle.getId(), "Cycle: " + cycle.getName(), content,
+        cycle.getId(), null, null, null);
+
+    log.info("Ingested cycle: {} (ID: {})", cycle.getName(), cycle.getId());
+  }
+
+  /** Ingest a pitch into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestPitch(Long pitchId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(pitchId);
+    if (pitchOpt.isEmpty()) {
+      log.warn("Pitch not found for ingestion: {}", pitchId);
+      return;
+    }
+
+    Pitch pitch = pitchOpt.get();
+    String content = buildPitchContent(pitch);
+
+    Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+    ingestEntity(KnowledgeEntityType.PITCH, pitch.getId(), pitch.getTitle(), content, cycleId,
+        pitch.getTeam() != null ? pitch.getTeam().getId() : null, pitch.getId(), null);
+
+    log.info("Ingested pitch: {} (ID: {})", pitch.getTitle(), pitch.getId());
+  }
+
+  /** Ingest a meeting into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestMeeting(Long meetingId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Meeting> meetingOpt = meetingRepository.findById(meetingId);
+    if (meetingOpt.isEmpty()) {
+      log.warn("Meeting not found for ingestion: {}", meetingId);
+      return;
+    }
+
+    Meeting meeting = meetingOpt.get();
+    String content = buildMeetingContent(meeting);
+
+    Long cycleId = meeting.getPitch() != null && meeting.getPitch().getCycle() != null
+        ? meeting.getPitch().getCycle().getId()
+        : null;
+    Long teamId = meeting.getPitch() != null && meeting.getPitch().getTeam() != null
+        ? meeting.getPitch().getTeam().getId()
+        : null;
+    Long pitchId = meeting.getPitch() != null ? meeting.getPitch().getId() : null;
+
+    ingestEntity(KnowledgeEntityType.MEETING, meeting.getId(),
+        "Meeting: " + meeting.getType() + " - " + meeting.getDateHeld(), content, cycleId, teamId, pitchId,
+        null);
+
+    log.info("Ingested meeting: {} (ID: {})", meeting.getType(), meeting.getId());
+  }
+
+  /** Ingest a work log into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestWorkLog(Long workLogId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<WorkLog> workLogOpt = workLogRepository.findById(workLogId);
+    if (workLogOpt.isEmpty()) {
+      log.warn("WorkLog not found for ingestion: {}", workLogId);
+      return;
+    }
+
+    WorkLog workLog = workLogOpt.get();
+
+    // Only ingest work logs with notes
+    if (workLog.getNote() == null || workLog.getNote().trim().isEmpty()) {
+      log.debug("Skipping worklog without note: {}", workLogId);
+      return;
+    }
+
+    String content = buildWorkLogContent(workLog);
+
+    // Work logs may not have a pitch (e.g., technical debt work)
+    Long cycleId = null;
+    Long teamId = null;
+    Long pitchId = null;
+    
+    if (workLog.getPitch() != null) {
+      pitchId = workLog.getPitch().getId();
+      if (workLog.getPitch().getCycle() != null) {
+        cycleId = workLog.getPitch().getCycle().getId();
+      }
+      if (workLog.getPitch().getTeam() != null) {
+        teamId = workLog.getPitch().getTeam().getId();
+      }
+    }
+
+    ingestEntity(KnowledgeEntityType.WORKLOG, workLog.getId(),
+        "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(), content,
+        cycleId, teamId, pitchId, null);
+
+    log.info("Ingested work log: ID: {}", workLog.getId());
+  }
+
+  /** Ingest evidence into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestEvidence(Long evidenceId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Evidence> evidenceOpt = evidenceRepository.findById(evidenceId);
+    if (evidenceOpt.isEmpty()) {
+      log.warn("Evidence not found for ingestion: {}", evidenceId);
+      return;
+    }
+
+    Evidence evidence = evidenceOpt.get();
+    String content = buildEvidenceContent(evidence);
+
+    ingestEntity(KnowledgeEntityType.EVIDENCE, evidence.getId(), "Evidence: " + evidence.getDate(), content,
+        evidence.getPitch().getCycle().getId(),
+        evidence.getPitch().getTeam() != null ? evidence.getPitch().getTeam().getId() : null,
+        evidence.getPitch().getId(), evidence.getPerson().getId());
+
+    log.info("Ingested evidence: ID: {}", evidence.getId());
+  }
+
+  /** Ingest a manual note into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestManualNote(Long noteId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<ManualNote> noteOpt = manualNoteRepository.findById(noteId);
+    if (noteOpt.isEmpty()) {
+      log.warn("Manual note not found for ingestion: {}", noteId);
+      return;
+    }
+
+    ManualNote note = noteOpt.get();
+
+    if (!note.getIncludeInKnowledge()) {
+      log.debug("Skipping note not marked for knowledge inclusion: {}", noteId);
+      return;
+    }
+
+    String content = buildManualNoteContent(note);
+
+    ingestEntity(KnowledgeEntityType.MANUAL_NOTE, note.getId(), note.getTitle(), content, note.getCycleId(),
+        note.getTeamId(), note.getPitchId(), note.getAuthorId());
+
+    log.info("Ingested manual note: {} (ID: {})", note.getTitle(), note.getId());
+  }
+
+  /** Ingest an initiative into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestInitiative(Long initiativeId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Initiative> initiativeOpt = initiativeRepository.findById(initiativeId);
+    if (initiativeOpt.isEmpty()) {
+      log.warn("Initiative not found for ingestion: {}", initiativeId);
+      return;
+    }
+
+    Initiative initiative = initiativeOpt.get();
+    String content = buildInitiativeContent(initiative);
+
+    // Initiatives don't belong to specific cycles/teams/pitches, so pass nulls
+    ingestEntity(KnowledgeEntityType.INITIATIVE, initiative.getId(), initiative.getName(), content,
+        null, null, null, initiative.getOwner() != null ? initiative.getOwner().getId() : null);
+
+    log.info("Ingested initiative: {} (ID: {})", initiative.getName(), initiative.getId());
+  }
+
+  /** Ingest an epic into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestEpic(Long epicId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Epic> epicOpt = epicRepository.findById(epicId);
+    if (epicOpt.isEmpty()) {
+      log.warn("Epic not found for ingestion: {}", epicId);
+      return;
+    }
+
+    Epic epic = epicOpt.get();
+    String content = buildEpicContent(epic);
+
+    // Epics don't belong to specific cycles/teams/pitches, so pass nulls
+    ingestEntity(KnowledgeEntityType.EPIC, epic.getId(), epic.getName(), content,
+        null, null, null, epic.getOwner() != null ? epic.getOwner().getId() : null);
+
+    log.info("Ingested epic: {} (ID: {})", epic.getName(), epic.getId());
+  }
+
+  /** Ingest a release into the knowledge base. */
+  @Transactional
+  @Async
+  public void ingestRelease(Long releaseId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<Release> releaseOpt = releaseRepository.findById(releaseId);
+    if (releaseOpt.isEmpty()) {
+      log.warn("Release not found for ingestion: {}", releaseId);
+      return;
+    }
+
+    Release release = releaseOpt.get();
+    String content = buildReleaseContent(release);
+
+    // Releases can span multiple cycles, so we don't link to a specific cycle
+    ingestEntity(KnowledgeEntityType.RELEASE, release.getId(), release.getName(), content,
+        null, null, null, null);
+
+    log.info("Ingested release: {} (ID: {})", release.getName(), release.getId());
+  }
+
+  /**
+   * Ingest a reference document (like Shape Up methodology book) into the
+   * knowledge base. Reference documents are external materials that provide
+   * context for the Q&A system.
+   *
+   * @param sourceId
+   *            Unique identifier for the reference (e.g., "shape-up-methodology")
+   * @param title
+   *            Display title for the reference
+   * @param content
+   *            The full text content of the document
+   * @return The number of chunks created
+   */
+  @Transactional
+  public int ingestReferenceDocument(String sourceId, String title, String content) {
+    if (!isQAEnabled()) {
+      log.warn("Q&A feature is disabled, cannot ingest reference document");
+      return 0;
+    }
+
+    if (content == null || content.trim().isEmpty()) {
+      log.warn("Reference document has no content, skipping: {}", sourceId);
+      return 0;
+    }
+
+    // Use a hash of the sourceId as a pseudo entity ID for consistency
+    Long entityId = (long) sourceId.hashCode();
+
+    String formattedContent = buildReferenceDocumentContent(sourceId, title, content);
+
+    ingestEntity(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId, title, formattedContent, null, // No cycle
+        // association
+        null, // No team association
+        null, // No pitch association
+        null // No author
+    );
+
+    // Count how many chunks were created
+    int chunkCount = knowledgeItemRepository
+        .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId).size();
+
+    log.info("Ingested reference document: {} ({} chunks)", title, chunkCount);
+    return chunkCount;
+  }
+
+  /** Build content for a reference document with metadata. */
+  private String buildReferenceDocumentContent(String sourceId, String title, String content) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("=== Reference Document ===\n");
+    sb.append("Source: ").append(sourceId).append("\n");
+    sb.append("Title: ").append(title).append("\n");
+    sb.append("Type: Shape Up Methodology Reference\n\n");
+    sb.append("=== Content ===\n");
+    sb.append(content);
+    return sb.toString();
+  }
+
+  /** Check if a reference document is already ingested. */
+  public boolean isReferenceDocumentIngested(String sourceId) {
+    Long entityId = (long) sourceId.hashCode();
+    return !knowledgeItemRepository.findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
+        .isEmpty();
+  }
+
+  /**
+   * Ingest an uploaded document into the knowledge base. Uses REQUIRES_NEW
+   * propagation to prevent rollback of parent transaction if embedding fails.
+   */
+  @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
+  public void ingestDocument(UploadedDocument document) {
+    if (!isQAEnabled())
+      return;
+
+    if (document.getExtractedText() == null || document.getExtractedText().isEmpty()) {
+      log.warn("Document has no extracted text, skipping: {}", document.getId());
+      return;
+    }
+
+    String content = buildDocumentContent(document);
+    Long cycleId = null;
+    Long teamId = null;
+    Long pitchId = null;
+
+    // Resolve entity associations
+    if ("PITCH".equals(document.getEntityType()) && document.getEntityId() != null) {
+      pitchRepository.findById(document.getEntityId()).ifPresent(pitch -> {
+        // Can't set outer variables, using ingestEntity directly below
+      });
+      Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(document.getEntityId());
+      if (pitchOpt.isPresent()) {
         Pitch pitch = pitchOpt.get();
-        String content = buildPitchContent(pitch);
-        
-        ingestEntity(
-                KnowledgeEntityType.PITCH,
-                pitch.getId(),
-                pitch.getTitle(),
-                content,
-                pitch.getCycle().getId(),
-                pitch.getTeam() != null ? pitch.getTeam().getId() : null,
-                pitch.getId(),
-                null
-        );
-        
-        log.info("Ingested pitch: {} (ID: {})", pitch.getTitle(), pitch.getId());
-    }
-
-    /**
-     * Ingest a meeting into the knowledge base.
-     */
-    @Transactional
-    @Async
-    public void ingestMeeting(Long meetingId) {
-        if (!isQAEnabled()) return;
-
-        Optional<Meeting> meetingOpt = meetingRepository.findById(meetingId);
-        if (meetingOpt.isEmpty()) {
-            log.warn("Meeting not found for ingestion: {}", meetingId);
-            return;
-        }
-
+        cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+        teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
+        pitchId = pitch.getId();
+      }
+    } else if ("MEETING".equals(document.getEntityType()) && document.getEntityId() != null) {
+      Optional<Meeting> meetingOpt = meetingRepository.findById(document.getEntityId());
+      if (meetingOpt.isPresent()) {
         Meeting meeting = meetingOpt.get();
-        String content = buildMeetingContent(meeting);
-        
-        Long cycleId = meeting.getPitch() != null ? meeting.getPitch().getCycle().getId() : null;
-        Long teamId = meeting.getPitch() != null && meeting.getPitch().getTeam() != null 
-                ? meeting.getPitch().getTeam().getId() : null;
-        Long pitchId = meeting.getPitch() != null ? meeting.getPitch().getId() : null;
-
-        ingestEntity(
-                KnowledgeEntityType.MEETING,
-                meeting.getId(),
-                "Meeting: " + meeting.getType() + " - " + meeting.getDateHeld(),
-                content,
-                cycleId,
-                teamId,
-                pitchId,
-                null
-        );
-
-        log.info("Ingested meeting: {} (ID: {})", meeting.getType(), meeting.getId());
-    }
-
-    /**
-     * Ingest a work log into the knowledge base.
-     */
-    @Transactional
-    @Async
-    public void ingestWorkLog(Long workLogId) {
-        if (!isQAEnabled()) return;
-
-        Optional<WorkLog> workLogOpt = workLogRepository.findById(workLogId);
-        if (workLogOpt.isEmpty()) {
-            log.warn("WorkLog not found for ingestion: {}", workLogId);
-            return;
-        }
-
-        WorkLog workLog = workLogOpt.get();
-        
-        // Only ingest work logs with notes
-        if (workLog.getNote() == null || workLog.getNote().trim().isEmpty()) {
-            log.debug("Skipping worklog without note: {}", workLogId);
-            return;
-        }
-
-        String content = buildWorkLogContent(workLog);
-        
-        ingestEntity(
-                KnowledgeEntityType.WORKLOG,
-                workLog.getId(),
-                "Work Log: " + workLog.getPerson().getName() + " - " + workLog.getDate(),
-                content,
-                workLog.getPitch().getCycle().getId(),
-                workLog.getPitch().getTeam() != null ? workLog.getPitch().getTeam().getId() : null,
-                workLog.getPitch().getId(),
-                null
-        );
-
-        log.info("Ingested work log: ID: {}", workLog.getId());
-    }
-
-    /**
-     * Ingest evidence into the knowledge base.
-     */
-    @Transactional
-    @Async
-    public void ingestEvidence(Long evidenceId) {
-        if (!isQAEnabled()) return;
-
-        Optional<Evidence> evidenceOpt = evidenceRepository.findById(evidenceId);
-        if (evidenceOpt.isEmpty()) {
-            log.warn("Evidence not found for ingestion: {}", evidenceId);
-            return;
-        }
-
-        Evidence evidence = evidenceOpt.get();
-        String content = buildEvidenceContent(evidence);
-
-        ingestEntity(
-                KnowledgeEntityType.EVIDENCE,
-                evidence.getId(),
-                "Evidence: " + evidence.getDate(),
-                content,
-                evidence.getPitch().getCycle().getId(),
-                evidence.getPitch().getTeam() != null ? evidence.getPitch().getTeam().getId() : null,
-                evidence.getPitch().getId(),
-                evidence.getPerson().getId()
-        );
-
-        log.info("Ingested evidence: ID: {}", evidence.getId());
-    }
-
-    /**
-     * Ingest a manual note into the knowledge base.
-     */
-    @Transactional
-    @Async
-    public void ingestManualNote(Long noteId) {
-        if (!isQAEnabled()) return;
-
-        Optional<ManualNote> noteOpt = manualNoteRepository.findById(noteId);
-        if (noteOpt.isEmpty()) {
-            log.warn("Manual note not found for ingestion: {}", noteId);
-            return;
-        }
-
-        ManualNote note = noteOpt.get();
-        
-        if (!note.getIncludeInKnowledge()) {
-            log.debug("Skipping note not marked for knowledge inclusion: {}", noteId);
-            return;
-        }
-
-        String content = buildManualNoteContent(note);
-
-        ingestEntity(
-                KnowledgeEntityType.MANUAL_NOTE,
-                note.getId(),
-                note.getTitle(),
-                content,
-                note.getCycleId(),
-                note.getTeamId(),
-                note.getPitchId(),
-                note.getAuthorId()
-        );
-
-        log.info("Ingested manual note: {} (ID: {})", note.getTitle(), note.getId());
-    }
-
-    /**
-     * Ingest a reference document (like Shape Up methodology book) into the knowledge base.
-     * Reference documents are external materials that provide context for the Q&A system.
-     * 
-     * @param sourceId Unique identifier for the reference (e.g., "shape-up-methodology")
-     * @param title Display title for the reference
-     * @param content The full text content of the document
-     * @return The number of chunks created
-     */
-    @Transactional
-    public int ingestReferenceDocument(String sourceId, String title, String content) {
-        if (!isQAEnabled()) {
-            log.warn("Q&A feature is disabled, cannot ingest reference document");
-            return 0;
-        }
-
-        if (content == null || content.trim().isEmpty()) {
-            log.warn("Reference document has no content, skipping: {}", sourceId);
-            return 0;
-        }
-
-        // Use a hash of the sourceId as a pseudo entity ID for consistency
-        Long entityId = (long) sourceId.hashCode();
-
-        String formattedContent = buildReferenceDocumentContent(sourceId, title, content);
-
-        ingestEntity(
-                KnowledgeEntityType.REFERENCE_DOCUMENT,
-                entityId,
-                title,
-                formattedContent,
-                null, // No cycle association
-                null, // No team association
-                null, // No pitch association
-                null  // No author
-        );
-
-        // Count how many chunks were created
-        int chunkCount = knowledgeItemRepository
-                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
-                .size();
-
-        log.info("Ingested reference document: {} ({} chunks)", title, chunkCount);
-        return chunkCount;
-    }
-
-    /**
-     * Build content for a reference document with metadata.
-     */
-    private String buildReferenceDocumentContent(String sourceId, String title, String content) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== Reference Document ===\n");
-        sb.append("Source: ").append(sourceId).append("\n");
-        sb.append("Title: ").append(title).append("\n");
-        sb.append("Type: Shape Up Methodology Reference\n\n");
-        sb.append("=== Content ===\n");
-        sb.append(content);
-        return sb.toString();
-    }
-
-    /**
-     * Check if a reference document is already ingested.
-     */
-    public boolean isReferenceDocumentIngested(String sourceId) {
-        Long entityId = (long) sourceId.hashCode();
-        return !knowledgeItemRepository
-                .findByEntityTypeAndEntityId(KnowledgeEntityType.REFERENCE_DOCUMENT, entityId)
-                .isEmpty();
-    }
-
-    /**
-     * Ingest an uploaded document into the knowledge base.
-     */
-    @Transactional
-    public void ingestDocument(UploadedDocument document) {
-        if (!isQAEnabled()) return;
-
-        if (document.getExtractedText() == null || document.getExtractedText().isEmpty()) {
-            log.warn("Document has no extracted text, skipping: {}", document.getId());
-            return;
-        }
-
-        String content = buildDocumentContent(document);
-        Long cycleId = null;
-        Long teamId = null;
-        Long pitchId = null;
-
-        // Resolve entity associations
-        if ("PITCH".equals(document.getEntityType()) && document.getEntityId() != null) {
-            pitchRepository.findById(document.getEntityId()).ifPresent(pitch -> {
-                // Can't set outer variables, using ingestEntity directly below
-            });
-            Optional<Pitch> pitchOpt = pitchRepository.findById(document.getEntityId());
-            if (pitchOpt.isPresent()) {
-                Pitch pitch = pitchOpt.get();
-                cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
-                teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
-                pitchId = pitch.getId();
-            }
-        } else if ("MEETING".equals(document.getEntityType()) && document.getEntityId() != null) {
-            Optional<Meeting> meetingOpt = meetingRepository.findById(document.getEntityId());
-            if (meetingOpt.isPresent()) {
-                Meeting meeting = meetingOpt.get();
-                if (meeting.getPitch() != null) {
-                    pitchId = meeting.getPitch().getId();
-                    cycleId = meeting.getPitch().getCycle() != null ? meeting.getPitch().getCycle().getId() : null;
-                    teamId = meeting.getPitch().getTeam() != null ? meeting.getPitch().getTeam().getId() : null;
-                }
-            }
-        } else if ("CYCLE".equals(document.getEntityType()) && document.getEntityId() != null) {
-            cycleId = document.getEntityId();
-        }
-
-        ingestEntity(
-                KnowledgeEntityType.DOCUMENT,
-                document.getId(),
-                "Document: " + document.getOriginalFileName(),
-                content,
-                cycleId,
-                teamId,
-                pitchId,
-                document.getUploaderId()
-        );
-
-        log.info("Ingested document: {} (ID: {})", document.getOriginalFileName(), document.getId());
-    }
-
-    /**
-     * Ingest a pitch document directly into the knowledge base.
-     * Used when extracting pitch data from uploaded documents.
-     * This makes pitch documents searchable via Q&A.
-     */
-    @Transactional
-    public void ingestPitchDocument(String fileName, String extractedText, Long pitchId, 
-                                     String pitchTitle, Long uploaderId, String uploaderUsername) {
-        if (!isQAEnabled()) return;
-
-        if (extractedText == null || extractedText.trim().isEmpty()) {
-            log.warn("Pitch document has no extracted text, skipping: {}", fileName);
-            return;
-        }
-
-        Long cycleId = null;
-        Long teamId = null;
-
-        // Resolve pitch associations
-        if (pitchId != null) {
-            Optional<Pitch> pitchOpt = pitchRepository.findById(pitchId);
-            if (pitchOpt.isPresent()) {
-                Pitch pitch = pitchOpt.get();
-                cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
-                teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
-            }
-        }
-
-        String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
-
-        ingestEntity(
-                KnowledgeEntityType.DOCUMENT,
-                null, // No document ID yet as it's directly uploaded for extraction
-                "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName),
-                content,
-                cycleId,
-                teamId,
-                pitchId,
-                uploaderId
-        );
-
-        log.info("Ingested pitch document to knowledge base: {} (Pitch: {})", fileName, pitchTitle);
-    }
-
-    private String buildPitchDocumentContent(String fileName, String pitchTitle, String extractedText) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Pitch Document: ").append(fileName).append("\n");
-        if (pitchTitle != null) {
-            sb.append("Pitch Title: ").append(pitchTitle).append("\n");
-        }
-        sb.append("Type: PITCH_DOCUMENT\n");
-        sb.append("\n--- Pitch Content ---\n");
-        sb.append(extractedText);
-        
-        return sb.toString();
-    }
-
-    private String buildDocumentContent(UploadedDocument document) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Document: ").append(document.getOriginalFileName()).append("\n");
-        sb.append("Type: ").append(document.getFileType().toUpperCase()).append("\n");
-        
-        if (document.getEntityType() != null) {
-            sb.append("Associated with: ").append(document.getEntityType());
-            if (document.getEntityId() != null) {
-                sb.append(" #").append(document.getEntityId());
-            }
-            sb.append("\n");
-        }
-        
-        sb.append("\n--- Document Content ---\n");
-        sb.append(document.getExtractedText());
-        
-        return sb.toString();
-    }
-
-    /**
-     * Ingest a validated Q&A interaction as knowledge.
-     */
-    @Transactional
-    public void ingestValidatedQA(Long interactionId) {
-        if (!isQAEnabled()) return;
-
-        Optional<QAInteraction> interactionOpt = qaInteractionRepository.findById(interactionId);
-        if (interactionOpt.isEmpty()) {
-            log.warn("QA interaction not found for ingestion: {}", interactionId);
-            return;
-        }
-
-        QAInteraction interaction = interactionOpt.get();
-        
-        // Only ingest validated (accurate or corrected) interactions
-        if (interaction.getFeedbackType() != QAFeedbackType.ACCURATE && 
-                interaction.getFeedbackType() != QAFeedbackType.CORRECTED) {
-            log.debug("Skipping non-validated QA interaction: {}", interactionId);
-            return;
-        }
-
-        String content = buildValidatedQAContent(interaction);
-
-        ingestEntity(
-                KnowledgeEntityType.VALIDATED_QA,
-                interaction.getId(),
-                "Q&A: " + truncate(interaction.getQuestion(), 100),
-                content,
-                interaction.getCycleId(),
-                interaction.getTeamId(),
-                null,
-                interaction.getUserId()
-        );
-
-        // Mark as embedded
-        interaction.setIsEmbedded(true);
-        qaInteractionRepository.save(interaction);
-
-        log.info("Ingested validated Q&A: ID: {}", interaction.getId());
-    }
-
-    /**
-     * Re-index all knowledge items.
-     */
-    @Transactional
-    public void reindexAllKnowledge() {
-        if (!isQAEnabled()) {
-            log.warn("Q&A feature is disabled, cannot reindex");
-            return;
-        }
-
-        log.info("Starting full knowledge reindexing...");
-
-        // Reindex pitches
-        pitchRepository.findAll().forEach(pitch -> {
-            try {
-                ingestPitch(pitch.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex pitch {}: {}", pitch.getId(), e.getMessage());
-            }
-        });
-
-        // Reindex meetings
-        meetingRepository.findAll().forEach(meeting -> {
-            try {
-                ingestMeeting(meeting.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex meeting {}: {}", meeting.getId(), e.getMessage());
-            }
-        });
-
-        // Reindex work logs with notes
-        workLogRepository.findAll().forEach(workLog -> {
-            try {
-                ingestWorkLog(workLog.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex work log {}: {}", workLog.getId(), e.getMessage());
-            }
-        });
-
-        // Reindex evidence
-        evidenceRepository.findAll().forEach(evidence -> {
-            try {
-                ingestEvidence(evidence.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex evidence {}: {}", evidence.getId(), e.getMessage());
-            }
-        });
-
-        // Reindex manual notes
-        manualNoteRepository.findByIncludeInKnowledgeTrue().forEach(note -> {
-            try {
-                ingestManualNote(note.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex note {}: {}", note.getId(), e.getMessage());
-            }
-        });
-
-        // Reindex validated Q&A
-        qaInteractionRepository.findValidatedNotEmbedded(
-                List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED)
-        ).forEach(qa -> {
-            try {
-                ingestValidatedQA(qa.getId());
-            } catch (Exception e) {
-                log.error("Failed to reindex QA {}: {}", qa.getId(), e.getMessage());
-            }
-        });
-
-        log.info("Knowledge reindexing completed");
-    }
-
-    /**
-     * Process pending embeddings - embed knowledge items that haven't been embedded yet.
-     */
-    @Transactional
-    public int processPendingEmbeddings() {
-        if (!isQAEnabled()) return 0;
-
-        List<KnowledgeItem> pending = knowledgeItemRepository.findByIsEmbeddedFalse();
-        int processed = 0;
-
-        for (KnowledgeItem item : pending) {
-            try {
-                embedKnowledgeItem(item);
-                processed++;
-            } catch (Exception e) {
-                log.error("Failed to embed knowledge item {}: {}", item.getId(), e.getMessage());
-            }
-        }
-
-        log.info("Processed {} pending embeddings", processed);
-        return processed;
-    }
-
-    // ===== Private helper methods =====
-
-    private void ingestEntity(
-            KnowledgeEntityType entityType,
-            Long entityId,
-            String title,
-            String content,
-            Long cycleId,
-            Long teamId,
-            Long pitchId,
-            Long authorId) {
-
-        String contentHash = computeHash(content);
-
-        // Check if we need to update existing knowledge
-        List<KnowledgeItem> existing = knowledgeItemRepository
-                .findByEntityTypeAndEntityId(entityType, entityId);
-
-        // If content hasn't changed, skip
-        if (!existing.isEmpty() && existing.get(0).getContentHash() != null 
-                && existing.get(0).getContentHash().equals(contentHash)) {
-            log.debug("Content unchanged for {} {}, skipping", entityType, entityId);
-            return;
-        }
-
-        // Remove old knowledge items and embeddings
-        if (!existing.isEmpty()) {
-            List<String> oldEmbeddingIds = knowledgeItemRepository
-                    .findEmbeddingIdsByEntity(entityType, entityId);
-            for (String embeddingId : oldEmbeddingIds) {
-                try {
-                    // Note: In-memory store doesn't support deletion by ID
-                    // ChromaDB supports it
-                    log.debug("Would remove embedding: {}", embeddingId);
-                } catch (Exception e) {
-                    log.warn("Failed to remove old embedding: {}", embeddingId);
-                }
-            }
-            knowledgeItemRepository.deleteByEntityTypeAndEntityId(entityType, entityId);
-        }
-
-        // Split content into chunks
-        List<TextSegment> chunks = splitIntoChunks(content, title);
-
-        // Create knowledge items for each chunk
-        for (int i = 0; i < chunks.size(); i++) {
-            KnowledgeItem item = KnowledgeItem.builder()
-                    .entityType(entityType)
-                    .entityId(entityId)
-                    .title(title)
-                    .content(chunks.get(i).text())
-                    .cycleId(cycleId)
-                    .teamId(teamId)
-                    .pitchId(pitchId)
-                    .authorId(authorId)
-                    .chunkIndex(i)
-                    .totalChunks(chunks.size())
-                    .contentHash(i == 0 ? contentHash : null) // Only store hash on first chunk
-                    .isEmbedded(false)
-                    .build();
-
-            item.setEmbeddingId(item.generateEmbeddingId());
-            knowledgeItemRepository.save(item);
-
-            // Embed immediately
-            embedKnowledgeItem(item);
-        }
-    }
-
-    private void embedKnowledgeItem(KnowledgeItem item) {
-        if (embeddingModel == null || embeddingStore == null) {
-            log.warn("Embedding model or store not available");
-            return;
-        }
-
-        try {
-            // Create metadata for the embedding
-            Metadata metadata = Metadata.from("knowledgeItemId", item.getId().toString());
-            metadata.put("entityType", item.getEntityType().name());
-            metadata.put("entityId", item.getEntityId().toString());
-            if (item.getCycleId() != null) {
-                metadata.put("cycleId", item.getCycleId().toString());
-            }
-            if (item.getTeamId() != null) {
-                metadata.put("teamId", item.getTeamId().toString());
-            }
-            if (item.getPitchId() != null) {
-                metadata.put("pitchId", item.getPitchId().toString());
-            }
-            if (item.getTitle() != null) {
-                metadata.put("title", item.getTitle());
-            }
-
-            TextSegment segment = TextSegment.from(item.getContent(), metadata);
-            Embedding embedding = embeddingModel.embed(segment).content();
-
-            // Store embedding with ID
-            embeddingStore.add(embedding, segment);
-
-            item.setIsEmbedded(true);
-            knowledgeItemRepository.save(item);
-
-            log.debug("Embedded knowledge item: {}", item.getEmbeddingId());
-        } catch (Exception e) {
-            log.error("Failed to embed knowledge item {}: {}", item.getId(), e.getMessage());
-            throw e;
-        }
-    }
-
-    private List<TextSegment> splitIntoChunks(String content, String title) {
-        if (content == null || content.trim().isEmpty()) {
-            return List.of();
-        }
-
-        int maxTokens = qaConfig != null ? qaConfig.getMaxTokens() : 512;
-        int overlap = qaConfig != null ? qaConfig.getChunkOverlap() : 50;
-
-        // Use LangChain4j's document splitter
-        Document document = Document.from(content);
-        var splitter = DocumentSplitters.recursive(maxTokens, overlap);
-        
-        return splitter.split(document);
-    }
-
-    private boolean isQAEnabled() {
-        return embeddingModel != null && embeddingStore != null;
-    }
-
-    private String computeHash(String content) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            log.warn("SHA-256 not available, using content length as hash");
-            return String.valueOf(content.length());
-        }
-    }
-
-    private String truncate(String text, int maxLength) {
-        if (text == null) return "";
-        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
-    }
-
-    // ===== Content building methods =====
-
-    private String buildPitchContent(Pitch pitch) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Pitch: ").append(pitch.getTitle()).append("\n\n");
-        
-        if (pitch.getDescription() != null) {
-            sb.append("Description:\n").append(pitch.getDescription()).append("\n\n");
-        }
-        
-        sb.append("Status: ").append(pitch.getStatus()).append("\n");
-        sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
-        
-        if (pitch.getCycle() != null) {
-            sb.append("Cycle: ").append(pitch.getCycle().getName()).append("\n");
-        }
-        
-        if (pitch.getTeam() != null) {
-            sb.append("Team: ").append(pitch.getTeam().getName()).append("\n");
-        }
-        
-        sb.append("Created: ").append(pitch.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
-        sb.append("Last Updated: ").append(pitch.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
-        
-        return sb.toString();
-    }
-
-    private String buildMeetingContent(Meeting meeting) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Meeting: ").append(meeting.getType()).append("\n");
-        sb.append("Date: ").append(meeting.getDateHeld()).append("\n\n");
-        
         if (meeting.getPitch() != null) {
-            sb.append("Related Pitch: ").append(meeting.getPitch().getTitle()).append("\n");
+          pitchId = meeting.getPitch().getId();
+          cycleId = meeting.getPitch().getCycle() != null ? meeting.getPitch().getCycle().getId() : null;
+          teamId = meeting.getPitch().getTeam() != null ? meeting.getPitch().getTeam().getId() : null;
         }
-        
-        sb.append("Definition of Ready (DoR): ").append(meeting.getDorReady() ? "Ready" : "Not Ready").append("\n");
-        sb.append("Definition of Done (DoD): ").append(meeting.getDodReady() ? "Ready" : "Not Ready").append("\n");
-        
-        if (meeting.getNotes() != null && !meeting.getNotes().isEmpty()) {
-            sb.append("\nMeeting Notes (Minutes of Meeting):\n");
-            sb.append(meeting.getNotes()).append("\n");
-        }
-        
-        return sb.toString();
+      }
+    } else if ("CYCLE".equals(document.getEntityType()) && document.getEntityId() != null) {
+      cycleId = document.getEntityId();
     }
 
-    private String buildWorkLogContent(WorkLog workLog) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Work Log Entry\n");
-        sb.append("Date: ").append(workLog.getDate()).append("\n");
-        sb.append("Person: ").append(workLog.getPerson().getName()).append("\n");
-        sb.append("Hours Spent: ").append(workLog.getHoursSpent()).append("\n");
-        sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n\n");
-        
-        if (workLog.getNote() != null) {
-            sb.append("Notes:\n").append(workLog.getNote()).append("\n");
-        }
-        
-        return sb.toString();
+    ingestEntity(KnowledgeEntityType.DOCUMENT, document.getId(), "Document: " + document.getOriginalFileName(),
+        content, cycleId, teamId, pitchId, document.getUploaderId());
+
+    log.info("Ingested document: {} (ID: {})", document.getOriginalFileName(), document.getId());
+  }
+
+  /**
+   * Ingest a pitch document directly into the knowledge base. Used when
+   * extracting pitch data from uploaded documents. This makes pitch documents
+   * searchable via Q&A.
+   */
+  @Transactional
+  public void ingestPitchDocument(String fileName, String extractedText, Long pitchId, String pitchTitle,
+      Long uploaderId, String uploaderUsername) {
+    if (!isQAEnabled())
+      return;
+
+    if (extractedText == null || extractedText.trim().isEmpty()) {
+      log.warn("Pitch document has no extracted text, skipping: {}", fileName);
+      return;
     }
 
-    private String buildEvidenceContent(Evidence evidence) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Evidence Entry\n");
-        sb.append("Date: ").append(evidence.getDate()).append("\n");
-        sb.append("Added by: ").append(evidence.getPerson().getName()).append("\n");
-        sb.append("Pitch: ").append(evidence.getPitch().getTitle()).append("\n\n");
-        
-        sb.append("Description:\n").append(evidence.getDescription()).append("\n");
-        
-        if (evidence.getFileUrl() != null) {
-            sb.append("\nAttachment: ").append(evidence.getFileUrl()).append("\n");
-        }
-        
-        return sb.toString();
+    Long cycleId = null;
+    Long teamId = null;
+
+    // Resolve pitch associations
+    if (pitchId != null) {
+      Optional<Pitch> pitchOpt = pitchRepository.findByIdNotDeleted(pitchId);
+      if (pitchOpt.isPresent()) {
+        Pitch pitch = pitchOpt.get();
+        cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+        teamId = pitch.getTeam() != null ? pitch.getTeam().getId() : null;
+      }
     }
 
-    private String buildManualNoteContent(ManualNote note) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Note: ").append(note.getTitle()).append("\n");
-        sb.append("Context: ").append(note.getContextType()).append("\n");
-        sb.append("Created: ").append(note.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n\n");
-        sb.append(note.getContent()).append("\n");
-        return sb.toString();
+    String content = buildPitchDocumentContent(fileName, pitchTitle, extractedText);
+
+    // Generate a synthetic entity ID for pitch documents that don't have a database
+    // record
+    // Use a combination of pitch ID and content hash to create a unique identifier
+    String contentHash = computeHash(extractedText);
+    Long syntheticEntityId = generateSyntheticDocumentId(pitchId, contentHash);
+
+    ingestEntity(KnowledgeEntityType.DOCUMENT, syntheticEntityId,
+        "Pitch Document: " + (pitchTitle != null ? pitchTitle : fileName), content, cycleId, teamId, pitchId,
+        uploaderId);
+
+    log.info("Ingested pitch document to knowledge base: {} (Pitch: {})", fileName, pitchTitle);
+  }
+
+  private String buildPitchDocumentContent(String fileName, String pitchTitle, String extractedText) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Pitch Document: ").append(fileName).append("\n");
+    if (pitchTitle != null) {
+      sb.append("Pitch Title: ").append(pitchTitle).append("\n");
+    }
+    sb.append("Type: PITCH_DOCUMENT\n");
+    sb.append("\n--- Pitch Content ---\n");
+    sb.append(extractedText);
+
+    return sb.toString();
+  }
+
+  private String buildDocumentContent(UploadedDocument document) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Document: ").append(document.getOriginalFileName()).append("\n");
+    sb.append("Type: ").append(document.getFileType().toUpperCase()).append("\n");
+
+    if (document.getEntityType() != null) {
+      sb.append("Associated with: ").append(document.getEntityType());
+      if (document.getEntityId() != null) {
+        sb.append(" #").append(document.getEntityId());
+      }
+      sb.append("\n");
     }
 
-    private String buildValidatedQAContent(QAInteraction interaction) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Validated Q&A\n\n");
-        sb.append("Question: ").append(interaction.getQuestion()).append("\n\n");
-        
-        if (interaction.getFeedbackType() == QAFeedbackType.CORRECTED && 
-                interaction.getFeedbackCorrection() != null) {
-            sb.append("Corrected Answer:\n").append(interaction.getFeedbackCorrection()).append("\n");
-        } else {
-            sb.append("Answer:\n").append(interaction.getAnswer()).append("\n");
-        }
-        
-        if (interaction.getContextType() != null) {
-            sb.append("\nContext: ").append(interaction.getContextType());
-            if (interaction.getContextId() != null) {
-                sb.append(" (ID: ").append(interaction.getContextId()).append(")");
-            }
-            sb.append("\n");
-        }
-        
-        return sb.toString();
+    sb.append("\n--- Document Content ---\n");
+    sb.append(document.getExtractedText());
+
+    return sb.toString();
+  }
+
+  /** Ingest a validated Q&A interaction as knowledge. */
+  @Transactional
+  public void ingestValidatedQA(Long interactionId) {
+    if (!isQAEnabled())
+      return;
+
+    Optional<QAInteraction> interactionOpt = qaInteractionRepository.findById(interactionId);
+    if (interactionOpt.isEmpty()) {
+      log.warn("QA interaction not found for ingestion: {}", interactionId);
+      return;
     }
+
+    QAInteraction interaction = interactionOpt.get();
+
+    // Only ingest validated (accurate or corrected) interactions
+    if (interaction.getFeedbackType() != QAFeedbackType.ACCURATE
+        && interaction.getFeedbackType() != QAFeedbackType.CORRECTED) {
+      log.debug("Skipping non-validated QA interaction: {}", interactionId);
+      return;
+    }
+
+    String content = buildValidatedQAContent(interaction);
+
+    ingestEntity(KnowledgeEntityType.VALIDATED_QA, interaction.getId(),
+        "Q&A: " + truncate(interaction.getQuestion(), 100), content, interaction.getCycleId(),
+        interaction.getTeamId(), null, interaction.getUserId());
+
+    // Mark as embedded
+    interaction.setIsEmbedded(true);
+    qaInteractionRepository.save(interaction);
+
+    log.info("Ingested validated Q&A: ID: {}", interaction.getId());
+  }
+
+  /** Re-index all knowledge items. */
+  @Transactional
+  public void reindexAllKnowledge() {
+    if (!isQAEnabled()) {
+      log.warn("Q&A feature is disabled, cannot reindex");
+      return;
+    }
+
+    log.info("Starting full knowledge reindexing...");
+
+    // Reindex cycles
+    cycleRepository.findAll().forEach(cycle -> {
+      try {
+        ingestCycle(cycle.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex cycle {}: {}", cycle.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex pitches
+    pitchRepository.findAll().forEach(pitch -> {
+      try {
+        ingestPitch(pitch.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex pitch {}: {}", pitch.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex meetings
+    meetingRepository.findAll().forEach(meeting -> {
+      try {
+        ingestMeeting(meeting.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex meeting {}: {}", meeting.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex work logs with notes
+    workLogRepository.findAll().forEach(workLog -> {
+      try {
+        ingestWorkLog(workLog.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex work log {}: {}", workLog.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex evidence
+    evidenceRepository.findAll().forEach(evidence -> {
+      try {
+        ingestEvidence(evidence.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex evidence {}: {}", evidence.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex manual notes
+    manualNoteRepository.findByIncludeInKnowledgeTrue().forEach(note -> {
+      try {
+        ingestManualNote(note.getId());
+      } catch (Exception e) {
+        log.error("Failed to reindex note {}: {}", note.getId(), e.getMessage());
+      }
+    });
+
+    // Reindex validated Q&A
+    qaInteractionRepository.findValidatedNotEmbedded(List.of(QAFeedbackType.ACCURATE, QAFeedbackType.CORRECTED))
+        .forEach(qa -> {
+          try {
+            ingestValidatedQA(qa.getId());
+          } catch (Exception e) {
+            log.error("Failed to reindex QA {}: {}", qa.getId(), e.getMessage());
+          }
+        });
+
+    log.info("Knowledge reindexing completed");
+  }
+
+  /**
+   * Process pending embeddings - embed knowledge items that haven't been embedded
+   * yet.
+   */
+  @Transactional
+  public int processPendingEmbeddings() {
+    if (!isQAEnabled())
+      return 0;
+
+    List<KnowledgeItem> pending = knowledgeItemRepository.findByIsEmbeddedFalse();
+    int processed = 0;
+
+    for (KnowledgeItem item : pending) {
+      try {
+        embedKnowledgeItem(item);
+        processed++;
+      } catch (Exception e) {
+        log.error("Failed to embed knowledge item {}: {}", item.getId(), e.getMessage());
+      }
+    }
+
+    log.info("Processed {} pending embeddings", processed);
+    return processed;
+  }
+
+  // ===== Private helper methods =====
+
+  private void ingestEntity(KnowledgeEntityType entityType, Long entityId, String title, String content, Long cycleId,
+      Long teamId, Long pitchId, Long authorId) {
+
+    String contentHash = computeHash(content);
+
+    // Check if we need to update existing knowledge
+    List<KnowledgeItem> existing = knowledgeItemRepository.findByEntityTypeAndEntityId(entityType, entityId);
+
+    // If content hasn't changed, skip
+    if (!existing.isEmpty() && existing.get(0).getContentHash() != null
+        && existing.get(0).getContentHash().equals(contentHash)) {
+      log.debug("Content unchanged for {} {}, skipping", entityType, entityId);
+      return;
+    }
+
+    // Remove old knowledge items and embeddings
+    if (!existing.isEmpty()) {
+      List<String> oldEmbeddingIds = knowledgeItemRepository.findEmbeddingIdsByEntity(entityType, entityId);
+      for (String embeddingId : oldEmbeddingIds) {
+        try {
+          // Note: In-memory store doesn't support deletion by ID
+          // ChromaDB supports it
+          log.debug("Would remove embedding: {}", embeddingId);
+        } catch (Exception e) {
+          log.warn("Failed to remove old embedding: {}", embeddingId);
+        }
+      }
+      knowledgeItemRepository.deleteByEntityTypeAndEntityId(entityType, entityId);
+    }
+
+    // Split content into chunks
+    List<TextSegment> chunks = splitIntoChunks(content, title);
+
+    // Create knowledge items for each chunk
+    for (int i = 0; i < chunks.size(); i++) {
+      KnowledgeItem item = KnowledgeItem.builder().entityType(entityType).entityId(entityId).title(title)
+          .content(chunks.get(i).text()).cycleId(cycleId).teamId(teamId).pitchId(pitchId).authorId(authorId)
+          .chunkIndex(i).totalChunks(chunks.size()).contentHash(i == 0 ? contentHash : null) // Only store
+          // hash on first
+          // chunk
+          .isEmbedded(false).build();
+
+      item.setEmbeddingId(item.generateEmbeddingId());
+      knowledgeItemRepository.save(item);
+
+      // Embed immediately
+      embedKnowledgeItem(item);
+    }
+  }
+
+  private void embedKnowledgeItem(KnowledgeItem item) {
+    if (embeddingModel == null || embeddingStore == null) {
+      log.warn("Embedding model or store not available");
+      return;
+    }
+
+    try {
+      // Create metadata for the embedding
+      Metadata metadata = Metadata.from("knowledgeItemId", item.getId().toString());
+      metadata.put("entityType", item.getEntityType().name());
+      metadata.put("entityId", item.getEntityId().toString());
+      if (item.getCycleId() != null) {
+        metadata.put("cycleId", item.getCycleId().toString());
+        // Resolve cycle name for name-based vector search filtering
+        try {
+          cycleRepository.findById(item.getCycleId()).ifPresent(c -> metadata.put("cycleName", c.getName()));
+        } catch (Exception e) {
+          log.debug("Could not resolve cycle name for cycleId={}: {}", item.getCycleId(), e.getMessage());
+        }
+      }
+      if (item.getTeamId() != null) {
+        metadata.put("teamId", item.getTeamId().toString());
+      }
+      if (item.getPitchId() != null) {
+        metadata.put("pitchId", item.getPitchId().toString());
+      }
+      if (item.getTitle() != null) {
+        metadata.put("title", item.getTitle());
+      }
+
+      TextSegment segment = TextSegment.from(item.getContent(), metadata);
+      Embedding embedding = embeddingModel.embed(segment).content();
+
+      // Store embedding with ID
+      embeddingStore.add(embedding, segment);
+
+      item.setIsEmbedded(true);
+      knowledgeItemRepository.save(item);
+
+      log.debug("Embedded knowledge item: {}", item.getEmbeddingId());
+    } catch (Exception e) {
+      log.error("Failed to embed knowledge item {}: {}", item.getId(), e.getMessage());
+      throw e;
+    }
+  }
+
+  private List<TextSegment> splitIntoChunks(String content, String title) {
+    if (content == null || content.trim().isEmpty()) {
+      return List.of();
+    }
+
+    int maxTokens = qaConfig != null ? qaConfig.getMaxTokens() : 512;
+    int overlap = qaConfig != null ? qaConfig.getChunkOverlap() : 50;
+
+    // Use LangChain4j's document splitter
+    Document document = Document.from(content);
+    var splitter = DocumentSplitters.recursive(maxTokens, overlap);
+
+    return splitter.split(document);
+  }
+
+  private boolean isQAEnabled() {
+    return embeddingModel != null && embeddingStore != null;
+  }
+
+  private String computeHash(String content) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      log.warn("SHA-256 not available, using content length as hash");
+      return String.valueOf(content.length());
+    }
+  }
+
+  /**
+   * Generate a synthetic document ID for pitch documents that don't have a
+   * database record. Uses the pitch ID and content hash to create a unique
+   * identifier.
+   */
+  private Long generateSyntheticDocumentId(Long pitchId, String contentHash) {
+    // Create a deterministic ID based on pitch ID and content hash
+    // Use the first 8 characters of the hash to avoid collisions
+    String hashPrefix = contentHash.substring(0, Math.min(8, contentHash.length()));
+
+    // Combine pitch ID and hash prefix to create a synthetic ID
+    // Use negative values to distinguish from real document IDs
+    try {
+      long hashValue = Long.parseUnsignedLong(hashPrefix, 16);
+      return -(pitchId * 1000000 + (hashValue % 1000000));
+    } catch (NumberFormatException e) {
+      // Fallback if hash parsing fails
+      return -(pitchId * 1000000 + Math.abs(contentHash.hashCode() % 1000000));
+    }
+  }
+
+  private String truncate(String text, int maxLength) {
+    if (text == null)
+      return "";
+    return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
+  }
+
+  // ===== Content building methods =====
+
+  private String buildCycleContent(Cycle cycle) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Cycle: ").append(cycle.getName()).append("\n");
+    if (cycle.getProject() != null) {
+      sb.append("Project: ").append(cycle.getProject().getName()).append("\n");
+    }
+    sb.append("Phase: ").append(cycle.getPhase()).append("\n");
+    sb.append("Active: ").append(cycle.getIsActive()).append("\n");
+    sb.append("Start Date: ").append(cycle.getStartDate()).append("\n");
+    sb.append("End Date: ").append(cycle.getEndDate()).append("\n");
+    if (cycle.getPitches() != null && !cycle.getPitches().isEmpty()) {
+      sb.append("Pitches (" ).append(cycle.getPitches().size()).append("):\n");
+      for (Pitch p : cycle.getPitches()) {
+        sb.append("  - ").append(p.getTitle()).append(" [").append(p.getStatus()).append("]\n");
+      }
+    }
+    List<Team> cycleTeams = cycle.getPitches() != null
+        ? cycle.getPitches().stream().map(Pitch::getTeam).filter(java.util.Objects::nonNull)
+            .distinct().collect(java.util.stream.Collectors.toList())
+        : java.util.List.of();
+    if (!cycleTeams.isEmpty()) {
+      sb.append("Teams (" ).append(cycleTeams.size()).append("):\n");
+      for (Team t : cycleTeams) {
+        sb.append("  - ").append(t.getName()).append("\n");
+      }
+    }
+    return sb.toString();
+  }
+
+  private String buildPitchContent(Pitch pitch) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Pitch: ").append(pitch.getTitle()).append("\n\n");
+
+    if (pitch.getDescription() != null) {
+      sb.append("Description:\n").append(pitch.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(pitch.getStatus()).append("\n");
+    sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
+
+    if (pitch.getCycle() != null) {
+      sb.append("Cycle: ").append(pitch.getCycle().getName()).append("\n");
+    }
+
+    if (pitch.getTeam() != null) {
+      sb.append("Team: ").append(pitch.getTeam().getName()).append("\n");
+    }
+
+    sb.append("Created: ").append(pitch.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(pitch.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
+
+  private String buildMeetingContent(Meeting meeting) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Meeting: ").append(meeting.getType()).append("\n");
+    sb.append("Date: ").append(meeting.getDateHeld()).append("\n\n");
+
+    if (meeting.getPitch() != null) {
+      sb.append("Related Pitch: ").append(meeting.getPitch().getTitle()).append("\n");
+    }
+
+    sb.append("Definition of Ready (DoR): ").append(meeting.getDorReady() ? "Ready" : "Not Ready").append("\n");
+    sb.append("Definition of Done (DoD): ").append(meeting.getDodReady() ? "Ready" : "Not Ready").append("\n");
+
+    if (meeting.getNotes() != null && !meeting.getNotes().isEmpty()) {
+      sb.append("\nMeeting Notes (Minutes of Meeting):\n");
+      sb.append(meeting.getNotes()).append("\n");
+    }
+
+    return sb.toString();
+  }
+
+  private String buildWorkLogContent(WorkLog workLog) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Work Log Entry\n");
+    sb.append("Date: ").append(workLog.getDate()).append("\n");
+    sb.append("Person: ").append(workLog.getPerson().getName()).append("\n");
+    sb.append("Hours Spent: ").append(workLog.getHoursSpent()).append("\n");
+    
+    if (workLog.getPitch() != null) {
+      sb.append("Pitch: ").append(workLog.getPitch().getTitle()).append("\n");
+    } else {
+      sb.append("Pitch: Technical Debt / Unassigned\n");
+    }
+    sb.append("\n");
+
+    if (workLog.getNote() != null) {
+      sb.append("Notes:\n").append(workLog.getNote()).append("\n");
+    }
+
+    return sb.toString();
+  }
+
+  private String buildEvidenceContent(Evidence evidence) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Evidence Entry\n");
+    sb.append("Date: ").append(evidence.getDate()).append("\n");
+    sb.append("Added by: ").append(evidence.getPerson().getName()).append("\n");
+    sb.append("Pitch: ").append(evidence.getPitch().getTitle()).append("\n\n");
+
+    sb.append("Description:\n").append(evidence.getDescription()).append("\n");
+
+    if (evidence.getFileUrl() != null) {
+      sb.append("\nAttachment: ").append(evidence.getFileUrl()).append("\n");
+    }
+
+    return sb.toString();
+  }
+
+  private String buildManualNoteContent(ManualNote note) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Note: ").append(note.getTitle()).append("\n");
+    sb.append("Context: ").append(note.getContextType()).append("\n");
+    sb.append("Created: ").append(note.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n\n");
+    sb.append(note.getContent()).append("\n");
+    return sb.toString();
+  }
+
+  private String buildValidatedQAContent(QAInteraction interaction) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Validated Q&A\n\n");
+    sb.append("Question: ").append(interaction.getQuestion()).append("\n\n");
+
+    if (interaction.getFeedbackType() == QAFeedbackType.CORRECTED && interaction.getFeedbackCorrection() != null) {
+      sb.append("Corrected Answer:\n").append(interaction.getFeedbackCorrection()).append("\n");
+    } else {
+      sb.append("Answer:\n").append(interaction.getAnswer()).append("\n");
+    }
+
+    if (interaction.getContextType() != null) {
+      sb.append("\nContext: ").append(interaction.getContextType());
+      if (interaction.getContextId() != null) {
+        sb.append(" (ID: ").append(interaction.getContextId()).append(")");
+      }
+      sb.append("\n");
+    }
+
+    return sb.toString();
+  }
+
+  private String buildInitiativeContent(Initiative initiative) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Initiative: ").append(initiative.getName()).append("\n\n");
+
+    if (initiative.getDescription() != null && !initiative.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(initiative.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(initiative.getStatus()).append("\n");
+
+    if (initiative.getOwner() != null) {
+      String ownerName = initiative.getOwner().getPerson() != null 
+          ? initiative.getOwner().getPerson().getName() 
+          : initiative.getOwner().getUsername();
+      sb.append("Owner: ").append(ownerName).append("\n");
+    }
+
+    if (initiative.getTargetStartDate() != null) {
+      sb.append("Target Start Date: ").append(initiative.getTargetStartDate()).append("\n");
+    }
+
+    if (initiative.getTargetEndDate() != null) {
+      sb.append("Target End Date: ").append(initiative.getTargetEndDate()).append("\n");
+    }
+
+    if (initiative.getEpics() != null && !initiative.getEpics().isEmpty()) {
+      sb.append("\nEpics in this Initiative:\n");
+      for (Epic epic : initiative.getEpics()) {
+        if (epic.getDeletedAt() == null) {
+          sb.append("  - ").append(epic.getName()).append(" (").append(epic.getStatus()).append(")\n");
+        }
+      }
+    }
+
+    sb.append("\nCreated: ").append(initiative.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(initiative.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
+
+  private String buildEpicContent(Epic epic) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Epic: ").append(epic.getName()).append("\n\n");
+
+    if (epic.getDescription() != null && !epic.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(epic.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(epic.getStatus()).append("\n");
+
+    if (epic.getInitiative() != null) {
+      sb.append("Initiative: ").append(epic.getInitiative().getName()).append("\n");
+    }
+
+    if (epic.getOwner() != null) {
+      String ownerName = epic.getOwner().getPerson() != null 
+          ? epic.getOwner().getPerson().getName() 
+          : epic.getOwner().getUsername();
+      sb.append("Owner: ").append(ownerName).append("\n");
+    }
+
+    if (epic.getTargetStartDate() != null) {
+      sb.append("Target Start Date: ").append(epic.getTargetStartDate()).append("\n");
+    }
+
+    if (epic.getTargetEndDate() != null) {
+      sb.append("Target End Date: ").append(epic.getTargetEndDate()).append("\n");
+    }
+
+    if (epic.getPitches() != null && !epic.getPitches().isEmpty()) {
+      sb.append("\nPitches in this Epic:\n");
+      for (Pitch pitch : epic.getPitches()) {
+        if (pitch.getDeletedAt() == null) {
+          sb.append("  - ").append(pitch.getTitle()).append(" (").append(pitch.getStatus()).append(")\n");
+        }
+      }
+    }
+
+    sb.append("\nCreated: ").append(epic.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(epic.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
+
+  private String buildReleaseContent(Release release) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Release: ").append(release.getName()).append("\n");
+
+    if (release.getVersion() != null && !release.getVersion().isEmpty()) {
+      sb.append("Version: ").append(release.getVersion()).append("\n");
+    }
+
+    sb.append("\n");
+
+    if (release.getDescription() != null && !release.getDescription().isEmpty()) {
+      sb.append("Description:\n").append(release.getDescription()).append("\n\n");
+    }
+
+    sb.append("Status: ").append(release.getStatus()).append("\n");
+    sb.append("Risk Level: ").append(release.getRiskLevel()).append("\n");
+
+    if (release.getTargetDate() != null) {
+      sb.append("Target Date: ").append(release.getTargetDate()).append("\n");
+    }
+
+    if (release.getReleaseDate() != null) {
+      sb.append("Actual Release Date: ").append(release.getReleaseDate()).append("\n");
+    }
+
+    if (release.getCycles() != null && !release.getCycles().isEmpty()) {
+      sb.append("\nLinked Cycles:\n");
+      for (Cycle cycle : release.getCycles()) {
+        sb.append("  - ").append(cycle.getName()).append(" (").append(cycle.getStartDate())
+            .append(" to ").append(cycle.getEndDate()).append(")\n");
+      }
+    }
+
+    if (release.getReleaseNotes() != null && !release.getReleaseNotes().isEmpty()) {
+      sb.append("\nRelease Notes:\n").append(release.getReleaseNotes()).append("\n");
+    }
+
+    sb.append("\nCreated: ").append(release.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+    sb.append("Last Updated: ").append(release.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
+
+    return sb.toString();
+  }
 }

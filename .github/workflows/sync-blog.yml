@@ -1,0 +1,34 @@
+name: Sync Blog Posts from Private Repo
+
+on:
+  repository_dispatch:
+    types: [blog-update]
+  workflow_dispatch:
+
+jobs:
+  sync-blog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ShipFlow main repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BLOG_SYNC_TOKEN }}
+
+      - name: Clone private blog repo
+        run: |
+          git clone https://${{ secrets.BLOG_SYNC_TOKEN }}@github.com/farzad-sedaghatbin/ShipFlow-blog.git /tmp/blog
+
+      - name: Copy posts to docs/blog
+        run: |
+          mkdir -p docs/blog/posts
+          mkdir -p docs/blog/authors
+          cp /tmp/blog/posts/*.md docs/blog/posts/ 2>/dev/null || true
+          cp /tmp/blog/authors/*.md docs/blog/authors/ 2>/dev/null || true
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/blog/
+          git diff --staged --quiet || git commit -m "sync: update blog posts from private repo"
+          git push

@@ -13,12 +13,14 @@ import {
   ClipboardList, 
   Clock, 
   FileText,
-  Loader2 
+  Loader2,
+  Lock,
+  UserPlus
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import api from '../services/api';
 import { workLogService } from '../services/workLogService';
-import { Person, CreatePersonRequest, TeamAssignment, WorkLog } from '../types';
+import { Person, CreatePersonRequest, TeamAssignment, WorkLog, UserRole } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyPeopleIllustration, EmptyWorkLogsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
@@ -29,6 +31,14 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Checkbox } from '../components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +62,11 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { MobileCardView, ResponsiveTable } from '../components/ui/mobile-card-view';
+
+const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function People() {
   const { t, i18n } = useTranslation();
@@ -68,6 +83,10 @@ export default function People() {
     email: '',
     skills: '',
     avatarUrl: '',
+    createUser: false,
+    username: '',
+    password: '',
+    userRole: 'MEMBER',
   });
   const [saving, setSaving] = useState(false);
   
@@ -81,6 +100,14 @@ export default function People() {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [loadingWorkLogs, setLoadingWorkLogs] = useState(false);
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityTotalPages, setActivityTotalPages] = useState(0);
+  const [activityTotalElements, setActivityTotalElements] = useState(0);
+  const ACTIVITY_PAGE_SIZE = 20;
+  
+  // Delete confirmation dialog
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -119,10 +146,23 @@ export default function People() {
         email: person.email,
         skills: person.skills || '',
         avatarUrl: person.avatarUrl || '',
+        createUser: false,
+        username: '',
+        password: '',
+        userRole: 'MEMBER',
       });
     } else {
       setEditingPerson(null);
-      setFormData({ name: '', email: '', skills: '', avatarUrl: '' });
+      setFormData({ 
+        name: '', 
+        email: '', 
+        skills: '', 
+        avatarUrl: '',
+        createUser: false,
+        username: '',
+        password: '',
+        userRole: 'MEMBER',
+      });
     }
     setDialogOpen(true);
   };
@@ -130,7 +170,16 @@ export default function People() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingPerson(null);
-    setFormData({ name: '', email: '', skills: '', avatarUrl: '' });
+    setFormData({ 
+      name: '', 
+      email: '', 
+      skills: '', 
+      avatarUrl: '',
+      createUser: false,
+      username: '',
+      password: '',
+      userRole: 'MEMBER',
+    });
   };
 
   const handleSave = async () => {
@@ -143,6 +192,18 @@ export default function People() {
       return;
     }
 
+    // Validate user creation fields if creating user
+    if (formData.createUser && !editingPerson) {
+      if (!formData.password || !formData.password.trim() || formData.password.length < MIN_PASSWORD_LENGTH) {
+        showToast(t('userManagement.passwordMinLength'), 'error');
+        return;
+      }
+      if (!formData.userRole) {
+        showToast(t('userManagement.roleRequired'), 'error');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (editingPerson) {
@@ -150,7 +211,11 @@ export default function People() {
         showToast(t('peopleManagement.personUpdated'), 'success');
       } else {
         await api.post('/persons', formData);
-        showToast(t('peopleManagement.personCreated'), 'success');
+        if (formData.createUser) {
+          showToast(t('peopleManagement.personAndUserCreated'), 'success');
+        } else {
+          showToast(t('peopleManagement.personCreated'), 'success');
+        }
       }
       fetchPeople();
       handleCloseDialog();
@@ -161,15 +226,20 @@ export default function People() {
     }
   };
 
-  const handleDelete = async (person: Person) => {
-    if (!confirm(t('peopleManagement.confirmDeactivate') + ' ' + person.name + '?')) {
-      return;
-    }
+  const openDeleteConfirm = (person: Person) => {
+    setPersonToDelete(person);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!personToDelete) return;
 
     try {
-      await api.delete(`/persons/${person.id}`);
+      await api.delete(`/persons/${personToDelete.id}`);
       showToast(t('peopleManagement.personDeactivated'), 'success');
       fetchPeople();
+      setDeleteConfirmOpen(false);
+      setPersonToDelete(null);
     } catch (error) {
       // Error handled by interceptor
     }
@@ -183,25 +253,46 @@ export default function People() {
 
   const handleViewActivity = (person: Person) => {
     setSelectedPerson(person);
-    fetchWorkLogs(person.id);
+    setActivityPage(0);
     setActivityDialogOpen(true);
+    fetchWorkLogs(person.id, 0);
   };
 
-  const fetchWorkLogs = async (personId: number) => {
+  const fetchWorkLogs = async (personId: number, page: number) => {
     setLoadingWorkLogs(true);
     try {
-      const response = await workLogService.getByPersonId(personId);
-      // Sort by date descending (most recent first)
-      const sortedLogs = response.data.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setWorkLogs(sortedLogs);
+      const response = await workLogService.getByPersonId(personId, page, ACTIVITY_PAGE_SIZE);
+      setWorkLogs(response.data.content);
+      setActivityTotalPages(response.data.totalPages);
+      setActivityTotalElements(response.data.totalElements);
     } catch (error) {
       showToast(t('peopleManagement.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);
     } finally {
       setLoadingWorkLogs(false);
     }
+  };
+
+  // Handle email change and automatically set username when creating user
+  const handleEmailChange = (email: string) => {
+    setFormData(prev => ({
+      ...prev,
+      email,
+      // If creating user is enabled, automatically set username to email
+      username: prev.createUser ? email : prev.username
+    }));
+  };
+
+  // Handle create user checkbox change
+  const handleCreateUserChange = (createUser: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      createUser,
+      // If enabling user creation, set username to current email
+      username: createUser ? prev.email : '',
+      // Reset password when toggling
+      password: createUser ? prev.password : ''
+    }));
   };
 
   const filteredPeople = people.filter(
@@ -301,7 +392,93 @@ export default function People() {
 
         {/* People Table */}
         <div className="rounded-lg border bg-card">
-          <Table>
+          <ResponsiveTable
+            mobileContent={
+              <MobileCardView
+                items={filteredPeople.map((person) => ({
+                  key: person.id,
+                  title: person.name,
+                  subtitle: person.email,
+                  avatar: (
+                    <Avatar>
+                      <AvatarImage src={person.avatarUrl} alt={person.name} />
+                      <AvatarFallback>{person.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  ),
+                  fields: [
+                    {
+                      label: t('peopleManagement.skills'),
+                      value: (
+                        <div className="flex gap-1 flex-wrap">
+                          {person.skills?.split(',').slice(0, 3).map((skill, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                        </div>
+                      ),
+                      fullWidth: true,
+                    },
+                    {
+                      label: t('peopleManagement.status'),
+                      value: (
+                        <Badge variant={person.isActive ? 'default' : 'secondary'} className={cn(
+                          person.isActive && 'bg-green-500 hover:bg-green-600'
+                        )}>
+                          {person.isActive ? t('peopleManagement.active') : t('peopleManagement.inactive')}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      label: t('peopleManagement.joined'),
+                      value: formatLocalizedDate(new Date(person.createdAt), i18n.language),
+                    },
+                  ],
+                  actions: (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleViewActivity(person)}>
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleViewHistory(person)}>
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleOpenDialog(person)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {person.isActive && (
+                        <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => openDeleteConfirm(person)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </>
+                  ),
+                  onClick: () => handleViewActivity(person),
+                }))}
+                emptyState={
+                  people.length === 0 ? (
+                    <EmptyState
+                      illustration={<EmptyPeopleIllustration />}
+                      title={t('peopleManagement.noPeopleYet')}
+                      description={t('peopleManagement.noPeopleDescription')}
+                      action={{
+                        label: t('peopleManagement.addFirstPerson'),
+                        onClick: () => handleOpenDialog(),
+                        startIcon: <Plus className="h-4 w-4" />,
+                      }}
+                      size="medium"
+                    />
+                  ) : (
+                    <EmptyState
+                      title={t('peopleManagement.noMatches')}
+                      description={t('peopleManagement.tryDifferentSearch')}
+                      size="small"
+                    />
+                  )
+                }
+              />
+            }
+          >
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('peopleManagement.person')}</TableHead>
@@ -401,7 +578,7 @@ export default function People() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(person)}
+                              onClick={() => openDeleteConfirm(person)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -441,6 +618,7 @@ export default function People() {
               )}
             </TableBody>
           </Table>
+          </ResponsiveTable>
         </div>
 
         {/* Add/Edit Dialog */}
@@ -477,7 +655,7 @@ export default function People() {
                     type="email"
                     className="pl-10"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder={t('peopleManagement.enterEmail')}
                   />
                 </div>
@@ -505,6 +683,88 @@ export default function People() {
                   placeholder={t('peopleManagement.avatarPlaceholder')}
                 />
               </div>
+              
+              {/* User Account Creation Section */}
+              {!editingPerson && (
+                <>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="createUser"
+                        checked={formData.createUser}
+                        onCheckedChange={handleCreateUserChange}
+                      />
+                      <Label htmlFor="createUser" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        {t('peopleManagement.createUserAccount')}
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('peopleManagement.createUserAccountDesc')}
+                    </p>
+                  </div>
+                  
+                  {formData.createUser && (
+                    <div className="space-y-4 pl-6 border-l-2 border-muted">
+                      <div className="space-y-2">
+                        <Label htmlFor="username">{t('userManagement.username')}</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="username"
+                            className="pl-10"
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            placeholder={t('userManagement.enterUsername')}
+                            aria-describedby="username-help"
+                            disabled
+                          />
+                        </div>
+                        <p id="username-help" className="text-xs text-muted-foreground">
+                          {t('peopleManagement.usernameAutoSet')}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">{t('userManagement.password')} *</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type="password"
+                            className="pl-10"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            placeholder={t('userManagement.enterPassword')}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t('userManagement.minCharacters')}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="userRole">{t('userManagement.role')}</Label>
+                        <Select
+                          value={formData.userRole}
+                          onValueChange={(value) => setFormData({ ...formData, userRole: value as UserRole })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('userManagement.selectRole')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {USER_ROLES.map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {role.replace('_', ' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={handleCloseDialog}>
@@ -639,7 +899,7 @@ export default function People() {
                     <Card className="border">
                       <CardContent className="text-center py-3">
                         <p className="text-2xl font-bold text-purple-600">
-                          {workLogs.length}
+                          {activityTotalElements}
                         </p>
                         <p className="text-xs text-muted-foreground">{t('peopleManagement.logEntries')}</p>
                       </CardContent>
@@ -667,7 +927,7 @@ export default function People() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {workLogs.slice(0, 50).map((log) => (
+                        {workLogs.map((log) => (
                           <TableRow key={log.id}>
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -715,10 +975,37 @@ export default function People() {
                       </TableBody>
                     </Table>
                   </ScrollArea>
-                  {workLogs.length > 50 && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t('peopleManagement.showingFirst', { count: workLogs.length })}
-                    </p>
+                  {activityTotalPages > 1 && (
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-xs text-muted-foreground">
+                        {t('meetingList.pagination.showing', { from: activityPage * ACTIVITY_PAGE_SIZE + 1, to: Math.min((activityPage + 1) * ACTIVITY_PAGE_SIZE, activityTotalElements), total: activityTotalElements })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={activityPage === 0 || loadingWorkLogs}
+                          onClick={() => {
+                            const p = activityPage - 1;
+                            setActivityPage(p);
+                            fetchWorkLogs(selectedPerson!.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+                        </Button>
+                        <span className="text-xs text-muted-foreground">{t('meetingList.pagination.page', { current: activityPage + 1, total: activityTotalPages })}</span>
+                        <Button
+                          variant="outline" size="sm"
+                          disabled={activityPage >= activityTotalPages - 1 || loadingWorkLogs}
+                          onClick={() => {
+                            const p = activityPage + 1;
+                            setActivityPage(p);
+                            fetchWorkLogs(selectedPerson!.id, p);
+                          }}
+                        >
+                          {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               )}
@@ -730,6 +1017,18 @@ export default function People() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title={t('peopleManagement.deactivate')}
+          description={`${t('peopleManagement.confirmDeactivate')} ${personToDelete?.name || ''}?`}
+          confirmLabel={t('common.confirm')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={handleDelete}
+          variant="destructive"
+        />
       </div>
     </TooltipProvider>
   );
