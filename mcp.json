@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "ShipFlow MCP Server — connects Claude Code to your running ShipFlow backend.",
+    "",
+    "PREREQUISITE: The backend MCP server endpoint must be implemented and enabled.",
+    "See the backend source for MCP server configuration and the required API key setup.",
+    "",
+    "The key is read from the environment — do NOT put it in this file directly.",
+    "This file is committed to git; secrets stay in your shell environment.",
+    "",
+    "Update the url and header below once the MCP server endpoint is live."
+  ],
+  "mcpServers": {
+    "shipflow": {
+      "type": "sse",
+      "url": "http://localhost:8080/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer ${SHIPFLOW_API_KEY}"
+      }
+    }
+  }
+}
