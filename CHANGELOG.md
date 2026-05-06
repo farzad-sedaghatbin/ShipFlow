@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **MCP `get_work_context` — relationship graph tool**: New read tool that returns the full context for a pitch or cycle in a single call — cycle metadata, pitch details (problem/solution/risks/wireframes), all tasks with per-status counts, blockers, hill-chart scope positions (0–100), and retrospective summaries.
+  - Replaces the need to chain `get_cycle` + `get_pitches` + `get_tasks` + `get_blockers` separately.
+  - Accepts either `pitchId` (scoped to that pitch and its parent cycle) or `cycleId` (full cycle graph).
+  - New `McpWorkContextDTO` with nested `McpHillChartScopeDTO` and `McpRetroSummaryDTO` types.
+  - `MCP_CLIENT_SETUP.md` updated with tool reference and usage example.
+  - 5 new unit tests in `McpToolDispatcherTest`.
 - **Anthropic Claude provider**: `langchain4j-anthropic` integrated as a first-class LLM provider.
   Set `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` to use Claude models.
   Default: `claude-3-5-haiku-20241022` (cost-efficient). Recommended for Wise Architecture: `claude-3-5-sonnet-20241022`.

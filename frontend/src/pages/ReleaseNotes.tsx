@@ -42,6 +42,7 @@ import {
   FlaskConical,
   Rss,
   Container,
+  Network,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -121,6 +122,12 @@ const releases: Release[] = [
         title: 'Bug Bash & Production Fixes',
         description:
           'SSE async-dispatch security fix (AuthorizationDeniedException on notification stream), rate-limiter separate bucket for async job polling, Anthropic model update for 2025+ API keys, and Playwright selector stabilization.',
+      },
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'MCP Relationship Graph: get_work_context',
+        description:
+          'New MCP read tool that returns the full context for a pitch or cycle in a single call — cycle metadata, pitches, tasks with status breakdown, blockers, hill-chart scope positions, and retrospective summaries. Replaces chaining 4–5 separate tool calls.',
       },
       {
         icon: <Rss className="h-5 w-5" />,

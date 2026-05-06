@@ -3060,6 +3060,8 @@
     "phase090Item3Desc": "پاس پایداری پروداکشن: رفع باگ امنیتی SSE (AuthorizationDeniedException در جریان اعلان‌ها)، bucket جداگانه برای polling جاب‌های async، بروزرسانی مدل Anthropic برای کلیدهای ۲۰۲۵+، و پایدارسازی انتخاب‌گرهای Playwright.",
     "phase090Item4Title": "سیستم وبلاگ",
     "phase090Item4Desc": "وبلاگ استاتیک در /blog با فایل‌های Markdown همگام‌شده از مخزن خصوصی GitHub. اولین پست‌ها: مبانی Shape Up، نمودارهای تپه، مقایسه ShipFlow با Linear و Shape Up در برابر Scrum.",
+    "phase090Item5Title": "گراف روابط MCP: get_work_context",
+    "phase090Item5Desc": "ابزار جدید خواندن MCP که تمام زمینه یک پیچ یا سیکل را در یک فراخوانی برمی‌گرداند — متادیتا سیکل، پیچ‌ها، تسک‌ها با تفکیک وضعیت، مسدودکننده‌ها، موقعیت‌های hill chart (۰–۱۰۰)، و خلاصه بازنگری‌ها. جایگزین زنجیره ۴–۵ فراخوانی ابزار جداگانه.",
     "phase100Theme": "نسخه ۱.۰.۰ — اولین انتشار اوپن‌سورس",
     "phase100Item0Title": "تگ v1.0.0 و تصویر Docker",
     "phase100Item0Desc": "ghcr.io/farzad-sedaghatbin/shipflow:1.0.0 و :latest در GHCR منتشر می‌شوند. راه‌اندازی خودمیزبان با یک دستور از طریق Docker Compose.",
