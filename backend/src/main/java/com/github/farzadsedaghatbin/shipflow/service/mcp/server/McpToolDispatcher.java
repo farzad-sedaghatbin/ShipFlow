@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTo
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +58,7 @@ public class McpToolDispatcher {
   private final PitchMcpTools pitchTools;
   private final CommentMcpTools commentTools;
   private final WiseArchitectureMcpTools wiseArchitectureTools;
+  private final WorkContextMcpTools workContextTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -225,6 +227,9 @@ public class McpToolDispatcher {
       case WiseArchitectureMcpTools.TOOL_GET_FILES -> wiseArchitectureTools.getFiles(args);
       case WiseArchitectureMcpTools.TOOL_ANALYZE -> wiseArchitectureTools.analyze(args, auth);
 
+      // Work context graph tool
+      case WorkContextMcpTools.TOOL_GET_WORK_CONTEXT -> workContextTools.getWorkContext(args);
+
       default -> throw new McpToolException("Unknown tool: " + name);
     };
   }
@@ -244,7 +249,8 @@ public class McpToolDispatcher {
         PitchMcpTools.getPitchDetailDefinition(),
         PitchMcpTools.getBettingCandidatesDefinition(),
         WiseArchitectureMcpTools.listAnalysesDefinition(),
-        WiseArchitectureMcpTools.getFilesDefinition());
+        WiseArchitectureMcpTools.getFilesDefinition(),
+        WorkContextMcpTools.getWorkContextDefinition());
   }
 
   /**
