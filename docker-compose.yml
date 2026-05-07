@@ -51,6 +51,8 @@ services:
       RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
       RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
+      # JWT Secret (Base64-encoded, min 32 bytes)
+      JWT_SECRET: ${JWT_SECRET:-c2hhcGV1cC10cmFja2VyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1zaWduaW5nLTI1Ni1iaXRz}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
       QA_VECTORSTORE_PROVIDER: qdrant
