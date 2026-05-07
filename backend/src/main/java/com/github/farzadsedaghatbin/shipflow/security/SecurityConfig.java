@@ -160,19 +160,28 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(true);
-    // Parse comma-separated origins from config and trim whitespace
-    List<String> origins = Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList();
-    // Use both setAllowedOrigins (exact match) and setAllowedOriginPatterns
-    // (patterns)
-    config.setAllowedOrigins(origins);
-    config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setExposedHeaders(List.of("Authorization"));
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .toList();
+        List<String> exactOrigins = origins.stream()
+                .filter(o -> !o.contains("*"))
+                .toList();
+        List<String> patternOrigins = origins.stream()
+                .filter(o -> o.contains("*"))
+                .toList();
+        if (!exactOrigins.isEmpty()) {
+            config.setAllowedOrigins(exactOrigins);
+        }
+        if (!patternOrigins.isEmpty()) {
+            config.setAllowedOriginPatterns(patternOrigins);
+        }
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setExposedHeaders(List.of("Authorization"));
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
