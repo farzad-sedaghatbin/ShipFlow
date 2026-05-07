@@ -7,6 +7,7 @@ import {
   Play,
   Loader2,
   AlertCircle,
+  History,
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
@@ -15,6 +16,8 @@ import { TestCase, TestRun } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
 import { cn } from '../lib/utils';
 
 const getPriorityStyle = (priority: string): string => {
@@ -55,6 +58,7 @@ const TestCaseDetailPage: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
   useEffect(() => {
     loadTestCase();
@@ -138,6 +142,25 @@ const TestCaseDetailPage: React.FC = () => {
             <Pencil className="h-4 w-4" />
             {t('testCaseDetail.edit')}
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setHistoryDialogOpen(true)}
+            className="gap-2"
+          >
+            <History className="h-4 w-4" />
+            {t('history.viewHistory')}
+          </Button>
+          <SoftDeleteButton
+            entityType="testCase"
+            entityId={testCase.id}
+            entityTitle={testCase.title}
+            onSuccess={() => {
+              // Navigate back to test cases list after successful deletion
+              navigate('/qa/test-cases');
+            }}
+            variant="outline"
+            size="sm"
+          />
           <Button
             onClick={() => navigate(`/qa/test-cases/${id}/run`)}
             className="gap-2"
@@ -292,6 +315,18 @@ const TestCaseDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* History Dialog */}
+      <EntityHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        entityName={t('testCaseDetail.testCase')}
+        entityId={String(testCase.id)}
+        fetchHistory={async (page, size) => {
+          const response = await qaTestManagementService.getTestCaseHistory(testCase.id, page, size);
+          return response.data;
+        }}
+      />
     </div>
   );
 };

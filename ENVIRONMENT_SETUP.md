@@ -13,7 +13,7 @@ ShipFlow uses a pluggable LLM provider system that supports multiple AI backends
 | Ollama | `ollama` | Local development, privacy-first | No |
 | RunPod | `runpod` | Production with GPU scaling | Yes |
 | OpenAI | `openai` | High-quality responses, complex tasks | Yes |
-| Anthropic | `anthropic` | Coming soon | Yes |
+| Anthropic | `anthropic` | Best for code analysis & long-context reasoning | Yes |
 | Google | `google` | Coming soon | Yes |
 
 ## Vector Store Configuration
@@ -100,8 +100,11 @@ QA_VECTORSTORE_COLLECTION=shipflow_knowledge
    cat > .env << 'EOF'
    AI_PROVIDER=openai
    OPENAI_API_KEY=sk-your-api-key-here
-   OPENAI_MODEL=gpt-4o-mini
-   # Optional: gpt-4o for more complex tasks
+   OPENAI_MODEL=gpt-4.1-mini
+   # Current recommended default in this guide.
+   # If you see older examples elsewhere in the repo using gpt-4o or
+   # gpt-4-turbo-preview, treat those as legacy references.
+   # Optional: gpt-4.1 for more complex tasks
    EOF
    ```
 
@@ -150,11 +153,39 @@ OLLAMA_TIMEOUT=180
 ```bash
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-key
-OPENAI_MODEL=gpt-4o-mini          # or gpt-4o, gpt-3.5-turbo
+OPENAI_MODEL=gpt-4.1-mini          # or gpt-4.1 (flagship), gpt-4.1-nano (fastest)
 OPENAI_TIMEOUT=120
 OPENAI_ORG_ID=                     # Optional: Organization ID
 OPENAI_BASE_URL=                   # Optional: For Azure OpenAI or proxies
 ```
+
+### Anthropic Configuration
+```bash
+APP_AI_PROVIDER=anthropic
+APP_AI_ANTHROPIC_API_KEY=sk-ant-your-key-here   # preferred — consistent with APP_AI_* convention
+# ANTHROPIC_API_KEY=sk-ant-your-key-here        # also accepted as fallback
+APP_AI_ANTHROPIC_MODEL=claude-haiku-4-5-20251001   # see model table below
+APP_AI_ANTHROPIC_TIMEOUT=120
+```
+Get an API key at: https://console.anthropic.com/settings/keys
+
+Check which models your key can access:
+```bash
+curl https://api.anthropic.com/v1/models -H "X-Api-Key: $APP_AI_ANTHROPIC_API_KEY"
+```
+
+> ⚠️ **Common mistake**: `APP_ANTHROPIC_API_KEY` (missing the `AI` segment) is **wrong** — it maps to
+> `app.anthropic.api-key`, not `app.ai.anthropic.api-key`. Always use `APP_AI_ANTHROPIC_API_KEY`.
+
+> ⚠️ **Model mismatch**: Newer API keys (created 2025+) only expose Claude 4.x models. Older Claude 3.x
+> IDs like `claude-3-5-haiku-20241022` return `not_found_error` on these keys. Use the models table below.
+
+| Model | Best for | Notes |
+|-------|----------|-------|
+| `claude-haiku-4-5-20251001` | **Default** — all ShipFlow AI features | Fastest, cheapest |
+| `claude-sonnet-4-5-20250929` | Wise Architecture, risk analysis | Better reasoning |
+| `claude-sonnet-4-6` | Best quality/cost balance | Latest Sonnet |
+| `claude-opus-4-6` | Maximum capability | Premium pricing |
 
 ### RunPod Configuration
 ```bash

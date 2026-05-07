@@ -1,6 +1,20 @@
 import api from './api';
 
 // Types for Pitch Health
+
+export interface MemberBudgetSummary {
+  personId: number;
+  personName: string;
+  role?: string;
+  hoursPerDay: number;
+  capacitySource: 'organization' | 'team' | 'person' | 'assignment';
+  totalBudgetHours: number;
+  hoursSpent: number;
+  hoursRemaining: number;
+  utilizationPercent: number;
+  isOverBudget: boolean;
+}
+
 export interface PitchHealthDTO {
   pitchId: number;
   pitchName: string;
@@ -19,6 +33,16 @@ export interface PitchHealthDTO {
   actualHours: number;
   qaStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
   cycleEndDate: string;
+  // Team budget fields
+  teamMemberCount?: number;
+  appetiteDays?: number;
+  totalBudgetPersonDays?: number;
+  totalHoursSpent?: number;
+  totalPersonDaysSpent?: number;
+  budgetUtilizationPercent?: number;
+  bottleneckMember?: MemberBudgetSummary;
+  memberBudgets?: MemberBudgetSummary[];
+  hasOverBudgetMember?: boolean;
 }
 
 export interface CycleHealthSummaryDTO {

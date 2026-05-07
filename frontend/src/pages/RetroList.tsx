@@ -8,7 +8,6 @@ import {
   Play,
   Square,
   Eye,
-  Loader2,
   Brain,
   Search,
   ArrowUpDown,
@@ -19,6 +18,8 @@ import { useProject, useToast } from '../contexts';
 import { usePermission } from '../hooks/usePermission';
 import { Retrospective, Cycle, RetroStatus } from '../types';
 import EmptyState from '../components/EmptyState';
+import { RetroListSkeleton } from '../components/Skeletons';
+import ProjectRequiredDialog from '../components/ProjectRequiredDialog';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -66,7 +67,7 @@ const statusLabels: Record<RetroStatus, string> = {
 export default function RetroList() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { showSuccess, showError } = useToast();
   const [retros, setRetros] = useState<Retrospective[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -113,6 +114,7 @@ export default function RetroList() {
       }
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
@@ -179,23 +181,15 @@ export default function RetroList() {
   // Check for "All Projects" first before loading check
   if (isAllProjectsSelected || !currentProject) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">{t('retroListPage.title')}</h1>
-        <Alert variant="info">
-          <AlertDescription>
-            {t('retroListPage.selectProject')}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <ProjectRequiredDialog
+        open={true}
+        featureDescription={t('retroListPage.selectProject')}
+      />
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <RetroListSkeleton />;
   }
 
   if (!retroEnabled) {

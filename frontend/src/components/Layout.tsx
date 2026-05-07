@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -33,6 +33,13 @@ import {
   Github,
   Plug,
   BookOpen,
+  Rss,
+  Beaker,
+  Map,
+  Layers,
+  PackageCheck,
+  ArrowDownToLine,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -70,6 +77,10 @@ import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { useProject } from '../contexts';
+import { RouteProgressProvider } from './RouteProgressProvider';
+import MobileBottomNav from './MobileBottomNav';
+import GlobalSearchCommand from './GlobalSearchCommand';
+import packageJson from '../../package.json';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -101,6 +112,7 @@ const cycleWorkspaceItems: NavItemConfig[] = [
   { textKey: 'nav.betting', icon: Dices, path: '/betting', tourId: 'betting-menu' },
   { textKey: 'nav.health', icon: Activity, path: '/health', tourId: 'health-menu' },
   { textKey: 'nav.retrospectives', icon: Brain, path: '/retros', tourId: 'retros-menu' },
+  { textKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards', tourId: 'dashboards-menu' },
   { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
 ];
 
@@ -114,6 +126,19 @@ const peopleItems: NavItemConfig[] = [
 const qualityItems: NavItemConfig[] = [
   { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases', tourId: 'qa-test-cases-menu' },
   { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', tourId: 'qa-bug-reports-menu' },
+];
+
+// R&D section
+const rdItems: NavItemConfig[] = [
+  { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/rd/wise-architecture', tourId: 'rd-wise-architecture-menu' },
+];
+
+// Roadmap & Planning section
+const roadmapItems: NavItemConfig[] = [
+  { textKey: 'nav.roadmap', icon: Map, path: '/roadmap', tourId: 'roadmap-menu' },
+  { textKey: 'nav.initiatives', icon: Target, path: '/initiatives', tourId: 'initiatives-menu' },
+  { textKey: 'nav.epics', icon: Layers, path: '/epics', tourId: 'epics-menu' },
+  { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
 ];
 
 // Meetings (accessible from cycle context)
@@ -132,6 +157,8 @@ const integrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
+  { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
+  { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
 
 function NavItem({
@@ -222,8 +249,19 @@ function SectionHeader({ textKey }: { textKey: string }) {
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
   const { isKanbanProject, isAllProjectsSelected } = useProject();
-  const { hasPermissionSync } = usePermission();
+  const { hasPermissionSync, hasPermission } = usePermission();
+  const { startTour, hasCompletedTour } = useTour();
+  const { actualMode, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const currentPath = location.pathname;
+
+  // Preload essential admin permissions for menu visibility
+  useEffect(() => {
+    // Preload SYSTEM MANAGE permission to ensure admin menus show immediately
+    hasPermission('SYSTEM', 'MANAGE').catch(() => {
+      // Ignore errors, permission will be cached as false
+    });
+  }, [hasPermission]); // Include hasPermission since it's now stable
 
   // Check if we're in a cycle context (viewing pitches, betting, health, retros, reports)
   const isCycleContext = ['/pitches', '/betting', '/health', '/retros', '/reports'].some(
@@ -248,6 +286,40 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
+        {/* Dashboard Switcher - shown in sidebar on mobile */}
+        <div className="lg:hidden mb-4 px-1">
+          <DashboardSwitcher onDashboardChange={() => {}} />
+        </div>
+
+        {/* Mobile-only quick actions (hidden from header on small screens) */}
+        <div className="sm:hidden mb-4 px-1 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={startTour}
+            className={cn(
+              "h-9 w-9 touch-manipulation",
+              !hasCompletedTour && "text-primary animate-pulse"
+            )}
+            aria-label={hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+          <LanguageSelector className="h-9 w-9 touch-manipulation" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9 touch-manipulation"
+            aria-label={t('layout.toggleTheme')}
+          >
+            {actualMode === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
         <nav className="flex flex-col gap-1">
           {/* Overview Section */}
           <SectionHeader textKey="nav.sections.overview" />
@@ -307,12 +379,12 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           ))}
 
-          {/* Organization Section */}
-          <SectionHeader textKey="nav.sections.organization" />
+          {/* Roadmap & Planning Section - moved up for daily relevance */}
+          <SectionHeader textKey="nav.sections.roadmap" />
           <NavGroup
-            titleKey="nav.groups.people"
-            icon={Users2}
-            items={peopleItems}
+            titleKey="nav.groups.planning"
+            icon={Map}
+            items={roadmapItems}
             currentPath={currentPath}
             onItemClick={onItemClick}
           />
@@ -327,12 +399,37 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onItemClick={onItemClick}
           />
 
+          {/* R&D Section */}
+          <SectionHeader textKey="nav.sections.rd" />
+          <NavGroup
+            titleKey="nav.groups.research"
+            icon={Beaker}
+            items={rdItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
+          />
+
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
+          <NavItem
+            item={{ textKey: 'nav.blog', icon: Rss, path: '/blog', tourId: 'blog-menu' }}
+            isActive={currentPath.startsWith('/blog')}
+            onClick={onItemClick}
+          />
           <NavItem
             item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
             onClick={onItemClick}
+          />
+
+          {/* Organization Section - moved down (less frequently used) */}
+          <SectionHeader textKey="nav.sections.organization" />
+          <NavGroup
+            titleKey="nav.groups.people"
+            icon={Users2}
+            items={peopleItems}
+            currentPath={currentPath}
+            onItemClick={onItemClick}
           />
         </nav>
 
@@ -366,19 +463,39 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           </>
         )}
       </ScrollArea>
+      
+      {/* Footer with version */}
+      <div className="border-t border-sidebar-border px-3 py-2">
+        <div className="text-xs text-muted-foreground text-center">
+          v{packageJson.version}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
 
+  // Global search keyboard shortcut: Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar - hidden on mobile (< 768px) */}
       <aside className="hidden lg:flex w-64 flex-shrink-0 border-e border-border bg-sidebar">
         <SidebarContent />
@@ -392,7 +509,7 @@ export default function Layout({ children }: LayoutProps) {
       </Sheet>
 
       {/* Main Content - Full width on mobile */}
-      <div className="flex flex-1 flex-col w-full lg:w-auto">
+      <div className="flex flex-1 flex-col w-full lg:w-auto overflow-hidden">
         {/* Header */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-2 sm:gap-4 border-b border-border bg-background/95 px-3 sm:px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {/* Mobile Menu Button - Touch-friendly */}
@@ -414,9 +531,8 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Dashboard Switcher */}
           <div className="hidden lg:block">
-            <DashboardSwitcher onDashboardChange={(dashboardId) => {
-              // Dashboard changed - could refresh widgets or navigate
-              console.log('Dashboard switched to:', dashboardId);
+            <DashboardSwitcher onDashboardChange={() => {
+              // Dashboard changed - widgets will auto-refresh based on context
             }} />
           </div>
 
@@ -424,7 +540,7 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Right side actions - Touch-friendly */}
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Tour Help Button */}
+            {/* Tour Help Button - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -432,7 +548,7 @@ export default function Layout({ children }: LayoutProps) {
                   size="icon"
                   onClick={startTour}
                   className={cn(
-                    "h-11 w-11 touch-manipulation",
+                    "hidden sm:inline-flex h-11 w-11 touch-manipulation",
                     !hasCompletedTour && "text-primary animate-pulse"
                   )}
                   aria-label={hasCompletedTour ? t('layout.restartTour') : t('layout.startTour')}
@@ -448,10 +564,10 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Language Selector */}
+            {/* Language Selector - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div>
+                <div className="hidden sm:block">
                   <LanguageSelector className="h-11 w-11 touch-manipulation" />
                 </div>
               </TooltipTrigger>
@@ -460,14 +576,14 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleTheme}
-                  className="h-11 w-11 touch-manipulation"
+                  className="hidden sm:inline-flex h-11 w-11 touch-manipulation"
                   aria-label={t('layout.toggleTheme')}
                 >
                   {actualMode === 'dark' ? (
@@ -480,6 +596,25 @@ export default function Layout({ children }: LayoutProps) {
               </TooltipTrigger>
               <TooltipContent>
                 {actualMode === 'dark' ? t('layout.switchToLight') : t('layout.switchToDark')}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Global Search */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}
+                  className="hidden sm:inline-flex h-11 w-11 touch-manipulation"
+                  aria-label={t('globalSearch.shortcut', 'Search')}
+                >
+                  <Search className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="sr-only">{t('globalSearch.shortcut', 'Search')}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('globalSearch.shortcut', 'Search')} ({navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+K)
               </TooltipContent>
             </Tooltip>
 
@@ -536,18 +671,26 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Page Content - Responsive padding */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6">
-          <Breadcrumbs />
-          {children}
+        {/* Page Content - Responsive padding with scroll, extra bottom padding for mobile bottom nav */}
+        <main className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 md:p-6 pb-20 sm:pb-4 md:pb-6">
+          <RouteProgressProvider>
+            <Breadcrumbs />
+            {children}
+          </RouteProgressProvider>
         </main>
       </div>
 
       {/* Welcome Tour Dialog for new users */}
       <WelcomeTourDialog />
 
+      {/* Global Search Command Palette */}
+      <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+
       {/* Q&A Floating Button - Available on all pages */}
       <QAFloatingButton contextType="cycle" contextName="your active cycles" />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }

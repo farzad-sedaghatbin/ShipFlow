@@ -20,17 +20,20 @@ describe('workLogService', () => {
   });
 
   describe('getAll', () => {
-    it('should fetch all work logs', async () => {
-      const mockLogs = [
-        { id: 1, note: 'Work 1' },
-        { id: 2, note: 'Work 2' },
-      ];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch all work logs with pagination', async () => {
+      const mockPage = {
+        content: [{ id: 1, note: 'Work 1' }, { id: 2, note: 'Work 2' }],
+        totalElements: 2,
+        totalPages: 1,
+        size: 20,
+        number: 0,
+      };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getAll();
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(2);
     });
   });
 
@@ -47,26 +50,26 @@ describe('workLogService', () => {
   });
 
   describe('getByPitchId', () => {
-    it('should fetch work logs by pitch id', async () => {
-      const mockLogs = [{ id: 1, note: 'Work 1' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch work logs by pitch id with pagination', async () => {
+      const mockPage = { content: [{ id: 1, note: 'Work 1' }], totalElements: 1, totalPages: 1 };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getByPitchId(1);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/pitch/1');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/pitch/1', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(1);
     });
   });
 
   describe('getByPersonId', () => {
-    it('should fetch work logs by person id', async () => {
-      const mockLogs = [{ id: 1, note: 'Work 1' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch work logs by person id with pagination', async () => {
+      const mockPage = { content: [{ id: 1, note: 'Work 1' }], totalElements: 1, totalPages: 1 };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getByPersonId(1);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/person/1');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/person/1', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(1);
     });
   });
 
@@ -109,38 +112,38 @@ describe('workLogService', () => {
   // ========== My Work Logs Tests ==========
 
   describe('getMy', () => {
-    it('should fetch current user work logs', async () => {
-      const mockLogs = [{ id: 1, note: 'My Work' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch current user work logs with pagination', async () => {
+      const mockPage = { content: [{ id: 1, note: 'My Work' }], totalElements: 1, totalPages: 1 };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getMy();
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(1);
     });
   });
 
   describe('getMyByCycle', () => {
-    it('should fetch current user work logs by cycle', async () => {
-      const mockLogs = [{ id: 1, note: 'My Work' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch current user work logs by cycle with pagination', async () => {
+      const mockPage = { content: [{ id: 1, note: 'My Work' }], totalElements: 1, totalPages: 1 };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getMyByCycle(5);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my/cycle/5');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my/cycle/5', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(1);
     });
   });
 
   describe('getMyByDate', () => {
-    it('should fetch current user work logs by date', async () => {
-      const mockLogs = [{ id: 1, note: 'My Work' }];
-      mockedApi.get.mockResolvedValueOnce({ data: mockLogs });
+    it('should fetch current user work logs by date with pagination', async () => {
+      const mockPage = { content: [{ id: 1, note: 'My Work' }], totalElements: 1, totalPages: 1 };
+      mockedApi.get.mockResolvedValueOnce({ data: mockPage });
 
       const result = await workLogService.getMyByDate('2024-01-15');
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my/date/2024-01-15');
-      expect(result.data).toEqual(mockLogs);
+      expect(mockedApi.get).toHaveBeenCalledWith('/worklogs/my/date/2024-01-15', { params: { page: 0, size: 20 } });
+      expect(result.data.content).toHaveLength(1);
     });
   });
 

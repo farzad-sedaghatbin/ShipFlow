@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format as formatGregorian } from 'date-fns';
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import 'react-multi-date-picker/styles/colors/green.css';
+import { Calendar } from 'lucide-react';
 import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 interface LocalizedDateInputProps {
   id?: string;
@@ -40,6 +42,7 @@ export function LocalizedDateInput({
 }: LocalizedDateInputProps) {
   const { i18n } = useTranslation();
   const isPersian = i18n.language === 'fa';
+  const datePickerRef = useRef<any>(null);
   
   const [internalValue, setInternalValue] = useState<any>(null);
 
@@ -92,22 +95,51 @@ export function LocalizedDateInput({
 
   // For Persian, use react-multi-date-picker with Jalali calendar
   return (
-    <DatePicker
-      id={id}
-      value={internalValue}
-      onChange={handleDateChange}
-      calendar={persian}
-      locale={persian_fa}
-      format="YYYY/MM/DD"
-      disabled={disabled}
-      className={`green ${className}`}
-      containerClassName="w-full"
-      inputClass="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      aria-label={ariaLabel}
-      aria-describedby={ariaDescribedby}
-      style={{
-        width: '100%',
-      }}
-    />
+    <div className="relative w-full">
+      <DatePicker
+        ref={datePickerRef}
+        id={id}
+        value={internalValue}
+        onChange={handleDateChange}
+        calendar={persian}
+        locale={persian_fa}
+        format="YYYY/MM/DD"
+        disabled={disabled}
+        editable={false}
+        className={`green ${className}`}
+        containerClassName="w-full"
+        render={(value, openCalendar) => {
+          return (
+            <div className="relative w-full">
+              <Input
+                id={id}
+                value={value || ''}
+                onClick={openCalendar}
+                readOnly
+                disabled={disabled}
+                className={`cursor-pointer pr-10 ${className || ''}`}
+                placeholder="انتخاب تاریخ"
+                aria-label={ariaLabel}
+                aria-describedby={ariaDescribedby}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute left-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={openCalendar}
+                disabled={disabled}
+                tabIndex={-1}
+              >
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
+          );
+        }}
+        style={{
+          width: '100%',
+        }}
+      />
+    </div>
   );
 }

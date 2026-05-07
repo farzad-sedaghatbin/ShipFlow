@@ -11,10 +11,11 @@ import {
   EyeOff,
   Camera,
   Loader2,
+  Bell,
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import api from '../services/api';
-import { UserProfile, UpdateProfileRequest, ChangePasswordRequest } from '../types';
+import { UserProfile, UpdateProfileRequest, ChangePasswordRequest, NotificationUserMapping } from '../types';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -54,9 +55,16 @@ export default function Profile() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Notification mapping state
+  const [, setNotificationMappings] = useState<NotificationUserMapping[]>([]);
+  const [slackId, setSlackId] = useState('');
+  const [teamsId, setTeamsId] = useState('');
+  const [savingMapping, setSavingMapping] = useState<string | null>(null);
+
   useEffect(() => {
     const abortController = new AbortController();
     fetchProfile();
+    fetchNotificationMappings();
     return () => abortController.abort();
   }, []);
 
@@ -113,6 +121,37 @@ export default function Profile() {
       // Error is handled by interceptor
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const fetchNotificationMappings = async () => {
+    try {
+      const response = await api.get<NotificationUserMapping[]>('/users/me/notification-mappings');
+      setNotificationMappings(response.data);
+      const slack = response.data.find((m) => m.providerName === 'slack');
+      const teams = response.data.find((m) => m.providerName === 'teams');
+      if (slack) setSlackId(slack.externalUserId);
+      if (teams) setTeamsId(teams.externalUserId);
+    } catch {
+      // Non-critical — profile still works without mappings
+    }
+  };
+
+  const handleSaveMapping = async (providerName: string, externalUserId: string) => {
+    setSavingMapping(providerName);
+    try {
+      if (externalUserId.trim()) {
+        await api.put('/users/me/notification-mappings', { providerName, externalUserId: externalUserId.trim() });
+        showToast(t('profilePage.notificationIdSaved'), 'success');
+      } else {
+        await api.delete(`/users/me/notification-mappings/${providerName}`);
+        showToast(t('profilePage.notificationIdRemoved'), 'success');
+      }
+      await fetchNotificationMappings();
+    } catch {
+      showToast(t('profilePage.notificationIdSaveFailed'), 'error');
+    } finally {
+      setSavingMapping(null);
     }
   };
 
@@ -328,6 +367,61 @@ export default function Profile() {
           </Card>
         </div>
       </div>
+
+      {/* Notification IDs Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            {t('profilePage.notificationIds')}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{t('profilePage.notificationIdsDesc')}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="slack-member-id">{t('profilePage.slackMemberId')}</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="slack-member-id"
+                  value={slackId}
+                  onChange={(e) => setSlackId(e.target.value)}
+                  placeholder="U0123456789"
+                />
+                <Button
+                  size="sm"
+                  aria-label={t('profilePage.slackMemberId') + ' - ' + t('profilePage.save', 'Save')}
+                  onClick={() => handleSaveMapping('slack', slackId)}
+                  disabled={savingMapping === 'slack'}
+                >
+                  {savingMapping === 'slack' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('profilePage.slackMemberIdHelp')}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="teams-member-id">{t('profilePage.teamsMemberId')}</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="teams-member-id"
+                  value={teamsId}
+                  onChange={(e) => setTeamsId(e.target.value)}
+                  placeholder="user@company.com"
+                />
+                <Button
+                  size="sm"
+                  aria-label={t('profilePage.teamsMemberId') + ' - ' + t('profilePage.save', 'Save')}
+                  onClick={() => handleSaveMapping('teams', teamsId)}
+                  disabled={savingMapping === 'teams'}
+                >
+                  {savingMapping === 'teams' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('profilePage.teamsMemberIdHelp')}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Change Password Dialog */}
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>

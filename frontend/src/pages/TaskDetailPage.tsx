@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import MarkdownEditor from '@/components/MarkdownEditor';
+import { Markdown } from '@/components/ui/markdown';
 import {
   Dialog,
   DialogContent,
@@ -19,22 +20,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, HillChartPoint } from '../types';
+import { Combobox } from '@/components/ui/combobox';
+import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, Team } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
+import { teamService } from '../services/teamService';
 import { pitchService } from '../services/pitchService';
-import { hillChartApi } from '../services/hillChartApi';
 import timerService from '../services/timerService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
+import TaskAttachments from '../components/TaskAttachments';
 import TaskDependencies from '../components/TaskDependencies';
+import Comments from '../components/Comments';
+import { SoftDeleteButton } from '../components/SoftDeleteButton';
+import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
@@ -69,6 +68,7 @@ export default function TaskDetailPage() {
   const [saving, setSaving] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
     description: '',
@@ -76,17 +76,16 @@ export default function TaskDetailPage() {
     status: 'BACKLOG',
     priority: 'MEDIUM',
     estimateHours: undefined,
+    teamId: undefined,
     assigneeId: undefined,
     pairAssigneeId: undefined,
     dueDate: undefined,
     tags: '',
     category: 'PITCH_SCOPE',
     pitchId: undefined,
-    scopeId: undefined,
   });
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
-  const [scopes, setScopes] = useState<HillChartPoint[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -99,12 +98,14 @@ export default function TaskDetailPage() {
 
   const loadInitialData = async () => {
     try {
-      const [cyclesRes, personsRes] = await Promise.all([
+      const [cyclesRes, personsRes, teamsRes] = await Promise.all([
         cycleService.getMyActiveCycles(),
         personService.getAll(),
+        teamService.getAll(),
       ]);
       setCycles(cyclesRes.data);
       setPersons(personsRes);
+      setTeams(teamsRes.data);
     } catch (error) {
       console.error('Failed to load data:', error);
     }
@@ -118,7 +119,7 @@ export default function TaskDetailPage() {
       
       // Load subtasks
       const subtasksResponse = await taskService.getSubTasks(id);
-      setSubtasks(subtasksResponse.data);
+      setSubtasks(subtasksResponse.data || []);
     } catch (error) {
       console.error('Failed to load task:', error);
       toast.error('Failed to load task');
@@ -149,23 +150,9 @@ export default function TaskDetailPage() {
     }
   };
 
-  const loadScopesForPitch = async (pitchId: number) => {
-    try {
-      const response = await hillChartApi.getHillChartPointsByPitch(pitchId);
-      setScopes(response);
-    } catch (error) {
-      console.error('Failed to load scopes:', error);
-      setScopes([]);
-    }
-  };
-
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
-    setFormData({ ...formData, pitchId: pitch, scopeId: undefined });
-    setScopes([]);
-    if (pitch) {
-      loadScopesForPitch(pitch);
-    }
+    setFormData({ ...formData, pitchId: pitch });
   };
 
   const handleStartTimer = async () => {
@@ -195,6 +182,7 @@ export default function TaskDetailPage() {
       status: task.status,
       priority: task.priority,
       estimateHours: task.estimateHours,
+      teamId: task.teamId,
       assigneeId: task.assigneeId,
       pairAssigneeId: task.pairAssigneeId,
       dueDate: task.dueDate,
@@ -202,7 +190,6 @@ export default function TaskDetailPage() {
       category: task.category,
       parentTaskId: task.parentTaskId,
       pitchId: task.pitchId,
-      scopeId: task.scopeId,
     });
     
     if (task.dueDate) {
@@ -214,11 +201,6 @@ export default function TaskDetailPage() {
     // Load pitches for the cycle
     if (task.cycleId) {
       loadPitchesForCycle(task.cycleId);
-    }
-    
-    // Load scopes if pitch is selected
-    if (task.pitchId) {
-      loadScopesForPitch(task.pitchId);
     }
     
     setFieldErrors({});
@@ -340,6 +322,17 @@ export default function TaskDetailPage() {
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </Button>
+              <SoftDeleteButton
+                entityType="task"
+                entityId={task.id}
+                entityTitle={task.title}
+                onSuccess={() => {
+                  // Navigate back to backlog after successful deletion
+                  navigate('/backlog');
+                }}
+                variant="outline"
+                size="sm"
+              />
             </div>
           </div>
         </CardHeader>
@@ -388,6 +381,12 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             )}
+            {task.teamName && (
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('backlogPage.team')}</Label>
+                <div className="mt-1 font-medium">{task.teamName}</div>
+              </div>
+            )}
             <div>
               <Label className="text-xs text-muted-foreground">{t('taskDetailPage.cycle')}</Label>
               <div className="mt-1 font-medium">
@@ -402,14 +401,24 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             )}
+            {task.pitchId && task.pitchTitle && (
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('common.pitch', 'Pitch')}</Label>
+                <div className="mt-1 font-medium">
+                  <Link to={`/pitches/${task.pitchId}`} className="hover:underline text-primary">
+                    {task.pitchTitle}
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
           {task.description && (
             <div>
               <Label className="text-sm font-semibold">{t('common.description')}</Label>
-              <div className="mt-2 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                {task.description}
+              <div className="mt-2 p-4 bg-muted rounded-md text-sm">
+                <Markdown content={task.description} />
               </div>
             </div>
           )}
@@ -447,6 +456,9 @@ export default function TaskDetailPage() {
         </CardContent>
       </Card>
 
+      {/* File Attachments */}
+      <TaskAttachments taskId={task.id} />
+
       {/* GitHub Integration */}
       <GitHubLinksCard taskId={task.id} />
 
@@ -455,6 +467,21 @@ export default function TaskDetailPage() {
         taskId={task.id} 
         cycleId={task.cycleId}
         onDependenciesChange={() => loadTask(task.id)}
+      />
+
+      {/* Comments */}
+      <Comments 
+        entityType="task" 
+        entityId={task.id}
+      />
+
+      {/* Activity Timeline */}
+      <ActivityTimeline
+        entityId={task.id}
+        fetchHistory={async (page, size) => {
+          const response = await taskService.getHistory(task.id, page, size);
+          return response.data;
+        }}
       />
 
       {/* Subtasks */}
@@ -559,8 +586,8 @@ export default function TaskDetailPage() {
               {viewSubtask.description && (
                 <div>
                   <Label className="text-sm font-semibold">Description</Label>
-                  <div className="mt-2 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                    {viewSubtask.description}
+                  <div className="mt-2 p-4 bg-muted rounded-md text-sm">
+                    <Markdown content={viewSubtask.description} />
                   </div>
                 </div>
               )}
@@ -621,73 +648,51 @@ export default function TaskDetailPage() {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="edit-description">{t('common.description')}</Label>
-              <Textarea
+              <Label>{t('common.description')}</Label>
+              <MarkdownEditor
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder={t('backlogPage.taskDescription')}
-                rows={3}
+                rows={4}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">{t('common.status')} *</Label>
-                <Select
+                <Combobox
+                  options={statusOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={formData.status}
-                  onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger id="edit-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}
+                  placeholder="Select status"
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-priority">Priority *</Label>
-                <Select
+                <Combobox
+                  options={priorityOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={formData.priority}
-                  onValueChange={(value: TaskPriority) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger id="edit-priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}
+                  placeholder="Select priority"
+                />
               </div>
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="edit-cycle">Cycle *</Label>
-              <Select
+              <Combobox
+                options={cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))}
                 value={formData.cycleId.toString()}
-                onValueChange={(value) => setFormData({ ...formData, cycleId: parseInt(value) })}
-              >
-                <SelectTrigger id="edit-cycle" className={fieldErrors.cycleId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select cycle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                      {cycle.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={(value) => {
+                  const cycleId = parseInt(value);
+                  setFormData({ ...formData, cycleId, pitchId: undefined });
+                  loadPitchesForCycle(cycleId);
+                }}
+                placeholder="Select cycle"
+                className={fieldErrors.cycleId ? 'border-destructive' : ''}
+              />
               {fieldErrors.cycleId && (
                 <p className="text-sm text-destructive">{fieldErrors.cycleId}</p>
               )}
@@ -696,48 +701,53 @@ export default function TaskDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-assignee">Assignee</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: 'None' },
+                    ...persons.map(person => ({ value: person.id.toString(), label: person.name }))
+                  ]}
                   value={formData.assigneeId?.toString() || 'none'}
                   onValueChange={(value) =>
                     setFormData({ ...formData, assigneeId: value === 'none' ? undefined : parseInt(value) })
                   }
-                >
-                  <SelectTrigger id="edit-assignee">
-                    <SelectValue placeholder="Select assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {persons.map((person) => (
-                      <SelectItem key={person.id} value={person.id.toString()}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select assignee"
+                  searchPlaceholder="Search persons..."
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-pair-assignee">Pair Assignee</Label>
-                <Select
+                <Combobox
+                  options={[
+                    { value: 'none', label: 'None' },
+                    ...persons.map(person => ({ value: person.id.toString(), label: person.name }))
+                  ]}
                   value={formData.pairAssigneeId?.toString() || 'none'}
                   onValueChange={(value) =>
                     setFormData({ ...formData, pairAssigneeId: value === 'none' ? undefined : parseInt(value) })
                   }
-                >
-                  <SelectTrigger id="edit-pair-assignee">
-                    <SelectValue placeholder="Select pair assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {persons.map((person) => (
-                      <SelectItem key={person.id} value={person.id.toString()}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select pair assignee"
+                  searchPlaceholder="Search persons..."
+                />
               </div>
             </div>
+
+            {teams.length > 0 && (
+              <div className="grid gap-2">
+                <Label>{t('backlogPage.team')}</Label>
+                <Combobox
+                  options={[
+                    { value: 'none', label: t('backlogPage.noTeam') },
+                    ...teams.map(team => ({ value: team.id.toString(), label: team.name }))
+                  ]}
+                  value={formData.teamId?.toString() || 'none'}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, teamId: value === 'none' ? undefined : parseInt(value) })
+                  }
+                  placeholder={t('backlogPage.noTeam')}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -778,46 +788,18 @@ export default function TaskDetailPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Pitch (optional)</Label>
-                <Select
-                  value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                  onValueChange={handlePitchChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No pitch (technical debt)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No pitch (technical debt)</SelectItem>
-                    {pitches.map((pitch) => (
-                      <SelectItem key={pitch.id} value={String(pitch.id)}>
-                        {pitch.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Scope (optional)</Label>
-                <Select
-                  value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
-                  disabled={!formData.pitchId || scopes.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!formData.pitchId ? "Select pitch first" : "No specific scope"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No specific scope</SelectItem>
-                    {scopes.map((scope) => (
-                      <SelectItem key={scope.id} value={String(scope.id)}>
-                        {scope.scope}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label>Pitch (optional)</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: 'No pitch (technical debt)' },
+                  ...pitches.map(pitch => ({ value: String(pitch.id), label: pitch.title }))
+                ]}
+                value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                onValueChange={handlePitchChange}
+                placeholder="No pitch (technical debt)"
+                searchPlaceholder="Search pitches..."
+              />
             </div>
           </div>
 

@@ -17,10 +17,8 @@ interface CycleViewDialogProps {
 }
 
 const phaseConfig: Record<CyclePhase, { labelKey: string; variant: 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' }> = {
-  SHAPING: { labelKey: 'cycles.phases.shaping', variant: 'secondary' },
-  BETTING: { labelKey: 'cycles.phases.betting', variant: 'warning' },
-  BUILD: { labelKey: 'cycles.phases.build', variant: 'default' },
-  COOLDOWN: { labelKey: 'cycles.phases.cooldown', variant: 'outline' },
+  SHAPING_BUILDING: { labelKey: 'cycles.phases.shaping_building', variant: 'default' },
+  BETTING_COOLDOWN: { labelKey: 'cycles.phases.betting_cooldown', variant: 'secondary' },
 };
 
 export function CycleViewDialog({ cycle, open, onOpenChange }: CycleViewDialogProps) {

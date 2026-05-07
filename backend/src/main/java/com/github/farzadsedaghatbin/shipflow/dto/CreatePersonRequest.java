@@ -9,15 +9,16 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreatePersonRequest {
-    @NotBlank(message = "Name is required")
-    private String name;
-    
-    @Email(message = "Invalid email format")
-    private String email;
-    
-    private String avatarUrl;
-    private String department;
-    private String skills;
-    private String bio;
-    private Boolean isActive = true;
+  @NotBlank(message = "Name is required")
+  private String name;
+
+  @Email(message = "Invalid email format")
+  private String email;
+
+  private String avatarUrl;
+  private String department;
+  private String skills;
+  private String bio;
+  @Builder.Default
+  private Boolean isActive = true;
 }

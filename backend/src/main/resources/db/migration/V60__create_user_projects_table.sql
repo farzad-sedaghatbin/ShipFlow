@@ -32,16 +32,15 @@ CREATE INDEX idx_user_projects_user_id ON user_projects(user_id);
 CREATE INDEX idx_user_projects_project_id ON user_projects(project_id);
 
 -- Migrate existing data: Grant MANAGER access to project owners
-MERGE INTO user_projects (user_id, project_id, project_role, created_at)
-KEY (user_id, project_id)
+INSERT INTO user_projects (user_id, project_id, project_role, created_at)
 SELECT p.owner_id, p.id, 'MANAGER', NOW()
 FROM projects p
-WHERE p.owner_id IS NOT NULL;
+WHERE p.owner_id IS NOT NULL
+ON CONFLICT (user_id, project_id) DO NOTHING;
 
 -- Grant access to users who are already team members in project cycles
 -- This ensures existing team members don't lose access
-MERGE INTO user_projects (user_id, project_id, project_role, created_at)
-KEY (user_id, project_id)
+INSERT INTO user_projects (user_id, project_id, project_role, created_at)
 SELECT DISTINCT u.id, p.id, 'CONTRIBUTOR', NOW()
 FROM users u
 JOIN persons per ON u.person_id = per.id
@@ -49,4 +48,5 @@ JOIN team_assignments ta ON ta.person_id = per.id
 JOIN teams t ON ta.team_id = t.id
 JOIN cycles c ON t.cycle_id = c.id
 JOIN projects p ON c.project_id = p.id
-WHERE u.id IS NOT NULL AND p.id IS NOT NULL;
+WHERE u.id IS NOT NULL AND p.id IS NOT NULL
+ON CONFLICT (user_id, project_id) DO NOTHING;

@@ -10,6 +10,10 @@ export interface OrganizationSettings {
   defaultCycleLengthWeeks: number;
   defaultCooldownWeeks: number;
   
+  // Capacity Configuration
+  defaultHoursPerDay: number;
+  defaultWorkingDaysPerWeek: number;
+  
   // Risk Thresholds
   riskThresholds: RiskThresholds;
   
@@ -27,12 +31,27 @@ export interface OrganizationSettings {
   bugStatuses: BugStatusConfig[];
   severityLevels: SeverityLevelConfig[];
   
+  // Meeting Types Configuration
+  meetingTypes: MeetingTypeConfig[];
+  
   // Other Settings
   timeZone: string;
   dateFormat: string;
   enableNotifications: boolean;
   enableAIFeatures: boolean;
-  
+  enableWiseArchitecture: boolean;
+
+  // Email / SMTP settings (password is env-var only — never stored in DB)
+  emailNotificationsEnabled: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled: boolean;
+
+  // Figma Integration (for Wise Architecture)
+  hasFigmaAccessToken: boolean;
+
   updatedAt: string;
   updatedBy: string;
 }
@@ -108,14 +127,68 @@ export interface UpdateOrganizationSettingsRequest {
   organizationName?: string;
   defaultCycleLengthWeeks?: number;
   defaultCooldownWeeks?: number;
+  defaultHoursPerDay?: number;
+  defaultWorkingDaysPerWeek?: number;
   riskThresholds?: RiskThresholds;
   riskWeights?: RiskWeights;
   taskCategories?: CategoryConfig[];
   pitchCategories?: CategoryConfig[];
+  colors?: ColorSettings;
+  bugStatuses?: BugStatusConfig[];
+  severityLevels?: SeverityLevelConfig[];
+  meetingTypes?: MeetingTypeConfig[];
   timeZone?: string;
   dateFormat?: string;
   enableNotifications?: boolean;
   enableAIFeatures?: boolean;
+  enableWiseArchitecture?: boolean;
+  // Email / SMTP settings
+  emailNotificationsEnabled?: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFrom?: string;
+  smtpTlsEnabled?: boolean;
+  /** Figma access token for Wise Architecture. Set to update, empty string to clear. */
+  figmaAccessToken?: string;
+}
+
+/**
+ * Configuration for a meeting type with DOR and DOD checklist items.
+ */
+export interface MeetingTypeConfig {
+  id?: number;
+  name: string;
+  displayName: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+  order: number;
+  dorItems: DorDodItem[];
+  dodItems: DorDodItem[];
+}
+
+/**
+ * A single checklist item for DOR (Definition of Ready) or DOD (Definition of Done).
+ */
+export interface DorDodItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  order: number;
+  isDeleted?: boolean;
+}
+
+/**
+ * A checklist item with completion status for use in meetings.
+ */
+export interface MeetingChecklistItem {
+  id?: number;
+  name: string;
+  description: string;
+  isRequired: boolean;
+  isCompleted: boolean;
 }
 
 export interface RolePermissions {

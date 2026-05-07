@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Edit3, Save, X, Filter } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import DashboardGrid from '../components/DashboardGrid';
 import WidgetSelector from '../components/WidgetSelector';
 import WidgetSettings from '../components/WidgetSettings';
@@ -27,6 +28,8 @@ export default function DashboardView() {
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [showWidgetSettings, setShowWidgetSettings] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<DashboardWidgetConfig | null>(null);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [widgetToRemove, setWidgetToRemove] = useState<number | null>(null);
   const { showSuccess, showError } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -141,17 +144,20 @@ export default function DashboardView() {
     }
   };
 
-  const handleRemoveWidget = async (widgetId: number) => {
-    if (!id) return;
+  const openRemoveConfirm = (widgetId: number) => {
+    setWidgetToRemove(widgetId);
+    setRemoveConfirmOpen(true);
+  };
 
-    if (!confirm(t('dashboardView.removeWidgetConfirm'))) {
-      return;
-    }
+  const handleRemoveWidget = async () => {
+    if (!id || widgetToRemove === null) return;
 
     try {
-      await customDashboardService.removeWidget(parseInt(id), widgetId);
-      setWidgets(widgets.filter(w => w.id !== widgetId));
+      await customDashboardService.removeWidget(parseInt(id), widgetToRemove);
+      setWidgets(widgets.filter(w => w.id !== widgetToRemove));
       showSuccess(t('dashboardView.widgetRemoved'));
+      setRemoveConfirmOpen(false);
+      setWidgetToRemove(null);
     } catch (error) {
       showError(getUserFriendlyError(error));
     }
@@ -269,7 +275,7 @@ export default function DashboardView() {
           editable={editMode}
           userContextFilter={dashboard.userContextFilter}
           onLayoutChange={handleLayoutChange}
-          onWidgetRemove={handleRemoveWidget}
+          onWidgetRemove={openRemoveConfirm}
           onWidgetConfigure={handleConfigureWidget}
         />
       )}
@@ -301,6 +307,18 @@ export default function DashboardView() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Remove Widget Confirmation Dialog */}
+      <ConfirmDialog
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        title={t('dashboardView.removeWidgetTitle')}
+        description={t('dashboardView.removeWidgetConfirm')}
+        confirmLabel={t('common.remove')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleRemoveWidget}
+        variant="destructive"
+      />
     </div>
   );
 }

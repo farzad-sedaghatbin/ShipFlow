@@ -8,6 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TestTeamsNotificationRequest {
-    private String message;
-    private String channel;
+  private String message;
+  private String channel;
 }

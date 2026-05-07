@@ -20,6 +20,7 @@ import {
   BugStatus,
   BugSeverity,
   Page,
+  EntityHistory,
 } from '../types';
 
 /**
@@ -82,6 +83,7 @@ export const qaTestManagementService = {
     }),
 
   getBugReportsWithFilters: (
+    projectId?: number,
     cycleId?: number,
     pitchId?: number,
     statuses?: BugStatus[],
@@ -92,21 +94,18 @@ export const qaTestManagementService = {
     size: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: string = 'desc'
-  ) => 
-    api.get<Page<BugReport>>('/qa/bug-reports/filter', {
-      params: {
-        cycleId,
-        pitchId,
-        statuses: statuses?.join(','),
-        severities: severities?.join(','),
-        assigneeIds: assigneeIds?.join(','),
-        exclude: exclude ?? false,
-        page,
-        size,
-        sortBy,
-        sortOrder,
-      },
-    }),
+  ) => {
+    const params: any = { page, size, sortBy, sortOrder };
+    if (projectId !== undefined) params.projectId = projectId;
+    if (cycleId !== undefined) params.cycleId = cycleId;
+    if (pitchId !== undefined) params.pitchId = pitchId;
+    if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
+    if (severities && severities.length > 0) params.severities = severities.join(',');
+    if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (exclude !== undefined) params.exclude = exclude;
+    
+    return api.get<Page<BugReport>>('/qa/bug-reports/filter', { params });
+  },
 
   getBugReportById: (id: number) => 
     api.get<BugReport>(`/qa/bug-reports/${id}`),
@@ -178,6 +177,23 @@ export const qaTestManagementService = {
   // ========== AI Test Generation ==========
   generateTestCases: (request: GenerateTestCasesRequest) => 
     api.post<GenerateTestCasesResponse>('/qa/generate-test-cases', request),
+
+  // ========== History (Audit Trail) ==========
+  getBugReportHistory: (bugId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/qa/bug-reports/${bugId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
+
+  getTestCaseHistory: (testCaseId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/qa/test-cases/${testCaseId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
 };
 
 export default qaTestManagementService;

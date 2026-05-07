@@ -11,18 +11,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserSecurity {
 
-    private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-    public boolean isCurrentUser(Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return false;
-        }
-
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .map(id -> id.equals(userId))
-                .orElse(false);
+  public boolean isCurrentUser(Long userId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return false;
     }
+
+    String username = authentication.getName();
+    return userRepository.findByUsername(username).map(User::getId).map(id -> id.equals(userId)).orElse(false);
+  }
 }

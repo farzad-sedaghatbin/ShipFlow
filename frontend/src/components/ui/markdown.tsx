@@ -103,3 +103,52 @@ export const Markdown: React.FC<MarkdownProps> = ({ content, className }) => {
     </div>
   );
 };
+
+/**
+ * A lightweight inline markdown component that only handles basic formatting like **bold** and *italic*.
+ * Use this for short text snippets where full markdown parsing is overkill.
+ * Converts markdown to HTML and renders it safely.
+ */
+interface MarkdownInlineProps {
+  content: string;
+  className?: string;
+  as?: keyof JSX.IntrinsicElements;
+}
+
+export const MarkdownInline: React.FC<MarkdownInlineProps> = ({ 
+  content, 
+  className,
+  as: Component = 'span' 
+}) => {
+  // Convert basic markdown to HTML
+  const htmlContent = content
+    // Bold: **text** or __text__ (process first to avoid conflicts)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_ (single asterisk/underscore not part of double)
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
+    .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
+  
+  return (
+    <Component 
+      className={className}
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  );
+};
+
+/**
+ * Utility function to convert basic markdown to HTML.
+ * Useful when you need to render inline markdown in JSX with dangerouslySetInnerHTML.
+ */
+export function parseInlineMarkdown(content: string): string {
+  return content
+    // Bold: **text** or __text__ (process first to avoid conflicts)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_ (single asterisk/underscore not part of double)
+    // Use word boundaries to avoid matching underscores in identifiers like foo_bar_baz
+    .replace(/([^*]|^)\*([^*]+?)\*([^*]|$)/g, '$1<em>$2</em>$3')
+    .replace(/(\s|^)_([^_]+?)_(\s|$)/g, '$1<em>$2</em>$3');
+}

@@ -4,6 +4,7 @@ import { ArrowLeft, Repeat, Calendar, FileText, Users, CheckCircle2, AlertCircle
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function CycleSetupGuide() {
     const { t } = useTranslation();
@@ -52,7 +53,7 @@ export default function CycleSetupGuide() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>{t('guides.cycleSetup.whatDesc')}</p>
+                    <p><MarkdownInline content={t('guides.cycleSetup.whatDesc')} /></p>
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
                             <strong>{t('guides.cycleSetup.keyConcept')}</strong> {t('guides.cycleSetup.keyConceptDesc')}
@@ -76,11 +77,11 @@ export default function CycleSetupGuide() {
                         <li>{t('guides.cycleSetup.step1Item2')}</li>
                         <li>{t('guides.cycleSetup.step1Item3')}
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3a') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3b') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3c') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3d') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.cycleSetup.step1Item3e') }} />
+                                <li><MarkdownInline content={t('guides.cycleSetup.step1Item3a')} /></li>
+                                <li><MarkdownInline content={t('guides.cycleSetup.step1Item3b')} /></li>
+                                <li><MarkdownInline content={t('guides.cycleSetup.step1Item3c')} /></li>
+                                <li><MarkdownInline content={t('guides.cycleSetup.step1Item3d')} /></li>
+                                <li><MarkdownInline content={t('guides.cycleSetup.step1Item3e')} /></li>
                             </ul>
                         </li>
                         <li>{t('guides.cycleSetup.step1Item4')}</li>

@@ -5,9 +5,11 @@ export interface AskQuestionRequest {
   question: string;
   contextType?: string;
   contextId?: number;
+  contextName?: string;
   cycleId?: number;
   teamId?: number;
   includeSources?: boolean;
+  conversationId?: string;
 }
 
 export interface SourceCitation {
@@ -32,6 +34,8 @@ export interface QAResponse {
   suggestedFollowUps?: string[];
   /** Whether this response was served from cache */
   cached?: boolean;
+  /** Conversation ID for multi-turn context */
+  conversationId?: string;
 }
 
 export type QAFeedbackType = 'ACCURATE' | 'INACCURATE' | 'CORRECTED';

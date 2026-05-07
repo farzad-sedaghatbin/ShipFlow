@@ -7,6 +7,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class UpdateRetroRequest {
-    private String title;
-    private String notes;
+  private String title;
+  private String notes;
 }

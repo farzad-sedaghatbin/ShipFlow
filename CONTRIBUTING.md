@@ -48,8 +48,10 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### Using Docker
 
+> Requires Docker Compose v2 (`docker compose` plugin). The legacy `docker-compose` v1 is not supported.
+
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### AI Features Setup (Optional)

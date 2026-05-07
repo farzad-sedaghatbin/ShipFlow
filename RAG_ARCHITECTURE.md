@@ -477,6 +477,120 @@ Every answer now includes:
 - Marked responses indicate cache hits
 - Reduces costs and improves latency
 
+#### F. **Async AI Advisor Pattern**
+
+To prevent HTTP timeouts when AI responses are slow or not cached, the system uses an **async job-based pattern** with **cache-first optimization**.
+
+**Architecture Overview:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend Client                        │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ POST /api/risk/async/pitch/{id}/analyze
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              AsyncAIAdvisorController                       │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 1. Check Cache First                                   │ │
+│  │    → If HIT: Return 200 OK with result immediately     │ │
+│  │    → If MISS: Start async job, return 202 with jobId  │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ (cache miss only)
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              AsyncAIAdvisorService                          │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ @Async("aiTaskExecutor")                               │ │
+│  │ - Dedicated thread pool (2-5 threads)                  │ │
+│  │ - Executes RiskAnalysisService.analyzePitchRisk()      │ │
+│  │ - Updates job status: PENDING → PROCESSING → COMPLETED │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Frontend Polling                                │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ GET /api/risk/async/jobs/{jobId}/status                │ │
+│  │ - Poll every 1-5s (exponential backoff)                │ │
+│  │ - Show status: "Queued...", "Processing...", etc.      │ │
+│  │ - On COMPLETED: GET /jobs/{jobId}/pitch-risk           │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**API Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/risk/async/pitch/{id}/analyze` | POST | Start pitch risk analysis (cache-first) |
+| `/api/risk/async/cycle/{id}/analyze` | POST | Start cycle risk analysis (cache-first) |
+| `/api/risk/async/pitch/{id}/ask` | POST | Start Q&A question |
+| `/api/risk/async/jobs/{jobId}/status` | GET | Get job status |
+| `/api/risk/async/jobs/{jobId}/pitch-risk` | GET | Get pitch risk result |
+| `/api/risk/async/jobs/{jobId}/cycle-risk` | GET | Get cycle risk result |
+| `/api/risk/async/jobs/{jobId}/qa` | GET | Get Q&A result |
+
+**Response Examples:**
+
+*Cache Hit (200 OK - Immediate):*
+```json
+{
+  "cached": true,
+  "result": { "pitchId": 1, "riskScore": 65, ... }
+}
+```
+
+*Cache Miss (202 Accepted - Start Job):*
+```json
+{
+  "cached": false,
+  "jobId": "a1b2c3d4",
+  "status": "PENDING",
+  "message": "AI analysis started. Poll /jobs/a1b2c3d4/status for updates."
+}
+```
+
+*Job Status Response:*
+```json
+{
+  "jobId": "a1b2c3d4",
+  "status": "PROCESSING",
+  "jobType": "pitch_risk",
+  "contextId": 1,
+  "createdAt": "2026-02-05T10:30:00",
+  "hasResult": false
+}
+```
+
+**Frontend Usage:**
+
+```typescript
+import { fetchPitchRiskAsync, JobStatusResponse } from './riskService';
+
+// Fetch with status updates
+const result = await fetchPitchRiskAsync(pitchId, (status: JobStatusResponse) => {
+  if (status.status === 'PENDING') {
+    setLoadingText('Queued for AI analysis...');
+  } else if (status.status === 'PROCESSING') {
+    setLoadingText('AI analyzing pitch risks...');
+  }
+});
+
+// If cached, returns immediately without polling
+// If not cached, polls until complete (~30 attempts, 1-5s intervals)
+```
+
+**Benefits:**
+
+1. **No HTTP Timeouts**: Long-running AI calls don't block the HTTP request
+2. **Cache-First**: Cached responses return in <50ms
+3. **Progress Feedback**: Users see real-time status updates
+4. **Resilience**: Failed jobs can be retried without repeating work
+5. **Resource Management**: Dedicated thread pool prevents thread exhaustion
+
 ---
 
 ## 2. QA Test Case Generator Improvements

@@ -25,12 +25,22 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
-    pool: 'threads',
+    // Exclude Playwright E2E tests — those are run separately via `npm run test:e2e`
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'e2e/**',
+      '**/*.e2e.{ts,tsx}',
+    ],
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: 2,
-        minThreads: 1,
+      forks: {
+        // singleFork: true accumulates ALL jsdom environments in one process → OOM.
+        // maxForks: 1 + singleFork: false gives each file its own fresh process
+        // while running only one at a time → low peak memory, full isolation.
+        singleFork: false,
+        maxForks: 1,
+        minForks: 1,
       },
     },
     coverage: {
@@ -39,6 +49,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/test/',
+        'e2e/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/types/**',

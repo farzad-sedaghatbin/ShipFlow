@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateDashboardRequest {
-    
-    @Size(max = 100, message = "Dashboard name must not exceed 100 characters")
-    private String name;
-    
-    @Size(max = 500, message = "Description must not exceed 500 characters")
-    private String description;
-    
-    private String layoutConfig;
+
+  @Size(max = 100, message = "Dashboard name must not exceed 100 characters")
+  private String name;
+
+  @Size(max = 500, message = "Description must not exceed 500 characters")
+  private String description;
+
+  private String layoutConfig;
 }

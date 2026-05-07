@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /
+Allow: /compare
+Allow: /releases
+Allow: /public-roadmap
+Allow: /login
+Sitemap: https://shipflow.dev/sitemap.xml

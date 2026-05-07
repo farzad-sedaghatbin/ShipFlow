@@ -15,29 +15,28 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreateProjectRequest {
 
-    @NotBlank(message = "Project name is required")
-    @Size(max = 100, message = "Project name must be less than 100 characters")
-    private String name;
+  @NotBlank(message = "Project name is required")
+  @Size(max = 100, message = "Project name must be less than 100 characters")
+  private String name;
 
-    @NotBlank(message = "Project key is required")
-    @Size(min = 2, max = 10, message = "Project key must be 2-10 characters")
-    @Pattern(regexp = "^[A-Z0-9]+$", message = "Project key must be uppercase letters and numbers only")
-    private String projectKey;
+  @NotBlank(message = "Project key is required")
+  @Size(min = 2, max = 10, message = "Project key must be 2-10 characters")
+  @Pattern(regexp = "^[A-Z0-9]+$", message = "Project key must be uppercase letters and numbers only")
+  private String projectKey;
 
-    private String description;
+  private String description;
 
-    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color must be a valid hex color (e.g., #FF5733)")
-    private String color;
+  @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color must be a valid hex color (e.g., #FF5733)")
+  private String color;
 
-    private String logoUrl;
+  private String logoUrl;
 
-    private Long ownerId;
+  private Long ownerId;
 
-    /**
-     * Project methodology type.
-     * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown (default)
-     * KANBAN: Continuous flow with visual board, no cycles
-     */
-    @Builder.Default
-    private ProjectType projectType = ProjectType.SHAPE_UP;
+  /**
+   * Project methodology type. SHAPE_UP: 6-week cycles with betting, pitches, and
+   * cooldown (default) KANBAN: Continuous flow with visual board, no cycles
+   */
+  @Builder.Default
+  private ProjectType projectType = ProjectType.SHAPE_UP;
 }

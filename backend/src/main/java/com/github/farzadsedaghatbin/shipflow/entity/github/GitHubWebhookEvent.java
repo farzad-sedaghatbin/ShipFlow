@@ -1,9 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.entity.github;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "github_webhook_events")
@@ -14,38 +13,36 @@ import java.time.LocalDateTime;
 @Builder
 public class GitHubWebhookEvent {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "event_type", nullable = false, length = 100)
-    private String eventType;
+  @Column(name = "event_type", nullable = false, length = 100)
+  private String eventType;
 
-    @Lob
-    @Column(nullable = false)
-    private String payload;
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String payload;
 
-    @Column(name = "repository_full_name", length = 511)
-    private String repositoryFullName;
+  @Column(name = "repository_full_name", length = 511)
+  private String repositoryFullName;
 
-    @Column(nullable = false)
-    private Boolean processed;
+  @Column(nullable = false)
+  private Boolean processed;
 
-    @Column(name = "processed_at")
-    private LocalDateTime processedAt;
+  @Column(name = "processed_at")
+  private LocalDateTime processedAt;
 
-    @Lob
-    @Column(name = "error_message")
-    private String errorMessage;
+  @Column(name = "error_message", columnDefinition = "TEXT")
+  private String errorMessage;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+  @Column(name = "created_at", nullable = false)
+  private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        if (processed == null) {
-            processed = false;
-        }
+  @PrePersist
+  protected void onCreate() {
+    createdAt = LocalDateTime.now();
+    if (processed == null) {
+      processed = false;
     }
+  }
 }

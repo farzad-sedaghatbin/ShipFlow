@@ -1,153 +1,127 @@
 package com.github.farzadsedaghatbin.shipflow.config.llm;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.OllamaLLMProvider;
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.OpenAILLMProvider;
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.RunPodLLMProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-/**
- * Tests for LLMProviderFactory.
- */
+/** Tests for LLMProviderFactory. */
 class LLMProviderFactoryTest {
 
-    private LLMProviderFactory factory;
+  private LLMProviderFactory factory;
 
-    @BeforeEach
-    void setUp() {
-        // Create factory with test providers
-        List<LLMProvider> providers = List.of(
-                new OllamaLLMProvider(),
-                new OpenAILLMProvider(),
-                new RunPodLLMProvider()
-        );
-        factory = new LLMProviderFactory(providers);
-    }
+  @BeforeEach
+  void setUp() {
+    // Create factory with test providers
+    List<LLMProvider> providers = List.of(new OllamaLLMProvider(), new OpenAILLMProvider(),
+        new RunPodLLMProvider());
+    factory = new LLMProviderFactory(providers);
+  }
 
-    @Test
-    void shouldRegisterAllProviders() {
-        assertTrue(factory.isProviderAvailable(LLMProviderType.OLLAMA));
-        assertTrue(factory.isProviderAvailable(LLMProviderType.OPENAI));
-        assertTrue(factory.isProviderAvailable(LLMProviderType.RUNPOD));
-    }
+  @Test
+  void shouldRegisterAllProviders() {
+    assertTrue(factory.isProviderAvailable(LLMProviderType.OLLAMA));
+    assertTrue(factory.isProviderAvailable(LLMProviderType.OPENAI));
+    assertTrue(factory.isProviderAvailable(LLMProviderType.RUNPOD));
+  }
 
-    @Test
-    void shouldCheckProviderAvailabilityByString() {
-        assertTrue(factory.isProviderAvailable("ollama"));
-        assertTrue(factory.isProviderAvailable("openai"));
-        assertTrue(factory.isProviderAvailable("runpod"));
-        assertFalse(factory.isProviderAvailable("unknown"));
-    }
+  @Test
+  void shouldCheckProviderAvailabilityByString() {
+    assertTrue(factory.isProviderAvailable("ollama"));
+    assertTrue(factory.isProviderAvailable("openai"));
+    assertTrue(factory.isProviderAvailable("runpod"));
+    assertFalse(factory.isProviderAvailable("unknown"));
+  }
 
-    @Test
-    void getAvailableProviders_shouldReturnAllTypes() {
-        var available = factory.getAvailableProviders();
-        assertTrue(available.contains(LLMProviderType.OLLAMA));
-        assertTrue(available.contains(LLMProviderType.OPENAI));
-        assertTrue(available.contains(LLMProviderType.RUNPOD));
-        assertEquals(3, available.size());
-    }
+  @Test
+  void getAvailableProviders_shouldReturnAllTypes() {
+    var available = factory.getAvailableProviders();
+    assertTrue(available.contains(LLMProviderType.OLLAMA));
+    assertTrue(available.contains(LLMProviderType.OPENAI));
+    assertTrue(available.contains(LLMProviderType.RUNPOD));
+    assertEquals(3, available.size());
+  }
 
-    @Test
-    void getProvider_shouldReturnCorrectProvider() {
-        LLMProvider ollamaProvider = factory.getProvider(LLMProviderType.OLLAMA);
-        assertNotNull(ollamaProvider);
-        assertTrue(ollamaProvider instanceof OllamaLLMProvider);
+  @Test
+  void getProvider_shouldReturnCorrectProvider() {
+    LLMProvider ollamaProvider = factory.getProvider(LLMProviderType.OLLAMA);
+    assertNotNull(ollamaProvider);
+    assertTrue(ollamaProvider instanceof OllamaLLMProvider);
 
-        LLMProvider openaiProvider = factory.getProvider(LLMProviderType.OPENAI);
-        assertNotNull(openaiProvider);
-        assertTrue(openaiProvider instanceof OpenAILLMProvider);
-    }
+    LLMProvider openaiProvider = factory.getProvider(LLMProviderType.OPENAI);
+    assertNotNull(openaiProvider);
+    assertTrue(openaiProvider instanceof OpenAILLMProvider);
+  }
 
-    @Test
-    void getProvider_shouldReturnNullForUnregistered() {
-        assertNull(factory.getProvider(LLMProviderType.ANTHROPIC));
-    }
+  @Test
+  void getProvider_shouldReturnNullForUnregistered() {
+    assertNull(factory.getProvider(LLMProviderType.ANTHROPIC));
+  }
 
-    @Test
-    void createModel_shouldCreateOllamaModel() {
-        LLMProviderConfig config = LLMProviderConfig.builder()
-                .baseUrl("http://localhost:11434")
-                .modelName("mistral:instruct")
-                .timeout(Duration.ofSeconds(180))
-                .temperature(0.3)
-                .build();
+  @Test
+  void createModel_shouldCreateOllamaModel() {
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").timeout(Duration.ofSeconds(180)).temperature(0.3).build();
 
-        ChatLanguageModel model = factory.createModel(LLMProviderType.OLLAMA, config);
-        assertNotNull(model);
-    }
+    ChatLanguageModel model = factory.createModel(LLMProviderType.OLLAMA, config);
+    assertNotNull(model);
+  }
 
-    @Test
-    void createModel_shouldCreateOpenAIModel() {
-        LLMProviderConfig config = LLMProviderConfig.builder()
-                .apiKey("sk-test-key-12345")
-                .modelName("gpt-4o-mini")
-                .timeout(Duration.ofSeconds(120))
-                .temperature(0.3)
-                .build();
+  @Test
+  void createModel_shouldCreateOpenAIModel() {
+    LLMProviderConfig config = LLMProviderConfig.builder().apiKey("sk-test-key-12345").modelName("gpt-4o-mini")
+        .timeout(Duration.ofSeconds(120)).temperature(0.3).build();
 
-        ChatLanguageModel model = factory.createModel(LLMProviderType.OPENAI, config);
-        assertNotNull(model);
-    }
+    ChatLanguageModel model = factory.createModel(LLMProviderType.OPENAI, config);
+    assertNotNull(model);
+  }
 
-    @Test
-    void createModel_shouldThrowForUnavailableProvider() {
-        LLMProviderConfig config = LLMProviderConfig.builder().build();
+  @Test
+  void createModel_shouldThrowForUnavailableProvider() {
+    LLMProviderConfig config = LLMProviderConfig.builder().build();
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> factory.createModel(LLMProviderType.ANTHROPIC, config)
-        );
-        assertTrue(ex.getMessage().contains("No provider registered"));
-    }
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> factory.createModel(LLMProviderType.ANTHROPIC, config));
+    assertTrue(ex.getMessage().contains("No provider registered"));
+  }
 
-    @Test
-    void createModel_shouldThrowForInvalidConfig() {
-        // OpenAI requires API key
-        LLMProviderConfig config = LLMProviderConfig.builder()
-                .modelName("gpt-4o-mini")
-                .build();
+  @Test
+  void createModel_shouldThrowForInvalidConfig() {
+    // OpenAI requires API key
+    LLMProviderConfig config = LLMProviderConfig.builder().modelName("gpt-4o-mini").build();
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> factory.createModel(LLMProviderType.OPENAI, config)
-        );
-    }
+    assertThrows(IllegalArgumentException.class, () -> factory.createModel(LLMProviderType.OPENAI, config));
+  }
 
-    @Test
-    void createModelByString_shouldWork() {
-        LLMProviderConfig config = LLMProviderConfig.builder()
-                .baseUrl("http://localhost:11434")
-                .modelName("mistral:instruct")
-                .build();
+  @Test
+  void createModelByString_shouldWork() {
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").build();
 
-        ChatLanguageModel model = factory.createModel("ollama", config);
-        assertNotNull(model);
-    }
+    ChatLanguageModel model = factory.createModel("ollama", config);
+    assertNotNull(model);
+  }
 
-    @Test
-    void createModelByString_shouldThrowForInvalidString() {
-        LLMProviderConfig config = LLMProviderConfig.builder().build();
+  @Test
+  void createModelByString_shouldThrowForInvalidString() {
+    LLMProviderConfig config = LLMProviderConfig.builder().build();
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> factory.createModel("invalid-provider", config)
-        );
-    }
+    assertThrows(IllegalArgumentException.class, () -> factory.createModel("invalid-provider", config));
+  }
 
-    @Test
-    void getProviderInfo_shouldReturnFormattedInfo() {
-        String info = factory.getProviderInfo();
-        assertTrue(info.contains("Available LLM Providers"));
-        assertTrue(info.contains("ollama"));
-        assertTrue(info.contains("openai"));
-        assertTrue(info.contains("runpod"));
-        assertTrue(info.contains("Requires API Key"));
-    }
+  @Test
+  void getProviderInfo_shouldReturnFormattedInfo() {
+    String info = factory.getProviderInfo();
+    assertTrue(info.contains("Available LLM Providers"));
+    assertTrue(info.contains("ollama"));
+    assertTrue(info.contains("openai"));
+    assertTrue(info.contains("runpod"));
+    assertTrue(info.contains("Requires API Key"));
+  }
 }

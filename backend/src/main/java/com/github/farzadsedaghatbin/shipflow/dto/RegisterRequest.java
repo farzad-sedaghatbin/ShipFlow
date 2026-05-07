@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterRequest {
 
-    @NotBlank(message = "Username is required")
-    private String username;
+  @NotBlank(message = "Username is required")
+  private String username;
 
-    @NotBlank(message = "Password is required")
-    private String password;
+  @NotBlank(message = "Password is required")
+  private String password;
 
-    @NotNull(message = "Role is required")
-    private UserRole role;
+  @NotNull(message = "Role is required")
+  private UserRole role;
 
-    private Long personId; // Optional: link to existing person
+  private Long personId; // Optional: link to existing person
 }

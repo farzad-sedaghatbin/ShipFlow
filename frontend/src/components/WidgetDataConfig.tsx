@@ -2,11 +2,11 @@ import React from 'react';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import { CustomMetric } from '../types/metrics';
 
-export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS';
+export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'BUG_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS';
 
 export interface WidgetDataFilter {
   field: string;
@@ -86,38 +86,31 @@ export default function WidgetDataConfig({
     <div className="space-y-6">
       <div>
         <Label>Data Source Type</Label>
-        <Select value={sourceType} onValueChange={(value) => setSourceType(value as WidgetDataSourceType)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="METRIC">Metric Value</SelectItem>
-            <SelectItem value="PITCH_LIST">Pitch List</SelectItem>
-            <SelectItem value="TASK_LIST">Task List</SelectItem>
-            <SelectItem value="CYCLE_SUMMARY">Cycle Summary</SelectItem>
-            <SelectItem value="TEAM_STATS">Team Statistics</SelectItem>
-          </SelectContent>
-        </Select>
+        <Combobox
+          options={[
+            { value: 'METRIC', label: 'Metric Value' },
+            { value: 'PITCH_LIST', label: 'Pitch List' },
+            { value: 'TASK_LIST', label: 'Task List' },
+            { value: 'BUG_LIST', label: 'Bug Report List' },
+            { value: 'CYCLE_SUMMARY', label: 'Cycle Summary' },
+            { value: 'TEAM_STATS', label: 'Team Statistics' }
+          ]}
+          value={sourceType}
+          onValueChange={(value) => setSourceType(value as WidgetDataSourceType)}
+          placeholder="Select data source"
+        />
       </div>
 
       {sourceType === 'METRIC' && (
         <div>
           <Label>Select Metric</Label>
-          <Select 
-            value={metricId?.toString()} 
+          <Combobox
+            options={metrics.map(metric => ({ value: metric.id.toString(), label: metric.name }))}
+            value={metricId?.toString()}
             onValueChange={(value) => setMetricId(parseInt(value))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a metric" />
-            </SelectTrigger>
-            <SelectContent>
-              {metrics.map((metric) => (
-                <SelectItem key={metric.id} value={metric.id.toString()}>
-                  {metric.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Choose a metric"
+            searchPlaceholder="Search metrics..."
+          />
         </div>
       )}
 
@@ -136,22 +129,20 @@ export default function WidgetDataConfig({
               onChange={(e) => updateFilter(index, { field: e.target.value })}
               className="flex-1"
             />
-            <Select
+            <Combobox
+              options={[
+                { value: 'EQUALS', label: 'Equals' },
+                { value: 'NOT_EQUALS', label: 'Not Equals' },
+                { value: 'GREATER_THAN', label: 'Greater Than' },
+                { value: 'LESS_THAN', label: 'Less Than' },
+                { value: 'CONTAINS', label: 'Contains' },
+                { value: 'IN', label: 'In List' }
+              ]}
               value={filter.operator}
               onValueChange={(value) => updateFilter(index, { operator: value as any })}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EQUALS">Equals</SelectItem>
-                <SelectItem value="NOT_EQUALS">Not Equals</SelectItem>
-                <SelectItem value="GREATER_THAN">Greater Than</SelectItem>
-                <SelectItem value="LESS_THAN">Less Than</SelectItem>
-                <SelectItem value="CONTAINS">Contains</SelectItem>
-                <SelectItem value="IN">In List</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Operator"
+              triggerClassName="w-40"
+            />
             <Input
               placeholder="Value"
               value={filter.value}
@@ -176,15 +167,15 @@ export default function WidgetDataConfig({
         </div>
         <div>
           <Label>Sort Order</Label>
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'ASC' | 'DESC')}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ASC">Ascending</SelectItem>
-              <SelectItem value="DESC">Descending</SelectItem>
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={[
+              { value: 'ASC', label: 'Ascending' },
+              { value: 'DESC', label: 'Descending' }
+            ]}
+            value={sortOrder}
+            onValueChange={(value) => setSortOrder(value as 'ASC' | 'DESC')}
+            placeholder="Select order"
+          />
         </div>
       </div>
 

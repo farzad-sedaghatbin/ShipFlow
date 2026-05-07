@@ -1,5 +1,5 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory, BulkTaskUpdateRequest, BulkUpdateResult } from '../types';
 
 export const taskService = {
   // Current user's tasks
@@ -77,6 +77,7 @@ export const taskService = {
   },
   getByAssigneeId: (assigneeId: number) => api.get<Task[]>(`/tasks/assignee/${assigneeId}`),
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
+  getByPitchId: (pitchId: number) => api.get<Task[]>(`/tasks/pitch/${pitchId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
   getByProjectIdPaged: (projectId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/project/${projectId}/paged`, {
@@ -91,6 +92,32 @@ export const taskService = {
   getByProjectIdAndCategory: (projectId: number, category: TaskCategory, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/project/${projectId}/category/${category}`, {
       params: {
+        page: page ?? 0,
+        size: size ?? 10,
+        sortBy: sortBy ?? 'createdAt',
+        sortOrder: sortOrder ?? 'desc',
+      },
+    });
+  },
+  getByProjectIdWithFilters: (
+    projectId: number,
+    statuses?: TaskStatus[],
+    priorities?: TaskPriority[],
+    assigneeIds?: number[],
+    category?: TaskCategory,
+    exclude?: boolean,
+    page?: number,
+    size?: number,
+    sortBy?: string,
+    sortOrder?: string
+  ) => {
+    return api.get<Page<Task>>(`/tasks/project/${projectId}/filter`, {
+      params: {
+        statuses: statuses?.join(','),
+        priorities: priorities?.join(','),
+        assigneeIds: assigneeIds?.join(','),
+        category: category,
+        exclude: exclude ?? false,
         page: page ?? 0,
         size: size ?? 10,
         sortBy: sortBy ?? 'createdAt',
@@ -167,4 +194,38 @@ export const taskService = {
     api.get<TaskDependency[]>(`/tasks/${taskId}/dependencies/blocked-by`),
   removeDependency: (taskId: number, dependencyId: number) => 
     api.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
+  
+  // Task History (Audit Trail)
+  getHistory: (taskId: number, page?: number, size?: number) =>
+    api.get<Page<EntityHistory>>(`/tasks/${taskId}/history`, {
+      params: {
+        page: page ?? 0,
+        size: size ?? 20,
+      },
+    }),
+
+  // Bulk operations
+  bulkUpdate: (request: BulkTaskUpdateRequest) =>
+    api.post<BulkUpdateResult>('/tasks/bulk-update', request),
+
+  // CSV Export — pass exactly one of projectId or cycleId
+  exportTasks: (params: {
+    projectId?: number;
+    cycleId?: number;
+    statuses?: TaskStatus[];
+    priorities?: TaskPriority[];
+    assigneeIds?: number[];
+    category?: TaskCategory;
+  }) =>
+    api.get<Blob>('/tasks/export', {
+      params: {
+        projectId: params.projectId,
+        cycleId: params.cycleId,
+        statuses: params.statuses?.join(','),
+        priorities: params.priorities?.join(','),
+        assigneeIds: params.assigneeIds?.join(','),
+        category: params.category,
+      },
+      responseType: 'blob',
+    }),
 };

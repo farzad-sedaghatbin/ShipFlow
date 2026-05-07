@@ -1,5 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.CreateDashboardWidgetRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardWidgetDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.UpdateDashboardWidgetRequest;
@@ -7,6 +11,11 @@ import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,228 +23,188 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class DashboardWidgetServiceTest {
 
-    @Mock
-    private DashboardWidgetRepository dashboardWidgetRepository;
+  @Mock
+  private DashboardWidgetRepository dashboardWidgetRepository;
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-    @InjectMocks
-    private DashboardWidgetService dashboardWidgetService;
+  @Mock
+  private EntityManager entityManager;
 
-    private User testUser;
-    private DashboardWidget testWidget;
+  @InjectMocks
+  private DashboardWidgetService dashboardWidgetService;
 
-    @BeforeEach
-    void setUp() {
-        testUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .build();
+  private User testUser;
+  private DashboardWidget testWidget;
 
-        testWidget = DashboardWidget.builder()
-                .id(1L)
-                .user(testUser)
-                .widgetType("STATS_CARDS")
-                .isVisible(true)
-                .displayOrder(0)
-                .build();
-    }
+  @BeforeEach
+  void setUp() {
+    testUser = User.builder().id(1L).username("testuser").build();
 
-    @Test
-    void getUserWidgets_WhenWidgetsExist_ShouldReturnWidgets() {
-        // Arrange
-        when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L))
-                .thenReturn(Arrays.asList(testWidget));
+    testWidget = DashboardWidget.builder().id(1L).user(testUser).widgetType("STATS_CARDS").isVisible(true)
+        .displayOrder(0).build();
+  }
 
-        // Act
-        List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
+  @Test
+  void getUserWidgets_WhenWidgetsExist_ShouldReturnWidgets() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Arrays.asList(testWidget));
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("STATS_CARDS", result.get(0).getWidgetType());
-        verify(dashboardWidgetRepository, times(1)).findByUserIdOrderByDisplayOrderAsc(1L);
-    }
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
 
-    @Test
-    void getUserWidgets_WhenNoWidgetsExist_ShouldCreateDefaults() {
-        // Arrange
-        when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L))
-                .thenReturn(Collections.emptyList());
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
-            List<DashboardWidget> widgets = invocation.getArgument(0);
-            for (int i = 0; i < widgets.size(); i++) {
-                widgets.get(i).setId((long) (i + 1));
-            }
-            return widgets;
-        });
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals("STATS_CARDS", result.get(0).getWidgetType());
+    verify(dashboardWidgetRepository, times(1)).findByUserIdOrderByDisplayOrderAsc(1L);
+  }
 
-        // Act
-        List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
+  @Test
+  void getUserWidgets_WhenNoWidgetsExist_ShouldCreateDefaults() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Collections.emptyList());
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
+      List<DashboardWidget> widgets = invocation.getArgument(0);
+      for (int i = 0; i < widgets.size(); i++) {
+        widgets.get(i).setId((long) (i + 1));
+      }
+      return widgets;
+    });
 
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.size() > 0);
-        verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
-    }
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
 
-    @Test
-    void getVisibleWidgets_ShouldReturnOnlyVisibleWidgets() {
-        // Arrange
-        when(dashboardWidgetRepository.findByUserIdAndIsVisibleOrderByDisplayOrderAsc(1L, true))
-                .thenReturn(Arrays.asList(testWidget));
+    // Assert
+    assertNotNull(result);
+    assertTrue(result.size() > 0);
+    verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
+  }
 
-        // Act
-        List<DashboardWidgetDTO> result = dashboardWidgetService.getVisibleWidgets(1L);
+  @Test
+  void getVisibleWidgets_ShouldReturnOnlyVisibleWidgets() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdAndIsVisibleOrderByDisplayOrderAsc(1L, true))
+        .thenReturn(Arrays.asList(testWidget));
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getIsVisible());
-    }
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getVisibleWidgets(1L);
 
-    @Test
-    void createWidget_WithValidData_ShouldCreateWidget() {
-        // Arrange
-        CreateDashboardWidgetRequest request = CreateDashboardWidgetRequest.builder()
-                .widgetType("NEW_WIDGET")
-                .isVisible(true)
-                .displayOrder(5)
-                .build();
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertTrue(result.get(0).getIsVisible());
+  }
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(dashboardWidgetRepository.save(any(DashboardWidget.class))).thenAnswer(invocation -> {
-            DashboardWidget widget = invocation.getArgument(0);
-            widget.setId(2L);
-            return widget;
-        });
+  @Test
+  void createWidget_WithValidData_ShouldCreateWidget() {
+    // Arrange
+    CreateDashboardWidgetRequest request = CreateDashboardWidgetRequest.builder().widgetType("NEW_WIDGET")
+        .isVisible(true).displayOrder(5).build();
 
-        // Act
-        DashboardWidgetDTO result = dashboardWidgetService.createWidget(1L, request);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(dashboardWidgetRepository.save(any(DashboardWidget.class))).thenAnswer(invocation -> {
+      DashboardWidget widget = invocation.getArgument(0);
+      widget.setId(2L);
+      return widget;
+    });
 
-        // Assert
-        assertNotNull(result);
-        assertEquals("NEW_WIDGET", result.getWidgetType());
-        assertEquals(5, result.getDisplayOrder());
-        verify(dashboardWidgetRepository, times(1)).save(any(DashboardWidget.class));
-    }
+    // Act
+    DashboardWidgetDTO result = dashboardWidgetService.createWidget(1L, request);
 
-    @Test
-    void updateWidget_WhenExists_ShouldUpdateWidget() {
-        // Arrange
-        UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder()
-                .isVisible(false)
-                .displayOrder(10)
-                .build();
+    // Assert
+    assertNotNull(result);
+    assertEquals("NEW_WIDGET", result.getWidgetType());
+    assertEquals(5, result.getDisplayOrder());
+    verify(dashboardWidgetRepository, times(1)).save(any(DashboardWidget.class));
+  }
 
-        when(dashboardWidgetRepository.findById(1L)).thenReturn(Optional.of(testWidget));
-        when(dashboardWidgetRepository.save(any(DashboardWidget.class))).thenReturn(testWidget);
+  @Test
+  void updateWidget_WhenExists_ShouldUpdateWidget() {
+    // Arrange
+    UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder().isVisible(false).displayOrder(10)
+        .build();
 
-        // Act
-        DashboardWidgetDTO result = dashboardWidgetService.updateWidget(1L, request);
+    when(dashboardWidgetRepository.findById(1L)).thenReturn(Optional.of(testWidget));
+    when(dashboardWidgetRepository.save(any(DashboardWidget.class))).thenReturn(testWidget);
 
-        // Assert
-        assertNotNull(result);
-        assertFalse(result.getIsVisible());
-        assertEquals(10, result.getDisplayOrder());
-        verify(dashboardWidgetRepository, times(1)).save(any(DashboardWidget.class));
-    }
+    // Act
+    DashboardWidgetDTO result = dashboardWidgetService.updateWidget(1L, request);
 
-    @Test
-    void updateWidget_WhenNotExists_ShouldThrowException() {
-        // Arrange
-        UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder()
-                .isVisible(false)
-                .build();
+    // Assert
+    assertNotNull(result);
+    assertFalse(result.getIsVisible());
+    assertEquals(10, result.getDisplayOrder());
+    verify(dashboardWidgetRepository, times(1)).save(any(DashboardWidget.class));
+  }
 
-        when(dashboardWidgetRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  void updateWidget_WhenNotExists_ShouldThrowException() {
+    // Arrange
+    UpdateDashboardWidgetRequest request = UpdateDashboardWidgetRequest.builder().isVisible(false).build();
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            dashboardWidgetService.updateWidget(999L, request)
-        );
-    }
+    when(dashboardWidgetRepository.findById(999L)).thenReturn(Optional.empty());
 
-    @Test
-    void bulkUpdateWidgets_ShouldUpdateMultipleWidgets() {
-        // Arrange
-        DashboardWidget widget2 = DashboardWidget.builder()
-                .id(2L)
-                .user(testUser)
-                .widgetType("WIDGET_2")
-                .isVisible(true)
-                .displayOrder(1)
-                .build();
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> dashboardWidgetService.updateWidget(999L, request));
+  }
 
-        DashboardWidgetDTO dto1 = DashboardWidgetDTO.builder()
-                .id(1L)
-                .isVisible(false)
-                .displayOrder(5)
-                .build();
+  @Test
+  void bulkUpdateWidgets_ShouldUpdateMultipleWidgets() {
+    // Arrange
+    DashboardWidget widget2 = DashboardWidget.builder().id(2L).user(testUser).widgetType("WIDGET_2").isVisible(true)
+        .displayOrder(1).build();
 
-        DashboardWidgetDTO dto2 = DashboardWidgetDTO.builder()
-                .id(2L)
-                .isVisible(true)
-                .displayOrder(1)
-                .build();
+    DashboardWidgetDTO dto1 = DashboardWidgetDTO.builder().id(1L).isVisible(false).displayOrder(5).build();
 
-        when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L))
-                .thenReturn(Arrays.asList(testWidget, widget2));
-        when(dashboardWidgetRepository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+    DashboardWidgetDTO dto2 = DashboardWidgetDTO.builder().id(2L).isVisible(true).displayOrder(1).build();
 
-        // Act
-        List<DashboardWidgetDTO> result = dashboardWidgetService.bulkUpdateWidgets(1L, Arrays.asList(dto1, dto2));
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L))
+        .thenReturn(Arrays.asList(testWidget, widget2));
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
-    }
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.bulkUpdateWidgets(1L, Arrays.asList(dto1, dto2));
 
-    @Test
-    void deleteWidget_ShouldDeleteWidget() {
-        // Act
-        dashboardWidgetService.deleteWidget(1L);
+    // Assert
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
+  }
 
-        // Assert
-        verify(dashboardWidgetRepository, times(1)).deleteById(1L);
-    }
+  @Test
+  void deleteWidget_ShouldDeleteWidget() {
+    // Act
+    dashboardWidgetService.deleteWidget(1L);
 
-    @Test
-    void resetToDefaults_ShouldDeleteExistingAndCreateDefaults() {
-        // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
-            List<DashboardWidget> widgets = invocation.getArgument(0);
-            for (int i = 0; i < widgets.size(); i++) {
-                widgets.get(i).setId((long) (i + 1));
-            }
-            return widgets;
-        });
+    // Assert
+    verify(dashboardWidgetRepository, times(1)).deleteById(1L);
+  }
 
-        // Act
-        List<DashboardWidgetDTO> result = dashboardWidgetService.resetToDefaults(1L);
+  @Test
+  void resetToDefaults_ShouldDeleteExistingAndCreateDefaults() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
+      List<DashboardWidget> widgets = invocation.getArgument(0);
+      for (int i = 0; i < widgets.size(); i++) {
+        widgets.get(i).setId((long) (i + 1));
+      }
+      return widgets;
+    });
 
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.size() > 0);
-        verify(dashboardWidgetRepository, times(1)).deleteByUserId(1L);
-        verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
-    }
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.resetToDefaults(1L);
+
+    // Assert
+    assertNotNull(result);
+    assertTrue(result.size() > 0);
+    verify(dashboardWidgetRepository, times(1)).deleteByUserId(1L);
+    verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
+  }
 }

@@ -82,7 +82,7 @@ export function RecentActivityFeed({
 
       const activityItems: ActivityItem[] = [];
 
-      const recentWorkLogs = workLogsRes.data
+      const recentWorkLogs = workLogsRes.data.content
         .filter((log: WorkLog) => {
           const logDate = parseDate(log.date);
           const weekAgo = new Date();

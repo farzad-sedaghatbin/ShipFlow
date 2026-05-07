@@ -1,0 +1,823 @@
+package com.github.farzadsedaghatbin.shipflow.service.wisearchitecture;
+
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.DetectedStackDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wisearchitecture.TechStackType;
+import com.github.farzadsedaghatbin.shipflow.entity.RepositoryTechStack;
+import com.github.farzadsedaghatbin.shipflow.entity.github.GitHubRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.RepositoryTechStackRepository;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Service for detecting technology stacks in repositories.
+ * Uses file patterns and project structure to identify tech stacks.
+ * Caches detected stacks to avoid repeated detection.
+ * 
+ * Performance optimizations:
+ * - Pre-indexes files by extension for O(1) extension lookup
+ * - Uses early termination when high-confidence stacks are found
+ * - Batches pattern matching by extension type
+ */
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class TechStackDetectorService {
+
+    private final RepositoryTechStackRepository techStackRepository;
+
+    // File patterns for stack detection
+    private static final Map<TechStackType, List<Pattern>> STACK_PATTERNS = new HashMap<>();
+    
+    // Pre-computed extension sets for fast filtering (avoid regex for simple extension matches)
+    private static final Map<String, Set<TechStackType>> EXTENSION_TO_STACKS = new HashMap<>();
+    
+    // Key config file names that strongly indicate a stack (exact match, no regex needed)
+    private static final Map<String, TechStackType> KEY_CONFIG_FILES = new HashMap<>();
+
+    static {
+        // Mobile - Kotlin/Android
+        STACK_PATTERNS.put(TechStackType.MOBILE_KOTLIN, List.of(
+            Pattern.compile(".*\\.kt$"),
+            Pattern.compile(".*build\\.gradle(\\.kts)?$"),
+            Pattern.compile(".*AndroidManifest\\.xml$")
+        ));
+
+        // Mobile - Swift/iOS
+        STACK_PATTERNS.put(TechStackType.MOBILE_SWIFT, List.of(
+            Pattern.compile(".*\\.swift$"),
+            Pattern.compile(".*Package\\.swift$"),
+            Pattern.compile(".*\\.xcodeproj/[^/]+$"),
+            Pattern.compile(".*Podfile$")
+        ));
+
+        // Mobile - React Native (improved detection patterns)
+        STACK_PATTERNS.put(TechStackType.MOBILE_REACT_NATIVE, List.of(
+            Pattern.compile(".*metro\\.config\\.(js|ts)$"),
+            Pattern.compile(".*babel\\.config\\.js$"),
+            Pattern.compile(".*/android/app/src/main/.*$"),
+            Pattern.compile(".*/ios/.*\\.xcodeproj/.*$"),
+            Pattern.compile(".*react-native\\.config\\.js$"),
+            Pattern.compile(".*app\\.json$")
+        ));
+
+        // Mobile - Flutter
+        STACK_PATTERNS.put(TechStackType.MOBILE_FLUTTER, List.of(
+            Pattern.compile(".*pubspec\\.yaml$"),
+            Pattern.compile(".*\\.dart$")
+        ));
+
+        // Backend - Java/Spring
+        STACK_PATTERNS.put(TechStackType.BACKEND_JAVA, List.of(
+            Pattern.compile(".*pom\\.xml$"),
+            Pattern.compile(".*build\\.gradle$"),
+            Pattern.compile(".*\\.java$"),
+            Pattern.compile(".*application\\.properties$"),
+            Pattern.compile(".*application\\.ya?ml$")
+        ));
+
+        // Backend - Node.js
+        STACK_PATTERNS.put(TechStackType.BACKEND_NODE, List.of(
+            Pattern.compile(".*package\\.json$"),
+            Pattern.compile(".*server\\.js$"),
+            Pattern.compile(".*index\\.js$")
+        ));
+
+        // Backend - Python
+        STACK_PATTERNS.put(TechStackType.BACKEND_PYTHON, List.of(
+            Pattern.compile(".*requirements\\.txt$"),
+            Pattern.compile(".*setup\\.py$"),
+            Pattern.compile(".*pyproject\\.toml$"),
+            Pattern.compile(".*\\.py$")
+        ));
+
+        // Backend - Go
+        STACK_PATTERNS.put(TechStackType.BACKEND_GO, List.of(
+            Pattern.compile(".*go\\.mod$"),
+            Pattern.compile(".*go\\.sum$"),
+            Pattern.compile(".*\\.go$")
+        ));
+
+        // Backend - .NET
+        STACK_PATTERNS.put(TechStackType.BACKEND_DOTNET, List.of(
+            Pattern.compile(".*\\.csproj$"),
+            Pattern.compile(".*\\.sln$"),
+            Pattern.compile(".*\\.cs$")
+        ));
+
+        // Web - React
+        STACK_PATTERNS.put(TechStackType.WEB_REACT, List.of(
+            Pattern.compile(".*package\\.json$"),
+            Pattern.compile(".*\\.jsx$"),
+            Pattern.compile(".*\\.tsx$"),
+            Pattern.compile(".*vite\\.config\\.(js|ts|mjs|mts)$")
+        ));
+
+        // Web - Angular
+        STACK_PATTERNS.put(TechStackType.WEB_ANGULAR, List.of(
+            Pattern.compile(".*angular\\.json$"),
+            Pattern.compile(".*\\.component\\.ts$"),
+            Pattern.compile(".*\\.module\\.ts$")
+        ));
+
+        // Web - Vue
+        STACK_PATTERNS.put(TechStackType.WEB_VUE, List.of(
+            Pattern.compile(".*\\.vue$"),
+            Pattern.compile(".*vue\\.config\\.js$"),
+            Pattern.compile(".*nuxt\\.config\\.(js|ts)$")
+        ));
+
+        // Web - Next.js
+        STACK_PATTERNS.put(TechStackType.WEB_NEXTJS, List.of(
+            Pattern.compile(".*next\\.config\\.(js|mjs|ts)$"),
+            Pattern.compile(".*/pages/[^/]+\\.(jsx|tsx)$"),
+            Pattern.compile(".*/app/[^/]+\\.(jsx|tsx)$")
+        ));
+
+        // Build extension-to-stacks index for fast filtering
+        addExtension(".kt", TechStackType.MOBILE_KOTLIN);
+        addExtension(".swift", TechStackType.MOBILE_SWIFT);
+        addExtension(".dart", TechStackType.MOBILE_FLUTTER);
+        addExtension(".java", TechStackType.BACKEND_JAVA);
+        addExtension(".py", TechStackType.BACKEND_PYTHON);
+        addExtension(".go", TechStackType.BACKEND_GO);
+        addExtension(".cs", TechStackType.BACKEND_DOTNET);
+        addExtension(".jsx", TechStackType.WEB_REACT);
+        addExtension(".tsx", TechStackType.WEB_REACT, TechStackType.MOBILE_REACT_NATIVE);
+        addExtension(".vue", TechStackType.WEB_VUE);
+        addExtension(".js", TechStackType.BACKEND_NODE, TechStackType.WEB_REACT, TechStackType.MOBILE_REACT_NATIVE);
+        addExtension(".ts", TechStackType.BACKEND_NODE, TechStackType.WEB_REACT, TechStackType.WEB_ANGULAR);
+
+        // Key config files for instant detection (exact filename match)
+        KEY_CONFIG_FILES.put("pom.xml", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("build.gradle", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("build.gradle.kts", TechStackType.BACKEND_JAVA);
+        KEY_CONFIG_FILES.put("go.mod", TechStackType.BACKEND_GO);
+        KEY_CONFIG_FILES.put("requirements.txt", TechStackType.BACKEND_PYTHON);
+        KEY_CONFIG_FILES.put("pyproject.toml", TechStackType.BACKEND_PYTHON);
+        KEY_CONFIG_FILES.put("pubspec.yaml", TechStackType.MOBILE_FLUTTER);
+        KEY_CONFIG_FILES.put("angular.json", TechStackType.WEB_ANGULAR);
+        KEY_CONFIG_FILES.put("next.config.js", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("next.config.mjs", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("next.config.ts", TechStackType.WEB_NEXTJS);
+        KEY_CONFIG_FILES.put("nuxt.config.js", TechStackType.WEB_VUE);
+        KEY_CONFIG_FILES.put("nuxt.config.ts", TechStackType.WEB_VUE);
+        KEY_CONFIG_FILES.put("metro.config.js", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("metro.config.ts", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("react-native.config.js", TechStackType.MOBILE_REACT_NATIVE);
+        KEY_CONFIG_FILES.put("Podfile", TechStackType.MOBILE_SWIFT);
+        KEY_CONFIG_FILES.put("Package.swift", TechStackType.MOBILE_SWIFT);
+        KEY_CONFIG_FILES.put("AndroidManifest.xml", TechStackType.MOBILE_KOTLIN);
+    }
+
+    private static void addExtension(String ext, TechStackType... stacks) {
+        EXTENSION_TO_STACKS.computeIfAbsent(ext, k -> new HashSet<>()).addAll(Set.of(stacks));
+    }
+
+    /**
+     * Pre-index files by extension for faster pattern matching.
+     * Returns a map of extension -> list of files with that extension.
+     */
+    private Map<String, List<String>> indexFilesByExtension(List<String> fileList) {
+        Map<String, List<String>> index = new HashMap<>();
+        for (String file : fileList) {
+            if (file == null || file.length() > 500) continue;
+            
+            int lastDot = file.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < file.length() - 1) {
+                String ext = file.substring(lastDot);
+                index.computeIfAbsent(ext, k -> new ArrayList<>()).add(file);
+            }
+            
+            // Also index by filename for key config file detection
+            int lastSlash = file.lastIndexOf('/');
+            String filename = lastSlash >= 0 ? file.substring(lastSlash + 1) : file;
+            index.computeIfAbsent("__" + filename, k -> new ArrayList<>()).add(file);
+        }
+        return index;
+    }
+
+    /**
+     * Quick check for key config files using the pre-built index.
+     * Returns stacks that are definitely present based on key config files.
+     */
+    private Set<TechStackType> quickDetectFromConfigFiles(Map<String, List<String>> fileIndex) {
+        Set<TechStackType> detected = new HashSet<>();
+        for (Map.Entry<String, TechStackType> entry : KEY_CONFIG_FILES.entrySet()) {
+            if (fileIndex.containsKey("__" + entry.getKey())) {
+                detected.add(entry.getValue());
+                log.debug("Quick detect: found {} -> {}", entry.getKey(), entry.getValue());
+            }
+        }
+        return detected;
+    }
+
+    /**
+     * Detect technology stacks in a repository based on file structure.
+     * Uses cached results if available, otherwise performs detection and caches the result.
+     *
+     * @param repository the GitHub repository to analyze
+     * @param fileList list of file paths in the repository (from MCP)
+     * @return list of detected technology stacks
+     */
+    @Transactional
+    public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList) {
+        return detectStacks(repository, fileList, null);
+    }
+
+    /**
+     * Detect technology stacks in a repository based on file structure and optional package.json content.
+     * Uses cached results if available, otherwise performs detection and caches the result.
+     *
+     * @param repository the GitHub repository to analyze
+     * @param fileList list of file paths in the repository (from MCP)
+     * @param packageJsonContent optional content of package.json for accurate framework detection
+     * @return list of detected technology stacks
+     */
+    @Transactional
+    public List<DetectedStackDTO> detectStacks(GitHubRepository repository, List<String> fileList, String packageJsonContent) {
+        log.info("Detecting tech stacks in repository: {} with {} files", 
+            repository.getFullName(), fileList != null ? fileList.size() : 0);
+        
+        // Check if we have cached results
+        List<RepositoryTechStack> cachedStacks = techStackRepository.findByRepository(repository);
+        if (!cachedStacks.isEmpty()) {
+            log.info("Using cached tech stacks for repository: {} ({} stacks)", 
+                repository.getFullName(), cachedStacks.size());
+            return convertCachedToDTO(cachedStacks);
+        }
+        
+        if (fileList == null || fileList.isEmpty()) {
+            log.warn("File list is empty for repository: {}, cannot detect tech stacks", 
+                repository.getFullName());
+            return List.of();
+        }
+        
+        log.debug("Sample files from repository {}: {}", 
+            repository.getFullName(),
+            fileList.stream().limit(20).collect(java.util.stream.Collectors.joining(", ")));
+        
+        log.info("No cached stacks found, performing detection for: {}", repository.getFullName());
+        
+        // OPTIMIZATION: Pre-index files by extension for faster pattern matching
+        long indexStart = System.currentTimeMillis();
+        Map<String, List<String>> fileIndex = indexFilesByExtension(fileList);
+        log.debug("File indexing took {}ms for {} files", 
+            System.currentTimeMillis() - indexStart, fileList.size());
+        
+        // PRIORITY: Check for React Native via package.json content FIRST
+        // This is more reliable than file pattern matching
+        boolean isReactNativeProject = false;
+        if (packageJsonContent != null && !packageJsonContent.isBlank()) {
+            isReactNativeProject = packageJsonContent.contains("\"react-native\"");
+            if (isReactNativeProject) {
+                log.info("Detected React Native from package.json in {}", repository.getFullName());
+            }
+        }
+        
+        // Also check for React Native structural indicators when package.json isn't available
+        if (!isReactNativeProject && packageJsonContent == null) {
+            // Check for RN project structure: both android/ and ios/ directories + package.json
+            boolean hasAndroidDir = fileList.stream().anyMatch(f -> f.startsWith("android/") || f.contains("/android/"));
+            boolean hasIosDir = fileList.stream().anyMatch(f -> f.startsWith("ios/") || f.contains("/ios/"));
+            boolean hasPackageJson = fileIndex.containsKey("__package.json");
+            boolean hasMetroConfig = fileIndex.containsKey("__metro.config.js") || fileIndex.containsKey("__metro.config.ts");
+            boolean hasBabelConfig = fileIndex.containsKey("__babel.config.js");
+            boolean hasAppJson = fileIndex.containsKey("__app.json");
+            boolean hasRNConfig = fileIndex.containsKey("__react-native.config.js");
+            boolean hasJsxFiles = fileIndex.get(".jsx") != null || fileIndex.get(".tsx") != null;
+            
+            // Strong indicators of React Native
+            if (hasMetroConfig || hasRNConfig) {
+                isReactNativeProject = true;
+                log.info("Detected React Native from metro/rn config in {}", repository.getFullName());
+            } else if (hasAndroidDir && hasIosDir && hasPackageJson && (hasBabelConfig || hasAppJson) && hasJsxFiles) {
+                // Structural detection: android + ios + package.json + babel/app.json + jsx/tsx = React Native
+                isReactNativeProject = true;
+                log.info("Detected React Native from project structure in {}", repository.getFullName());
+            }
+        }
+        
+        // OPTIMIZATION: Quick detect from key config files (exact match, no regex)
+        Set<TechStackType> quickDetected = quickDetectFromConfigFiles(fileIndex);
+        log.debug("Quick detection found {} stacks from config files", quickDetected.size());
+        
+        // If React Native detected, add it to quick detected and mark it
+        if (isReactNativeProject) {
+            quickDetected.add(TechStackType.MOBILE_REACT_NATIVE);
+        }
+        
+        List<DetectedStackDTO> detectedStacks = new ArrayList<>();
+        
+        for (Map.Entry<TechStackType, List<Pattern>> entry : STACK_PATTERNS.entrySet()) {
+            TechStackType stackType = entry.getKey();
+            List<Pattern> patterns = entry.getValue();
+            
+            // OPTIMIZATION: If already quick-detected with high confidence, skip full scan
+            boolean alreadyQuickDetected = quickDetected.contains(stackType);
+            
+            List<String> matchedFiles = new ArrayList<>();
+            int matchCount = 0;
+            
+            // OPTIMIZATION: First check files with relevant extensions only
+            extensionLoop:
+            for (Map.Entry<String, Set<TechStackType>> extEntry : EXTENSION_TO_STACKS.entrySet()) {
+                if (extEntry.getValue().contains(stackType)) {
+                    List<String> extFiles = fileIndex.get(extEntry.getKey());
+                    if (extFiles != null) {
+                        for (String filePath : extFiles) {
+                            for (Pattern pattern : patterns) {
+                                if (pattern.matcher(filePath).matches()) {
+                                    matchedFiles.add(filePath);
+                                    matchCount++;
+                                    break;
+                                }
+                            }
+                            // OPTIMIZATION: Stop early if we have enough high-confidence matches
+                            if (matchCount >= 20 && alreadyQuickDetected) {
+                                break extensionLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Also check non-extension patterns (like config files, directories)
+            for (String filePath : fileList) {
+                if (filePath == null || filePath.length() > 500) continue;
+                if (matchedFiles.contains(filePath)) continue; // Skip already matched
+                
+                for (Pattern pattern : patterns) {
+                    if (pattern.matcher(filePath).matches()) {
+                        matchedFiles.add(filePath);
+                        matchCount++;
+                        break;
+                    }
+                }
+                
+                // Stop early if we have enough matches
+                if (matchCount >= 50) break;
+            }
+            
+            // Calculate confidence based on match ratio and specific key files
+            if (matchCount > 0) {
+                int confidence = calculateConfidence(stackType, matchedFiles, fileList.size());
+                
+                // Boost confidence if quick-detected from config file
+                if (alreadyQuickDetected && confidence < 80) {
+                    confidence = Math.min(95, confidence + 20);
+                }
+                
+                if (confidence >= 30) { // Minimum confidence threshold
+                    DetectedStackDTO detected = DetectedStackDTO.builder()
+                        .stackType(stackType)
+                        .confidence(confidence)
+                        .keyFilesFound(matchedFiles.stream().limit(5).toList())
+                        .primaryLanguage(getPrimaryLanguage(stackType))
+                        .framework(detectFramework(stackType, matchedFiles))
+                        .repositoryId(repository.getId())
+                        .repositoryName(repository.getFullName())
+                        .build();
+                    
+                    detectedStacks.add(detected);
+                    log.debug("Detected {} with {}% confidence in {}", 
+                        stackType, confidence, repository.getFullName());
+                }
+            }
+        }
+        
+        // Special handling: Ensure React Native is properly detected if identified earlier
+        if (isReactNativeProject) {
+            boolean rnAlreadyDetected = detectedStacks.stream()
+                .anyMatch(s -> s.getStackType() == TechStackType.MOBILE_REACT_NATIVE);
+            
+            if (!rnAlreadyDetected) {
+                // Add React Native with high confidence
+                List<String> rnKeyFiles = new ArrayList<>();
+                if (fileIndex.containsKey("__package.json")) rnKeyFiles.add("package.json");
+                if (fileIndex.containsKey("__metro.config.js")) rnKeyFiles.add("metro.config.js");
+                if (fileIndex.containsKey("__app.json")) rnKeyFiles.add("app.json");
+                if (fileIndex.containsKey("__babel.config.js")) rnKeyFiles.add("babel.config.js");
+                
+                detectedStacks.add(DetectedStackDTO.builder()
+                    .stackType(TechStackType.MOBILE_REACT_NATIVE)
+                    .confidence(95) // High confidence since we detected via package.json or structure
+                    .keyFilesFound(rnKeyFiles.isEmpty() ? List.of("package.json") : rnKeyFiles)
+                    .primaryLanguage("TypeScript/JavaScript")
+                    .framework("React Native")
+                    .repositoryId(repository.getId())
+                    .repositoryName(repository.getFullName())
+                    .build());
+                log.info("Added React Native stack with 95% confidence for {}", repository.getFullName());
+            } else {
+                // Boost existing React Native confidence if it was detected but with low confidence
+                for (int i = 0; i < detectedStacks.size(); i++) {
+                    DetectedStackDTO s = detectedStacks.get(i);
+                    if (s.getStackType() == TechStackType.MOBILE_REACT_NATIVE && s.getConfidence() < 85) {
+                        detectedStacks.set(i, DetectedStackDTO.builder()
+                            .stackType(s.getStackType())
+                            .confidence(95) // Boost to 95% since we confirmed via package.json/structure
+                            .keyFilesFound(s.getKeyFilesFound())
+                            .primaryLanguage(s.getPrimaryLanguage())
+                            .framework(s.getFramework())
+                            .repositoryId(s.getRepositoryId())
+                            .repositoryName(s.getRepositoryName())
+                            .build());
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Remove overlapping detections (e.g., if both BACKEND_NODE and WEB_REACT detected, keep both)
+        // But remove lower confidence duplicates in same category
+        detectedStacks = filterOverlappingStacks(detectedStacks);
+        
+        log.info("Detected {} tech stacks in {}: {}", 
+            detectedStacks.size(), 
+            repository.getFullName(),
+            detectedStacks.stream().map(d -> d.getStackType().name()).toList());
+        
+        // Cache the detected stacks
+        cacheDetectedStacks(repository, detectedStacks);
+        
+        return detectedStacks;
+    }
+
+    /**
+     * Force re-detection of tech stacks for a repository by clearing the cache.
+     * Useful when repository structure has changed significantly.
+     *
+     * @param repository the repository to clear cache for
+     */
+    @Transactional
+    public void clearCache(GitHubRepository repository) {
+        log.info("Clearing tech stack cache for repository: {}", repository.getFullName());
+        techStackRepository.deleteByRepository(repository);
+    }
+
+    /**
+     * Convert cached stack entities to DTOs.
+     */
+    private List<DetectedStackDTO> convertCachedToDTO(List<RepositoryTechStack> cachedStacks) {
+        return cachedStacks.stream()
+            .map(cached -> {
+                List<String> keyFiles = cached.getDetectedByFiles() != null 
+                    ? java.util.Arrays.stream(cached.getDetectedByFiles().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList())
+                    : List.of();
+                
+                // Use persisted values if available, otherwise fall back to computed values
+                String framework = cached.getFramework() != null 
+                    ? cached.getFramework() 
+                    : detectFramework(cached.getStackType(), keyFiles);
+                
+                String primaryLanguage = cached.getPrimaryLanguage() != null
+                    ? cached.getPrimaryLanguage()
+                    : getPrimaryLanguage(cached.getStackType());
+                
+                return DetectedStackDTO.builder()
+                    .stackType(cached.getStackType())
+                    .confidence(cached.getConfidenceScore())
+                    .keyFilesFound(keyFiles)
+                    .primaryLanguage(primaryLanguage)
+                    .framework(framework)
+                    .repositoryId(cached.getRepository().getId())
+                    .repositoryName(cached.getRepository().getFullName())
+                    .build();
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Cache detected stacks for future use.
+     * Handles concurrent requests gracefully by catching constraint violations.
+     */
+    private void cacheDetectedStacks(GitHubRepository repository, List<DetectedStackDTO> detectedStacks) {
+        List<RepositoryTechStack> entitiesToSave = detectedStacks.stream()
+            .map(dto -> RepositoryTechStack.builder()
+                .repository(repository)
+                .stackType(dto.getStackType())
+                .confidenceScore(dto.getConfidence())
+                .detectedByFiles(dto.getKeyFilesFound() != null 
+                    ? String.join(",", dto.getKeyFilesFound())
+                    : null)
+                .framework(dto.getFramework())
+                .primaryLanguage(dto.getPrimaryLanguage())
+                .build())
+            .collect(Collectors.toList());
+        
+        if (!entitiesToSave.isEmpty()) {
+            try {
+                techStackRepository.saveAll(entitiesToSave);
+                log.info("Cached {} tech stacks for repository: {}", 
+                    entitiesToSave.size(), repository.getFullName());
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // Race condition: another request already cached these stacks
+                log.debug("Tech stacks already cached for repository {} (concurrent request): {}", 
+                    repository.getFullName(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Detect stacks from package.json content (for more accurate detection).
+     */
+    public List<DetectedStackDTO> detectStacksFromPackageJson(
+            GitHubRepository repository, 
+            String packageJsonContent) {
+        
+        List<DetectedStackDTO> stacks = new ArrayList<>();
+        
+        // Check for React
+        if (packageJsonContent.contains("\"react\"") && 
+            !packageJsonContent.contains("\"react-native\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.WEB_REACT)
+                .confidence(90)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript/JavaScript")
+                .framework(detectReactFramework(packageJsonContent))
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        // Check for React Native
+        if (packageJsonContent.contains("\"react-native\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.MOBILE_REACT_NATIVE)
+                .confidence(95)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript/JavaScript")
+                .framework("React Native")
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        // Check for Angular
+        if (packageJsonContent.contains("\"@angular/core\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.WEB_ANGULAR)
+                .confidence(95)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript")
+                .framework("Angular")
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        // Check for Vue
+        if (packageJsonContent.contains("\"vue\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.WEB_VUE)
+                .confidence(90)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript/JavaScript")
+                .framework(packageJsonContent.contains("\"nuxt\"") ? "Nuxt.js" : "Vue.js")
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        // Check for Next.js
+        if (packageJsonContent.contains("\"next\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.WEB_NEXTJS)
+                .confidence(95)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript/JavaScript")
+                .framework("Next.js")
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        // Check for Node.js backend frameworks
+        if (packageJsonContent.contains("\"express\"") || 
+            packageJsonContent.contains("\"@nestjs/core\"") ||
+            packageJsonContent.contains("\"fastify\"") ||
+            packageJsonContent.contains("\"koa\"")) {
+            stacks.add(DetectedStackDTO.builder()
+                .stackType(TechStackType.BACKEND_NODE)
+                .confidence(90)
+                .keyFilesFound(List.of("package.json"))
+                .primaryLanguage("TypeScript/JavaScript")
+                .framework(detectNodeFramework(packageJsonContent))
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getFullName())
+                .build());
+        }
+        
+        return stacks;
+    }
+
+    private int calculateConfidence(TechStackType stackType, List<String> matchedFiles, int totalFiles) {
+        int baseConfidence = 0;
+        
+        // Key file detection gives higher confidence
+        for (String file : matchedFiles) {
+            if (isKeyFile(stackType, file)) {
+                baseConfidence += 30;
+            } else {
+                baseConfidence += 5;
+            }
+        }
+        
+        // Cap at 100
+        return Math.min(baseConfidence, 100);
+    }
+
+    private boolean isKeyFile(TechStackType stackType, String file) {
+        return switch (stackType) {
+            case MOBILE_KOTLIN -> file.contains("AndroidManifest.xml") || file.contains("build.gradle");
+            case MOBILE_SWIFT -> file.contains("Package.swift") || file.contains(".xcodeproj");
+            case MOBILE_REACT_NATIVE -> file.contains("metro.config") || file.contains("app.json");
+            case MOBILE_FLUTTER -> file.contains("pubspec.yaml");
+            case BACKEND_JAVA -> file.contains("pom.xml") || file.contains("build.gradle");
+            case BACKEND_NODE -> file.contains("package.json");
+            case BACKEND_PYTHON -> file.contains("requirements.txt") || file.contains("pyproject.toml");
+            case BACKEND_GO -> file.contains("go.mod");
+            case BACKEND_DOTNET -> file.contains(".csproj") || file.contains(".sln");
+            case WEB_REACT -> file.contains("package.json") || file.contains("vite.config");
+            case WEB_ANGULAR -> file.contains("angular.json");
+            case WEB_VUE -> file.contains("vue.config") || file.contains("nuxt.config");
+            case WEB_NEXTJS -> file.contains("next.config");
+            default -> false;
+        };
+    }
+
+    private String getPrimaryLanguage(TechStackType stackType) {
+        return switch (stackType) {
+            case MOBILE_KOTLIN -> "Kotlin";
+            case MOBILE_SWIFT -> "Swift";
+            case MOBILE_REACT_NATIVE, BACKEND_NODE, WEB_REACT, WEB_ANGULAR, WEB_VUE, WEB_NEXTJS -> "TypeScript/JavaScript";
+            case MOBILE_FLUTTER -> "Dart";
+            case BACKEND_JAVA -> "Java";
+            case BACKEND_PYTHON -> "Python";
+            case BACKEND_GO -> "Go";
+            case BACKEND_DOTNET -> "C#";
+            default -> "Unknown";
+        };
+    }
+
+    private String detectFramework(TechStackType stackType, List<String> matchedFiles) {
+        String filesStr = String.join(",", matchedFiles).toLowerCase();
+        
+        return switch (stackType) {
+            case BACKEND_JAVA -> {
+                if (filesStr.contains("spring") || filesStr.contains("application.properties") || 
+                    filesStr.contains("application.yml")) {
+                    yield "Spring Boot";
+                }
+                yield "Java";
+            }
+            case BACKEND_NODE -> {
+                if (filesStr.contains("nest")) yield "NestJS";
+                if (filesStr.contains("express")) yield "Express.js";
+                yield "Node.js";
+            }
+            case BACKEND_PYTHON -> {
+                if (filesStr.contains("django")) yield "Django";
+                if (filesStr.contains("fastapi")) yield "FastAPI";
+                if (filesStr.contains("flask")) yield "Flask";
+                yield "Python";
+            }
+            case WEB_REACT -> "React";
+            case WEB_ANGULAR -> "Angular";
+            case WEB_VUE -> "Vue.js";
+            case WEB_NEXTJS -> "Next.js";
+            case MOBILE_KOTLIN -> "Android (Kotlin)";
+            case MOBILE_SWIFT -> "iOS (Swift)";
+            case MOBILE_REACT_NATIVE -> "React Native";
+            case MOBILE_FLUTTER -> "Flutter";
+            default -> stackType.getDisplayName();
+        };
+    }
+
+    private String detectReactFramework(String packageJson) {
+        if (packageJson.contains("\"next\"")) return "Next.js";
+        if (packageJson.contains("\"vite\"")) return "React + Vite";
+        if (packageJson.contains("\"react-scripts\"")) return "Create React App";
+        return "React";
+    }
+
+    private String detectNodeFramework(String packageJson) {
+        if (packageJson.contains("\"@nestjs/core\"")) return "NestJS";
+        if (packageJson.contains("\"express\"")) return "Express.js";
+        if (packageJson.contains("\"fastify\"")) return "Fastify";
+        if (packageJson.contains("\"koa\"")) return "Koa";
+        return "Node.js";
+    }
+
+    @SuppressWarnings("null")
+    private List<DetectedStackDTO> filterOverlappingStacks(List<DetectedStackDTO> stacks) {
+        // First pass: Check if React Native is detected in any repository and get its confidence
+        Map<Long, Integer> reactNativeConfidenceByRepo = stacks.stream()
+            .filter(s -> s.getStackType() == TechStackType.MOBILE_REACT_NATIVE)
+            .collect(Collectors.toMap(
+                DetectedStackDTO::getRepositoryId, 
+                DetectedStackDTO::getConfidence,
+                Math::max // If multiple React Native detections, take highest confidence
+            ));
+        
+        Set<Long> reactNativeRepos = reactNativeConfidenceByRepo.keySet();
+        
+        // Second pass: Filter out false positives for React Native projects
+        // When React Native is detected with HIGH confidence (from package.json), 
+        // aggressively remove false positives
+        List<DetectedStackDTO> filteredStacks = stacks.stream()
+            .filter(stack -> {
+                Long repoId = stack.getRepositoryId();
+                TechStackType type = stack.getStackType();
+                
+                // If this repo has React Native detected
+                if (reactNativeRepos.contains(repoId)) {
+                    int rnConfidence = reactNativeConfidenceByRepo.getOrDefault(repoId, 0);
+                    boolean highConfidenceRN = rnConfidence >= 90;
+                    
+                    // Remove WEB_REACT as it's a false positive from .tsx/.jsx files
+                    if (type == TechStackType.WEB_REACT) {
+                        log.info("Filtering out {} for repo {} - React Native project", type, repoId);
+                        return false;
+                    }
+                    
+                    // Remove MOBILE_KOTLIN - RN projects always have android/ folder
+                    // When RN is high confidence (from package.json), remove ALL Android detection
+                    if (type == TechStackType.MOBILE_KOTLIN) {
+                        if (highConfidenceRN) {
+                            log.info("Filtering out {} for repo {} - confirmed RN android/ folder", type, repoId);
+                            return false;
+                        } else if (stack.getConfidence() < 90) {
+                            log.debug("Filtering out {} for repo {} - likely RN android/ folder", type, repoId);
+                            return false;
+                        }
+                    }
+                    
+                    // Remove MOBILE_SWIFT - RN projects always have ios/ folder  
+                    // When RN is high confidence (from package.json), remove ALL iOS detection unless very high confidence
+                    if (type == TechStackType.MOBILE_SWIFT) {
+                        if (highConfidenceRN) {
+                            log.info("Filtering out {} for repo {} - confirmed RN ios/ folder", type, repoId);
+                            return false;
+                        } else if (stack.getConfidence() < 90) {
+                            log.debug("Filtering out {} for repo {} - likely RN ios/ folder", type, repoId);
+                            return false;
+                        }
+                    }
+                    
+                    // Remove BACKEND_NODE unless it indicates a real backend (Express, NestJS, etc.)
+                    // RN projects always have package.json which triggers Node detection
+                    if (type == TechStackType.BACKEND_NODE) {
+                        String framework = stack.getFramework();
+                        boolean isRealBackend = framework != null && 
+                            (framework.contains("Express") || framework.contains("Nest") || 
+                             framework.contains("Fastify") || framework.contains("Koa"));
+                        
+                        if (!isRealBackend && (highConfidenceRN || stack.getConfidence() < 80)) {
+                            log.info("Filtering out {} for repo {} - RN package.json (framework: {})", 
+                                type, repoId, framework);
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            })
+            .collect(Collectors.toList());
+        
+        // Third pass: Group by category and keep highest confidence in each category
+        Map<String, DetectedStackDTO> bestByCategory = new HashMap<>();
+        
+        for (DetectedStackDTO stack : filteredStacks) {
+            String category = stack.getStackType().getCategory();
+            String key = category + "_" + stack.getRepositoryId();
+            
+            DetectedStackDTO existing = bestByCategory.get(key);
+            if (existing == null || stack.getConfidence() > existing.getConfidence()) {
+                // Special case: keep both backend and frontend for Node.js projects
+                if (existing != null && 
+                    !existing.getStackType().getCategory().equals(stack.getStackType().getCategory())) {
+                    // Different categories, keep both
+                    bestByCategory.put(key + "_" + stack.getStackType().name(), stack);
+                } else {
+                    bestByCategory.put(key, stack);
+                }
+            }
+        }
+        
+        return new ArrayList<>(bestByCategory.values());
+    }
+}
