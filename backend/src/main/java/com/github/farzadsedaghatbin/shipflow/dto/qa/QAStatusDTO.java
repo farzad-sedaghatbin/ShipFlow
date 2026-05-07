@@ -5,57 +5,37 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO for Q&A feature status information.
- */
+/** DTO for Q&A feature status information. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class QAStatusDTO {
 
-    /**
-     * Whether the Q&A feature is enabled.
-     */
-    private Boolean qaEnabled;
+  /** Whether the Q&A feature is enabled. */
+  private Boolean qaEnabled;
 
-    /**
-     * Whether AI (LLM) is available for answer generation.
-     */
-    private Boolean aiAvailable;
+  /** Whether AI (LLM) is available for answer generation. */
+  private Boolean aiAvailable;
 
-    /**
-     * Type of vector store being used.
-     */
-    private String vectorStoreType;
+  /** Type of vector store being used. */
+  private String vectorStoreType;
 
-    /**
-     * Total number of knowledge items in the database.
-     */
-    private Long totalKnowledgeItems;
+  /** Total number of knowledge items in the database. */
+  private Long totalKnowledgeItems;
 
-    /**
-     * Number of knowledge items that have been embedded.
-     */
-    private Long embeddedKnowledgeItems;
+  /** Number of knowledge items that have been embedded. */
+  private Long embeddedKnowledgeItems;
 
-    /**
-     * Total number of Q&A interactions.
-     */
-    private Long totalInteractions;
+  /** Total number of Q&A interactions. */
+  private Long totalInteractions;
 
-    /**
-     * Number of validated (accurate/corrected) Q&A interactions.
-     */
-    private Long validatedInteractions;
+  /** Number of validated (accurate/corrected) Q&A interactions. */
+  private Long validatedInteractions;
 
-    /**
-     * Name of the embedding model being used.
-     */
-    private String embeddingModel;
+  /** Name of the embedding model being used. */
+  private String embeddingModel;
 
-    /**
-     * Name of the LLM model being used.
-     */
-    private String llmModel;
+  /** Name of the LLM model being used. */
+  private String llmModel;
 }

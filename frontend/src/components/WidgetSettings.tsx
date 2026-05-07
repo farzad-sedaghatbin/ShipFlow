@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import { CustomMetric } from '../types/metrics';
 import WidgetDataConfig, { WidgetDataConfig as DataConfig } from './WidgetDataConfig';
@@ -66,19 +66,20 @@ export default function WidgetSettings({
 
       <div>
         <Label>Widget Type</Label>
-        <Select value={widgetType} onValueChange={setWidgetType}>
-          <SelectTrigger className="mt-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="KPI">KPI Card</SelectItem>
-            <SelectItem value="LINE_CHART">Line Chart</SelectItem>
-            <SelectItem value="BAR_CHART">Bar Chart</SelectItem>
-            <SelectItem value="PIE_CHART">Pie Chart</SelectItem>
-            <SelectItem value="AREA_CHART">Area Chart</SelectItem>
-            <SelectItem value="TABLE">Data Table</SelectItem>
-          </SelectContent>
-        </Select>
+        <Combobox
+          options={[
+            { value: 'KPI', label: 'KPI Card' },
+            { value: 'LINE_CHART', label: 'Line Chart' },
+            { value: 'BAR_CHART', label: 'Bar Chart' },
+            { value: 'PIE_CHART', label: 'Pie Chart' },
+            { value: 'AREA_CHART', label: 'Area Chart' },
+            { value: 'TABLE', label: 'Data Table' }
+          ]}
+          value={widgetType}
+          onValueChange={setWidgetType}
+          placeholder="Select widget type"
+          triggerClassName="mt-1"
+        />
       </div>
 
       <Tabs defaultValue="data" className="w-full">

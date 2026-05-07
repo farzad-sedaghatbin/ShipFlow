@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Build stage for backend
-FROM maven:3.9-eclipse-temurin-17 AS backend-builder
+FROM maven:3.9-eclipse-temurin-21 AS backend-builder
 WORKDIR /app/backend
 COPY backend/pom.xml ./
 RUN mvn dependency:go-offline -B
@@ -17,7 +17,7 @@ COPY --from=frontend-builder /app/frontend/dist ./src/main/resources/static
 RUN mvn clean package -DskipTests -B
 
 # Runtime stage (glibc-based for onnxruntime)
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21.0.10_7-jre-jammy
 WORKDIR /app
 
 # Install runtime deps needed by onnxruntime-java (and healthcheck tool)
@@ -47,4 +47,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
-CMD ["--spring.profiles.active=prod"]

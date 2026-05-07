@@ -12,13 +12,7 @@ import { cycleService } from '../services/cycleService';
 import { Cycle } from '../types';
 import { Card, CardContent } from '../components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Label } from '../components/ui/label';
 
 export const HealthOverview: React.FC = () => {
@@ -145,21 +139,17 @@ export const HealthOverview: React.FC = () => {
         <TabsContent value="specific" className="mt-4">
           <div className="mb-6">
             <Label className="mb-2 block">{t('healthOverview.selectCycle')}</Label>
-            <Select
+            <Combobox
+              options={cycles.map(cycle => ({
+                value: String(cycle.id),
+                label: `${cycle.name} ${cycle.isActive ? `(${t('healthOverview.active')})` : ''}`
+              }))}
               value={selectedCycleId}
               onValueChange={setSelectedCycleId}
-            >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder={t('healthOverview.selectCycle')} />
-              </SelectTrigger>
-              <SelectContent>
-                {cycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={String(cycle.id)}>
-                    {cycle.name} {cycle.isActive && `(${t('healthOverview.active')})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={t('healthOverview.selectCycle')}
+              searchPlaceholder="Search cycles..."
+              triggerClassName="w-[300px]"
+            />
           </div>
 
           {selectedCycleId ? (

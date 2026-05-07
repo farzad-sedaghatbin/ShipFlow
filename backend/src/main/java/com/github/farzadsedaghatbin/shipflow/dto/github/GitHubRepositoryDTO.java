@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GitHubRepositoryDTO {
-    private Long id;
-    private String owner;
-    private String name;
-    private String fullName;
-    private String url;
-    private String defaultBranch;
-    private Boolean isActive;
+  private Long id;
+  private String owner;
+  private String name;
+  private String fullName;
+  private String url;
+  private String defaultBranch;
+  private Boolean isActive;
 }

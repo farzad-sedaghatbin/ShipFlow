@@ -130,4 +130,25 @@ export const documentService = {
   // Link existing document to pitch
   linkDocumentToPitch: (documentId: number, pitchId: number) =>
     api.put(`/documents/${documentId}/link-to-pitch/${pitchId}`),
+
+  // ========== Bug Report Attachments ==========
+
+  // Upload attachment for a bug report (images/videos)
+  uploadBugAttachment: (bugId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<DocumentUploadResponse>(`/documents/bug/${bugId}/attachment`, formData);
+  },
+
+  // Get attachments for a bug report
+  getBugAttachments: (bugId: number) =>
+    api.get<UploadedDocument[]>(`/documents/bug/${bugId}/attachments`),
+
+  // Delete bug attachment
+  deleteBugAttachment: (attachmentId: number) =>
+    api.delete<{ message: string }>(`/documents/bug/attachment/${attachmentId}`),
+
+  // Get attachment URL for display (inline viewing)
+  getAttachmentUrl: (attachmentId: number) =>
+    `${api.defaults.baseURL}/documents/${attachmentId}/download`,
 };

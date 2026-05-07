@@ -10,16 +10,16 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateRetroItemRequest {
-    
-    @NotBlank(message = "Content is required")
-    private String content;
-    
-    @NotNull(message = "Column type is required")
-    private RetroColumnType columnType;
-    
-    @NotNull(message = "Retrospective ID is required")
-    private Long retrospectiveId;
-    
-    @Builder.Default
-    private Boolean isAnonymous = false;
+
+  @NotBlank(message = "Content is required")
+  private String content;
+
+  @NotNull(message = "Column type is required")
+  private RetroColumnType columnType;
+
+  @NotNull(message = "Retrospective ID is required")
+  private Long retrospectiveId;
+
+  @Builder.Default
+  private Boolean isAnonymous = false;
 }

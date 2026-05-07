@@ -1,5 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.github.farzadsedaghatbin.shipflow.dto.qa.CreateTestCaseRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.TestCaseDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.UpdateTestCaseRequest;
@@ -7,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestCasePriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestCaseStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,12 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 /**
  * Unit tests for TestCase traceability relationships - scope and task linking.
  */
@@ -29,319 +28,238 @@ import static org.mockito.Mockito.*;
 @DisplayName("TestCase Traceability Tests")
 class TestCaseTraceabilityTest {
 
-    @Mock
-    private TestCaseRepository testCaseRepository;
-    
-    @Mock
-    private TestRunRepository testRunRepository;
-    
-    @Mock
-    private PitchRepository pitchRepository;
-    
-    @Mock
-    private CycleRepository cycleRepository;
-    
-    @Mock
-    private UserRepository userRepository;
-    
-    @Mock
-    private HillChartPointRepository hillChartPointRepository;
-    
-    @Mock
-    private TaskRepository taskRepository;
+  @Mock
+  private TestCaseRepository testCaseRepository;
 
-    @InjectMocks
-    private TestCaseService testCaseService;
+  @Mock
+  private TestRunRepository testRunRepository;
 
-    private User user;
-    private Cycle cycle;
-    private Pitch pitch;
-    private HillChartPoint scope;
-    private Task task;
+  @Mock
+  private PitchRepository pitchRepository;
 
-    @BeforeEach
-    void setUp() {
-        // Enable QA Test Management feature for tests
-        ReflectionTestUtils.setField(testCaseService, "testManagementEnabled", true);
-        
-        user = User.builder()
-                .id(1L)
-                .username("testuser")
-                .build();
+  @Mock
+  private CycleRepository cycleRepository;
 
-        cycle = Cycle.builder()
-                .id(1L)
-                .name("Cycle 1")
-                .build();
+  @Mock
+  private UserRepository userRepository;
 
-        pitch = Pitch.builder()
-                .id(1L)
-                .title("User Authentication")
-                .cycle(cycle)
-                .build();
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-        scope = HillChartPoint.builder()
-                .id(1L)
-                .scope("Login Form")
-                .description("Build login form UI")
-                .pitch(pitch)
-                .build();
+  @Mock
+  private TaskRepository taskRepository;
 
-        task = Task.builder()
-                .id(1L)
-                .title("Implement login validation")
-                .cycle(cycle)
-                .pitch(pitch)
-                .scope(scope)
-                .build();
-    }
+  @InjectMocks
+  private TestCaseService testCaseService;
 
-    @Test
-    @DisplayName("Should create test case with scope and task links")
-    void shouldCreateTestCaseWithScopeAndTask() {
-        // Arrange
-        CreateTestCaseRequest request = CreateTestCaseRequest.builder()
-                .title("TC-001: Verify email validation on login")
-                .description("Test that email field shows error for invalid format")
-                .priority(TestCasePriority.HIGH)
-                .pitchId(1L)
-                .scopeId(1L)
-                .taskId(1L)
-                .build();
+  private User user;
+  private Cycle cycle;
+  private Pitch pitch;
+  private HillChartPoint scope;
+  private Task task;
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(pitchRepository.findById(1L)).thenReturn(Optional.of(pitch));
-        when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        
-        TestCase savedTestCase = TestCase.builder()
-                .id(1L)
-                .testCaseKey("TC-001")
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .priority(request.getPriority())
-                .status(TestCaseStatus.READY)
-                .pitch(pitch)
-                .cycle(cycle)
-                .scope(scope)
-                .task(task)
-                .createdBy(user)
-                .build();
-        
-        when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
+  @BeforeEach
+  void setUp() {
+    // Enable QA Test Management feature for tests
+    ReflectionTestUtils.setField(testCaseService, "testManagementEnabled", true);
 
-        // Act
-        TestCaseDTO result = testCaseService.createTestCase(request, 1L);
+    user = User.builder().id(1L).username("testuser").build();
 
-        // Assert
-        assertNotNull(result);
-        assertEquals("TC-001: Verify email validation on login", result.getTitle());
-        assertEquals(1L, result.getScopeId());
-        assertEquals("Login Form", result.getScopeName());
-        assertEquals(1L, result.getTaskId());
-        assertEquals("Implement login validation", result.getTaskTitle());
-        
-        verify(hillChartPointRepository).findById(1L);
-        verify(taskRepository).findById(1L);
-        verify(testCaseRepository).save(any(TestCase.class));
-    }
+    cycle = Cycle.builder().id(1L).name("Cycle 1").build();
 
-    @Test
-    @DisplayName("Should create test case without scope/task for general tests")
-    void shouldCreateTestCaseWithoutScopeOrTask() {
-        // Arrange
-        CreateTestCaseRequest request = CreateTestCaseRequest.builder()
-                .title("TC-100: Verify app loads on all supported browsers")
-                .description("Cross-browser compatibility smoke test")
-                .priority(TestCasePriority.MEDIUM)
-                .build();
+    pitch = Pitch.builder().id(1L).title("User Authentication").cycle(cycle).build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        
-        TestCase savedTestCase = TestCase.builder()
-                .id(2L)
-                .testCaseKey("TC-100")
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .priority(request.getPriority())
-                .status(TestCaseStatus.READY)
-                .scope(null)  // General test not tied to specific scope
-                .task(null)   // General test not tied to specific task
-                .createdBy(user)
-                .build();
-        
-        when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
+    scope = HillChartPoint.builder().id(1L).scope("Login Form").description("Build login form UI").pitch(pitch)
+        .build();
 
-        // Act
-        TestCaseDTO result = testCaseService.createTestCase(request, 1L);
+    task = Task.builder().id(1L).title("Implement login validation").cycle(cycle).pitch(pitch).scope(scope).build();
+  }
 
-        // Assert
-        assertNotNull(result);
-        assertEquals("TC-100: Verify app loads on all supported browsers", result.getTitle());
-        assertNull(result.getScopeId());
-        assertNull(result.getScopeName());
-        assertNull(result.getTaskId());
-        assertNull(result.getTaskTitle());
-        
-        verify(hillChartPointRepository, never()).findById(anyLong());
-        verify(taskRepository, never()).findById(anyLong());
-    }
+  @Test
+  @DisplayName("Should create test case with scope and task links")
+  void shouldCreateTestCaseWithScopeAndTask() {
+    // Arrange
+    CreateTestCaseRequest request = CreateTestCaseRequest.builder()
+        .title("TC-001: Verify email validation on login")
+        .description("Test that email field shows error for invalid format").priority(TestCasePriority.HIGH)
+        .pitchId(1L).scopeId(1L).taskId(1L).build();
 
-    @Test
-    @DisplayName("Should update test case to link with scope and task")
-    void shouldUpdateTestCaseToLinkWithScopeAndTask() {
-        // Arrange
-        TestCase existingTestCase = TestCase.builder()
-                .id(1L)
-                .testCaseKey("TC-001")
-                .title("Generic test")
-                .description("Some test")
-                .priority(TestCasePriority.LOW)
-                .status(TestCaseStatus.READY)
-                .createdBy(user)
-                .scope(null)
-                .task(null)
-                .build();
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(pitchRepository.findById(1L)).thenReturn(Optional.of(pitch));
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        UpdateTestCaseRequest updateRequest = UpdateTestCaseRequest.builder()
-                .scopeId(1L)
-                .taskId(1L)
-                .build();
+    TestCase savedTestCase = TestCase.builder().id(1L).testCaseKey("TC-001").title(request.getTitle())
+        .description(request.getDescription()).priority(request.getPriority()).status(TestCaseStatus.READY)
+        .pitch(pitch).cycle(cycle).scope(scope).task(task).createdBy(user).build();
 
-        when(testCaseRepository.findById(1L)).thenReturn(Optional.of(existingTestCase));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(testCaseRepository.save(any(TestCase.class))).thenReturn(existingTestCase);
+    when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
 
-        // Act
-        TestCaseDTO result = testCaseService.updateTestCase(1L, updateRequest, 1L);
+    // Act
+    TestCaseDTO result = testCaseService.createTestCase(request, 1L);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1L, result.getScopeId());
-        assertEquals(1L, result.getTaskId());
-        
-        verify(hillChartPointRepository).findById(1L);
-        verify(taskRepository).findById(1L);
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals("TC-001: Verify email validation on login", result.getTitle());
+    assertEquals(1L, result.getScopeId());
+    assertEquals("Login Form", result.getScopeName());
+    assertEquals(1L, result.getTaskId());
+    assertEquals("Implement login validation", result.getTaskTitle());
 
-    @Test
-    @DisplayName("Should link test case to scope but not task")
-    void shouldLinkTestCaseToScopeOnly() {
-        // Arrange
-        CreateTestCaseRequest request = CreateTestCaseRequest.builder()
-                .title("TC-050: Verify login form UI layout")
-                .description("Check all UI elements are properly aligned")
-                .priority(TestCasePriority.LOW)
-                .scopeId(1L)
-                // No taskId - test covers entire scope, not specific task
-                .build();
+    verify(hillChartPointRepository).findById(1L);
+    verify(taskRepository).findById(1L);
+    verify(testCaseRepository).save(any(TestCase.class));
+  }
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
-        
-        TestCase savedTestCase = TestCase.builder()
-                .id(3L)
-                .testCaseKey("TC-050")
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .priority(request.getPriority())
-                .status(TestCaseStatus.READY)
-                .scope(scope)
-                .task(null)
-                .createdBy(user)
-                .build();
-        
-        when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
+  @Test
+  @DisplayName("Should create test case without scope/task for general tests")
+  void shouldCreateTestCaseWithoutScopeOrTask() {
+    // Arrange
+    CreateTestCaseRequest request = CreateTestCaseRequest.builder()
+        .title("TC-100: Verify app loads on all supported browsers")
+        .description("Cross-browser compatibility smoke test").priority(TestCasePriority.MEDIUM).build();
 
-        // Act
-        TestCaseDTO result = testCaseService.createTestCase(request, 1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1L, result.getScopeId());
-        assertEquals("Login Form", result.getScopeName());
-        assertNull(result.getTaskId());
-        
-        verify(hillChartPointRepository).findById(1L);
-        verify(taskRepository, never()).findById(anyLong());
-    }
+    TestCase savedTestCase = TestCase.builder().id(2L).testCaseKey("TC-100").title(request.getTitle())
+        .description(request.getDescription()).priority(request.getPriority()).status(TestCaseStatus.READY)
+        .scope(null) // General test not tied to specific scope
+        .task(null) // General test not tied to specific task
+        .createdBy(user).build();
 
-    @Test
-    @DisplayName("Should throw exception when scope not found")
-    void shouldThrowExceptionWhenScopeNotFound() {
-        // Arrange
-        CreateTestCaseRequest request = CreateTestCaseRequest.builder()
-                .title("Test case with invalid scope")
-                .description("Test case")
-                .priority(TestCasePriority.HIGH)
-                .scopeId(999L)  // Non-existent scope
-                .build();
+    when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(hillChartPointRepository.findById(999L)).thenReturn(Optional.empty());
+    // Act
+    TestCaseDTO result = testCaseService.createTestCase(request, 1L);
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, 
-            () -> testCaseService.createTestCase(request, 1L));
-        verify(testCaseRepository, never()).save(any(TestCase.class));
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals("TC-100: Verify app loads on all supported browsers", result.getTitle());
+    assertNull(result.getScopeId());
+    assertNull(result.getScopeName());
+    assertNull(result.getTaskId());
+    assertNull(result.getTaskTitle());
 
-    @Test
-    @DisplayName("Should throw exception when task not found")
-    void shouldThrowExceptionWhenTaskNotFound() {
-        // Arrange
-        CreateTestCaseRequest request = CreateTestCaseRequest.builder()
-                .title("Test case with invalid task")
-                .description("Test case")
-                .priority(TestCasePriority.HIGH)
-                .taskId(999L)  // Non-existent task
-                .build();
+    verify(hillChartPointRepository, never()).findById(anyLong());
+    verify(taskRepository, never()).findById(anyLong());
+  }
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  @DisplayName("Should update test case to link with scope and task")
+  void shouldUpdateTestCaseToLinkWithScopeAndTask() {
+    // Arrange
+    TestCase existingTestCase = TestCase.builder().id(1L).testCaseKey("TC-001").title("Generic test")
+        .description("Some test").priority(TestCasePriority.LOW).status(TestCaseStatus.READY).createdBy(user)
+        .scope(null).task(null).build();
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, 
-            () -> testCaseService.createTestCase(request, 1L));
-        verify(testCaseRepository, never()).save(any(TestCase.class));
-    }
+    UpdateTestCaseRequest updateRequest = UpdateTestCaseRequest.builder().scopeId(1L).taskId(1L).build();
 
-    @Test
-    @DisplayName("Should not change links when update request has no scope/task fields")
-    void shouldNotChangeLinksWhenUpdateRequestHasNoScopeOrTaskFields() {
-        // Arrange
-        TestCase existingTestCase = TestCase.builder()
-                .id(1L)
-                .testCaseKey("TC-001")
-                .title("Linked test")
-                .description("Test with links")
-                .priority(TestCasePriority.HIGH)
-                .status(TestCaseStatus.READY)
-                .createdBy(user)
-                .scope(scope)
-                .task(task)
-                .build();
+    when(testCaseRepository.findById(1L)).thenReturn(Optional.of(existingTestCase));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+    when(testCaseRepository.save(any(TestCase.class))).thenReturn(existingTestCase);
 
-        UpdateTestCaseRequest updateRequest = UpdateTestCaseRequest.builder()
-                .title("Updated title")
-                // No scopeId or taskId - existing links should remain
-                .build();
+    // Act
+    TestCaseDTO result = testCaseService.updateTestCase(1L, updateRequest, 1L);
 
-        when(testCaseRepository.findById(1L)).thenReturn(Optional.of(existingTestCase));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(testCaseRepository.save(any(TestCase.class))).thenReturn(existingTestCase);
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getScopeId());
+    assertEquals(1L, result.getTaskId());
 
-        // Act
-        TestCaseDTO result = testCaseService.updateTestCase(1L, updateRequest, 1L);
+    verify(hillChartPointRepository).findById(1L);
+    verify(taskRepository).findById(1L);
+  }
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1L, result.getScopeId());  // Links should still be present
-        assertEquals(1L, result.getTaskId());
-        
-        verify(hillChartPointRepository, never()).findById(anyLong());
-        verify(taskRepository, never()).findById(anyLong());
-    }
+  @Test
+  @DisplayName("Should link test case to scope but not task")
+  void shouldLinkTestCaseToScopeOnly() {
+    // Arrange
+    CreateTestCaseRequest request = CreateTestCaseRequest.builder().title("TC-050: Verify login form UI layout")
+        .description("Check all UI elements are properly aligned").priority(TestCasePriority.LOW).scopeId(1L)
+        // No taskId - test covers entire scope, not specific task
+        .build();
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
+
+    TestCase savedTestCase = TestCase.builder().id(3L).testCaseKey("TC-050").title(request.getTitle())
+        .description(request.getDescription()).priority(request.getPriority()).status(TestCaseStatus.READY)
+        .scope(scope).task(null).createdBy(user).build();
+
+    when(testCaseRepository.save(any(TestCase.class))).thenReturn(savedTestCase);
+
+    // Act
+    TestCaseDTO result = testCaseService.createTestCase(request, 1L);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getScopeId());
+    assertEquals("Login Form", result.getScopeName());
+    assertNull(result.getTaskId());
+
+    verify(hillChartPointRepository).findById(1L);
+    verify(taskRepository, never()).findById(anyLong());
+  }
+
+  @Test
+  @DisplayName("Should throw exception when scope not found")
+  void shouldThrowExceptionWhenScopeNotFound() {
+    // Arrange
+    CreateTestCaseRequest request = CreateTestCaseRequest.builder().title("Test case with invalid scope")
+        .description("Test case").priority(TestCasePriority.HIGH).scopeId(999L) // Non-existent scope
+        .build();
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(hillChartPointRepository.findById(999L)).thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> testCaseService.createTestCase(request, 1L));
+    verify(testCaseRepository, never()).save(any(TestCase.class));
+  }
+
+  @Test
+  @DisplayName("Should throw exception when task not found")
+  void shouldThrowExceptionWhenTaskNotFound() {
+    // Arrange
+    CreateTestCaseRequest request = CreateTestCaseRequest.builder().title("Test case with invalid task")
+        .description("Test case").priority(TestCasePriority.HIGH).taskId(999L) // Non-existent task
+        .build();
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> testCaseService.createTestCase(request, 1L));
+    verify(testCaseRepository, never()).save(any(TestCase.class));
+  }
+
+  @Test
+  @DisplayName("Should not change links when update request has no scope/task fields")
+  void shouldNotChangeLinksWhenUpdateRequestHasNoScopeOrTaskFields() {
+    // Arrange
+    TestCase existingTestCase = TestCase.builder().id(1L).testCaseKey("TC-001").title("Linked test")
+        .description("Test with links").priority(TestCasePriority.HIGH).status(TestCaseStatus.READY)
+        .createdBy(user).scope(scope).task(task).build();
+
+    UpdateTestCaseRequest updateRequest = UpdateTestCaseRequest.builder().title("Updated title")
+        // No scopeId or taskId - existing links should remain
+        .build();
+
+    when(testCaseRepository.findById(1L)).thenReturn(Optional.of(existingTestCase));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(testCaseRepository.save(any(TestCase.class))).thenReturn(existingTestCase);
+
+    // Act
+    TestCaseDTO result = testCaseService.updateTestCase(1L, updateRequest, 1L);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getScopeId()); // Links should still be present
+    assertEquals(1L, result.getTaskId());
+
+    verify(hillChartPointRepository, never()).findById(anyLong());
+    verify(taskRepository, never()).findById(anyLong());
+  }
 }

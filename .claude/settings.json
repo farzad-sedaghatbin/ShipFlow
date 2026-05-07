@@ -1,0 +1,58 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw *)",
+      "Bash(cd backend && ./mvnw *)",
+      "Bash(npm *)",
+      "Bash(cd frontend && npm *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh *)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose *)",
+      "Bash(docker ps *)",
+      "Bash(docker logs *)",
+      "Bash(redis-cli *)",
+      "Bash(curl http://localhost:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(ollama *)",
+      "Bash(node scripts/*)",
+      "Bash(ls *)",
+      "Bash(find * -name *)"
+    ],
+    "deny": [
+      "Bash(git push --force)",
+      "Bash(git push --force *)",
+      "Bash(git push -f)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard)",
+      "Bash(git reset --hard *)",
+      "Bash(./mvnw flyway:clean)",
+      "Bash(./mvnw flyway:clean *)",
+      "Bash(cd backend && ./mvnw flyway:clean)",
+      "Bash(cd backend && ./mvnw flyway:clean *)",
+      "Bash(docker compose down -v)",
+      "Bash(docker compose down -v *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const f=process.env.CLAUDE_TOOL_INPUT_FILE_PATH||''; if(f.match(/frontend\\/src\\/.*\\.(tsx?)$/)) { const fs=require('fs'); const s=fs.existsSync(f)?fs.readFileSync(f,'utf8'):''; const hasText=/['\\\"][A-Z][a-z]|['\\\"][a-z]+\\s[a-z]/.test(s); if(hasText) process.stdout.write('\\n[i18n reminder] This file may contain user-facing text. Add/update keys in BOTH frontend/src/i18n/locales/en.json AND fa.json.\\n'); }\"",
+            "blocking": false
+          }
+        ]
+      }
+    ]
+  }
+}

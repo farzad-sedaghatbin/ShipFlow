@@ -4,6 +4,7 @@ import { ArrowLeft, CheckSquare, Bug, Sparkles, Beaker } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { MarkdownInline } from '@/components/ui/markdown';
 
 export default function QATestingGuide() {
     const { t } = useTranslation();
@@ -60,11 +61,11 @@ export default function QATestingGuide() {
                         <li>{t('guides.qaTesting.testCasesStep2')}</li>
                         <li>{t('guides.qaTesting.testCasesStep3')}
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3a') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3b') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3c') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3d') }} />
-                                <li dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.testCasesStep3e') }} />
+                                <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3a')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3b')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3c')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3d')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3e')} /></li>
                             </ul>
                         </li>
                         <li>{t('guides.qaTesting.testCasesStep4')}</li>
@@ -137,11 +138,11 @@ export default function QATestingGuide() {
                     </p>
                     <ul className="space-y-2 text-sm">
                         <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]" dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.bugSeverity').split(':')[0] + ':' }} />
+                            <span className="font-semibold min-w-[80px]">{t('guides.qaTesting.bugSeverity').split(':')[0]}:</span>
                             <span>{t('guides.qaTesting.bugSeverity').split(':').slice(1).join(':').trim()}</span>
                         </li>
                         <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]" dangerouslySetInnerHTML={{ __html: t('guides.qaTesting.bugStatus').split(':')[0] + ':' }} />
+                            <span className="font-semibold min-w-[80px]">{t('guides.qaTesting.bugStatus').split(':')[0]}:</span>
                             <span>{t('guides.qaTesting.bugStatus').split(':').slice(1).join(':').trim()}</span>
                         </li>
                     </ul>

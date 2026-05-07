@@ -9,6 +9,8 @@ interface StatusChipProps {
 }
 
 const statusConfig: Record<PitchStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; translationKey: string; className?: string }> = {
+  IDEA: { variant: 'outline', translationKey: 'pitch.statuses.idea', className: 'border-gray-400 text-gray-500' },
+  DRAFT: { variant: 'secondary', translationKey: 'pitch.statuses.draft', className: 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/20' },
   PENDING: { variant: 'outline', translationKey: 'pitch.statuses.pending', className: 'border-muted-foreground/50 text-muted-foreground' },
   SHAPED: { variant: 'secondary', translationKey: 'pitch.statuses.shaped', className: 'bg-violet-500/15 text-violet-500 hover:bg-violet-500/20' },
   STARTED: { variant: 'secondary', translationKey: 'pitch.statuses.started', className: 'bg-blue-500/15 text-blue-500 hover:bg-blue-500/20' },

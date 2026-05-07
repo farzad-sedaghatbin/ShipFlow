@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +22,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/hill-chart")
 @RequiredArgsConstructor
@@ -30,111 +29,130 @@ import java.util.Map;
 @SecurityRequirement(name = "bearer-jwt")
 public class HillChartController {
 
-    private final HillChartService hillChartService;
-    private final UserService userService;
+  private final HillChartService hillChartService;
+  private final UserService userService;
 
-    @GetMapping
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get all hill chart points")
-    public ResponseEntity<List<HillChartPointDTO>> getAllHillChartPoints() {
-        return ResponseEntity.ok(hillChartService.getAllHillChartPoints());
-    }
+  @GetMapping
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get all hill chart points")
+  public ResponseEntity<List<HillChartPointDTO>> getAllHillChartPoints() {
+    return ResponseEntity.ok(hillChartService.getAllHillChartPoints());
+  }
 
-    @GetMapping("/search")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Search hill chart points (scopes)",
-               description = "Search scopes by name or description. Minimum 3 characters required.")
-    public ResponseEntity<?> searchHillChartPoints(@RequestParam String q) {
-        if (q == null || q.trim().length() < 3) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
-        }
-        return ResponseEntity.ok(hillChartService.searchHillChartPoints(q));
+  @GetMapping("/search")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Search hill chart points (scopes)", description = "Search scopes by name or description. Minimum 3 characters required.")
+  public ResponseEntity<?> searchHillChartPoints(@RequestParam String q) {
+    if (q == null || q.trim().length() < 3) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
     }
+    return ResponseEntity.ok(hillChartService.searchHillChartPoints(q));
+  }
 
-    @GetMapping("/pitch/{pitchId}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get hill chart points by pitch")
-    public ResponseEntity<List<HillChartPointDTO>> getHillChartPointsByPitch(@PathVariable Long pitchId) {
-        return ResponseEntity.ok(hillChartService.getHillChartPointsByPitch(pitchId));
-    }
+  @GetMapping("/pitch/{pitchId}")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get hill chart points by pitch")
+  public ResponseEntity<List<HillChartPointDTO>> getHillChartPointsByPitch(@PathVariable Long pitchId) {
+    return ResponseEntity.ok(hillChartService.getHillChartPointsByPitch(pitchId));
+  }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get hill chart point by ID")
-    public ResponseEntity<HillChartPointDTO> getHillChartPointById(@PathVariable Long id) {
-        return ResponseEntity.ok(hillChartService.getHillChartPointById(id));
-    }
+  @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get hill chart points by cycle", description = "Returns all scopes across all pitches in the cycle, ordered by pitch then last updated. Use this for the cycle-level hill chart view.")
+  public ResponseEntity<List<HillChartPointDTO>> getHillChartPointsByCycle(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(hillChartService.getHillChartPointsByCycle(cycleId));
+  }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'PRODUCT')")
-    @Operation(summary = "Create a new hill chart point")
-    public ResponseEntity<HillChartPointDTO> createHillChartPoint(@Valid @RequestBody CreateHillChartPointRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(hillChartService.createHillChartPoint(request));
-    }
+  @GetMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get hill chart point by ID")
+  public ResponseEntity<HillChartPointDTO> getHillChartPointById(@PathVariable Long id) {
+    return ResponseEntity.ok(hillChartService.getHillChartPointById(id));
+  }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'PRODUCT')")
-    @Operation(summary = "Update a hill chart point")
-    public ResponseEntity<HillChartPointDTO> updateHillChartPoint(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateHillChartPointRequest request) {
-        return ResponseEntity.ok(hillChartService.updateHillChartPoint(id, request));
-    }
+  @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'PRODUCT')")
+  @Operation(summary = "Create a new hill chart point")
+  public ResponseEntity<HillChartPointDTO> createHillChartPoint(
+      @Valid @RequestBody CreateHillChartPointRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(hillChartService.createHillChartPoint(request));
+  }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
-    @Operation(summary = "Delete a hill chart point")
-    public ResponseEntity<Void> deleteHillChartPoint(@PathVariable Long id) {
-        hillChartService.deleteHillChartPoint(id);
-        return ResponseEntity.noContent().build();
-    }
+  @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'PRODUCT')")
+  @Operation(summary = "Update a hill chart point")
+  public ResponseEntity<HillChartPointDTO> updateHillChartPoint(@PathVariable Long id,
+      @Valid @RequestBody UpdateHillChartPointRequest request) {
+    return ResponseEntity.ok(hillChartService.updateHillChartPoint(id, request));
+  }
 
-    @PutMapping("/{id}/position")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Update hill chart point position with drag-drop", 
-               description = "Update position with confidence tracking for analyzing team accuracy")
-    public ResponseEntity<HillChartPointDTO> updatePosition(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateHillChartPositionRequest request) {
-        Long userId = getCurrentUserId();
-        return ResponseEntity.ok(hillChartService.updatePositionWithHistory(id, request, userId));
-    }
+  @DeleteMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+  @Operation(summary = "Delete a hill chart point")
+  public ResponseEntity<Void> deleteHillChartPoint(@PathVariable Long id) {
+    hillChartService.deleteHillChartPoint(id);
+    return ResponseEntity.noContent().build();
+  }
 
-    @GetMapping("/{id}/history")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get position history for a point", 
-               description = "Get all position changes for a hill chart point")
-    public ResponseEntity<List<HillChartHistoryDTO>> getPointHistory(@PathVariable Long id) {
-        return ResponseEntity.ok(hillChartService.getPointHistory(id));
-    }
+  @PutMapping("/{id}/position")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Update hill chart point position with drag-drop", description = "Update position with confidence tracking for analyzing team accuracy")
+  public ResponseEntity<HillChartPointDTO> updatePosition(@PathVariable Long id,
+      @Valid @RequestBody UpdateHillChartPositionRequest request) {
+    Long userId = getCurrentUserId();
+    return ResponseEntity.ok(hillChartService.updatePositionWithHistory(id, request, userId));
+  }
 
-    @GetMapping("/pitch/{pitchId}/history")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get position history for a pitch", 
-               description = "Get all position changes for all points in a pitch")
-    public ResponseEntity<List<HillChartHistoryDTO>> getPitchHistory(@PathVariable Long pitchId) {
-        return ResponseEntity.ok(hillChartService.getPitchHistory(pitchId));
-    }
+  @GetMapping("/{id}/history")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get position history for a point", description = "Get all position changes for a hill chart point")
+  public ResponseEntity<List<HillChartHistoryDTO>> getPointHistory(@PathVariable Long id) {
+    return ResponseEntity.ok(hillChartService.getPointHistory(id));
+  }
 
-    @GetMapping("/pitch/{pitchId}/confidence")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get confidence analysis for a pitch", 
-               description = "Compare team confidence vs actual progress based on hill chart moves")
-    public ResponseEntity<ConfidenceAnalysisDTO> getConfidenceAnalysis(@PathVariable Long pitchId) {
-        return ResponseEntity.ok(hillChartService.getConfidenceAnalysis(pitchId));
-    }
+  @GetMapping("/pitch/{pitchId}/history")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get position history for a pitch", description = "Get all position changes for all points in a pitch")
+  public ResponseEntity<List<HillChartHistoryDTO>> getPitchHistory(@PathVariable Long pitchId) {
+    return ResponseEntity.ok(hillChartService.getPitchHistory(pitchId));
+  }
 
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            try {
-                return userService.findByUsername(username).getId();
-            } catch (Exception e) {
-                return null; // Allow anonymous for simplicity
-            }
-        }
-        return null;
+  @GetMapping("/pitch/{pitchId}/confidence")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get confidence analysis for a pitch", description = "Compare team confidence vs actual progress based on hill chart moves")
+  public ResponseEntity<ConfidenceAnalysisDTO> getConfidenceAnalysis(@PathVariable Long pitchId) {
+    return ResponseEntity.ok(hillChartService.getConfidenceAnalysis(pitchId));
+  }
+
+  private Long getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null && authentication.isAuthenticated()) {
+      String username = authentication.getName();
+      try {
+        return userService.findByUsername(username).getId();
+      } catch (Exception e) {
+        return null; // Allow anonymous for simplicity
+      }
     }
+    return null;
+  }
+
+  @PutMapping("/{id}/auto-progress")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Toggle auto-progress for a scope",
+      description = "When enabled, the scope position auto-updates based on subtask completion. When disabled, user controls position manually via drag.")
+  public ResponseEntity<HillChartPointDTO> toggleAutoProgress(
+      @PathVariable Long id,
+      @RequestParam boolean enabled) {
+    return ResponseEntity.ok(hillChartService.toggleAutoProgress(id, enabled));
+  }
+
+  @GetMapping("/{id}/suggested-position")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get suggested position based on subtask completion",
+      description = "Returns the calculated position without applying it. Useful for showing the difference between current and suggested position in UI.")
+  public ResponseEntity<Map<String, Integer>> getSuggestedPosition(@PathVariable Long id) {
+    Integer position = hillChartService.getSuggestedPosition(id);
+    return ResponseEntity.ok(Map.of("suggestedPosition", position));
+  }
 }

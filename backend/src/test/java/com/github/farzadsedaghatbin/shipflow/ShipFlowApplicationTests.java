@@ -8,8 +8,8 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class ShipFlowApplicationTests {
 
-    @Test
-    void contextLoads() {
-        // Verify application context loads successfully
-    }
+  @Test
+  void contextLoads() {
+    // Verify application context loads successfully
+  }
 }

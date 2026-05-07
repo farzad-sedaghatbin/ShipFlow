@@ -15,6 +15,8 @@ import {
   CycleRiskOverviewDTO,
   RiskLevel,
   formatRiskCategory,
+  fetchCycleRiskAsync,
+  JobStatusResponse,
 } from '../services/riskService';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,6 +67,7 @@ export default function CycleRiskOverview({
   const [riskData, setRiskData] = useState<CycleRiskOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiJobStatus, setAiJobStatus] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -74,16 +77,30 @@ export default function CycleRiskOverview({
   const loadRiskOverview = async () => {
     try {
       setLoading(true);
+      // First load fast rule-based data - immediate response
       const fastResponse = await riskService.getCycleRiskOverview(cycleId);
       setRiskData(fastResponse.data);
       setLoading(false);
       
+      // Then load AI-enhanced data asynchronously with polling
       setAiLoading(true);
+      setAiJobStatus('Starting AI analysis...');
       try {
-        const aiResponse = await riskService.getCycleRiskOverviewWithAI(cycleId);
-        setRiskData(aiResponse.data);
+        const aiResult = await fetchCycleRiskAsync(cycleId, (status: JobStatusResponse) => {
+          if (status.status === 'PENDING') {
+            setAiJobStatus('Queued for AI analysis...');
+          } else if (status.status === 'PROCESSING') {
+            setAiJobStatus('AI analyzing cycle risks...');
+          }
+        });
+        
+        if (aiResult) {
+          setRiskData(aiResult);
+        }
+        setAiJobStatus(null);
       } catch (aiError) {
         console.warn('AI risk analysis unavailable, using rule-based analysis');
+        setAiJobStatus(null);
       } finally {
         setAiLoading(false);
       }
@@ -97,11 +114,22 @@ export default function CycleRiskOverview({
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const response = await riskService.refreshCycleRisk(cycleId);
-      setRiskData(response.data);
+      setAiJobStatus('Refreshing AI analysis...');
+      
+      const aiResult = await fetchCycleRiskAsync(cycleId, (status: JobStatusResponse) => {
+        if (status.status === 'PROCESSING') {
+          setAiJobStatus('AI re-analyzing cycle...');
+        }
+      });
+      
+      if (aiResult) {
+        setRiskData(aiResult);
+      }
+      setAiJobStatus(null);
     } catch (error: any) {
       console.error('Failed to refresh cycle risk:', error);
       onError?.(t('errors.refreshRiskOverviewFailed'));
+      setAiJobStatus(null);
     } finally {
       setRefreshing(false);
     }
@@ -160,7 +188,7 @@ export default function CycleRiskOverview({
                   )}
                 </TooltipTrigger>
                 <TooltipContent>
-                  {aiLoading ? 'AI analyzing...' : (riskData.aiEnabled ? 'AI-powered' : 'Rule-based')}
+                  {aiLoading ? (aiJobStatus || 'AI analyzing...') : (riskData.aiEnabled ? 'AI-powered' : 'Rule-based')}
                 </TooltipContent>
               </Tooltip>
             </div>

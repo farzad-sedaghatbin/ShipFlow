@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
@@ -88,18 +88,18 @@ export default function ChartConfigPanel({
         <TabsContent value="basic" className="space-y-4">
           <div>
             <Label>{t('chartConfig.chartType')}</Label>
-            <Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LINE">{t('chartConfig.lineChart')}</SelectItem>
-                <SelectItem value="BAR">{t('chartConfig.barChart')}</SelectItem>
-                <SelectItem value="PIE">{t('chartConfig.pieChart')}</SelectItem>
-                <SelectItem value="AREA">{t('chartConfig.areaChart')}</SelectItem>
-                <SelectItem value="SCATTER">{t('chartConfig.scatterPlot')}</SelectItem>
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={[
+                { value: 'LINE', label: t('chartConfig.lineChart') },
+                { value: 'BAR', label: t('chartConfig.barChart') },
+                { value: 'PIE', label: t('chartConfig.pieChart') },
+                { value: 'AREA', label: t('chartConfig.areaChart') },
+                { value: 'SCATTER', label: t('chartConfig.scatterPlot') }
+              ]}
+              value={chartType}
+              onValueChange={(value) => setChartType(value as ChartType)}
+              placeholder="Select chart type"
+            />
           </div>
 
           <div>

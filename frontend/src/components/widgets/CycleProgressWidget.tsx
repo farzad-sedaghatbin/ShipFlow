@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
@@ -10,6 +10,7 @@ import { cycleService } from '../../services/cycleService';
 import { pitchService } from '../../services/pitchService';
 import { Cycle, Pitch } from '../../types';
 import { cn } from '@/lib/utils';
+import { STALE_TIMES } from '../../lib/queryClient';
 
 interface CycleProgress {
   cycle: Cycle;
@@ -22,33 +23,40 @@ interface CycleProgress {
 
 export function CycleProgressWidget() {
   const { i18n } = useTranslation();
-  const [cycles, setCycles] = useState<CycleProgress[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCycleProgress();
-  }, []);
+  const [cyclesQuery, pitchesQuery] = useQueries({
+    queries: [
+      {
+        queryKey: ['widgets', 'cycle-progress', 'cycles'],
+        queryFn: () => cycleService.getMyActiveCycles().then((r) => r.data as Cycle[]),
+        staleTime: STALE_TIMES.entities,
+      },
+      {
+        queryKey: ['widgets', 'cycle-progress', 'pitches'],
+        queryFn: () => pitchService.getMyPitches().then((r) => r.data as Pitch[]),
+        staleTime: STALE_TIMES.entities,
+      },
+    ],
+  });
 
-  const loadCycleProgress = async () => {
-    try {
-      setLoading(true);
-      const [cyclesRes, pitchesRes] = await Promise.all([
-        cycleService.getMyActiveCycles(),
-        pitchService.getMyPitches(),
-      ]);
+  const loading = cyclesQuery.isLoading || pitchesQuery.isLoading;
 
-      const today = new Date();
-      const progressData = cyclesRes.data.map((cycle: Cycle) => {
-        const cyclePitches = pitchesRes.data.filter((p: Pitch) => p.cycleId === cycle.id);
-        const completed = cyclePitches.filter((p: Pitch) => p.status === 'DONE').length;
-        
+  const cycles: CycleProgress[] = (() => {
+    if (!cyclesQuery.data || !pitchesQuery.data) return [];
+    const today = new Date();
+    const shapeUpCycles = cyclesQuery.data.filter(
+      (cycle) => !cycle.projectType || cycle.projectType === 'SHAPE_UP'
+    );
+    return shapeUpCycles
+      .map((cycle) => {
+        const cyclePitches = pitchesQuery.data.filter((p) => p.cycleId === cycle.id);
+        const completed = cyclePitches.filter((p) => p.status === 'DONE').length;
         const startDate = new Date(cycle.startDate);
         const endDate = new Date(cycle.endDate);
         const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         const elapsedDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         const daysRemaining = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        const timeProgress = Math.min(((elapsedDays / totalDays) * 100), 100);
-
+        const timeProgress = Math.min((elapsedDays / totalDays) * 100, 100);
         return {
           cycle,
           totalPitches: cyclePitches.length,
@@ -57,15 +65,9 @@ export function CycleProgressWidget() {
           daysRemaining: Math.max(daysRemaining, 0),
           timeProgress,
         };
-      });
-
-      setCycles(progressData.slice(0, 3));
-    } catch (error) {
-      console.error('Failed to load cycle progress:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      })
+      .slice(0, 3);
+  })();
 
   if (loading) {
     return (
@@ -73,11 +75,11 @@ export function CycleProgressWidget() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-primary" />
-            Cycle Progress
+            {i18n.t('widgets.cycleProgress')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{i18n.t('widgets.loading')}</div>
         </CardContent>
       </Card>
     );
@@ -88,12 +90,12 @@ export function CycleProgressWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-primary" />
-          Cycle Progress
+          {i18n.t('widgets.cycleProgress')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {cycles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No active cycles</p>
+          <p className="text-sm text-muted-foreground">{i18n.t('widgets.noActiveCycles')}</p>
         ) : (
           <div className="space-y-3">
             {cycles.map(({ cycle, totalPitches, completedPitches, progressPercentage, daysRemaining, timeProgress }) => (
@@ -107,9 +109,8 @@ export function CycleProgressWidget() {
                   <Badge 
                     variant="secondary"
                     className={cn(
-                      cycle.phase === 'BUILD' && 'bg-primary/15 text-primary',
-                      cycle.phase === 'SHAPING' && 'bg-blue-500/15 text-blue-500',
-                      cycle.phase === 'BETTING' && 'bg-amber-500/15 text-amber-500',
+                      cycle.phase === 'SHAPING_BUILDING' && 'bg-primary/15 text-primary',
+                      cycle.phase === 'BETTING_COOLDOWN' && 'bg-amber-500/15 text-amber-500',
                     )}
                   >
                     {cycle.phase}
@@ -120,8 +121,8 @@ export function CycleProgressWidget() {
                   {/* Work Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Work Progress</span>
-                      <span className="font-medium">{completedPitches}/{totalPitches} pitches</span>
+                      <span className="text-muted-foreground">{i18n.t('widgets.workProgress')}</span>
+                      <span className="font-medium">{completedPitches}/{totalPitches} {i18n.t('widgets.pitches')}</span>
                     </div>
                     <Progress 
                       value={progressPercentage} 
@@ -132,8 +133,8 @@ export function CycleProgressWidget() {
                   {/* Time Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Time Progress</span>
-                      <span className="font-medium">{daysRemaining}d remaining</span>
+                      <span className="text-muted-foreground">{i18n.t('widgets.timeProgress')}</span>
+                      <span className="font-medium">{daysRemaining}d {i18n.t('widgets.remaining')}</span>
                     </div>
                     <Progress value={timeProgress} className="h-1.5" />
                   </div>
@@ -146,7 +147,7 @@ export function CycleProgressWidget() {
                     <>
                       <span>•</span>
                       <TrendingUp className="w-3 h-3 text-destructive" />
-                      <span className="text-destructive">Behind schedule</span>
+                      <span className="text-destructive">{i18n.t('widgets.behindSchedule')}</span>
                     </>
                   )}
                 </div>

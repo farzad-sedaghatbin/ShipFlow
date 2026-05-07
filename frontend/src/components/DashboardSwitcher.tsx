@@ -60,7 +60,7 @@ export default function DashboardSwitcher({ onDashboardChange }: DashboardSwitch
     localStorage.setItem('selectedDashboardId', dashboard.id.toString());
     onDashboardChange?.(dashboard.id);
     // Navigate to report view
-    navigate(`/reports/${dashboard.id}`);
+    navigate(`/dashboards/${dashboard.id}`);
   };
 
   if (loading || dashboards.length === 0) {
@@ -100,11 +100,11 @@ export default function DashboardSwitcher({ onDashboardChange }: DashboardSwitch
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => navigate('/reports')}
+          onClick={() => navigate('/dashboards')}
           className="cursor-pointer"
         >
           <Settings className="mr-2 h-4 w-4" />
-          Manage Reports
+          Manage Dashboards
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

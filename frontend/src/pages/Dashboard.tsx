@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedDate } from '../utils/dateLocalization';
+import { useQueries } from '@tanstack/react-query';
 import {
   RefreshCw,
   FileText,
   Users,
   TrendingUp,
-  Plus,
   Rocket,
   Settings,
 } from 'lucide-react';
@@ -17,132 +16,89 @@ import { teamService } from '../services/teamService';
 import { dashboardWidgetApi } from '../services/dashboardApi';
 import { Cycle, Pitch, Team } from '../types';
 import { DashboardWidget } from '../types/dashboard';
-import StatusChip from '../components/StatusChip';
-import { HillChartWidget } from '../components/HillChartWidget';
-import CycleRiskOverview from '../components/CycleRiskOverview';
 import { DashboardSkeleton } from '../components/Skeletons';
 import EmptyState from '../components/EmptyState';
 import { useProject } from '../contexts';
 import {
-  EmptyCyclesIllustration,
-  EmptyPitchesIllustration,
   WelcomeIllustration,
 } from '../components/illustrations';
 import MotionContainer from '../components/MotionContainer';
 import { AnimatedCard } from '../components/animations';
 import QuickLinks from '../components/QuickLinks';
-import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import {
-  OverdueTasksWidget,
-  BlockedTasksWidget,
-  UpcomingDeadlinesWidget,
-  MyTasksWidget,
-  TeamWorkloadWidget,
-  CycleProgressWidget,
-  RecentActivityWidget,
-} from '../components/widgets';
 import { DashboardCustomizer } from '../components/DashboardCustomizer';
+import { DashboardTabs } from '../components/DashboardTabs';
+import { STALE_TIMES, queryKeys } from '../lib/queryClient';
 
 export default function Dashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
-  const [activeCycles, setActiveCycles] = useState<Cycle[]>([]);
-  const [recentPitches, setRecentPitches] = useState<Pitch[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    loadData();
-    return () => abortController.abort();
-  }, [currentProject, isAllProjectsSelected]);
+  const cyclesQueryKey = isAllProjectsSelected
+    ? [...queryKeys.cycles.active(), 'my']
+    : currentProject
+    ? queryKeys.cycles.byProject(currentProject.id)
+    : ['cycles', 'none'];
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
+  const [cyclesQuery, pitchesQuery, teamsQuery, widgetsQuery] = useQueries({
+    queries: [
+      {
+        queryKey: cyclesQueryKey,
+        queryFn: async (): Promise<Cycle[]> => {
+          if (!isAllProjectsSelected && !currentProject) return [];
+          const res = isAllProjectsSelected
+            ? await cycleService.getMyActiveCycles()
+            : await cycleService.getActiveByProject(currentProject!.id);
+          return res.data;
+        },
+        staleTime: STALE_TIMES.entities,
+        placeholderData: (previousData: Cycle[] | undefined) => previousData,
+      },
+      {
+        queryKey: [...queryKeys.pitches.lists(), 'my'],
+        queryFn: async (): Promise<Pitch[]> => {
+          const res = await pitchService.getMyPitches();
+          const pitches: Pitch[] = res.data;
+          if (!isAllProjectsSelected && currentProject) {
+            return pitches.filter((p) => p.projectId === currentProject.id);
+          }
+          return pitches;
+        },
+        staleTime: STALE_TIMES.entities,
+      },
+      {
+        queryKey: queryKeys.teams.lists(),
+        queryFn: async (): Promise<Team[]> => {
+          const res = await teamService.getAll();
+          return res.data;
+        },
+        staleTime: STALE_TIMES.reference,
+      },
+      {
+        queryKey: queryKeys.dashboard.widgets(),
+        queryFn: async (): Promise<DashboardWidget[]> => {
+          try {
+            return await dashboardWidgetApi.getAllWidgets();
+          } catch (error) {
+            console.error('Failed to load dashboard widgets:', error);
+            return [];
+          }
+        },
+        staleTime: STALE_TIMES.reference,
+      },
+    ],
+  });
 
-      let cyclesPromise;
-      if (isAllProjectsSelected) {
-        cyclesPromise = cycleService.getMyActiveCycles();
-      } else if (currentProject) {
-        cyclesPromise = cycleService.getActiveByProject(currentProject.id);
-      } else {
-        cyclesPromise = Promise.resolve({ data: [] });
-      }
+  const loading = cyclesQuery.isLoading || pitchesQuery.isLoading || teamsQuery.isLoading || widgetsQuery.isLoading;
+  const activeCycles: Cycle[] = cyclesQuery.data ?? [];
+  const recentPitches: Pitch[] = (pitchesQuery.data ?? []).slice(0, 5);
+  const teams: Team[] = teamsQuery.data ?? [];
+  const widgets: DashboardWidget[] = widgetsQuery.data ?? [];
 
-      const [cyclesRes, pitchesRes, teamsRes, widgetsData] = await Promise.all([
-        cyclesPromise,
-        pitchService.getMyPitches(),
-        teamService.getAll(),
-        dashboardWidgetApi.getAllWidgets().catch((error) => {
-          console.error('Failed to load dashboard widgets:', error);
-          return [];
-        }),
-      ]);
-
-      const cycles = cyclesRes.data;
-      setActiveCycles(cycles);
-
-      const cycleIds = new Set(cycles.map((c: Cycle) => c.id));
-
-      let filteredPitches = pitchesRes.data;
-      let filteredTeams = teamsRes.data;
-
-      if (!isAllProjectsSelected && currentProject) {
-        filteredPitches = pitchesRes.data.filter((p: Pitch) => p.projectId === currentProject.id);
-        filteredTeams = teamsRes.data.filter((t: Team) => cycleIds.has(t.cycleId!));
-      }
-
-      setRecentPitches(filteredPitches.slice(0, 5));
-      setTeams(filteredTeams);
-      setWidgets(widgetsData);
-    } catch (error: any) {
-      if (error.name !== 'CanceledError') {
-        console.error('Failed to load dashboard data:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshWidgets = async () => {
-    try {
-      const widgetsData = await dashboardWidgetApi.getAllWidgets();
-      setWidgets(widgetsData);
-    } catch (error) {
-      console.error('Failed to refresh widgets:', error);
-    }
-  };
-
-  const renderWidget = (widget: DashboardWidget) => {
-    const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
-    
-    switch (widget.widgetType) {
-      case 'OVERDUE_TASKS':
-        return <OverdueTasksWidget key={widget.id} />;
-      case 'BLOCKED_TASKS':
-        return <BlockedTasksWidget key={widget.id} />;
-      case 'UPCOMING_DEADLINES':
-        return <UpcomingDeadlinesWidget key={widget.id} />;
-      case 'MY_TASKS':
-        return <MyTasksWidget key={widget.id} />;
-      case 'TEAM_WORKLOAD':
-        return <TeamWorkloadWidget key={widget.id} />;
-      case 'CYCLE_PROGRESS':
-        return <CycleProgressWidget key={widget.id} />;
-      case 'RECENT_ACTIVITY':
-        return <RecentActivityWidget key={widget.id} projectId={projectId} />;
-      default:
-        return null;
-    }
-  };
+  const refreshWidgets = () => { widgetsQuery.refetch(); };
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -339,167 +295,16 @@ export default function Dashboard() {
         </MotionContainer>
       )}
 
-      {/* Customizable Widgets Grid */}
-      {widgets.filter((w) => w.isVisible).length > 0 && (
-        <MotionContainer delay={0.5} className="mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {widgets
-              .filter((widget) => widget.isVisible)
-              .sort((a, b) => a.displayOrder - b.displayOrder)
-              .map((widget) => renderWidget(widget))}
-          </div>
-        </MotionContainer>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Left Column: Active Cycles + Hill Chart */}
-        {!isKanbanProject && (
-        <MotionContainer delay={0.6} className="space-y-3">
-          {/* Active Cycles */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.activeCycles')}</h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/cycles">{t('common.viewAll')}</Link>
-                </Button>
-              </div>
-              {activeCycles.length === 0 ? (
-                <EmptyState
-                  illustration={<EmptyCyclesIllustration width={160} height={120} />}
-                  title={t('dashboard.noActiveCycles')}
-                  description={t('dashboard.noActiveCyclesDescription')}
-                  size="small"
-                  compact
-                  action={{
-                    label: t('dashboard.newCycle'),
-                    onClick: () => window.location.href = '/cycles/new',
-                    startIcon: <Plus className="w-4 h-4 mr-1" />,
-                  }}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {activeCycles.map((cycle) => (
-                    <Link
-                      key={cycle.id}
-                      to={`/cycles/${cycle.id}`}
-                      className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-foreground">{cycle.name}</span>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            cycle.phase === 'BUILD' && 'bg-primary/15 text-primary',
-                            cycle.phase === 'SHAPING' && 'bg-blue-500/15 text-blue-500',
-                            cycle.phase === 'BETTING' && 'bg-amber-500/15 text-amber-500',
-                            cycle.phase === 'COOLDOWN' && 'bg-violet-500/15 text-violet-500'
-                          )}
-                        >
-                          {cycle.phase}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatLocalizedDate(new Date(cycle.startDate), i18n.language)} - {formatLocalizedDate(new Date(cycle.endDate), i18n.language)}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Hill Chart Widget */}
-          <HillChartWidget
-            maxPoints={5}
-            projectId={isAllProjectsSelected ? undefined : currentProject?.id}
-          />
-        </MotionContainer>
-        )}
-
-        {/* Right Column: Recent Pitches */}
-        {!isKanbanProject && (
-        <MotionContainer delay={0.7}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-foreground">{t('dashboard.recentPitches')}</h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/pitches">{t('common.viewAll')}</Link>
-                </Button>
-              </div>
-              {recentPitches.length === 0 ? (
-                <EmptyState
-                  illustration={<EmptyPitchesIllustration width={160} height={120} />}
-                  title={t('dashboard.noPitches')}
-                  description={t('dashboard.noPitchesDescription')}
-                  size="small"
-                  compact
-                  action={{
-                    label: t('dashboard.createPitch'),
-                    onClick: () => window.location.href = '/pitches/new',
-                    startIcon: <Plus className="w-4 h-4 mr-1" />,
-                  }}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {recentPitches.map((pitch) => (
-                    <Link
-                      key={pitch.id}
-                      to={`/pitches/${pitch.id}`}
-                      className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-foreground">{pitch.title}</span>
-                        <StatusChip status={pitch.status} />
-                      </div>
-                      <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')}</span>
-                        <span>{pitch.progressPercentage?.toFixed(0) || 0}%</span>
-                      </div>
-                      <Progress
-                        value={Math.min(pitch.progressPercentage || 0, 100)}
-                        className={cn(
-                          'h-1 mt-1',
-                          (pitch.progressPercentage || 0) > 100 && '[&>div]:bg-destructive'
-                        )}
-                      />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </MotionContainer>
-        )}
-
-        {/* Cycle Risk Overview */}
-        {!isKanbanProject && activeCycles.length > 0 && (
-          <div className="col-span-full">
-            <h2 className="text-lg font-semibold text-foreground mb-2">{t('dashboard.aiRiskAnalysis')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              {activeCycles.slice(0, 3).map((cycle) => (
-                <CycleRiskOverview
-                  key={cycle.id}
-                  cycleId={cycle.id}
-                  cycleName={cycle.name}
-                  compact
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Full Risk Overview for First Active Cycle */}
-        {!isKanbanProject && activeCycles.length > 0 && (
-          <div className="col-span-full">
-            <CycleRiskOverview
-              cycleId={activeCycles[0].id}
-              cycleName={activeCycles[0].name}
-            />
-          </div>
-        )}
-      </div>
+      {/* Tabbed Dashboard Content */}
+      <MotionContainer delay={0.5}>
+        <DashboardTabs
+          widgets={widgets}
+          activeCycles={activeCycles}
+          recentPitches={recentPitches}
+          projectId={isAllProjectsSelected ? undefined : currentProject?.id}
+          isKanbanProject={isKanbanProject}
+        />
+      </MotionContainer>
     </div>
   );
 }

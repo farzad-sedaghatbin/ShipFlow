@@ -40,7 +40,7 @@ export default function CycleForm() {
     name: '',
     startDate: '',
     endDate: '',
-    phase: 'BUILD',
+    phase: 'SHAPING_BUILDING',
   });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -394,10 +394,8 @@ export default function CycleForm() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SHAPING">{t('cycleForm.shaping')}</SelectItem>
-                  <SelectItem value="BETTING">{t('cycleForm.betting')}</SelectItem>
-                  <SelectItem value="BUILD">{t('cycleForm.build')}</SelectItem>
-                  <SelectItem value="COOLDOWN">{t('cycleForm.cooldown')}</SelectItem>
+                  <SelectItem value="SHAPING_BUILDING">{t('cycleForm.shaping_building')}</SelectItem>
+                  <SelectItem value="BETTING_COOLDOWN">{t('cycleForm.betting_cooldown')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

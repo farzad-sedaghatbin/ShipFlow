@@ -1,5 +1,23 @@
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 
+// ─── Stale-time constants (ms) ─────────────────────────────────────────────
+// Per-domain stale times — used in individual useQuery calls to override
+// the global default (5 min). Shorter values for fast-changing data,
+// longer for expensive/rarely-mutated computations.
+export const STALE_TIMES = {
+  /** User status — must detect deactivation / role change quickly */
+  user: 1000 * 60,          // 1 minute
+  /** Active work items — change frequently during a cycle */
+  tasks: 1000 * 30,         // 30 seconds
+  /** Projects, cycles, teams — moderate change rate */
+  entities: 1000 * 60 * 5,  // 5 minutes  (= global default)
+  /** Permissions, tags, people — rarely change */
+  reference: 1000 * 60 * 10, // 10 minutes
+  /** Roadmap, signals, health — expensive analytics */
+  analytics: 1000 * 60 * 10, // 10 minutes
+} as const;
+// ────────────────────────────────────────────────────────────────────────────
+
 // Create a custom QueryClient with default options
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({

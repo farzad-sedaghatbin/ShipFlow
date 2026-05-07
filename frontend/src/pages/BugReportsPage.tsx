@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedDate, formatLocalizedDateTime } from '../utils/dateLocalization';
+import { formatLocalizedDate } from '../utils/dateLocalization';
+import { detectTextDirection } from '../utils/rtlDetection';
 import {
   Bug,
   Plus,
@@ -14,6 +15,11 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
+  LayoutList,
+  Kanban,
+  Check,
+  Info,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -27,24 +33,18 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import { Combobox } from '../components/ui/combobox';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import { Checkbox } from '../components/ui/checkbox';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { MobileCardView, ResponsiveTable } from '../components/ui/mobile-card-view';
 import {
   Tooltip,
   TooltipContent,
@@ -52,12 +52,17 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
+import { releaseService } from '../services/releaseService';
 import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch } from '../types';
+import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release } from '../types';
 import BugReportModal from '../components/BugReportModal';
+import BugKanbanBoard from '../components/BugKanbanBoard';
+import { BugViewDialog } from '../components/BugViewDialog';
+import { BugReportsSkeleton } from '../components/Skeletons';
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -80,7 +85,7 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -91,8 +96,10 @@ const BugReportsPage: React.FC = () => {
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
   const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
   const [excludeMode, setExcludeMode] = useState(false);
   const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -103,6 +110,10 @@ const BugReportsPage: React.FC = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bugToDelete, setBugToDelete] = useState<number | null>(null);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -114,16 +125,24 @@ const BugReportsPage: React.FC = () => {
   const filteredPitches = useMemo(() => {
     if (isAllProjectsSelected) return pitches;
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
-    return pitches.filter(p => projectCycleIds.has(p.cycleId));
+    return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
+
+  // Reset cycle and pitch filters when project changes to ensure clean filtering
+  useEffect(() => {
+    setCycleFilter(undefined);
+    setPitchFilter(undefined);
+    setReleaseFilter(undefined);
+    setPage(0); // Reset to first page when project changes
+  }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, currentProject?.id]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadCyclesAndPitches();
-  }, []);
+  }, [currentProject?.id]);
 
   const loadCyclesAndPitches = async () => {
     try {
@@ -133,6 +152,15 @@ const BugReportsPage: React.FC = () => {
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);
+      // Load releases for current project
+      if (currentProject?.id) {
+        try {
+          const releasesRes = await releaseService.getByProject(currentProject.id);
+          setReleases(releasesRes.data);
+        } catch {
+          setReleases([]);
+        }
+      }
     } catch (err) {
       console.error('Failed to load cycles and pitches', err);
     }
@@ -143,46 +171,58 @@ const BugReportsPage: React.FC = () => {
     setError(null);
     try {
       let response;
-      if (statusFilter.length > 0 || severityFilter.length > 0 || assigneeFilter.length > 0 || cycleFilter || pitchFilter) {
-        response = await qaTestManagementService.getBugReportsWithFilters(
-          cycleFilter,
-          pitchFilter,
-          statusFilter.length > 0 ? statusFilter : undefined,
-          severityFilter.length > 0 ? severityFilter : undefined,
-          assigneeFilter.length > 0 ? assigneeFilter : undefined,
-          excludeMode,
-          page,
-          rowsPerPage,
-          sortBy,
-          sortOrder
-        );
-      } else {
-        response = await qaTestManagementService.getAllBugReports(page, rowsPerPage, sortBy, sortOrder);
+      // Always use the filter endpoint for consistent server-side filtering
+      const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
+      
+      // When release filter is active, fetch a large page so client-side
+      // filtering covers all records (no reliable backend support yet).
+      const effectivePage = releaseFilter !== undefined ? 0 : page;
+      const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
+
+      response = await qaTestManagementService.getBugReportsWithFilters(
+        projectId,
+        cycleFilter,
+        pitchFilter,
+        statusFilter.length > 0 ? statusFilter : undefined,
+        severityFilter.length > 0 ? severityFilter : undefined,
+        assigneeFilter.length > 0 ? assigneeFilter : undefined,
+        excludeMode,
+        effectivePage,
+        effectiveSize,
+        sortBy,
+        sortOrder
+      );
+      
+      let bugData = response.data.content;
+      
+      // Client-side filter by release (not yet supported by backend filter endpoint)
+      if (releaseFilter !== undefined) {
+        bugData = bugData.filter(bug => bug.targetReleaseId === releaseFilter);
       }
       
-      let bugs = response.data.content;
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        const projectPitchIds = new Set(pitches.filter(p => projectCycleIds.has(p.cycleId)).map(p => p.id));
-        bugs = bugs.filter(bug => bug.pitchId && projectPitchIds.has(bug.pitchId));
-      }
-      
-      setBugReports(bugs);
-      setTotalElements(response.data.totalElements);
+      setBugReports(bugData);
+      setTotalElements(releaseFilter !== undefined ? bugData.length : response.data.totalElements);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
+      notifyProjectSwitchComplete();
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm(t('bugReports.confirmDelete'))) return;
+  const openDeleteConfirm = (id: number) => {
+    setBugToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (bugToDelete === null) return;
     try {
-      await qaTestManagementService.deleteBugReport(id);
-      setBugReports(bugReports.filter((b) => b.id !== id));
+      await qaTestManagementService.deleteBugReport(bugToDelete);
+      setBugReports(bugReports.filter((b) => b.id !== bugToDelete));
+      setDeleteConfirmOpen(false);
+      setBugToDelete(null);
     } catch (err) {
       setError(t('bugReports.deleteFailed'));
     }
@@ -201,6 +241,7 @@ const BugReportsPage: React.FC = () => {
       setSelectedBug(null);
     } catch (err) {
       setError(t('bugReports.saveFailed'));
+      throw err; // Re-throw so the modal knows there was an error
     }
   };
 
@@ -212,6 +253,11 @@ const BugReportsPage: React.FC = () => {
   const openCreateModal = () => {
     setSelectedBug(null);
     setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedBug(null);
   };
 
   const openDetailModal = (bug: BugReport) => {
@@ -250,6 +296,30 @@ const BugReportsPage: React.FC = () => {
     );
   };
 
+  // Inline update for status/severity
+  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity', value: string) => {
+    setUpdatingBugId(bugId);
+    try {
+      const bug = bugReports.find(b => b.id === bugId);
+      if (!bug) return;
+      
+      const updateData = {
+        title: bug.title,
+        description: bug.description,
+        severity: field === 'severity' ? value as BugSeverity : bug.severity,
+        status: field === 'status' ? value as BugStatus : bug.status,
+      };
+      
+      const response = await qaTestManagementService.updateBugReport(bugId, updateData);
+      setBugReports(bugReports.map(b => b.id === bugId ? response.data : b));
+    } catch (err) {
+      setError(t('bugReports.saveFailed'));
+      console.error('Failed to update bug:', err);
+    } finally {
+      setUpdatingBugId(null);
+    }
+  };
+
   const getStatCounts = () => ({
     total: totalElements,
     open: bugReports.filter((b) => b.status === 'OPEN').length,
@@ -261,12 +331,8 @@ const BugReportsPage: React.FC = () => {
   const stats = getStatCounts();
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || isSwitchingProject) {
+    return <BugReportsSkeleton />;
   }
 
   return (
@@ -274,11 +340,75 @@ const BugReportsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
-        <Button onClick={openCreateModal} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          {t('bugReports.reportBug')}
-        </Button>
+        
+        <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 border rounded-md p-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.viewMode.list')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('kanban')}
+                  >
+                    <Kanban className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.viewMode.kanban')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {/* Add New Bug Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button 
+                    onClick={openCreateModal} 
+                    disabled={isAllProjectsSelected}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('bugReports.reportBug')}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {isAllProjectsSelected && (
+                <TooltipContent>
+                  {t('bugReports.selectProjectToCreate')}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
+
+      {/* All Projects Info Alert */}
+      {isAllProjectsSelected && (
+        <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-blue-700 dark:text-blue-300">
+            {t('bugReports.allProjectsInfoMessage')}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -415,6 +545,7 @@ const BugReportsPage: React.FC = () => {
                 setAssigneeFilter([]);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
+                setReleaseFilter(undefined);
                 setExcludeMode(false);
               }}
             >
@@ -426,17 +557,17 @@ const BugReportsPage: React.FC = () => {
           <div className="flex gap-2">
             <div className="flex-1">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">{t('bugReports.sort.createdDate')}</SelectItem>
-                  <SelectItem value="severity">{t('bugReports.sort.severity')}</SelectItem>
-                  <SelectItem value="status">{t('bugReports.sort.status')}</SelectItem>
-                  <SelectItem value="title">{t('bugReports.sort.title')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
+                  { value: 'severity', label: t('bugReports.sort.severity') },
+                  { value: 'status', label: t('bugReports.sort.status') },
+                  { value: 'title', label: t('bugReports.sort.title') }
+                ]}
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as typeof sortBy)}
+                placeholder="Sort by"
+              />
             </div>
             <div className="self-end">
               <Button
@@ -455,60 +586,122 @@ const BugReportsPage: React.FC = () => {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[180px]">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allCycles') },
+                  ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
+                ]}
                 value={cycleFilter?.toString() ?? 'all'}
                 onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('bugReports.filters.allCycles')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('bugReports.filters.allCycles')}</SelectItem>
-                  {filteredCycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                      {cycle.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('bugReports.filters.allCycles')}
+                searchPlaceholder="Search cycles..."
+              />
             </div>
 
             <div className="min-w-[180px]">
               <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allPitches') },
+                  ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
+                ]}
                 value={pitchFilter?.toString() ?? 'all'}
                 onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('bugReports.filters.allPitches')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('bugReports.filters.allPitches')}</SelectItem>
-                  {filteredPitches.map((pitch) => (
-                    <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                      {pitch.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('bugReports.filters.allPitches')}
+                searchPlaceholder="Search pitches..."
+              />
             </div>
+
+            {releases.length > 0 && (
+              <div className="min-w-[180px]">
+                <Label className="text-xs mb-1 block">{t('bugReports.filters.release', 'Release')}</Label>
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
+                    ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` }))
+                  ]}
+                  value={releaseFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allReleases', 'All Releases')}
+                  searchPlaceholder="Search releases..."
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Bug Reports Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('bugReports.table.key')}</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => handleSort('title')}
-                >
-                  <div className="flex items-center gap-1">
-                    {t('bugReports.table.title')}
+      {/* Bug Reports - List View */}
+      {viewMode === 'list' && (
+        <Card>
+          <ResponsiveTable
+            mobileContent={
+              <MobileCardView
+                className="p-3"
+                items={bugReports.map((bug) => ({
+                  key: bug.id,
+                  title: (
+                    <div className="flex items-center gap-2">
+                      <Bug className="h-4 w-4 text-destructive flex-shrink-0" />
+                      <span className="font-medium text-xs text-muted-foreground">{bug.bugKey}</span>
+                      <span className="truncate">{bug.title}</span>
+                    </div>
+                  ),
+                  subtitle: bug.pitchTitle ? `Pitch: ${bug.pitchTitle}` : undefined,
+                  fields: [
+                    {
+                      label: t('bugReports.table.severity'),
+                      value: <Badge variant={severityBadgeVariants[bug.severity]}>{bug.severity}</Badge>,
+                    },
+                    {
+                      label: t('bugReports.table.status'),
+                      value: <Badge variant={statusBadgeVariants[bug.status]}>{bug.status.replace('_', ' ')}</Badge>,
+                    },
+                    {
+                      label: t('bugReports.table.assignee'),
+                      value: bug.assigneeName || t('bugReports.unassigned'),
+                    },
+                    {
+                      label: t('bugReports.table.created'),
+                      value: formatLocalizedDate(new Date(bug.createdAt), i18n.language),
+                    },
+                  ],
+                  actions: (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openDetailModal(bug)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(bug)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => openDeleteConfirm(bug.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ),
+                  onClick: () => openDetailModal(bug),
+                }))}
+                emptyState={
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
+                      ? t('bugReports.emptyState.noMatches')
+                      : t('bugReports.emptyState.noBugs')}
+                  </div>
+                }
+              />
+            }
+          >
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('bugReports.table.key')}</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => handleSort('title')}
+                  >
+                    <div className="flex items-center gap-1">
+                      {t('bugReports.table.title')}
                     {sortBy === 'title' && (
                       sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                     )}
@@ -550,6 +743,11 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </div>
                 </TableHead>
+                <TableHead className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <MessageSquare className="h-3 w-3" />
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">{t('bugReports.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -566,6 +764,8 @@ const BugReportsPage: React.FC = () => {
                     <div
                       className="max-w-[280px] truncate cursor-pointer hover:text-primary"
                       onClick={() => openDetailModal(bug)}
+                      dir={detectTextDirection(bug.title)}
+                      style={{ textAlign: detectTextDirection(bug.title) === 'rtl' ? 'right' : 'left' }}
                     >
                       {bug.title}
                     </div>
@@ -585,12 +785,54 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={severityBadgeVariants[bug.severity]}>{bug.severity}</Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-0" disabled={updatingBugId === bug.id}>
+                          <Badge variant={severityBadgeVariants[bug.severity]} className="cursor-pointer">
+                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                            {bug.severity}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {(['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'] as BugSeverity[]).map((severity) => (
+                          <DropdownMenuItem
+                            key={severity}
+                            onClick={() => handleInlineUpdate(bug.id, 'severity', severity)}
+                          >
+                            <Badge variant={severityBadgeVariants[severity]} className="mr-2">
+                              {severity}
+                            </Badge>
+                            {bug.severity === severity && <Check className="ml-auto h-4 w-4" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusBadgeVariants[bug.status]}>
-                      {bug.status.replace('_', ' ')}
-                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-0" disabled={updatingBugId === bug.id}>
+                          <Badge variant={statusBadgeVariants[bug.status]} className="cursor-pointer">
+                            {updatingBugId === bug.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                            {bug.status.replace('_', ' ')}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REOPENED', 'WONT_FIX', 'DUPLICATE'] as BugStatus[]).map((status) => (
+                          <DropdownMenuItem
+                            key={status}
+                            onClick={() => handleInlineUpdate(bug.id, 'status', status)}
+                          >
+                            <Badge variant={statusBadgeVariants[status]} className="mr-2">
+                              {status.replace('_', ' ')}
+                            </Badge>
+                            {bug.status === status && <Check className="ml-auto h-4 w-4" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
@@ -616,6 +858,16 @@ const BugReportsPage: React.FC = () => {
                     <span className="text-muted-foreground">
                       {formatLocalizedDate(new Date(bug.createdAt), i18n.language)}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {(bug.commentCount ?? 0) > 0 ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {bug.commentCount}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
@@ -656,7 +908,7 @@ const BugReportsPage: React.FC = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(bug.id)}
+                              onClick={() => openDeleteConfirm(bug.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -682,22 +934,23 @@ const BugReportsPage: React.FC = () => {
             </TableBody>
           </Table>
         </div>
+        </ResponsiveTable>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{t('bugReports.pagination.rowsPerPage')}</span>
-            <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
-              <SelectTrigger className="w-[70px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={[
+                { value: '5', label: '5' },
+                { value: '10', label: '10' },
+                { value: '25', label: '25' },
+                { value: '50', label: '50' }
+              ]}
+              value={rowsPerPage.toString()}
+              onValueChange={handleChangeRowsPerPage}
+              triggerClassName="w-[70px] h-8"
+            />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
@@ -730,124 +983,52 @@ const BugReportsPage: React.FC = () => {
           </div>
         </div>
       </Card>
+      )}
+
+      {/* Bug Reports - Kanban View */}
+      {viewMode === 'kanban' && (
+        <BugKanbanBoard
+          bugs={bugReports}
+          onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
+          onViewBug={openDetailModal}
+          onEditBug={(bug) => {
+            setSelectedBug(bug);
+            setModalOpen(true);
+          }}
+          onDeleteBug={handleDelete}
+          loading={loading}
+          updatingBugId={updatingBugId}
+        />
+      )}
 
       {/* Create/Edit Modal */}
       <BugReportModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedBug(null);
-        }}
+        onClose={handleModalClose}
         onSubmit={handleCreateOrUpdate}
         bugReport={selectedBug || undefined}
+        cycleId={!isAllProjectsSelected && currentProject ? filteredCycles[0]?.id : undefined}
+        pitchId={!isAllProjectsSelected && currentProject ? filteredPitches[0]?.id : undefined}
       />
 
-      {/* Bug Detail Dialog */}
-      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <Bug className="h-5 w-5 text-destructive" />
-              <div>
-                <div className="text-lg">{selectedBug?.bugKey}</div>
-                <div className="text-base font-normal text-muted-foreground">{selectedBug?.title}</div>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-          {selectedBug && (
-            <div className="space-y-4">
-              {/* Status and Severity badges */}
-              <div className="flex gap-2">
-                <Badge variant={severityBadgeVariants[selectedBug.severity]}>
-                  {selectedBug.severity}
-                </Badge>
-                <Badge variant={statusBadgeVariants[selectedBug.status]}>
-                  {selectedBug.status.replace('_', ' ')}
-                </Badge>
-              </div>
+      {/* Bug Detail Dialog - uses BugViewDialog with Activity tab */}
+      <BugViewDialog
+        bug={selectedBug}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
 
-              {/* Description */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.description')}</h4>
-                <div className="border rounded-md p-3 bg-muted/30">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.description || t('bugReports.detail.noDescription')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Steps to Reproduce */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.stepsToReproduce')}</h4>
-                <div className="border rounded-md p-3 bg-muted/30">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedBug.stepsToReproduce || t('bugReports.detail.notProvided')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Expected / Actual Behavior */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.expectedBehavior')}</h4>
-                  <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.expectedBehavior || t('bugReports.detail.notProvided')}</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.actualBehavior')}</h4>
-                  <div className="border rounded-md p-3 bg-muted/30">
-                    <p className="text-sm">{selectedBug.actualBehavior || t('bugReports.detail.notProvided')}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Environment */}
-              <div className="text-sm text-muted-foreground">
-                <strong>{t('bugReports.detail.environment')}</strong> {selectedBug.environment || '-'}
-              </div>
-
-              {/* Tags */}
-              {selectedBug.tags && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">{t('bugReports.detail.tags')}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedBug.tags.split(',').map((tag: string) => (
-                      <Badge key={tag} variant="secondary">{tag.trim()}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
-                <div>
-                  <strong>{t('bugReports.detail.reporter')}</strong> {selectedBug.reporterName || '-'}
-                </div>
-                <div>
-                  <strong>{t('bugReports.detail.assignee')}</strong> {selectedBug.assigneeName || t('bugReports.unassigned')}
-                </div>
-                <div>
-                  <strong>{t('bugReports.detail.created')}</strong> {formatLocalizedDateTime(new Date(selectedBug.createdAt), i18n.language)}
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailModalOpen(false)}>
-              {t('bugReports.actions.close')}
-            </Button>
-            <Button
-              onClick={() => {
-                setDetailModalOpen(false);
-                if (selectedBug) openEditModal(selectedBug);
-              }}
-            >
-              {t('bugReports.actions.editBug')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('bugReports.deleteTitle')}
+        description={t('bugReports.confirmDelete')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 };

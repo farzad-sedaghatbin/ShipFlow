@@ -9,13 +9,13 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateSlackConfigurationRequest {
-    @NotBlank(message = "Workspace name is required")
-    private String workspaceName;
+  @NotBlank(message = "Workspace name is required")
+  private String workspaceName;
 
-    @NotBlank(message = "Webhook URL is required")
-    private String webhookUrl;
+  @NotBlank(message = "Webhook URL is required")
+  private String webhookUrl;
 
-    private String defaultChannel;
+  private String defaultChannel;
 
-    private Boolean isEnabled;
+  private Boolean isEnabled;
 }

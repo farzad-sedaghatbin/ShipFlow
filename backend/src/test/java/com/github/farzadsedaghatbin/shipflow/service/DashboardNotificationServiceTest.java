@@ -1,18 +1,18 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardNotificationDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
-import com.github.farzadsedaghatbin.shipflow.service.slack.SlackIntegrationService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
+import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,498 +20,634 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class DashboardNotificationServiceTest {
 
-    @Mock
-    private DashboardNotificationRepository notificationRepository;
+  @Mock
+  private DashboardNotificationRepository notificationRepository;
 
-    @Mock
-    private TaskRepository taskRepository;
+  @Mock
+  private TaskRepository taskRepository;
 
-    @Mock
-    private CycleRepository cycleRepository;
+  @Mock
+  private CycleRepository cycleRepository;
 
-    @Mock
-    private PitchRepository pitchRepository;
+  @Mock
+  private PitchRepository pitchRepository;
 
-    @Mock
-    private HillChartPointRepository hillChartPointRepository;
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-    @Mock
-    private SlackIntegrationService slackService;
+  @Mock
+  private NotificationProvider slackProvider;
 
-    @InjectMocks
-    private DashboardNotificationService notificationService;
+  @Mock
+  private NotificationProvider teamsProvider;
 
-    private User testUser;
-    private DashboardNotification testNotification;
-    private Task testTask;
+  @Mock
+  private NotificationSseManager notificationSseManager;
 
-    @BeforeEach
-    void setUp() {
-        testUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .build();
+  @Mock
+  private IEmailNotificationService emailService;
 
-        testNotification = DashboardNotification.builder()
-                .id(1L)
-                .user(testUser)
-                .type("OVERDUE_TASK")
-                .title("Test Notification")
-                .message("Test message")
-                .severity("WARNING")
-                .isRead(false)
-                .build();
+  private DashboardNotificationService notificationService;
 
-        Person assignee = Person.builder()
-                .id(1L)
-                .name("Test Person")
-                .build();
-        assignee.setUser(testUser);
+  private User testUser;
+  private DashboardNotification testNotification;
+  private Task testTask;
 
-        testTask = Task.builder()
-                .id(1L)
-                .title("Test Task")
-                .status(TaskStatus.TODO)
-                .assignee(assignee)
-                .dueDate(LocalDate.now().minusDays(1))
-                .build();
-    }
+  @BeforeEach
+  void setUp() {
+    // Configure provider names
+    lenient().when(slackProvider.getProviderName()).thenReturn("slack");
+    lenient().when(teamsProvider.getProviderName()).thenReturn("teams");
 
-    @Test
-    void getUserNotifications_ShouldReturnActiveNotifications() {
-        // Arrange
-        when(notificationRepository.findActiveNotifications(eq(1L), any(LocalDateTime.class)))
-                .thenReturn(Arrays.asList(testNotification));
+    // Default: both providers inactive
+    lenient().when(slackProvider.isActive()).thenReturn(false);
+    lenient().when(teamsProvider.isActive()).thenReturn(false);
 
-        // Act
-        List<DashboardNotificationDTO> result = notificationService.getUserNotifications(1L);
+    notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
+        cycleRepository, pitchRepository, hillChartPointRepository, userRepository,
+        List.of(slackProvider, teamsProvider), notificationSseManager, emailService);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("OVERDUE_TASK", result.get(0).getType());
-        assertFalse(result.get(0).getIsRead());
-    }
+    testUser = User.builder().id(1L).username("testuser").build();
 
-    @Test
-    void getUnreadNotifications_ShouldReturnOnlyUnreadNotifications() {
-        // Arrange
-        when(notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(1L, false))
-                .thenReturn(Arrays.asList(testNotification));
+    testNotification = DashboardNotification.builder().id(1L).user(testUser).type("OVERDUE_TASK")
+        .title("Test Notification").message("Test message").severity("WARNING").isRead(false).build();
 
-        // Act
-        List<DashboardNotificationDTO> result = notificationService.getUnreadNotifications(1L);
+    Person assignee = Person.builder().id(1L).name("Test Person").build();
+    assignee.setUser(testUser);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertFalse(result.get(0).getIsRead());
-    }
+    testTask = Task.builder().id(1L).title("Test Task").status(TaskStatus.TODO).assignee(assignee)
+        .dueDate(LocalDate.now().minusDays(1)).build();
+  }
 
-    @Test
-    void getUnreadCount_ShouldReturnCorrectCount() {
-        // Arrange
-        when(notificationRepository.countByUserIdAndIsRead(1L, false))
-                .thenReturn(3L);
+  @Test
+  void getUserNotifications_ShouldReturnActiveNotifications() {
+    // Arrange
+    when(notificationRepository.findActiveNotifications(eq(1L), any(LocalDateTime.class)))
+        .thenReturn(Arrays.asList(testNotification));
 
-        // Act
-        Long count = notificationService.getUnreadCount(1L);
+    // Act
+    List<DashboardNotificationDTO> result = notificationService.getUserNotifications(1L);
 
-        // Assert
-        assertEquals(3L, count);
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals("OVERDUE_TASK", result.get(0).getType());
+    assertFalse(result.get(0).getIsRead());
+  }
 
-    @Test
-    void markAsRead_WhenExists_ShouldMarkNotificationAsRead() {
-        // Arrange
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
-        when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
+  @Test
+  void getUnreadNotifications_ShouldReturnOnlyUnreadNotifications() {
+    // Arrange
+    when(notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(1L, false))
+        .thenReturn(Arrays.asList(testNotification));
 
-        // Act
-        DashboardNotificationDTO result = notificationService.markAsRead(1L);
+    // Act
+    List<DashboardNotificationDTO> result = notificationService.getUnreadNotifications(1L);
 
-        // Assert
-        assertNotNull(result);
-        assertTrue(testNotification.getIsRead());
-        assertNotNull(testNotification.getReadAt());
-        verify(notificationRepository, times(1)).save(any(DashboardNotification.class));
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertFalse(result.get(0).getIsRead());
+  }
 
-    @Test
-    void markAsRead_WhenNotExists_ShouldThrowException() {
-        // Arrange
-        when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  void getUnreadCount_ShouldReturnCorrectCount() {
+    // Arrange
+    when(notificationRepository.countByUserIdAndIsRead(1L, false)).thenReturn(3L);
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            notificationService.markAsRead(999L)
-        );
-    }
+    // Act
+    Long count = notificationService.getUnreadCount(1L);
 
-    @Test
-    void markAllAsRead_ShouldMarkAllUnreadNotifications() {
-        // Arrange
-        DashboardNotification notification1 = DashboardNotification.builder()
-                .id(1L)
-                .user(testUser)
-                .type("TEST")
-                .title("Test 1")
-                .severity("INFO")
-                .isRead(false)
-                .build();
+    // Assert
+    assertEquals(3L, count);
+  }
 
-        DashboardNotification notification2 = DashboardNotification.builder()
-                .id(2L)
-                .user(testUser)
-                .type("TEST")
-                .title("Test 2")
-                .severity("INFO")
-                .isRead(false)
-                .build();
+  @Test
+  void markAsRead_WhenExists_ShouldMarkNotificationAsRead() {
+    // Arrange
+    when(notificationRepository.findById(1L)).thenReturn(Optional.of(testNotification));
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
 
-        when(notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(1L, false))
-                .thenReturn(Arrays.asList(notification1, notification2));
-        when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+    // Act
+    DashboardNotificationDTO result = notificationService.markAsRead(1L);
 
-        // Act
-        notificationService.markAllAsRead(1L);
+    // Assert
+    assertNotNull(result);
+    assertTrue(testNotification.getIsRead());
+    assertNotNull(testNotification.getReadAt());
+    verify(notificationRepository, times(1)).save(any(DashboardNotification.class));
+  }
 
-        // Assert
-        assertTrue(notification1.getIsRead());
-        assertTrue(notification2.getIsRead());
-        verify(notificationRepository, times(1)).saveAll(anyList());
-    }
+  @Test
+  void markAsRead_WhenNotExists_ShouldThrowException() {
+    // Arrange
+    when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
 
-    @Test
-    void deleteNotification_ShouldDeleteNotification() {
-        // Act
-        notificationService.deleteNotification(1L);
+    // Act & Assert
+    assertThrows(RuntimeException.class, () -> notificationService.markAsRead(999L));
+  }
 
-        // Assert
-        verify(notificationRepository, times(1)).deleteById(1L);
-    }
+  @Test
+  void markAllAsRead_ShouldMarkAllUnreadNotifications() {
+    // Arrange
+    DashboardNotification notification1 = DashboardNotification.builder().id(1L).user(testUser).type("TEST")
+        .title("Test 1").severity("INFO").isRead(false).build();
 
-    @Test
-    void generateOverdueTaskNotifications_ShouldCreateNotifications() {
-        // Arrange
-        when(taskRepository.findAll()).thenReturn(Arrays.asList(testTask));
-        when(notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(anyLong(), anyString()))
-                .thenReturn(Collections.emptyList());
-        when(notificationRepository.save(any(DashboardNotification.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+    DashboardNotification notification2 = DashboardNotification.builder().id(2L).user(testUser).type("TEST")
+        .title("Test 2").severity("INFO").isRead(false).build();
 
-        // Act
-        notificationService.generateDailyNotifications();
+    when(notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(1L, false))
+        .thenReturn(Arrays.asList(notification1, notification2));
+    when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Assert
-        verify(notificationRepository, atLeastOnce()).save(any(DashboardNotification.class));
-    }
+    // Act
+    notificationService.markAllAsRead(1L);
 
-    @Test
-    void generateBlockedTaskNotifications_ShouldCreateNotifications() {
-        // Arrange
-        testTask.setStatus(TaskStatus.BLOCKED);
-        when(taskRepository.findAll()).thenReturn(Arrays.asList(testTask));
-        when(notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(anyLong(), anyString()))
-                .thenReturn(Collections.emptyList());
-        when(notificationRepository.save(any(DashboardNotification.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+    // Assert
+    assertTrue(notification1.getIsRead());
+    assertTrue(notification2.getIsRead());
+    verify(notificationRepository, times(1)).saveAll(anyList());
+  }
 
-        // Act
-        notificationService.generateDailyNotifications();
+  @Test
+  void deleteNotification_ShouldDeleteNotification() {
+    // Act
+    notificationService.deleteNotification(1L);
 
-        // Assert
-        verify(notificationRepository, atLeastOnce()).save(any(DashboardNotification.class));
-    }
+    // Assert
+    verify(notificationRepository, times(1)).deleteById(1L);
+  }
 
-    @Test
-    void cleanupOldNotifications_ShouldDeleteExpiredNotifications() {
-        // Arrange
-        DashboardNotification expiredNotification = DashboardNotification.builder()
-                .id(1L)
-                .user(testUser)
-                .type("TEST")
-                .title("Expired")
-                .severity("INFO")
-                .isRead(true)
-                .expiresAt(LocalDateTime.now().minusDays(1))
-                .build();
+  @Test
+  void generateOverdueTaskNotifications_ShouldCreateNotifications() {
+    // Arrange
+    when(taskRepository.findAll()).thenReturn(Arrays.asList(testTask));
+    when(notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(anyLong(), anyString()))
+        .thenReturn(Collections.emptyList());
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(notificationRepository.findExpiredNotifications(any(LocalDateTime.class)))
-                .thenReturn(Arrays.asList(expiredNotification));
+    // Act
+    notificationService.generateDailyNotifications();
 
-        // Act
-        notificationService.cleanupOldNotifications();
+    // Assert
+    verify(notificationRepository, atLeastOnce()).save(any(DashboardNotification.class));
+  }
 
-        // Assert
-        verify(notificationRepository, times(1)).deleteAll(anyList());
-        verify(notificationRepository, times(1)).deleteOldReadNotifications(any(LocalDateTime.class));
-    }
+  @Test
+  void generateBlockedTaskNotifications_ShouldCreateNotifications() {
+    // Arrange
+    testTask.setStatus(TaskStatus.BLOCKED);
+    when(taskRepository.findAll()).thenReturn(Arrays.asList(testTask));
+    when(notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(anyLong(), anyString()))
+        .thenReturn(Collections.emptyList());
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    @Test
-    void notificationDTO_ShouldContainAllRequiredFields() {
-        // Arrange
-        testNotification.setActionUrl("/tasks/1");
-        testNotification.setEntityType("TASK");
-        testNotification.setEntityId(1L);
+    // Act
+    notificationService.generateDailyNotifications();
 
-        when(notificationRepository.findActiveNotifications(eq(1L), any(LocalDateTime.class)))
-                .thenReturn(Arrays.asList(testNotification));
+    // Assert
+    verify(notificationRepository, atLeastOnce()).save(any(DashboardNotification.class));
+  }
 
-        // Act
-        List<DashboardNotificationDTO> result = notificationService.getUserNotifications(1L);
+  @Test
+  void cleanupOldNotifications_ShouldDeleteExpiredNotifications() {
+    // Arrange
+    DashboardNotification expiredNotification = DashboardNotification.builder().id(1L).user(testUser).type("TEST")
+        .title("Expired").severity("INFO").isRead(true).expiresAt(LocalDateTime.now().minusDays(1)).build();
 
-        // Assert
-        DashboardNotificationDTO dto = result.get(0);
-        assertNotNull(dto.getId());
-        assertNotNull(dto.getUserId());
-        assertNotNull(dto.getType());
-        assertNotNull(dto.getTitle());
-        assertNotNull(dto.getSeverity());
-        assertEquals("/tasks/1", dto.getActionUrl());
-        assertEquals("TASK", dto.getEntityType());
-        assertEquals(1L, dto.getEntityId());
-    }
+    when(notificationRepository.findExpiredNotifications(any(LocalDateTime.class)))
+        .thenReturn(Arrays.asList(expiredNotification));
 
-    @Test
-    void notifyCyclePhaseChange_ShouldCreateNotificationsForAllInvolvedUsers() {
-        // Arrange
-        User user1 = User.builder().id(1L).username("user1").build();
-        User user2 = User.builder().id(2L).username("user2").build();
-        
-        Person person1 = Person.builder().id(1L).name("Person 1").build();
-        person1.setUser(user1);
-        Person person2 = Person.builder().id(2L).name("Person 2").build();
-        person2.setUser(user2);
-        
-        TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
-        TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
-        
-        Team team = Team.builder()
-                .id(1L)
-                .name("Test Team")
-                .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-                .build();
-        
-        Cycle cycle = Cycle.builder()
-                .id(1L)
-                .name("Test Cycle")
-                .phase(CyclePhase.BUILD)
-                .teams(new ArrayList<>(Arrays.asList(team)))
-                .pitches(new ArrayList<>())
-                .build();
-        
-        when(notificationRepository.save(any(DashboardNotification.class)))
-                .thenReturn(testNotification);
-        
-        // Act
-        notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
-        
-        // Assert
-        verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("CYCLE_PHASE_CHANGED"),
-                any(String.class),
-                eq(null),
-                eq("CYCLE"),
-                eq(1L)
-        );
-    }
+    // Act
+    notificationService.cleanupOldNotifications();
 
-    @Test
-    void notifyCyclePhaseChange_ShouldNotCreateNotificationsWhenPhaseUnchanged() {
-        // Arrange
-        Cycle cycle = Cycle.builder()
-                .id(1L)
-                .name("Test Cycle")
-                .phase(CyclePhase.BUILD)
-                .teams(new ArrayList<>())
-                .pitches(new ArrayList<>())
-                .build();
-        
-        // Act
-        notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.BUILD);
-        
-        // Assert
-        verify(notificationRepository, never()).save(any(DashboardNotification.class));
-        verify(slackService, never()).sendNotification(any(), any(), any(), any(), any());
-    }
+    // Assert
+    verify(notificationRepository, times(1)).deleteAll(anyList());
+    verify(notificationRepository, times(1)).deleteOldReadNotifications(any(LocalDateTime.class));
+  }
 
-    @Test
-    void notifyCyclePhaseChange_ShouldHandleCycleWithNoUsers() {
-        // Arrange
-        Cycle cycle = Cycle.builder()
-                .id(1L)
-                .name("Test Cycle")
-                .phase(CyclePhase.BUILD)
-                .teams(new ArrayList<>())
-                .pitches(new ArrayList<>())
-                .build();
-        
-        // Act
-        notificationService.notifyCyclePhaseChange(cycle, CyclePhase.BUILD, CyclePhase.COOLDOWN);
-        
-        // Assert
-        verify(notificationRepository, never()).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("CYCLE_PHASE_CHANGED"),
-                any(String.class),
-                eq(null),
-                eq("CYCLE"),
-                eq(1L)
-        );
-    }
+  @Test
+  void notificationDTO_ShouldContainAllRequiredFields() {
+    // Arrange
+    testNotification.setActionUrl("/tasks/1");
+    testNotification.setEntityType("TASK");
+    testNotification.setEntityId(1L);
 
-    @Test
-    void notifyCircuitBreakerTriggered_ShouldCreateNotificationsForTeamMembers() {
-        // Arrange
-        User user1 = User.builder().id(1L).username("user1").build();
-        User user2 = User.builder().id(2L).username("user2").build();
-        
-        Person person1 = Person.builder().id(1L).name("Person 1").build();
-        person1.setUser(user1);
-        Person person2 = Person.builder().id(2L).name("Person 2").build();
-        person2.setUser(user2);
-        
-        TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
-        TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
-        
-        Team team = Team.builder()
-                .id(1L)
-                .name("Test Team")
-                .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-                .build();
-        
-        Pitch pitch = Pitch.builder()
-                .id(1L)
-                .title("Overflowing Pitch")
-                .team(team)
-                .isCircuitBreakerTriggered(true)
-                .circuitBreakerReason("Exceeded appetite by 50%")
-                .build();
-        
-        when(notificationRepository.save(any(DashboardNotification.class)))
-                .thenReturn(testNotification);
-        
-        // Act
-        notificationService.notifyCircuitBreakerTriggered(pitch);
-        
-        // Assert
-        verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("CIRCUIT_BREAKER_TRIGGERED"),
-                any(String.class),
-                eq(null),
-                eq("PITCH"),
-                eq(1L)
-        );
-    }
+    when(notificationRepository.findActiveNotifications(eq(1L), any(LocalDateTime.class)))
+        .thenReturn(Arrays.asList(testNotification));
 
-    @Test
-    void notifyCircuitBreakerTriggered_ShouldHandlePitchWithNoTeam() {
-        // Arrange
-        Pitch pitch = Pitch.builder()
-                .id(1L)
-                .title("Overflowing Pitch")
-                .team(null)
-                .isCircuitBreakerTriggered(true)
-                .circuitBreakerReason("Exceeded appetite")
-                .build();
-        
-        // Act
-        notificationService.notifyCircuitBreakerTriggered(pitch);
-        
-        // Assert
-        verify(notificationRepository, never()).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("CIRCUIT_BREAKER_TRIGGERED"),
-                any(String.class),
-                eq(null),
-                eq("PITCH"),
-                eq(1L)
-        );
-    }
+    // Act
+    List<DashboardNotificationDTO> result = notificationService.getUserNotifications(1L);
 
-    @Test
-    void notifyPitchKilled_ShouldCreateNotificationsForTeamMembers() {
-        // Arrange
-        User user1 = User.builder().id(1L).username("user1").build();
-        User user2 = User.builder().id(2L).username("user2").build();
-        
-        Person person1 = Person.builder().id(1L).name("Person 1").build();
-        person1.setUser(user1);
-        Person person2 = Person.builder().id(2L).name("Person 2").build();
-        person2.setUser(user2);
-        
-        TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
-        TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
-        
-        Team team = Team.builder()
-                .id(1L)
-                .name("Test Team")
-                .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2)))
-                .build();
-        
-        Pitch pitch = Pitch.builder()
-                .id(1L)
-                .title("Killed Pitch")
-                .team(team)
-                .build();
-        
-        String reason = "Could not fit in time box";
-        
-        when(notificationRepository.save(any(DashboardNotification.class)))
-                .thenReturn(testNotification);
-        
-        // Act
-        notificationService.notifyPitchKilled(pitch, reason);
-        
-        // Assert
-        verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("PITCH_KILLED"),
-                any(String.class),
-                eq(null),
-                eq("PITCH"),
-                eq(1L)
-        );
-    }
+    // Assert
+    DashboardNotificationDTO dto = result.get(0);
+    assertNotNull(dto.getId());
+    assertNotNull(dto.getUserId());
+    assertNotNull(dto.getType());
+    assertNotNull(dto.getTitle());
+    assertNotNull(dto.getSeverity());
+    assertEquals("/tasks/1", dto.getActionUrl());
+    assertEquals("TASK", dto.getEntityType());
+    assertEquals(1L, dto.getEntityId());
+  }
 
-    @Test
-    void notifyPitchKilled_ShouldHandlePitchWithNoTeam() {
-        // Arrange
-        Pitch pitch = Pitch.builder()
-                .id(1L)
-                .title("Killed Pitch")
-                .team(null)
-                .build();
-        
-        String reason = "Could not fit in time box";
-        
-        // Act
-        notificationService.notifyPitchKilled(pitch, reason);
-        
-        // Assert
-        verify(notificationRepository, never()).save(any(DashboardNotification.class));
-        verify(slackService, times(1)).sendNotification(
-                eq("PITCH_KILLED"),
-                any(String.class),
-                eq(null),
-                eq("PITCH"),
-                eq(1L)
-        );
-    }
+  @Test
+  void notifyCyclePhaseChange_ShouldCreateNotificationsForAllInvolvedUsers() {
+    // Arrange
+    User user1 = User.builder().id(1L).username("user1").build();
+    User user2 = User.builder().id(2L).username("user2").build();
+
+    Person person1 = Person.builder().id(1L).name("Person 1").build();
+    person1.setUser(user1);
+    Person person2 = Person.builder().id(2L).name("Person 2").build();
+    person2.setUser(user2);
+
+    TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
+    TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
+
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
+
+    Pitch pitch = Pitch.builder().id(1L).title("Test Pitch").team(team).build();
+
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
+        .pitches(new ArrayList<>(Arrays.asList(pitch))).build();
+
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
+
+    // Act
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.BETTING_COOLDOWN);
+
+    // Assert
+    verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCyclePhaseChange_ShouldNotCreateNotificationsWhenPhaseUnchanged() {
+    // Arrange
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
+        .pitches(new ArrayList<>()).build();
+
+    // Act
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.SHAPING_BUILDING);
+
+    // Assert
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCyclePhaseChange_ShouldHandleCycleWithNoUsers() {
+    // Arrange
+    Cycle cycle = Cycle.builder().id(1L).name("Test Cycle").phase(CyclePhase.SHAPING_BUILDING)
+        .pitches(new ArrayList<>()).build();
+
+    // Act
+    notificationService.notifyCyclePhaseChange(cycle, CyclePhase.SHAPING_BUILDING, CyclePhase.BETTING_COOLDOWN);
+
+    // Assert
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldCreateNotificationsForTeamMembers() {
+    // Arrange
+    User user1 = User.builder().id(1L).username("user1").build();
+    User user2 = User.builder().id(2L).username("user2").build();
+
+    Person person1 = Person.builder().id(1L).name("Person 1").build();
+    person1.setUser(user1);
+    Person person2 = Person.builder().id(2L).name("Person 2").build();
+    person2.setUser(user2);
+
+    TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
+    TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
+
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(team).isCircuitBreakerTriggered(true)
+        .circuitBreakerReason("Exceeded appetite by 50%").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldHandlePitchWithNoTeam() {
+    // Arrange
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).isCircuitBreakerTriggered(true)
+        .circuitBreakerReason("Exceeded appetite").build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldCreateNotificationsForTeamMembers() {
+    // Arrange
+    User user1 = User.builder().id(1L).username("user1").build();
+    User user2 = User.builder().id(2L).username("user2").build();
+
+    Person person1 = Person.builder().id(1L).name("Person 1").build();
+    person1.setUser(user1);
+    Person person2 = Person.builder().id(2L).name("Person 2").build();
+    person2.setUser(user2);
+
+    TeamAssignment assignment1 = TeamAssignment.builder().id(1L).person(person1).build();
+    TeamAssignment assignment2 = TeamAssignment.builder().id(2L).person(person2).build();
+
+    Team team = Team.builder().id(1L).name("Test Team")
+        .assignments(new ArrayList<>(Arrays.asList(assignment1, assignment2))).build();
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(team).build();
+
+    String reason = "Could not fit in time box";
+
+    when(notificationRepository.save(any(DashboardNotification.class))).thenReturn(testNotification);
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(notificationRepository, times(2)).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldHandlePitchWithNoTeam() {
+    // Arrange
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+    // No external notifications since neither Slack nor Teams are configured
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToSlackWhenConfigured() {
+    // Arrange
+    when(slackProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToTeamsWhenConfigured() {
+    // Arrange
+    when(teamsProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+  }
+
+  @Test
+  void notifyCircuitBreakerTriggered_ShouldSendToBothWhenBothConfigured() {
+    // Arrange
+    when(slackProvider.isActive()).thenReturn(true);
+    when(teamsProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Overflowing Pitch").team(null).build();
+
+    // Act
+    notificationService.notifyCircuitBreakerTriggered(pitch);
+
+    // Assert
+    verify(slackProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+    verify(teamsProvider, times(1)).sendNotification(eq("CIRCUIT_BREAKER_TRIGGERED"), any(String.class), eq(null),
+        eq("PITCH"), eq(1L));
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToSlackWhenConfigured() {
+    // Arrange
+    when(slackProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+    verify(teamsProvider, never()).sendNotification(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToTeamsWhenConfigured() {
+    // Arrange
+    when(teamsProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackProvider, never()).sendNotification(any(), any(), any(), any(), any());
+    verify(teamsProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+  }
+
+  @Test
+  void notifyPitchKilled_ShouldSendToBothWhenBothConfigured() {
+    // Arrange
+    when(slackProvider.isActive()).thenReturn(true);
+    when(teamsProvider.isActive()).thenReturn(true);
+
+    Pitch pitch = Pitch.builder().id(1L).title("Killed Pitch").team(null).build();
+    String reason = "Could not fit in time box";
+
+    // Act
+    notificationService.notifyPitchKilled(pitch, reason);
+
+    // Assert
+    verify(slackProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+    verify(teamsProvider, times(1)).sendNotification(eq("PITCH_KILLED"), any(String.class), eq(null), eq("PITCH"),
+        eq(1L));
+  }
+
+  // ========== notifyCommentMention ==========
+
+  @Test
+  void notifyCommentMention_ShouldCreateNotificationForMentionedUser() {
+    // Arrange
+    Person authorPerson = Person.builder().id(2L).name("Bob Smith").build();
+    User author = User.builder().id(2L).username("bob").person(authorPerson).build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 42L, "Hey @alice, take a look!");
+
+    // Assert
+    verify(notificationRepository).save(argThat(n ->
+        "COMMENT_MENTION".equals(n.getType())
+        && "INFO".equals(n.getSeverity())
+        && n.getUser().equals(mentioned)
+        && n.getActionUrl() != null && n.getActionUrl().startsWith("/tasks/") && n.getActionUrl().contains("42")
+        && n.getMessage() != null && n.getMessage().contains("Bob Smith")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldUseUsernameWhenPersonIsNull() {
+    // Arrange — author has no Person profile
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 10L, "check this");
+
+    // Assert
+    verify(notificationRepository).save(argThat(n ->
+        n.getMessage() != null && n.getMessage().contains("bob")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenMentionedUserIsSameAsAuthor() {
+    // Arrange — two distinct User objects with the same id (same logical user)
+    User author = User.builder().id(1L).username("alice").build();
+    User mentioned = User.builder().id(1L).username("alice").build();
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 1L, "@alice testing");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenMentionedUserIsNull() {
+    // Arrange
+    User author = User.builder().id(1L).username("alice").build();
+
+    // Act
+    notificationService.notifyCommentMention(null, author, "TASK", 1L, "@unknown");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldSkipWhenAuthorIsNull() {
+    // Arrange
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, null, "TASK", 1L, "some content");
+
+    // Assert — no notification saved
+    verify(notificationRepository, never()).save(any(DashboardNotification.class));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldTruncateCommentPreviewLongerThan100Chars() {
+    // Arrange
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+    String longComment = "a".repeat(150);
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 5L, longComment);
+
+    // Assert — message contains "..." indicating truncation
+    verify(notificationRepository).save(argThat(n ->
+        n.getMessage() != null && n.getMessage().contains("...")
+    ));
+  }
+
+  @Test
+  void notifyCommentMention_ShouldBuildCorrectActionUrlForBugEntity() {
+    // Arrange
+    User author = User.builder().id(2L).username("bob").build();
+    User mentioned = User.builder().id(3L).username("alice").build();
+
+    when(notificationRepository.save(any(DashboardNotification.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Act
+    notificationService.notifyCommentMention(mentioned, author, "BUG_REPORT", 99L, "check this bug");
+
+    // Assert — action URL points to bugs endpoint (not /tasks/)
+    verify(notificationRepository).save(argThat(n ->
+        n.getActionUrl() != null
+        && n.getActionUrl().startsWith("/bugs/")
+        && n.getActionUrl().contains("99")
+        && n.getEntityType().equals("BUG_REPORT")
+        && n.getEntityId().equals(99L)
+    ));
+  }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
@@ -8,39 +8,29 @@ import { Badge } from '@/components/ui/badge';
 import { cycleService } from '../../services/cycleService';
 import { Cycle } from '../../types';
 import { cn } from '@/lib/utils';
+import { STALE_TIMES } from '../../lib/queryClient';
 
 export function UpcomingDeadlinesWidget() {
   const { t, i18n } = useTranslation();
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadUpcomingDeadlines();
-  }, []);
-
-  const loadUpcomingDeadlines = async () => {
-    try {
-      setLoading(true);
+  const { data: cycles = [], isLoading: loading } = useQuery({
+    queryKey: ['widgets', 'upcoming-deadlines'],
+    queryFn: async () => {
       const response = await cycleService.getMyActiveCycles();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      const upcoming = response.data
-        .filter((cycle: Cycle) => {
+      return (response.data as Cycle[])
+        .filter((cycle) => {
           const endDate = new Date(cycle.endDate);
           endDate.setHours(0, 0, 0, 0);
           const daysUntilEnd = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           return daysUntilEnd >= 0 && daysUntilEnd <= 14;
         })
-        .sort((a: Cycle, b: Cycle) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-
-      setCycles(upcoming.slice(0, 5));
-    } catch (error) {
-      console.error('Failed to load upcoming deadlines:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+        .slice(0, 5);
+    },
+    staleTime: STALE_TIMES.entities,
+  });
 
   const getDaysUntil = (endDate: string) => {
     const today = new Date();

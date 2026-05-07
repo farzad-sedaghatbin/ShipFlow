@@ -22,7 +22,17 @@ export type ResourceType =
   | 'RETROSPECTIVE' 
   | 'BETTING_TABLE' 
   | 'AI_FEATURES' 
-  | 'SYSTEM';
+  | 'SYSTEM'
+  | 'INITIATIVE'
+  | 'EPIC'
+  | 'RELEASE'
+  | 'BACKLOG'
+  | 'WORKLOG'
+  | 'MEETING'
+  | 'METRIC'
+  | 'TEST_CASE'
+  | 'INTEGRATION'
+  | 'WISE_ARCHITECTURE';
 
 export type PermissionType = 
   | 'CREATE' 
@@ -138,7 +148,9 @@ class PermissionService {
     return [
       'CYCLE', 'PITCH', 'BUG', 'REPORT', 'PROJECT', 'TEAM', 
       'USER', 'RISK', 'DASHBOARD', 'RETROSPECTIVE', 
-      'BETTING_TABLE', 'AI_FEATURES', 'SYSTEM'
+      'BETTING_TABLE', 'AI_FEATURES', 'SYSTEM',
+      'INITIATIVE', 'EPIC', 'RELEASE', 'BACKLOG', 'WORKLOG',
+      'MEETING', 'METRIC', 'TEST_CASE', 'INTEGRATION', 'WISE_ARCHITECTURE'
     ];
   }
 
@@ -173,7 +185,17 @@ class PermissionService {
       'RETROSPECTIVE': 'Retrospectives',
       'BETTING_TABLE': 'Betting Table',
       'AI_FEATURES': 'AI Features',
-      'SYSTEM': 'System Settings'
+      'SYSTEM': 'System Settings',
+      'INITIATIVE': 'Initiatives',
+      'EPIC': 'Epics',
+      'RELEASE': 'Releases',
+      'BACKLOG': 'Backlog & Tasks',
+      'WORKLOG': 'Work Logs',
+      'MEETING': 'Meetings',
+      'METRIC': 'Custom Metrics',
+      'TEST_CASE': 'Test Cases',
+      'INTEGRATION': 'Integrations',
+      'WISE_ARCHITECTURE': 'WISE Architecture'
     };
     return labels[resourceType] || resourceType;
   }

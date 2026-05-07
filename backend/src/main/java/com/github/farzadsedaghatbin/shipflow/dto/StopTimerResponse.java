@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class StopTimerResponse {
-    private Long workLogId;
-    private Double hoursSpent;
-    private String message;
+  private Long workLogId;
+  private Double hoursSpent;
+  private String message;
 }

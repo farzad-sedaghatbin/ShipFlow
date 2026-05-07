@@ -159,6 +159,46 @@ For issues or questions about Slack integration:
 3. Ensure you're using the correct API version
 4. Contact your system administrator
 
+## User Mention Configuration (v0.9.0+)
+
+Slack notifications can @mention the relevant user in channel messages. When a task is assigned, blocked, completed, or a user is mentioned in a comment, the notification will tag the assignee directly in Slack.
+
+### Setup
+
+1. Each user opens **Profile** in ShipFlow
+2. In the **Notification IDs** section, enter their **Slack Member ID**
+3. Click the save button
+
+### Finding Your Slack Member ID
+
+1. Open Slack and click on your **profile picture** (top right)
+2. Click **Profile**
+3. Click the **three dots** (**...**) menu
+4. Select **Copy member ID**
+5. The ID looks like `U0123456789`
+
+### How It Works
+
+- When a notification targets a specific user, ShipFlow looks up their Slack Member ID from the `notification_user_mapping` table
+- If found, the message is prefixed with `<@U0123456789>` which Slack renders as an @mention
+- If no mapping exists, the notification is sent without a mention (graceful fallback)
+
+### API
+
+```
+GET    /api/users/me/notification-mappings
+PUT    /api/users/me/notification-mappings   { "providerName": "slack", "externalUserId": "U0123456789" }
+DELETE /api/users/me/notification-mappings/slack
+```
+
+## Plugin Architecture (v0.9.0+)
+
+All notification providers (Slack, Teams, future integrations) implement the `NotificationProvider` interface. To add a new provider:
+
+1. Create a `@Service` class implementing `NotificationProvider`
+2. Implement `getProviderName()`, `sendNotification()`, `isActive()`, and optionally `resolveUserMention()`
+3. Spring auto-discovers the bean — no changes needed to `DashboardNotificationService`
+
 ## Future Enhancements
 
 Planned features for future releases:
@@ -166,6 +206,5 @@ Planned features for future releases:
 - Interactive Slack messages with action buttons
 - Two-way integration (respond to Slack messages)
 - Rich formatting with attachments and blocks
-- User mention support
 - Thread support for related notifications
 - Slack OAuth integration (instead of webhooks)

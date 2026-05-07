@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const teamsApi = axios.create({
   baseURL: `${API_BASE_URL}/api/teams`,
@@ -45,6 +45,7 @@ export interface TeamsChannelConfig {
   notifyCycleCooldown: boolean;
   notifyBettingCompleted: boolean;
   notifySprintStarted: boolean;
+  flowType: 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD';
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +53,7 @@ export interface TeamsChannelConfig {
 export interface CreateTeamsChannelConfigRequest {
   channelName: string;
   channelWebhookUrl?: string;
+  flowType?: 'WEBHOOK' | 'POWER_AUTOMATE_POST' | 'POWER_AUTOMATE_THREAD';
   notifyTaskAssigned?: boolean;
   notifyTaskCompleted?: boolean;
   notifyTaskBlocked?: boolean;

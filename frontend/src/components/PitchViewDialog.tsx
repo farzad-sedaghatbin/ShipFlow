@@ -29,6 +29,8 @@ interface PitchViewDialogProps {
 }
 
 const statusConfig: Record<PitchStatus, { labelKey: string; variant: 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'info' }> = {
+  IDEA: { labelKey: 'pitches.status.idea', variant: 'outline' },
+  DRAFT: { labelKey: 'pitches.status.draft', variant: 'secondary' },
   PENDING: { labelKey: 'pitches.status.pending', variant: 'secondary' },
   SHAPED: { labelKey: 'pitches.status.shaped', variant: 'info' },
   STARTED: { labelKey: 'pitches.status.started', variant: 'default' },
@@ -55,7 +57,7 @@ export function PitchViewDialog({ pitch, open, onOpenChange }: PitchViewDialogPr
 
   const progressPercent = pitch.progressPercentage ?? 0;
   const hoursSpent = pitch.totalHoursSpent ?? 0;
-  const appetiteHours = pitch.appetiteHours ?? (pitch.appetiteDays * 8);
+  const appetiteHours = pitch.appetiteHours ?? ((pitch.appetiteDays ?? 0) * 8);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

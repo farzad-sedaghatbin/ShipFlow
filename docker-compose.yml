@@ -39,31 +39,58 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-runpod}
       AI_RISK_ENABLED: "true"
       # Ollama Configuration (local/self-hosted)
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:instruct}
-      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
+      APP_AI_OLLAMA_BASE_URL: ${APP_AI_OLLAMA_BASE_URL:-http://localhost:11434}
+      APP_AI_OLLAMA_MODEL: ${APP_AI_OLLAMA_MODEL:-mistral:instruct}
+      APP_AI_OLLAMA_TIMEOUT: ${APP_AI_OLLAMA_TIMEOUT:-180}
       # OpenAI Configuration (ChatGPT)
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4-turbo-preview}
-      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-120}
+      APP_AI_OPENAI_API_KEY: ${APP_AI_OPENAI_API_KEY:-}
+      APP_AI_OPENAI_MODEL: ${APP_AI_OPENAI_MODEL:-gpt-4.1-mini}
+      APP_AI_OPENAI_TIMEOUT: ${APP_AI_OPENAI_TIMEOUT:-120}
+      # Anthropic Configuration (Claude) — set APP_AI_ANTHROPIC_API_KEY in .env
+      APP_AI_ANTHROPIC_API_KEY: ${APP_AI_ANTHROPIC_API_KEY:-}
+      APP_AI_ANTHROPIC_MODEL: ${APP_AI_ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      APP_AI_ANTHROPIC_TIMEOUT: ${APP_AI_ANTHROPIC_TIMEOUT:-120}
       # RunPod Configuration (cloud GPU)
       RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
       RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
       RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
       RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
+      # JWT Secret (Base64-encoded, min 32 bytes)
+      JWT_SECRET: ${JWT_SECRET:-c2hhcGV1cC10cmFja2VyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1zaWduaW5nLTI1Ni1iaXRz}
+      APP_AI_RUNPOD_BASE_URL: ${APP_AI_RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
+      APP_AI_RUNPOD_API_KEY: ${APP_AI_RUNPOD_API_KEY:-}
+      APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
+      APP_AI_RUNPOD_TIMEOUT: ${APP_AI_RUNPOD_TIMEOUT:-180}
+      APP_AI_RUNPOD_POLL_INTERVAL: ${APP_AI_RUNPOD_POLL_INTERVAL:-2}
+      # Redis Configuration
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
       # Q&A Feature Configuration
       QA_ENABLED: "true"
       QA_VECTORSTORE_PROVIDER: qdrant
+      # Force Qdrant even in dev profile (overrides application-dev.properties in-memory default)
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
       QDRANT_API_KEY: ${QDRANT_API_KEY:-shipflow_qdrant_key}
+      # MCP (Model Context Protocol) Configuration
+      # GitHub MCP server for code context (set MCP_GITHUB_SERVER_URL to your MCP server)
+      MCP_GITHUB_ENABLED: ${MCP_GITHUB_ENABLED:-false}
+      MCP_GITHUB_SERVER_URL: ${MCP_GITHUB_SERVER_URL:-}
+      MCP_GITHUB_TIMEOUT: ${MCP_GITHUB_TIMEOUT:-120}
+      # Figma MCP server for design context (set MCP_FIGMA_SERVER_URL to your MCP server)
+      MCP_FIGMA_ENABLED: ${MCP_FIGMA_ENABLED:-false}
+      MCP_FIGMA_SERVER_URL: ${MCP_FIGMA_SERVER_URL:-}
+      MCP_FIGMA_TIMEOUT: ${MCP_FIGMA_TIMEOUT:-120}
     ports:
       - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
       qdrant:
+        condition: service_started
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
@@ -91,7 +118,34 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:6333/readyz"]
+      test: ["CMD-SHELL", "nc -z localhost 6333 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
+  # Redis Cache (with RDB + AOF persistence)
+  redis:
+    image: redis:7-alpine
+    container_name: shipflow-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -124,6 +178,7 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
+  redis_data:
   # chromadb_data:  # Uncomment if using ChromaDB
 
 networks:
