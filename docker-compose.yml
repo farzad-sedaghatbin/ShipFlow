@@ -50,6 +50,13 @@ services:
       APP_AI_ANTHROPIC_MODEL: ${APP_AI_ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
       APP_AI_ANTHROPIC_TIMEOUT: ${APP_AI_ANTHROPIC_TIMEOUT:-120}
       # RunPod Configuration (cloud GPU)
+      RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
+      RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
+      RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
+      RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
+      # JWT Secret (Base64-encoded, min 32 bytes)
+      JWT_SECRET: ${JWT_SECRET:-c2hhcGV1cC10cmFja2VyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1zaWduaW5nLTI1Ni1iaXRz}
       APP_AI_RUNPOD_BASE_URL: ${APP_AI_RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
       APP_AI_RUNPOD_API_KEY: ${APP_AI_RUNPOD_API_KEY:-}
       APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
