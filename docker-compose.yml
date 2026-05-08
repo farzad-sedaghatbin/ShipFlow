@@ -28,14 +28,15 @@ services:
       dockerfile: Dockerfile
     container_name: shipflow-app
     environment:
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shipflowdb
-      SPRING_DATASOURCE_USERNAME: shipflow
-      SPRING_DATASOURCE_PASSWORD: shipflow_secret
-      FLYWAY_REPAIR_ENABLED: "true"
-      APP_SAMPLE_DATA_ENABLED: "true"
-      # AI Provider Selection: 'ollama' | 'openai' | 'anthropic' | 'runpod'
-      APP_AI_PROVIDER: ${APP_AI_PROVIDER:-openai}
+      SPRING_PROFILES_ACTIVE: prod
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shipflowdb
+      DB_USERNAME: shipflow
+      DB_PASSWORD: shipflow_secret
+      # AI Provider Selection: 'ollama' (local), 'openai' (ChatGPT), or 'runpod' (cloud GPU)
+      AI_PROVIDER: ${AI_PROVIDER:-runpod}
       AI_RISK_ENABLED: "true"
       # Ollama Configuration (local/self-hosted)
       APP_AI_OLLAMA_BASE_URL: ${APP_AI_OLLAMA_BASE_URL:-http://localhost:11434}
@@ -50,6 +51,13 @@ services:
       APP_AI_ANTHROPIC_MODEL: ${APP_AI_ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
       APP_AI_ANTHROPIC_TIMEOUT: ${APP_AI_ANTHROPIC_TIMEOUT:-120}
       # RunPod Configuration (cloud GPU)
+      RUNPOD_BASE_URL: ${RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
+      RUNPOD_MODEL: ${RUNPOD_MODEL:-mistral:instruct}
+      RUNPOD_TIMEOUT: ${RUNPOD_TIMEOUT:-180}
+      RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
+      # JWT Secret (Base64-encoded, min 32 bytes)
+      JWT_SECRET: ${JWT_SECRET:-c2hhcGV1cC10cmFja2VyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1zaWduaW5nLTI1Ni1iaXRz}
       APP_AI_RUNPOD_BASE_URL: ${APP_AI_RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
       APP_AI_RUNPOD_API_KEY: ${APP_AI_RUNPOD_API_KEY:-}
       APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
