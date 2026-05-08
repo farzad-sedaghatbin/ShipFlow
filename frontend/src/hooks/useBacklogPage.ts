@@ -416,6 +416,14 @@ export function useBacklogPage() {
     catch (error: any) { toast.error(getUserFriendlyError(error)); }
   };
 
+  /**
+   * Optimistically update local task order after a drag-to-reorder.
+   * Called by BacklogTaskTable before the API request is made.
+   */
+  const handleReorder = (reorderedTasks: Task[]) => {
+    setTasks(reorderedTasks);
+  };
+
   const handleClearFilters = () => {
     setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]);
     setDependencyFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
@@ -523,6 +531,7 @@ export function useBacklogPage() {
     handleDeleteTask,
     handleQuickStatusChange,
     handleQuickPriorityChange,
+    handleReorder,
     handleClearFilters,
     handleExportCsv,
     loadTasks,

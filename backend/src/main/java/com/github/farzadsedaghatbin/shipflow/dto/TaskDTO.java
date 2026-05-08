@@ -22,6 +22,7 @@ public class TaskDTO {
   private TaskStatus status;
   private TaskPriority priority;
   private TaskCategory category;
+  private Integer sortOrder;
   private BigDecimal estimateHours;
   private BigDecimal actualHours;
 

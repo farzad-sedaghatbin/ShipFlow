@@ -330,6 +330,7 @@
     "stopTimer": "توقف تایمر",
     "stopTimerFirst": "ابتدا تایمر فعلی را متوقف کنید",
     "subTask": "زیرتسک",
+    "dragToReorder": "برای مرتب‌سازی بکشید",
     "subtaskCount": "{{count}} زیرتسک",
     "subtaskDescription": "توضیحات زیرتسک",
     "subtaskTitle": "عنوان زیرتسک",
@@ -5505,7 +5506,10 @@
     "task": "تسک",
     "taskTitle": "عنوان وظیفه",
     "title": "وظایف",
-    "todo": "انجام نشده"
+    "todo": "انجام نشده",
+    "reorderBlocked": "ترتیب‌دهی مجدد ممکن نیست: این تسک توسط یک وابستگی مسدود شده است",
+    "reorderSuccess": "ترتیب تسک‌ها ذخیره شد",
+    "reorderError": "ذخیره ترتیب تسک‌ها ناموفق بود"
   },
   "teams": {
     "add": "افزودن",

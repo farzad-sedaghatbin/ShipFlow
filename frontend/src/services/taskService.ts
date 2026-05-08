@@ -208,6 +208,10 @@ export const taskService = {
   bulkUpdate: (request: BulkTaskUpdateRequest) =>
     api.post<BulkUpdateResult>('/tasks/bulk-update', request),
 
+  // Drag-to-reorder: send new sort positions, server validates dependency constraints
+  reorderTasks: (items: { id: number; sortOrder: number }[]) =>
+    api.patch<void>('/tasks/reorder', { items }),
+
   // CSV Export — pass exactly one of projectId or cycleId
   exportTasks: (params: {
     projectId?: number;

@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
@@ -321,6 +322,18 @@ public class TaskController {
   public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
     taskService.deleteTask(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/reorder")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Reorder tasks (batch update sort order)",
+      description = "Validates dependency constraints before persisting the new order. "
+          + "Returns 400 if the proposed order would place a blocked task above its blocker.")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Tasks reordered successfully"),
+      @ApiResponse(responseCode = "400", description = "Dependency constraint violation")})
+  public ResponseEntity<Void> reorderTasks(@Valid @RequestBody ReorderRequest request) {
+    taskService.reorderTasks(request);
+    return ResponseEntity.ok().build();
   }
 
   // ========== Bulk Operations ==========

@@ -65,6 +65,7 @@ export default function BacklogPage() {
     onQuickStatusChange: bp.handleQuickStatusChange,
     onQuickPriorityChange: bp.handleQuickPriorityChange,
     onOpenDialog: () => bp.handleOpenDialog(),
+    onReorder: bp.handleReorder,
   };
 
   return (

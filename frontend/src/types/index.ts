@@ -846,6 +846,9 @@ export interface Task {
   tags?: string;
   commentCount?: number;
   
+  // Manual ordering (drag-to-reorder)
+  sortOrder?: number;
+
   // Dependency information
   blockingTasks?: TaskDependency[];
   blockedByTasks?: TaskDependency[];
