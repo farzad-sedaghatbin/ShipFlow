@@ -6790,5 +6790,27 @@
     "updatePitchStatus": "Update Pitch Status via MCP",
     "addComment": "Add Comment via MCP",
     "writeToolsEnabled": "Write tools enabled"
+  },
+  "pitchDependencies": {
+    "title": "Dependencies",
+    "addDependency": "Add dependency",
+    "blockedBy": "Blocked by",
+    "blocks": "Blocks",
+    "removeDependency": "Remove",
+    "noDependencies": "No dependencies",
+    "dependencyType": "Dependency type",
+    "selectPitch": "Select a pitch",
+    "reorderViolation": "Cannot reorder: dependency constraint violated",
+    "circularDependency": "This would create a circular dependency"
+  },
+  "epicDependencies": {
+    "title": "Epic Dependencies",
+    "addDependency": "Add dependency",
+    "blockedBy": "Depends on",
+    "blocks": "Blocks",
+    "removeDependency": "Remove",
+    "noDependencies": "No epic dependencies",
+    "selectEpic": "Select an epic",
+    "dependencyType": "Dependency type"
   }
 }

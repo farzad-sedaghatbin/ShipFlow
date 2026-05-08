@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -18,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, FileEdit, Trash2, Tag } from 'lucide-react';
+import { GripVertical, FileEdit, Trash2, Tag, Lock, AlertTriangle } from 'lucide-react';
 import { Pitch, PitchStatusUtils, BusinessValue } from '../types';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -34,11 +35,46 @@ import PriorityBadge from './PriorityBadge';
 import { cn } from '../lib/utils';
 
 // ========================
+// Dependency violation check
+// ========================
+
+function getReorderViolation(
+  pitches: Pitch[],
+  fromIndex: number,
+  toIndex: number
+): string | null {
+  if (fromIndex === toIndex) return null;
+  const reordered = arrayMove(pitches, fromIndex, toIndex);
+  const positionMap = new Map(reordered.map((p, i) => [p.id, i]));
+
+  for (const pitch of pitches) {
+    // pitch BLOCKS others → pitch must appear before them
+    for (const dep of pitch.blockingPitches ?? []) {
+      const blockerPos = positionMap.get(dep.sourcePitchId);
+      const blockedPos = positionMap.get(dep.targetPitchId);
+      if (blockerPos !== undefined && blockedPos !== undefined && blockerPos >= blockedPos) {
+        return `"${dep.sourcePitchTitle}" blocks "${dep.targetPitchTitle}" — cannot move it after`;
+      }
+    }
+    // pitch is BLOCKED BY others → blockers must appear before pitch
+    for (const dep of pitch.blockedByPitches ?? []) {
+      const blockerPos = positionMap.get(dep.sourcePitchId);
+      const blockedPos = positionMap.get(dep.targetPitchId);
+      if (blockerPos !== undefined && blockedPos !== undefined && blockerPos >= blockedPos) {
+        return `"${dep.sourcePitchTitle}" blocks "${dep.targetPitchTitle}" — cannot move it before its blocker`;
+      }
+    }
+  }
+  return null;
+}
+
+// ========================
 // Sortable Pitch Item
 // ========================
 
 interface SortablePitchItemProps {
   pitch: Pitch;
+  isBlockedDrop: boolean;
   onUnlink?: (id: number) => void;
   onStartShaping?: (id: number) => void;
   onPriorityChange?: (id: number, priority: BusinessValue) => void;
@@ -47,6 +83,7 @@ interface SortablePitchItemProps {
 
 function SortablePitchItem({
   pitch,
+  isBlockedDrop,
   onUnlink,
   onStartShaping,
   onPriorityChange,
@@ -67,13 +104,17 @@ function SortablePitchItem({
     transition,
   };
 
+  const hasBlockers = (pitch.blockedByPitches?.length ?? 0) > 0;
+  const isBlocker = (pitch.blockingPitches?.length ?? 0) > 0;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
         'flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 group',
-        isDragging && 'opacity-50 shadow-lg z-50 bg-background'
+        isDragging && 'opacity-50 shadow-lg z-50 bg-background',
+        isBlockedDrop && 'border-destructive/50 bg-destructive/5'
       )}
     >
       {/* Drag handle */}
@@ -99,6 +140,19 @@ function SortablePitchItem({
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700">
               <Tag className="h-2.5 w-2.5 mr-0.5" />
               v{pitch.targetReleaseVersion}
+            </Badge>
+          )}
+          {/* Dependency badges */}
+          {hasBlockers && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700">
+              <Lock className="h-2.5 w-2.5 mr-0.5" />
+              {t('pitchDependencies.blockedBy')} {pitch.blockedByPitches!.length}
+            </Badge>
+          )}
+          {isBlocker && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700">
+              <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+              {t('pitchDependencies.blocks')} {pitch.blockingPitches!.length}
             </Badge>
           )}
         </div>
@@ -218,6 +272,7 @@ export default function SortablePitchList({
   emptyMessage,
 }: SortablePitchListProps) {
   const { t } = useTranslation();
+  const [blockedDropId, setBlockedDropId] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -230,15 +285,40 @@ export default function SortablePitchList({
     })
   );
 
+  const handleDragOver = useCallback(
+    (e: DragOverEvent) => {
+      if (!e.over) {
+        setBlockedDropId(null);
+        return;
+      }
+      const activeId = Number(e.active.id);
+      const overId = Number(e.over.id);
+      const fromIdx = pitches.findIndex((p) => p.id === activeId);
+      const toIdx = pitches.findIndex((p) => p.id === overId);
+      const violation = getReorderViolation(pitches, fromIdx, toIdx);
+      setBlockedDropId(violation ? overId : null);
+    },
+    [pitches]
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
+      setBlockedDropId(null);
+
       if (!over || active.id === over.id) return;
 
       const oldIndex = pitches.findIndex((p) => p.id === active.id);
       const newIndex = pitches.findIndex((p) => p.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
+        // Check for dependency violation before reordering
+        const violation = getReorderViolation(pitches, oldIndex, newIndex);
+        if (violation) {
+          // Silently reject — the backend will also reject if the user somehow bypasses
+          console.warn('Pitch reorder blocked by dependency:', violation);
+          return;
+        }
         const reordered = arrayMove(pitches, oldIndex, newIndex);
         onReorder(reordered);
       }
@@ -258,6 +338,7 @@ export default function SortablePitchList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
@@ -269,6 +350,7 @@ export default function SortablePitchList({
             <SortablePitchItem
               key={pitch.id}
               pitch={pitch}
+              isBlockedDrop={pitch.id === blockedDropId}
               onUnlink={onUnlink}
               onStartShaping={onStartShaping}
               onPriorityChange={onPriorityChange}

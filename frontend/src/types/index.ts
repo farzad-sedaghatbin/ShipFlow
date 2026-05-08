@@ -264,6 +264,9 @@ export interface Pitch {
   // Prioritization
   priority?: BusinessValue;
   sortOrder?: number;
+  // Roadmap dependencies
+  blockingPitches?: PitchDependency[];
+  blockedByPitches?: PitchDependency[];
 }
 
 export interface BusiestPerson {
@@ -912,6 +915,38 @@ export interface TaskDependencies {
   blockedBy: TaskDependency[];
 }
 
+// Pitch Dependency Types
+export interface PitchDependency {
+  id: number;
+  sourcePitchId: number;
+  sourcePitchTitle: string;
+  targetPitchId: number;
+  targetPitchTitle: string;
+  dependencyType: DependencyType;
+  createdAt: string;
+}
+
+export interface PitchDependencies {
+  blocking: PitchDependency[];
+  blockedBy: PitchDependency[];
+}
+
+// Epic Dependency Types
+export interface EpicDependency {
+  id: number;
+  sourceEpicId: number;
+  sourceEpicName: string;
+  targetEpicId: number;
+  targetEpicName: string;
+  dependencyType: DependencyType;
+  createdAt: string;
+}
+
+export interface EpicDependencies {
+  blocking: EpicDependency[];
+  blockedBy: EpicDependency[];
+}
+
 export interface TaskStatistics {
   cycleId: number;
   cycleName: string;
@@ -1506,6 +1541,9 @@ export interface Epic {
   pitches?: PitchSummary[];
   // Prioritization
   priority?: BusinessValue;
+  // Roadmap dependencies (informational)
+  blockingEpics?: EpicDependency[];
+  blockedByEpics?: EpicDependency[];
 }
 
 /**

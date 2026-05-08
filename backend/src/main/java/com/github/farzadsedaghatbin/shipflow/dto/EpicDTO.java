@@ -53,6 +53,10 @@ public class EpicDTO {
   // Child pitches (optional, for detail view)
   private List<PitchSummaryDTO> pitches;
 
+  // Roadmap dependencies (informational)
+  private List<EpicDependencyDTO> blockingEpics;
+  private List<EpicDependencyDTO> blockedByEpics;
+
   /**
    * Summary of a pitch for list views.
    */

@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.dto;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.*;
 
 @Data
@@ -70,7 +71,11 @@ public class PitchDTO {
   // Priority and ordering
   private BusinessValue priority;
   private Integer sortOrder;
-  
+
+  // Roadmap dependencies
+  private List<PitchDependencyDTO> blockingPitches;
+  private List<PitchDependencyDTO> blockedByPitches;
+
   /**
    * Summary of the busiest team member (closest to exhausting their budget).
    */
