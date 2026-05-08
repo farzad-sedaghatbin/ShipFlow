@@ -63,47 +63,57 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.0.0',
-    date: 'Coming Soon',
+    date: 'April 21, 2026',
     title: 'First Open Source Release',
-    upcoming: true,
     highlights: [
       {
+        icon: <Network className="h-5 w-5" />,
+        title: 'MCP Relationship Graph: get_work_context',
+        description:
+          'New read tool that returns the full context for a pitch or cycle in one call — cycle metadata, pitches, tasks with status breakdown, blockers, hill-chart scope positions (0–100), and retrospective summaries. Replaces chaining 4–5 separate MCP tool calls.',
+      },
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'Anthropic Claude Provider',
+        description:
+          'Set AI_PROVIDER=anthropic and ANTHROPIC_API_KEY to use Claude models alongside OpenAI and Ollama. Default claude-3-5-haiku for cost efficiency; claude-3-5-sonnet recommended for Wise Architecture.',
+      },
+      {
+        icon: <Rss className="h-5 w-5" />,
+        title: 'Blog System at /blog',
+        description:
+          'Static blog powered by Markdown files. Responsive 2-column card grid, full typography rendering via @tailwindcss/typography, and blog nav link on the landing page. Launch posts: What is Shape Up, Hill Charts, ShipFlow vs Linear, Shape Up vs Scrum.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Production Fixes: JWT, CORS & SSE',
+        description:
+          'JWT secret now configurable via JWT_SECRET env var. CORS_ALLOWED_ORIGINS properly threaded through docker-compose. Spring Security 6 SSE async-dispatch AccessDeniedException fixed.',
+      },
+      {
         icon: <Container className="h-5 w-5" />,
-        title: 'Tag v1.0.0 & Docker Image',
+        title: 'Docker Image on GHCR',
         description:
-          'ghcr.io/farzad-sedaghatbin/shipflow:1.0.0 and :latest published on GHCR. One-command self-hosted setup via Docker Compose verified on Linux, macOS, and WSL2.',
-      },
-      {
-        icon: <Rocket className="h-5 w-5" />,
-        title: 'Public Launch Announcements',
-        description:
-          'Hacker News, Reddit (r/selfhosted, r/projectmanagement, r/java, r/reactjs), blog post, and live demo at shipflow.dev with guest read-only access.',
-      },
-      {
-        icon: <FileText className="h-5 w-5" />,
-        title: 'Migration Guide',
-        description:
-          'Documented upgrade path from 0.x to 1.0.0, including Flyway migration notes and any breaking configuration changes.',
+          'ghcr.io/farzad-sedaghatbin/shipflow:1.0.0 and :latest published. One-command self-hosted setup via Docker Compose verified on Linux, macOS, and WSL2.',
       },
       {
         icon: <Sparkles className="h-5 w-5" />,
-        title: 'Live Demo',
+        title: 'Live Demo at shipflow.dev',
         description:
-          'Public demo at shipflow.dev with pre-loaded seed data. No sign-up required to explore Shape Up and Kanban modes.',
+          'Public demo with pre-loaded seed data. No sign-up required to explore Shape Up and Kanban modes.',
       },
     ],
   },
   {
     version: '1.0.0-rc1',
-    date: 'Coming Soon',
+    date: 'April 14, 2026',
     title: 'Stabilization — Docs, Community & Production Fixes',
-    upcoming: true,
     highlights: [
       {
         icon: <FileText className="h-5 w-5" />,
         title: 'VitePress Documentation Site',
         description:
-          'Dedicated docs site with Getting Started, User Guide, Admin Guide, and Developer Guide. 10+ architecture guides migrated from Markdown files into a searchable, navigable site.',
+          'Dedicated docs site at farzad-sedaghatbin.github.io/ShipFlow/ with Getting Started, User Guide, Admin Guide, and Developer Guide. 20 content pages covering all integrations and guides.',
       },
       {
         icon: <Github className="h-5 w-5" />,
@@ -115,25 +125,13 @@ const releases: Release[] = [
         icon: <FlaskConical className="h-5 w-5" />,
         title: 'Full E2E Suite on Production Image',
         description:
-          'All 32 Playwright tests passing against the production Docker image on CI. Auth, project management, pitch lifecycle, hill chart drag-and-persist, and task management flows covered.',
+          'All 32 Playwright tests passing against the production Docker image on CI. Auth, project management, pitch lifecycle, hill chart drag-and-persist, and task flows covered.',
       },
       {
         icon: <Shield className="h-5 w-5" />,
         title: 'Bug Bash & Production Fixes',
         description:
-          'SSE async-dispatch security fix (AuthorizationDeniedException on notification stream), rate-limiter separate bucket for async job polling, Anthropic model update for 2025+ API keys, and Playwright selector stabilization.',
-      },
-      {
-        icon: <Network className="h-5 w-5" />,
-        title: 'MCP Relationship Graph: get_work_context',
-        description:
-          'New MCP read tool that returns the full context for a pitch or cycle in a single call — cycle metadata, pitches, tasks with status breakdown, blockers, hill-chart scope positions, and retrospective summaries. Replaces chaining 4–5 separate tool calls.',
-      },
-      {
-        icon: <Rss className="h-5 w-5" />,
-        title: 'Blog System',
-        description:
-          'Static blog at /blog powered by Markdown files synced from a private GitHub repository. First posts: What is Shape Up, Hill Charts, ShipFlow vs Linear, Shape Up vs Scrum.',
+          'SSE async-dispatch security fix, rate-limiter bucket for async polling, Anthropic model IDs corrected for 2025+ API keys, and Playwright selector stabilization for CI.',
       },
     ],
   },
