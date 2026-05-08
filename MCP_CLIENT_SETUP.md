@@ -187,6 +187,7 @@ Once connected, your AI assistant has access to these tools:
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
 | `wise_architecture_list_analyses` | Past Wise Architecture analyses for the current user (filterable by pitchId) |
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
+| `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId` or `cycleId`) |
 
 ### Write Tools (v0.9.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
@@ -234,7 +235,22 @@ wise_architecture_get_files(conversationId: "abc-...")
 # → list of Markdown files
 ```
 
-> **Planned tools** (future releases): `get_cycle` hill-chart positions, `search_all`, `get_retrospective`.
+**Work context graph workflow:**
+
+```
+# One call replaces: get_cycle + get_pitches + get_tasks + get_blockers
+
+# By pitch — full graph scoped to that pitch
+get_work_context(pitchId: 42)
+# → { cycle, pitch, pitches, tasks, taskStatusCounts, blockers, hillChartScopes, retrospectives }
+
+# By cycle — full graph for all pitches in the cycle
+get_work_context(cycleId: 5)
+# → { cycle, pitches: [...], tasks: [...], taskStatusCounts: { TODO: 3, IN_PROGRESS: 2, ... },
+#     blockers: [...], hillChartScopes: [...], retrospectives: [...] }
+```
+
+> **Planned tools** (future releases): `search_all`, `get_initiative`, `get_betting_table`.
 > See [MCP_SERVER_MILESTONE.md](MCP_SERVER_MILESTONE.md) for the full roadmap.
 
 ### Prompt Templates

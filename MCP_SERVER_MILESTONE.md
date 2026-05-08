@@ -36,7 +36,7 @@ ShipFlow is both an **MCP client** (consuming external servers) and an **MCP ser
 | `service/mcp/FigmaMcpProvider.java` | Reads designs from Figma MCP |
 | `service/mcp/McpConfig.java` | Config for consumed MCP servers |
 
-### MCP Server (implemented in v0.7.0)
+### MCP Server (implemented in v0.7.0+)
 
 | File | Role |
 |------|------|
@@ -47,16 +47,22 @@ ShipFlow is both an **MCP client** (consuming external servers) and an **MCP ser
 | `service/mcp/server/McpSessionManager.java` | SSE emitter registry |
 | `service/mcp/server/tools/ProjectMcpTools.java` | list_projects, get_project |
 | `service/mcp/server/tools/CycleMcpTools.java` | get_cycles, get_cycle |
-| `service/mcp/server/tools/TaskMcpTools.java` | get_tasks, get_task, get_blockers, update_task_status |
-| `service/mcp/server/tools/PitchMcpTools.java` | get_pitches, get_pitch_detail, get_betting_candidates |
+| `service/mcp/server/tools/TaskMcpTools.java` | get_tasks, get_task, get_blockers, create_task, update_task_status |
+| `service/mcp/server/tools/PitchMcpTools.java` | get_pitches, get_pitch_detail, get_betting_candidates, create_pitch, update_pitch_status |
+| `service/mcp/server/tools/CommentMcpTools.java` | add_comment |
+| `service/mcp/server/tools/WiseArchitectureMcpTools.java` | wise_architecture_list_analyses, wise_architecture_get_files, wise_architecture_analyze |
+| `service/mcp/server/tools/WorkContextMcpTools.java` | **get_work_context** — full relationship graph (cycle + pitches + tasks + blockers + hill chart + retros) in one call |
+| `dto/mcp/McpWorkContextDTO.java` | Graph response DTO with nested HillScope and RetroSummary types |
 | `security/McpAuthFilter.java` | Bearer API-key auth on `/mcp/**` |
 | `config/mcp/McpServerProperties.java` | `mcp.server.*` config (disabled by default) |
 
+**Current tool count**: 13 read tools + 6 write tools = 19 total
+
 **Remaining gaps** (planned for future milestones — see Gap Analysis below):
 - MCP resource definitions (URIs for entities)
-- Prompt templates
+- Prompt templates (`summarize_cycle`, `analyze_pitch_risks`, `generate_test_cases`)
 - Developer SDK / OpenAPI client
-- Additional write tools (create_task, add_comment, create_pitch)
+- Additional read tools: `search_all`, `get_betting_table`, `get_initiative`
 
 ---
 

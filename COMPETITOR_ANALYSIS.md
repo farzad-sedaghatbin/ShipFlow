@@ -115,23 +115,27 @@ Basecamp invented Shape Up but their own product does not implement the methodol
 
 ---
 
-## 4. The MCP Server Differentiator (v0.7.0)
+## 4. The MCP Server Differentiator (v0.7.0+)
 
 As of v0.7.0, ShipFlow is the **only project management tool** that implements the [Model Context Protocol](https://modelcontextprotocol.io) as a server — meaning AI coding assistants (Claude Code, Cursor, GitHub Copilot) can query your project board as a first-class tool call.
+
+Atlassian launched their "Teamwork Graph CLI" for Claude Code in 2026, which indexes Jira, Confluence, and Bitbucket into a single graph. ShipFlow's `get_work_context` tool (added alongside this) offers the same relationship-graph pattern natively for Shape Up teams — cycle + pitches + tasks + blockers + hill chart + retros in one call.
 
 ### What this enables that no competitor offers
 
 | Workflow | With ShipFlow MCP | Without MCP (every other tool) |
 |----------|------------------|--------------------------------|
+| Full context for a cycle or pitch | `get_work_context(pitchId)` returns the entire graph | Open 4–5 browser tabs |
 | Know your tasks while coding | Ask Claude Code in the terminal | Open browser tab, navigate to board |
-| Find blockers before writing code | `get_blockers(taskId)` returns live graph | Manual check in the tool |
+| Find blockers before writing code | `get_blockers(cycleId)` returns live list | Manual check in the tool |
 | Understand pitch scope before implementing | `get_pitch_detail` returns full Shape Up fields + Figma URL | Copy-paste from browser |
 | Update task status after a commit | `update_task_status` from the editor | Manual click in the UI |
 | Design context while coding | Pitch → Figma MCP chain, automatic | Open Figma manually |
+| Run AI architecture analysis from editor | `wise_architecture_analyze` returns Markdown guides | Open ShipFlow UI |
 
-### Why competitors haven't done this yet
+### Why competitors haven't matched this yet
 
-MCP is an emerging standard (2024). Most PM tools are building AI features **inside** their UI (AI-assisted summaries, auto-prioritization). ShipFlow's bet is that the most valuable AI surface is **the developer's editor** — where they already spend 8+ hours a day.
+MCP is an emerging standard (2024). Most PM tools are building AI features **inside** their UI (AI-assisted summaries, auto-prioritization). Atlassian's Teamwork Graph is the first serious competitor move into editor-native context — but it requires Jira + Confluence + Bitbucket. ShipFlow's bet is that the most valuable AI surface is **the developer's editor**, and the full relationship graph should be a single tool call, not a product suite.
 
 ---
 

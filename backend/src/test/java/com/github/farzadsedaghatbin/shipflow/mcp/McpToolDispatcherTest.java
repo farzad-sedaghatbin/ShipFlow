@@ -22,12 +22,19 @@ import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSession;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
+import com.github.farzadsedaghatbin.shipflow.dto.HillChartPointDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.RetroDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
+import com.github.farzadsedaghatbin.shipflow.service.CycleService;
+import com.github.farzadsedaghatbin.shipflow.service.HillChartService;
+import com.github.farzadsedaghatbin.shipflow.service.RetroService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureHistoryService;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
 import java.time.Instant;
@@ -61,6 +68,8 @@ class McpToolDispatcherTest {
   @Mock private Authentication auth;
   @Mock private WiseArchitectureService wiseArchitectureService;
   @Mock private WiseArchitectureHistoryService wiseArchHistoryService;
+  @Mock private HillChartService hillChartService;
+  @Mock private RetroService retroService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -82,10 +91,12 @@ class McpToolDispatcherTest {
     PitchMcpTools pitchTools = new PitchMcpTools(pitchService);
     CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository);
     WiseArchitectureMcpTools wiseArchTools = new WiseArchitectureMcpTools(wiseArchitectureService, wiseArchHistoryService, userRepository);
+    WorkContextMcpTools workContextTools = new WorkContextMcpTools(pitchService, cycleService, taskService, hillChartService, retroService);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
-        projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools);
+        projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
+        workContextTools);
 
     McpSession session = new McpSession(
         SESSION_ID,
@@ -148,7 +159,7 @@ class McpToolDispatcherTest {
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
 
-    // Should have 10 read tools (no write tools since writeEnabled=false)
+    // Should have at least 11 read tools (no write tools since writeEnabled=false)
     assertThat(tools).hasSizeGreaterThanOrEqualTo(10);
 
     // Verify tool names
@@ -542,6 +553,194 @@ class McpToolDispatcherTest {
 
   // ── Tool definitions ──────────────────────────────────────────────────────
 
+  // ── get_work_context ──────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_getWorkContextByPitch_returnsFullGraph() throws Exception {
+    PitchDTO pitch = PitchDTO.builder()
+        .id(10L)
+        .title("Search Revamp")
+        .cycleId(5L)
+        .cycleName("Cycle 1")
+        .problemStatement("Search is slow")
+        .solution("Add Elasticsearch")
+        .build();
+    when(pitchService.getPitchById(10L)).thenReturn(pitch);
+
+    CycleDTO cycle = CycleDTO.builder()
+        .id(5L)
+        .name("Cycle 1")
+        .projectId(1L)
+        .projectName("Backend")
+        .build();
+    when(cycleService.getCycleById(5L)).thenReturn(cycle);
+
+    TaskDTO task = TaskDTO.builder()
+        .id(20L)
+        .title("Index articles")
+        .build();
+    when(taskService.getTasksByPitchId(10L)).thenReturn(List.of(task));
+    when(hillChartService.getHillChartPointsByPitch(10L)).thenReturn(List.of(
+        HillChartPointDTO.builder()
+            .id(1L)
+            .scope("Indexing")
+            .position(40)
+            .pitchId(10L)
+            .pitchTitle("Search Revamp")
+            .build()));
+    when(retroService.getRetrosByCycle(5L)).thenReturn(List.of(
+        RetroDTO.builder()
+            .id(3L)
+            .title("Cycle 1 Retro")
+            .status(RetroStatus.CLOSED)
+            .itemCount(5)
+            .cycleId(5L)
+            .cycleName("Cycle 1")
+            .build()));
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "get_work_context",
+            "arguments", Map.of("pitchId", 10)),
+        "id", 20);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("Search Revamp");
+    assertThat(text).contains("Cycle 1");
+    assertThat(text).contains("Index articles");
+    assertThat(text).contains("Indexing");     // hill chart scope
+    assertThat(text).contains("Cycle 1 Retro"); // retro summary
+  }
+
+  @Test
+  void toolsCall_getWorkContextByCycle_returnsAllPitchesAndTasks() throws Exception {
+    CycleDTO cycle = CycleDTO.builder()
+        .id(7L)
+        .name("Cycle 2")
+        .projectId(1L)
+        .projectName("Mobile")
+        .build();
+    when(cycleService.getCycleById(7L)).thenReturn(cycle);
+
+    PitchDTO pitch = PitchDTO.builder()
+        .id(30L)
+        .title("Onboarding Flow")
+        .cycleId(7L)
+        .build();
+    when(pitchService.getPitchesByCycleId(7L)).thenReturn(List.of(pitch));
+
+    TaskDTO blockedTask = TaskDTO.builder()
+        .id(50L)
+        .title("Design screens")
+        .isBlocked(true)
+        .build();
+    when(taskService.getTasksByCycleId(7L)).thenReturn(List.of(blockedTask));
+    when(hillChartService.getHillChartPointsByCycle(7L)).thenReturn(List.of());
+    when(retroService.getRetrosByCycle(7L)).thenReturn(List.of());
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "get_work_context",
+            "arguments", Map.of("cycleId", 7)),
+        "id", 21);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("Cycle 2");
+    assertThat(text).contains("Onboarding Flow");
+    assertThat(text).contains("Design screens");
+    assertThat(text).contains("blockers"); // blocked task present in blockers list
+  }
+
+  @Test
+  void toolsCall_getWorkContextWithoutArgs_sendsError() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "get_work_context",
+            "arguments", Map.of()),
+        "id", 22);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).containsIgnoringCase("pitchId");
+  }
+
+  @Test
+  void workContextDefinition_hasRequiredFields() {
+    Map<String, Object> def = WorkContextMcpTools.getWorkContextDefinition();
+    assertThat(def).containsKeys("name", "description", "inputSchema");
+    assertThat((String) def.get("description")).containsIgnoringCase("hill");
+    assertThat((String) def.get("description")).containsIgnoringCase("retro");
+    assertThat((String) def.get("description")).containsIgnoringCase("blocker");
+  }
+
+  @Test
+  void toolsList_includesGetWorkContext() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/list",
+        "id", 23);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
+    List<String> toolNames = tools.stream().map(t -> (String) t.get("name")).toList();
+    assertThat(toolNames).contains("get_work_context");
+  }
+
   @Test
   void pitchDefinition_mentionsFigmaInDescription() {
     Map<String, Object> def = PitchMcpTools.getPitchDetailDefinition();
@@ -567,7 +766,8 @@ class McpToolDispatcherTest {
         PitchMcpTools.getBettingCandidatesDefinition(),
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
-        CommentMcpTools.addCommentDefinition());
+        CommentMcpTools.addCommentDefinition(),
+        WorkContextMcpTools.getWorkContextDefinition());
 
     for (Map<String, Object> def : all) {
       assertThat(def).as("Tool definition " + def.get("name"))
