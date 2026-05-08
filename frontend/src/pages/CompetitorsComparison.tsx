@@ -79,6 +79,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   { category: 'AI Features', feature: 'AI technical solution generator', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Team skills-aware recommendations', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Figma design analysis (MCP)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'AI Features', feature: 'Work context graph API (MCP)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Configurable risk weights', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'Risk trend prediction', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'AI Features', feature: 'AI-powered help search', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
