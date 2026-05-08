@@ -68,7 +68,23 @@ public class EpicDependencyService {
     return toDTO(saved);
   }
 
-  /** Remove a dependency between epics. */
+  /** Remove a dependency between epics, verifying it belongs to the given epic. */
+  public void removeDependency(Long epicId, Long dependencyId) {
+    EpicDependency dependency = epicDependencyRepository.findById(dependencyId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            localizationService.getMessage("dependency.not.found", dependencyId)));
+    Long sourceEpicId = dependency.getSourceEpic().getId();
+    Long targetEpicId = dependency.getTargetEpic().getId();
+    if (!sourceEpicId.equals(epicId) && !targetEpicId.equals(epicId)) {
+      throw new BadRequestException("Dependency does not belong to this epic");
+    }
+    epicDependencyRepository.deleteById(dependencyId);
+  }
+
+  /**
+   * @deprecated Use {@link #removeDependency(Long, Long)} with explicit epic ownership check.
+   */
+  @Deprecated
   public void removeDependency(Long dependencyId) {
     if (!epicDependencyRepository.existsById(dependencyId)) {
       throw new IllegalArgumentException(localizationService.getMessage("dependency.not.found", dependencyId));

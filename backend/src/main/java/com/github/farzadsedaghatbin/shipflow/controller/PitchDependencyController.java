@@ -45,9 +45,11 @@ public class PitchDependencyController {
 
   @DeleteMapping("/{dependencyId}")
   @PreAuthorize("isAuthenticated()")
-  @Operation(summary = "Remove a pitch dependency", description = "Delete a specific dependency relationship between pitches")
+  @Operation(summary = "Remove a pitch dependency",
+      description = "Delete a specific dependency relationship between pitches. "
+          + "The dependency must involve the pitch specified in the path.")
   public ResponseEntity<Void> removeDependency(@PathVariable Long pitchId, @PathVariable Long dependencyId) {
-    pitchDependencyService.removeDependency(dependencyId);
+    pitchDependencyService.removeDependency(pitchId, dependencyId);
     return ResponseEntity.noContent().build();
   }
 }

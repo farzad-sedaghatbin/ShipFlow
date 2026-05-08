@@ -43,13 +43,23 @@ function getReorderViolation(
   fromIndex: number,
   toIndex: number
 ): string | null {
-  if (fromIndex === toIndex) return null;
+  // Guard: indices must be valid (findIndex returns -1 for missing items)
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return null;
   const reordered = arrayMove(pitches, fromIndex, toIndex);
   const positionMap = new Map(reordered.map((p, i) => [p.id, i]));
 
   for (const pitch of pitches) {
-    // pitch BLOCKS others → pitch must appear before them
-    for (const dep of pitch.blockingPitches ?? []) {
+    // Only enforce BLOCKS and DEPENDS_ON — RELATED_TO is informational only
+    const enforcedBlockingDeps = (pitch.blockingPitches ?? []).filter(
+      d => d.dependencyType === 'BLOCKS' || d.dependencyType === 'DEPENDS_ON'
+    );
+    const enforcedBlockedByDeps = (pitch.blockedByPitches ?? []).filter(
+      d => d.dependencyType === 'BLOCKS' || d.dependencyType === 'DEPENDS_ON'
+    );
+
+    // pitch BLOCKS others → source (blocker) must appear before target (blocked)
+    for (const dep of enforcedBlockingDeps) {
+      if (dep.dependencyType !== 'BLOCKS') continue; // DEPENDS_ON handled in blockedBy
       const blockerPos = positionMap.get(dep.sourcePitchId);
       const blockedPos = positionMap.get(dep.targetPitchId);
       if (blockerPos !== undefined && blockedPos !== undefined && blockerPos >= blockedPos) {
@@ -57,7 +67,8 @@ function getReorderViolation(
       }
     }
     // pitch is BLOCKED BY others → blockers must appear before pitch
-    for (const dep of pitch.blockedByPitches ?? []) {
+    for (const dep of enforcedBlockedByDeps) {
+      if (dep.dependencyType !== 'BLOCKS') continue;
       const blockerPos = positionMap.get(dep.sourcePitchId);
       const blockedPos = positionMap.get(dep.targetPitchId);
       if (blockerPos !== undefined && blockedPos !== undefined && blockerPos >= blockedPos) {
@@ -295,6 +306,7 @@ export default function SortablePitchList({
       const overId = Number(e.over.id);
       const fromIdx = pitches.findIndex((p) => p.id === activeId);
       const toIdx = pitches.findIndex((p) => p.id === overId);
+      if (fromIdx === -1 || toIdx === -1) { setBlockedDropId(null); return; }
       const violation = getReorderViolation(pitches, fromIdx, toIdx);
       setBlockedDropId(violation ? overId : null);
     },

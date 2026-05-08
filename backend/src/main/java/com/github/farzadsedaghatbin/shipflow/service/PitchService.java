@@ -25,9 +25,11 @@ import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +62,8 @@ public class PitchService {
   private PitchDependencyService pitchDependencyService;
 
   public List<PitchDTO> getAllPitches() {
-    return pitchRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
+    List<com.github.farzadsedaghatbin.shipflow.entity.Pitch> pitches = pitchRepository.findAllNotDeleted();
+    return toDTOList(pitches);
   }
 
   /**
@@ -78,8 +81,7 @@ public class PitchService {
       return getAllPitches();
     }
 
-    return pitchRepository.findAccessiblePitchesByUserId(currentUser.getId()).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return toDTOList(pitchRepository.findAccessiblePitchesByUserId(currentUser.getId()));
   }
 
   /** Get the currently authenticated user. */
@@ -97,19 +99,19 @@ public class PitchService {
     // Includes pitches directly assigned to the cycle AND pitches assigned
     // to a betting slot that belongs to this cycle (handles cases where the
     // pitch's cycle_id was not set but the slot's cycle_id is set).
-    return pitchRepository.findByCycleIdNotDeleted(cycleId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findByCycleIdNotDeleted(cycleId));
   }
 
   public List<PitchDTO> getPitchesByTeamId(Long teamId) {
-    return pitchRepository.findByTeamIdNotDeleted(teamId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findByTeamIdNotDeleted(teamId));
   }
 
   public List<PitchDTO> getPitchesByEpicId(Long epicId) {
-    return pitchRepository.findByEpicIdNotDeleted(epicId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findByEpicIdNotDeleted(epicId));
   }
 
   public List<PitchDTO> getPitchesByReleaseId(Long releaseId) {
-    return pitchRepository.findByTargetReleaseIdNotDeleted(releaseId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findByTargetReleaseIdNotDeleted(releaseId));
   }
 
   @CacheEvict(value = "roadmap", allEntries = true)
@@ -412,42 +414,42 @@ public class PitchService {
 
   /** Get all ideas (raw concepts not yet being shaped). */
   public List<PitchDTO> getIdeas() {
-    return pitchRepository.findAllIdeas().stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findAllIdeas());
   }
 
   /** Get ideas for a specific project. */
   public List<PitchDTO> getIdeasByProjectId(Long projectId) {
-    return pitchRepository.findIdeasByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findIdeasByProjectId(projectId));
   }
 
   /** Get ideas for a specific epic. */
   public List<PitchDTO> getIdeasByEpicId(Long epicId) {
-    return pitchRepository.findIdeasByEpicId(epicId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findIdeasByEpicId(epicId));
   }
 
   /** Get all drafts (pitches being shaped). */
   public List<PitchDTO> getDrafts() {
-    return pitchRepository.findAllDrafts().stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findAllDrafts());
   }
 
   /** Get drafts for a specific project. */
   public List<PitchDTO> getDraftsByProjectId(Long projectId) {
-    return pitchRepository.findDraftsByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findDraftsByProjectId(projectId));
   }
 
   /** Get all betting candidates (shaped pitches ready for cycle assignment). */
   public List<PitchDTO> getBettingCandidates() {
-    return pitchRepository.findBettingCandidates().stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findBettingCandidates());
   }
 
   /** Get betting candidates for a specific project. */
   public List<PitchDTO> getBettingCandidatesByProjectId(Long projectId) {
-    return pitchRepository.findBettingCandidatesByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findBettingCandidatesByProjectId(projectId));
   }
 
   /** Get all unassigned pitches (IDEA, DRAFT, SHAPED). */
   public List<PitchDTO> getUnassignedByEpicId(Long epicId) {
-    return pitchRepository.findUnassignedByEpicId(epicId).stream().map(this::toDTO).collect(Collectors.toList());
+    return toDTOList(pitchRepository.findUnassignedByEpicId(epicId));
   }
 
   /**
@@ -483,14 +485,29 @@ public class PitchService {
             continue;
           }
           com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType type = dep.getDependencyType();
-          if (type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS
-              || type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.DEPENDS_ON) {
+          if (type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.RELATED_TO) {
+            continue;
+          }
+          // For BLOCKS: source must appear before target (sourceOrder < targetOrder).
+          // For DEPENDS_ON: source depends on target, so target must appear before source
+          //   (targetOrder < sourceOrder), which means sourceOrder >= targetOrder is valid —
+          //   the constraint is violated when targetOrder >= sourceOrder.
+          if (type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS) {
             if (sourceOrder >= targetOrder) {
               String sourceTitle = dep.getSourcePitch().getTitle();
               String targetTitle = dep.getTargetPitch().getTitle();
               throw new BadRequestException(
                   "Cannot reorder: \"" + sourceTitle + "\" blocks \"" + targetTitle
                       + "\" — the blocking pitch must appear before the blocked pitch");
+            }
+          } else {
+            // DEPENDS_ON: targetOrder must be < sourceOrder (target comes first)
+            if (targetOrder >= sourceOrder) {
+              String sourceTitle = dep.getSourcePitch().getTitle();
+              String targetTitle = dep.getTargetPitch().getTitle();
+              throw new BadRequestException(
+                  "Cannot reorder: \"" + sourceTitle + "\" depends on \"" + targetTitle
+                      + "\" — the dependency must appear before the dependent pitch");
             }
           }
         }
@@ -653,6 +670,51 @@ public class PitchService {
     }
   }
 
+  /**
+   * Convert a list of pitches to DTOs using a single batch dependency query,
+   * avoiding N+1 selects when the list has more than one element.
+   */
+  private List<PitchDTO> toDTOList(List<Pitch> pitches) {
+    if (pitches.isEmpty()) {
+      return new ArrayList<>();
+    }
+    // Batch load all dependencies for all pitch IDs in one query
+    Map<Long, List<com.github.farzadsedaghatbin.shipflow.entity.PitchDependency>> depsBySource = new HashMap<>();
+    Map<Long, List<com.github.farzadsedaghatbin.shipflow.entity.PitchDependency>> depsByTarget = new HashMap<>();
+    if (pitchDependencyRepository != null) {
+      List<Long> pitchIds = pitches.stream().map(Pitch::getId).collect(Collectors.toList());
+      List<com.github.farzadsedaghatbin.shipflow.entity.PitchDependency> allDeps =
+          pitchDependencyRepository.findBySourcePitchIdInOrTargetPitchIdIn(pitchIds, pitchIds);
+      for (com.github.farzadsedaghatbin.shipflow.entity.PitchDependency dep : allDeps) {
+        depsBySource.computeIfAbsent(dep.getSourcePitch().getId(), k -> new ArrayList<>()).add(dep);
+        depsByTarget.computeIfAbsent(dep.getTargetPitch().getId(), k -> new ArrayList<>()).add(dep);
+      }
+    }
+    return pitches.stream()
+        .map(p -> toDTO(p, depsBySource, depsByTarget))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Convert a single pitch to DTO using pre-loaded dependency maps (no extra queries).
+   */
+  private PitchDTO toDTO(
+      Pitch pitch,
+      Map<Long, List<com.github.farzadsedaghatbin.shipflow.entity.PitchDependency>> depsBySource,
+      Map<Long, List<com.github.farzadsedaghatbin.shipflow.entity.PitchDependency>> depsByTarget) {
+
+    List<PitchDependencyDTO> blockingPitches = (pitchDependencyService != null)
+        ? depsBySource.getOrDefault(pitch.getId(), java.util.Collections.emptyList())
+            .stream().map(pitchDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+    List<PitchDependencyDTO> blockedByPitches = (pitchDependencyService != null)
+        ? depsByTarget.getOrDefault(pitch.getId(), java.util.Collections.emptyList())
+            .stream().map(pitchDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+
+    return buildPitchDTO(pitch, blockingPitches, blockedByPitches);
+  }
+
   private PitchDTO toDTO(Pitch pitch) {
     // Load dependency data (null-safe: repositories may be absent in unit tests)
     List<PitchDependencyDTO> blockingPitches = (pitchDependencyRepository != null && pitchDependencyService != null)
@@ -663,6 +725,14 @@ public class PitchService {
         ? pitchDependencyRepository.findByTargetPitchId(pitch.getId())
             .stream().map(pitchDependencyService::toDTO).collect(Collectors.toList())
         : java.util.Collections.emptyList();
+    return buildPitchDTO(pitch, blockingPitches, blockedByPitches);
+  }
+
+  /** Shared DTO builder — accepts pre-loaded dependency lists to avoid N+1. */
+  private PitchDTO buildPitchDTO(
+      Pitch pitch,
+      List<PitchDependencyDTO> blockingPitches,
+      List<PitchDependencyDTO> blockedByPitches) {
 
     Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
     if (totalHours == null)

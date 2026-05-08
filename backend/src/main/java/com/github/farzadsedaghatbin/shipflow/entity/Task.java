@@ -41,7 +41,7 @@ public class Task {
   private TaskPriority priority;
 
   @NotAudited
-  @Column(name = "sort_order")
+  @Column(name = "sort_order", nullable = false)
   @Builder.Default
   private Integer sortOrder = 0;
 

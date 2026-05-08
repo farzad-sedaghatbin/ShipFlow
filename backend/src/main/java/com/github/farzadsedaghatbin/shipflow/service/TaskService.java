@@ -999,10 +999,14 @@ public class TaskService {
    */
   @Transactional
   public void reorderTasks(ReorderRequest request) {
-    // Load all tasks in the batch
+    // Validate: reject duplicate task IDs in the request up-front
     List<Long> ids = request.getItems().stream()
         .map(ReorderRequest.ReorderItem::getId)
         .collect(Collectors.toList());
+    Set<Long> uniqueIds = new java.util.LinkedHashSet<>(ids);
+    if (uniqueIds.size() != ids.size()) {
+      throw new BadRequestException("Duplicate task IDs in reorder request");
+    }
 
     Map<Long, Task> taskMap = taskRepository.findAllById(ids).stream()
         .collect(Collectors.toMap(Task::getId, t -> t));
@@ -1014,46 +1018,42 @@ public class TaskService {
             ReorderRequest.ReorderItem::getSortOrder
         ));
 
-    // Validate dependency constraints for each affected task
-    for (Long taskId : ids) {
-      Task task = taskMap.get(taskId);
-      if (task == null) continue;
+    // Batch-load all dependencies touching any task in this batch (avoids N+1)
+    List<TaskDependency> allDeps =
+        taskDependencyRepository.findBySourceTaskIdInOrTargetTaskIdIn(ids, ids);
 
-      // Load dependencies involving this task
-      List<TaskDependency> deps = taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(taskId, taskId);
+    // Validate dependency constraints using the pre-loaded dependency list
+    for (TaskDependency dep : allDeps) {
+      DependencyType type = dep.getDependencyType();
+      if (type == DependencyType.RELATED_TO) continue;
 
-      for (TaskDependency dep : deps) {
-        DependencyType type = dep.getDependencyType();
-        if (type == DependencyType.RELATED_TO) continue;
+      Long blockerId;
+      Long blockedId;
 
-        Long blockerId;
-        Long blockedId;
+      if (type == DependencyType.BLOCKS) {
+        // source BLOCKS target: source must appear before target
+        blockerId = dep.getSourceTask().getId();
+        blockedId = dep.getTargetTask().getId();
+      } else {
+        // DEPENDS_ON: source depends on target, so target must appear before source
+        blockerId = dep.getTargetTask().getId();
+        blockedId = dep.getSourceTask().getId();
+      }
 
-        if (type == DependencyType.BLOCKS) {
-          // source BLOCKS target: source must come before target
-          blockerId = dep.getSourceTask().getId();
-          blockedId = dep.getTargetTask().getId();
-        } else {
-          // DEPENDS_ON: source depends on target, so target must come before source
-          blockerId = dep.getTargetTask().getId();
-          blockedId = dep.getSourceTask().getId();
-        }
+      Integer blockerOrder = proposedOrder.get(blockerId);
+      Integer blockedOrder = proposedOrder.get(blockedId);
 
-        Integer blockerOrder = proposedOrder.get(blockerId);
-        Integer blockedOrder = proposedOrder.get(blockedId);
-
-        // Only validate if both tasks are in this reorder batch
-        if (blockerOrder != null && blockedOrder != null) {
-          if (blockerOrder >= blockedOrder) {
-            Task blocker = taskMap.get(blockerId);
-            Task blocked = taskMap.get(blockedId);
-            String blockerTitle = blocker != null ? blocker.getTitle() : String.valueOf(blockerId);
-            String blockedTitle = blocked != null ? blocked.getTitle() : String.valueOf(blockedId);
-            throw new BadRequestException(
-                String.format("Cannot reorder: '%s' blocks '%s' and must appear before it in the list.",
-                    blockerTitle, blockedTitle)
-            );
-          }
+      // Only validate when both tasks are present in this reorder batch
+      if (blockerOrder != null && blockedOrder != null) {
+        if (blockerOrder >= blockedOrder) {
+          Task blocker = taskMap.get(blockerId);
+          Task blocked = taskMap.get(blockedId);
+          String blockerTitle = blocker != null ? blocker.getTitle() : String.valueOf(blockerId);
+          String blockedTitle = blocked != null ? blocked.getTitle() : String.valueOf(blockedId);
+          throw new BadRequestException(
+              String.format("Cannot reorder: '%s' blocks '%s' and must appear before it in the list.",
+                  blockerTitle, blockedTitle)
+          );
         }
       }
     }

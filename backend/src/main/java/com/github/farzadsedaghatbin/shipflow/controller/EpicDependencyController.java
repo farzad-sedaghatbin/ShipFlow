@@ -45,9 +45,11 @@ public class EpicDependencyController {
 
   @DeleteMapping("/{dependencyId}")
   @PreAuthorize("isAuthenticated()")
-  @Operation(summary = "Remove an epic dependency", description = "Delete a specific dependency relationship between epics")
+  @Operation(summary = "Remove an epic dependency",
+      description = "Delete a specific dependency relationship between epics. "
+          + "The dependency must involve the epic specified in the path.")
   public ResponseEntity<Void> removeDependency(@PathVariable Long epicId, @PathVariable Long dependencyId) {
-    epicDependencyService.removeDependency(dependencyId);
+    epicDependencyService.removeDependency(epicId, dependencyId);
     return ResponseEntity.noContent().build();
   }
 }

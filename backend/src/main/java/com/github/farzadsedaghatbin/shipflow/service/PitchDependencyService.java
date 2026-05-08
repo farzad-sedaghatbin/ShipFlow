@@ -68,7 +68,23 @@ public class PitchDependencyService {
     return toDTO(saved);
   }
 
-  /** Remove a dependency between pitches. */
+  /** Remove a dependency between pitches, verifying it belongs to the given pitch. */
+  public void removeDependency(Long pitchId, Long dependencyId) {
+    PitchDependency dependency = pitchDependencyRepository.findById(dependencyId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            localizationService.getMessage("dependency.not.found", dependencyId)));
+    Long sourcePitchId = dependency.getSourcePitch().getId();
+    Long targetPitchId = dependency.getTargetPitch().getId();
+    if (!sourcePitchId.equals(pitchId) && !targetPitchId.equals(pitchId)) {
+      throw new BadRequestException("Dependency does not belong to this pitch");
+    }
+    pitchDependencyRepository.deleteById(dependencyId);
+  }
+
+  /**
+   * @deprecated Use {@link #removeDependency(Long, Long)} with explicit pitch ownership check.
+   */
+  @Deprecated
   public void removeDependency(Long dependencyId) {
     if (!pitchDependencyRepository.existsById(dependencyId)) {
       throw new IllegalArgumentException(localizationService.getMessage("dependency.not.found", dependencyId));
