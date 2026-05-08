@@ -4,15 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-04-21
+
 ### Added
 - **Anthropic Claude provider**: `langchain4j-anthropic` integrated as a first-class LLM provider.
   Set `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` to use Claude models.
   Default: `claude-3-5-haiku-20241022` (cost-efficient). Recommended for Wise Architecture: `claude-3-5-sonnet-20241022`.
+- **Static Blog system**: Public `/blog` route with markdown posts served from `frontend/public/blog/`.
+  Index fetched from `/blog/index.json`; posts parsed from frontmatter. Includes three launch articles.
+  Blog link added to Landing page CTA and footer nav.
+- **Markdown rendering fixed**: `@tailwindcss/typography` plugin enabled in Tailwind v4 so
+  `prose` classes correctly style headings, bold, lists, code blocks in blog posts.
+- **Blog nav link**: "Blog" added alongside Competitors / What's New / Roadmap in landing header and footer.
+
+### Fixed
+- **JWT secret configurable via env var** (`JWT_SECRET`): app no longer hardcodes the secret in production.
+- **CORS production config**: `CORS_ALLOWED_ORIGINS` env var properly threaded through `docker-compose.yml`;
+  exact origins and wildcard patterns handled separately to prevent Spring Security `IllegalArgumentException`.
+- **SSE `AccessDeniedException`**: Spring Security 6 `AuthorizationFilter` now permits `ASYNC` and `ERROR`
+  dispatcher types, fixing `403` errors during SSE notification push.
+- **Anthropic model IDs corrected** and async job polling exempted from AI rate limiting.
 
 ### Changed
-- Default OpenAI model updated from retired `gpt-4o-mini` to `gpt-4.1-mini`
+- Default OpenAI model updated from retired `gpt-4o-mini` to `gpt-4.1-mini`.
 
-## [1.0.0-rc1] - Upcoming
+## [1.0.0-rc1] - 2026-04-14
 
 ### Focus
 Stabilization — no new features. Bug fixes, documentation, community setup, and final release engineering.
