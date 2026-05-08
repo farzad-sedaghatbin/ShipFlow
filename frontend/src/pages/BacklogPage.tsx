@@ -13,6 +13,7 @@ import {
   BacklogTaskDialog,
   BacklogViewDialog,
   BacklogDeleteDialog,
+  GanttView,
 } from '../components/backlog';
 import { useTranslation } from 'react-i18next';
 
@@ -121,10 +122,32 @@ export default function BacklogPage() {
         />
 
         <TabsContent value="all" className="mt-0">
-          {bp.viewMode === 'kanban' ? <KanbanBoard {...kanbanProps} /> : <BacklogTaskTable {...taskTableProps} />}
+          {bp.viewMode === 'gantt' ? (
+            <GanttView
+              tasks={bp.tasks}
+              cycles={bp.cycles}
+              selectedCycle={bp.selectedCycle}
+              onViewTask={bp.handleViewTask}
+            />
+          ) : bp.viewMode === 'kanban' ? (
+            <KanbanBoard {...kanbanProps} />
+          ) : (
+            <BacklogTaskTable {...taskTableProps} />
+          )}
         </TabsContent>
         <TabsContent value="my" className="mt-0">
-          {bp.viewMode === 'kanban' ? <KanbanBoard {...kanbanProps} /> : <BacklogTaskTable {...taskTableProps} />}
+          {bp.viewMode === 'gantt' ? (
+            <GanttView
+              tasks={bp.tasks}
+              cycles={bp.cycles}
+              selectedCycle={bp.selectedCycle}
+              onViewTask={bp.handleViewTask}
+            />
+          ) : bp.viewMode === 'kanban' ? (
+            <KanbanBoard {...kanbanProps} />
+          ) : (
+            <BacklogTaskTable {...taskTableProps} />
+          )}
         </TabsContent>
       </Tabs>
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, List, Kanban, Download, Loader2 } from 'lucide-react';
+import { Plus, List, Kanban, GanttChartSquare, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -109,7 +109,7 @@ export function BacklogHeader({
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('list')}
-                  className="rounded-r-none"
+                  className="rounded-r-none border-r"
                 >
                   <List className="h-4 w-4" />
                 </Button>
@@ -122,12 +122,25 @@ export function BacklogHeader({
                   variant={viewMode === 'kanban' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('kanban')}
-                  className="rounded-l-none"
+                  className="rounded-none border-x"
                 >
                   <Kanban className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.viewMode.kanban')}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'gantt' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => onViewModeChange('gantt')}
+                  className="rounded-l-none"
+                >
+                  <GanttChartSquare className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('backlogPage.viewMode.gantt')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

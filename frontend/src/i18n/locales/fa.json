@@ -631,7 +631,8 @@
     },
     "viewMode": {
       "list": "نمای لیست",
-      "kanban": "نمای کانبان"
+      "kanban": "نمای کانبان",
+      "gantt": "نمای زمان‌بندی (گانت)"
     },
     "status": {
       "open": "باز",
@@ -1131,6 +1132,7 @@
   "common": {
     "about": "درباره ما",
     "actions": "عملیات",
+    "add": "افزودن",
     "all": "همه",
     "back": "بازگشت",
     "by": "[TODO: Persian translation] by",
@@ -6816,5 +6818,15 @@
     "noDependencies": "بدون وابستگی Epic",
     "selectEpic": "انتخاب Epic",
     "dependencyType": "نوع وابستگی"
+  },
+  "ganttView": {
+    "title": "جدول زمانی",
+    "zoomWeek": "هفته",
+    "zoomMonth": "ماه",
+    "today": "امروز",
+    "noTasksWithDates": "هیچ وظیفه‌ای با تاریخ در این نما وجود ندارد.",
+    "setDueDates": "تاریخ سررسید تعیین کنید تا وظایف در جدول زمانی نمایش داده شوند.",
+    "unassigned": "بدون تخصیص",
+    "noDueDate": "بدون تاریخ سررسید"
   }
 }
