@@ -6790,5 +6790,27 @@
     "updatePitchStatus": "به‌روزرسانی وضعیت پیچ از طریق MCP",
     "addComment": "افزودن نظر از طریق MCP",
     "writeToolsEnabled": "ابزارهای نوشتاری فعال است"
+  },
+  "pitchDependencies": {
+    "title": "وابستگی‌ها",
+    "addDependency": "افزودن وابستگی",
+    "blockedBy": "مسدود شده توسط",
+    "blocks": "مسدود می‌کند",
+    "removeDependency": "حذف",
+    "noDependencies": "بدون وابستگی",
+    "dependencyType": "نوع وابستگی",
+    "selectPitch": "انتخاب پیچ",
+    "reorderViolation": "ترتیب‌دهی مجدد ممکن نیست: محدودیت وابستگی نقض شده",
+    "circularDependency": "این عمل باعث ایجاد وابستگی چرخه‌ای می‌شود"
+  },
+  "epicDependencies": {
+    "title": "وابستگی‌های Epic",
+    "addDependency": "افزودن وابستگی",
+    "blockedBy": "وابسته به",
+    "blocks": "مسدود می‌کند",
+    "removeDependency": "حذف",
+    "noDependencies": "بدون وابستگی Epic",
+    "selectEpic": "انتخاب Epic",
+    "dependencyType": "نوع وابستگی"
   }
 }

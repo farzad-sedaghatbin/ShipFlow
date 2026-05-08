@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEpicRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.EpicDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.EpicDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
@@ -10,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
@@ -39,6 +41,10 @@ public class EpicService {
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private EpicDependencyRepository epicDependencyRepository;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private EpicDependencyService epicDependencyService;
 
   public List<EpicDTO> getAllEpics() {
     return epicRepository.findAllNotDeleted().stream()
@@ -293,6 +299,16 @@ public class EpicService {
           .count();
     }
 
+    // Load dependency data (informational only; null-safe for unit tests)
+    List<EpicDependencyDTO> blockingEpics = (epicDependencyRepository != null && epicDependencyService != null)
+        ? epicDependencyRepository.findBySourceEpicId(epic.getId())
+            .stream().map(epicDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+    List<EpicDependencyDTO> blockedByEpics = (epicDependencyRepository != null && epicDependencyService != null)
+        ? epicDependencyRepository.findByTargetEpicId(epic.getId())
+            .stream().map(epicDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+
     return EpicDTO.builder()
         .id(epic.getId())
         .name(epic.getName())
@@ -315,6 +331,9 @@ public class EpicService {
         .pitchCount(pitchCount)
         .completedPitchCount(completedPitchCount)
         .progressPercentage(pitchCount > 0 ? (completedPitchCount * 100.0) / pitchCount : 0.0)
+        // Roadmap dependencies (informational)
+        .blockingEpics(blockingEpics)
+        .blockedByEpics(blockedByEpics)
         .build();
   }
 

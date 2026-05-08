@@ -14,10 +14,14 @@ import {
   Lightbulb,
   FileEdit,
   Vote,
+  GitMerge,
+  X,
+  Plus,
 } from 'lucide-react';
 import { epicService } from '../services/epicService';
 import { pitchService } from '../services/pitchService';
-import { Epic, EpicStatus, Pitch, BusinessValue } from '../types';
+import { getEpicDependencies, addEpicDependency, removeEpicDependency } from '../services/epicDependencyService';
+import { Epic, EpicStatus, Pitch, BusinessValue, EpicDependency, DependencyType } from '../types';
 import { useToast } from '../contexts';
 import SortablePitchList from '../components/SortablePitchList';
 
@@ -56,12 +60,21 @@ export default function EpicDetailPage() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
-  
+
   // Quick Add Idea dialog state
   const [ideaDialog, setIdeaDialog] = useState(false);
   const [ideaTitle, setIdeaTitle] = useState('');
   const [ideaDescription, setIdeaDescription] = useState('');
   const [addingIdea, setAddingIdea] = useState(false);
+
+  // Epic dependency state
+  const [blockingEpics, setBlockingEpics] = useState<EpicDependency[]>([]);
+  const [blockedByEpics, setBlockedByEpics] = useState<EpicDependency[]>([]);
+  const [depDialog, setDepDialog] = useState(false);
+  const [allEpics, setAllEpics] = useState<Epic[]>([]);
+  const [depTargetEpicId, setDepTargetEpicId] = useState<string>('');
+  const [depType, setDepType] = useState<DependencyType>('BLOCKS');
+  const [addingDep, setAddingDep] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -72,17 +85,70 @@ export default function EpicDetailPage() {
   const loadEpic = async () => {
     try {
       setLoading(true);
-      const response = await epicService.getById(Number(id));
-      setEpic(response.data);
-      
-      // Load pitches for this epic
-      const pitchesResponse = await pitchService.getByEpicId(Number(id));
-      setPitches(pitchesResponse.data);
+      const epicId = Number(id);
+      const [epicRes, pitchesRes, depsRes] = await Promise.all([
+        epicService.getById(epicId),
+        pitchService.getByEpicId(epicId),
+        getEpicDependencies(epicId),
+      ]);
+      setEpic(epicRes.data);
+      setPitches(pitchesRes.data);
+      setBlockingEpics(depsRes.blocking);
+      setBlockedByEpics(depsRes.blockedBy);
     } catch (error) {
       console.error('Failed to load epic:', error);
       showError(t('epics.loadError'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openDepDialog = async () => {
+    try {
+      if (allEpics.length === 0 && epic) {
+        const res = await epicService.getByProject(epic.projectId);
+        setAllEpics(res.data.filter((e) => e.id !== Number(id)));
+      }
+    } catch (error) {
+      console.error('Failed to load epics for dependency selection:', error);
+    }
+    setDepDialog(true);
+  };
+
+  const handleAddDep = async () => {
+    if (!depTargetEpicId) return;
+    try {
+      setAddingDep(true);
+      const dep = await addEpicDependency(Number(id), Number(depTargetEpicId), depType);
+      if (depType === 'BLOCKS') {
+        setBlockingEpics((prev) => [...prev, dep]);
+      } else {
+        setBlockedByEpics((prev) => [...prev, dep]);
+      }
+      showSuccess(t('epicDependencies.addDependency'));
+      setDepDialog(false);
+      setDepTargetEpicId('');
+      setDepType('BLOCKS');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      showError(msg || t('common.error'));
+    } finally {
+      setAddingDep(false);
+    }
+  };
+
+  const handleRemoveDep = async (depId: number, isBlocking: boolean) => {
+    try {
+      await removeEpicDependency(Number(id), depId);
+      if (isBlocking) {
+        setBlockingEpics((prev) => prev.filter((d) => d.id !== depId));
+      } else {
+        setBlockedByEpics((prev) => prev.filter((d) => d.id !== depId));
+      }
+      showSuccess(t('epicDependencies.removeDependency'));
+    } catch (error) {
+      console.error('Failed to remove dependency:', error);
+      showError(t('common.error'));
     }
   };
 
@@ -385,6 +451,70 @@ export default function EpicDetailPage() {
         </Card>
       </div>
 
+      {/* Epic Dependencies */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <GitMerge className="h-5 w-5" />
+            {t('epicDependencies.title')}
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={openDepDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('epicDependencies.addDependency')}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {blockingEpics.length === 0 && blockedByEpics.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('epicDependencies.noDependencies')}</p>
+          ) : (
+            <div className="space-y-4">
+              {blockingEpics.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">{t('epicDependencies.blocks')}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {blockingEpics.map((dep) => (
+                      <div key={dep.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 text-xs text-yellow-800 dark:text-yellow-200">
+                        <Link to={`/epics/${dep.targetEpicId}`} className="hover:underline">
+                          {dep.targetEpicName}
+                        </Link>
+                        <button
+                          onClick={() => handleRemoveDep(dep.id, true)}
+                          className="ml-1 hover:text-destructive"
+                          title={t('epicDependencies.removeDependency')}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {blockedByEpics.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">{t('epicDependencies.blockedBy')}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {blockedByEpics.map((dep) => (
+                      <div key={dep.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 text-xs text-orange-800 dark:text-orange-200">
+                        <Link to={`/epics/${dep.sourceEpicId}`} className="hover:underline">
+                          {dep.sourceEpicName}
+                        </Link>
+                        <button
+                          onClick={() => handleRemoveDep(dep.id, false)}
+                          className="ml-1 hover:text-destructive"
+                          title={t('epicDependencies.removeDependency')}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Pitches */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -477,6 +607,58 @@ export default function EpicDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Epic Dependency Dialog */}
+      <Dialog open={depDialog} onOpenChange={setDepDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitMerge className="h-5 w-5" />
+              {t('epicDependencies.addDependency')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('epicDependencies.title')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>{t('epicDependencies.dependencyType')}</Label>
+              <Select value={depType} onValueChange={(v) => setDepType(v as DependencyType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BLOCKS">{t('epicDependencies.blocks')}</SelectItem>
+                  <SelectItem value="DEPENDS_ON">{t('epicDependencies.blockedBy')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('epicDependencies.selectEpic')}</Label>
+              <Select value={depTargetEpicId} onValueChange={setDepTargetEpicId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('epicDependencies.selectEpic')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {allEpics.map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDepDialog(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleAddDep} disabled={addingDep || !depTargetEpicId}>
+              {addingDep ? t('common.saving') : t('epicDependencies.addDependency')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Quick Add Idea Dialog */}
       <Dialog open={ideaDialog} onOpenChange={setIdeaDialog}>

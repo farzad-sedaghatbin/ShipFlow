@@ -1,26 +1,31 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.PitchDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.PitchDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
+import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,6 +54,10 @@ public class PitchService {
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
   private final CapacityConfigService capacityConfigService;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private PitchDependencyRepository pitchDependencyRepository;
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private PitchDependencyService pitchDependencyService;
 
   public List<PitchDTO> getAllPitches() {
     return pitchRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -443,6 +452,7 @@ public class PitchService {
 
   /**
    * Batch-update sort order for pitches (used by drag-and-drop reordering).
+   * Validates that no pitch dependency constraints are violated by the new order.
    */
   @CacheEvict(value = "roadmap", allEntries = true)
   public void reorder(ReorderRequest request) {
@@ -452,6 +462,41 @@ public class PitchService {
       pitch.setSortOrder(item.getSortOrder());
       return pitch;
     }).collect(Collectors.toList());
+
+    // Build proposed order map (pitchId -> sortOrder)
+    Map<Long, Integer> proposedOrder = new HashMap<>();
+    for (ReorderRequest.ReorderItem item : request.getItems()) {
+      proposedOrder.put(item.getId(), item.getSortOrder());
+    }
+
+    // Validate dependency constraints (null-safe: repository may be absent in unit tests)
+    if (pitchDependencyRepository != null) {
+      for (ReorderRequest.ReorderItem item : request.getItems()) {
+        List<PitchDependency> deps = pitchDependencyRepository
+            .findBySourcePitchIdOrTargetPitchId(item.getId(), item.getId());
+        for (PitchDependency dep : deps) {
+          Long sourceId = dep.getSourcePitch().getId();
+          Long targetId = dep.getTargetPitch().getId();
+          Integer sourceOrder = proposedOrder.get(sourceId);
+          Integer targetOrder = proposedOrder.get(targetId);
+          if (sourceOrder == null || targetOrder == null) {
+            continue;
+          }
+          com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType type = dep.getDependencyType();
+          if (type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS
+              || type == com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.DEPENDS_ON) {
+            if (sourceOrder >= targetOrder) {
+              String sourceTitle = dep.getSourcePitch().getTitle();
+              String targetTitle = dep.getTargetPitch().getTitle();
+              throw new BadRequestException(
+                  "Cannot reorder: \"" + sourceTitle + "\" blocks \"" + targetTitle
+                      + "\" — the blocking pitch must appear before the blocked pitch");
+            }
+          }
+        }
+      }
+    }
+
     pitchRepository.saveAll(pitchesToSave);
     log.info("Reordered {} pitches", request.getItems().size());
   }
@@ -609,6 +654,16 @@ public class PitchService {
   }
 
   private PitchDTO toDTO(Pitch pitch) {
+    // Load dependency data (null-safe: repositories may be absent in unit tests)
+    List<PitchDependencyDTO> blockingPitches = (pitchDependencyRepository != null && pitchDependencyService != null)
+        ? pitchDependencyRepository.findBySourcePitchId(pitch.getId())
+            .stream().map(pitchDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+    List<PitchDependencyDTO> blockedByPitches = (pitchDependencyRepository != null && pitchDependencyService != null)
+        ? pitchDependencyRepository.findByTargetPitchId(pitch.getId())
+            .stream().map(pitchDependencyService::toDTO).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+
     Double totalHours = workLogRepository.getTotalHoursByPitchId(pitch.getId());
     if (totalHours == null)
       totalHours = 0.0;
@@ -727,6 +782,9 @@ public class PitchService {
         // Circuit breaker fields
         .isCircuitBreakerTriggered(pitch.getIsCircuitBreakerTriggered())
         .circuitBreakerReason(pitch.getCircuitBreakerReason()).circuitBreakerDate(pitch.getCircuitBreakerDate())
+        // Roadmap dependencies
+        .blockingPitches(blockingPitches)
+        .blockedByPitches(blockedByPitches)
         .build();
   }
 }
