@@ -665,7 +665,10 @@
     "todo": "To Do",
     "inProgress": "In Progress",
     "done": "Done",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "reorderBlocked": "Cannot reorder: this task is blocked by a dependency",
+    "reorderSuccess": "Task order saved",
+    "reorderError": "Failed to save task order"
   },
   "teams": {
     "title": "Teams",
@@ -3126,6 +3129,7 @@
     "selectPitchFirst": "Select a pitch first",
     "noSpecificScope": "No specific scope",
     "subTask": "Subtask",
+    "dragToReorder": "Drag to reorder",
     "timer": "Timer",
     "running": "Running",
     "cancel": "Cancel",

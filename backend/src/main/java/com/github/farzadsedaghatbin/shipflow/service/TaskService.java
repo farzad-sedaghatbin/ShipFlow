@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
@@ -12,20 +13,24 @@ import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.TaskDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -38,6 +43,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +63,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
   private final TaskRepository taskRepository;
+  private final TaskDependencyRepository taskDependencyRepository;
   private final CycleRepository cycleRepository;
   private final PersonRepository personRepository;
   private final UserRepository userRepository;
@@ -956,6 +963,7 @@ public class TaskService {
 
     return TaskDTO.builder().id(task.getId()).title(task.getTitle()).description(task.getDescription())
         .status(task.getStatus()).priority(task.getPriority()).category(task.getCategory())
+        .sortOrder(task.getSortOrder())
         .estimateHours(task.getEstimateHours()).actualHours(task.getActualHours())
         .cycleId(task.getCycle().getId()).cycleName(task.getCycle().getName())
         .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
@@ -983,6 +991,85 @@ public class TaskService {
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
         .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())
         .build();
+  }
+
+  /**
+   * Reorder tasks within a cycle. Validates that the new order respects
+   * all BLOCKS and DEPENDS_ON dependency constraints.
+   */
+  @Transactional
+  public void reorderTasks(ReorderRequest request) {
+    // Load all tasks in the batch
+    List<Long> ids = request.getItems().stream()
+        .map(ReorderRequest.ReorderItem::getId)
+        .collect(Collectors.toList());
+
+    Map<Long, Task> taskMap = taskRepository.findAllById(ids).stream()
+        .collect(Collectors.toMap(Task::getId, t -> t));
+
+    // Build proposed sort order map: taskId -> proposedSortOrder
+    Map<Long, Integer> proposedOrder = request.getItems().stream()
+        .collect(Collectors.toMap(
+            ReorderRequest.ReorderItem::getId,
+            ReorderRequest.ReorderItem::getSortOrder
+        ));
+
+    // Validate dependency constraints for each affected task
+    for (Long taskId : ids) {
+      Task task = taskMap.get(taskId);
+      if (task == null) continue;
+
+      // Load dependencies involving this task
+      List<TaskDependency> deps = taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(taskId, taskId);
+
+      for (TaskDependency dep : deps) {
+        DependencyType type = dep.getDependencyType();
+        if (type == DependencyType.RELATED_TO) continue;
+
+        Long blockerId;
+        Long blockedId;
+
+        if (type == DependencyType.BLOCKS) {
+          // source BLOCKS target: source must come before target
+          blockerId = dep.getSourceTask().getId();
+          blockedId = dep.getTargetTask().getId();
+        } else {
+          // DEPENDS_ON: source depends on target, so target must come before source
+          blockerId = dep.getTargetTask().getId();
+          blockedId = dep.getSourceTask().getId();
+        }
+
+        Integer blockerOrder = proposedOrder.get(blockerId);
+        Integer blockedOrder = proposedOrder.get(blockedId);
+
+        // Only validate if both tasks are in this reorder batch
+        if (blockerOrder != null && blockedOrder != null) {
+          if (blockerOrder >= blockedOrder) {
+            Task blocker = taskMap.get(blockerId);
+            Task blocked = taskMap.get(blockedId);
+            String blockerTitle = blocker != null ? blocker.getTitle() : String.valueOf(blockerId);
+            String blockedTitle = blocked != null ? blocked.getTitle() : String.valueOf(blockedId);
+            throw new BadRequestException(
+                String.format("Cannot reorder: '%s' blocks '%s' and must appear before it in the list.",
+                    blockerTitle, blockedTitle)
+            );
+          }
+        }
+      }
+    }
+
+    // Apply new sort orders
+    List<Task> toSave = ids.stream()
+        .filter(taskMap::containsKey)
+        .map(id -> {
+          Task t = taskMap.get(id);
+          t.setSortOrder(proposedOrder.get(id));
+          return t;
+        })
+        .collect(Collectors.toList());
+
+    taskRepository.saveAll(toSave);
+    log.info("Reordered {} tasks", toSave.size());
   }
 
   /**

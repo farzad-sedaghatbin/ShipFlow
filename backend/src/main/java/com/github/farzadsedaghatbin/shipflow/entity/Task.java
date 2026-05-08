@@ -40,6 +40,11 @@ public class Task {
   @Column(nullable = false)
   private TaskPriority priority;
 
+  @NotAudited
+  @Column(name = "sort_order")
+  @Builder.Default
+  private Integer sortOrder = 0;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private TaskCategory category;
