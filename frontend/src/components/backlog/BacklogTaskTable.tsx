@@ -579,13 +579,6 @@ export function BacklogTaskTable({
     }
   };
 
-  const toggleTask = (id: number, checked: boolean) => {
-    if (!onSelectedTaskIdsChange) return;
-    const next = new Set(selectedTaskIds);
-    if (checked) next.add(id); else next.delete(id);
-    onSelectedTaskIdsChange(next);
-  };
-
   const toggleAll = (checked: boolean) => {
     if (!onSelectedTaskIdsChange) return;
     onSelectedTaskIdsChange(checked ? new Set(tasks.map(t => t.id)) : new Set());

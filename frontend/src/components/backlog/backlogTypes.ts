@@ -33,7 +33,7 @@ export function getPriorityBadgeVariant(priority: TaskPriority) {
   return priorityOptions.find(p => p.value === priority)?.variant || 'secondary';
 }
 
-export type ViewMode = 'list' | 'kanban';
+export type ViewMode = 'list' | 'kanban' | 'gantt';
 
 export interface ViewDialogState {
   open: boolean;

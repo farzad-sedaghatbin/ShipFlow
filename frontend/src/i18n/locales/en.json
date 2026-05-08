@@ -7,6 +7,7 @@
     "edit": "Edit",
     "create": "Create",
     "update": "Update",
+    "add": "Add",
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
@@ -3199,7 +3200,8 @@
     },
     "viewMode": {
       "list": "List View",
-      "kanban": "Kanban Board"
+      "kanban": "Kanban Board",
+      "gantt": "Timeline (Gantt)"
     },
     "kanban": {
       "noTasks": "No tasks in this column",
@@ -6816,5 +6818,15 @@
     "noDependencies": "No epic dependencies",
     "selectEpic": "Select an epic",
     "dependencyType": "Dependency type"
+  },
+  "ganttView": {
+    "title": "Timeline",
+    "zoomWeek": "Week",
+    "zoomMonth": "Month",
+    "today": "Today",
+    "noTasksWithDates": "No tasks with dates in this view.",
+    "setDueDates": "Set due dates to see tasks on the timeline.",
+    "unassigned": "Unassigned",
+    "noDueDate": "No due date"
   }
 }

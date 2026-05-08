@@ -1,4 +1,5 @@
 export { BacklogHeader } from './BacklogHeader';
+export { GanttView } from './GanttView';
 export { BacklogFilters } from './BacklogFilters';
 export { BacklogStatistics } from './BacklogStatistics';
 export { BacklogTaskTable } from './BacklogTaskTable';
