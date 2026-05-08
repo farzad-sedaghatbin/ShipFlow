@@ -46,6 +46,13 @@ public interface TaskDependencyRepository extends JpaRepository<TaskDependency, 
    */
   List<TaskDependency> findBySourceTaskIdOrTargetTaskId(Long sourceTaskId, Long targetTaskId);
 
+  /**
+   * Batch fetch all dependencies where any of the given task IDs appears as source
+   * or target. Used to avoid N+1 queries during reorder validation.
+   */
+  List<TaskDependency> findBySourceTaskIdInOrTargetTaskIdIn(
+      java.util.Collection<Long> sourceIds, java.util.Collection<Long> targetIds);
+
   /** Delete a specific dependency between two tasks. */
   void deleteBySourceTaskIdAndTargetTaskId(Long sourceTaskId, Long targetTaskId);
 

@@ -50,7 +50,7 @@ public class TaskController {
   
   // Allowed fields for sorting to prevent runtime errors
   private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-      "id", "createdAt", "updatedAt", "title", "status", "priority", "category"
+      "id", "createdAt", "updatedAt", "title", "status", "priority", "category", "sortOrder"
   );
   
   /**

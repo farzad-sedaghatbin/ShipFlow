@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
 import {
   Plus,
@@ -72,6 +72,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Task, TaskStatus, TaskPriority, Person } from '../../types';
 import { taskService } from '../../services/taskService';
+import { getUserFriendlyError } from '../../utils/errorMessages';
 import EmptyState from '../EmptyState';
 import { EmptyTasksIllustration } from '../illustrations';
 import BulkActionBar from '../BulkActionBar';
@@ -141,9 +142,8 @@ function SortableTaskRow({
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           aria-label={t('backlogPage.dragToReorder')}
-          tabIndex={-1}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -552,6 +552,8 @@ export function BacklogTaskTable({
     }
   };
 
+  const reorderInFlight = useRef(false);
+
   const handleDragEnd = async (e: DragEndEvent) => {
     setActiveTaskId(null);
     setBlockedDropIds(new Set());
@@ -559,12 +561,17 @@ export function BacklogTaskTable({
 
     const fromIndex = tasks.findIndex((t) => t.id === Number(e.active.id));
     const toIndex = tasks.findIndex((t) => t.id === Number(e.over!.id));
+    if (fromIndex === -1 || toIndex === -1) return;
 
     const violation = getViolatedDependency(tasks, fromIndex, toIndex);
     if (violation) {
       toast.error(violation);
       return;
     }
+
+    // Prevent concurrent reorder requests
+    if (reorderInFlight.current) return;
+    reorderInFlight.current = true;
 
     const reordered = arrayMove(tasks, fromIndex, toIndex);
     onReorder?.(reordered);
@@ -573,17 +580,13 @@ export function BacklogTaskTable({
       await taskService.reorderTasks(
         reordered.map((task, idx) => ({ id: task.id, sortOrder: idx + 1 }))
       );
-    } catch {
-      toast.error(t('tasks.reorderError'));
+      toast.success(t('tasks.reorderSuccess'));
+    } catch (err) {
+      toast.error(getUserFriendlyError(err, t('tasks.reorderError')));
       onReorder?.(tasks); // revert optimistic update
+    } finally {
+      reorderInFlight.current = false;
     }
-  };
-
-  const toggleTask = (id: number, checked: boolean) => {
-    if (!onSelectedTaskIdsChange) return;
-    const next = new Set(selectedTaskIds);
-    if (checked) next.add(id); else next.delete(id);
-    onSelectedTaskIdsChange(next);
   };
 
   const toggleAll = (checked: boolean) => {

@@ -480,6 +480,7 @@ export default function EpicDetailPage() {
                         <button
                           onClick={() => handleRemoveDep(dep.id, true)}
                           className="ml-1 hover:text-destructive"
+                          aria-label={t('epicDependencies.removeDependency')}
                           title={t('epicDependencies.removeDependency')}
                         >
                           <X className="h-3 w-3" />
@@ -493,20 +494,27 @@ export default function EpicDetailPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-2">{t('epicDependencies.blockedBy')}</h4>
                   <div className="flex flex-wrap gap-2">
-                    {blockedByEpics.map((dep) => (
-                      <div key={dep.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 text-xs text-orange-800 dark:text-orange-200">
-                        <Link to={`/epics/${dep.sourceEpicId}`} className="hover:underline">
-                          {dep.sourceEpicName}
-                        </Link>
-                        <button
-                          onClick={() => handleRemoveDep(dep.id, false)}
-                          className="ml-1 hover:text-destructive"
-                          title={t('epicDependencies.removeDependency')}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {blockedByEpics.map((dep) => {
+                      // DEPENDS_ON: source=current epic, target=dependency — show target
+                      // BLOCKS: source=blocker, target=current epic — show source
+                      const otherEpicId = dep.dependencyType === 'DEPENDS_ON' ? dep.targetEpicId : dep.sourceEpicId;
+                      const otherEpicName = dep.dependencyType === 'DEPENDS_ON' ? dep.targetEpicName : dep.sourceEpicName;
+                      return (
+                        <div key={dep.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 text-xs text-orange-800 dark:text-orange-200">
+                          <Link to={`/epics/${otherEpicId}`} className="hover:underline">
+                            {otherEpicName}
+                          </Link>
+                          <button
+                            onClick={() => handleRemoveDep(dep.id, false)}
+                            className="ml-1 hover:text-destructive"
+                            aria-label={t('epicDependencies.removeDependency')}
+                            title={t('epicDependencies.removeDependency')}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
