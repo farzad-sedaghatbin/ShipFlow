@@ -6,24 +6,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync-blog:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ShipFlow main repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.BLOG_SYNC_TOKEN }}
 
-      - name: Clone private blog repo
+      - name: Inject blog posts from private repo
         run: |
           git clone https://${{ secrets.BLOG_SYNC_TOKEN }}@github.com/farzad-sedaghatbin/ShipFlow-blog.git /tmp/blog
-
-      - name: Copy posts and rebuild index
-        run: |
           mkdir -p frontend/public/blog/posts
           cp /tmp/blog/posts/*.md frontend/public/blog/posts/ 2>/dev/null || true
+          rm -rf /tmp/blog
 
-          # Rebuild index.json from post files, sorted newest-first by frontmatter date
+          # Rebuild index.json sorted newest-first by frontmatter date
           node -e "
           const fs = require('fs');
           const dir = 'frontend/public/blog/posts';
@@ -39,23 +35,8 @@ jobs:
           fs.writeFileSync('frontend/public/blog/index.json', JSON.stringify(posts) + '\n');
           "
 
-      - name: Create PR if changed
-        env:
-          GH_TOKEN: ${{ secrets.BLOG_SYNC_TOKEN }}
+      - name: Deploy
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/public/blog/
-          if git diff --staged --quiet; then
-            echo "No blog changes to sync"
-            exit 0
-          fi
-          BRANCH="sync/blog-$(date +%Y%m%d-%H%M%S)"
-          git checkout -b "$BRANCH"
-          git commit -m "sync: update blog posts from private repo"
-          git push -u origin "$BRANCH"
-          gh pr create \
-            --title "sync: update blog posts from private repo" \
-            --body "Automated sync of blog posts from the private ShipFlow-blog repository." \
-            --base main \
-            --head "$BRANCH"
+          echo "Blog posts injected. Ready for deployment."
+          echo "Posts available:"
+          cat frontend/public/blog/index.json
