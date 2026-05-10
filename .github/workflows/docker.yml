@@ -19,9 +19,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Inject blog posts from private repo
-        if: ${{ secrets.BLOG_SYNC_TOKEN != '' }}
+        env:
+          BLOG_TOKEN: ${{ secrets.BLOG_SYNC_TOKEN }}
+        if: ${{ env.BLOG_TOKEN != '' }}
         run: |
-          git clone https://${{ secrets.BLOG_SYNC_TOKEN }}@github.com/farzad-sedaghatbin/ShipFlow-blog.git /tmp/blog
+          git clone https://${BLOG_TOKEN}@github.com/farzad-sedaghatbin/ShipFlow-blog.git /tmp/blog
           mkdir -p frontend/public/blog/posts
           cp /tmp/blog/posts/*.md frontend/public/blog/posts/ 2>/dev/null || true
           rm -rf /tmp/blog
