@@ -18,17 +18,44 @@ jobs:
         run: |
           git clone https://${{ secrets.BLOG_SYNC_TOKEN }}@github.com/farzad-sedaghatbin/ShipFlow-blog.git /tmp/blog
 
-      - name: Copy posts to docs/blog
+      - name: Copy posts and rebuild index
         run: |
-          mkdir -p docs/blog/posts
-          mkdir -p docs/blog/authors
-          cp /tmp/blog/posts/*.md docs/blog/posts/ 2>/dev/null || true
-          cp /tmp/blog/authors/*.md docs/blog/authors/ 2>/dev/null || true
+          mkdir -p frontend/public/blog/posts
+          cp /tmp/blog/posts/*.md frontend/public/blog/posts/ 2>/dev/null || true
 
-      - name: Commit and push if changed
+          # Rebuild index.json from post files, sorted newest-first by frontmatter date
+          node -e "
+          const fs = require('fs');
+          const dir = 'frontend/public/blog/posts';
+          const posts = fs.readdirSync(dir)
+            .filter(f => f.endsWith('.md'))
+            .map(f => {
+              const content = fs.readFileSync(dir + '/' + f, 'utf8');
+              const match = content.match(/^---[\s\S]*?date:\s*(\S+)[\s\S]*?---/);
+              return { slug: f.replace('.md', ''), date: match ? match[1] : '1970-01-01' };
+            })
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .map(p => p.slug);
+          fs.writeFileSync('frontend/public/blog/index.json', JSON.stringify(posts) + '\n');
+          "
+
+      - name: Create PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.BLOG_SYNC_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/blog/
-          git diff --staged --quiet || git commit -m "sync: update blog posts from private repo"
-          git push
+          git add frontend/public/blog/
+          if git diff --staged --quiet; then
+            echo "No blog changes to sync"
+            exit 0
+          fi
+          BRANCH="sync/blog-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git commit -m "sync: update blog posts from private repo"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "sync: update blog posts from private repo" \
+            --body "Automated sync of blog posts from the private ShipFlow-blog repository." \
+            --base main \
+            --head "$BRANCH"
