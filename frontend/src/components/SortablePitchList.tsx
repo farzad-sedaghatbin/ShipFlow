@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -144,6 +145,8 @@ function SortablePitchItem({
       setSavingTitle(true);
       await onTitleSave(pitch.id, trimmed);
       setEditingTitle(false);
+    } catch {
+      // toast already shown by caller
     } finally {
       setSavingTitle(false);
     }
@@ -154,7 +157,7 @@ function SortablePitchItem({
     setEditingTitle(false);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+  const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleTitleSave();
@@ -200,7 +203,7 @@ function SortablePitchItem({
                 disabled={savingTitle}
                 className="font-medium bg-transparent border-b-2 border-primary outline-none flex-1 min-w-0"
               />
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleTitleSave} disabled={savingTitle}>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleSave} disabled={savingTitle}>
                 <Check className="h-3.5 w-3.5" />
               </Button>
               <Button variant="ghost" size="icon" className="h-6 w-6" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleCancel} disabled={savingTitle}>
@@ -217,9 +220,11 @@ function SortablePitchItem({
               </Link>
               {onTitleSave && (
                 <button
+                  type="button"
                   onClick={() => setEditingTitle(true)}
                   className="opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground hover:text-foreground flex-shrink-0"
                   title={t('pitchDetailPage.clickToEditTitle')}
+                  aria-label={t('pitchDetailPage.clickToEditTitle')}
                 >
                   <Pencil className="h-3 w-3" />
                 </button>

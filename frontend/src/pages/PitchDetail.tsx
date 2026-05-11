@@ -180,7 +180,7 @@ export default function PitchDetail() {
       loadData(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.titleUpdateFailed')));
-      throw error;
+      throw error; // let PitchHeader know save failed so it stays in edit mode
     }
   };
 

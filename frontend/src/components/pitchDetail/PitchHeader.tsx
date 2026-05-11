@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +53,8 @@ export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave 
       setSavingTitle(true);
       await onTitleSave(trimmed);
       setEditingTitle(false);
+    } catch {
+      // toast already shown by caller
     } finally {
       setSavingTitle(false);
     }
@@ -62,7 +65,7 @@ export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave 
     setEditingTitle(false);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+  const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleTitleSave();
@@ -86,7 +89,7 @@ export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave 
               disabled={savingTitle}
               className="text-3xl font-bold tracking-tight bg-transparent border-b-2 border-primary outline-none w-full min-w-0"
             />
-            <Button variant="ghost" size="icon" onClick={handleTitleSave} disabled={savingTitle}>
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleSave} disabled={savingTitle}>
               <Check className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleCancel} disabled={savingTitle}>
@@ -95,17 +98,24 @@ export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave 
           </div>
         ) : (
           <div className="group flex items-center gap-2">
-            <h1
-              className="text-3xl font-bold tracking-tight cursor-pointer"
+            <button
+              type="button"
+              className="text-3xl font-bold tracking-tight cursor-pointer text-left bg-transparent border-none p-0"
               onClick={() => onTitleSave && setEditingTitle(true)}
+              onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onTitleSave) { e.preventDefault(); setEditingTitle(true); } }}
               title={onTitleSave ? t('pitchDetailPage.clickToEditTitle') : undefined}
+              aria-label={onTitleSave ? t('pitchDetailPage.clickToEditTitle') : undefined}
+              disabled={!onTitleSave}
             >
               {pitch.title}
-            </h1>
+            </button>
             {onTitleSave && (
               <button
+                type="button"
                 onClick={() => setEditingTitle(true)}
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                aria-label={t('pitchDetailPage.clickToEditTitle')}
+                title={t('pitchDetailPage.clickToEditTitle')}
               >
                 <Pencil className="h-4 w-4" />
               </button>

@@ -733,6 +733,7 @@
     "targetDate": "تاریخ هدف",
     "progress": "پیشرفت",
     "unassignedEpics": "اپیک‌های تخصیص نیافته",
+    "epics": "اپیک",
     "filter": {
       "status": "وضعیت",
       "dateRange": "بازه زمانی",

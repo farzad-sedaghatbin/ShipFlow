@@ -2351,6 +2351,7 @@
     "targetDate": "Target Date",
     "progress": "Progress",
     "unassignedEpics": "Unassigned Epics",
+    "epics": "epics",
     "filter": {
       "status": "Status",
       "dateRange": "Date Range",

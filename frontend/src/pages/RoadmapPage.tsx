@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Target,
   Layers,
-  FileText,
   Package,
   CheckCircle,
   Flag,
@@ -109,20 +108,39 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   const start = parseDate(startDate);
   const end = parseDate(endDate);
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
-  
-  if (!barStyle) return null;
-  
+
+  if (!barStyle) {
+    return (
+      <div className="absolute inset-0 flex items-center px-2">
+        <div className="flex items-center gap-2 w-full">
+          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full ${color || getStatusColor(status)}`}
+              style={{ width: `${progress ?? 0}%` }}
+            />
+          </div>
+          <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+            {Math.round(progress ?? 0)}%
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`absolute h-6 rounded ${color || getStatusColor(status)} opacity-80`}
       style={{ ...barStyle, top: '50%', transform: 'translateY(-50%)' }}
     >
-      {progress !== undefined && (
+      {progress !== undefined && progress > 0 && (
         <div
           className="h-full bg-white/30 rounded-l"
           style={{ width: `${progress}%` }}
         />
       )}
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white font-medium drop-shadow-sm">
+        {Math.round(progress ?? 0)}%
+      </span>
     </div>
   );
 }
@@ -421,8 +439,8 @@ export default function RoadmapPage() {
                       className="flex items-center gap-2 flex-1 min-w-0 text-left"
                     >
                       <div
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: initiative.color || '#6366f1' }}
+                        className={`w-3 h-3 rounded-full shrink-0 ${getStatusColor(initiative.status)}`}
+                        style={initiative.color ? { backgroundColor: initiative.color } : undefined}
                       />
                       <Link
                         to={`/initiatives/${initiative.id}`}
@@ -435,6 +453,11 @@ export default function RoadmapPage() {
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                     </Badge>
+                    {initiative.epics && initiative.epics.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {initiative.epics.length} {t('roadmap.epics')}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 relative h-8">
                     <TimelineBar
@@ -459,7 +482,7 @@ export default function RoadmapPage() {
                           onClick={() => toggleEpic(epic.id)}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
                           <Link
                             to={`/epics/${epic.id}`}
                             className="text-sm hover:underline truncate"
@@ -471,6 +494,11 @@ export default function RoadmapPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {t(`epics.status.${epic.status.toLowerCase()}`)}
                         </Badge>
+                        {epic.pitches && epic.pitches.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 relative h-6">
                         <TimelineBar
@@ -527,7 +555,7 @@ export default function RoadmapPage() {
                           onClick={() => toggleEpic(epic.id)}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
                           <Link
                             to={`/epics/${epic.id}`}
                             className="text-sm hover:underline truncate"
@@ -539,6 +567,11 @@ export default function RoadmapPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {t(`epics.status.${epic.status.toLowerCase()}`)}
                         </Badge>
+                        {epic.pitches && epic.pitches.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 relative h-6">
                         <TimelineBar
