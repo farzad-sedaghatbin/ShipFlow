@@ -115,11 +115,11 @@ export default function ReleaseFormPage() {
       if (isEditing) {
         await releaseService.update(Number(id), data);
         showSuccess(t('releases.updated'));
-        navigate(`/releases/${id}`);
+        navigate(`/releases-management/${id}`);
       } else {
         const response = await releaseService.create(data);
         showSuccess(t('releases.created'));
-        navigate(`/releases/${response.data.id}`);
+        navigate(`/releases-management/${response.data.id}`);
       }
     } catch (error) {
       showError(isEditing ? t('releases.updateError') : t('releases.createError'));
