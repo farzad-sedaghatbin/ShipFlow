@@ -733,8 +733,9 @@
     "targetDate": "تاریخ هدف",
     "progress": "پیشرفت",
     "unassignedEpics": "اپیک‌های تخصیص نیافته",
-    "epics": "اپیک",
-    "setDates": "برای تنظیم تاریخ‌ها کلیک کنید",
+    "epicCount_one": "{{count}} اپیک",
+    "epicCount_other": "{{count}} اپیک",
+    "setDates": "تنظیم تاریخ‌ها",
     "datesUpdated": "تاریخ‌ها با موفقیت به‌روزرسانی شد",
     "datesUpdateFailed": "به‌روزرسانی تاریخ‌ها ناموفق بود",
     "filter": {

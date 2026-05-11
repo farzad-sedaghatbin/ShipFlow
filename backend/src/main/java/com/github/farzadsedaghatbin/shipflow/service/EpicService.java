@@ -189,6 +189,9 @@ public class EpicService {
 
   @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDTO updateDates(Long id, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+      throw new IllegalArgumentException("Start date must not be after end date");
+    }
     Epic epic = epicRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));
     epic.setTargetStartDate(startDate);

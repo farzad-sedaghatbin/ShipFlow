@@ -1,3 +1,4 @@
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -130,7 +131,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, mode: 'move' | 'start' | 'end') => {
+  const handleMouseDown = useCallback((e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
     if (!onDatesChange || !containerRef.current) return;
     e.preventDefault();
     e.stopPropagation();
@@ -187,6 +188,14 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
     };
   }, [dragging, onDatesChange, pxToDate]);
 
+  const handleSetDefaultDates = () => {
+    if (!onDatesChange) return;
+    const today = new Date();
+    const twoWeeksLater = new Date(today);
+    twoWeeksLater.setDate(today.getDate() + 14);
+    onDatesChange(formatDate(today), formatDate(twoWeeksLater));
+  };
+
   if (!barStyle) {
     return (
       <div className="absolute inset-0 flex items-center px-2">
@@ -201,9 +210,13 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
             {Math.round(progress ?? 0)}%
           </span>
           {onDatesChange && (
-            <span className="text-[10px] text-muted-foreground italic">
+            <button
+              type="button"
+              onClick={handleSetDefaultDates}
+              className="text-[10px] text-primary hover:underline italic"
+            >
               {t('roadmap.setDates')}
-            </span>
+            </button>
           )}
         </div>
       </div>
@@ -269,7 +282,7 @@ export default function RoadmapPage() {
     loadTimeline();
   }, [currentProject, isAllProjectsSelected, viewMode, year, quarter]);
 
-  const loadTimeline = async () => {
+  const loadTimeline = useCallback(async () => {
     if (!currentProject) return;
     try {
       setLoading(true);
@@ -283,7 +296,7 @@ export default function RoadmapPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProject, viewMode, year, quarter, showError, t]);
 
   const handleInitiativeDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
     try {
@@ -293,7 +306,7 @@ export default function RoadmapPage() {
     } catch {
       showError(t('roadmap.datesUpdateFailed'));
     }
-  }, [t, showSuccess, showError]);
+  }, [loadTimeline, t, showSuccess, showError]);
 
   const handleEpicDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
     try {
@@ -303,7 +316,7 @@ export default function RoadmapPage() {
     } catch {
       showError(t('roadmap.datesUpdateFailed'));
     }
-  }, [t, showSuccess, showError]);
+  }, [loadTimeline, t, showSuccess, showError]);
 
   const timelineStart = useMemo(() => {
     if (!timeline) return new Date();
@@ -577,7 +590,7 @@ export default function RoadmapPage() {
                     </Badge>
                     {initiative.epics && initiative.epics.length > 0 && (
                       <span className="text-[10px] text-muted-foreground shrink-0">
-                        {initiative.epics.length} {t('roadmap.epics')}
+                        {t('roadmap.epicCount', { count: initiative.epics.length })}
                       </span>
                     )}
                   </div>

@@ -2351,8 +2351,9 @@
     "targetDate": "Target Date",
     "progress": "Progress",
     "unassignedEpics": "Unassigned Epics",
-    "epics": "epics",
-    "setDates": "click bar to set dates",
+    "epicCount_one": "{{count}} epic",
+    "epicCount_other": "{{count}} epics",
+    "setDates": "Set dates",
     "datesUpdated": "Dates updated successfully",
     "datesUpdateFailed": "Failed to update dates",
     "filter": {
