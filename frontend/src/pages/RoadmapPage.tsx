@@ -73,34 +73,21 @@ const calculateBarStyle = (
   };
 };
 
-const getStatusColor = (status: string): string => {
-  const colors: Record<string, string> = {
-    DRAFT: 'bg-gray-400',
-    PLANNED: 'bg-blue-500',
-    IN_PROGRESS: 'bg-yellow-500',
-    COMPLETED: 'bg-green-500',
-    ON_HOLD: 'bg-orange-500',
-    CANCELLED: 'bg-red-500',
-    PLANNING: 'bg-blue-400',
-    STAGING: 'bg-purple-500',
-    RELEASED: 'bg-green-600',
-  };
-  return colors[status] || 'bg-gray-500';
+// Single source of truth for status colors (hex values)
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: '#94a3b8',
+  PLANNED: '#3b82f6',
+  IN_PROGRESS: '#8b5cf6',
+  COMPLETED: '#22c55e',
+  ON_HOLD: '#f97316',
+  CANCELLED: '#ef4444',
+  PLANNING: '#60a5fa',
+  STAGING: '#a855f7',
+  RELEASED: '#16a34a',
 };
 
 const getStatusCssColor = (status: string): string => {
-  const colors: Record<string, string> = {
-    DRAFT: '#94a3b8',
-    PLANNED: '#3b82f6',
-    IN_PROGRESS: '#8b5cf6',
-    COMPLETED: '#22c55e',
-    ON_HOLD: '#f97316',
-    CANCELLED: '#ef4444',
-    PLANNING: '#60a5fa',
-    STAGING: '#a855f7',
-    RELEASED: '#16a34a',
-  };
-  return colors[status] || '#94a3b8';
+  return STATUS_COLORS[status] || '#94a3b8';
 };
 
 const getRiskBadgeVariant = (risk: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
@@ -398,10 +385,11 @@ export default function RoadmapPage() {
 
   const todayPosition = useMemo(() => {
     const today = new Date();
-    const totalMs = timelineEnd.getTime() - timelineStart.getTime();
-    if (totalMs <= 0) return null;
-    const offset = today.getTime() - timelineStart.getTime();
-    const pct = (offset / totalMs) * 100;
+    const dayMs = 1000 * 60 * 60 * 24;
+    const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / dayMs);
+    if (totalDays <= 0) return null;
+    const dayOffset = Math.ceil((today.getTime() - timelineStart.getTime()) / dayMs);
+    const pct = (dayOffset / totalDays) * 100;
     return pct >= 0 && pct <= 100 ? pct : null;
   }, [timelineStart, timelineEnd]);
 
@@ -463,8 +451,28 @@ export default function RoadmapPage() {
     );
   }
 
-  // Count all rows for alternating stripe calculation
-  let rowIndex = 0;
+  // Pre-compute flat row indices for stable striping
+  const rowIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    let idx = 0;
+    for (const init of timeline?.initiatives ?? []) {
+      indices.set(`init-${init.id}`, idx++);
+      if (expandedInitiatives.has(init.id)) {
+        for (const epic of init.epics ?? []) {
+          indices.set(`epic-${epic.id}`, idx++);
+          if (expandedEpics.has(epic.id)) {
+            for (const pitch of epic.pitches ?? []) {
+              indices.set(`pitch-${pitch.id}`, idx++);
+            }
+          }
+        }
+      }
+    }
+    for (const epic of timeline?.orphanEpics ?? []) {
+      indices.set(`orphan-${epic.id}`, idx++);
+    }
+    return indices;
+  }, [timeline, expandedInitiatives, expandedEpics]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -616,7 +624,7 @@ export default function RoadmapPage() {
           {/* Initiatives rows with grid overlay */}
           <div className="relative">
             {/* Grid lines overlay — spans full height, aligned with timeline area */}
-            <div className="absolute top-0 bottom-0 flex pointer-events-none" style={{ left: '18rem', right: 0 }}>
+            <div className="absolute top-0 bottom-0 left-72 right-0 flex pointer-events-none">
               {/* Month boundary lines */}
               {monthBoundaries.map((pct, i) => (
                 <div
@@ -657,12 +665,10 @@ export default function RoadmapPage() {
 
             {/* Data rows */}
             <div>
-              {timeline?.initiatives.map((initiative) => {
-                const initRowIdx = rowIndex++;
-                return (
+              {timeline?.initiatives.map((initiative) => (
                   <div key={initiative.id}>
                     {/* Initiative row */}
-                    <div className={`flex items-center h-12 hover:bg-muted/50 ${initRowIdx % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                    <div className={`flex items-center h-12 hover:bg-muted/50 ${(rowIndices.get(`init-${initiative.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
                       <div className="w-72 shrink-0 flex items-center gap-2 py-2 px-2">
                         <button
                           onClick={() => toggleInitiative(initiative.id)}
@@ -713,12 +719,10 @@ export default function RoadmapPage() {
                     </div>
 
                     {/* Expanded Epics */}
-                    {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => {
-                      const epicRowIdx = rowIndex++;
-                      return (
+                    {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
                         <div key={epic.id}>
                           {/* Epic row */}
-                          <div className={`flex items-center h-10 hover:bg-muted/50 ${epicRowIdx % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                          <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`epic-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
                             <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-8 pr-2">
                               <button
                                 onClick={() => toggleEpic(epic.id)}
@@ -733,7 +737,7 @@ export default function RoadmapPage() {
                                 ) : (
                                   <span className="w-3.5 shrink-0" />
                                 )}
-                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
                                 <Link
                                   to={`/epics/${epic.id}`}
                                   className="text-sm hover:underline truncate"
@@ -766,10 +770,8 @@ export default function RoadmapPage() {
                           </div>
 
                           {/* Expanded Pitches */}
-                          {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => {
-                            const pitchRowIdx = rowIndex++;
-                            return (
-                              <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${pitchRowIdx % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                          {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
+                              <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
                                 <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-14 pr-2">
                                   <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
                                   <Link
@@ -791,24 +793,19 @@ export default function RoadmapPage() {
                                   />
                                 </div>
                               </div>
-                            );
-                          })}
+                          ))}
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
-                );
-              })}
+              ))}
 
               {/* Orphan Epics */}
               {timeline?.orphanEpics && timeline.orphanEpics.length > 0 && (
                 <div className="border-t pt-2 mt-2">
                   <p className="text-xs text-muted-foreground px-2 mb-2">{t('roadmap.unassignedEpics')}</p>
-                  {timeline.orphanEpics.map((epic) => {
-                    const orphanRowIdx = rowIndex++;
-                    return (
+                  {timeline.orphanEpics.map((epic) => (
                       <div key={epic.id}>
-                        <div className={`flex items-center h-10 hover:bg-muted/50 ${orphanRowIdx % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                        <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`orphan-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
                           <div className="w-72 shrink-0 flex items-center gap-2 py-1 px-2">
                             <button
                               onClick={() => toggleEpic(epic.id)}
@@ -823,7 +820,7 @@ export default function RoadmapPage() {
                               ) : (
                                 <span className="w-3.5 shrink-0" />
                               )}
-                              <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
                               <Link
                                 to={`/epics/${epic.id}`}
                                 className="text-sm hover:underline truncate"
@@ -855,8 +852,7 @@ export default function RoadmapPage() {
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                  ))}
                 </div>
               )}
             </div>
