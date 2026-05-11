@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.service.EpicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -102,6 +103,16 @@ public class EpicController {
   @Operation(summary = "Unlink epic from its initiative")
   public ResponseEntity<EpicDTO> unlinkFromInitiative(@PathVariable Long id) {
     return ResponseEntity.ok(epicService.unlinkFromInitiative(id));
+  }
+
+  @PatchMapping("/{id}/dates")
+  @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
+  @Operation(summary = "Update epic target dates")
+  public ResponseEntity<EpicDTO> updateEpicDates(
+      @PathVariable Long id,
+      @RequestParam(required = false) LocalDate startDate,
+      @RequestParam(required = false) LocalDate endDate) {
+    return ResponseEntity.ok(epicService.updateDates(id, startDate, endDate));
   }
 
   @PatchMapping("/reorder")

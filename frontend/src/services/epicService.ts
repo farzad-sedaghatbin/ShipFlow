@@ -38,6 +38,9 @@ export const epicService = {
   delete: (id: number) => 
     api.delete(`/epics/${id}`),
 
+  updateDates: (id: number, startDate?: string, endDate?: string) =>
+    api.patch<Epic>(`/epics/${id}/dates`, null, { params: { startDate, endDate } }),
+
   // ===== Prioritization & Reordering =====
   /** Batch update sort order for epics */
   reorder: (data: ReorderRequest) => api.patch<void>('/epics/reorder', data),

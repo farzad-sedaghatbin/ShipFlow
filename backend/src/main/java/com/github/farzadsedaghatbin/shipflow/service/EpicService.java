@@ -188,6 +188,16 @@ public class EpicService {
   }
 
   @CacheEvict(value = "roadmap", allEntries = true)
+  public EpicDTO updateDates(Long id, LocalDate startDate, LocalDate endDate) {
+    Epic epic = epicRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));
+    epic.setTargetStartDate(startDate);
+    epic.setTargetEndDate(endDate);
+    Epic saved = epicRepository.save(epic);
+    return toDTO(saved);
+  }
+
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteEpic(Long id) {
     Epic epic = epicRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Epic not found with id: " + id));

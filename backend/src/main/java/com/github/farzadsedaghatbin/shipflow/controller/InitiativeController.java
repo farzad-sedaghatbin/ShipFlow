@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.service.InitiativeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -74,6 +75,16 @@ public class InitiativeController {
       @PathVariable Long id,
       @RequestParam InitiativeStatus status) {
     return ResponseEntity.ok(initiativeService.updateStatus(id, status));
+  }
+
+  @PatchMapping("/{id}/dates")
+  @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
+  @Operation(summary = "Update initiative target dates")
+  public ResponseEntity<InitiativeDTO> updateInitiativeDates(
+      @PathVariable Long id,
+      @RequestParam(required = false) LocalDate startDate,
+      @RequestParam(required = false) LocalDate endDate) {
+    return ResponseEntity.ok(initiativeService.updateDates(id, startDate, endDate));
   }
 
   @PatchMapping("/reorder")

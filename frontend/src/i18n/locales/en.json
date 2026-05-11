@@ -2352,6 +2352,9 @@
     "progress": "Progress",
     "unassignedEpics": "Unassigned Epics",
     "epics": "epics",
+    "setDates": "click bar to set dates",
+    "datesUpdated": "Dates updated successfully",
+    "datesUpdateFailed": "Failed to update dates",
     "filter": {
       "status": "Status",
       "dateRange": "Date Range",

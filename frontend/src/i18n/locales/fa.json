@@ -734,6 +734,9 @@
     "progress": "پیشرفت",
     "unassignedEpics": "اپیک‌های تخصیص نیافته",
     "epics": "اپیک",
+    "setDates": "برای تنظیم تاریخ‌ها کلیک کنید",
+    "datesUpdated": "تاریخ‌ها با موفقیت به‌روزرسانی شد",
+    "datesUpdateFailed": "به‌روزرسانی تاریخ‌ها ناموفق بود",
     "filter": {
       "status": "وضعیت",
       "dateRange": "بازه زمانی",

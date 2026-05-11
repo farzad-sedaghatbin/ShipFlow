@@ -26,6 +26,9 @@ export const initiativeService = {
   delete: (id: number) => 
     api.delete(`/initiatives/${id}`),
 
+  updateDates: (id: number, startDate?: string, endDate?: string) =>
+    api.patch<Initiative>(`/initiatives/${id}/dates`, null, { params: { startDate, endDate } }),
+
   // ===== Prioritization & Reordering =====
   /** Batch update sort order for initiatives */
   reorder: (data: ReorderRequest) => api.patch<void>('/initiatives/reorder', data),
