@@ -156,6 +156,34 @@ export default function PitchDetail() {
     setDocuments(prev => prev.filter(d => d.id !== docId));
   };
 
+  const handleTitleSave = async (newTitle: string) => {
+    if (!pitch) return;
+    try {
+      await pitchService.update(pitch.id, {
+        title: newTitle,
+        description: pitch.description,
+        cycleId: pitch.cycleId,
+        teamId: pitch.teamId,
+        epicId: pitch.epicId,
+        status: pitch.status,
+        targetReleaseId: pitch.targetReleaseId,
+        priority: pitch.priority,
+        problemStatement: pitch.problemStatement,
+        solution: pitch.solution,
+        rabbitHoles: pitch.rabbitHoles,
+        risks: pitch.risks,
+        noGos: pitch.noGos,
+        wireframeLinks: pitch.wireframeLinks,
+        appetiteDays: pitch.appetiteDays,
+      });
+      showSuccess(t('pitchDetailPage.titleUpdated'));
+      loadData(pitch.id);
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('pitchDetailPage.titleUpdateFailed')));
+      throw error;
+    }
+  };
+
   const handleStatusChange = async (newStatus: PitchStatus) => {
     if (!pitch) return;
     try {
@@ -473,6 +501,7 @@ export default function PitchDetail() {
         pitch={pitch}
         onStatusChange={handleStatusChange}
         onHistoryOpen={() => setHistoryDialogOpen(true)}
+        onTitleSave={handleTitleSave}
       />
 
       <PitchStatsRow
