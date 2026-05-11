@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -19,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, FileEdit, Trash2, Tag, Lock, AlertTriangle } from 'lucide-react';
+import { GripVertical, FileEdit, Trash2, Tag, Lock, AlertTriangle, Pencil, Check, X } from 'lucide-react';
 import { Pitch, PitchStatusUtils, BusinessValue } from '../types';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -89,6 +90,7 @@ interface SortablePitchItemProps {
   onUnlink?: (id: number) => void;
   onStartShaping?: (id: number) => void;
   onPriorityChange?: (id: number, priority: BusinessValue) => void;
+  onTitleSave?: (id: number, newTitle: string) => Promise<void>;
   getPitchStatusVariant: (status: string) => 'default' | 'secondary' | 'destructive' | 'outline';
 }
 
@@ -98,9 +100,14 @@ function SortablePitchItem({
   onUnlink,
   onStartShaping,
   onPriorityChange,
+  onTitleSave,
   getPitchStatusVariant,
 }: SortablePitchItemProps) {
   const { t } = useTranslation();
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(pitch.title);
+  const [savingTitle, setSavingTitle] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const {
     attributes,
     listeners,
@@ -113,6 +120,50 @@ function SortablePitchItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  useEffect(() => {
+    setTitleDraft(pitch.title);
+  }, [pitch.title]);
+
+  useEffect(() => {
+    if (editingTitle) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editingTitle]);
+
+  const handleTitleSave = async () => {
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === pitch.title) {
+      setTitleDraft(pitch.title);
+      setEditingTitle(false);
+      return;
+    }
+    if (!onTitleSave) return;
+    try {
+      setSavingTitle(true);
+      await onTitleSave(pitch.id, trimmed);
+      setEditingTitle(false);
+    } catch {
+      // toast already shown by caller
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
+  const handleTitleCancel = () => {
+    setTitleDraft(pitch.title);
+    setEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      handleTitleCancel();
+    }
   };
 
   const hasBlockers = (pitch.blockedByPitches?.length ?? 0) > 0;
@@ -140,12 +191,46 @@ function SortablePitchItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            to={`/pitches/${pitch.id}`}
-            className="font-medium hover:underline truncate"
-          >
-            {pitch.title}
-          </Link>
+          {editingTitle ? (
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              <input
+                ref={inputRef}
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={handleTitleSave}
+                disabled={savingTitle}
+                className="font-medium bg-transparent border-b-2 border-primary outline-none flex-1 min-w-0"
+              />
+              <Button variant="ghost" size="icon" className="h-6 w-6" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleSave} disabled={savingTitle}>
+                <Check className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onMouseDown={(e) => e.preventDefault()} onClick={handleTitleCancel} disabled={savingTitle}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 group/title min-w-0">
+              <Link
+                to={`/pitches/${pitch.id}`}
+                className="font-medium hover:underline truncate"
+              >
+                {pitch.title}
+              </Link>
+              {onTitleSave && (
+                <button
+                  type="button"
+                  onClick={() => setEditingTitle(true)}
+                  className="opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground hover:text-foreground flex-shrink-0"
+                  title={t('pitchDetailPage.clickToEditTitle')}
+                  aria-label={t('pitchDetailPage.clickToEditTitle')}
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )}
           <PriorityBadge priority={pitch.priority} />
           {pitch.targetReleaseVersion && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700">
@@ -260,6 +345,7 @@ interface SortablePitchListProps {
   onUnlink?: (id: number) => void;
   onStartShaping?: (id: number) => void;
   onPriorityChange?: (id: number, priority: BusinessValue) => void;
+  onTitleSave?: (id: number, newTitle: string) => Promise<void>;
   emptyMessage?: string;
 }
 
@@ -280,6 +366,7 @@ export default function SortablePitchList({
   onUnlink,
   onStartShaping,
   onPriorityChange,
+  onTitleSave,
   emptyMessage,
 }: SortablePitchListProps) {
   const { t } = useTranslation();
@@ -366,6 +453,7 @@ export default function SortablePitchList({
               onUnlink={onUnlink}
               onStartShaping={onStartShaping}
               onPriorityChange={onPriorityChange}
+              onTitleSave={onTitleSave}
               getPitchStatusVariant={getPitchStatusVariant}
             />
           ))}

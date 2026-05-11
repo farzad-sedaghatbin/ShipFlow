@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -7,13 +8,14 @@ import {
   ChevronRight,
   Target,
   Layers,
-  FileText,
   Package,
   CheckCircle,
   Flag,
   Maximize2,
 } from 'lucide-react';
 import { roadmapService } from '../services/roadmapService';
+import { epicService } from '../services/epicService';
+import { initiativeService } from '../services/initiativeService';
 import {
   RoadmapTimeline,
 } from '../types';
@@ -103,25 +105,156 @@ interface TimelineBarProps {
   status: string;
   color?: string;
   progress?: number;
+  onDatesChange?: (startDate: string, endDate: string) => void;
 }
 
-function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, color, progress }: TimelineBarProps) {
+function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, color, progress, onDatesChange }: TimelineBarProps) {
+  const { t } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState<'move' | 'start' | 'end' | null>(null);
+  const [dragOffset, setDragOffset] = useState({ leftPx: 0, widthPx: 0 });
+  const dragStartRef = useRef({ mouseX: 0, origLeftPx: 0, origWidthPx: 0 });
+
   const start = parseDate(startDate);
   const end = parseDate(endDate);
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
-  
-  if (!barStyle) return null;
-  
+  const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
+
+  const pxToDate = useCallback((pxOffset: number): Date => {
+    if (!containerRef.current) return new Date(timelineStart);
+    const containerWidth = containerRef.current.parentElement!.clientWidth;
+    const dayOffset = Math.round((pxOffset / containerWidth) * totalDays);
+    const d = new Date(timelineStart);
+    d.setDate(d.getDate() + dayOffset);
+    return d;
+  }, [timelineStart, totalDays]);
+
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+  const handleMouseDown = useCallback((e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
+    if (!onDatesChange || !containerRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = containerRef.current.getBoundingClientRect();
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      origLeftPx: rect.left - containerRef.current.parentElement!.getBoundingClientRect().left,
+      origWidthPx: rect.width,
+    };
+    setDragOffset({ leftPx: 0, widthPx: 0 });
+    setDragging(mode);
+  }, [onDatesChange]);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      if (dragging === 'move') {
+        setDragOffset({ leftPx: dx, widthPx: 0 });
+      } else if (dragging === 'start') {
+        setDragOffset({ leftPx: dx, widthPx: -dx });
+      } else {
+        setDragOffset({ leftPx: 0, widthPx: dx });
+      }
+    };
+    const handleMouseUp = (e: MouseEvent) => {
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      setDragging(null);
+      setDragOffset({ leftPx: 0, widthPx: 0 });
+      if (Math.abs(dx) < 5 || !onDatesChange) return;
+
+      const { origLeftPx, origWidthPx } = dragStartRef.current;
+      let newLeftPx: number, newWidthPx: number;
+      if (dragging === 'move') {
+        newLeftPx = origLeftPx + dx;
+        newWidthPx = origWidthPx;
+      } else if (dragging === 'start') {
+        newLeftPx = origLeftPx + dx;
+        newWidthPx = origWidthPx - dx;
+      } else {
+        newLeftPx = origLeftPx;
+        newWidthPx = origWidthPx + dx;
+      }
+      if (newWidthPx < 10) return;
+      const newStart = pxToDate(newLeftPx);
+      const newEnd = pxToDate(newLeftPx + newWidthPx);
+      onDatesChange(formatDate(newStart), formatDate(newEnd));
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging, onDatesChange, pxToDate]);
+
+  const handleSetDefaultDates = () => {
+    if (!onDatesChange) return;
+    const today = new Date();
+    const twoWeeksLater = new Date(today);
+    twoWeeksLater.setDate(today.getDate() + 14);
+    onDatesChange(formatDate(today), formatDate(twoWeeksLater));
+  };
+
+  if (!barStyle) {
+    return (
+      <div className="absolute inset-0 flex items-center px-2">
+        <div className="flex items-center gap-2 w-full">
+          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full ${color || getStatusColor(status)}`}
+              style={{ width: `${progress ?? 0}%` }}
+            />
+          </div>
+          <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+            {Math.round(progress ?? 0)}%
+          </span>
+          {onDatesChange && (
+            <button
+              type="button"
+              onClick={handleSetDefaultDates}
+              className="text-[10px] text-primary hover:underline italic"
+            >
+              {t('roadmap.setDates')}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const dragStyle = dragging ? {
+    left: `calc(${barStyle.left} + ${dragOffset.leftPx}px)`,
+    width: `calc(${barStyle.width} + ${dragOffset.widthPx}px)`,
+  } : barStyle;
+
   return (
     <div
-      className={`absolute h-6 rounded ${color || getStatusColor(status)} opacity-80`}
-      style={{ ...barStyle, top: '50%', transform: 'translateY(-50%)' }}
+      ref={containerRef}
+      className={`absolute h-6 rounded ${color || getStatusColor(status)} opacity-80 ${onDatesChange ? 'cursor-grab' : ''} ${dragging === 'move' ? 'cursor-grabbing opacity-60' : ''} group/bar`}
+      style={{ ...dragStyle, top: '50%', transform: 'translateY(-50%)' }}
+      onMouseDown={onDatesChange ? (e) => handleMouseDown(e, 'move') : undefined}
     >
-      {progress !== undefined && (
+      {progress !== undefined && progress > 0 && (
         <div
-          className="h-full bg-white/30 rounded-l"
+          className="h-full bg-white/30 rounded-l pointer-events-none"
           style={{ width: `${progress}%` }}
         />
+      )}
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white font-medium drop-shadow-sm pointer-events-none">
+        {Math.round(progress ?? 0)}%
+      </span>
+      {onDatesChange && (
+        <>
+          <div
+            className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-l"
+            onMouseDown={(e) => handleMouseDown(e, 'start')}
+          />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-r"
+            onMouseDown={(e) => handleMouseDown(e, 'end')}
+          />
+        </>
       )}
     </div>
   );
@@ -130,7 +263,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
 export default function RoadmapPage() {
   const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   const [timeline, setTimeline] = useState<RoadmapTimeline | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'quarterly' | 'yearly'>('quarterly');
@@ -149,7 +282,7 @@ export default function RoadmapPage() {
     loadTimeline();
   }, [currentProject, isAllProjectsSelected, viewMode, year, quarter]);
 
-  const loadTimeline = async () => {
+  const loadTimeline = useCallback(async () => {
     if (!currentProject) return;
     try {
       setLoading(true);
@@ -163,7 +296,27 @@ export default function RoadmapPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProject, viewMode, year, quarter, showError, t]);
+
+  const handleInitiativeDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
+    try {
+      await initiativeService.updateDates(id, startDate, endDate);
+      showSuccess(t('roadmap.datesUpdated'));
+      loadTimeline();
+    } catch {
+      showError(t('roadmap.datesUpdateFailed'));
+    }
+  }, [loadTimeline, t, showSuccess, showError]);
+
+  const handleEpicDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
+    try {
+      await epicService.updateDates(id, startDate, endDate);
+      showSuccess(t('roadmap.datesUpdated'));
+      loadTimeline();
+    } catch {
+      showError(t('roadmap.datesUpdateFailed'));
+    }
+  }, [loadTimeline, t, showSuccess, showError]);
 
   const timelineStart = useMemo(() => {
     if (!timeline) return new Date();
@@ -421,8 +574,8 @@ export default function RoadmapPage() {
                       className="flex items-center gap-2 flex-1 min-w-0 text-left"
                     >
                       <div
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: initiative.color || '#6366f1' }}
+                        className={`w-3 h-3 rounded-full shrink-0 ${getStatusColor(initiative.status)}`}
+                        style={initiative.color ? { backgroundColor: initiative.color } : undefined}
                       />
                       <Link
                         to={`/initiatives/${initiative.id}`}
@@ -435,6 +588,11 @@ export default function RoadmapPage() {
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                     </Badge>
+                    {initiative.epics && initiative.epics.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {t('roadmap.epicCount', { count: initiative.epics.length })}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 relative h-8">
                     <TimelineBar
@@ -445,6 +603,7 @@ export default function RoadmapPage() {
                       status={initiative.status}
                       color={initiative.color}
                       progress={initiative.progress}
+                      onDatesChange={(s, e) => handleInitiativeDatesChange(initiative.id, s, e)}
                     />
                   </div>
                 </div>
@@ -459,7 +618,7 @@ export default function RoadmapPage() {
                           onClick={() => toggleEpic(epic.id)}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
                           <Link
                             to={`/epics/${epic.id}`}
                             className="text-sm hover:underline truncate"
@@ -471,6 +630,11 @@ export default function RoadmapPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {t(`epics.status.${epic.status.toLowerCase()}`)}
                         </Badge>
+                        {epic.pitches && epic.pitches.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 relative h-6">
                         <TimelineBar
@@ -481,10 +645,11 @@ export default function RoadmapPage() {
                           status={epic.status}
                           color={epic.color}
                           progress={epic.progress}
+                          onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                         />
                       </div>
                     </div>
-                    
+
                     {/* Expanded Pitches */}
                     {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
                       <div key={pitch.id} className="flex items-center hover:bg-muted/50 rounded ml-8">
@@ -527,7 +692,7 @@ export default function RoadmapPage() {
                           onClick={() => toggleEpic(epic.id)}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
                           <Link
                             to={`/epics/${epic.id}`}
                             className="text-sm hover:underline truncate"
@@ -539,6 +704,11 @@ export default function RoadmapPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {t(`epics.status.${epic.status.toLowerCase()}`)}
                         </Badge>
+                        {epic.pitches && epic.pitches.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 relative h-6">
                         <TimelineBar
@@ -549,6 +719,7 @@ export default function RoadmapPage() {
                           status={epic.status}
                           color={epic.color}
                           progress={epic.progress}
+                          onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                         />
                       </div>
                     </div>

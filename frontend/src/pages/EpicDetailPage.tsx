@@ -239,6 +239,37 @@ export default function EpicDetailPage() {
     }
   }, [id, showError, t]);
 
+  const handlePitchTitleSave = useCallback(async (pitchId: number, newTitle: string) => {
+    const pitch = pitches.find(p => p.id === pitchId);
+    if (!pitch) return;
+    try {
+      await pitchService.update(pitchId, {
+        title: newTitle,
+        description: pitch.description,
+        appetiteDays: pitch.appetiteDays,
+        cycleId: pitch.cycleId,
+        teamId: pitch.teamId,
+        epicId: pitch.epicId,
+        targetReleaseId: pitch.targetReleaseId,
+        status: pitch.status,
+        problemStatement: pitch.problemStatement,
+        solution: pitch.solution,
+        rabbitHoles: pitch.rabbitHoles,
+        risks: pitch.risks,
+        noGos: pitch.noGos,
+        wireframeLinks: pitch.wireframeLinks,
+        priority: pitch.priority,
+        sortOrder: pitch.sortOrder,
+      });
+      setPitches(prev => prev.map(p => p.id === pitchId ? { ...p, title: newTitle } : p));
+      showSuccess(t('pitchDetailPage.titleUpdated'));
+    } catch (error) {
+      console.error('Failed to update pitch title:', error);
+      showError(t('pitchDetailPage.titleUpdateFailed'));
+      throw error;
+    }
+  }, [pitches, showError, showSuccess, t]);
+
   const handlePriorityChange = useCallback(async (pitchId: number, priority: BusinessValue) => {
     // Capture current pitch via functional update to avoid stale closure
     let snapshot: Pitch | undefined;
@@ -567,9 +598,10 @@ export default function EpicDetailPage() {
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
                   onPriorityChange={handlePriorityChange}
+                  onTitleSave={handlePitchTitleSave}
                 />
               </TabsContent>
-              
+
               <TabsContent value="ideas" className="mt-4">
                 <SortablePitchList
                   pitches={pitches.filter(p => p.status === 'IDEA')}
@@ -580,10 +612,11 @@ export default function EpicDetailPage() {
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
                   onPriorityChange={handlePriorityChange}
+                  onTitleSave={handlePitchTitleSave}
                   emptyMessage={t('pitches.noIdeas')}
                 />
               </TabsContent>
-              
+
               <TabsContent value="shaping" className="mt-4">
                 <SortablePitchList
                   pitches={pitches.filter(p => p.status === 'DRAFT')}
@@ -594,10 +627,11 @@ export default function EpicDetailPage() {
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
                   onPriorityChange={handlePriorityChange}
+                  onTitleSave={handlePitchTitleSave}
                   emptyMessage={t('pitches.noDrafts')}
                 />
               </TabsContent>
-              
+
               <TabsContent value="ready" className="mt-4">
                 <SortablePitchList
                   pitches={pitches.filter(p => p.status === 'SHAPED')}
@@ -608,6 +642,7 @@ export default function EpicDetailPage() {
                   onUnlink={handleUnlinkPitch}
                   onStartShaping={handleStartShaping}
                   onPriorityChange={handlePriorityChange}
+                  onTitleSave={handlePitchTitleSave}
                   emptyMessage={t('pitches.noShaped')}
                 />
               </TabsContent>

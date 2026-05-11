@@ -155,6 +155,19 @@ public class InitiativeService {
   }
 
   @CacheEvict(value = "roadmap", allEntries = true)
+  public InitiativeDTO updateDates(Long id, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+      throw new IllegalArgumentException("Start date must not be after end date");
+    }
+    Initiative initiative = initiativeRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + id));
+    initiative.setTargetStartDate(startDate);
+    initiative.setTargetEndDate(endDate);
+    Initiative saved = initiativeRepository.save(initiative);
+    return toDTO(saved);
+  }
+
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteInitiative(Long id) {
     Initiative initiative = initiativeRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Initiative not found with id: " + id));
