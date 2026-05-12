@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,75 +12,45 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/**
- * Rate-limiting filter that enforces per-IP request limits on sensitive API
- * paths using Bucket4j (in-memory token-bucket algorithm).
- *
- * <p>Limits:
- * <ul>
- *   <li>{@code /api/auth/**} — 10 requests / minute</li>
- *   <li>{@code /api/search/**} — 30 requests / minute</li>
- *   <li>{@code /api/wise-architecture/**} — 5 requests / minute (actual AI calls)</li>
- *   <li>{@code /api/risk/**} — 5 requests / minute (actual AI calls)</li>
- *   <li>{@code /api/risk/async/jobs/**} — 120 requests / minute (status polling, not AI calls)</li>
- * </ul>
- *
- * <p>Requests that exceed the limit receive HTTP 429 with a JSON body and a
- * {@code Retry-After} header indicating how many seconds to wait.
- */
 @Slf4j
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-  // ---- Configuration constants ----
-
-  /**
-   * Auth endpoints: configurable requests per minute per IP.
-   * Default 10 (production-safe). Override in dev/test profiles via
-   * {@code app.rate-limit.auth.capacity} to avoid blocking E2E test suites
-   * that re-login many times from the same runner IP.
-   */
   @Value("${app.rate-limit.auth.capacity:10}")
   private int authCapacity;
 
+  @Value("${app.rate-limit.ai.capacity:20}")
+  private int aiCapacity;
+
+  @Value("${app.rate-limit.risk-read.capacity:60}")
+  private int riskReadCapacity;
+
+  @Value("${app.rate-limit.search.capacity:30}")
+  private int searchCapacity;
+
+  @Value("${app.rate-limit.poll.capacity:120}")
+  private int pollCapacity;
+
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
-  private static final long AUTH_RETRY_AFTER_SECONDS = 60;
-
-  /** Search endpoint: 30 requests per minute per IP. */
-  private static final int SEARCH_CAPACITY = 30;
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
-  private static final long SEARCH_RETRY_AFTER_SECONDS = 60;
-
-  /** AI endpoints (wise-architecture, risk triggers): 5 requests per minute per IP. */
-  private static final int AI_CAPACITY = 5;
   private static final Duration AI_PERIOD = Duration.ofMinutes(1);
-  private static final long AI_RETRY_AFTER_SECONDS = 60;
-
-  /**
-   * Async job status/result polling endpoints: 120 requests per minute per IP.
-   * These are lightweight DB reads, not AI calls — they must not share the strict
-   * AI bucket or polling will be rate-limited immediately after the job starts.
-   */
-  private static final int POLL_CAPACITY = 120;
+  private static final Duration RISK_READ_PERIOD = Duration.ofMinutes(1);
   private static final Duration POLL_PERIOD = Duration.ofMinutes(1);
-  private static final long POLL_RETRY_AFTER_SECONDS = 5;
 
-  // ---- Bucket stores (one ConcurrentHashMap per rate-limited path group) ----
+  private static final int MAX_BUCKETS = 10_000;
 
-  /** Key: {@code "<ip>:<path-group>"} → Bucket */
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-  // ---- Path prefixes for each limit group ----
   private static final String AUTH_PREFIX = "/api/auth/";
   private static final String SEARCH_PREFIX = "/api/search";
   private static final String WISE_ARCH_PREFIX = "/api/wise-architecture";
   private static final String RISK_PREFIX = "/api/risk";
-  /** Async job polling — checked BEFORE RISK_PREFIX so it gets the higher limit. */
   private static final String ASYNC_JOBS_PREFIX = "/api/risk/async/jobs/";
 
   @Override
@@ -91,42 +62,55 @@ public class RateLimitFilter extends OncePerRequestFilter {
     RateLimit limit = resolveLimit(path);
 
     if (limit == null) {
-      // Path is not rate-limited — pass through immediately
       filterChain.doFilter(request, response);
       return;
     }
 
     String clientIp = resolveClientIp(request);
     String bucketKey = clientIp + ":" + limit.group;
+
+    if (buckets.size() > MAX_BUCKETS) {
+      buckets.clear();
+      log.warn("Rate limit bucket cache exceeded {} entries, cleared", MAX_BUCKETS);
+    }
+
     Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> newBucket(limit));
 
-    if (bucket.tryConsume(1)) {
+    ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+    if (probe.isConsumed()) {
       filterChain.doFilter(request, response);
     } else {
+      long retryAfterSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill()) + 1;
       log.warn("Rate limit exceeded: ip={} path={} group={}", clientIp, path, limit.group);
-      sendTooManyRequests(response, limit.retryAfterSeconds);
+      sendTooManyRequests(response, retryAfterSeconds);
     }
   }
-
-  // ---- Helpers ----
 
   private RateLimit resolveLimit(String path) {
     if (path == null) return null;
     if (path.startsWith(AUTH_PREFIX)) {
-      return new RateLimit("auth", authCapacity, AUTH_PERIOD, AUTH_RETRY_AFTER_SECONDS);
+      return new RateLimit("auth", authCapacity, AUTH_PERIOD);
     }
     if (path.startsWith(SEARCH_PREFIX)) {
-      return new RateLimit("search", SEARCH_CAPACITY, SEARCH_PERIOD, SEARCH_RETRY_AFTER_SECONDS);
+      return new RateLimit("search", searchCapacity, SEARCH_PERIOD);
     }
-    // Async job polling must be checked BEFORE the general RISK_PREFIX check —
-    // status/result endpoints are lightweight DB reads, not AI calls.
     if (path.startsWith(ASYNC_JOBS_PREFIX)) {
-      return new RateLimit("poll", POLL_CAPACITY, POLL_PERIOD, POLL_RETRY_AFTER_SECONDS);
+      return new RateLimit("poll", pollCapacity, POLL_PERIOD);
     }
-    if (path.startsWith(WISE_ARCH_PREFIX) || path.startsWith(RISK_PREFIX)) {
-      return new RateLimit("ai", AI_CAPACITY, AI_PERIOD, AI_RETRY_AFTER_SECONDS);
+    if (path.startsWith(WISE_ARCH_PREFIX)) {
+      return new RateLimit("ai", aiCapacity, AI_PERIOD);
+    }
+    if (path.startsWith(RISK_PREFIX)) {
+      if (isAiTriggerPath(path)) {
+        return new RateLimit("ai", aiCapacity, AI_PERIOD);
+      }
+      return new RateLimit("risk-read", riskReadCapacity, RISK_READ_PERIOD);
     }
     return null;
+  }
+
+  private boolean isAiTriggerPath(String path) {
+    return path.contains("/analyze") || path.contains("/ask") || path.contains("/refresh");
   }
 
   private Bucket newBucket(RateLimit limit) {
@@ -148,15 +132,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 + "}");
   }
 
-  /**
-   * Resolves the real client IP, preferring the first value in
-   * {@code X-Forwarded-For} when present (set by the load balancer /
-   * reverse proxy).
-   */
   private String resolveClientIp(HttpServletRequest request) {
     String xff = request.getHeader("X-Forwarded-For");
     if (xff != null && !xff.isBlank()) {
-      // X-Forwarded-For may be a comma-separated list; take the first entry
       int commaIdx = xff.indexOf(',');
       return commaIdx >= 0 ? xff.substring(0, commaIdx).trim() : xff.trim();
     }
@@ -167,7 +145,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
     return request.getRemoteAddr();
   }
 
-  // ---- Value type ----
-
-  private record RateLimit(String group, int capacity, Duration period, long retryAfterSeconds) {}
+  private record RateLimit(String group, int capacity, Duration period) {}
 }

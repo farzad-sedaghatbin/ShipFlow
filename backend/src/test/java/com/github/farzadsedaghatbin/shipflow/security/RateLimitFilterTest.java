@@ -17,35 +17,26 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/**
- * Unit tests for {@link RateLimitFilter}.
- *
- * <p>Verifies that rate limits are enforced on targeted paths and that
- * unrelated paths bypass the filter without consuming tokens.
- */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class RateLimitFilterTest {
 
   private RateLimitFilter filter;
 
-  @Mock
-  private HttpServletRequest request;
-
-  @Mock
-  private HttpServletResponse response;
-
-  @Mock
-  private FilterChain filterChain;
+  @Mock private HttpServletRequest request;
+  @Mock private HttpServletResponse response;
+  @Mock private FilterChain filterChain;
 
   private StringWriter responseWriter;
 
   @BeforeEach
   void setUp() throws Exception {
     filter = new RateLimitFilter();
-    // authCapacity is @Value-injected; set it explicitly for unit tests that
-    // bypass Spring context.  Default production value is 10.
     ReflectionTestUtils.setField(filter, "authCapacity", 10);
+    ReflectionTestUtils.setField(filter, "aiCapacity", 20);
+    ReflectionTestUtils.setField(filter, "riskReadCapacity", 60);
+    ReflectionTestUtils.setField(filter, "searchCapacity", 30);
+    ReflectionTestUtils.setField(filter, "pollCapacity", 120);
     responseWriter = new StringWriter();
     when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
     when(request.getRemoteAddr()).thenReturn("10.0.0.1");
@@ -57,7 +48,6 @@ class RateLimitFilterTest {
   void unratedPath_alwaysPassesThrough() throws Exception {
     when(request.getRequestURI()).thenReturn("/api/projects/1/tasks");
 
-    // Should pass through many times without triggering a 429
     for (int i = 0; i < 50; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
@@ -70,7 +60,6 @@ class RateLimitFilterTest {
   void authPath_allowsUpToCapacityPerIp() throws Exception {
     when(request.getRequestURI()).thenReturn("/api/auth/login");
 
-    // First 10 requests should be allowed (capacity = 10)
     for (int i = 0; i < 10; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
@@ -83,26 +72,22 @@ class RateLimitFilterTest {
   void authPath_blocksAfterCapacityExceeded() throws Exception {
     when(request.getRequestURI()).thenReturn("/api/auth/login");
 
-    // Exhaust the bucket (capacity 10)
     for (int i = 0; i < 10; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
 
-    // 11th request must be rate-limited
     filter.doFilterInternal(request, response, filterChain);
 
-    // filterChain called exactly 10 times (not 11)
     verify(filterChain, times(10)).doFilter(request, response);
     verify(response).setStatus(429);
-    verify(response).setHeader("Retry-After", "60");
 
     String body = responseWriter.toString();
-    assertTrue(body.contains("Too many requests"), "Body should contain 'Too many requests'");
-    assertTrue(body.contains("retryAfter"), "Body should contain 'retryAfter'");
+    assertTrue(body.contains("Too many requests"));
+    assertTrue(body.contains("retryAfter"));
   }
 
   @Test
-  void searchPath_allowsUpTo30PerIp() throws Exception {
+  void searchPath_allowsUpToCapacity() throws Exception {
     when(request.getRequestURI()).thenReturn("/api/search?q=foo");
 
     for (int i = 0; i < 30; i++) {
@@ -114,14 +99,13 @@ class RateLimitFilterTest {
   }
 
   @Test
-  void searchPath_blocksAfter30Requests() throws Exception {
+  void searchPath_blocksAfterCapacity() throws Exception {
     when(request.getRequestURI()).thenReturn("/api/search?q=foo");
 
     for (int i = 0; i < 30; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
 
-    // 31st should be rejected
     filter.doFilterInternal(request, response, filterChain);
 
     verify(filterChain, times(30)).doFilter(request, response);
@@ -129,43 +113,117 @@ class RateLimitFilterTest {
   }
 
   @Test
-  void aiPath_wiseArchitecture_allowsUpTo5PerIp() throws Exception {
-    when(request.getRequestURI()).thenReturn("/api/wise-architecture/analyze");
+  void aiPath_wiseArchitecture_allowsUpToCapacity() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/wise-architecture/some-endpoint");
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 20; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
 
-    verify(filterChain, times(5)).doFilter(request, response);
+    verify(filterChain, times(20)).doFilter(request, response);
     verify(response, never()).setStatus(429);
   }
 
   @Test
-  void aiPath_wiseArchitecture_blocksAfter5Requests() throws Exception {
-    when(request.getRequestURI()).thenReturn("/api/wise-architecture/analyze");
+  void aiPath_wiseArchitecture_blocksAfterCapacity() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/wise-architecture/some-endpoint");
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 20; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
 
     filter.doFilterInternal(request, response, filterChain);
 
-    verify(filterChain, times(5)).doFilter(request, response);
+    verify(filterChain, times(20)).doFilter(request, response);
     verify(response).setStatus(429);
   }
 
   @Test
-  void aiPath_risk_blocksAfter5Requests() throws Exception {
-    when(request.getRequestURI()).thenReturn("/api/risk/analyze");
+  void riskAnalyze_usesAiBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/async/pitch/1/analyze");
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 20; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
 
-    filter.doFilterInternal(request, response, filterChain);
+    verify(filterChain, times(20)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
 
-    verify(filterChain, times(5)).doFilter(request, response);
+    filter.doFilterInternal(request, response, filterChain);
     verify(response).setStatus(429);
+  }
+
+  @Test
+  void riskAsk_usesAiBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/pitch/1/ask");
+
+    for (int i = 0; i < 20; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(20)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+
+    filter.doFilterInternal(request, response, filterChain);
+    verify(response).setStatus(429);
+  }
+
+  @Test
+  void riskHistory_usesRiskReadBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/pitch/1/history");
+
+    for (int i = 0; i < 60; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(60)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+
+    filter.doFilterInternal(request, response, filterChain);
+    verify(response).setStatus(429);
+  }
+
+  @Test
+  void riskStatus_usesRiskReadBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/status");
+
+    for (int i = 0; i < 60; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(60)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+  }
+
+  @Test
+  void riskAnalyzeAndAsk_shareAiBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/async/pitch/1/analyze");
+    for (int i = 0; i < 10; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    when(request.getRequestURI()).thenReturn("/api/risk/pitch/2/ask");
+    for (int i = 0; i < 10; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(20)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+
+    filter.doFilterInternal(request, response, filterChain);
+    verify(response).setStatus(429);
+  }
+
+  @Test
+  void asyncJobPolling_usesHighCapacityPollBucket() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/risk/async/jobs/abc-123/status");
+
+    for (int i = 0; i < 120; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(120)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
   }
 
   @Test
@@ -178,16 +236,13 @@ class RateLimitFilterTest {
     when(request2.getHeader("X-Forwarded-For")).thenReturn(null);
     when(request2.getHeader("X-Real-IP")).thenReturn(null);
 
-    // Exhaust IP 1 bucket
     for (int i = 0; i < 10; i++) {
       filter.doFilterInternal(request, response, filterChain);
     }
-    filter.doFilterInternal(request, response, filterChain); // 429
+    filter.doFilterInternal(request, response, filterChain);
 
-    // IP 2 should still be allowed (independent bucket)
     filter.doFilterInternal(request2, response, filterChain);
 
-    // request1: 10 passes + 1 block; request2: 1 pass — filterChain called 11 times total
     verify(filterChain, times(11)).doFilter(any(), any());
   }
 
@@ -201,5 +256,22 @@ class RateLimitFilterTest {
     }
 
     verify(filterChain, times(10)).doFilter(request, response);
+  }
+
+  @Test
+  void retryAfterHeader_isSetDynamically() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/auth/login");
+
+    for (int i = 0; i < 10; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    filter.doFilterInternal(request, response, filterChain);
+
+    verify(response).setStatus(429);
+    verify(response).setHeader(eq("Retry-After"), argThat(val -> {
+      long seconds = Long.parseLong(val);
+      return seconds > 0 && seconds <= 61;
+    }));
   }
 }
