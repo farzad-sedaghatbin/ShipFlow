@@ -70,6 +70,14 @@ public class UserController {
     return ResponseEntity.ok(userService.activate(id));
   }
 
+  @DeleteMapping("/{id}")
+  @Operation(summary = "Delete user (soft delete)")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    userService.deleteUser(id);
+    return ResponseEntity.noContent().build();
+  }
+
   @PutMapping("/{id}/password")
   @Operation(summary = "Change user password (admin can change any, user can change own)")
   @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")

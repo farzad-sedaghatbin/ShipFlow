@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
 import { usePermission } from '../hooks/usePermission';
@@ -98,6 +99,10 @@ export default function UserManagement() {
   // Toggle active confirmation dialog
   const [toggleActiveConfirmOpen, setToggleActiveConfirmOpen] = useState(false);
   const [userToToggle, setUserToToggle] = useState<UserType | null>(null);
+
+  // Delete confirmation dialog
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
 
   // Check if current user has user management permission
   useEffect(() => {
@@ -193,6 +198,24 @@ export default function UserManagement() {
       // Error handled by interceptor
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openDeleteConfirm = (user: UserType) => {
+    setUserToDelete(user);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      await api.delete(`/users/${userToDelete.id}`);
+      showToast(t('userManagement.userDeleted'), 'success');
+      fetchUsers();
+      setDeleteConfirmOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      showToast(t('userManagement.deleteFailed'), 'error');
     }
   };
 
@@ -486,30 +509,45 @@ export default function UserManagement() {
                           <TooltipContent>{t('userManagement.resetPassword')}</TooltipContent>
                         </Tooltip>
                         {user.id !== currentUser?.userId && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                  'h-8 w-8',
-                                  user.isActive
-                                    ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950'
-                                    : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950'
-                                )}
-                                onClick={() => openToggleActiveConfirm(user)}
-                              >
-                                {user.isActive ? (
-                                  <Ban className="h-4 w-4" />
-                                ) : (
-                                  <CheckCircle className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {user.isActive ? t('userManagement.deactivate') : t('userManagement.activate')}
-                            </TooltipContent>
-                          </Tooltip>
+                          <>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    'h-8 w-8',
+                                    user.isActive
+                                      ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950'
+                                      : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950'
+                                  )}
+                                  onClick={() => openToggleActiveConfirm(user)}
+                                >
+                                  {user.isActive ? (
+                                    <Ban className="h-4 w-4" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {user.isActive ? t('userManagement.deactivate') : t('userManagement.activate')}
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                  onClick={() => openDeleteConfirm(user)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('userManagement.deleteUser')}</TooltipContent>
+                            </Tooltip>
+                          </>
                         )}
                       </div>
                     </TooltipProvider>
@@ -761,6 +799,18 @@ export default function UserManagement() {
         cancelLabel={t('common.cancel')}
         onConfirm={handleToggleActive}
         variant={userToToggle?.isActive ? 'destructive' : 'default'}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t('userManagement.deleteUser')}
+        description={t('userManagement.confirmDelete', { username: userToDelete?.username || '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteUser}
+        variant="destructive"
       />
     </div>
   );
