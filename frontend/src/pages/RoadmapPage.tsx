@@ -126,6 +126,9 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
   const totalDays = Math.max(1, Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24)));
 
+
+  const bgColor = color || getStatusCssColor(status);
+
   const pxToDateRef = useRef((_pxOffset: number): Date => new Date(timelineStart));
   pxToDateRef.current = (pxOffset: number): Date => {
     if (!containerRef.current) return new Date(timelineStart);
@@ -137,7 +140,6 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   };
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
-  const bgColor = color || getStatusCssColor(status);
 
   const handleMouseDown = (e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
     if (!onDatesChangeRef.current || !containerRef.current) return;
@@ -439,25 +441,7 @@ export default function RoadmapPage() {
     }
   };
 
-  if (isAllProjectsSelected) {
-    return (
-      <ProjectRequiredDialog
-        open={true}
-        featureDescription={t('roadmap.selectProjectDescription')}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8 space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  // Pre-compute flat row indices for stable striping
+  // Pre-compute flat row indices for stable striping (must be before early returns)
   const rowIndices = useMemo(() => {
     const indices = new Map<string, number>();
     let idx = 0;
@@ -479,6 +463,24 @@ export default function RoadmapPage() {
     }
     return indices;
   }, [timeline, expandedInitiatives, expandedEpics]);
+
+  if (isAllProjectsSelected) {
+    return (
+      <ProjectRequiredDialog
+        open={true}
+        featureDescription={t('roadmap.selectProjectDescription')}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8 space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
