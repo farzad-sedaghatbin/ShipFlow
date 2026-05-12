@@ -128,8 +128,6 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
 
   const pxToDateRef = useRef((_pxOffset: number): Date => new Date(timelineStart));
   pxToDateRef.current = (pxOffset: number): Date => {
-  const bgColor = color || getStatusCssColor(status);
-
     if (!containerRef.current) return new Date(timelineStart);
     const containerWidth = containerRef.current.parentElement!.clientWidth;
     const dayOffset = Math.round((pxOffset / containerWidth) * totalDays);
@@ -139,6 +137,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   };
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
+  const bgColor = color || getStatusCssColor(status);
 
   const handleMouseDown = (e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
     if (!onDatesChangeRef.current || !containerRef.current) return;
