@@ -120,4 +120,42 @@ class UserControllerIntegrationTest {
     mockMvc.perform(put("/api/users/{id}/activate", testUser.getId())).andExpect(status().isOk())
         .andExpect(jsonPath("$.isActive", is(true)));
   }
+
+  @Test
+  @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
+  void deleteUser_AsAdmin_ShouldSoftDeleteAndExcludeFromListing() throws Exception {
+    mockMvc.perform(delete("/api/users/{id}", testUser.getId()))
+        .andExpect(status().isNoContent());
+
+    // Deleted user must not appear in listing
+    mockMvc.perform(get("/api/users"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[*].username", not(hasItem("user-ctrl-test-user"))));
+  }
+
+  @Test
+  @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
+  void deleteUser_SelfDelete_ShouldReturn400() throws Exception {
+    mockMvc.perform(delete("/api/users/{id}", adminUser.getId()))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(username = "user-ctrl-admin", roles = {"ADMIN"})
+  void deleteUser_AlreadyDeleted_ShouldReturn404() throws Exception {
+    // Soft-delete first
+    mockMvc.perform(delete("/api/users/{id}", testUser.getId()))
+        .andExpect(status().isNoContent());
+
+    // Second delete should 404
+    mockMvc.perform(delete("/api/users/{id}", testUser.getId()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = "user-ctrl-test-user", roles = {"MEMBER"})
+  void deleteUser_AsNonAdmin_ShouldReturn403() throws Exception {
+    mockMvc.perform(delete("/api/users/{id}", adminUser.getId()))
+        .andExpect(status().isForbidden());
+  }
 }

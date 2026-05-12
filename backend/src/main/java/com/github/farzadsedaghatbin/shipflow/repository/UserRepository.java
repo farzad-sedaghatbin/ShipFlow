@@ -27,6 +27,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   List<User> findByIsActiveTrue();
 
+  List<User> findByDeletedAtIsNull();
+
   @Query("SELECT u FROM User u WHERE u.role = :role AND u.isActive = true")
   List<User> findByRoleAndActive(@Param("role") com.github.farzadsedaghatbin.shipflow.entity.UserRole role);
 

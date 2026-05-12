@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public List<UserDTO> findAll() {
-    return userRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    return userRepository.findByDeletedAtIsNull().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   @Cacheable(value = "users", key = "'detail:' + #id")
@@ -46,6 +47,9 @@ public class UserService {
   public UserDTO findById(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     return toDTO(user);
   }
 
@@ -106,9 +110,36 @@ public class UserService {
 
   @CacheEvict(value = "users", allEntries = true)
   @Transactional
+  public void deleteUser(Long id) {
+    String currentUsername = SecurityContextHolder.getContext().getAuthentication() != null
+        ? SecurityContextHolder.getContext().getAuthentication().getName()
+        : null;
+
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
+
+    if (Objects.equals(user.getUsername(), currentUsername)) {
+      throw new IllegalArgumentException("Cannot delete your own account");
+    }
+
+    user.setDeletedAt(LocalDateTime.now());
+    user.setIsActive(false);
+    userRepository.save(user);
+    log.info("Admin '{}' soft-deleted user: {}", currentUsername, user.getUsername());
+  }
+
+  @CacheEvict(value = "users", allEntries = true)
+  @Transactional
   public UserDTO deactivate(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     user.setIsActive(false);
     user = userRepository.save(user);
     return toDTO(user);
@@ -119,6 +150,9 @@ public class UserService {
   public UserDTO activate(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     user.setIsActive(true);
     user = userRepository.save(user);
     return toDTO(user);
