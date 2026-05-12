@@ -35,6 +35,9 @@ import {
   BarChart3,
   ArrowDownToLine,
   Calendar,
+  Pencil,
+  GripHorizontal,
+  Bug,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -161,9 +164,20 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
+      version: 'v1.0.1',
+      theme: t('publicRoadmap.phase101Theme'),
+      status: 'in-progress',
+      items: [
+        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase101Item0Title'), description: t('publicRoadmap.phase101Item0Desc') },
+        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase101Item1Title'), description: t('publicRoadmap.phase101Item1Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase101Item2Title'), description: t('publicRoadmap.phase101Item2Desc') },
+        { icon: <Bug className="h-5 w-5" />, title: t('publicRoadmap.phase101Item3Title'), description: t('publicRoadmap.phase101Item3Desc') },
+      ],
+    },
+    {
       version: 'v1.1.0',
       theme: t('publicRoadmap.phase110Theme'),
-      status: 'in-progress',
+      status: 'planned',
       items: [
         { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase110Item0Title'), description: t('publicRoadmap.phase110Item0Desc') },
         { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.phase110Item1Title'), description: t('publicRoadmap.phase110Item1Desc') },
