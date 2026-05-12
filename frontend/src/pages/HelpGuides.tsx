@@ -18,7 +18,8 @@ import {
     Download,
     Webhook,
     Code,
-    Server
+    Server,
+    Lightbulb
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,13 @@ export default function HelpGuides() {
             icon: BookOpen,
             path: '/help/getting-started',
             color: 'text-blue-500',
+        },
+        {
+            title: t('helpGuides.ideaToRoadmap'),
+            description: t('helpGuides.ideaToRoadmapDesc'),
+            icon: Lightbulb,
+            path: '/help/idea-to-roadmap',
+            color: 'text-yellow-500',
         },
         {
             title: t('helpGuides.projectTypes'),
