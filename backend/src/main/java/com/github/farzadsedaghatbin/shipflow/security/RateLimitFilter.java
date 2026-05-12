@@ -16,71 +16,44 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/**
- * Rate-limiting filter that enforces per-IP request limits on sensitive API
- * paths using Bucket4j (in-memory token-bucket algorithm).
- *
- * <p>Limits:
- * <ul>
- *   <li>{@code /api/auth/**} — 10 requests / minute</li>
- *   <li>{@code /api/search/**} — 30 requests / minute</li>
- *   <li>{@code /api/wise-architecture/**} — 5 requests / minute (actual AI calls)</li>
- *   <li>{@code /api/risk/**} — 5 requests / minute (actual AI calls)</li>
- *   <li>{@code /api/risk/async/jobs/**} — 120 requests / minute (status polling, not AI calls)</li>
- * </ul>
- *
- * <p>Requests that exceed the limit receive HTTP 429 with a JSON body and a
- * {@code Retry-After} header indicating how many seconds to wait.
- */
 @Slf4j
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-  // ---- Configuration constants ----
-
-  /**
-   * Auth endpoints: configurable requests per minute per IP.
-   * Default 10 (production-safe). Override in dev/test profiles via
-   * {@code app.rate-limit.auth.capacity} to avoid blocking E2E test suites
-   * that re-login many times from the same runner IP.
-   */
   @Value("${app.rate-limit.auth.capacity:10}")
   private int authCapacity;
+
+  @Value("${app.rate-limit.ai.capacity:20}")
+  private int aiCapacity;
+
+  @Value("${app.rate-limit.risk-read.capacity:60}")
+  private int riskReadCapacity;
 
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
   private static final long AUTH_RETRY_AFTER_SECONDS = 60;
 
-  /** Search endpoint: 30 requests per minute per IP. */
   private static final int SEARCH_CAPACITY = 30;
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
   private static final long SEARCH_RETRY_AFTER_SECONDS = 60;
 
-  /** AI endpoints (wise-architecture, risk triggers): 5 requests per minute per IP. */
-  private static final int AI_CAPACITY = 5;
   private static final Duration AI_PERIOD = Duration.ofMinutes(1);
-  private static final long AI_RETRY_AFTER_SECONDS = 60;
+  private static final long AI_RETRY_AFTER_SECONDS = 30;
 
-  /**
-   * Async job status/result polling endpoints: 120 requests per minute per IP.
-   * These are lightweight DB reads, not AI calls — they must not share the strict
-   * AI bucket or polling will be rate-limited immediately after the job starts.
-   */
+  private static final Duration RISK_READ_PERIOD = Duration.ofMinutes(1);
+  private static final long RISK_READ_RETRY_AFTER_SECONDS = 10;
+
   private static final int POLL_CAPACITY = 120;
   private static final Duration POLL_PERIOD = Duration.ofMinutes(1);
   private static final long POLL_RETRY_AFTER_SECONDS = 5;
 
-  // ---- Bucket stores (one ConcurrentHashMap per rate-limited path group) ----
-
-  /** Key: {@code "<ip>:<path-group>"} → Bucket */
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-  // ---- Path prefixes for each limit group ----
   private static final String AUTH_PREFIX = "/api/auth/";
   private static final String SEARCH_PREFIX = "/api/search";
   private static final String WISE_ARCH_PREFIX = "/api/wise-architecture";
   private static final String RISK_PREFIX = "/api/risk";
-  /** Async job polling — checked BEFORE RISK_PREFIX so it gets the higher limit. */
   private static final String ASYNC_JOBS_PREFIX = "/api/risk/async/jobs/";
+  private static final String RISK_ANALYZE_INFIX = "/analyze";
 
   @Override
   protected void doFilterInternal(
@@ -91,7 +64,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     RateLimit limit = resolveLimit(path);
 
     if (limit == null) {
-      // Path is not rate-limited — pass through immediately
       filterChain.doFilter(request, response);
       return;
     }
@@ -108,8 +80,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
   }
 
-  // ---- Helpers ----
-
   private RateLimit resolveLimit(String path) {
     if (path == null) return null;
     if (path.startsWith(AUTH_PREFIX)) {
@@ -118,13 +88,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     if (path.startsWith(SEARCH_PREFIX)) {
       return new RateLimit("search", SEARCH_CAPACITY, SEARCH_PERIOD, SEARCH_RETRY_AFTER_SECONDS);
     }
-    // Async job polling must be checked BEFORE the general RISK_PREFIX check —
-    // status/result endpoints are lightweight DB reads, not AI calls.
     if (path.startsWith(ASYNC_JOBS_PREFIX)) {
       return new RateLimit("poll", POLL_CAPACITY, POLL_PERIOD, POLL_RETRY_AFTER_SECONDS);
     }
-    if (path.startsWith(WISE_ARCH_PREFIX) || path.startsWith(RISK_PREFIX)) {
-      return new RateLimit("ai", AI_CAPACITY, AI_PERIOD, AI_RETRY_AFTER_SECONDS);
+    if (path.startsWith(WISE_ARCH_PREFIX)) {
+      return new RateLimit("ai", aiCapacity, AI_PERIOD, AI_RETRY_AFTER_SECONDS);
+    }
+    if (path.startsWith(RISK_PREFIX)) {
+      if (path.contains(RISK_ANALYZE_INFIX)) {
+        return new RateLimit("ai", aiCapacity, AI_PERIOD, AI_RETRY_AFTER_SECONDS);
+      }
+      return new RateLimit("risk-read", riskReadCapacity, RISK_READ_PERIOD, RISK_READ_RETRY_AFTER_SECONDS);
     }
     return null;
   }
@@ -148,15 +122,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 + "}");
   }
 
-  /**
-   * Resolves the real client IP, preferring the first value in
-   * {@code X-Forwarded-For} when present (set by the load balancer /
-   * reverse proxy).
-   */
   private String resolveClientIp(HttpServletRequest request) {
     String xff = request.getHeader("X-Forwarded-For");
     if (xff != null && !xff.isBlank()) {
-      // X-Forwarded-For may be a comma-separated list; take the first entry
       int commaIdx = xff.indexOf(',');
       return commaIdx >= 0 ? xff.substring(0, commaIdx).trim() : xff.trim();
     }
@@ -166,8 +134,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     return request.getRemoteAddr();
   }
-
-  // ---- Value type ----
 
   private record RateLimit(String group, int capacity, Duration period, long retryAfterSeconds) {}
 }
