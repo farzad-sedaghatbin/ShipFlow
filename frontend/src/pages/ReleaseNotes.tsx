@@ -43,6 +43,8 @@ import {
   Rss,
   Container,
   Network,
+  Pencil,
+  GripHorizontal,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -61,6 +63,38 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.0.1',
+    date: 'May 2026',
+    title: 'UX Polish & Roadmap Interactivity',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Pencil className="h-5 w-5" />,
+        title: 'Inline Pitch Title Editing',
+        description:
+          'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
+      },
+      {
+        icon: <GripHorizontal className="h-5 w-5" />,
+        title: 'Interactive Roadmap Timeline',
+        description:
+          'Drag-to-move and drag-to-resize timeline bars to adjust epic and initiative dates. Progress percentages and status indicators shown on bars. One-click "Set dates" for items without a timeline.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Backend Date Validation',
+        description:
+          'Epic and initiative date endpoints now validate that start date ≤ end date, returning 400 on invalid ranges. @DateTimeFormat annotations ensure explicit ISO date parsing.',
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Release Form Navigation Fix',
+        description:
+          'After creating or editing a release, the form now correctly navigates to the release detail page instead of a broken route.',
+      },
+    ],
+  },
   {
     version: '1.0.0',
     date: 'April 21, 2026',

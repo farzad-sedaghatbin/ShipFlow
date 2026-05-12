@@ -103,7 +103,9 @@ A modern project management application implementing the [Shape Up](https://base
     - Track pitches and bugs by target release and actual fix release
   - **Roadmap Timeline View**: Visual timeline for stakeholder communication
     - Gantt-style visualization of initiatives, epics, and releases
-    - Progress bars showing completion percentages
+    - **Interactive drag-to-move and drag-to-resize** timeline bars to adjust dates directly
+    - Progress bars showing completion percentages with status-colored indicators
+    - One-click "Set dates" for items without a timeline
     - Filterable by project, status, and date range
 - **Organization Settings**: Centralized configuration management
   - Cycle length and risk threshold customization

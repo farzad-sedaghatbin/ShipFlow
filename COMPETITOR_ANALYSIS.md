@@ -163,7 +163,7 @@ Be honest with evaluators:
 - **You need enterprise SSO/SAML today** — not yet implemented (planned).
 - **You need a mobile app** — ShipFlow is web-first; mobile is responsive but not a native app.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched.
-- **You need non-technical stakeholder tools** (timesheets, resource planning, Gantt) — Asana/Monday win here.
+- **You need non-technical stakeholder tools** (timesheets, resource planning) — Asana/Monday win here. ShipFlow now has interactive Gantt-style timeline bars for initiatives and epics, but not full resource planning.
 
 ---
 
