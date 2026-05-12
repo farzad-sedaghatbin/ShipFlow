@@ -56,20 +56,10 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        // CSRF protection is safely disabled because:
-        // 1. This is a stateless REST API using JWT tokens (not cookies)
-        // 2. SessionCreationPolicy.STATELESS means no server-side sessions
-        // 3. JWT tokens are sent via Authorization header, not vulnerable to CSRF
-        // See:
-        // https://security.stackexchange.com/questions/170388/do-i-need-csrf-token-if-im-using-bearer-jwt
         .csrf(AbstractHttpConfigurer::disable)
-        // Security response headers
         .headers(headers -> headers
-            // Prevent clickjacking — only allow framing from same origin
             .frameOptions(frame -> frame.sameOrigin())
-            // Prevent MIME-type sniffing
             .contentTypeOptions(cto -> {})
-            // Content Security Policy for the React SPA
             .contentSecurityPolicy(csp -> csp.policyDirectives(
                 "default-src 'self'; "
                 + "script-src 'self' 'unsafe-inline'; "
@@ -80,62 +70,39 @@ public class SecurityConfig {
                 + "frame-ancestors 'self'; "
                 + "object-src 'none'; "
                 + "base-uri 'self'"))
-            // Tell browsers to use HTTPS only (1 year)
             .httpStrictTransportSecurity(hsts -> hsts
                 .maxAgeInSeconds(31536000)
                 .includeSubDomains(true))
-            // Referrer policy
             .referrerPolicy(rp -> rp.policy(
                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-            // Permissions policy — restrict sensitive browser features
             .permissionsPolicy(pp -> pp.policy(
                 "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
         .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
             .accessDeniedHandler(jwtAccessDeniedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
-            // ASYNC and ERROR dispatches are internal Tomcat re-dispatches (e.g. SSE push,
-            // error page rendering). The SecurityContext is not propagated on these re-dispatches,
-            // so the AuthorizationFilter would throw AccessDeniedException. Permit them explicitly
-            // — the original REQUEST was already authenticated; these are follow-up I/O dispatches.
             .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-            // Allow CORS preflight requests
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-            // SPA routes - all frontend routes should be accessible (React handles auth)
             .requestMatchers("/login", "/welcome", "/dashboard", "/dashboard/**", "/cycles/**",
                 "/pitches/**", "/betting/**", "/projects/**", "/health/**", "/qa/**", "/reports/**",
                 "/tests/**", "/teams/**", "/people/**", "/users/**", "/profile/**", "/worklogs/**",
                 "/my-worklogs/**", "/meetings/**", "/tasks/**")
             .permitAll()
-            // Public API endpoints
             .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/public/**").permitAll()
-            // Public REST API v1 (authenticated via X-API-Key header)
             .requestMatchers("/api/v1/public/**").permitAll()
-            // Inbound webhooks (each handler validates its own signature)
             .requestMatchers("/api/inbound/**").permitAll()
-            // Q&A status endpoint (public to check if feature is enabled)
             .requestMatchers("/api/qa/status").permitAll()
-            // Swagger/OpenAPI endpoints
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-            // H2 console (dev only)
             .requestMatchers("/h2-console/**").permitAll()
-            // Actuator health endpoint
             .requestMatchers("/actuator/health").permitAll()
-            // All API endpoints require authentication
             .requestMatchers("/api/**").authenticated()
-            // MCP health is public; all other /mcp/** auth is handled by McpAuthFilter
             .requestMatchers("/mcp/health").permitAll()
             .requestMatchers("/mcp/**").permitAll()
-            // Allow any other request (frontend will handle auth)
             .anyRequest().permitAll())
         .authenticationProvider(authenticationProvider())
-        // Rate limiting runs first on auth/search/AI paths
         .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-        // Malicious header detection runs after rate limiting
         .addFilterBefore(maliciousHeaderFilter, UsernamePasswordAuthenticationFilter.class)
-        // Add MCP API key filter for /mcp/** paths
         .addFilterBefore(mcpAuthFilter, UsernamePasswordAuthenticationFilter.class)
-        // Add API key filter before JWT filter for /api/v1/public/** paths
         .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
