@@ -115,24 +115,28 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   const [dragOffset, setDragOffset] = useState({ leftPx: 0, widthPx: 0 });
   const dragStartRef = useRef({ mouseX: 0, origLeftPx: 0, origWidthPx: 0 });
 
+  const onDatesChangeRef = useRef(onDatesChange);
+  onDatesChangeRef.current = onDatesChange;
+
   const start = parseDate(startDate);
   const end = parseDate(endDate);
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
-  const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
+  const totalDays = Math.max(1, Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24)));
 
-  const pxToDate = useCallback((pxOffset: number): Date => {
+  const pxToDateRef = useRef((_pxOffset: number): Date => new Date(timelineStart));
+  pxToDateRef.current = (pxOffset: number): Date => {
     if (!containerRef.current) return new Date(timelineStart);
     const containerWidth = containerRef.current.parentElement!.clientWidth;
     const dayOffset = Math.round((pxOffset / containerWidth) * totalDays);
     const d = new Date(timelineStart);
     d.setDate(d.getDate() + dayOffset);
     return d;
-  }, [timelineStart, totalDays]);
+  };
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
-  const handleMouseDown = useCallback((e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
-    if (!onDatesChange || !containerRef.current) return;
+  const handleMouseDown = (e: ReactMouseEvent, mode: 'move' | 'start' | 'end') => {
+    if (!onDatesChangeRef.current || !containerRef.current) return;
     e.preventDefault();
     e.stopPropagation();
     const rect = containerRef.current.getBoundingClientRect();
@@ -143,7 +147,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
     };
     setDragOffset({ leftPx: 0, widthPx: 0 });
     setDragging(mode);
-  }, [onDatesChange]);
+  };
 
   useEffect(() => {
     if (!dragging) return;
@@ -161,7 +165,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
       const dx = e.clientX - dragStartRef.current.mouseX;
       setDragging(null);
       setDragOffset({ leftPx: 0, widthPx: 0 });
-      if (Math.abs(dx) < 5 || !onDatesChange) return;
+      if (Math.abs(dx) < 5 || !onDatesChangeRef.current) return;
 
       const { origLeftPx, origWidthPx } = dragStartRef.current;
       let newLeftPx: number, newWidthPx: number;
@@ -176,9 +180,9 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
         newWidthPx = origWidthPx + dx;
       }
       if (newWidthPx < 10) return;
-      const newStart = pxToDate(newLeftPx);
-      const newEnd = pxToDate(newLeftPx + newWidthPx);
-      onDatesChange(formatDate(newStart), formatDate(newEnd));
+      const newStart = pxToDateRef.current(newLeftPx);
+      const newEnd = pxToDateRef.current(newLeftPx + newWidthPx);
+      onDatesChangeRef.current(formatDate(newStart), formatDate(newEnd));
     };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -186,14 +190,14 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragging, onDatesChange, pxToDate]);
+  }, [dragging]);
 
   const handleSetDefaultDates = () => {
-    if (!onDatesChange) return;
+    if (!onDatesChangeRef.current) return;
     const today = new Date();
     const twoWeeksLater = new Date(today);
     twoWeeksLater.setDate(today.getDate() + 14);
-    onDatesChange(formatDate(today), formatDate(twoWeeksLater));
+    onDatesChangeRef.current(formatDate(today), formatDate(twoWeeksLater));
   };
 
   if (!barStyle) {
@@ -273,15 +277,6 @@ export default function RoadmapPage() {
   const [expandedEpics, setExpandedEpics] = useState<Set<number>>(new Set());
   const [isPresentationMode, setIsPresentationMode] = useState(false);
 
-  useEffect(() => {
-    if (!currentProject || isAllProjectsSelected) {
-      setTimeline(null);
-      setLoading(false);
-      return;
-    }
-    loadTimeline();
-  }, [currentProject, isAllProjectsSelected, viewMode, year, quarter]);
-
   const loadTimeline = useCallback(async () => {
     if (!currentProject) return;
     try {
@@ -298,25 +293,37 @@ export default function RoadmapPage() {
     }
   }, [currentProject, viewMode, year, quarter, showError, t]);
 
+  const loadTimelineRef = useRef(loadTimeline);
+  loadTimelineRef.current = loadTimeline;
+
+  useEffect(() => {
+    if (!currentProject || isAllProjectsSelected) {
+      setTimeline(null);
+      setLoading(false);
+      return;
+    }
+    loadTimelineRef.current();
+  }, [currentProject, isAllProjectsSelected, viewMode, year, quarter]);
+
   const handleInitiativeDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
     try {
       await initiativeService.updateDates(id, startDate, endDate);
       showSuccess(t('roadmap.datesUpdated'));
-      loadTimeline();
+      loadTimelineRef.current();
     } catch {
       showError(t('roadmap.datesUpdateFailed'));
     }
-  }, [loadTimeline, t, showSuccess, showError]);
+  }, [t, showSuccess, showError]);
 
   const handleEpicDatesChange = useCallback(async (id: number, startDate: string, endDate: string) => {
     try {
       await epicService.updateDates(id, startDate, endDate);
       showSuccess(t('roadmap.datesUpdated'));
-      loadTimeline();
+      loadTimelineRef.current();
     } catch {
       showError(t('roadmap.datesUpdateFailed'));
     }
-  }, [loadTimeline, t, showSuccess, showError]);
+  }, [t, showSuccess, showError]);
 
   const timelineStart = useMemo(() => {
     if (!timeline) return new Date();
