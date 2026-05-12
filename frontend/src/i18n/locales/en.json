@@ -2378,7 +2378,8 @@
     "navigate": "Navigate",
     "toggleTheme": "Theme",
     "toggleView": "View",
-    "exit": "Exit"
+    "exit": "Exit",
+    "today": "Today"
   },
   "initiatives": {
     "title": "Initiatives",

@@ -6,6 +6,7 @@ import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Target,
   Layers,
   Package,
@@ -55,36 +56,38 @@ const calculateBarStyle = (
   timelineEnd: Date
 ): { left: string; width: string } | null => {
   if (!startDate && !endDate) return null;
-  
+
   const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
   const start = startDate || endDate!;
   const end = endDate || startDate!;
-  
+
   const startOffset = Math.ceil((start.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
   const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
+
   const left = Math.max(0, (startOffset / totalDays) * 100);
   const width = Math.min((duration / totalDays) * 100, 100 - left);
-  
+
   return {
     left: `${left}%`,
     width: `${Math.max(width, 2)}%`, // Minimum 2% width for visibility
   };
 };
 
-const getStatusColor = (status: string): string => {
-  const colors: Record<string, string> = {
-    DRAFT: 'bg-gray-400',
-    PLANNED: 'bg-blue-500',
-    IN_PROGRESS: 'bg-yellow-500',
-    COMPLETED: 'bg-green-500',
-    ON_HOLD: 'bg-orange-500',
-    CANCELLED: 'bg-red-500',
-    PLANNING: 'bg-blue-400',
-    STAGING: 'bg-purple-500',
-    RELEASED: 'bg-green-600',
-  };
-  return colors[status] || 'bg-gray-500';
+// Single source of truth for status colors (hex values)
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: '#94a3b8',
+  PLANNED: '#3b82f6',
+  IN_PROGRESS: '#8b5cf6',
+  COMPLETED: '#22c55e',
+  ON_HOLD: '#f97316',
+  CANCELLED: '#ef4444',
+  PLANNING: '#60a5fa',
+  STAGING: '#a855f7',
+  RELEASED: '#16a34a',
+};
+
+const getStatusCssColor = (status: string): string => {
+  return STATUS_COLORS[status] || '#94a3b8';
 };
 
 const getRiskBadgeVariant = (risk: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
@@ -119,6 +122,8 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   const end = parseDate(endDate);
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
   const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
+
+  const bgColor = color || getStatusCssColor(status);
 
   const pxToDate = useCallback((pxOffset: number): Date => {
     if (!containerRef.current) return new Date(timelineStart);
@@ -202,8 +207,8 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
         <div className="flex items-center gap-2 w-full">
           <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className={`h-full rounded-full ${color || getStatusColor(status)}`}
-              style={{ width: `${progress ?? 0}%` }}
+              className="h-full rounded-full"
+              style={{ width: `${progress ?? 0}%`, backgroundColor: bgColor }}
             />
           </div>
           <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
@@ -231,27 +236,33 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   return (
     <div
       ref={containerRef}
-      className={`absolute h-6 rounded ${color || getStatusColor(status)} opacity-80 ${onDatesChange ? 'cursor-grab' : ''} ${dragging === 'move' ? 'cursor-grabbing opacity-60' : ''} group/bar`}
-      style={{ ...dragStyle, top: '50%', transform: 'translateY(-50%)' }}
+      className={`absolute h-7 rounded-full ${onDatesChange ? 'cursor-grab' : ''} ${dragging === 'move' ? 'cursor-grabbing opacity-60' : ''} group/bar`}
+      style={{
+        ...dragStyle,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        backgroundColor: bgColor,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+      }}
       onMouseDown={onDatesChange ? (e) => handleMouseDown(e, 'move') : undefined}
     >
       {progress !== undefined && progress > 0 && (
         <div
-          className="h-full bg-white/30 rounded-l pointer-events-none"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-l-full pointer-events-none"
+          style={{ width: `${progress}%`, backgroundColor: 'rgba(255,255,255,0.3)' }}
         />
       )}
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white font-medium drop-shadow-sm pointer-events-none">
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white font-semibold drop-shadow-sm pointer-events-none">
         {Math.round(progress ?? 0)}%
       </span>
       {onDatesChange && (
         <>
           <div
-            className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-l"
+            className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-l-full"
             onMouseDown={(e) => handleMouseDown(e, 'start')}
           />
           <div
-            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-r"
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover/bar:opacity-100 bg-white/40 rounded-r-full"
             onMouseDown={(e) => handleMouseDown(e, 'end')}
           />
         </>
@@ -345,22 +356,41 @@ export default function RoadmapPage() {
     const start = new Date(timelineStart);
     const end = new Date(timelineEnd);
     const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     let current = new Date(start);
     while (current <= end) {
       const monthStart = new Date(current);
       const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
       const monthEnd = nextMonth > end ? end : new Date(nextMonth.getTime() - 1);
       const daysInMonth = Math.ceil((monthEnd.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      
+
       headers.push({
         label: current.toLocaleString('default', { month: 'short', year: '2-digit' }),
         width: (daysInMonth / totalDays) * 100,
       });
-      
+
       current = nextMonth;
     }
     return headers;
+  }, [timelineStart, timelineEnd]);
+
+  const monthBoundaries = useMemo(() => {
+    let cumulative = 0;
+    return monthHeaders.map(h => {
+      const offset = cumulative;
+      cumulative += h.width;
+      return offset;
+    }).slice(1); // skip first (0%)
+  }, [monthHeaders]);
+
+  const todayPosition = useMemo(() => {
+    const today = new Date();
+    const dayMs = 1000 * 60 * 60 * 24;
+    const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / dayMs);
+    if (totalDays <= 0) return null;
+    const dayOffset = Math.ceil((today.getTime() - timelineStart.getTime()) / dayMs);
+    const pct = (dayOffset / totalDays) * 100;
+    return pct >= 0 && pct <= 100 ? pct : null;
   }, [timelineStart, timelineEnd]);
 
   const toggleInitiative = (id: number) => {
@@ -421,6 +451,29 @@ export default function RoadmapPage() {
     );
   }
 
+  // Pre-compute flat row indices for stable striping
+  const rowIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    let idx = 0;
+    for (const init of timeline?.initiatives ?? []) {
+      indices.set(`init-${init.id}`, idx++);
+      if (expandedInitiatives.has(init.id)) {
+        for (const epic of init.epics ?? []) {
+          indices.set(`epic-${epic.id}`, idx++);
+          if (expandedEpics.has(epic.id)) {
+            for (const pitch of epic.pitches ?? []) {
+              indices.set(`pitch-${pitch.id}`, idx++);
+            }
+          }
+        }
+      }
+    }
+    for (const epic of timeline?.orphanEpics ?? []) {
+      indices.set(`orphan-${epic.id}`, idx++);
+    }
+    return indices;
+  }, [timeline, expandedInitiatives, expandedEpics]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -434,7 +487,7 @@ export default function RoadmapPage() {
             {currentProject?.name} - {viewMode === 'quarterly' ? `Q${quarter} ${year}` : year}
           </p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2">
           <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'quarterly' | 'yearly')}>
             <SelectTrigger className="w-full sm:w-[160px]">
@@ -445,20 +498,20 @@ export default function RoadmapPage() {
               <SelectItem value="yearly">{t('roadmap.yearly')}</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Button variant="outline" size="icon" onClick={() => navigatePeriod('prev')}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="icon" onClick={() => navigatePeriod('next')}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={() => setIsPresentationMode(true)}
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -492,17 +545,17 @@ export default function RoadmapPage() {
                   </div>
                 ))}
               </div>
-              
+
               {/* Release markers */}
               <div className="relative h-16">
                 {timeline.releases.map((release) => {
                   const releaseDate = parseDate(release.targetDate);
                   if (!releaseDate) return null;
-                  
+
                   const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
                   const dayOffset = Math.ceil((releaseDate.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
                   const left = (dayOffset / totalDays) * 100;
-                  
+
                   return (
                     <TooltipProvider key={release.id}>
                       <Tooltip>
@@ -553,182 +606,258 @@ export default function RoadmapPage() {
           <div className="overflow-x-auto">
           <div className="min-w-[700px]">
           {/* Month headers */}
-          <div className="flex border-b mb-2">
+          <div className="flex border-b">
             <div className="w-72 shrink-0" />
-            {monthHeaders.map((h, i) => (
-              <div key={i} className="text-xs text-muted-foreground text-center py-1" style={{ width: `${h.width}%` }}>
-                {h.label}
-              </div>
-            ))}
-          </div>
-          
-          {/* Initiatives */}
-          <div className="space-y-2">
-            {timeline?.initiatives.map((initiative) => (
-              <div key={initiative.id}>
-                {/* Initiative row */}
-                <div className="flex items-center hover:bg-muted/50 rounded">
-                  <div className="w-72 shrink-0 flex items-center gap-2 py-2 px-2">
-                    <button
-                      onClick={() => toggleInitiative(initiative.id)}
-                      className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                    >
-                      <div
-                        className={`w-3 h-3 rounded-full shrink-0 ${getStatusColor(initiative.status)}`}
-                        style={initiative.color ? { backgroundColor: initiative.color } : undefined}
-                      />
-                      <Link
-                        to={`/initiatives/${initiative.id}`}
-                        className="font-medium hover:underline truncate"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {initiative.name}
-                      </Link>
-                    </button>
-                    <Badge variant="outline" className="text-[10px] shrink-0">
-                      {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
-                    </Badge>
-                    {initiative.epics && initiative.epics.length > 0 && (
-                      <span className="text-[10px] text-muted-foreground shrink-0">
-                        {t('roadmap.epicCount', { count: initiative.epics.length })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 relative h-8">
-                    <TimelineBar
-                      startDate={initiative.startDate}
-                      endDate={initiative.endDate}
-                      timelineStart={timelineStart}
-                      timelineEnd={timelineEnd}
-                      status={initiative.status}
-                      color={initiative.color}
-                      progress={initiative.progress}
-                      onDatesChange={(s, e) => handleInitiativeDatesChange(initiative.id, s, e)}
-                    />
-                  </div>
+            <div className="flex-1 flex">
+              {monthHeaders.map((h, i) => (
+                <div
+                  key={i}
+                  className={`text-xs font-medium text-muted-foreground text-center py-2 ${i % 2 === 1 ? 'bg-muted/20' : ''}`}
+                  style={{ width: `${h.width}%` }}
+                >
+                  {h.label}
                 </div>
-                
-                {/* Expanded Epics */}
-                {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
-                  <div key={epic.id}>
-                    {/* Epic row */}
-                    <div className="flex items-center hover:bg-muted/50 rounded ml-4">
-                      <div className="w-68 shrink-0 flex items-center gap-2 py-1 px-2">
+              ))}
+            </div>
+          </div>
+
+          {/* Initiatives rows with grid overlay */}
+          <div className="relative">
+            {/* Grid lines overlay — spans full height, aligned with timeline area */}
+            <div className="absolute top-0 bottom-0 left-72 right-0 flex pointer-events-none">
+              {/* Month boundary lines */}
+              {monthBoundaries.map((pct, i) => (
+                <div
+                  key={`grid-${i}`}
+                  className="absolute top-0 bottom-0 w-px bg-border/40"
+                  style={{ left: `${pct}%` }}
+                />
+              ))}
+              {/* Alternating month backgrounds */}
+              {(() => {
+                let cumulative = 0;
+                return monthHeaders.map((h, i) => {
+                  const left = cumulative;
+                  cumulative += h.width;
+                  if (i % 2 !== 1) return null;
+                  return (
+                    <div
+                      key={`month-bg-${i}`}
+                      className="absolute top-0 bottom-0 bg-muted/10"
+                      style={{ left: `${left}%`, width: `${h.width}%` }}
+                    />
+                  );
+                });
+              })()}
+              {/* Today marker */}
+              {todayPosition !== null && (
+                <div
+                  className="absolute top-0 bottom-0 z-10 flex flex-col items-center"
+                  style={{ left: `${todayPosition}%` }}
+                >
+                  <div className="px-1 py-0.5 rounded text-[9px] font-semibold text-red-600 bg-red-50 border border-red-200 -translate-x-1/2 whitespace-nowrap">
+                    {t('roadmap.today')}
+                  </div>
+                  <div className="w-0.5 flex-1 bg-red-500/70" />
+                </div>
+              )}
+            </div>
+
+            {/* Data rows */}
+            <div>
+              {timeline?.initiatives.map((initiative) => (
+                  <div key={initiative.id}>
+                    {/* Initiative row */}
+                    <div className={`flex items-center h-12 hover:bg-muted/50 ${(rowIndices.get(`init-${initiative.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                      <div className="w-72 shrink-0 flex items-center gap-2 py-2 px-2">
                         <button
-                          onClick={() => toggleEpic(epic.id)}
+                          onClick={() => toggleInitiative(initiative.id)}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
+                          {initiative.epics && initiative.epics.length > 0 ? (
+                            expandedInitiatives.has(initiative.id) ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )
+                          ) : (
+                            <span className="w-4 shrink-0" />
+                          )}
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: initiative.color || getStatusCssColor(initiative.status) }}
+                          />
                           <Link
-                            to={`/epics/${epic.id}`}
-                            className="text-sm hover:underline truncate"
+                            to={`/initiatives/${initiative.id}`}
+                            className="font-medium hover:underline truncate"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {epic.name}
+                            {initiative.name}
                           </Link>
                         </button>
                         <Badge variant="outline" className="text-[10px] shrink-0">
-                          {t(`epics.status.${epic.status.toLowerCase()}`)}
+                          {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                         </Badge>
-                        {epic.pitches && epic.pitches.length > 0 && (
+                        {initiative.epics && initiative.epics.length > 0 && (
                           <span className="text-[10px] text-muted-foreground shrink-0">
-                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                            {t('roadmap.epicCount', { count: initiative.epics.length })}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 relative h-6">
+                      <div className="flex-1 relative h-12">
                         <TimelineBar
-                          startDate={epic.startDate}
-                          endDate={epic.endDate}
+                          startDate={initiative.startDate}
+                          endDate={initiative.endDate}
                           timelineStart={timelineStart}
                           timelineEnd={timelineEnd}
-                          status={epic.status}
-                          color={epic.color}
-                          progress={epic.progress}
-                          onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
+                          status={initiative.status}
+                          color={initiative.color}
+                          progress={initiative.progress}
+                          onDatesChange={(s, e) => handleInitiativeDatesChange(initiative.id, s, e)}
                         />
                       </div>
                     </div>
 
-                    {/* Expanded Pitches */}
-                    {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
-                      <div key={pitch.id} className="flex items-center hover:bg-muted/50 rounded ml-8">
-                        <div className="w-40 shrink-0 flex items-center gap-2 py-1 px-2">
-                          <CheckCircle className="h-3 w-3 text-muted-foreground" />
-                          <Link
-                            to={`/pitches/${pitch.id}`}
-                            className="text-xs truncate hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {pitch.title}
-                          </Link>
+                    {/* Expanded Epics */}
+                    {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
+                        <div key={epic.id}>
+                          {/* Epic row */}
+                          <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`epic-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                            <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-8 pr-2">
+                              <button
+                                onClick={() => toggleEpic(epic.id)}
+                                className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                              >
+                                {epic.pitches && epic.pitches.length > 0 ? (
+                                  expandedEpics.has(epic.id) ? (
+                                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  )
+                                ) : (
+                                  <span className="w-3.5 shrink-0" />
+                                )}
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                                <Link
+                                  to={`/epics/${epic.id}`}
+                                  className="text-sm hover:underline truncate"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {epic.name}
+                                </Link>
+                              </button>
+                              <Badge variant="outline" className="text-[10px] shrink-0">
+                                {t(`epics.status.${epic.status.toLowerCase()}`)}
+                              </Badge>
+                              {epic.pitches && epic.pitches.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                  {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 relative h-10">
+                              <TimelineBar
+                                startDate={epic.startDate}
+                                endDate={epic.endDate}
+                                timelineStart={timelineStart}
+                                timelineEnd={timelineEnd}
+                                status={epic.status}
+                                color={epic.color}
+                                progress={epic.progress}
+                                onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Expanded Pitches */}
+                          {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
+                              <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                                <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-14 pr-2">
+                                  <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  <Link
+                                    to={`/pitches/${pitch.id}`}
+                                    className="text-xs truncate hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {pitch.title}
+                                  </Link>
+                                </div>
+                                <div className="flex-1 relative h-9">
+                                  <TimelineBar
+                                    startDate={pitch.startDate}
+                                    endDate={pitch.endDate}
+                                    timelineStart={timelineStart}
+                                    timelineEnd={timelineEnd}
+                                    status={pitch.status}
+                                    progress={pitch.progress}
+                                  />
+                                </div>
+                              </div>
+                          ))}
                         </div>
-                        <div className="flex-1 relative h-5">
-                          <TimelineBar
-                            startDate={pitch.startDate}
-                            endDate={pitch.endDate}
-                            timelineStart={timelineStart}
-                            timelineEnd={timelineEnd}
-                            status={pitch.status}
-                            progress={pitch.progress}
-                          />
-                        </div>
-                      </div>
                     ))}
                   </div>
-                ))}
-              </div>
-            ))}
-            
-            {/* Orphan Epics */}
-            {timeline?.orphanEpics && timeline.orphanEpics.length > 0 && (
-              <div className="border-t pt-2 mt-2">
-                <p className="text-xs text-muted-foreground px-2 mb-2">{t('roadmap.unassignedEpics')}</p>
-                {timeline.orphanEpics.map((epic) => (
-                  <div key={epic.id}>
-                    <div className="flex items-center hover:bg-muted/50 rounded">
-                      <div className="w-72 shrink-0 flex items-center gap-2 py-1 px-2">
-                        <button
-                          onClick={() => toggleEpic(epic.id)}
-                          className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                        >
-                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(epic.status)}`} />
-                          <Link
-                            to={`/epics/${epic.id}`}
-                            className="text-sm hover:underline truncate"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {epic.name}
-                          </Link>
-                        </button>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {t(`epics.status.${epic.status.toLowerCase()}`)}
-                        </Badge>
-                        {epic.pitches && epic.pitches.length > 0 && (
-                          <span className="text-[10px] text-muted-foreground shrink-0">
-                            {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
-                          </span>
-                        )}
+              ))}
+
+              {/* Orphan Epics */}
+              {timeline?.orphanEpics && timeline.orphanEpics.length > 0 && (
+                <div className="border-t pt-2 mt-2">
+                  <p className="text-xs text-muted-foreground px-2 mb-2">{t('roadmap.unassignedEpics')}</p>
+                  {timeline.orphanEpics.map((epic) => (
+                      <div key={epic.id}>
+                        <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`orphan-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                          <div className="w-72 shrink-0 flex items-center gap-2 py-1 px-2">
+                            <button
+                              onClick={() => toggleEpic(epic.id)}
+                              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                            >
+                              {epic.pitches && epic.pitches.length > 0 ? (
+                                expandedEpics.has(epic.id) ? (
+                                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                )
+                              ) : (
+                                <span className="w-3.5 shrink-0" />
+                              )}
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                              <Link
+                                to={`/epics/${epic.id}`}
+                                className="text-sm hover:underline truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {epic.name}
+                              </Link>
+                            </button>
+                            <Badge variant="outline" className="text-[10px] shrink-0">
+                              {t(`epics.status.${epic.status.toLowerCase()}`)}
+                            </Badge>
+                            {epic.pitches && epic.pitches.length > 0 && (
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 relative h-10">
+                            <TimelineBar
+                              startDate={epic.startDate}
+                              endDate={epic.endDate}
+                              timelineStart={timelineStart}
+                              timelineEnd={timelineEnd}
+                              status={epic.status}
+                              color={epic.color}
+                              progress={epic.progress}
+                              onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 relative h-6">
-                        <TimelineBar
-                          startDate={epic.startDate}
-                          endDate={epic.endDate}
-                          timelineStart={timelineStart}
-                          timelineEnd={timelineEnd}
-                          status={epic.status}
-                          color={epic.color}
-                          progress={epic.progress}
-                          onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          
+
           {/* Empty state */}
           {(!timeline?.initiatives || timeline.initiatives.length === 0) &&
            (!timeline?.orphanEpics || timeline.orphanEpics.length === 0) && (
@@ -756,23 +885,23 @@ export default function RoadmapPage() {
           <div className="flex flex-wrap gap-4 text-xs">
             <span className="font-medium">{t('roadmap.legend')}:</span>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-gray-400" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#94a3b8' }} />
               <span>{t('roadmap.draft')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-500" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
               <span>{t('roadmap.planned')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-yellow-500" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
               <span>{t('roadmap.inProgress')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-500" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
               <span>{t('roadmap.completed')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-orange-500" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
               <span>{t('roadmap.onHold')}</span>
             </div>
           </div>
