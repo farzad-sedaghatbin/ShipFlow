@@ -214,8 +214,8 @@ export default function UserManagement() {
       fetchUsers();
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
-    } catch (error) {
-      showToast(t('userManagement.deleteFailed'), 'error');
+    } catch {
+      // Error handled by Axios interceptor
     }
   };
 

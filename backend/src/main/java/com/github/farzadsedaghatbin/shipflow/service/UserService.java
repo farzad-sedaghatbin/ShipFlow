@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,9 @@ public class UserService {
   public UserDTO findById(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     return toDTO(user);
   }
 
@@ -118,7 +122,7 @@ public class UserService {
       throw new ResourceNotFoundException("User not found with id: " + id);
     }
 
-    if (user.getUsername().equals(currentUsername)) {
+    if (Objects.equals(user.getUsername(), currentUsername)) {
       throw new IllegalArgumentException("Cannot delete your own account");
     }
 
@@ -133,6 +137,9 @@ public class UserService {
   public UserDTO deactivate(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     user.setIsActive(false);
     user = userRepository.save(user);
     return toDTO(user);
@@ -143,6 +150,9 @@ public class UserService {
   public UserDTO activate(Long id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    if (user.getDeletedAt() != null) {
+      throw new ResourceNotFoundException("User not found with id: " + id);
+    }
     user.setIsActive(true);
     user = userRepository.save(user);
     return toDTO(user);
