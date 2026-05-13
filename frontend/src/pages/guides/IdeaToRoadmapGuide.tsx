@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Dices,
   Repeat,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,7 +74,7 @@ export default function IdeaToRoadmapGuide() {
               { label: 'IDEA', color: 'bg-gray-500', icon: Lightbulb },
               { label: 'DRAFT', color: 'bg-blue-400', icon: FileText },
               { label: 'SHAPED', color: 'bg-blue-600', icon: Target },
-              { label: 'BET', color: 'bg-purple-500', icon: Dices },
+              { label: 'PENDING', color: 'bg-purple-500', icon: Dices },
               { label: 'STARTED', color: 'bg-yellow-500', icon: Repeat },
               { label: 'DONE', color: 'bg-green-500', icon: CheckCircle2 },
             ].map((step, i, arr) => (
@@ -403,7 +404,7 @@ export default function IdeaToRoadmapGuide() {
               to="/help/circuit-breaker"
               className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
             >
-              <Lightbulb className="h-5 w-5 text-amber-500" />
+              <Zap className="h-5 w-5 text-amber-500" />
               <div>
                 <p className="font-medium text-sm">{t('helpGuides.circuitBreaker')}</p>
                 <p className="text-xs text-muted-foreground">{t('helpGuides.circuitBreakerDesc')}</p>

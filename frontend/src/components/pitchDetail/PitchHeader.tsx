@@ -31,6 +31,7 @@ export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTit
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(pitch.title);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [savingEpic, setSavingEpic] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -126,15 +127,19 @@ export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTit
           </div>
         )}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground mb-1">
-          <span>{pitch.teamName || t('common.unassigned')} • {pitch.cycleName}</span>
+          <span>{pitch.teamName || t('common.unassigned')} • {pitch.cycleName || t('common.unassigned')}</span>
           <span className="text-muted-foreground/50">•</span>
           {onEpicChange ? (
             <span className="flex items-center gap-1">
               <Layers className="h-3.5 w-3.5" />
               <Select
                 value={pitch.epicId?.toString() || '__none__'}
+                disabled={savingEpic}
                 onValueChange={(value) => {
-                  onEpicChange(value === '__none__' ? null : parseInt(value));
+                  setSavingEpic(true);
+                  onEpicChange(value === '__none__' ? null : parseInt(value))
+                    .catch(() => {})
+                    .finally(() => setSavingEpic(false));
                 }}
               >
                 <SelectTrigger className="h-6 w-auto min-w-[120px] max-w-[200px] text-xs border-dashed px-2 py-0">

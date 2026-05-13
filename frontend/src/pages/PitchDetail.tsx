@@ -113,7 +113,11 @@ export default function PitchDetail() {
 
   useEffect(() => {
     if (currentProject?.id) {
-      epicService.getByProject(currentProject.id).then(res => setEpics(res.data)).catch(() => {});
+      epicService.getByProject(currentProject.id)
+        .then(res => setEpics(res.data))
+        .catch(error => {
+          console.error('Failed to load epics:', error);
+        });
     }
   }, [currentProject?.id]);
 
