@@ -126,6 +126,7 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   const barStyle = calculateBarStyle(start, end, timelineStart, timelineEnd);
   const totalDays = Math.max(1, Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24)));
 
+
   const bgColor = color || getStatusCssColor(status);
 
   const pxToDateRef = useRef((_pxOffset: number): Date => new Date(timelineStart));

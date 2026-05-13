@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { safeParseId } from '../utils/validation';
 import { pitchService } from '../services/pitchService';
+import { epicService } from '../services/epicService';
 import { workLogService } from '../services/workLogService';
 import { meetingService } from '../services/meetingService';
 import { taskService } from '../services/taskService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
-import { Pitch, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task } from '../types';
+import { Pitch, Epic, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
@@ -17,7 +18,7 @@ import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
-import { useToast } from '../contexts';
+import { useToast, useProject } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { Button } from '../components/ui/button';
 import {
@@ -37,7 +38,9 @@ export default function PitchDetail() {
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
+  const { currentProject } = useProject();
   const [pitch, setPitch] = useState<Pitch | null>(null);
+  const [epics, setEpics] = useState<Epic[]>([]);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [workLogPage, setWorkLogPage] = useState(0);
   const [, setWorkLogTotalPages] = useState(0);
@@ -107,6 +110,16 @@ export default function PitchDetail() {
     }
     return () => abortController.abort();
   }, [id]);
+
+  useEffect(() => {
+    if (currentProject?.id) {
+      epicService.getByProject(currentProject.id)
+        .then(res => setEpics(res.data))
+        .catch(error => {
+          console.error('Failed to load epics:', error);
+        });
+    }
+  }, [currentProject?.id]);
 
   const loadData = async (pitchId: number) => {
     try {
@@ -192,6 +205,21 @@ export default function PitchDetail() {
       loadData(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.statusUpdateFailed')));
+    }
+  };
+
+  const handleEpicChange = async (epicId: number | null) => {
+    if (!pitch) return;
+    try {
+      if (epicId) {
+        await pitchService.linkToEpic(pitch.id, epicId);
+      } else {
+        await pitchService.unlinkFromEpic(pitch.id);
+      }
+      showSuccess(t('pitchDetailPage.epicUpdated'));
+      loadData(pitch.id);
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('pitchDetailPage.epicUpdateFailed')));
     }
   };
 
@@ -499,9 +527,11 @@ export default function PitchDetail() {
     <div>
       <PitchHeader
         pitch={pitch}
+        epics={epics}
         onStatusChange={handleStatusChange}
         onHistoryOpen={() => setHistoryDialogOpen(true)}
         onTitleSave={handleTitleSave}
+        onEpicChange={handleEpicChange}
       />
 
       <PitchStatsRow

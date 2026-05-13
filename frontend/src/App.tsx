@@ -128,6 +128,7 @@ const ExportDataGuide = lazy(() => import('./pages/guides/ExportDataGuide'));
 const WebhooksGuide = lazy(() => import('./pages/guides/WebhooksGuide'));
 const PublicApiGuide = lazy(() => import('./pages/guides/PublicApiGuide'));
 const McpServerGuide = lazy(() => import('./pages/guides/McpServerGuide'));
+const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -324,6 +325,7 @@ function App() {
                       <Route path="help/webhooks" element={<WebhooksGuide />} />
                       <Route path="help/public-api" element={<PublicApiGuide />} />
                       <Route path="help/mcp-server" element={<McpServerGuide />} />
+                      <Route path="help/idea-to-roadmap" element={<IdeaToRoadmapGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />

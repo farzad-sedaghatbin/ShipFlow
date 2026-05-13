@@ -2,8 +2,8 @@ import type { KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { History, Pencil, Check, X } from 'lucide-react';
-import { Pitch, PitchStatus } from '../../types';
+import { History, Pencil, Check, X, Layers } from 'lucide-react';
+import { Pitch, PitchStatus, Epic } from '../../types';
 import StatusChip from '../StatusChip';
 import { SoftDeleteButton } from '../SoftDeleteButton';
 import { Button } from '../ui/button';
@@ -15,19 +15,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import { Badge } from '../ui/badge';
 
 interface PitchHeaderProps {
   pitch: Pitch;
+  epics?: Epic[];
   onStatusChange: (newStatus: PitchStatus) => void;
   onHistoryOpen: () => void;
   onTitleSave?: (newTitle: string) => Promise<void>;
+  onEpicChange?: (epicId: number | null) => Promise<void>;
 }
 
-export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave }: PitchHeaderProps) {
+export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTitleSave, onEpicChange }: PitchHeaderProps) {
   const { t } = useTranslation();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(pitch.title);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [savingEpic, setSavingEpic] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -122,9 +126,49 @@ export function PitchHeader({ pitch, onStatusChange, onHistoryOpen, onTitleSave 
             )}
           </div>
         )}
-        <p className="text-muted-foreground mb-1">
-          {pitch.teamName || t('common.unassigned')} • {pitch.cycleName}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground mb-1">
+          <span>{pitch.teamName || t('common.unassigned')} • {pitch.cycleName || t('common.unassigned')}</span>
+          <span className="text-muted-foreground/50">•</span>
+          {onEpicChange ? (
+            <span className="flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5" />
+              <Select
+                value={pitch.epicId?.toString() || '__none__'}
+                disabled={savingEpic}
+                onValueChange={(value) => {
+                  setSavingEpic(true);
+                  onEpicChange(value === '__none__' ? null : parseInt(value))
+                    .catch(() => {})
+                    .finally(() => setSavingEpic(false));
+                }}
+              >
+                <SelectTrigger className="h-6 w-auto min-w-[120px] max-w-[200px] text-xs border-dashed px-2 py-0">
+                  <SelectValue placeholder={t('pitchDetailPage.selectEpic')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t('pitchDetailPage.noEpic')}</SelectItem>
+                  {epics?.map((epic) => (
+                    <SelectItem key={epic.id} value={epic.id.toString()}>
+                      {epic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </span>
+          ) : pitch.epicId ? (
+            <Link to={`/epics/${pitch.epicId}`} className="inline-flex items-center gap-1 hover:text-foreground">
+              <Layers className="h-3.5 w-3.5" />
+              <Badge variant="outline" className="text-xs font-normal">
+                {pitch.epicName || t('pitchDetailPage.epic')}
+              </Badge>
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs italic">
+              <Layers className="h-3.5 w-3.5" />
+              {t('pitchDetailPage.noEpic')}
+            </span>
+          )}
+        </div>
         {pitch.description && (
           <div className="mt-4">
             <Markdown content={pitch.description} className="text-muted-foreground" />
