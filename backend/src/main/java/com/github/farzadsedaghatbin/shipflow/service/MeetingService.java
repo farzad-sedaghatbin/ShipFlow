@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetrospectiveRepository;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -51,18 +52,17 @@ public class MeetingService {
     Specification<Meeting> spec = (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
 
-      var pitchJoin = root.join("pitch", jakarta.persistence.criteria.JoinType.LEFT);
-      var cycleJoin = pitchJoin.join("cycle", jakarta.persistence.criteria.JoinType.LEFT);
-      var cycleProjectJoin = cycleJoin.join("project", jakarta.persistence.criteria.JoinType.LEFT);
-      var directProjectJoin = root.join("project", jakarta.persistence.criteria.JoinType.LEFT);
-
-      query.distinct(true);
-
       if (cycleId != null) {
+        var pitchJoin = root.join("pitch", JoinType.LEFT);
+        var cycleJoin = pitchJoin.join("cycle", JoinType.LEFT);
         predicates.add(cb.equal(cycleJoin.get("id"), cycleId));
       }
 
       if (projectId != null) {
+        var directProjectJoin = root.join("project", JoinType.LEFT);
+        var pitchJoin = root.join("pitch", JoinType.LEFT);
+        var cycleJoin = pitchJoin.join("cycle", JoinType.LEFT);
+        var cycleProjectJoin = cycleJoin.join("project", JoinType.LEFT);
         predicates.add(cb.or(
             cb.equal(directProjectJoin.get("id"), projectId),
             cb.equal(cycleProjectJoin.get("id"), projectId)
@@ -70,7 +70,7 @@ public class MeetingService {
       }
 
       if (pitchId != null) {
-        predicates.add(cb.equal(pitchJoin.get("id"), pitchId));
+        predicates.add(cb.equal(root.get("pitch").get("id"), pitchId));
       }
 
       if (types != null && !types.isEmpty()) {
