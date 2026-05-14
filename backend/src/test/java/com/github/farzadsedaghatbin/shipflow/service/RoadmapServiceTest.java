@@ -16,10 +16,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseRiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -45,6 +47,12 @@ class RoadmapServiceTest {
 
   @Mock
   private PitchRepository pitchRepository;
+
+  @Mock
+  private TaskRepository taskRepository;
+
+  @Mock
+  private BugReportRepository bugReportRepository;
 
   @InjectMocks
   private RoadmapService roadmapService;
@@ -127,8 +135,10 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList());
     when(releaseRepository.findByProjectIdNotDeleted(any()))
         .thenReturn(Arrays.asList(testRelease));
-    when(pitchRepository.countByTargetReleaseIdNotDeleted(any())).thenReturn(3L);
-    when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(1L);
+    when(pitchRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 3L}));
+    when(pitchRepository.countByTargetReleaseIdsAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 1L}));
+    when(taskRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 5L}));
+    when(bugReportRepository.countByTargetReleaseIds(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 2L}));
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,
@@ -212,8 +222,10 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList());
     when(releaseRepository.findByProjectIdNotDeleted(any()))
         .thenReturn(Arrays.asList(testRelease));
-    when(pitchRepository.countByTargetReleaseIdNotDeleted(1L)).thenReturn(5L);
-    when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(1L, PitchStatus.DONE)).thenReturn(2L);
+    when(pitchRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 5L}));
+    when(pitchRepository.countByTargetReleaseIdsAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 2L}));
+    when(taskRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 8L}));
+    when(bugReportRepository.countByTargetReleaseIds(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 3L}));
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,
@@ -229,6 +241,9 @@ class RoadmapServiceTest {
     assertThat(release.getStatus()).isEqualTo("PLANNING");
     assertThat(release.getRiskLevel()).isEqualTo("MEDIUM");
     assertThat(release.getProgressPercentage()).isEqualTo(40.0);
+    assertThat(release.getPitchCount()).isEqualTo(5L);
+    assertThat(release.getTaskCount()).isEqualTo(8L);
+    assertThat(release.getBugCount()).isEqualTo(3L);
   }
 
   @Test
@@ -273,5 +288,117 @@ class RoadmapServiceTest {
         eq(LocalDate.of(2026, 1, 1)),
         eq(LocalDate.of(2026, 12, 31))
     );
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeSingleQuarterLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 4, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2026, 6, 15));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q2 2026");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeMultiQuarterSameYearLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 4, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2026, 9, 30));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q2 – Q3 2026");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeCrossYearQuarterLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 10, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2027, 3, 31));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2027, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q4 2026 – Q1 2027");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldExcludeOrphanEpicsWithNoDates() {
+    Epic noDatesEpic = Epic.builder()
+        .id(99L)
+        .name("No Dates Epic")
+        .status(EpicStatus.DRAFT)
+        .project(testProject)
+        .pitches(Arrays.asList())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList());
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList(noDatesEpic));
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getOrphanEpics()).isEmpty();
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldExcludeChildEpicsOutsideDateRange() {
+    Epic outOfRangeEpic = Epic.builder()
+        .id(50L)
+        .name("October Epic")
+        .status(EpicStatus.PLANNED)
+        .color("#FF0000")
+        .targetStartDate(LocalDate.of(2026, 10, 1))
+        .targetEndDate(LocalDate.of(2026, 12, 15))
+        .project(testProject)
+        .pitches(Arrays.asList())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+    outOfRangeEpic.setInitiative(testInitiative);
+    testInitiative.setEpics(Arrays.asList(testEpic, outOfRangeEpic));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    // Q2 date range: April 1 - June 30
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 6, 30));
+
+    RoadmapTimelineDTO.TimelineInitiative init = result.getInitiatives().get(0);
+    assertThat(init.getEpics()).hasSize(1);
+    assertThat(init.getEpics().get(0).getName()).isEqualTo("Mobile Checkout Redesign");
   }
 }

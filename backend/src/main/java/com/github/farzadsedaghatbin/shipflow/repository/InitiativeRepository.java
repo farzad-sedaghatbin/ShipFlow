@@ -42,10 +42,10 @@ public interface InitiativeRepository extends JpaRepository<Initiative, Long> {
   @Query("SELECT i FROM Initiative i WHERE i.owner.id = :ownerId AND i.deletedAt IS NULL ORDER BY i.sortOrder")
   List<Initiative> findByOwnerIdNotDeleted(@Param("ownerId") Long ownerId);
 
-  // Date range queries for roadmap timeline
+  // Date range queries for roadmap timeline — only items with both dates set and overlapping the range
   @Query("SELECT i FROM Initiative i WHERE i.project.id = :projectId " +
-         "AND ((i.targetStartDate <= :endDate AND i.targetEndDate >= :startDate) " +
-         "OR (i.targetStartDate IS NULL OR i.targetEndDate IS NULL)) " +
+         "AND i.targetStartDate IS NOT NULL AND i.targetEndDate IS NOT NULL " +
+         "AND i.targetStartDate <= :endDate AND i.targetEndDate >= :startDate " +
          "AND i.deletedAt IS NULL ORDER BY i.sortOrder, i.targetStartDate")
   List<Initiative> findByProjectIdAndDateRangeNotDeleted(
       @Param("projectId") Long projectId,

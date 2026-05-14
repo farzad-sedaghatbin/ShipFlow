@@ -201,4 +201,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.targetRelease.id = :releaseId AND t.status = :status AND t.deletedAt IS NULL")
     long countByTargetReleaseIdAndStatusNotDeleted(@Param("releaseId") Long releaseId, @Param("status") TaskStatus status);
+
+    @Query("SELECT t.targetRelease.id, COUNT(t) FROM Task t WHERE t.targetRelease.id IN :releaseIds AND t.deletedAt IS NULL GROUP BY t.targetRelease.id")
+    List<Object[]> countByTargetReleaseIdsNotDeleted(@Param("releaseIds") List<Long> releaseIds);
 }

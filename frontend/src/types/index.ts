@@ -1681,6 +1681,7 @@ export interface TimelineEpic {
   startDate?: string;
   endDate?: string;
   progress: number;
+  quarterLabel?: string;
   pitches?: TimelinePitch[];
 }
 
@@ -1693,6 +1694,7 @@ export interface TimelineInitiative {
   startDate?: string;
   endDate?: string;
   progress: number;
+  quarterLabel?: string;
   epics?: TimelineEpic[];
 }
 
@@ -1705,6 +1707,9 @@ export interface TimelineRelease {
   releaseDate?: string;
   riskLevel: string;
   progressPercentage: number;
+  pitchCount?: number;
+  taskCount?: number;
+  bugCount?: number;
 }
 
 /**

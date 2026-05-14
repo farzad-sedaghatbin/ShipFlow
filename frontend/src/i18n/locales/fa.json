@@ -761,7 +761,14 @@
     "toggleTheme": "تم",
     "toggleView": "نما",
     "exit": "خروج",
-    "today": "امروز"
+    "today": "امروز",
+    "releasePitches_one": "{{count}} پیچ",
+    "releasePitches_other": "{{count}} پیچ",
+    "releaseTasks_one": "{{count}} وظیفه",
+    "releaseTasks_other": "{{count}} وظیفه",
+    "releaseBugs_one": "{{count}} باگ",
+    "releaseBugs_other": "{{count}} باگ",
+    "releaseNoItems": "موردی متصل نیست"
   },
   "initiatives": {
     "title": "ابتکارات",

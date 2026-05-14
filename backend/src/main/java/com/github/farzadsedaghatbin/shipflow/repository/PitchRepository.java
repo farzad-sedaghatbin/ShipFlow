@@ -151,6 +151,12 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT COUNT(p) FROM Pitch p WHERE p.targetRelease.id = :releaseId AND p.status = :status AND p.deletedAt IS NULL")
   long countByTargetReleaseIdAndStatusNotDeleted(@Param("releaseId") Long releaseId, @Param("status") PitchStatus status);
 
+  @Query("SELECT p.targetRelease.id, COUNT(p) FROM Pitch p WHERE p.targetRelease.id IN :releaseIds AND p.deletedAt IS NULL GROUP BY p.targetRelease.id")
+  List<Object[]> countByTargetReleaseIdsNotDeleted(@Param("releaseIds") List<Long> releaseIds);
+
+  @Query("SELECT p.targetRelease.id, COUNT(p) FROM Pitch p WHERE p.targetRelease.id IN :releaseIds AND p.status = :status AND p.deletedAt IS NULL GROUP BY p.targetRelease.id")
+  List<Object[]> countByTargetReleaseIdsAndStatusNotDeleted(@Param("releaseIds") List<Long> releaseIds, @Param("status") PitchStatus status);
+
   // ===== Ideas Pool Queries (IDEA status, no cycle) =====
 
   /** Find all ideas (raw concepts not yet being shaped). */
