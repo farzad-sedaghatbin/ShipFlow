@@ -314,7 +314,7 @@ export default function DashboardManager() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/reports/${dashboard.id}`)}
+                      onClick={() => navigate(`/dashboards/${dashboard.id}`)}
                     >
                       <Eye className="me-2 h-4 w-4" />
                       {t('dashboardManager.view')}

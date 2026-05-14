@@ -27,6 +27,12 @@ public class EpicController {
 
   private final EpicService epicService;
 
+  @GetMapping
+  @Operation(summary = "Get all epics across projects")
+  public ResponseEntity<List<EpicDTO>> getAllEpics() {
+    return ResponseEntity.ok(epicService.getAllEpics());
+  }
+
   @GetMapping("/project/{projectId}")
   @Operation(summary = "Get all epics for a project")
   public ResponseEntity<List<EpicDTO>> getEpicsByProject(@PathVariable Long projectId) {

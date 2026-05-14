@@ -6,7 +6,7 @@ import { Combobox } from '../components/ui/combobox';
 import { DashboardWidgetConfig } from '../types/customDashboard';
 import { CustomMetric } from '../types/metrics';
 
-export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'BUG_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS';
+export type WidgetDataSourceType = 'METRIC' | 'PITCH_LIST' | 'TASK_LIST' | 'BUG_LIST' | 'CYCLE_SUMMARY' | 'TEAM_STATS' | 'UNSHAPED_PITCHES' | 'STALE_BUGS' | 'HIGH_PRIORITY_TASKS' | 'AT_RISK_EPICS' | 'OVERDUE_TASKS';
 
 export interface WidgetDataFilter {
   field: string;
@@ -93,7 +93,12 @@ export default function WidgetDataConfig({
             { value: 'TASK_LIST', label: 'Task List' },
             { value: 'BUG_LIST', label: 'Bug Report List' },
             { value: 'CYCLE_SUMMARY', label: 'Cycle Summary' },
-            { value: 'TEAM_STATS', label: 'Team Statistics' }
+            { value: 'TEAM_STATS', label: 'Team Statistics' },
+            { value: 'UNSHAPED_PITCHES', label: 'Unshaped Pitches' },
+            { value: 'STALE_BUGS', label: 'Stale Bugs (Unresolved)' },
+            { value: 'HIGH_PRIORITY_TASKS', label: 'High Priority Tasks' },
+            { value: 'AT_RISK_EPICS', label: 'At-Risk Epics' },
+            { value: 'OVERDUE_TASKS', label: 'Overdue Tasks' }
           ]}
           value={sourceType}
           onValueChange={(value) => setSourceType(value as WidgetDataSourceType)}

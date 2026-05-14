@@ -38,7 +38,22 @@ class WidgetDataService {
       
       case 'TEAM_STATS':
         return this.fetchTeamStats(filters, userContextFilter);
-      
+
+      case 'UNSHAPED_PITCHES':
+        return this.fetchUnshapedPitches(filters, sortBy, sortOrder, limit, userContextFilter);
+
+      case 'STALE_BUGS':
+        return this.fetchStaleBugs(filters, sortBy, sortOrder, limit, userContextFilter);
+
+      case 'HIGH_PRIORITY_TASKS':
+        return this.fetchHighPriorityTasks(filters, sortBy, sortOrder, limit, userContextFilter);
+
+      case 'AT_RISK_EPICS':
+        return this.fetchAtRiskEpics(filters, sortBy, sortOrder, limit, userContextFilter);
+
+      case 'OVERDUE_TASKS':
+        return this.fetchOverdueTasks(filters, sortBy, sortOrder, limit, userContextFilter);
+
       default:
         throw new Error(`Unknown source type: ${sourceType}`);
     }
@@ -362,6 +377,291 @@ class WidgetDataService {
     }
   }
 
+  private async fetchUnshapedPitches(
+    filters?: any[],
+    _sortBy?: string,
+    _sortOrder?: string,
+    limit?: number,
+    _userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      const [ideasResp, draftsResp] = await Promise.all([
+        api.get('/pitches/ideas'),
+        api.get('/pitches/drafts')
+      ]);
+
+      const ideas = Array.isArray(ideasResp.data) ? ideasResp.data : [];
+      const drafts = Array.isArray(draftsResp.data) ? draftsResp.data : [];
+      let unshaped = [...ideas, ...drafts];
+
+      if (filters && filters.length > 0) {
+        unshaped = this.applyFilters(unshaped, filters);
+      }
+
+      const data = unshaped.slice(0, limit || 20).map((pitch: any) => ({
+        id: pitch.id,
+        title: pitch.title,
+        status: pitch.status,
+        priority: pitch.priority || 'N/A',
+        epicName: pitch.epicName || pitch.epic?.name || '-',
+        createdAt: pitch.createdAt ? new Date(pitch.createdAt).toLocaleDateString() : '-',
+        ageDays: pitch.createdAt
+          ? Math.floor((Date.now() - new Date(pitch.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0
+      }));
+
+      return {
+        type: 'TABLE',
+        data,
+        metadata: {
+          total: unshaped.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching unshaped pitches:', error);
+      return { type: 'TABLE', data: [], metadata: { total: 0, lastUpdated: new Date().toISOString() } };
+    }
+  }
+
+  private async fetchStaleBugs(
+    filters?: any[],
+    _sortBy?: string,
+    _sortOrder?: string,
+    limit?: number,
+    _userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      const response = await api.get('/qa/bug-reports', {
+        params: { page: 0, size: 100, sortBy: 'createdAt', sortOrder: 'asc' }
+      });
+
+      const bugs = response.data.content || [];
+      const openStatuses = ['OPEN', 'IN_PROGRESS', 'REOPENED'];
+      let staleBugs = bugs.filter((bug: any) => {
+        if (!openStatuses.includes(bug.status)) return false;
+        if (!bug.createdAt) return false;
+        const ageDays = Math.floor((Date.now() - new Date(bug.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        return ageDays >= 3;
+      });
+
+      if (filters && filters.length > 0) {
+        staleBugs = this.applyFilters(staleBugs, filters);
+      }
+
+      const data = staleBugs.slice(0, limit || 20).map((bug: any) => ({
+        id: bug.id,
+        bugKey: bug.bugKey || `BUG-${bug.id}`,
+        title: bug.title,
+        severity: bug.severity,
+        status: bug.status,
+        ageDays: Math.floor((Date.now() - new Date(bug.createdAt).getTime()) / (1000 * 60 * 60 * 24)),
+        assignee: bug.assigneeName || bug.assignee?.fullName || 'Unassigned'
+      }));
+
+      return {
+        type: 'TABLE',
+        data,
+        metadata: {
+          total: staleBugs.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching stale bugs:', error);
+      return { type: 'TABLE', data: [], metadata: { total: 0, lastUpdated: new Date().toISOString() } };
+    }
+  }
+
+  private async fetchHighPriorityTasks(
+    filters?: any[],
+    _sortBy?: string,
+    _sortOrder?: string,
+    limit?: number,
+    userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      const response = await api.get('/tasks', {
+        params: { page: 0, size: 50, sortBy: 'priority', sortOrder: 'desc' }
+      });
+
+      const tasks = response.data.content || [];
+      const highPriorities = ['URGENT', 'HIGH'];
+      const activeStatuses = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'BLOCKED', 'IN_REVIEW'];
+
+      let highPriorityTasks = tasks.filter((task: any) =>
+        highPriorities.includes(task.priority) && activeStatuses.includes(task.status)
+      );
+
+      if (userContextFilter) {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user?.id != null) {
+              highPriorityTasks = highPriorityTasks.filter((task: any) =>
+                task.assigneeId === user.id || task.createdById === user.id
+              );
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      if (filters && filters.length > 0) {
+        highPriorityTasks = this.applyFilters(highPriorityTasks, filters);
+      }
+
+      const data = highPriorityTasks.slice(0, limit || 20).map((task: any) => ({
+        id: task.id,
+        title: task.title,
+        priority: task.priority,
+        status: task.status,
+        assignee: task.assigneeName || 'Unassigned',
+        dueDate: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-',
+        pitchTitle: task.pitchTitle || '-'
+      }));
+
+      return {
+        type: 'TABLE',
+        data,
+        metadata: {
+          total: highPriorityTasks.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching high priority tasks:', error);
+      return { type: 'TABLE', data: [], metadata: { total: 0, lastUpdated: new Date().toISOString() } };
+    }
+  }
+
+  private async fetchAtRiskEpics(
+    filters?: any[],
+    _sortBy?: string,
+    _sortOrder?: string,
+    limit?: number,
+    _userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      const response = await api.get('/epics');
+      const epics = Array.isArray(response.data) ? response.data : (response.data.content || []);
+
+      const activeStatuses = ['PLANNED', 'IN_PROGRESS'];
+      const now = new Date();
+
+      let atRiskEpics = epics.filter((epic: any) => {
+        if (!activeStatuses.includes(epic.status)) return false;
+        if (!epic.targetEndDate) return false;
+        const endDate = new Date(epic.targetEndDate);
+        const daysUntilDeadline = Math.floor((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const totalPitches = epic.pitchCount || epic.pitches?.length || 0;
+        const completedPitches = epic.completedPitchCount || 0;
+        const completionRate = totalPitches > 0 ? completedPitches / totalPitches : 0;
+        return daysUntilDeadline <= 30 || (daysUntilDeadline <= 60 && completionRate < 0.5);
+      });
+
+      if (filters && filters.length > 0) {
+        atRiskEpics = this.applyFilters(atRiskEpics, filters);
+      }
+
+      const data = atRiskEpics.slice(0, limit || 20).map((epic: any) => {
+        const endDate = new Date(epic.targetEndDate);
+        const daysLeft = Math.floor((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const totalPitches = epic.pitchCount || epic.pitches?.length || 0;
+        const completedPitches = epic.completedPitchCount || 0;
+        return {
+          id: epic.id,
+          name: epic.name,
+          status: epic.status,
+          priority: epic.priority || 'N/A',
+          deadline: endDate.toLocaleDateString(),
+          daysLeft: Math.max(0, daysLeft),
+          progress: totalPitches > 0 ? `${completedPitches}/${totalPitches}` : '0/0'
+        };
+      });
+
+      return {
+        type: 'TABLE',
+        data,
+        metadata: {
+          total: atRiskEpics.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching at-risk epics:', error);
+      return { type: 'TABLE', data: [], metadata: { total: 0, lastUpdated: new Date().toISOString() } };
+    }
+  }
+
+  private async fetchOverdueTasks(
+    filters?: any[],
+    _sortBy?: string,
+    _sortOrder?: string,
+    limit?: number,
+    userContextFilter: boolean = false
+  ): Promise<WidgetData> {
+    try {
+      const response = await api.get('/tasks', {
+        params: { page: 0, size: 100, sortBy: 'dueDate', sortOrder: 'asc' }
+      });
+
+      const tasks = response.data.content || [];
+      const now = new Date();
+      const incompleteStatuses = ['BACKLOG', 'TODO', 'IN_PROGRESS', 'BLOCKED', 'IN_REVIEW'];
+
+      let overdueTasks = tasks.filter((task: any) => {
+        if (!incompleteStatuses.includes(task.status)) return false;
+        if (!task.dueDate) return false;
+        return new Date(task.dueDate) < now;
+      });
+
+      if (userContextFilter) {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user?.id != null) {
+              overdueTasks = overdueTasks.filter((task: any) =>
+                task.assigneeId === user.id || task.createdById === user.id
+              );
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      if (filters && filters.length > 0) {
+        overdueTasks = this.applyFilters(overdueTasks, filters);
+      }
+
+      const data = overdueTasks.slice(0, limit || 20).map((task: any) => {
+        const dueDate = new Date(task.dueDate);
+        const overdueDays = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          status: task.status,
+          assignee: task.assigneeName || 'Unassigned',
+          dueDate: dueDate.toLocaleDateString(),
+          overdueDays
+        };
+      });
+
+      return {
+        type: 'TABLE',
+        data,
+        metadata: {
+          total: overdueTasks.length,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching overdue tasks:', error);
+      return { type: 'TABLE', data: [], metadata: { total: 0, lastUpdated: new Date().toISOString() } };
+    }
+  }
+
   /**
    * Transform raw data based on widget type and configuration
    */
@@ -455,7 +755,8 @@ class WidgetDataService {
         const value = item[filter.field];
         const filterValue = filter.value;
 
-        switch (filter.operator) {
+        const op = (filter.operator || '').toLowerCase();
+        switch (op) {
           case 'equals':
             return value === filterValue;
           case 'not_equals':
