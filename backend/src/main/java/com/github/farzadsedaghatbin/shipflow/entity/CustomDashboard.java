@@ -105,6 +105,6 @@ public class CustomDashboard {
   }
 
   public enum TemplateCategory {
-    EXECUTIVE, DEVELOPER, MANAGER, QA, CUSTOM
+    EXECUTIVE, DEVELOPER, MANAGER, PROJECT_MANAGER, QA, CUSTOM
   }
 }

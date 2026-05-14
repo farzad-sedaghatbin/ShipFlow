@@ -8,9 +8,12 @@ All notable changes to this project will be documented in this file.
 - **Inline pitch title editing**: Pitch names can now be edited directly from the PitchDetail header and the SortablePitchList (EpicDetailPage). Click-to-edit with Enter/blur to save, Escape to cancel.
 - **Interactive roadmap timeline**: Drag-to-move and drag-to-resize timeline bars on the Roadmap page to adjust epic and initiative dates. Empty-state "Set dates" button creates a default 2-week range. Progress percentages and status-colored dots shown on bars.
 - **Backend date validation**: `PATCH /epics/{id}/dates` and `PATCH /initiatives/{id}/dates` now validate that startDate ≤ endDate, returning 400 if invalid. `@DateTimeFormat(iso = DATE)` annotations added for explicit date parsing.
+- **Project Manager report template**: New "Project Manager" dashboard template with 5 purpose-built widgets — unshaped pitches, stale bugs (3+ days unresolved), high-priority tasks, at-risk epics, and overdue tasks. Available from the template gallery in the Reports page.
+- **New widget data sources**: Five new data source types for custom dashboards — `UNSHAPED_PITCHES`, `STALE_BUGS`, `HIGH_PRIORITY_TASKS`, `AT_RISK_EPICS`, and `OVERDUE_TASKS`. Usable in any custom report board.
 
 ### Fixed
 - **Release form navigation**: After creating or editing a release, the form now correctly navigates to `/releases-management/:id` instead of the non-existent `/releases/:id`.
+- **Report board View button**: Clicking "View" on a custom report board now correctly navigates to the dashboard view instead of redirecting to the main dashboard.
 
 ## [1.0.0] - 2026-04-21
 
