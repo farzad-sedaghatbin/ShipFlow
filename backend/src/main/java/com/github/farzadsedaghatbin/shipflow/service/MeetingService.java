@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetrospectiveRepository;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -52,11 +53,20 @@ public class MeetingService {
       List<Predicate> predicates = new ArrayList<>();
 
       if (cycleId != null) {
-        predicates.add(cb.equal(root.get("pitch").get("cycle").get("id"), cycleId));
+        var pitchJoin = root.join("pitch", JoinType.LEFT);
+        var cycleJoin = pitchJoin.join("cycle", JoinType.LEFT);
+        predicates.add(cb.equal(cycleJoin.get("id"), cycleId));
       }
 
       if (projectId != null) {
-        predicates.add(cb.equal(root.get("pitch").get("cycle").get("project").get("id"), projectId));
+        var directProjectJoin = root.join("project", JoinType.LEFT);
+        var pitchJoin = root.join("pitch", JoinType.LEFT);
+        var cycleJoin = pitchJoin.join("cycle", JoinType.LEFT);
+        var cycleProjectJoin = cycleJoin.join("project", JoinType.LEFT);
+        predicates.add(cb.or(
+            cb.equal(directProjectJoin.get("id"), projectId),
+            cb.equal(cycleProjectJoin.get("id"), projectId)
+        ));
       }
 
       if (pitchId != null) {
