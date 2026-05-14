@@ -14,6 +14,7 @@
     "import": "Import",
     "download": "Download",
     "refresh": "Refresh",
+    "retry": "Retry",
     "close": "Close",
     "confirm": "Confirm",
     "yes": "Yes",
@@ -3715,7 +3716,9 @@
     "deselectAllProjects": "Deselect All",
     "adminProjectNote": "Admins automatically have access to all projects",
     "noProjects": "No projects available",
-    "projectsSelected": "{{count}} projects selected"
+    "projectsSelected_one": "{{count}} project selected",
+    "projectsSelected_other": "{{count}} projects selected",
+    "projectLoadFailed": "Failed to load projects. Cannot assign project access."
   },
   "peopleManagement": {
     "title": "People Management",

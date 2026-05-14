@@ -19,6 +19,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,8 +85,21 @@ class UserServiceTest {
     lenient().when(userProjectRepository.save(any(UserProject.class))).thenAnswer(inv -> inv.getArgument(0));
   }
 
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
+  }
+
+  private void authenticateAsAdmin() {
+    User admin = User.builder().id(1L).username("admin").role(UserRole.ADMIN).build();
+    lenient().when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken("admin", null, List.of()));
+  }
+
   @Test
-  void createUser_MemberRole_AssignsAllActiveProjectsAsContributor() {
+  void createUser_MemberRole_WhenCallerIsAdmin_AssignsAllActiveProjectsAsContributor() {
+    authenticateAsAdmin();
     when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(projectA, projectB));
 
     RegisterRequest request = new RegisterRequest();
@@ -108,7 +125,8 @@ class UserServiceTest {
   }
 
   @Test
-  void createUser_ReadonlyRole_AssignsAllActiveProjectsAsViewer() {
+  void createUser_ReadonlyRole_WhenCallerIsAdmin_AssignsAllActiveProjectsAsViewer() {
+    authenticateAsAdmin();
     when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(projectA));
 
     RegisterRequest request = new RegisterRequest();
@@ -127,7 +145,8 @@ class UserServiceTest {
   }
 
   @Test
-  void createUser_ManagerRole_AssignsAllActiveProjectsAsManager() {
+  void createUser_ManagerRole_WhenCallerIsAdmin_AssignsAllActiveProjectsAsManager() {
+    authenticateAsAdmin();
     when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(projectA, projectB));
 
     RegisterRequest request = new RegisterRequest();
@@ -145,6 +164,8 @@ class UserServiceTest {
 
   @Test
   void createUser_AdminRole_SkipsProjectAssignment() {
+    authenticateAsAdmin();
+
     RegisterRequest request = new RegisterRequest();
     request.setUsername("newadmin");
     request.setPassword("password123");
@@ -157,7 +178,8 @@ class UserServiceTest {
   }
 
   @Test
-  void createUser_WithSpecificProjectIds_AssignsOnlyThoseProjects() {
+  void createUser_WithSpecificProjectIds_WhenCallerIsAdmin_AssignsOnlyThoseProjects() {
+    authenticateAsAdmin();
     when(projectRepository.findAllById(List.of(2L))).thenReturn(List.of(projectB));
 
     RegisterRequest request = new RegisterRequest();
@@ -180,7 +202,8 @@ class UserServiceTest {
   }
 
   @Test
-  void createUser_WithEmptyProjectIds_AssignsAllActiveProjects() {
+  void createUser_WithEmptyProjectIds_WhenCallerIsAdmin_AssignsAllActiveProjects() {
+    authenticateAsAdmin();
     when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(projectA));
 
     RegisterRequest request = new RegisterRequest();
@@ -197,6 +220,7 @@ class UserServiceTest {
 
   @Test
   void createUser_WithNoActiveProjects_CreatesUserWithNoAssignments() {
+    authenticateAsAdmin();
     when(projectRepository.findByIsActiveTrue()).thenReturn(List.of());
 
     RegisterRequest request = new RegisterRequest();
@@ -208,6 +232,39 @@ class UserServiceTest {
 
     assertThat(result).isNotNull();
     verify(userProjectRepository, never()).save(any());
+  }
+
+  @Test
+  void createUser_UnauthenticatedCaller_SkipsProjectAssignment() {
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("selfregister");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result).isNotNull();
+    verify(userProjectRepository, never()).save(any());
+    verify(projectRepository, never()).findByIsActiveTrue();
+  }
+
+  @Test
+  void createUser_NonAdminCaller_SkipsProjectAssignment() {
+    User member = User.builder().id(2L).username("member").role(UserRole.MEMBER).build();
+    when(userRepository.findByUsername("member")).thenReturn(Optional.of(member));
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken("member", null, List.of()));
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("newuser");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result).isNotNull();
+    verify(userProjectRepository, never()).save(any());
+    verify(projectRepository, never()).findByIsActiveTrue();
   }
 
   @Test

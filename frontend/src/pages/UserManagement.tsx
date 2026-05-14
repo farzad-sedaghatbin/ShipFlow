@@ -80,6 +80,7 @@ export default function UserManagement() {
   // Projects for access selection
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
+  const [projectsFetchFailed, setProjectsFetchFailed] = useState(false);
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -148,10 +149,12 @@ export default function UserManagement() {
 
   const fetchProjects = async () => {
     try {
+      setProjectsFetchFailed(false);
       const allProjects = await projectService.getAll();
       setProjects(allProjects.filter((p) => p.isActive));
     } catch (error) {
-      // Silent fail — project list is optional
+      setProjectsFetchFailed(true);
+      showToast(t('userManagement.projectLoadFailed'), 'error');
     }
   };
 
@@ -713,6 +716,13 @@ export default function UserManagement() {
                 <p className="text-xs text-muted-foreground italic">
                   {t('userManagement.adminProjectNote')}
                 </p>
+              ) : projectsFetchFailed ? (
+                <div className="flex items-center gap-2 text-xs text-destructive">
+                  <span>{t('userManagement.projectLoadFailed')}</span>
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={fetchProjects}>
+                    {t('common.retry')}
+                  </Button>
+                </div>
               ) : projects.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   {t('userManagement.noProjects')}
@@ -759,7 +769,7 @@ export default function UserManagement() {
             <Button variant="outline" onClick={handleCloseDialog}>
               {t('userManagement.cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || (projectsFetchFailed && formData.role !== 'ADMIN')}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

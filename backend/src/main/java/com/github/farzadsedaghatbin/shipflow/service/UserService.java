@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -97,14 +98,17 @@ public class UserService {
   }
 
   /**
-   * Automatically assigns projects to a newly created user. ADMINs are skipped
-   * because they have global access. When projectIds is null or empty, all active
-   * projects are assigned. Otherwise, only the specified projects are assigned.
+   * Automatically assigns projects to a newly created user. Only runs when the
+   * caller is an authenticated ADMIN — public self-registration never triggers
+   * project assignment.
    */
   private void assignProjectsToNewUser(User user, RegisterRequest request) {
+    if (!isCallerAdmin()) {
+      return;
+    }
+
     ProjectRole projectRole = mapUserRoleToProjectRole(user.getRole());
     if (projectRole == null) {
-      // ADMIN users don't need project assignments
       return;
     }
 
@@ -124,6 +128,14 @@ public class UserService {
       log.info("Auto-assigned user '{}' (role={}) to {} project(s) with project role {}", user.getUsername(),
           user.getRole(), projects.size(), projectRole);
     }
+  }
+
+  private boolean isCallerAdmin() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+      return false;
+    }
+    return userRepository.findByUsername(auth.getName()).map(u -> u.getRole() == UserRole.ADMIN).orElse(false);
   }
 
   /**
